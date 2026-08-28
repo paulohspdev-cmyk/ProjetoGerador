@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "manufacturer": "ComAp",
+  "family": "InteliGen",
+  "model": "InteliGen 200",
+  "status": "field_validated",
+  "protocols": ["modbus"],
+  "transports": [
+    "reverse_tcp",
+    "modbus_tcp_direct",
+    "rtu_over_tcp",
+    "modbus_rtu_serial"
+  ],
+  "rapid": {
+    "template": "rapid/templates/DrvModbus_RC_IG200.xml",
+    "bindingDevice": 200
+  },
+  "capabilities": {
+    "telemetry": true,
+    "start": true,
+    "stop": true,
+    "auto": false,
+    "manual": false,
+    "test": false,
+    "mcb_open": false,
+    "mcb_close": false,
+    "gcb_open": false,
+    "gcb_close": false,
+    "paralleling": false
+  },
+  "validatedTelemetry": [
+    "rpm",
+    "frequency",
+    "voltage_l1",
+    "voltage_l2",
+    "voltage_l3",
+    "voltage_l1_l2",
+    "voltage_l2_l3",
+    "voltage_l3_l1"
+  ],
+  "notes": "Telemetria e START/STOP foram validados em campo. Demais comandos permanecem bloqueados até homologação específica."
+}
