@@ -24,7 +24,12 @@ jobs:
           set -euo pipefail
           gh api --paginate "repos/${GITHUB_REPOSITORY}/issues/1/comments" --jq '.[] | .body' \
             | tr -d '\r\n\t ' > /tmp/generator-vision.b64
+          echo "B64_BYTES=$(wc -c < /tmp/generator-vision.b64)"
+          sha256sum /tmp/generator-vision.b64
+          tail -c 80 /tmp/generator-vision.b64; echo
           base64 --decode /tmp/generator-vision.b64 > /tmp/generator-vision.zip
+          echo "ZIP_BYTES=$(wc -c < /tmp/generator-vision.zip)"
+          sha256sum /tmp/generator-vision.zip
           unzip -tq /tmp/generator-vision.zip
           rm -rf /tmp/generator-vision
           mkdir -p /tmp/generator-vision
