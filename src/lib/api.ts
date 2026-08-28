@@ -83,6 +83,27 @@ export type CommandResult = {
   rpm_after?: number | null;
 };
 
+export type AuditItem = {
+  id: number;
+  created_at: number;
+  actor: string;
+  action: string;
+  entity_type: string;
+  entity_id: string;
+  detail: string;
+};
+
+export type EventItemApi = {
+  id: number;
+  generator_id: string | null;
+  level: string;
+  message: string;
+  created_at: number;
+  tag?: string | null;
+  name?: string | null;
+  site?: string | null;
+};
+
 export const rcApi = {
   auth: {
     login: (email: string, password: string) =>
@@ -122,5 +143,11 @@ export const rcApi = {
         method: "POST",
         body: JSON.stringify({ confirmation: action.toUpperCase() }),
       }),
+  },
+  audit: {
+    list: (limit = 200) => request<AuditItem[]>(`/api/audit?limit=${limit}`),
+  },
+  events: {
+    list: (limit = 200) => request<EventItemApi[]>(`/api/events?limit=${limit}`),
   },
 };
