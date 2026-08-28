@@ -8,56 +8,45 @@ import {
   type ReactNode,
 } from "react";
 
-import {
-  CONTROLLER_MODELS,
-  GENERATORS_KEY,
-  GEN_SITES,
-  SEED_GENERATORS,
-  createGeneratorRecord,
-  syncLiveGenerators,
-  type Generator,
-} from "@/data/generators";
+import { CONTROLLER_MODELS, GEN_SITES, type Generator } from "@/data/generators";
+import { rcApi } from "@/lib/api";
 
 type CreateInput = { tag?: string; controller: string; site: string; ip?: string };
 
 type GeneratorsContextValue = {
   generators: Generator[];
+  ready: boolean;
+  error: string | null;
+  refresh: () => Promise<void>;
   getById: (id: string) => Generator | undefined;
-  addGenerator: (input: CreateInput) => string | null;
-  removeGenerator: (id: string) => string | null;
+  addGenerator: (input: CreateInput) => Promise<string | null>;
+  removeGenerator: (id: string) => Promise<string | null>;
 };
 
 const GeneratorsContext = createContext<GeneratorsContextValue | null>(null);
 
-function cloneSeed() {
-  return SEED_GENERATORS.map((g) => ({ ...g, mains: { ...g.mains }, gen: { ...g.gen } }));
-}
-
-function loadList(): Generator[] {
-  try {
-    const raw = localStorage.getItem(GENERATORS_KEY);
-    if (!raw) return cloneSeed();
-    const parsed = JSON.parse(raw) as Generator[];
-    if (!Array.isArray(parsed)) return cloneSeed();
-    return parsed;
-  } catch {
-    return cloneSeed();
-  }
-}
-
-function persist(list: Generator[]) {
-  localStorage.setItem(GENERATORS_KEY, JSON.stringify(list));
-  syncLiveGenerators(list);
-}
-
 export function GeneratorsProvider({ children }: { children: ReactNode }) {
-  const [generators, setGenerators] = useState<Generator[]>(() => cloneSeed());
+  const [generators, setGenerators] = useState<Generator[]>([]);
+  const [ready, setReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    try {
+      const list = await rcApi.generators.list();
+      setGenerators(list);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha ao consultar o backend.");
+    } finally {
+      setReady(true);
+    }
+  }, []);
 
   useEffect(() => {
-    const list = loadList();
-    persist(list);
-    setGenerators(list);
-  }, []);
+    void refresh();
+    const timer = window.setInterval(() => void refresh(), 3000);
+    return () => window.clearInterval(timer);
+  }, [refresh]);
 
   const getById = useCallback(
     (id: string) => generators.find((g) => g.id === id || g.tag.toLowerCase() === id.toLowerCase()),
@@ -65,37 +54,45 @@ export function GeneratorsProvider({ children }: { children: ReactNode }) {
   );
 
   const addGenerator = useCallback(
-    (input: CreateInput) => {
+    async (input: CreateInput) => {
       const controller = input.controller.trim();
       const site = input.site.trim();
       if (!controller) return "Informe a controladora.";
       if (!site) return "Informe o site.";
       const tag = (input.tag?.trim() || "").toUpperCase();
-      if (tag && generators.some((g) => g.tag.toUpperCase() === tag)) {
+      if (!tag) return "Informe a tag.";
+      if (generators.some((g) => g.tag.toUpperCase() === tag)) {
         return "Já existe um gerador com esta tag.";
       }
-      const next = [...generators, createGeneratorRecord(generators, { ...input, controller, site, tag })];
-      persist(next);
-      setGenerators(next);
-      return null;
+
+      try {
+        await rcApi.generators.create({ tag, controller, site, ip: input.ip?.trim() || undefined });
+        await refresh();
+        return null;
+      } catch (err) {
+        return err instanceof Error ? err.message : "Falha ao cadastrar gerador.";
+      }
     },
-    [generators],
+    [generators, refresh],
   );
 
   const removeGenerator = useCallback(
-    (id: string) => {
+    async (id: string) => {
       if (!generators.some((g) => g.id === id)) return "Gerador não encontrado.";
-      const next = generators.filter((g) => g.id !== id);
-      persist(next);
-      setGenerators(next);
-      return null;
+      try {
+        await rcApi.generators.remove(id);
+        await refresh();
+        return null;
+      } catch (err) {
+        return err instanceof Error ? err.message : "Falha ao excluir gerador.";
+      }
     },
-    [generators],
+    [generators, refresh],
   );
 
   const value = useMemo(
-    () => ({ generators, getById, addGenerator, removeGenerator }),
-    [generators, getById, addGenerator, removeGenerator],
+    () => ({ generators, ready, error, refresh, getById, addGenerator, removeGenerator }),
+    [generators, ready, error, refresh, getById, addGenerator, removeGenerator],
   );
 
   return <GeneratorsContext.Provider value={value}>{children}</GeneratorsContext.Provider>;
