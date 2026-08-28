@@ -1,0 +1,195 @@
+import json
+import subprocess
+import time
+
+from .config import RAPID_BINDINGS_FILE, RAPID_CACHE_TTL, RAPID_COMM_CONFIG, RAPID_READER_DLL
+
+_cache = {"at": 0.0, "channels": {}, "error": ""}
+
+
+def load_bindings():
+    try:
+        data = json.loads(RAPID_BINDINGS_FILE.read_text(encoding="utf-8"))
+        return data if isinstance(data, list) else []
+    except Exception:
+        return []
+
+
+def binding_for(generator, bindings):
+    ctype = str(generator.get("controller_type", "")).upper()
+    model = str(generator.get("controller_model", "")).strip().lower()
+    port = int(generator.get("listen_port") or 0)
+    unit = int(generator.get("modbus_unit") or 0)
+    rapid_device = generator.get("rapid_device_num")
+
+    for item in bindings:
+        if str(item.get("controller_type", "")).upper() != ctype:
+            continue
+        if str(item.get("controller_model", "")).strip().lower() != model:
+            continue
+        if rapid_device and int(item.get("rapid_device_num") or 0) == int(rapid_device):
+            return item
+        if int(item.get("listen_port") or 0) == port and int(item.get("modbus_unit") or 0) == unit:
+            return item
+    return None
+
+
+def read_channels(channel_nums):
+    nums = sorted({int(n) for n in channel_nums})
+    if not nums:
+        return {}, ""
+
+    now = time.monotonic()
+    if now - _cache["at"] < RAPID_CACHE_TTL and all(n in _cache["channels"] for n in nums):
+        return {n: _cache["channels"][n] for n in nums}, _cache["error"]
+
+    if not RAPID_READER_DLL.exists():
+        return {}, f"Leitor Rapid SCADA não instalado: {RAPID_READER_DLL}"
+    if not RAPID_COMM_CONFIG.exists():
+        return {}, f"Configuração Rapid SCADA não encontrada: {RAPID_COMM_CONFIG}"
+
+    cmd = ["dotnet", str(RAPID_READER_DLL), str(RAPID_COMM_CONFIG), *[str(n) for n in nums]]
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=4, check=False)
+    except Exception as exc:
+        return {}, f"Falha ao consultar Rapid SCADA: {exc}"
+
+    if proc.returncode != 0:
+        detail = (proc.stderr or proc.stdout or "erro desconhecido").strip()
+        return {}, f"Rapid SCADA: {detail[:300]}"
+
+    try:
+        payload = json.loads(proc.stdout)
+        channels = {
+            int(item["cnl"]): {
+                "val": item.get("val", 0),
+                "stat": int(item.get("stat", 0)),
+                "defined": bool(item.get("defined", False)),
+            }
+            for item in payload.get("channels", [])
+        }
+    except Exception as exc:
+        return {}, f"Resposta inválida do Rapid SCADA: {exc}"
+
+    _cache["at"] = now
+    _cache["channels"] = channels
+    _cache["error"] = ""
+    return channels, ""
+
+
+def _mode(values):
+    raw = values.get("controller_mode_raw")
+    return {0: "OFF", 1: "MANUAL", 2: "AUTO", 3: "TESTE"}.get(raw, "OFF")
+
+
+def _frontend_generator(generator, values, status, error=""):
+    configured = bool(generator.get("enabled"))
+    rpm = int(values.get("rpm") or 0)
+    online = status == "online"
+    fault = status == "fault"
+
+    return {
+        "id": generator["id"],
+        "tag": generator["tag"],
+        "name": generator.get("name") or generator["tag"],
+        "customer": generator.get("customer") or "",
+        "controller": generator.get("controller_model") or generator.get("controller_type") or "",
+        "controllerType": generator.get("controller_type") or "",
+        "site": generator.get("site") or "",
+        "status": "alerta" if fault else "online" if online else "offline" if configured else "nao_configurado",
+        "mode": _mode(values),
+        "ip": generator.get("host") or (f"TCP {generator.get('listen_port')}" if generator.get("listen_port") else "—"),
+        "battery": values.get("battery_voltage"),
+        "frequency": values.get("frequency"),
+        "rpm": rpm,
+        "load": float(values.get("power_kw") or 0),
+        "oilPressure": float(values.get("oil_pressure") or 0),
+        "coolantTemp": float(values.get("coolant_temperature") or 0),
+        "fuelLevel": float(values.get("fuel_level") or 0),
+        "alternatorVoltage": float(values.get("alternator_voltage") or 0),
+        "maintenance": float(values.get("maintenance_hours") or 0),
+        "runHours": float(values.get("run_hours") or 0),
+        "latency": None,
+        "alarms": 1 if fault else int(values.get("alarm_count") or 0),
+        "mcb": bool(values.get("mcb_closed", False)),
+        "gcb": bool(values.get("gcb_closed", rpm > 300 and online)),
+        "mains": {
+            "l1": float(values.get("mains_voltage_l1") or 0),
+            "l2": float(values.get("mains_voltage_l2") or 0),
+            "l3": float(values.get("mains_voltage_l3") or 0),
+            "l12": float(values.get("mains_voltage_l1_l2") or 0),
+        },
+        "gen": {
+            "l1": float(values.get("voltage_l1") or 0),
+            "l2": float(values.get("voltage_l2") or 0),
+            "l3": float(values.get("voltage_l3") or 0),
+            "l12": float(values.get("voltage_l1_l2") or 0),
+        },
+        "telemetrySource": "rapid_scada" if status in {"online", "fault", "connected"} else "none",
+        "rapidDeviceNum": generator.get("rapid_device_num"),
+        "lastError": error,
+    }
+
+
+def overlay_generators(generators):
+    bindings = load_bindings()
+    matched = []
+    all_channels = []
+
+    for generator in generators:
+        binding = binding_for(generator, bindings)
+        matched.append(binding)
+        if binding:
+            for cfg in (binding.get("channels") or {}).values():
+                if "cnl" in cfg:
+                    all_channels.append(int(cfg["cnl"]))
+
+    channel_data, read_error = read_channels(all_channels)
+    result = []
+
+    for generator, binding in zip(generators, matched):
+        if not generator.get("enabled"):
+            result.append(_frontend_generator(generator, {}, "disabled"))
+            continue
+        if not binding:
+            result.append(_frontend_generator(generator, {}, "offline", "Sem binding Rapid SCADA"))
+            continue
+
+        values = {}
+        defined_count = 0
+        for key, cfg in (binding.get("channels") or {}).items():
+            item = channel_data.get(int(cfg["cnl"]))
+            if not item or not item.get("defined"):
+                continue
+            defined_count += 1
+            scale = float(cfg.get("scale", 1.0))
+            value = float(item.get("val", 0)) * scale
+            values[key] = int(round(value)) if abs(value - round(value)) < 1e-9 and key != "frequency" else round(value, 3)
+
+        if read_error:
+            result.append(_frontend_generator(generator, {}, "fault", read_error))
+        elif defined_count:
+            result.append(_frontend_generator(generator, values, "online"))
+        else:
+            result.append(
+                _frontend_generator(
+                    generator,
+                    {},
+                    "connected",
+                    "Rapid SCADA conectado, canais ainda sem dados definidos",
+                )
+            )
+
+    return result
+
+
+def dashboard(generators):
+    return {
+        "total": len(generators),
+        "online": sum(g["status"] == "online" for g in generators),
+        "alerts": sum(g["status"] == "alerta" for g in generators),
+        "offline": sum(g["status"] == "offline" for g in generators),
+        "notConfigured": sum(g["status"] == "nao_configurado" for g in generators),
+        "running": sum((g.get("rpm") or 0) > 300 for g in generators),
+        "loadKw": round(sum(float(g.get("load") or 0) for g in generators), 3),
+    }
