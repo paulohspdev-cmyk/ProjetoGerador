@@ -12,6 +12,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Higiene do repositório
+        run: |
+          set -euo pipefail
+          BAD="$(git ls-files | grep -E '(^|/)node_modules/|(^|/)__pycache__/|\.py[co]$|(^|/)\.venv/|(^|/)backend/\.venv/|(^|/)\.output/' || true)"
+          if [[ -n "$BAD" ]]; then
+            echo 'ERRO: artefatos de runtime/build foram versionados:' >&2
+            echo "$BAD" >&2
+            exit 1
+          fi
+
       - name: Node
         uses: actions/setup-node@v4
         with:
@@ -42,11 +52,19 @@ jobs:
           cat /tmp/frontend.log
           exit 1
 
-      - name: Sem dados demonstrativos conhecidos
+      - name: Sem dados ou séries industriais demonstrativas
         run: |
           set -euo pipefail
-          if grep -R -n -E 'Teltonika RUT241|Sierra AirLink|Atlas Data Centers|23/05/2025|612 kW|0,92' src --include='*.ts' --include='*.tsx'; then
-            echo 'ERRO: dado demonstrativo conhecido voltou ao frontend.' >&2
+          if grep -R -n -E 'Teltonika RUT241|Sierra AirLink|Atlas Data Centers|23/05/2025|14:32:18|612 kW|0,92|phaseSeries|kwSeries' src --include='*.ts' --include='*.tsx'; then
+            echo 'ERRO: dado/série demonstrativa conhecida voltou ao frontend.' >&2
+            exit 1
+          fi
+          test ! -f src/components/generators/detail-widgets.tsx
+          grep -q 'availableMetrics' src/components/generators/PowerFlowCard.tsx
+          grep -q 'availableMetrics' src/components/generators/GeneratorDetailScreen.tsx
+          grep -q 'BLOQUEADO' src/components/generators/GeneratorDetailScreen.tsx
+          if grep -n -E 'gridHz[[:space:]]*=.*60|Math\.max\(gen\.mains.*> 50' src/components/generators/PowerFlowCard.tsx; then
+            echo 'ERRO: power-flow voltou a inferir rede/Hz sem canal homologado.' >&2
             exit 1
           fi
 
@@ -102,6 +120,10 @@ jobs:
           grep -q 'g.get("transport") == "reverse_tcp"' backend/app/bridge_runtime.py
           grep -q 'ALLOWED_ACTIONS = {"notify", "work_order"}' backend/app/automation_engine.py
           grep -q 'CmdEnabled.*false' rapid/provisioning/provision_generator.py
+          grep -q 'unit_conflict' rapid/provisioning/provision_generator.py
+          grep -q '_validate_shared_reverse_line' rapid/provisioning/provision_generator.py
+          grep -q 'if shared:' rapid/provisioning/provision_generator.py
+          grep -q 'Somente START e STOP estão homologados' backend/app/control.py
           python - <<'PY'
           import json
           data=json.load(open('controllers/production/comap/inteligen-200/manifest.json'))
