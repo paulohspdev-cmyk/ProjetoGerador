@@ -123,10 +123,15 @@ with TestClient(app) as client:
     assert agenda["when"] == "30/08 09:00"
 
     # Regra nasce em rascunho, não pode ser ativada sem aprovação explícita.
+    # Usa apenas gatilho/ação não industriais reconhecidos pelo motor seguro.
     rule = expect(
         client.post(
             "/api/automation/rules",
-            json={"name": "Regra teste", "trigger": "rpm > 0", "action": "somente notificar"},
+            json={
+                "name": "Regra teste",
+                "trigger": "generator_offline:GEN001",
+                "action": "notify:panel",
+            },
         ),
         201,
     ).json()
@@ -136,7 +141,7 @@ with TestClient(app) as client:
         409,
     )
     approved = expect(client.post(f"/api/automation/rules/{rule['id']}/approve"), 200).json()
-    assert approved["safety_state"] == "approved"
+    assert approved["safety_state"] == "approved_nonindustrial"
     rule = expect(
         client.put(f"/api/automation/rules/{rule['id']}/enabled", json={"enabled": True}),
         200,
