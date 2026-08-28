@@ -63,6 +63,8 @@ jobs:
 
       - name: Backend auth RBAC smoke
         working-directory: backend
+        env:
+          PYTHONPATH: .
         run: python tests/smoke.py
 
       - name: Instaladores Bash
