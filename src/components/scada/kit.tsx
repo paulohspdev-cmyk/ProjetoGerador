@@ -16,9 +16,9 @@ export function ScreenBody({ children }: { children: ReactNode }) {
 export type StatItem = {
   label: string;
   value: string | number;
-  sub?: string;
-  tone?: string;
-  icon?: LucideIcon;
+  sub?: string | undefined;
+  tone?: string | undefined;
+  icon?: LucideIcon | undefined;
 };
 
 export function Stats({ items }: { items: StatItem[] }) {
@@ -57,9 +57,9 @@ export function Panel({
   className,
 }: {
   title: string;
-  actions?: ReactNode;
+  actions?: ReactNode | undefined;
   children: ReactNode;
-  className?: string;
+  className?: string | undefined;
 }) {
   return (
     <section className={cn("rounded-lg border border-border bg-card", className)}>
@@ -94,7 +94,7 @@ export function Pill({
   tone = "muted",
 }: {
   children: ReactNode;
-  tone?: "ok" | "warn" | "err" | "info" | "muted";
+  tone?: "ok" | "warn" | "err" | "info" | "muted" | undefined;
 }) {
   const map = {
     ok: "border-online/40 bg-online/15 text-online",
@@ -110,16 +110,16 @@ export function Pill({
   );
 }
 
-type Col<T> = { label: string; hide?: string; render: (row: T) => ReactNode };
+type Col<T> = { label: string; hide?: string | undefined; render: (row: T) => ReactNode };
 
-export function ScadaTable<T extends { id: string }>({
+export function ScadaTable<T extends { id: string | number }>({
   columns,
   rows,
   min = "720px",
 }: {
   columns: Col<T>[];
   rows: T[];
-  min?: string;
+  min?: string | undefined;
 }) {
   return (
     <div className="scroll-slim overflow-x-auto">
@@ -158,8 +158,8 @@ export function Trend({
   unit,
 }: {
   data: Array<{ t: string; v: number }>;
-  color?: string;
-  unit?: string;
+  color?: string | undefined;
+  unit?: string | undefined;
 }) {
   return (
     <div className="h-48 w-full">
@@ -187,8 +187,8 @@ export function SwitchRow({
 }: {
   id: string;
   label: string;
-  desc?: string;
-  on?: boolean;
+  desc?: string | undefined;
+  on?: boolean | undefined;
 }) {
   const { switchOn, toggleSwitch } = useScadaOps();
   const checked = switchOn(id, on);
@@ -218,17 +218,20 @@ export function ActionBtn({
   children,
   onClick,
   tone = "default",
+  disabled = false,
 }: {
   children: ReactNode;
   onClick: () => void;
-  tone?: "default" | "danger" | "ok";
+  tone?: "default" | "danger" | "ok" | undefined;
+  disabled?: boolean | undefined;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       className={cn(
-        "rounded border px-2 py-0.5 text-[11px] font-semibold hover:bg-secondary",
+        "rounded border px-2 py-0.5 text-[11px] font-semibold hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50",
         tone === "danger" && "border-offline/40 text-offline hover:bg-offline/10",
         tone === "ok" && "border-online/40 text-online hover:bg-online/10",
         tone === "default" && "border-border",

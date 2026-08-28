@@ -75,13 +75,13 @@ export type ScadaAlarm = {
  * Não inventa causa elétrica, temperatura, bateria ou timestamp.
  */
 export function buildAlarms(list: Generator[]): ScadaAlarm[] {
-  return list.flatMap((g) => {
+  return list.flatMap<ScadaAlarm>((g) => {
     if (g.status === "offline") {
       return [{
         id: `COMM-${g.id}`,
         gen: g.tag,
         site: g.site,
-        severity: "falha" as const,
+        severity: "falha",
         message: g.lastError || "Comunicação indisponível",
         since: "—",
         ack: false,
@@ -92,7 +92,7 @@ export function buildAlarms(list: Generator[]): ScadaAlarm[] {
         id: `STATE-${g.id}`,
         gen: g.tag,
         site: g.site,
-        severity: "alarme" as const,
+        severity: "alarme",
         message: g.lastError || "Controlador reporta condição de alerta; detalhes dependem dos canais homologados",
         since: "—",
         ack: false,

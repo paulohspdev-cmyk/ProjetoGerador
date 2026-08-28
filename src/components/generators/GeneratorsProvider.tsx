@@ -13,14 +13,14 @@ import { CONTROLLER_MODELS, GEN_SITES, type Generator } from "@/data/generators"
 import { ApiError, rcApi, type GeneratorTransport } from "@/lib/api";
 
 type CreateInput = {
-  tag?: string;
+  tag?: string | undefined;
   controller: string;
   site: string;
-  ip?: string;
-  transport?: GeneratorTransport;
-  listenPort?: number;
-  modbusUnit?: number;
-  rapidDeviceNum?: number;
+  ip?: string | undefined;
+  transport?: GeneratorTransport | undefined;
+  listenPort?: number | undefined;
+  modbusUnit?: number | undefined;
+  rapidDeviceNum?: number | undefined;
 };
 
 type GeneratorsContextValue = {
@@ -90,15 +90,16 @@ export function GeneratorsProvider({ children }: { children: ReactNode }) {
       if (generators.some((g) => g.tag.toUpperCase() === tag)) return "Já existe um gerador com esta tag.";
 
       try {
+        const ip = input.ip?.trim();
         await rcApi.generators.create({
           tag,
           controller,
           site,
-          ip: input.ip?.trim() || undefined,
-          transport: input.transport,
-          listenPort: input.listenPort,
-          modbusUnit: input.modbusUnit,
-          rapidDeviceNum: input.rapidDeviceNum,
+          ...(ip ? { ip } : {}),
+          ...(input.transport ? { transport: input.transport } : {}),
+          ...(input.listenPort != null ? { listenPort: input.listenPort } : {}),
+          ...(input.modbusUnit != null ? { modbusUnit: input.modbusUnit } : {}),
+          ...(input.rapidDeviceNum != null ? { rapidDeviceNum: input.rapidDeviceNum } : {}),
         });
         await refresh();
         return null;

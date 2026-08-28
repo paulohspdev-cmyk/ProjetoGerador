@@ -50,6 +50,25 @@ def _row_by_pk(path: Path, key: str, value: int):
     return next((row for row in rows if int(row.get(key) or 0) == int(value)), None)
 
 
+def _binding_is_materialized(binding: dict) -> bool:
+    """Só adota binding canônico quando Rapid já contém linha/device correspondentes."""
+    try:
+        line_num = int(binding.get("rapid_line_num") or 0)
+        device_num = int(binding.get("rapid_device_num") or 0)
+        if line_num <= 0 or device_num <= 0:
+            return False
+        if not all(path.exists() for path in (DAT / "commline.dat", DAT / "device.dat", CFG)):
+            return False
+        if not _row_by_pk(DAT / "commline.dat", "CommLineNum", line_num):
+            return False
+        if not _row_by_pk(DAT / "device.dat", "DeviceNum", device_num):
+            return False
+        root = ET.parse(CFG).getroot()
+        return _find_line(root, line_num) is not None
+    except Exception:
+        return False
+
+
 def _load_bindings():
     if RUNTIME_BINDINGS.exists():
         try:
@@ -58,10 +77,19 @@ def _load_bindings():
                 return value
         except Exception:
             pass
+
+    # rapid/bindings.json é somente referência canônica. Ele não pode fazer uma
+    # VM limpa parecer provisionada. Só é adotado como migração quando o Rapid
+    # já possui fisicamente a Line/Device descritos no arquivo.
     canonical = BASE / "rapid/bindings.json"
     if canonical.exists():
-        value = json.loads(canonical.read_text(encoding="utf-8"))
-        return value if isinstance(value, list) else []
+        try:
+            value = json.loads(canonical.read_text(encoding="utf-8"))
+            if isinstance(value, list):
+                materialized = [item for item in value if _binding_is_materialized(item)]
+                return materialized
+        except Exception:
+            pass
     return []
 
 
@@ -226,18 +254,24 @@ def _add_device_to_line(line, device_num: int, generator: dict, template_name: s
     )
 
 
-def _canonical_identity_matches(binding: dict, generator: dict) -> bool:
+def _binding_identity_matches(binding: dict, generator: dict) -> bool:
     requested_device = int(generator.get("rapid_device_num") or 0)
-    if requested_device <= 0:
-        return False
-    return (
-        not binding.get("generator_id")
-        and int(binding.get("rapid_device_num") or 0) == requested_device
-        and str(binding.get("controller_type") or "").upper() == str(generator.get("controller_type") or "").upper()
+    same = (
+        str(binding.get("controller_type") or "").upper() == str(generator.get("controller_type") or "").upper()
         and str(binding.get("controller_model") or "").strip().lower() == str(generator.get("controller_model") or "").strip().lower()
+        and str(binding.get("transport") or "") == str(generator.get("transport") or "")
         and int(binding.get("listen_port") or 0) == int(generator.get("listen_port") or 0)
         and int(binding.get("modbus_unit") or 0) == int(generator.get("modbus_unit") or 1)
     )
+    if requested_device > 0:
+        same = same and int(binding.get("rapid_device_num") or 0) == requested_device
+    if generator.get("transport") != "reverse_tcp":
+        same = same and str(binding.get("host") or "").strip() == str(generator.get("host") or "").strip()
+    return same
+
+
+def _canonical_identity_matches(binding: dict, generator: dict) -> bool:
+    return not binding.get("generator_id") and _binding_identity_matches(binding, generator)
 
 
 def _ensure_unique_reverse_identity(generator: dict):
@@ -294,17 +328,27 @@ def provision(generator_id: str, restart: bool = True):
 
     bindings = _load_bindings()
     existing = next((b for b in bindings if str(b.get("generator_id") or "") == generator["id"]), None)
-    if not existing:
-        existing = next((b for b in bindings if _canonical_identity_matches(b, generator)), None)
-        if existing:
-            existing.update({
-                "generator_id": generator["id"],
-                "tag": generator["tag"],
-                "transport": generator.get("transport"),
-                "host": generator.get("host") or "",
-            })
-            _save_bindings(bindings)
     if existing:
+        if not _binding_identity_matches(existing, generator):
+            raise ValueError(
+                "Binding Rapid existente diverge do cadastro atual do gerador. "
+                "Reprovisione de forma controlada antes de continuar; o provisionador não reutiliza identidade industrial divergente."
+            )
+        if not _binding_is_materialized(existing):
+            raise ValueError("Binding Rapid existe no runtime, mas Line/Device correspondentes não existem no Rapid SCADA")
+        return {"ok": True, "existing": True, "binding": existing}
+
+    existing = next((b for b in bindings if _canonical_identity_matches(b, generator)), None)
+    if existing:
+        if not _binding_is_materialized(existing):
+            raise ValueError("Binding canônico coincide com o cadastro, mas não está materializado no Rapid SCADA")
+        existing.update({
+            "generator_id": generator["id"],
+            "tag": generator["tag"],
+            "transport": generator.get("transport"),
+            "host": generator.get("host") or "",
+        })
+        _save_bindings(bindings)
         return {"ok": True, "existing": True, "binding": existing}
 
     shared = None
