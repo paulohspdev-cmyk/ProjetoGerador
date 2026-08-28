@@ -29,6 +29,8 @@ backend/.venv/
 
 # Builds/runtime locais
 .rapid-reader/
+rapid/reader/obj/
+rapid/reader/bin/
 *.db
 *.db-shm
 *.db-wal
