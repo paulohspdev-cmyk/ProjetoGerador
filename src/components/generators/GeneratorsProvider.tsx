@@ -8,8 +8,9 @@ import {
   type ReactNode,
 } from "react";
 
+import { useAuth } from "@/components/auth/AuthProvider";
 import { CONTROLLER_MODELS, GEN_SITES, type Generator } from "@/data/generators";
-import { rcApi, type GeneratorTransport } from "@/lib/api";
+import { ApiError, rcApi, type GeneratorTransport } from "@/lib/api";
 
 type CreateInput = {
   tag?: string;
@@ -35,27 +36,43 @@ type GeneratorsContextValue = {
 const GeneratorsContext = createContext<GeneratorsContextValue | null>(null);
 
 export function GeneratorsProvider({ children }: { children: ReactNode }) {
+  const { ready: authReady, user } = useAuth();
   const [generators, setGenerators] = useState<Generator[]>([]);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
+    if (!user) {
+      setGenerators([]);
+      setError(null);
+      setReady(authReady);
+      return;
+    }
     try {
       const list = await rcApi.generators.list();
       setGenerators(list);
       setError(null);
     } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        setGenerators([]);
+      }
       setError(err instanceof Error ? err.message : "Falha ao consultar o backend.");
     } finally {
       setReady(true);
     }
-  }, []);
+  }, [authReady, user]);
 
   useEffect(() => {
+    if (!authReady) return;
+    if (!user) {
+      setGenerators([]);
+      setReady(true);
+      return;
+    }
     void refresh();
     const timer = window.setInterval(() => void refresh(), 3000);
     return () => window.clearInterval(timer);
-  }, [refresh]);
+  }, [authReady, refresh, user]);
 
   const getById = useCallback(
     (id: string) => generators.find((g) => g.id === id || g.tag.toLowerCase() === id.toLowerCase()),
@@ -70,9 +87,7 @@ export function GeneratorsProvider({ children }: { children: ReactNode }) {
       if (!site) return "Informe o site.";
       const tag = (input.tag?.trim() || "").toUpperCase();
       if (!tag) return "Informe a tag.";
-      if (generators.some((g) => g.tag.toUpperCase() === tag)) {
-        return "Já existe um gerador com esta tag.";
-      }
+      if (generators.some((g) => g.tag.toUpperCase() === tag)) return "Já existe um gerador com esta tag.";
 
       try {
         await rcApi.generators.create({
