@@ -145,7 +145,6 @@ def trend_for_generator(generator, metric, hours=24, archive_bit=1):
             }
         )
 
-    # Evita respostas gigantes em períodos longos. Mantém começo/fim e amostra uniforme.
     max_points = 2000
     if len(points) > max_points:
         step = max(1, len(points) // max_points)
@@ -183,15 +182,18 @@ def available_metrics(generator):
 
 
 def _mode(values):
+    if "controller_mode_raw" not in values:
+        return "OFF"
     raw = values.get("controller_mode_raw")
     return {0: "OFF", 1: "MANUAL", 2: "AUTO", 3: "TESTE"}.get(raw, "OFF")
 
 
-def _frontend_generator(generator, values, status, error=""):
+def _frontend_generator(generator, values, status, error="", available=None):
     configured = bool(generator.get("enabled"))
     rpm = int(values.get("rpm") or 0)
     online = status == "online"
     fault = status == "fault"
+    available_metrics_list = sorted(set(available or []))
 
     return {
         "id": generator["id"],
@@ -217,7 +219,7 @@ def _frontend_generator(generator, values, status, error=""):
         "latency": None,
         "alarms": 1 if fault else int(values.get("alarm_count") or 0),
         "mcb": bool(values.get("mcb_closed", False)),
-        "gcb": bool(values.get("gcb_closed", rpm > 300 and online)),
+        "gcb": bool(values.get("gcb_closed", False)),
         "mains": {
             "l1": float(values.get("mains_voltage_l1") or 0),
             "l2": float(values.get("mains_voltage_l2") or 0),
@@ -230,6 +232,7 @@ def _frontend_generator(generator, values, status, error=""):
             "l3": float(values.get("voltage_l3") or 0),
             "l12": float(values.get("voltage_l1_l2") or 0),
         },
+        "availableMetrics": available_metrics_list,
         "telemetrySource": "rapid_scada" if status in {"online", "fault", "connected"} else "none",
         "rapidDeviceNum": generator.get("rapid_device_num"),
         "lastError": error,
@@ -253,11 +256,12 @@ def overlay_generators(generators):
     result = []
 
     for generator, binding in zip(generators, matched):
+        available = sorted((binding.get("channels") or {}).keys()) if binding else []
         if not generator.get("enabled"):
-            result.append(_frontend_generator(generator, {}, "disabled"))
+            result.append(_frontend_generator(generator, {}, "disabled", available=available))
             continue
         if not binding:
-            result.append(_frontend_generator(generator, {}, "offline", "Sem binding Rapid SCADA"))
+            result.append(_frontend_generator(generator, {}, "offline", "Sem binding Rapid SCADA", available=[]))
             continue
 
         values = {}
@@ -272,9 +276,9 @@ def overlay_generators(generators):
             values[key] = int(round(value)) if abs(value - round(value)) < 1e-9 and key != "frequency" else round(value, 3)
 
         if read_error:
-            result.append(_frontend_generator(generator, {}, "fault", read_error))
+            result.append(_frontend_generator(generator, {}, "fault", read_error, available=available))
         elif defined_count:
-            result.append(_frontend_generator(generator, values, "online"))
+            result.append(_frontend_generator(generator, values, "online", available=available))
         else:
             result.append(
                 _frontend_generator(
@@ -282,6 +286,7 @@ def overlay_generators(generators):
                     {},
                     "connected",
                     "Rapid SCADA conectado, canais ainda sem dados definidos",
+                    available=available,
                 )
             )
 
@@ -295,6 +300,6 @@ def dashboard(generators):
         "alerts": sum(g["status"] == "alerta" for g in generators),
         "offline": sum(g["status"] == "offline" for g in generators),
         "notConfigured": sum(g["status"] == "nao_configurado" for g in generators),
-        "running": sum((g.get("rpm") or 0) > 300 for g in generators),
-        "loadKw": round(sum(float(g.get("load") or 0) for g in generators), 3),
+        "running": sum("rpm" in (g.get("availableMetrics") or []) and (g.get("rpm") or 0) > 300 for g in generators),
+        "loadKw": round(sum(float(g.get("load") or 0) for g in generators if "power_kw" in (g.get("availableMetrics") or [])), 3),
     }
