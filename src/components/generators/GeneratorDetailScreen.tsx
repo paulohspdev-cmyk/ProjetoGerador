@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Activity, AlertTriangle, Gauge, History, Radio, ShieldCheck, Zap } from "lucide-react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Activity, AlertTriangle, History, Radio, ShieldCheck } from "lucide-react";
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -9,111 +9,149 @@ import { CONTROLLER_IMAGE_FALLBACK, controllerImageSrc } from "@/data/controller
 import { displayGenName, type Generator } from "@/data/generators";
 import { rcApi, type EventItemApi, type RapidTrend } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { IoBtn, PowerFlowSld, fmt } from "./PowerFlowCard";
 import { StatusPill } from "./StatusPill";
+import {
+  IconBattery,
+  IconClock,
+  IconFuelPump,
+  IconOilCan,
+  IconRunHours,
+  IconThermometer,
+} from "./scada-icons";
+import "./comap-panel.css";
 import "./generator-detail.css";
 
-const METRIC_LABELS: Record<string, string> = {
-  rpm: "RPM",
-  frequency: "Frequência",
-  voltage_l1: "Tensão GEN L1-N",
-  voltage_l2: "Tensão GEN L2-N",
-  voltage_l3: "Tensão GEN L3-N",
-  voltage_l1_l2: "Tensão GEN L1-L2",
-  voltage_l2_l3: "Tensão GEN L2-L3",
-  voltage_l3_l1: "Tensão GEN L3-L1",
-  mains_voltage_l1: "Rede L1-N",
-  mains_voltage_l2: "Rede L2-N",
-  mains_voltage_l3: "Rede L3-N",
-  mains_voltage_l1_l2: "Rede L1-L2",
-  battery_voltage: "Bateria",
-  power_kw: "Potência ativa",
-  oil_pressure: "Pressão do óleo",
-  coolant_temperature: "Temperatura do líquido",
-  fuel_level: "Combustível",
-  alternator_voltage: "Tensão alternador",
-  maintenance_hours: "Horas para manutenção",
-  run_hours: "Horímetro",
-  alarm_count: "Alarmes",
-  mcb_closed: "MCB fechado",
-  gcb_closed: "GCB fechado",
-  controller_mode_raw: "Modo da controladora",
-};
-
-const METRIC_UNITS: Record<string, string> = {
-  rpm: "rpm",
-  frequency: "Hz",
-  voltage_l1: "V",
-  voltage_l2: "V",
-  voltage_l3: "V",
-  voltage_l1_l2: "V",
-  voltage_l2_l3: "V",
-  voltage_l3_l1: "V",
-  mains_voltage_l1: "V",
-  mains_voltage_l2: "V",
-  mains_voltage_l3: "V",
-  mains_voltage_l1_l2: "V",
-  battery_voltage: "V",
-  power_kw: "kW",
-  oil_pressure: "bar",
-  coolant_temperature: "°C",
-  fuel_level: "%",
-  alternator_voltage: "V",
-  maintenance_hours: "h",
-  run_hours: "h",
-};
-
-function formatNumber(value: number | null | undefined, digits = 1) {
-  if (value == null || !Number.isFinite(Number(value))) return "N/D";
-  return Number(value).toLocaleString("pt-BR", { maximumFractionDigits: digits });
+function hasMetric(gen: Generator, key: string) {
+  return (gen.availableMetrics ?? []).includes(key);
 }
 
-function valueFor(gen: Generator, metric: string): number | boolean | string | null {
-  switch (metric) {
-    case "rpm": return gen.rpm;
-    case "frequency": return gen.frequency;
-    case "voltage_l1": return gen.gen.l1;
-    case "voltage_l2": return gen.gen.l2;
-    case "voltage_l3": return gen.gen.l3;
-    case "voltage_l1_l2": return gen.gen.l12;
-    case "mains_voltage_l1": return gen.mains.l1;
-    case "mains_voltage_l2": return gen.mains.l2;
-    case "mains_voltage_l3": return gen.mains.l3;
-    case "mains_voltage_l1_l2": return gen.mains.l12;
-    case "battery_voltage": return gen.battery;
-    case "power_kw": return gen.load;
-    case "oil_pressure": return gen.oilPressure;
-    case "coolant_temperature": return gen.coolantTemp;
-    case "fuel_level": return gen.fuelLevel;
-    case "alternator_voltage": return gen.alternatorVoltage;
-    case "maintenance_hours": return gen.maintenance;
-    case "run_hours": return gen.runHours;
-    case "alarm_count": return gen.alarms;
-    case "mcb_closed": return gen.mcb;
-    case "gcb_closed": return gen.gcb;
-    case "controller_mode_raw": return gen.mode;
-    default: return null;
-  }
+function metricNumber(gen: Generator, key: string, value: number | null | undefined) {
+  return hasMetric(gen, key) && value != null && Number.isFinite(Number(value)) ? Number(value) : null;
 }
 
-function metricDisplay(gen: Generator, metric: string) {
-  const value = valueFor(gen, metric);
-  if (typeof value === "boolean") return value ? "SIM" : "NÃO";
-  if (typeof value === "string") return value;
+function metricText(value: number | null, unit = "", digits = 1) {
   if (value == null) return "N/D";
-  const digits = metric === "frequency" ? 2 : metric.includes("voltage") || metric === "rpm" || metric === "alarm_count" ? 0 : 1;
-  const formatted = formatNumber(value, digits);
-  const unit = METRIC_UNITS[metric];
-  return unit ? `${formatted} ${unit}` : formatted;
+  const text = fmt(value, digits);
+  return unit ? `${text} ${unit}` : text;
 }
 
-function TelemetryCard({ label, value, available }: { label: string; value: string; available: boolean }) {
+function toneFor(value: number | null, warn: (n: number) => boolean, bad: (n: number) => boolean): "ok" | "warn" | "bad" | undefined {
+  if (value == null) return undefined;
+  if (bad(value)) return "bad";
+  if (warn(value)) return "warn";
+  return "ok";
+}
+
+function KpiTile({
+  label,
+  value,
+  sub,
+  tone = "cyan",
+}: {
+  label: string;
+  value: string;
+  sub: string;
+  tone?: "green" | "cyan" | "gold" | "blue" | "red";
+}) {
   return (
-    <div className={cn("rounded-lg border border-border bg-card p-3", !available && "opacity-70")}>
-      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className={cn("num mt-1 text-xl font-extrabold", available ? "text-foreground" : "text-muted-foreground")}>{available ? value : "N/D"}</p>
-      <p className="mt-1 text-[10px] text-muted-foreground">{available ? "Rapid SCADA" : "Canal não homologado neste pack"}</p>
+    <div className={cn("gen-kpi", tone)}>
+      <p>{label}</p>
+      <strong>{value}</strong>
+      <span>{sub}</span>
     </div>
   );
+}
+
+function MetricCell({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="gen-cell">
+      <p>{label}</p>
+      <strong className="num">{value}</strong>
+    </div>
+  );
+}
+
+function BoolFlag({ label, value, goodWhenTrue = false }: { label: string; value: boolean | null; goodWhenTrue?: boolean }) {
+  if (value == null) {
+    return (
+      <div className="gen-flag">
+        <span>{label}</span>
+        <b className="num text-muted-foreground">N/D</b>
+      </div>
+    );
+  }
+  const ok = goodWhenTrue ? value : !value;
+  return (
+    <div className="gen-flag">
+      <span>{label}</span>
+      <b className={cn("num", ok ? "text-online" : "text-offline")}>{value ? "true" : "false"}</b>
+    </div>
+  );
+}
+
+function FlowChip({ icon, label, value, tone }: { icon: ReactNode; label: string; value: string; tone?: "ok" | "warn" | "bad" }) {
+  return (
+    <div className={cn("flow-chip", tone)}>
+      <span className="flow-chip-icon">{icon}</span>
+      <div className="min-w-0">
+        <p>{label}</p>
+        <strong className="num">{value}</strong>
+      </div>
+    </div>
+  );
+}
+
+function Readout({ label, value, unit, tone }: { label: string; value: number | null; unit: string; tone?: "ok" | "warn" | "bad" }) {
+  return (
+    <div className={cn("gen-read", tone ?? "ok", value == null && "opacity-60")}>
+      <p>{label}</p>
+      <strong className="num">
+        {value == null ? "N/D" : fmt(value, unit === "Hz" ? 2 : unit === "V" || unit === "RPM" ? 0 : 1)}
+        {value != null && <span>{unit}</span>}
+      </strong>
+    </div>
+  );
+}
+
+function TrendCard({ trend, loading, error }: { trend: RapidTrend | null; loading: boolean; error: string }) {
+  const rows = trend?.points.map((point) => ({
+    t: new Date(point.timestamp).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+    v: point.value,
+  })) ?? [];
+
+  return (
+    <section className="gen-card gen-chart-card">
+      <header className="gen-card-head">
+        <h2>Histórico Rapid 24h</h2>
+        <span className="num text-[10px] text-muted-foreground">{trend?.metric ?? "N/D"}</span>
+      </header>
+      <div className="gen-chart-body">
+        {loading && <div className="grid h-full place-items-center text-[10px] text-muted-foreground">Consultando Rapid SCADA…</div>}
+        {!loading && error && <div className="grid h-full place-items-center px-3 text-center text-[10px] text-muted-foreground">{error}</div>}
+        {!loading && !error && !rows.length && <div className="grid h-full place-items-center text-[10px] text-muted-foreground">Sem pontos no período</div>}
+        {!loading && !error && rows.length > 0 && (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={rows} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+              <XAxis dataKey="t" hide />
+              <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 9 }} width={40} />
+              <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 11 }} />
+              <Line type="monotone" dataKey="v" stroke="#38bdf8" strokeWidth={2} dot={false} isAnimationActive={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function statusText(gen: Generator, running: boolean | null) {
+  if (gen.status === "nao_configurado") return "Não configurado";
+  if (gen.status === "offline") return "Offline";
+  if (gen.status === "alerta") return "Alerta";
+  if (running === true) return "Running";
+  if (running === false) return "Off - Ready";
+  return "Online";
 }
 
 export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
@@ -124,20 +162,15 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
   const [message, setMessage] = useState<string | null>(null);
   const [events, setEvents] = useState<EventItemApi[]>([]);
   const [eventError, setEventError] = useState("");
-  const available = useMemo(() => new Set(gen.availableMetrics ?? []), [gen.availableMetrics]);
-  const preferredTrend = useMemo(() => {
-    const order = ["frequency", "rpm", "voltage_l1", "voltage_l2", "voltage_l3", "voltage_l1_l2", "power_kw"];
-    return order.find((key) => available.has(key)) ?? [...available][0] ?? "";
-  }, [available]);
-  const [trendMetric, setTrendMetric] = useState(preferredTrend);
   const [trend, setTrend] = useState<RapidTrend | null>(null);
   const [trendError, setTrendError] = useState("");
   const [trendLoading, setTrendLoading] = useState(false);
 
-  useEffect(() => {
-    if (!trendMetric || available.has(trendMetric)) return;
-    setTrendMetric(preferredTrend);
-  }, [available, preferredTrend, trendMetric]);
+  const available = useMemo(() => new Set(gen.availableMetrics ?? []), [gen.availableMetrics]);
+  const preferredTrend = useMemo(() => {
+    const order = ["frequency", "rpm", "voltage_l1_l2", "voltage_l1", "voltage_l2", "voltage_l3", "power_kw"];
+    return order.find((key) => available.has(key)) ?? [...available][0] ?? "";
+  }, [available]);
 
   useEffect(() => {
     let active = true;
@@ -154,14 +187,14 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
   }, [gen.id, gen.tag]);
 
   useEffect(() => {
-    if (!trendMetric) {
+    if (!preferredTrend) {
       setTrend(null);
       setTrendError("");
       return;
     }
     let active = true;
     setTrendLoading(true);
-    void rcApi.generators.trend(gen.id, trendMetric, 24, 1)
+    void rcApi.generators.trend(gen.id, preferredTrend, 24, 1)
       .then((result) => {
         if (!active) return;
         setTrend(result);
@@ -174,7 +207,7 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
       })
       .finally(() => { if (active) setTrendLoading(false); });
     return () => { active = false; };
-  }, [gen.id, trendMetric]);
+  }, [gen.id, preferredTrend]);
 
   const command = async (action: "start" | "stop") => {
     if (!can("operate")) {
@@ -186,7 +219,7 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
     setMessage(null);
     try {
       const result = await rcApi.generators.command(gen.id, action);
-      setMessage(result.accepted ? `${action.toUpperCase()} aceito pelo caminho homologado.` : result.reason || "Comando não aceito.");
+      setMessage(result.reason || `${action.toUpperCase()} aceito pelo caminho homologado.`);
       await refresh();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Falha ao executar comando homologado.");
@@ -196,167 +229,289 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
   };
 
   const configured = gen.status !== "nao_configurado";
-  const runningKnown = available.has("rpm");
-  const running = runningKnown ? gen.rpm > 300 : null;
-  const modeKnown = available.has("controller_mode_raw");
-  const mcbKnown = available.has("mcb_closed");
-  const gcbKnown = available.has("gcb_closed");
-  const mainsKnown = ["mains_voltage_l1", "mains_voltage_l2", "mains_voltage_l3", "mains_voltage_l1_l2"].some((m) => available.has(m));
-  const genVoltageKnown = ["voltage_l1", "voltage_l2", "voltage_l3", "voltage_l1_l2"].some((m) => available.has(m));
-  const chartRows = trend?.points.map((point) => ({
-    t: new Date(point.timestamp).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
-    value: point.value,
-  })) ?? [];
+  const operate = can("operate") && configured;
+  const comm = gen.telemetrySource === "rapid_scada" && gen.status !== "offline";
+
+  const rpm = metricNumber(gen, "rpm", gen.rpm);
+  const frequency = metricNumber(gen, "frequency", gen.frequency);
+  const genL1 = metricNumber(gen, "voltage_l1", gen.gen.l1);
+  const genL2 = metricNumber(gen, "voltage_l2", gen.gen.l2);
+  const genL3 = metricNumber(gen, "voltage_l3", gen.gen.l3);
+  const genL12 = metricNumber(gen, "voltage_l1_l2", gen.gen.l12);
+  const mainsL1 = metricNumber(gen, "mains_voltage_l1", gen.mains.l1);
+  const mainsL2 = metricNumber(gen, "mains_voltage_l2", gen.mains.l2);
+  const mainsL3 = metricNumber(gen, "mains_voltage_l3", gen.mains.l3);
+  const mainsL12 = metricNumber(gen, "mains_voltage_l1_l2", gen.mains.l12);
+  const load = metricNumber(gen, "power_kw", gen.load);
+  const oil = metricNumber(gen, "oil_pressure", gen.oilPressure);
+  const temp = metricNumber(gen, "coolant_temperature", gen.coolantTemp);
+  const fuel = metricNumber(gen, "fuel_level", gen.fuelLevel);
+  const batt = metricNumber(gen, "battery_voltage", gen.battery);
+  const alt = metricNumber(gen, "alternator_voltage", gen.alternatorVoltage);
+  const maintenance = metricNumber(gen, "maintenance_hours", gen.maintenance);
+  const runHours = metricNumber(gen, "run_hours", gen.runHours);
+  const alarms = metricNumber(gen, "alarm_count", gen.alarms);
+
+  const runningKnown = rpm != null;
+  const running = runningKnown ? rpm > 300 : null;
+  const mcbKnown = hasMetric(gen, "mcb_closed");
+  const gcbKnown = hasMetric(gen, "gcb_closed");
+  const modeKnown = hasMetric(gen, "controller_mode_raw");
+  const mcb = mcbKnown && gen.mcb;
+  const gcb = gcbKnown && gen.gcb;
+  const mainsKnown = [mainsL1, mainsL2, mainsL3, mainsL12].some((v) => v != null);
+  const mainsOk = mainsKnown && Math.max(mainsL1 ?? 0, mainsL2 ?? 0, mainsL3 ?? 0, mainsL12 ?? 0) > 50;
+  const modeLabel = modeKnown ? gen.mode : "N/D";
+  const ready = statusText(gen, running);
+  const name = displayGenName(gen.tag);
+
+  const genVoltageTone = toneFor(genL12, (n) => n > 0 && (n < 350 || n > 440), (n) => n > 0 && (n < 320 || n > 470));
+  const rpmTone = toneFor(rpm, (n) => n > 1900, (n) => n > 2200);
+  const frequencyTone = toneFor(frequency, (n) => n > 0 && (n < 58 || n > 62), (n) => n > 0 && (n < 55 || n > 65));
 
   return (
-    <article className="gen-detail overflow-auto">
-      <div className="space-y-3 p-3 sm:p-4 lg:p-5">
-        {message && (
-          <div className="flex items-start justify-between gap-3 rounded-md border border-border bg-card px-3 py-2 text-[12px]">
-            <span>{message}</span>
-            <button type="button" onClick={() => setMessage(null)} className="text-muted-foreground hover:text-foreground">×</button>
-          </div>
-        )}
+    <article className="gen-detail">
+      {message && (
+        <div className="gen-toast" role="alert">
+          {message}
+          <button type="button" onClick={() => setMessage(null)} aria-label="Fechar">×</button>
+        </div>
+      )}
 
-        <section className="rounded-xl border border-border bg-card p-3 sm:p-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-background">
-                <img src={controllerImageSrc(gen.controller)} alt={gen.controller} className="max-h-full max-w-full object-contain" onError={(e) => { e.currentTarget.src = CONTROLLER_IMAGE_FALLBACK; }} />
-              </div>
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-xl font-extrabold">{displayGenName(gen.tag)}</h1>
-                  <StatusPill status={gen.status} />
-                </div>
-                <p className="mt-1 text-[12px] text-muted-foreground">{gen.tag} · {gen.controller} · {gen.site || "Sem site"}</p>
-                <p className="num mt-1 text-[11px] text-muted-foreground">{gen.ip || "Endpoint N/D"} · Rapid Device {gen.rapidDeviceNum ?? "N/D"} · fonte {gen.telemetrySource || "none"}</p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <button type="button" disabled={!can("operate") || !configured || commandBusy !== null} onClick={() => void command("start")} className="h-10 rounded-md bg-online/15 px-4 text-[12px] font-extrabold text-online ring-1 ring-online/40 disabled:cursor-not-allowed disabled:opacity-40">
-                {commandBusy === "start" ? "ENVIANDO…" : "START"}
-              </button>
-              <button type="button" disabled={!can("operate") || !configured || commandBusy !== null} onClick={() => void command("stop")} className="h-10 rounded-md bg-offline/15 px-4 text-[12px] font-extrabold text-offline ring-1 ring-offline/40 disabled:cursor-not-allowed disabled:opacity-40">
-                {commandBusy === "stop" ? "ENVIANDO…" : "STOP"}
-              </button>
-              {(["AUTO", "TEST", "MCB", "GCB", "PRLL"] as const).map((label) => (
-                <button key={label} type="button" disabled title="Comando não homologado para este Controller Pack" className="h-10 rounded-md border border-border bg-secondary/30 px-3 text-[11px] font-bold text-muted-foreground opacity-60">
-                  {label} · BLOQUEADO
-                </button>
-              ))}
-            </div>
+      <div className="gen-top">
+        <section className="gen-ident">
+          <div className="gen-ident-photo">
+            <img
+              src={controllerImageSrc(gen.controller)}
+              alt={gen.controller}
+              onError={(e) => { e.currentTarget.src = CONTROLLER_IMAGE_FALLBACK; }}
+            />
           </div>
-          <p className="mt-3 rounded-md border border-border bg-background/40 px-3 py-2 text-[11px] text-muted-foreground">
-            START/STOP usam exclusivamente o backend e o caminho industrial homologado. AUTO, TEST, MCB, GCB e paralelismo permanecem bloqueados até existir documentação e validação específica do Controller Pack.
-          </p>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-2">
+              <h1>{name}</h1>
+              <span className={cn("gen-true", !comm && "opacity-60")}><i />{comm ? "true" : "false"}</span>
+            </div>
+            <p>{gen.controller} · {ready} · {modeLabel} · {gen.site || "Sem site"}</p>
+            <p className="gen-ident-meta">{gen.ip || "Endpoint N/D"} · {gen.tag} · Rapid Device {gen.rapidDeviceNum ?? "N/D"}</p>
+          </div>
         </section>
 
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
-          <TelemetryCard label="RPM" value={metricDisplay(gen, "rpm")} available={available.has("rpm")} />
-          <TelemetryCard label="Frequência" value={metricDisplay(gen, "frequency")} available={available.has("frequency")} />
-          <TelemetryCard label="Tensão L1-N" value={metricDisplay(gen, "voltage_l1")} available={available.has("voltage_l1")} />
-          <TelemetryCard label="Tensão L2-N" value={metricDisplay(gen, "voltage_l2")} available={available.has("voltage_l2")} />
-          <TelemetryCard label="Tensão L3-N" value={metricDisplay(gen, "voltage_l3")} available={available.has("voltage_l3")} />
-          <TelemetryCard label="Tensão L1-L2" value={metricDisplay(gen, "voltage_l1_l2")} available={available.has("voltage_l1_l2")} />
+        <div className="gen-kpis">
+          <KpiTile label="Status" value={ready} sub={comm ? "Rapid SCADA conectado" : "Sem telemetria atual"} tone={comm ? "green" : "red"} />
+          <KpiTile label="RPM" value={metricText(rpm, "rpm", 0)} sub="Registro 1000" tone="cyan" />
+          <KpiTile label="Gerador kW" value={metricText(load, "kW", 0)} sub={load == null ? "Canal não homologado" : "Rapid SCADA"} tone="gold" />
+          <KpiTile label="Gerador Hz" value={metricText(frequency, "Hz", 2)} sub={frequency == null ? "Canal não homologado" : "Rapid SCADA"} tone="cyan" />
+          <KpiTile label="Tensão L1-L2" value={metricText(genL12, "V", 0)} sub={genL12 == null ? "Canal não homologado" : "Rapid SCADA"} tone="blue" />
+          <KpiTile label="Rapid Device" value={gen.rapidDeviceNum == null ? "N/D" : String(gen.rapidDeviceNum)} sub={`Fonte ${gen.telemetrySource || "none"}`} tone="gold" />
         </div>
 
-        <div className="grid gap-3 lg:grid-cols-3">
-          <section className="rounded-lg border border-border bg-card p-3 lg:col-span-2">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h2 className="text-[12px] font-extrabold uppercase tracking-wider">Telemetria homologada</h2>
-                <p className="text-[10px] text-muted-foreground">Somente canais presentes no binding do Controller Pack.</p>
-              </div>
-              <span className="num text-[11px] text-muted-foreground">{available.size} canais</span>
-            </div>
-            {!available.size && <p className="py-8 text-center text-sm text-muted-foreground">Nenhum canal Rapid homologado para este gerador.</p>}
-            {!!available.size && (
-              <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                {[...available].map((metric) => (
-                  <div key={metric} className="rounded-md border border-border bg-background/30 p-2.5">
-                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{METRIC_LABELS[metric] ?? metric}</p>
-                    <p className="num mt-1 text-[15px] font-bold">{metricDisplay(gen, metric)}</p>
-                    <p className="mt-1 truncate text-[9px] text-muted-foreground">{metric}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          <section className="rounded-lg border border-border bg-card p-3">
-            <h2 className="text-[12px] font-extrabold uppercase tracking-wider">Estado conhecido</h2>
-            <div className="mt-3 space-y-2 text-[12px]">
-              <div className="flex items-center justify-between rounded-md border border-border px-2 py-1.5"><span className="flex items-center gap-2"><Radio className="size-3.5"/>Comunicação</span><b>{gen.telemetrySource === "rapid_scada" ? "Rapid SCADA" : "N/D"}</b></div>
-              <div className="flex items-center justify-between rounded-md border border-border px-2 py-1.5"><span className="flex items-center gap-2"><Activity className="size-3.5"/>Motor em funcionamento</span><b>{running == null ? "N/D" : running ? "SIM" : "NÃO"}</b></div>
-              <div className="flex items-center justify-between rounded-md border border-border px-2 py-1.5"><span className="flex items-center gap-2"><Gauge className="size-3.5"/>Modo</span><b>{modeKnown ? gen.mode : "N/D"}</b></div>
-              <div className="flex items-center justify-between rounded-md border border-border px-2 py-1.5"><span>MCB</span><b>{mcbKnown ? (gen.mcb ? "FECHADO" : "ABERTO") : "N/D"}</b></div>
-              <div className="flex items-center justify-between rounded-md border border-border px-2 py-1.5"><span>GCB</span><b>{gcbKnown ? (gen.gcb ? "FECHADO" : "ABERTO") : "N/D"}</b></div>
-            </div>
-            {gen.lastError && <div className="mt-3 rounded-md border border-offline/40 bg-offline/10 p-2 text-[11px] text-offline"><AlertTriangle className="mr-1 inline size-3.5"/>{gen.lastError}</div>}
-          </section>
+        <div className="gen-cmds">
+          <button type="button" disabled={!operate || commandBusy !== null} className={cn(running === false && "active off")} onClick={() => void command("stop")}>{commandBusy === "stop" ? "..." : "OFF"}</button>
+          <button type="button" disabled={!operate || commandBusy !== null} className={cn(running === true && "active")} onClick={() => void command("start")}>{commandBusy === "start" ? "..." : "ON"}</button>
+          <button type="button" disabled title="AUTO ainda não homologado">AUTO</button>
+          <button type="button" disabled title="TEST ainda não homologado">TEST</button>
         </div>
+      </div>
 
-        <section className="rounded-lg border border-border bg-card p-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h2 className="text-[12px] font-extrabold uppercase tracking-wider">Histórico real do Rapid SCADA</h2>
-              <p className="text-[10px] text-muted-foreground">Arquivo de 1 minuto, últimas 24 horas.</p>
+      <section className="comap-panel gen-flow">
+        <header className="comap-header">
+          <span className={cn("comap-logo", running === true ? "online" : "offline")}>G</span>
+          <h3 className="comap-name">Power Flow</h3>
+          <span className="comap-mode">MODE: {modeLabel}</span>
+        </header>
+        <div className="comap-sld min-h-0 flex-1 px-1 pb-1">
+          <div className="comap-sld-stage">
+            <button type="button" disabled title="Paralelismo não homologado" className="comap-prll cursor-not-allowed opacity-60" style={{ position: "absolute", left: 0, top: "1%", zIndex: 20 }}>PRLL<br />N/D</button>
+            <div className="absolute left-[1%] top-[24%] z-[2] flex flex-col items-center gap-0.5">
+              <span className="flow-breaker-name">MCB</span>
+              <div className="flex flex-col gap-0.5">
+                <IoBtn label="I" tone="close" active={mcbKnown && mcb} ariaLabel={mcbKnown ? "MCB fechado" : "Estado MCB indisponível"} />
+                <IoBtn label="O" tone="open" active={mcbKnown && !mcb} ariaLabel={mcbKnown ? "MCB aberto" : "Estado MCB indisponível"} />
+              </div>
             </div>
-            <select value={trendMetric} onChange={(e) => setTrendMetric(e.target.value)} disabled={!available.size} className="h-8 rounded-md border border-input bg-background px-2 text-[11px]">
-              {!available.size && <option value="">Sem métricas</option>}
-              {[...available].map((metric) => <option key={metric} value={metric}>{METRIC_LABELS[metric] ?? metric}</option>)}
-            </select>
+            <div className="absolute left-[1%] top-[50%] z-[2] flex flex-col items-center gap-0.5">
+              <span className="flow-breaker-name">GCB</span>
+              <div className="flex flex-col gap-0.5">
+                <IoBtn label="I" tone="close" active={gcbKnown && gcb} ariaLabel={gcbKnown ? "GCB fechado" : "Estado GCB indisponível"} />
+                <IoBtn label="O" tone="open" active={gcbKnown && !gcb} ariaLabel={gcbKnown ? "GCB aberto" : "Estado GCB indisponível"} />
+              </div>
+            </div>
+            <PowerFlowSld
+              mcb={mcb}
+              gcb={gcb}
+              running={running === true}
+              mainsOk={mainsOk}
+              gridHz={0}
+              genHz={frequency ?? 0}
+              loadKw={load ?? 0}
+              mcbKnown={mcbKnown}
+              gcbKnown={gcbKnown}
+              runningKnown={runningKnown}
+              mainsKnown={mainsKnown}
+              gridHzKnown={false}
+              genHzKnown={frequency != null}
+              loadKnown={load != null}
+            />
+            <div className="absolute bottom-[2%] right-[1%] z-10 flex flex-col gap-1">
+              <button type="button" className="comap-start" disabled={!operate || commandBusy !== null} onClick={() => void command("start")}>{commandBusy === "start" ? "..." : "START"}</button>
+              <button type="button" className="comap-stop" disabled={!operate || commandBusy !== null} onClick={() => void command("stop")}>{commandBusy === "stop" ? "..." : "STOP"}</button>
+            </div>
           </div>
-          {trendLoading && <p className="py-8 text-center text-sm text-muted-foreground">Consultando histórico…</p>}
-          {!trendLoading && trendError && <p className="mt-3 rounded-md border border-border bg-background/40 p-3 text-[11px] text-muted-foreground">{trendError}</p>}
-          {!trendLoading && !trendError && trend && !chartRows.length && <p className="py-8 text-center text-sm text-muted-foreground">O Rapid SCADA não retornou pontos definidos para esta janela.</p>}
-          {!trendLoading && chartRows.length > 0 && (
-            <div className="mt-3 h-56 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartRows} margin={{ top: 8, right: 10, bottom: 0, left: -15 }}>
-                  <XAxis dataKey="t" tick={{ fontSize: 9, fill: "var(--muted-foreground)" }} minTickGap={32} />
-                  <YAxis tick={{ fontSize: 9, fill: "var(--muted-foreground)" }} width={50} />
-                  <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 11 }} formatter={(value: number) => [`${formatNumber(value, 2)} ${METRIC_UNITS[trendMetric] ?? ""}`, METRIC_LABELS[trendMetric] ?? trendMetric]} />
-                  <Line type="monotone" dataKey="value" stroke="currentColor" strokeWidth={2} dot={false} isAnimationActive={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          )}
+        </div>
+        <div className="comap-mg">
+          <div className="comap-table-head"><span>Mains / Gen</span><span>Rede</span><span>Gerador</span></div>
+          {[
+            ["L1-N", metricText(mainsL1, "V", 0), metricText(genL1, "V", 0)],
+            ["L2-N", metricText(mainsL2, "V", 0), metricText(genL2, "V", 0)],
+            ["L3-N", metricText(mainsL3, "V", 0), metricText(genL3, "V", 0)],
+            ["L1-L2", metricText(mainsL12, "V", 0), metricText(genL12, "V", 0)],
+            ["Hz", "N/D", metricText(frequency, "Hz", 2)],
+            ["kW", "N/D", metricText(load, "kW", 0)],
+          ].map(([label, mainsValue, genValue]) => (
+            <div key={label} className="comap-table-row"><span className="label">{label}</span><span className="mains">{mainsValue}</span><span className="gen">{genValue}</span></div>
+          ))}
+        </div>
+      </section>
+
+      <aside className="flow-icons">
+        <FlowChip icon={<IconFuelPump size={34} />} label="Combustível" value={metricText(fuel, "%", 0)} tone={toneFor(fuel, (n) => n < 40, (n) => n < 15)} />
+        <FlowChip icon={<IconThermometer size={34} />} label="Temperatura" value={metricText(temp, "°C", 0)} tone={toneFor(temp, (n) => n > 85, (n) => n > 98)} />
+        <FlowChip icon={<IconOilCan size={34} />} label="Óleo" value={metricText(oil, "bar", 1)} tone={toneFor(oil, (n) => n > 0 && n < 3, (n) => n > 0 && n < 2)} />
+        <FlowChip icon={<IconBattery size={34} />} label="Bateria" value={metricText(batt, "V", 1)} tone={toneFor(batt, (n) => n < 12.2, (n) => n < 11.5)} />
+        <FlowChip icon={<IconClock size={34} />} label="Manutenção" value={metricText(maintenance, "h", 0)} />
+        <FlowChip icon={<IconRunHours size={34} />} label="Horímetro" value={metricText(runHours, "h", 1)} />
+      </aside>
+
+      <div className="gen-mid">
+        <section className="gen-card">
+          <header className="gen-card-head"><h2>Alarmes / Estado</h2><span className="gen-badge">{alarms == null ? "—" : fmt(alarms, 0)}</span></header>
+          <div className="gen-alarm-compact">
+            <b className={alarms != null && alarms > 0 ? "text-offline" : "text-online"}><AlertTriangle className="size-4" /></b>
+            <p className={cn("text-[11px] font-bold", alarms != null && alarms > 0 ? "text-offline" : "text-online")}>{alarms == null ? "Canal de alarmes não homologado" : alarms > 0 ? `${fmt(alarms, 0)} alarme(s) reportado(s)` : "Sem alarmes reportados"}</p>
+          </div>
+          <div className="gen-flags">
+            <BoolFlag label="Comunicação Rapid" value={comm} goodWhenTrue />
+            <BoolFlag label="Motor em marcha" value={running} goodWhenTrue />
+            <BoolFlag label="MCB fechado" value={mcbKnown ? gen.mcb : null} goodWhenTrue />
+            <BoolFlag label="GCB fechado" value={gcbKnown ? gen.gcb : null} goodWhenTrue />
+            <BoolFlag label="Modo conhecido" value={modeKnown ? true : null} goodWhenTrue />
+            <BoolFlag label="Falha comunicação" value={gen.status === "offline"} />
+          </div>
         </section>
 
-        <div className="grid gap-3 lg:grid-cols-2">
-          <section className="rounded-lg border border-border bg-card p-3">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <h2 className="flex items-center gap-2 text-[12px] font-extrabold uppercase tracking-wider"><History className="size-4"/>Eventos reais</h2>
-              <span className="num text-[10px] text-muted-foreground">{events.length}</span>
-            </div>
-            {eventError && <p className="text-[11px] text-offline">{eventError}</p>}
-            {!eventError && !events.length && <p className="py-6 text-center text-sm text-muted-foreground">Nenhum evento registrado para este gerador.</p>}
-            <div className="space-y-1.5">
-              {events.slice(0, 30).map((event) => (
-                <div key={event.id} className="flex items-start justify-between gap-3 rounded-md border border-border px-2 py-1.5 text-[11px]">
-                  <div className="min-w-0"><b>{event.level}</b><p className="truncate text-muted-foreground">{event.message}</p></div>
-                  <span className="num shrink-0 text-[9px] text-muted-foreground">{new Date(event.created_at * 1000).toLocaleString("pt-BR")}</span>
-                </div>
-              ))}
-            </div>
-          </section>
+        <section className="gen-card min-h-0">
+          <header className="gen-card-head"><h2>Rede elétrica</h2><span className="num text-[12px] font-bold text-muted-foreground">Hz N/D</span></header>
+          <div className="gen-metrics gen-metrics-3">
+            <MetricCell label="L1-N" value={metricText(mainsL1, "V", 0)} />
+            <MetricCell label="L2-N" value={metricText(mainsL2, "V", 0)} />
+            <MetricCell label="L3-N" value={metricText(mainsL3, "V", 0)} />
+            <MetricCell label="L1-L2" value={metricText(mainsL12, "V", 0)} />
+            <MetricCell label="MCB" value={mcbKnown ? (gen.mcb ? "FECHADO" : "ABERTO") : "N/D"} />
+            <MetricCell label="Fonte" value={mainsKnown ? "Rapid SCADA" : "N/D"} />
+          </div>
+          <div className="gen-phase">
+            <span>L1-N <b>{metricText(mainsL1, "V", 0)}</b></span>
+            <span>L1-L2 <b>{metricText(mainsL12, "V", 0)}</b></span>
+            <span>L2-N <b>{metricText(mainsL2, "V", 0)}</b></span>
+            <span>L3-N <b>{metricText(mainsL3, "V", 0)}</b></span>
+          </div>
+        </section>
 
-          <section className="rounded-lg border border-border bg-card p-3">
-            <h2 className="flex items-center gap-2 text-[12px] font-extrabold uppercase tracking-wider"><ShieldCheck className="size-4"/>Disponibilidade de sinais</h2>
-            <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
-              <div className="rounded-md border border-border p-2"><span className="text-muted-foreground">Tensões gerador</span><p className="font-bold">{genVoltageKnown ? "DISPONÍVEL" : "N/D"}</p></div>
-              <div className="rounded-md border border-border p-2"><span className="text-muted-foreground">Tensões rede</span><p className="font-bold">{mainsKnown ? "DISPONÍVEL" : "N/D"}</p></div>
-              <div className="rounded-md border border-border p-2"><span className="text-muted-foreground">Potência kW</span><p className="font-bold">{available.has("power_kw") ? "DISPONÍVEL" : "N/D"}</p></div>
-              <div className="rounded-md border border-border p-2"><span className="text-muted-foreground">Bateria</span><p className="font-bold">{available.has("battery_voltage") ? "DISPONÍVEL" : "N/D"}</p></div>
-              <div className="rounded-md border border-border p-2"><span className="text-muted-foreground">Óleo / temperatura</span><p className="font-bold">{available.has("oil_pressure") || available.has("coolant_temperature") ? "DISPONÍVEL" : "N/D"}</p></div>
-              <div className="rounded-md border border-border p-2"><span className="text-muted-foreground">Combustível</span><p className="font-bold">{available.has("fuel_level") ? "DISPONÍVEL" : "N/D"}</p></div>
-            </div>
-            <p className="mt-3 flex items-start gap-2 rounded-md border border-border bg-background/40 p-2 text-[10px] text-muted-foreground"><Zap className="mt-0.5 size-3.5 shrink-0"/>Qualquer item sem canal homologado fica explicitamente como N/D. A interface não estima, deriva nem simula valores industriais.</p>
-          </section>
+        <section className="gen-card gen-motor">
+          <header className="gen-card-head"><h2>Motor / ECU</h2><StatusPill status={gen.status} /></header>
+          <div className="gen-metrics gen-metrics-4">
+            <MetricCell label="RPM" value={metricText(rpm, "rpm", 0)} />
+            <MetricCell label="Óleo" value={metricText(oil, "bar", 1)} />
+            <MetricCell label="Temp. água" value={metricText(temp, "°C", 0)} />
+            <MetricCell label="Combustível" value={metricText(fuel, "%", 0)} />
+            <MetricCell label="Bateria" value={metricText(batt, "V", 1)} />
+            <MetricCell label="Alternador" value={metricText(alt, "V", 1)} />
+            <MetricCell label="Horímetro" value={metricText(runHours, "h", 1)} />
+            <MetricCell label="Manutenção" value={metricText(maintenance, "h", 0)} />
+            <MetricCell label="Modo" value={modeLabel} />
+            <MetricCell label="Fonte" value={gen.telemetrySource === "rapid_scada" ? "Rapid SCADA" : "N/D"} />
+            <MetricCell label="Device" value={gen.rapidDeviceNum == null ? "N/D" : String(gen.rapidDeviceNum)} />
+            <MetricCell label="Estado" value={ready} />
+          </div>
+        </section>
+      </div>
+
+      <div className="gen-data">
+        <section className="gen-card gen-elec">
+          <header className="gen-card-head"><h2>Elétrica do gerador</h2><span className="num text-[11px] font-bold">{metricText(frequency, "Hz", 2)}</span></header>
+          <div className="gen-metrics gen-metrics-3">
+            <MetricCell label="L1-N" value={metricText(genL1, "V", 0)} />
+            <MetricCell label="L2-N" value={metricText(genL2, "V", 0)} />
+            <MetricCell label="L3-N" value={metricText(genL3, "V", 0)} />
+            <MetricCell label="L1-L2" value={metricText(genL12, "V", 0)} />
+            <MetricCell label="Frequência" value={metricText(frequency, "Hz", 2)} />
+            <MetricCell label="Potência" value={metricText(load, "kW", 0)} />
+            <MetricCell label="GCB" value={gcbKnown ? (gen.gcb ? "FECHADO" : "ABERTO") : "N/D"} />
+            <MetricCell label="RPM" value={metricText(rpm, "rpm", 0)} />
+            <MetricCell label="Fonte" value={gen.telemetrySource === "rapid_scada" ? "Rapid SCADA" : "N/D"} />
+          </div>
+        </section>
+
+        <div className="gen-dials" aria-label="Instrumentos reais">
+          <Readout label="RPM" value={rpm} unit="RPM" tone={rpmTone} />
+          <Readout label="Frequência" value={frequency} unit="Hz" tone={frequencyTone} />
+          <Readout label="Tensão L1-L2" value={genL12} unit="V" tone={genVoltageTone} />
+          <Readout label="Tensão L1-N" value={genL1} unit="V" />
+          <Readout label="Tensão L2-N" value={genL2} unit="V" />
+          <Readout label="Tensão L3-N" value={genL3} unit="V" />
+          <Readout label="Potência" value={load} unit="kW" />
+          <Readout label="Bateria" value={batt} unit="V" />
+          <Readout label="Horímetro" value={runHours} unit="h" />
         </div>
+
+        <section className="maint-bar">
+          <header><h3>Horas para manutenção</h3><strong className="num">{metricText(maintenance, "h", 0)}</strong></header>
+          <div className="maint-track"><i className="ok" style={{ width: maintenance == null ? "0%" : "100%" }} /></div>
+          <p>{maintenance == null ? "Canal não homologado neste Controller Pack" : "Valor real recebido do Rapid SCADA"}</p>
+        </section>
+      </div>
+
+      <div className="gen-bottom">
+        <TrendCard trend={trend} loading={trendLoading} error={trendError} />
+
+        <section className="gen-card min-h-0 overflow-hidden">
+          <header className="gen-card-head"><h2>Eventos reais</h2><span className="num text-[10px] text-muted-foreground">{events.length}</span></header>
+          <div className="gen-resumo">
+            {eventError && <div><span>Erro</span><b>{eventError}</b></div>}
+            {!eventError && !events.length && <div><span>Eventos</span><b>Nenhum registrado</b></div>}
+            {events.slice(0, 8).map((event) => (
+              <div key={event.id} className="gen-log"><span>{new Date(event.created_at * 1000).toLocaleTimeString("pt-BR")}</span><b>{event.message}</b></div>
+            ))}
+          </div>
+        </section>
+
+        <section className="gen-card min-h-0 overflow-hidden">
+          <header className="gen-card-head"><h2>Sinais Rapid</h2><span className="num text-[10px] text-muted-foreground">{available.size}</span></header>
+          <div className="gen-resumo">
+            <div><span>Comunicação</span><b>{comm ? "CONECTADO" : "N/D"}</b></div>
+            <div><span>RPM</span><b>{rpm != null ? "DISPONÍVEL" : "N/D"}</b></div>
+            <div><span>Frequência</span><b>{frequency != null ? "DISPONÍVEL" : "N/D"}</b></div>
+            <div><span>Tensão GEN</span><b>{genL1 != null || genL12 != null ? "DISPONÍVEL" : "N/D"}</b></div>
+            <div><span>Tensão rede</span><b>{mainsKnown ? "DISPONÍVEL" : "N/D"}</b></div>
+            <div><span>MCB / GCB</span><b>{mcbKnown || gcbKnown ? "DISPONÍVEL" : "N/D"}</b></div>
+          </div>
+        </section>
+
+        <section className="gen-card min-h-0 overflow-hidden">
+          <header className="gen-card-head"><h2>Resumo</h2><ShieldCheck className="size-3.5 text-online" /></header>
+          <div className="gen-resumo">
+            <div><span>Endpoint</span><b className="num">{gen.ip || "N/D"}</b></div>
+            <div><span>Controladora</span><b>{gen.controller}</b></div>
+            <div><span>Rapid Device</span><b className="num">{gen.rapidDeviceNum ?? "N/D"}</b></div>
+            <div><span>Telemetria</span><b>{gen.telemetrySource || "none"}</b></div>
+            <div><span>MCB / GCB</span><b>{mcbKnown ? (gen.mcb ? "I" : "O") : "N/D"} / {gcbKnown ? (gen.gcb ? "I" : "O") : "N/D"}</b></div>
+            <div><span>Último erro</span><b>{gen.lastError || "—"}</b></div>
+            <div className="gen-log"><span><Radio className="inline size-3" /></span><b>Sem valores estimados ou simulados</b></div>
+            <div className="gen-log"><span><Activity className="inline size-3" /></span><b>START/STOP via backend homologado</b></div>
+            <div className="gen-log"><span><History className="inline size-3" /></span><b>Histórico do Rapid SCADA</b></div>
+          </div>
+        </section>
       </div>
     </article>
   );
