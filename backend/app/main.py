@@ -1,13 +1,13 @@
 from contextlib import asynccontextmanager
-import csv
-import io
 import sqlite3
 import time
+from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
-from . import db, ops_store
+from . import db, ops_store, platform_store, transport_store
 from .auth import (
     authenticate,
     create_login_session,
@@ -24,17 +24,23 @@ from .auth import (
     require_remove,
     require_view,
 )
+from .automation_engine import set_rule_enabled
+from .backup_manager import create_full_backup
 from .config import (
     ADMIN_EMAIL,
     ADMIN_NAME,
     ADMIN_PASSWORD,
     API_DOCS_ENABLED,
     CORS_ORIGINS,
+    LOGIN_LOCK_SECONDS,
+    LOGIN_MAX_FAILURES,
     RAPID_BINDINGS_FILE,
     RAPID_COMM_CONFIG,
     RAPID_READER_DLL,
 )
 from .control import send_homologated_command
+from .diagnostics import system_diagnostics
+from .extra_routes import router as extra_router
 from .ops_schemas import (
     AgendaCreate,
     AlarmAckRequest,
@@ -50,20 +56,17 @@ from .ops_schemas import (
     WorkOrderUpdate,
 )
 from .rapid import available_metrics, dashboard, overlay_generators, trend_for_generator
-from .schemas import (
-    CommandRequest,
-    GeneratorCreate,
-    GeneratorUpdate,
-    LoginRequest,
-    UserCreate,
-    UserUpdate,
-)
+from .reporting import generate_report
+from .schemas import CommandRequest, GeneratorCreate, GeneratorUpdate, LoginRequest, UserCreate, UserUpdate
+from .security_service import begin_login, totp_required, verify_user_totp
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db.init_db()
     ops_store.init_ops_db()
+    platform_store.init_platform_db()
+    transport_store.init_transport_db()
     if ADMIN_PASSWORD:
         try:
             _, created = db.bootstrap_admin(ADMIN_NAME, ADMIN_EMAIL, hash_password(ADMIN_PASSWORD))
@@ -78,8 +81,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="RC Geradores API",
-    version="1.2.0",
-    description="Backend do RC Geradores. Rapid SCADA é a fonte industrial de telemetria e histórico.",
+    version="2.0.0",
+    description="Backend RC Geradores. Rapid SCADA é a fonte industrial de telemetria e histórico.",
     docs_url="/api/docs" if API_DOCS_ENABLED else None,
     redoc_url="/api/redoc" if API_DOCS_ENABLED else None,
     openapi_url="/api/openapi.json" if API_DOCS_ENABLED else None,
@@ -146,52 +149,46 @@ def _ops_payload() -> dict:
         "agenda": [_agenda_public(x) for x in raw["agenda"]],
         "rules": [_rule_public(x) for x in raw["rules"]],
         "backups": [_backup_public(x) for x in raw["backups"]],
+        "fieldDevices": platform_store.list_field_devices(),
+        "notifications": platform_store.list_notifications(100),
+        "scheduler": platform_store.list_scheduler_jobs(),
     }
 
 
 # ---------------------------------------------------------------------------
 # Saúde e autenticação
 # ---------------------------------------------------------------------------
-
-
 @app.get("/api/health")
 def health():
-    return {
-        "ok": True,
-        "service": "rc-geradores-api",
-        "version": app.version,
-        "bootstrapRequired": db.count_users() == 0,
-    }
+    return {"ok": True, "service": "rc-geradores-api", "version": app.version, "bootstrapRequired": db.count_users() == 0}
 
 
 @app.get("/api/system/health")
 def system_health(user: dict = Depends(require_view)):
-    generators = live_generators()
-    return {
-        "ok": True,
-        "service": "rc-geradores-api",
-        "version": app.version,
-        "rapid": {
-            "bindings": str(RAPID_BINDINGS_FILE),
-            "bindingsExists": RAPID_BINDINGS_FILE.exists(),
-            "reader": str(RAPID_READER_DLL),
-            "readerExists": RAPID_READER_DLL.exists(),
-            "commConfig": str(RAPID_COMM_CONFIG),
-            "commConfigExists": RAPID_COMM_CONFIG.exists(),
-        },
-        "generators": dashboard(generators),
-    }
+    return system_diagnostics()
 
 
 @app.post("/api/auth/login")
 def auth_login(payload: LoginRequest, request: Request, response: Response):
+    key, allowed, retry = begin_login(payload.email, request, LOGIN_MAX_FAILURES, LOGIN_LOCK_SECONDS)
+    if not allowed:
+        raise HTTPException(status_code=429, detail="Muitas tentativas. Tente novamente mais tarde.", headers={"Retry-After": str(retry)})
+
     user = authenticate(payload.email, payload.password)
     if not user:
+        platform_store.record_login_failure(key, LOGIN_MAX_FAILURES, LOGIN_LOCK_SECONDS)
         db.add_audit(payload.email.strip().lower(), "login_failed", "session", "-", "credenciais inválidas")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="E-mail ou senha inválidos")
+
+    if totp_required(user) and not verify_user_totp(user, payload.otp):
+        platform_store.record_login_failure(key, LOGIN_MAX_FAILURES, LOGIN_LOCK_SECONDS)
+        db.add_audit(user["email"], "login_2fa_failed", "session", user["id"], "TOTP inválido/ausente")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Código 2FA obrigatório ou inválido")
+
+    platform_store.clear_login_failures(key)
     result = create_login_session(user, request, response)
     db.add_audit(user["email"], "login", "session", user["id"], "login efetuado")
-    return result
+    return {**result, "twoFactorEnabled": totp_required(user)}
 
 
 @app.post("/api/auth/logout", status_code=status.HTTP_204_NO_CONTENT)
@@ -209,14 +206,12 @@ def auth_logout(request: Request, response: Response):
 
 @app.get("/api/auth/me")
 def auth_me(user: dict = Depends(current_user)):
-    return public_user(user)
+    return {**public_user(user), "twoFactorEnabled": totp_required(user)}
 
 
 # ---------------------------------------------------------------------------
 # Usuários
 # ---------------------------------------------------------------------------
-
-
 @app.get("/api/users")
 def users_list(user: dict = Depends(require_manage_users)):
     return [public_user(item) for item in db.list_users()]
@@ -227,16 +222,7 @@ def users_create(payload: UserCreate, user: dict = Depends(require_manage_users)
     if payload.role not in {"administrador", "cadastro", "visualizacao"}:
         raise HTTPException(status_code=422, detail="Perfil inválido")
     try:
-        created = db.create_user(
-            {
-                "name": payload.name,
-                "email": payload.email,
-                "password_hash": hash_password(payload.password),
-                "role": payload.role,
-                "active": True,
-            },
-            actor=actor(user),
-        )
+        created = db.create_user({"name": payload.name, "email": payload.email, "password_hash": hash_password(payload.password), "role": payload.role, "active": True}, actor=actor(user))
     except sqlite3.IntegrityError as exc:
         raise HTTPException(status_code=409, detail="Já existe um usuário com este e-mail") from exc
     except ValueError as exc:
@@ -249,22 +235,16 @@ def users_update(user_id: str, payload: UserUpdate, user: dict = Depends(require
     target = db.get_user(user_id)
     if not target:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
-
     patch = payload.model_dump(exclude_unset=True)
     new_role = patch.get("role", target["role"])
     new_active = patch.get("active", target["active"])
     if new_role not in {"administrador", "cadastro", "visualizacao"}:
         raise HTTPException(status_code=422, detail="Perfil inválido")
-    if target["role"] == "administrador" and db.count_active_admins() <= 1:
-        if new_role != "administrador" or new_active is False:
-            raise HTTPException(status_code=409, detail="Não é possível desativar ou rebaixar o último administrador")
-
+    if target["role"] == "administrador" and db.count_active_admins() <= 1 and (new_role != "administrador" or new_active is False):
+        raise HTTPException(status_code=409, detail="Não é possível desativar ou rebaixar o último administrador")
     db_patch = {key: value for key, value in patch.items() if key != "password"}
     if patch.get("password"):
-        try:
-            db_patch["password_hash"] = hash_password(patch["password"])
-        except ValueError as exc:
-            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        db_patch["password_hash"] = hash_password(patch["password"])
     try:
         updated = db.update_user(user_id, db_patch, actor=actor(user))
     except ValueError as exc:
@@ -288,8 +268,6 @@ def users_delete(user_id: str, user: dict = Depends(require_manage_users)):
 # ---------------------------------------------------------------------------
 # Geradores e dados industriais
 # ---------------------------------------------------------------------------
-
-
 @app.get("/api/generators")
 def generators_list(user: dict = Depends(require_view)):
     return live_generators()
@@ -297,10 +275,7 @@ def generators_list(user: dict = Depends(require_view)):
 
 @app.get("/api/generators/{generator_id}")
 def generator_get(generator_id: str, user: dict = Depends(require_view)):
-    item = next(
-        (g for g in live_generators() if g["id"] == generator_id or g["tag"].lower() == generator_id.lower()),
-        None,
-    )
+    item = next((g for g in live_generators() if g["id"] == generator_id or g["tag"].lower() == generator_id.lower()), None)
     if not item:
         raise HTTPException(status_code=404, detail="Gerador não encontrado")
     return item
@@ -312,7 +287,7 @@ def generator_create(payload: GeneratorCreate, user: dict = Depends(require_crea
         created = db.create_generator(payload.to_db(), actor=actor(user))
     except sqlite3.IntegrityError as exc:
         raise HTTPException(status_code=409, detail="Tag de gerador já cadastrada") from exc
-    return next(g for g in overlay_generators([created]) if g["id"] == created["id"])
+    return overlay_generators([created])[0]
 
 
 @app.patch("/api/generators/{generator_id}")
@@ -334,24 +309,17 @@ def generator_delete(generator_id: str, user: dict = Depends(require_remove)):
 
 
 @app.post("/api/generators/{generator_id}/commands/{action}")
-async def generator_command(
-    generator_id: str,
-    action: str,
-    payload: CommandRequest,
-    user: dict = Depends(require_operate),
-):
+async def generator_command(generator_id: str, action: str, payload: CommandRequest, user: dict = Depends(require_operate)):
     action = action.strip().lower()
     if action not in {"start", "stop"}:
         raise HTTPException(status_code=422, detail="Somente START e STOP estão homologados")
     if payload.confirmation.strip().upper() != action.upper():
         raise HTTPException(status_code=422, detail=f"Confirmação deve ser {action.upper()}")
-
     generator = db.get_generator(generator_id)
     if not generator:
         raise HTTPException(status_code=404, detail="Gerador não encontrado")
     if not generator.get("enabled"):
         raise HTTPException(status_code=409, detail="Gerador desabilitado")
-
     try:
         result = await send_homologated_command(generator, action)
     except (ValueError, ConnectionError, TimeoutError) as exc:
@@ -360,15 +328,8 @@ async def generator_command(
     except Exception as exc:
         db.add_audit(actor(user), f"command_{action}_error", "generator", generator["id"], str(exc))
         raise HTTPException(status_code=502, detail="Falha ao comunicar com a bridge de controle") from exc
-
     accepted = bool(result.get("accepted"))
-    db.add_audit(
-        actor(user),
-        f"command_{action}",
-        "generator",
-        generator["id"],
-        f"accepted={accepted}; {result.get('reason') or result.get('error') or ''}",
-    )
+    db.add_audit(actor(user), f"command_{action}", "generator", generator["id"], f"accepted={accepted}; {result.get('reason') or result.get('error') or ''}")
     if not accepted:
         raise HTTPException(status_code=409, detail=result.get("reason") or result.get("error") or "Controlador recusou o comando")
     return result
@@ -383,13 +344,7 @@ def generator_metrics(generator_id: str, user: dict = Depends(require_view)):
 
 
 @app.get("/api/generators/{generator_id}/trends/{metric}")
-def generator_trend(
-    generator_id: str,
-    metric: str,
-    hours: int = 24,
-    archiveBit: int = 1,
-    user: dict = Depends(require_view),
-):
+def generator_trend(generator_id: str, metric: str, hours: int = 24, archiveBit: int = 1, user: dict = Depends(require_view)):
     generator = db.get_generator(generator_id)
     if not generator:
         raise HTTPException(status_code=404, detail="Gerador não encontrado")
@@ -421,15 +376,12 @@ def audit_get(limit: int = 200, user: dict = Depends(require_audit)):
 @app.get("/api/controller-bindings")
 def controller_bindings(user: dict = Depends(require_view)):
     from .rapid import load_bindings
-
     return load_bindings()
 
 
 # ---------------------------------------------------------------------------
 # Gestão, manutenção, agenda, automação e integrações
 # ---------------------------------------------------------------------------
-
-
 @app.get("/api/ops/bootstrap")
 def ops_bootstrap(user: dict = Depends(require_view)):
     return _ops_payload()
@@ -501,9 +453,16 @@ def rules_create(payload: RuleCreate, user: dict = Depends(require_admin)):
 
 @app.patch("/api/automation/rules/{item_id}")
 def rules_update(item_id: str, payload: RuleUpdate, user: dict = Depends(require_admin)):
-    updated = ops_store.update_rule(item_id, payload.to_db(), actor(user))
+    patch = payload.to_db()
+    enabled = patch.pop("enabled", None)
+    updated = ops_store.update_rule(item_id, patch, actor(user))
     if not updated:
         raise HTTPException(status_code=404, detail="Regra não encontrada")
+    if enabled is not None:
+        try:
+            updated = set_rule_enabled(item_id, enabled, actor(user))
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
     return _rule_public(updated)
 
 
@@ -516,7 +475,9 @@ def reports_list(user: dict = Depends(require_view)):
 def reports_create(payload: ReportCreate, user: dict = Depends(require_create)):
     if payload.format.upper() not in {"CSV", "XLSX", "PDF"}:
         raise HTTPException(status_code=422, detail="Formato inválido")
-    return ops_store.create_report(payload.model_dump(), actor(user))
+    report = ops_store.create_report(payload.model_dump(), actor(user))
+    generate_report(report, live_generators())
+    return report
 
 
 @app.get("/api/reports/{report_id}/download")
@@ -524,25 +485,15 @@ def reports_download(report_id: str, user: dict = Depends(require_view)):
     report = next((x for x in ops_store.list_reports() if x["id"] == report_id), None)
     if not report:
         raise HTTPException(status_code=404, detail="Relatório não encontrado")
-    out = io.StringIO()
-    writer = csv.writer(out, delimiter=";")
-    writer.writerow(["Gerador", "Site", "Status", "RPM", "Frequencia Hz", "Carga kW", "Controladora"])
-    for g in live_generators():
-        writer.writerow([
-            g.get("tag", ""),
-            g.get("site", ""),
-            g.get("status", ""),
-            g.get("rpm") or 0,
-            g.get("frequency") or 0,
-            g.get("load") or 0,
-            g.get("controller", ""),
-        ])
-    filename = f"{report_id}.csv"
-    return Response(
-        content="\ufeff" + out.getvalue(),
-        media_type="text/csv; charset=utf-8",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-    )
+    artifact = platform_store.get_report_artifact(report_id)
+    if not artifact or not Path(artifact["path"]).exists():
+        generated = generate_report(report, live_generators())
+        path = Path(generated["path"])
+        media_type = generated["media_type"]
+    else:
+        path = Path(artifact["path"])
+        media_type = artifact["media_type"]
+    return FileResponse(path, media_type=media_type, filename=path.name)
 
 
 @app.get("/api/webhooks")
@@ -587,7 +538,7 @@ def backups_list(user: dict = Depends(require_admin)):
 
 @app.post("/api/backups", status_code=status.HTTP_201_CREATED)
 def backups_create(user: dict = Depends(require_admin)):
-    return _backup_public(ops_store.create_product_backup(actor(user)))
+    return _backup_public(create_full_backup(actor(user)))
 
 
 @app.get("/api/alarms/ack")
@@ -598,3 +549,6 @@ def alarm_acks_list(user: dict = Depends(require_view)):
 @app.post("/api/alarms/ack", status_code=status.HTTP_201_CREATED)
 def alarm_ack(payload: AlarmAckRequest, user: dict = Depends(require_operate)):
     return ops_store.ack_alarm(payload.alarmKey, actor(user))
+
+
+app.include_router(extra_router)
