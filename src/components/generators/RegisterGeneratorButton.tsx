@@ -11,6 +11,12 @@ import {
 import { CONTROLLER_MODELS, GEN_SITES, nextGeneratorTag } from "@/data/generators";
 import { useGenerators } from "./GeneratorsProvider";
 import { cn } from "@/lib/utils";
+import type { GeneratorTransport } from "@/lib/api";
+
+const CONTROLLERS = [
+  "ComAp InteliGen 200",
+  ...CONTROLLER_MODELS.filter((item) => item !== "ComAp InteliGen 200"),
+];
 
 export function RegisterGeneratorButton({
   collapsed,
@@ -25,26 +31,74 @@ export function RegisterGeneratorButton({
   const [open, setOpen] = useState(false);
   const preview = useMemo(() => nextGeneratorTag(generators).tag, [generators]);
   const [tag, setTag] = useState("");
-  const [controller, setController] = useState(CONTROLLER_MODELS[0]!);
+  const [controller, setController] = useState(CONTROLLERS[0]!);
   const [site, setSite] = useState(GEN_SITES[0]!);
   const [ip, setIp] = useState("");
+  const [transport, setTransport] = useState<GeneratorTransport>("reverse_tcp");
+  const [listenPort, setListenPort] = useState("15001");
+  const [modbusUnit, setModbusUnit] = useState("1");
+  const [rapidDeviceNum, setRapidDeviceNum] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const reset = () => {
     setTag("");
-    setController(CONTROLLER_MODELS[0]!);
+    setController(CONTROLLERS[0]!);
     setSite(GEN_SITES[0]!);
     setIp("");
+    setTransport("reverse_tcp");
+    setListenPort("15001");
+    setModbusUnit("1");
+    setRapidDeviceNum("");
     setError(null);
     setSaving(false);
+  };
+
+  const changeTransport = (value: GeneratorTransport) => {
+    setTransport(value);
+    if (value === "modbus_tcp_direct" && (!listenPort || listenPort === "15001")) {
+      setListenPort("502");
+    }
+    if (value === "reverse_tcp" && (!listenPort || listenPort === "502")) {
+      setListenPort("15001");
+    }
   };
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setError(null);
-    const err = await addGenerator({ tag: tag || preview, controller, site, ip });
+
+    const port = Number(listenPort || 0);
+    const unit = Number(modbusUnit || 1);
+    const rapidDevice = rapidDeviceNum ? Number(rapidDeviceNum) : undefined;
+
+    if (!Number.isInteger(port) || port < 1 || port > 65535) {
+      setError("Informe uma porta TCP válida.");
+      setSaving(false);
+      return;
+    }
+    if (!Number.isInteger(unit) || unit < 1 || unit > 247) {
+      setError("O Modbus Unit ID deve ficar entre 1 e 247.");
+      setSaving(false);
+      return;
+    }
+    if (transport !== "reverse_tcp" && !ip.trim()) {
+      setError("Informe o IP ou hostname da controladora/gateway.");
+      setSaving(false);
+      return;
+    }
+
+    const err = await addGenerator({
+      tag: tag || preview,
+      controller,
+      site,
+      ip,
+      transport,
+      listenPort: port,
+      modbusUnit: unit,
+      rapidDeviceNum: rapidDevice,
+    });
     if (err) {
       setError(err);
       setSaving(false);
@@ -80,23 +134,40 @@ export function RegisterGeneratorButton({
           if (!next) reset();
         }}
       >
-        <DialogContent className="max-w-md bg-card">
+        <DialogContent className="max-w-lg bg-card">
           <DialogHeader>
             <DialogTitle>Cadastrar gerador</DialogTitle>
             <DialogDescription>
-              O cadastro é salvo no backend RC Geradores. A telemetria passa a aparecer quando existir binding homologado no Rapid SCADA.
+              Cadastre a identidade e a conexão industrial. O Rapid SCADA continua responsável pelo polling e pela telemetria.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={onSubmit} className="grid gap-3">
-            <label className="text-[12px] font-semibold text-muted-foreground">
-              Tag
-              <input
-                value={tag}
-                onChange={(e) => setTag(e.target.value.toUpperCase())}
-                placeholder={preview}
-                className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-              />
-            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="text-[12px] font-semibold text-muted-foreground">
+                Tag
+                <input
+                  value={tag}
+                  onChange={(e) => setTag(e.target.value.toUpperCase())}
+                  placeholder={preview}
+                  className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                />
+              </label>
+              <label className="text-[12px] font-semibold text-muted-foreground">
+                Site
+                <select
+                  value={site}
+                  onChange={(e) => setSite(e.target.value)}
+                  className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                >
+                  {GEN_SITES.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
             <label className="text-[12px] font-semibold text-muted-foreground">
               Controladora
               <select
@@ -104,36 +175,71 @@ export function RegisterGeneratorButton({
                 onChange={(e) => setController(e.target.value)}
                 className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
               >
-                {CONTROLLER_MODELS.map((m) => (
+                {CONTROLLERS.map((m) => (
                   <option key={m} value={m}>
                     {m}
                   </option>
                 ))}
               </select>
             </label>
+
             <label className="text-[12px] font-semibold text-muted-foreground">
-              Site
+              Tipo de conexão
               <select
-                value={site}
-                onChange={(e) => setSite(e.target.value)}
+                value={transport}
+                onChange={(e) => changeTransport(e.target.value as GeneratorTransport)}
                 className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
               >
-                {GEN_SITES.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
+                <option value="reverse_tcp">Modem / DTU como TCP Client (conexão reversa)</option>
+                <option value="modbus_tcp_direct">Modbus TCP direto / Ethernet</option>
+                <option value="rtu_over_tcp">Modbus RTU sobre TCP / gateway Ethernet</option>
+                <option value="modbus_rtu_serial">Modbus RTU serial local</option>
               </select>
             </label>
-            <label className="text-[12px] font-semibold text-muted-foreground">
-              IP / identificação de rede
-              <input
-                value={ip}
-                onChange={(e) => setIp(e.target.value)}
-                placeholder="10.50.1.130"
-                className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-              />
-            </label>
+
+            <div className="grid grid-cols-3 gap-3">
+              <label className="col-span-2 text-[12px] font-semibold text-muted-foreground">
+                {transport === "reverse_tcp" ? "IP remoto (opcional)" : "IP / hostname"}
+                <input
+                  value={ip}
+                  onChange={(e) => setIp(e.target.value)}
+                  placeholder={transport === "reverse_tcp" ? "modem conecta ao servidor" : "10.50.1.130"}
+                  className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                />
+              </label>
+              <label className="text-[12px] font-semibold text-muted-foreground">
+                Porta TCP
+                <input
+                  inputMode="numeric"
+                  value={listenPort}
+                  onChange={(e) => setListenPort(e.target.value.replace(/\D/g, ""))}
+                  className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                />
+              </label>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <label className="text-[12px] font-semibold text-muted-foreground">
+                Modbus Unit ID
+                <input
+                  inputMode="numeric"
+                  value={modbusUnit}
+                  onChange={(e) => setModbusUnit(e.target.value.replace(/\D/g, ""))}
+                  className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                />
+              </label>
+              <label className="text-[12px] font-semibold text-muted-foreground">
+                Rapid Device Nº (opcional)
+                <input
+                  inputMode="numeric"
+                  value={rapidDeviceNum}
+                  onChange={(e) => setRapidDeviceNum(e.target.value.replace(/\D/g, ""))}
+                  placeholder="200"
+                  className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                />
+              </label>
+            </div>
+
             {error && <p className="text-[12px] text-offline">{error}</p>}
             <button
               type="submit"
