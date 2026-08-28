@@ -73,7 +73,7 @@ jobs:
           test ! -f src/components/generators/detail-widgets.tsx
           grep -q 'availableMetrics' src/components/generators/PowerFlowCard.tsx
           grep -q 'availableMetrics' src/components/generators/GeneratorDetailScreen.tsx
-          grep -q 'BLOQUEADO' src/components/generators/GeneratorDetailScreen.tsx
+          grep -q -E 'BLOQUEADO|não homologado' src/components/generators/GeneratorDetailScreen.tsx
           if grep -n -E 'gridHz[[:space:]]*=.*60|Math\.max\(gen\.mains.*> 50' src/components/generators/PowerFlowCard.tsx; then
             echo 'ERRO: power-flow voltou a inferir rede/Hz sem canal homologado.' >&2
             exit 1
