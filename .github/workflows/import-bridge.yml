@@ -1,0 +1,67 @@
+name: Import validated bridge
+
+on:
+  push:
+    paths:
+      - '.github/workflows/import-bridge.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Importar bridge validada do repositório anterior
+        run: |
+          set -euo pipefail
+          curl -fsSL \
+            https://raw.githubusercontent.com/paulohspdev-cmyk/scada/main/app/rapid_bridge.py \
+            -o backend/app/bridge.py
+
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('backend/app/bridge.py')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace(
+              'BASE_DIR = Path(__file__).resolve().parents[1]',
+              'PROJECT_ROOT = Path(__file__).resolve().parents[2]'
+          )
+          s = s.replace(
+              'Path("/var/lib/rc-scada/rapid-bindings.json")',
+              'Path("/var/lib/rc-geradores/rapid-bindings.json")'
+          )
+          s = s.replace(
+              'BASE_DIR / "rapid" / "bindings.json"',
+              'PROJECT_ROOT / "rapid" / "bindings.json"'
+          )
+          s = s.replace(
+              'os.environ.get("RC_RAPID_CONTROL_SOCKET", "/run/rc-scada/control.sock")',
+              'os.environ.get("RC_RAPID_CONTROL_SOCKET", "/run/rc-geradores/control.sock")'
+          )
+          s = s.replace('generator.get("code")', 'generator.get("tag")')
+          s = s.replace(
+              'enabled = [g for g in db.list_generators() if g.get("enabled")]',
+              'enabled = [\n            g for g in db.list_generators()\n            if g.get("enabled") and g.get("transport") in ("reverse_tcp", "rtu_over_tcp")\n        ]'
+          )
+          p.write_text(s, encoding='utf-8')
+          PY
+
+          python -m py_compile backend/app/bridge.py
+          grep -q 'PROJECT_ROOT / "rapid" / "bindings.json"' backend/app/bridge.py
+          grep -q 'reverse_tcp' backend/app/bridge.py
+          grep -q '/run/rc-geradores/control.sock' backend/app/bridge.py
+
+          rm -f .github/workflows/import-bridge.yml
+
+      - name: Commit
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: migra bridge reverse TCP validada"
+          git push origin HEAD:main
