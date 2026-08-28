@@ -30,11 +30,21 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return (await response.json()) as T;
 }
 
+export type GeneratorTransport =
+  | "reverse_tcp"
+  | "modbus_tcp_direct"
+  | "rtu_over_tcp"
+  | "modbus_rtu_serial";
+
 export type CreateGeneratorPayload = {
   tag: string;
   controller: string;
   site: string;
   ip?: string;
+  transport?: GeneratorTransport;
+  listenPort?: number;
+  modbusUnit?: number;
+  rapidDeviceNum?: number;
 };
 
 export const rcApi = {
