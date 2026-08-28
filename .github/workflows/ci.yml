@@ -21,8 +21,26 @@ jobs:
       - name: Frontend dependencies
         run: npm ci
 
-      - name: Frontend build
+      - name: Frontend build para VM
+        env:
+          NITRO_PRESET: node-server
         run: npm run build
+
+      - name: Frontend Node smoke test
+        run: |
+          set -euo pipefail
+          test -f .output/server/index.mjs
+          PORT=3000 HOST=127.0.0.1 node .output/server/index.mjs > /tmp/frontend.log 2>&1 &
+          PID=$!
+          trap 'kill $PID 2>/dev/null || true' EXIT
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:3000/ >/dev/null; then
+              exit 0
+            fi
+            sleep 0.5
+          done
+          cat /tmp/frontend.log
+          exit 1
 
       - name: Python
         uses: actions/setup-python@v5
