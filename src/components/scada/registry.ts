@@ -44,16 +44,14 @@ import {
 } from "./scada-lib";
 import {
   ApiScreen,
-  AuditScreen,
   ClientsScreen,
   EmailScreen,
   ErpScreen,
-  RolesScreen,
   UnitsScreen,
-  UsersScreen,
   WebhooksScreen,
   WhatsAppScreen,
 } from "./mgmt";
+import { AuditScreen, RolesScreen, UsersScreen } from "./security";
 
 export const screens: Record<string, ComponentType> = {
   "central-de-operacao": OperationCenter,
