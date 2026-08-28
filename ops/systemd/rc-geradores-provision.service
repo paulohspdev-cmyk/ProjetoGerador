@@ -9,13 +9,16 @@ User=root
 Group=rcgeradores
 WorkingDirectory=/opt/rc-geradores/backend
 EnvironmentFile=-/etc/rc-geradores.env
+RuntimeDirectory=rc-geradores
+RuntimeDirectoryMode=0770
 ExecStart=/opt/rc-geradores/backend/.venv/bin/python -m app.provision_service
 Restart=on-failure
 RestartSec=3
 NoNewPrivileges=true
 PrivateTmp=true
+ProtectSystem=full
 ProtectHome=true
-ReadWritePaths=/run/rc-geradores /var/lib/rc-geradores /opt/scada /etc/rc-geradores.env
+ReadWritePaths=/run/rc-geradores /var/lib/rc-geradores /var/log/rc-geradores /opt/scada
 
 [Install]
 WantedBy=multi-user.target
