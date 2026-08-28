@@ -20,6 +20,9 @@ app = FastAPI(
     title="RC Geradores API",
     version="0.1.0",
     description="Backend do RC Geradores. Rapid SCADA é a fonte industrial de telemetria.",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json",
     lifespan=lifespan,
 )
 
