@@ -226,6 +226,42 @@ def _add_device_to_line(line, device_num: int, generator: dict, template_name: s
     )
 
 
+def _canonical_identity_matches(binding: dict, generator: dict) -> bool:
+    requested_device = int(generator.get("rapid_device_num") or 0)
+    if requested_device <= 0:
+        return False
+    return (
+        not binding.get("generator_id")
+        and int(binding.get("rapid_device_num") or 0) == requested_device
+        and str(binding.get("controller_type") or "").upper() == str(generator.get("controller_type") or "").upper()
+        and str(binding.get("controller_model") or "").strip().lower() == str(generator.get("controller_model") or "").strip().lower()
+        and int(binding.get("listen_port") or 0) == int(generator.get("listen_port") or 0)
+        and int(binding.get("modbus_unit") or 0) == int(generator.get("modbus_unit") or 1)
+    )
+
+
+def _ensure_unique_reverse_identity(generator: dict):
+    if generator.get("transport") != "reverse_tcp":
+        return
+    port = int(generator.get("listen_port") or 0)
+    unit = int(generator.get("modbus_unit") or 1)
+    conflict = next(
+        (
+            item for item in db.list_generators()
+            if item["id"] != generator["id"]
+            and item.get("transport") == "reverse_tcp"
+            and int(item.get("listen_port") or 0) == port
+            and int(item.get("modbus_unit") or 1) == unit
+        ),
+        None,
+    )
+    if conflict:
+        raise ValueError(
+            f"Porta reverse TCP {port} / Unit ID {unit} já pertence ao gerador "
+            f"{conflict.get('tag') or conflict['id']}"
+        )
+
+
 def provision(generator_id: str, restart: bool = True):
     if os.geteuid() != 0:
         raise PermissionError("Provisionamento do Rapid SCADA exige root")
@@ -249,6 +285,7 @@ def provision(generator_id: str, restart: bool = True):
 
     config = get_transport_config(generator["id"])
     validate_for_transport(generator, config)
+    _ensure_unique_reverse_identity(generator)
 
     required = [DAT / "commline.dat", DAT / "device.dat", DAT / "cnl.dat", CFG, BASE / template_rel]
     for path in required:
@@ -257,6 +294,16 @@ def provision(generator_id: str, restart: bool = True):
 
     bindings = _load_bindings()
     existing = next((b for b in bindings if str(b.get("generator_id") or "") == generator["id"]), None)
+    if not existing:
+        existing = next((b for b in bindings if _canonical_identity_matches(b, generator)), None)
+        if existing:
+            existing.update({
+                "generator_id": generator["id"],
+                "tag": generator["tag"],
+                "transport": generator.get("transport"),
+                "host": generator.get("host") or "",
+            })
+            _save_bindings(bindings)
     if existing:
         return {"ok": True, "existing": True, "binding": existing}
 
