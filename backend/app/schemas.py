@@ -1,6 +1,25 @@
 from pydantic import BaseModel, Field, model_validator
 
 
+class LoginRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=254)
+    password: str = Field(min_length=1, max_length=256)
+
+
+class UserCreate(BaseModel):
+    name: str = Field(min_length=2, max_length=120)
+    email: str = Field(min_length=3, max_length=254)
+    password: str = Field(min_length=8, max_length=256)
+    role: str = Field(default="visualizacao")
+
+
+class UserUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=2, max_length=120)
+    password: str | None = Field(default=None, min_length=8, max_length=256)
+    role: str | None = None
+    active: bool | None = None
+
+
 class GeneratorCreate(BaseModel):
     tag: str = Field(min_length=1, max_length=32)
     name: str | None = None
@@ -47,3 +66,35 @@ class GeneratorCreate(BaseModel):
             "rapid_device_num": self.rapidDeviceNum,
             "enabled": self.enabled,
         }
+
+
+class GeneratorUpdate(BaseModel):
+    tag: str | None = Field(default=None, min_length=1, max_length=32)
+    name: str | None = Field(default=None, min_length=1, max_length=160)
+    customer: str | None = Field(default=None, max_length=160)
+    site: str | None = Field(default=None, min_length=1, max_length=160)
+    transport: str | None = None
+    ip: str | None = None
+    listenPort: int | None = Field(default=None, ge=0, le=65535)
+    modbusUnit: int | None = Field(default=None, ge=1, le=247)
+    rapidDeviceNum: int | None = Field(default=None, ge=1)
+    enabled: bool | None = None
+
+    def to_db(self):
+        mapping = {
+            "tag": self.tag,
+            "name": self.name,
+            "customer": self.customer,
+            "site": self.site,
+            "transport": self.transport,
+            "host": self.ip,
+            "listen_port": self.listenPort,
+            "modbus_unit": self.modbusUnit,
+            "rapid_device_num": self.rapidDeviceNum,
+            "enabled": self.enabled,
+        }
+        return {key: value for key, value in mapping.items() if value is not None}
+
+
+class CommandRequest(BaseModel):
+    confirmation: str = Field(min_length=1, max_length=16)
