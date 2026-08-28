@@ -8,172 +8,146 @@ import {
   type ReactNode,
 } from "react";
 
-import {
-  SEED_USERS,
-  SESSION_KEY,
-  USERS_KEY,
-  canRole,
-  normalizeEmail,
-  type AppUser,
-  type Permission,
-  type UserRole,
-} from "@/lib/auth";
+import { ApiError, rcApi } from "@/lib/api";
+import { canRole, type AppUser, type Permission, type UserRole } from "@/lib/auth";
+
+type UserPatch = Partial<Pick<AppUser, "name" | "role" | "active">> & { password?: string };
 
 type AuthContextValue = {
   ready: boolean;
   user: AppUser | null;
   users: AppUser[];
-  login: (email: string, password: string) => string | null;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<string | null>;
+  logout: () => Promise<void>;
   can: (perm: Permission) => boolean;
-  createUser: (input: { name: string; email: string; password: string; role: UserRole }) => string | null;
-  updateUser: (id: string, patch: Partial<Pick<AppUser, "name" | "role" | "active" | "password">>) => string | null;
-  removeUser: (id: string) => string | null;
+  refreshUsers: () => Promise<void>;
+  createUser: (input: { name: string; email: string; password: string; role: UserRole }) => Promise<string | null>;
+  updateUser: (id: string, patch: UserPatch) => Promise<string | null>;
+  removeUser: (id: string) => Promise<string | null>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function loadUsers(): AppUser[] {
-  try {
-    const raw = localStorage.getItem(USERS_KEY);
-    if (!raw) return SEED_USERS.map((u) => ({ ...u }));
-    const parsed = JSON.parse(raw) as AppUser[];
-    if (!Array.isArray(parsed) || parsed.length === 0) return SEED_USERS.map((u) => ({ ...u }));
-    const hasAdmin = parsed.some((u) => normalizeEmail(u.email) === "admin@admin.cm");
-    return hasAdmin ? parsed : [...SEED_USERS.map((u) => ({ ...u })), ...parsed];
-  } catch {
-    return SEED_USERS.map((u) => ({ ...u }));
-  }
-}
-
-function persistUsers(users: AppUser[]) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
-
-function nowStamp() {
-  return new Date().toLocaleString("pt-BR", { hour12: false });
+function errorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [users, setUsers] = useState<AppUser[]>([]);
-  const [userId, setUserId] = useState<string | null>(null);
+
+  const refreshUsers = useCallback(async () => {
+    const list = await rcApi.users.list();
+    setUsers(list);
+  }, []);
 
   useEffect(() => {
+    let mounted = true;
+    void (async () => {
+      try {
+        const current = await rcApi.auth.me();
+        if (!mounted) return;
+        setUser(current);
+        if (canRole(current.role, "manageUsers")) {
+          try {
+            const list = await rcApi.users.list();
+            if (mounted) setUsers(list);
+          } catch {
+            if (mounted) setUsers([]);
+          }
+        }
+      } catch (error) {
+        if (mounted) {
+          setUser(null);
+          setUsers([]);
+        }
+        if (!(error instanceof ApiError) || error.status !== 401) {
+          // A tela de login continua disponível mesmo se o backend estiver temporariamente indisponível.
+        }
+      } finally {
+        if (mounted) setReady(true);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const login = useCallback(async (email: string, password: string) => {
+    if (!email.trim() || !password) return "Informe e-mail e senha.";
     try {
-      const list = loadUsers();
-      persistUsers(list);
-      setUsers(list);
-      const session = localStorage.getItem(SESSION_KEY);
-      if (session && list.some((u) => u.id === session && u.active)) setUserId(session);
-    } catch {
-      setUsers(SEED_USERS.map((u) => ({ ...u })));
-    } finally {
-      setReady(true);
+      const current = await rcApi.auth.login(email.trim(), password);
+      setUser(current);
+      if (canRole(current.role, "manageUsers")) {
+        setUsers(await rcApi.users.list());
+      } else {
+        setUsers([]);
+      }
+      return null;
+    } catch (error) {
+      return errorMessage(error, "Não foi possível entrar no sistema.");
     }
   }, []);
 
-  const user = useMemo(() => users.find((u) => u.id === userId) ?? null, [users, userId]);
-
-  const login = useCallback((email: string, password: string) => {
-    const mail = normalizeEmail(email);
-    if (!mail || !password) return "Informe e-mail e senha.";
-    const found = users.find((u) => normalizeEmail(u.email) === mail);
-    if (!found || found.password !== password) return "E-mail ou senha inválidos.";
-    if (!found.active) return "Usuário desativado. Contate o administrador.";
-    const next = users.map((u) => (u.id === found.id ? { ...u, lastAccess: nowStamp() } : u));
-    setUsers(next);
-    persistUsers(next);
-    localStorage.setItem(SESSION_KEY, found.id);
-    setUserId(found.id);
-    return null;
-  }, [users]);
-
-  const logout = useCallback(() => {
-    localStorage.removeItem(SESSION_KEY);
-    setUserId(null);
+  const logout = useCallback(async () => {
+    try {
+      await rcApi.auth.logout();
+    } catch {
+      // O estado do frontend é limpo abaixo.
+    }
+    setUser(null);
+    setUsers([]);
   }, []);
 
-  const can = useCallback(
-    (perm: Permission) => (user ? canRole(user.role, perm) : false),
-    [user],
-  );
+  const can = useCallback((perm: Permission) => (user ? canRole(user.role, perm) : false), [user]);
 
   const createUser = useCallback(
-    (input: { name: string; email: string; password: string; role: UserRole }) => {
-      if (!user || !canRole(user.role, "create") || !canRole(user.role, "manageUsers")) {
-        return "Sem permissão para cadastrar usuários.";
+    async (input: { name: string; email: string; password: string; role: UserRole }) => {
+      if (!user || !canRole(user.role, "manageUsers")) return "Sem permissão para cadastrar usuários.";
+      try {
+        await rcApi.users.create(input);
+        await refreshUsers();
+        return null;
+      } catch (error) {
+        return errorMessage(error, "Falha ao cadastrar usuário.");
       }
-      const name = input.name.trim();
-      const email = normalizeEmail(input.email);
-      const password = input.password;
-      if (!name || !email || !password) return "Preencha nome, e-mail e senha.";
-      if (!email.includes("@")) return "E-mail inválido.";
-      if (password.length < 6) return "A senha deve ter pelo menos 6 caracteres.";
-      if (users.some((u) => normalizeEmail(u.email) === email)) return "Já existe um usuário com este e-mail.";
-      const next: AppUser[] = [
-        ...users,
-        {
-          id: `u-${Date.now()}`,
-          name,
-          email,
-          password,
-          role: input.role,
-          active: true,
-          lastAccess: null,
-        },
-      ];
-      setUsers(next);
-      persistUsers(next);
-      return null;
     },
-    [user, users],
+    [refreshUsers, user],
   );
 
   const updateUser = useCallback(
-    (id: string, patch: Partial<Pick<AppUser, "name" | "role" | "active" | "password">>) => {
-      if (!user || !canRole(user.role, "edit") || !canRole(user.role, "manageUsers")) {
-        return "Sem permissão para editar usuários.";
+    async (id: string, patch: UserPatch) => {
+      if (!user || !canRole(user.role, "manageUsers")) return "Sem permissão para editar usuários.";
+      try {
+        const updated = await rcApi.users.update(id, patch);
+        if (updated.id === user.id) setUser(updated);
+        await refreshUsers();
+        return null;
+      } catch (error) {
+        return errorMessage(error, "Falha ao editar usuário.");
       }
-      const target = users.find((u) => u.id === id);
-      if (!target) return "Usuário não encontrado.";
-      const admins = users.filter((u) => u.role === "administrador" && u.active);
-      if (target.role === "administrador" && admins.length <= 1) {
-        if (patch.active === false || (patch.role && patch.role !== "administrador")) {
-          return "Não é possível desativar ou rebaixar o último administrador.";
-        }
-      }
-      const next = users.map((u) => (u.id === id ? { ...u, ...patch } : u));
-      setUsers(next);
-      persistUsers(next);
-      return null;
     },
-    [user, users],
+    [refreshUsers, user],
   );
 
   const removeUser = useCallback(
-    (id: string) => {
-      if (!user || !canRole(user.role, "remove") || !canRole(user.role, "manageUsers")) {
-        return "Sem permissão para excluir usuários.";
+    async (id: string) => {
+      if (!user || !canRole(user.role, "manageUsers")) return "Sem permissão para excluir usuários.";
+      try {
+        await rcApi.users.remove(id);
+        await refreshUsers();
+        return null;
+      } catch (error) {
+        return errorMessage(error, "Falha ao excluir usuário.");
       }
-      if (id === user.id) return "Você não pode excluir o próprio usuário.";
-      const target = users.find((u) => u.id === id);
-      if (!target) return "Usuário não encontrado.";
-      const admins = users.filter((u) => u.role === "administrador" && u.active);
-      if (target.role === "administrador" && admins.length <= 1) {
-        return "Não é possível excluir o último administrador.";
-      }
-      const next = users.filter((u) => u.id !== id);
-      setUsers(next);
-      persistUsers(next);
-      return null;
     },
-    [user, users],
+    [refreshUsers, user],
   );
 
   const value = useMemo(
-    () => ({ ready, user, users, login, logout, can, createUser, updateUser, removeUser }),
-    [ready, user, users, login, logout, can, createUser, updateUser, removeUser],
+    () => ({ ready, user, users, login, logout, can, refreshUsers, createUser, updateUser, removeUser }),
+    [ready, user, users, login, logout, can, refreshUsers, createUser, updateUser, removeUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
