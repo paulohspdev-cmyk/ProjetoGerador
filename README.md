@@ -58,7 +58,9 @@ Rapid Device:         200
 Rapid Channels:       2001..2008
 ```
 
-Esses valores são padrões, não uma obrigação do instalador. Porta, Unit ID e Rapid Device do primeiro IG200 podem ser definidos na instalação. Mais de um Unit ID pode compartilhar a mesma sessão física reverse TCP; o provisionador impede identidade Modbus duplicada na mesma porta.
+Porta, Unit ID e Rapid Device do primeiro IG200 podem ser definidos para **telemetria/provisionamento**. Mais de um Unit ID pode compartilhar a mesma sessão física reverse TCP; o provisionador impede identidade Modbus duplicada na mesma porta.
+
+**Limite de segurança atual:** o caminho de controle remoto START/STOP que foi validado em campo permanece deliberadamente restrito ao **Rapid Device 200**. Um IG200 com outro Rapid Device pode ser monitorado, mas `--enable-control` será recusado para esse gerador até existir nova validação de campo do caminho de comando.
 
 ## Estrutura
 
@@ -129,7 +131,7 @@ sudo bash ops/install.sh --skip-initial-generator
 
 ### Configurar o primeiro IG200
 
-Exemplo com identidade diferente da configuração de campo original:
+Exemplo com identidade de telemetria diferente da configuração de campo original:
 
 ```bash
 sudo bash ops/install.sh \
@@ -140,6 +142,8 @@ sudo bash ops/install.sh \
   --ig200-unit 3 \
   --ig200-device 210
 ```
+
+Nesse exemplo o monitoramento/provisionamento pode usar Device 210, mas o controle remoto permanece desabilitado. Para o START/STOP homologado atual, mantenha Rapid Device 200.
 
 Se a tag já existir, o instalador **preserva a identidade industrial existente** em vez de sobrescrever silenciosamente porta, Unit ID ou Rapid Device. O provisionador também recusa reutilizar um runtime binding que tenha divergido do cadastro.
 
@@ -165,7 +169,7 @@ cd /opt/rc-geradores
 sudo bash ops/install.sh --enable-control
 ```
 
-Isso habilita somente o caminho START/STOP do **InteliGen 200 homologado**. Não libera AUTO, TEST, MCB, GCB ou paralelismo.
+Isso habilita somente o caminho START/STOP do **InteliGen 200 homologado** e, na validação de campo atual, somente quando o cadastro usa **Rapid Device 200**. O bootstrap falha fechado se o controle for solicitado para outro Rapid Device. AUTO, TEST, MCB, GCB e paralelismo continuam bloqueados.
 
 ## Validação da VM
 
@@ -226,6 +230,7 @@ O banco SQLite guarda cadastro e dados do produto; **não substitui o historiado
 - bridge industrial de leitura bloqueia funções Modbus de escrita;
 - automação aceita somente ações não industriais (`notify` e `work_order`);
 - START/STOP passam por confirmação explícita, Controller Pack homologado, socket local e retorno do controlador;
+- START/STOP homologado falha fechado fora do Rapid Device 200 enquanto essa for a identidade validada em campo;
 - bindings divergentes não são reutilizados silenciosamente;
 - SMTP, WhatsApp e acesso público devem receber credenciais/configuração reais antes do uso;
 - para exposição fora da rede confiável, configure HTTPS e `RC_AUTH_COOKIE_SECURE=1`.
