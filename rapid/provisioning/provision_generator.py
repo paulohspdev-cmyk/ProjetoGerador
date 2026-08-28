@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Provisiona um gerador cadastrado no Rapid SCADA usando somente Controller Packs de production.
+"""Provisiona um gerador no Rapid SCADA usando somente Controller Packs production.
 
-Suporta:
+Transportes:
 - reverse_tcp: modem/DTU inicia sessão na bridge; Rapid usa localhost + offset.
-- modbus_tcp_direct: Rapid conecta ao equipamento TCP, padrão 502 quando porta não informada.
+- modbus_tcp_direct: Rapid conecta ao equipamento TCP, padrão 502.
 - rtu_over_tcp: Rapid conecta TCP e DrvModbus usa TransMode=RTU.
-- modbus_rtu_serial: Rapid usa SerialPort; baud/paridade/stop bits são obrigatórios no transport-config.
+- modbus_rtu_serial: Rapid usa SerialPort com parâmetros explícitos.
 
-Nunca habilita comandos no Rapid. CommandEnabled=false para todas as linhas.
+Nunca habilita comandos no Rapid. CmdEnabled=false para todas as linhas.
 """
 
 from __future__ import annotations
@@ -45,6 +45,11 @@ def _max_pk(path: Path, key: str, floor: int) -> int:
     return max([floor, *values])
 
 
+def _row_by_pk(path: Path, key: str, value: int):
+    _, rows = read_table(str(path))
+    return next((row for row in rows if int(row.get(key) or 0) == int(value)), None)
+
+
 def _load_bindings():
     if RUNTIME_BINDINGS.exists():
         try:
@@ -70,7 +75,11 @@ def _save_bindings(items):
 def _backup(paths):
     stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
     target = STATE / f"backup-{stamp}"
-    target.mkdir(parents=True, exist_ok=True)
+    suffix = 0
+    while target.exists():
+        suffix += 1
+        target = STATE / f"backup-{stamp}-{suffix}"
+    target.mkdir(parents=True, exist_ok=False)
     for path in paths:
         p = Path(path)
         if p.exists():
@@ -87,13 +96,20 @@ def _channel_options(parent, options: dict):
         ET.SubElement(parent, "Option", {"name": key, "value": str(value)})
 
 
+def _find_line(root, line_num: int):
+    lines = root.find("Lines")
+    if lines is None:
+        return None
+    return next((line for line in lines.findall("Line") if int(line.get("number") or 0) == line_num), None)
+
+
 def _find_or_create_line(root, line_num: int, name: str, transport: str, generator: dict, config: dict):
     lines = root.find("Lines")
     if lines is None:
         lines = ET.SubElement(root, "Lines")
-    for line in lines.findall("Line"):
-        if int(line.get("number") or 0) == line_num:
-            return line
+    existing = _find_line(root, line_num)
+    if existing is not None:
+        return existing
 
     line = ET.SubElement(lines, "Line", {"active": "true", "isBound": "true", "number": str(line_num), "name": name})
     opts = ET.SubElement(line, "LineOptions")
@@ -152,12 +168,42 @@ def _find_or_create_line(root, line_num: int, name: str, transport: str, generat
     return line
 
 
+def _validate_shared_reverse_line(root, shared: dict, generator: dict):
+    line_num = int(shared["rapid_line_num"])
+    line_row = _row_by_pk(DAT / "commline.dat", "CommLineNum", line_num)
+    if not line_row:
+        raise ValueError(f"Binding compartilhado aponta para CommLine {line_num} inexistente")
+    line = _find_line(root, line_num)
+    if line is None:
+        raise ValueError(f"Binding compartilhado aponta para Line {line_num} ausente no ScadaCommConfig.xml")
+
+    expected_port = int(generator["listen_port"]) + LOCAL_OFFSET
+    channel = line.find("Channel")
+    options = {}
+    if channel is not None:
+        for option in channel.findall("Option"):
+            options[option.get("name") or ""] = option.get("value")
+    if channel is None or channel.get("type") != "TcpClient":
+        raise ValueError(f"Line {line_num} compartilhada não é TcpClient")
+    if options.get("Host") not in {"127.0.0.1", "localhost"}:
+        raise ValueError(f"Line {line_num} compartilhada não aponta para a bridge local")
+    try:
+        configured_port = int(options.get("TcpPort") or 0)
+    except ValueError as exc:
+        raise ValueError(f"TcpPort inválida na Line {line_num}") from exc
+    if configured_port != expected_port:
+        raise ValueError(f"Line {line_num} usa TcpPort {configured_port}, esperado {expected_port}")
+    return line
+
+
 def _add_device_to_line(line, device_num: int, generator: dict, template_name: str, config: dict):
     polling = line.find("DevicePolling")
     if polling is None:
         polling = ET.SubElement(line, "DevicePolling")
     for dev in polling.findall("Device"):
         if int(dev.get("number") or 0) == device_num:
+            if int(dev.get("numAddress") or 0) != int(generator.get("modbus_unit") or 1):
+                raise ValueError(f"Device {device_num} já existe com outro Unit ID")
             return
     ET.SubElement(
         polling,
@@ -189,6 +235,7 @@ def provision(generator_id: str, restart: bool = True):
         raise ValueError("Gerador não encontrado")
     if not generator.get("enabled"):
         raise ValueError("Gerador desabilitado")
+
     pack = pack_for_model(generator.get("controller_model") or "")
     if not pack or pack.get("lifecycle") != "production":
         raise ValueError("Somente Controller Pack production pode ser provisionado")
@@ -213,31 +260,56 @@ def provision(generator_id: str, restart: bool = True):
     if existing:
         return {"ok": True, "existing": True, "binding": existing}
 
-    # Reverse TCP com a mesma porta deve compartilhar a linha para permitir vários Unit IDs.
     shared = None
     if generator["transport"] == "reverse_tcp":
-        shared = next((b for b in bindings if b.get("transport") == "reverse_tcp" and int(b.get("listen_port") or 0) == int(generator.get("listen_port") or 0) and b.get("rapid_line_num")), None)
+        same_port = [
+            b for b in bindings
+            if b.get("transport") == "reverse_tcp"
+            and int(b.get("listen_port") or 0) == int(generator.get("listen_port") or 0)
+        ]
+        unit_conflict = next((b for b in same_port if int(b.get("modbus_unit") or 0) == int(generator.get("modbus_unit") or 1)), None)
+        if unit_conflict:
+            raise ValueError(
+                f"Porta reverse TCP {generator['listen_port']} já possui Unit ID {generator.get('modbus_unit') or 1} "
+                f"no gerador {unit_conflict.get('tag') or unit_conflict.get('generator_id')}"
+            )
+        shared = next((b for b in same_port if b.get("rapid_line_num")), None)
+
     line_num = int(shared["rapid_line_num"]) if shared else _max_pk(DAT / "commline.dat", "CommLineNum", 99) + 1
     requested_device = int(generator.get("rapid_device_num") or 0)
     device_num = requested_device if requested_device > 0 else _max_pk(DAT / "device.dat", "DeviceNum", 199) + 1
     first_cnl = _max_pk(DAT / "cnl.dat", "CnlNum", 1999) + 1
 
+    device_existing = _row_by_pk(DAT / "device.dat", "DeviceNum", device_num)
+    if device_existing:
+        raise ValueError(f"Rapid Device {device_num} já existe no BaseDAT; escolha outro número ou deixe automático")
+
     template_src = BASE / template_rel
     template_dst = SCADA / "ScadaComm/Config" / template_src.name
+    runtime_existed = RUNTIME_BINDINGS.exists()
+    template_existed = template_dst.exists()
     backup = _backup([DAT / "commline.dat", DAT / "device.dat", DAT / "cnl.dat", CFG, RUNTIME_BINDINGS, template_dst])
 
     services_stopped = False
+    binding = None
     try:
         subprocess.run(["systemctl", "stop", "scadacomm6.service"], check=False)
         subprocess.run(["systemctl", "stop", "scadaserver6.service"], check=False)
         services_stopped = True
         shutil.copy2(template_src, template_dst)
 
-        append_row(str(DAT / "commline.dat"), "CommLineNum", {
-            "CommLineNum": line_num,
-            "Name": f"RC {generator['tag']}",
-            "Descr": f"{generator['transport']} {generator.get('host') or ''}:{generator.get('listen_port') or ''}",
-        })
+        tree = ET.parse(CFG)
+        root = tree.getroot()
+        if shared:
+            line = _validate_shared_reverse_line(root, shared, generator)
+        else:
+            append_row(str(DAT / "commline.dat"), "CommLineNum", {
+                "CommLineNum": line_num,
+                "Name": f"RC {generator['tag']}",
+                "Descr": f"{generator['transport']} {generator.get('host') or ''}:{generator.get('listen_port') or ''}",
+            })
+            line = _find_or_create_line(root, line_num, f"RC {generator['tag']}", generator["transport"], generator, config)
+
         append_row(str(DAT / "device.dat"), "DeviceNum", {
             "DeviceNum": device_num,
             "Name": generator.get("name") or generator["tag"],
@@ -278,15 +350,14 @@ def provision(generator_id: str, restart: bool = True):
             })
             channels[key] = {"cnl": cnl, "scale": float(spec.get("scale", 1.0))}
 
-        tree = ET.parse(CFG)
-        root = tree.getroot()
-        line = _find_or_create_line(root, line_num, f"RC {generator['tag']}", generator["transport"], generator, config)
         _add_device_to_line(line, device_num, generator, template_src.name, config)
         ET.indent(tree, space="  ")
         tree.write(CFG, encoding="utf-8", xml_declaration=True)
         ET.parse(CFG)
         ET.parse(template_dst)
-        read_table(str(DAT / "commline.dat")); read_table(str(DAT / "device.dat")); read_table(str(DAT / "cnl.dat"))
+        read_table(str(DAT / "commline.dat"))
+        read_table(str(DAT / "device.dat"))
+        read_table(str(DAT / "cnl.dat"))
 
         binding = {
             "generator_id": generator["id"],
@@ -307,7 +378,6 @@ def provision(generator_id: str, restart: bool = True):
         db.update_generator(generator["id"], {"rapid_device_num": device_num}, actor="rapid-provisioner")
         db.add_audit("rapid-provisioner", "provision", "generator", generator["id"], f"line={line_num};device={device_num};transport={generator['transport']}")
     except Exception:
-        # Restauração conservadora dos arquivos conhecidos.
         for name, target in [
             ("commline.dat", DAT / "commline.dat"),
             ("device.dat", DAT / "device.dat"),
@@ -319,6 +389,10 @@ def provision(generator_id: str, restart: bool = True):
             source = backup / name
             if source.exists():
                 shutil.copy2(source, target)
+        if not runtime_existed:
+            RUNTIME_BINDINGS.unlink(missing_ok=True)
+        if not template_existed:
+            template_dst.unlink(missing_ok=True)
         raise
     finally:
         if restart and services_stopped:
