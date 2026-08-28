@@ -9,9 +9,18 @@ import {
 } from "react";
 
 import { CONTROLLER_MODELS, GEN_SITES, type Generator } from "@/data/generators";
-import { rcApi } from "@/lib/api";
+import { rcApi, type GeneratorTransport } from "@/lib/api";
 
-type CreateInput = { tag?: string; controller: string; site: string; ip?: string };
+type CreateInput = {
+  tag?: string;
+  controller: string;
+  site: string;
+  ip?: string;
+  transport?: GeneratorTransport;
+  listenPort?: number;
+  modbusUnit?: number;
+  rapidDeviceNum?: number;
+};
 
 type GeneratorsContextValue = {
   generators: Generator[];
@@ -66,7 +75,16 @@ export function GeneratorsProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        await rcApi.generators.create({ tag, controller, site, ip: input.ip?.trim() || undefined });
+        await rcApi.generators.create({
+          tag,
+          controller,
+          site,
+          ip: input.ip?.trim() || undefined,
+          transport: input.transport,
+          listenPort: input.listenPort,
+          modbusUnit: input.modbusUnit,
+          rapidDeviceNum: input.rapidDeviceNum,
+        });
         await refresh();
         return null;
       } catch (err) {
