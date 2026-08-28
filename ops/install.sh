@@ -8,34 +8,49 @@ RAPID_VERSION="6.4.7"
 RAPID_URL="https://rapidscada.org/download/rapidscada_${RAPID_VERSION}_linux_en.zip"
 TMP="/tmp/rc-geradores-install"
 ENABLE_CONTROL=0
+SKIP_INITIAL_GENERATOR=0
 ADMIN_EMAIL="admin@rcgeradores.local"
 ADMIN_NAME="Administrador"
+ADMIN_PASSWORD_FILE=""
 IG200_TAG="GEN001"
 IG200_NAME="Gerador 01"
 IG200_SITE="Principal"
+IG200_PORT=15001
+IG200_UNIT=2
+IG200_DEVICE=200
+INITIAL_GENERATOR_ID=""
+INITIAL_LOCAL_PORT=""
 
 usage() {
   cat <<'EOF'
 Uso: sudo bash ops/install.sh [opções]
 
 Opções:
-  --enable-control          habilita START/STOP homologado da ComAp InteliGen 200
-  --admin-email EMAIL       e-mail do primeiro administrador
-  --admin-name NOME         nome do primeiro administrador
-  --ig200-tag TAG           tag do primeiro IG200 (padrão GEN001)
-  --ig200-name NOME         nome do primeiro IG200
-  --ig200-site SITE         site do primeiro IG200
-  -h, --help                mostra esta ajuda
+  --enable-control              habilita START/STOP homologado da ComAp InteliGen 200
+  --admin-email EMAIL           e-mail do primeiro administrador
+  --admin-name NOME             nome do primeiro administrador
+  --admin-password-file ARQ     arquivo chmod 600 com a senha inicial (automação segura)
+  --skip-initial-generator      instala a plataforma sem cadastrar/provisionar gerador
+  --ig200-tag TAG               tag do primeiro IG200 (padrão GEN001)
+  --ig200-name NOME             nome do primeiro IG200
+  --ig200-site SITE             site do primeiro IG200
+  --ig200-port PORTA            porta TCP reversa externa (padrão 15001)
+  --ig200-unit UNIT             Modbus Unit ID (padrão 2)
+  --ig200-device DEVICE         Rapid Device (padrão 200)
+  -h, --help                    mostra esta ajuda
 
 Instala em VM Ubuntu limpa:
   Rapid SCADA 6.4.7
-  IG200 validado: Line 100 / Device 200 / canais 2001..2008
   bridge reverse TCP somente leitura para o Rapid
   API FastAPI + frontend TanStack + worker + provisionador privilegiado
   SQLite do produto + login/RBAC + relatórios/backups/notificações
   Nginx na porta 80
 
+Por padrão cadastra e provisiona um ComAp InteliGen 200 com os parâmetros acima.
+Use --skip-initial-generator para instalar a plataforma vazia e cadastrar depois pelo painel.
+
 A senha inicial é solicitada no terminal e nunca é persistida em texto claro.
+Para automação, --admin-password-file lê a senha de arquivo proprietário chmod 600.
 SMTP, WhatsApp e HTTPS permanecem desabilitados até receberem configuração real.
 EOF
 }
@@ -45,9 +60,14 @@ while [[ $# -gt 0 ]]; do
     --enable-control) ENABLE_CONTROL=1; shift ;;
     --admin-email) ADMIN_EMAIL="${2:?Informe o e-mail}"; shift 2 ;;
     --admin-name) ADMIN_NAME="${2:?Informe o nome}"; shift 2 ;;
+    --admin-password-file) ADMIN_PASSWORD_FILE="${2:?Informe o arquivo}"; shift 2 ;;
+    --skip-initial-generator) SKIP_INITIAL_GENERATOR=1; shift ;;
     --ig200-tag) IG200_TAG="${2:?Informe a tag}"; shift 2 ;;
     --ig200-name) IG200_NAME="${2:?Informe o nome}"; shift 2 ;;
     --ig200-site) IG200_SITE="${2:?Informe o site}"; shift 2 ;;
+    --ig200-port) IG200_PORT="${2:?Informe a porta}"; shift 2 ;;
+    --ig200-unit) IG200_UNIT="${2:?Informe o Unit ID}"; shift 2 ;;
+    --ig200-device) IG200_DEVICE="${2:?Informe o Rapid Device}"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Opção desconhecida: $1"; usage; exit 2 ;;
   esac
@@ -57,9 +77,24 @@ if [[ $EUID -ne 0 ]]; then
   echo "Execute como root: sudo bash $0"
   exit 1
 fi
-if [[ ! -t 0 ]]; then
-  echo "ERRO: execute em terminal interativo para criar a senha inicial."
-  exit 2
+
+validate_range() {
+  local label="$1" value="$2" min="$3" max="$4"
+  if [[ ! "$value" =~ ^[0-9]+$ ]] || (( value < min || value > max )); then
+    echo "ERRO: $label deve estar entre $min e $max (recebido: $value)" >&2
+    exit 2
+  fi
+}
+
+validate_range "porta IG200" "$IG200_PORT" 1 65535
+validate_range "Modbus Unit ID" "$IG200_UNIT" 1 247
+validate_range "Rapid Device" "$IG200_DEVICE" 1 2147483647
+
+if [[ -n "$ADMIN_PASSWORD_FILE" ]]; then
+  [[ -f "$ADMIN_PASSWORD_FILE" && -r "$ADMIN_PASSWORD_FILE" ]] || {
+    echo "ERRO: arquivo de senha não encontrado/legível: $ADMIN_PASSWORD_FILE" >&2
+    exit 2
+  }
 fi
 
 export DEBIAN_FRONTEND=noninteractive
@@ -74,7 +109,7 @@ echo
 echo "[1/15] Dependências do sistema..."
 apt-get update
 apt-get install -y \
-  git curl ca-certificates unzip nginx jq openssl sudo \
+  git curl ca-certificates unzip nginx jq openssl sudo iproute2 \
   python3 python3-venv python3-pip build-essential
 
 NODE_MAJOR=0
@@ -87,21 +122,30 @@ if (( NODE_MAJOR < 22 )); then
   apt-get install -y nodejs
 fi
 
-if ! command -v dotnet >/dev/null 2>&1; then
-  apt-get install -y dotnet-sdk-8.0 || {
+DOTNET8_SDK=0
+DOTNET8_RUNTIME=0
+if command -v dotnet >/dev/null 2>&1; then
+  dotnet --list-sdks 2>/dev/null | grep -q '^8\.' && DOTNET8_SDK=1 || true
+  dotnet --list-runtimes 2>/dev/null | grep -q '^Microsoft.NETCore.App 8\.' && DOTNET8_RUNTIME=1 || true
+fi
+if (( DOTNET8_SDK == 0 || DOTNET8_RUNTIME == 0 )); then
+  if ! apt-get install -y dotnet-sdk-8.0; then
     . /etc/os-release
     curl -fsSL "https://packages.microsoft.com/config/ubuntu/${VERSION_ID}/packages-microsoft-prod.deb" \
       -o /tmp/packages-microsoft-prod.deb
     dpkg -i /tmp/packages-microsoft-prod.deb
     apt-get update
     apt-get install -y dotnet-sdk-8.0
-  }
+  fi
 fi
 
 node --version
 npm --version
 dotnet --version
 python3 --version
+
+dotnet --list-sdks | grep -q '^8\.' || { echo "ERRO: .NET SDK 8 não ficou disponível." >&2; exit 3; }
+dotnet --list-runtimes | grep -q '^Microsoft.NETCore.App 8\.' || { echo "ERRO: .NET Runtime 8 não ficou disponível." >&2; exit 3; }
 
 echo "[2/15] Instalando/validando Rapid SCADA ${RAPID_VERSION}..."
 if [[ ! -f /opt/scada/ScadaComm/Config/ScadaCommConfig.xml || ! -f /opt/scada/BaseDAT/cnl.dat ]]; then
@@ -165,7 +209,7 @@ install -d -m 0750 -o rcgeradores -g rcgeradores \
 install -d -m 0770 -o root -g rcgeradores /run/rc-geradores
 
 chmod +x \
-  "$BASE/ops/install.sh" "$BASE/ops/status.sh" \
+  "$BASE/ops/install.sh" "$BASE/ops/status.sh" "$BASE/ops/vm-smoke.sh" \
   "$BASE/ops/bootstrap_admin.py" "$BASE/ops/bootstrap_ig200.py" \
   "$BASE/rapid/provisioning/provision_ig200.sh" \
   "$BASE/rapid/provisioning/provision_generator.py" \
@@ -221,44 +265,37 @@ PY
 
 echo
 echo "Primeiro acesso ao RC Geradores"
-"$BASE/backend/.venv/bin/python" "$BASE/ops/bootstrap_admin.py" \
-  --name "$ADMIN_NAME" --email "$ADMIN_EMAIL"
-"$BASE/backend/.venv/bin/python" "$BASE/ops/bootstrap_ig200.py" \
-  --tag "$IG200_TAG" --name "$IG200_NAME" --site "$IG200_SITE"
+ADMIN_ARGS=(--name "$ADMIN_NAME" --email "$ADMIN_EMAIL")
+if [[ -n "$ADMIN_PASSWORD_FILE" ]]; then
+  ADMIN_ARGS+=(--password-file "$ADMIN_PASSWORD_FILE")
+fi
+"$BASE/backend/.venv/bin/python" "$BASE/ops/bootstrap_admin.py" "${ADMIN_ARGS[@]}"
 
-echo "[6/15] Provisionando o primeiro IG200 validado no Rapid SCADA..."
-bash "$BASE/rapid/provisioning/provision_ig200.sh" --no-restart
+if (( SKIP_INITIAL_GENERATOR == 0 )); then
+  "$BASE/backend/.venv/bin/python" "$BASE/ops/bootstrap_ig200.py" \
+    --tag "$IG200_TAG" --name "$IG200_NAME" --site "$IG200_SITE" \
+    --port "$IG200_PORT" --unit "$IG200_UNIT" --rapid-device "$IG200_DEVICE"
 
-# Runtime bindings ficam fora do Git. Incluímos o ID real do cadastro para que
-# o provisionador genérico reconheça o IG200 inicial como já provisionado.
-"$BASE/backend/.venv/bin/python" - "$IG200_TAG" <<'PY'
-import json
-import os
+  read -r INITIAL_GENERATOR_ID IG200_TAG IG200_PORT IG200_UNIT IG200_DEVICE < <(
+    "$BASE/backend/.venv/bin/python" - "$IG200_TAG" <<'PY'
 import sys
-from pathlib import Path
 from app import db
-
-tag = sys.argv[1]
-g = db.get_generator(tag)
+g = db.get_generator(sys.argv[1])
 if not g:
-    raise SystemExit(f"gerador {tag} não encontrado")
-canonical = Path('/opt/rc-geradores/rapid/bindings.json')
-data = json.loads(canonical.read_text(encoding='utf-8'))
-if not data:
-    raise SystemExit('bindings canônicos vazios')
-b = dict(data[0])
-b.update({
-    'generator_id': g['id'],
-    'tag': g['tag'],
-    'transport': 'reverse_tcp',
-    'rapid_line_num': 100,
-    'rapid_device_num': 200,
-})
-target = Path(os.environ.get('RC_RAPID_BINDINGS', '/var/lib/rc-geradores/rapid-bindings.json'))
-target.parent.mkdir(parents=True, exist_ok=True)
-target.write_text(json.dumps([b], ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-print(f'Runtime binding: {target}')
+    raise SystemExit(f"gerador {sys.argv[1]} não encontrado após bootstrap")
+print(g['id'], g['tag'], g['listen_port'], g['modbus_unit'], g.get('rapid_device_num') or 0)
 PY
+  )
+  INITIAL_LOCAL_PORT=$((IG200_PORT + ${RC_RAPID_LOCAL_OFFSET:-10000}))
+fi
+
+echo "[6/15] Provisionamento industrial inicial..."
+if (( SKIP_INITIAL_GENERATOR == 0 )); then
+  "$BASE/backend/.venv/bin/python" "$BASE/rapid/provisioning/provision_generator.py" \
+    "$INITIAL_GENERATOR_ID" --no-restart
+else
+  echo "Plataforma vazia solicitada; nenhum gerador foi provisionado no Rapid SCADA."
+fi
 chown -R rcgeradores:rcgeradores /var/lib/rc-geradores /var/log/rc-geradores
 
 echo "[7/15] Compilando leitor oficial do Rapid SCADA Server..."
@@ -294,8 +331,8 @@ for unit in \
 done
 systemctl daemon-reload
 
-# A bridge precisa existir antes do Communicator porque o IG200 inicial usa
-# reverse TCP: modem :15001 -> bridge -> Rapid 127.0.0.1:25001.
+# A bridge sobe antes do Communicator. Quando existem bindings reverse_tcp,
+# isso garante que as portas locais já estejam disponíveis no primeiro polling.
 systemctl enable rc-geradores-bridge.service >/dev/null
 systemctl restart rc-geradores-bridge.service
 
@@ -358,19 +395,39 @@ done
   exit 5
 }
 
-echo "[13/15] Validando BaseDAT, template e runtime binding..."
+echo "[13/15] Validando BaseDAT e runtime bindings..."
 python3 "$BASE/rapid/provisioning/rapid_dat.py" check \
   /opt/scada/BaseDAT/commline.dat \
   /opt/scada/BaseDAT/device.dat \
   /opt/scada/BaseDAT/cnl.dat
-grep -q 'number="100"' /opt/scada/ScadaComm/Config/ScadaCommConfig.xml
-grep -q 'number="200"' /opt/scada/ScadaComm/Config/ScadaCommConfig.xml
-test -s /var/lib/rc-geradores/rapid-bindings.json
-jq -e '.[0].rapid_device_num == 200 and .[0].generator_id != null' \
-  /var/lib/rc-geradores/rapid-bindings.json >/dev/null
 
-echo "[14/15] Diagnóstico local..."
-ss -lnt 2>/dev/null | grep -E ':(80|3000|8090|15001|25001)\b' || true
+if (( SKIP_INITIAL_GENERATOR == 0 )); then
+  test -s "${RC_RAPID_BINDINGS:-/var/lib/rc-geradores/rapid-bindings.json}"
+  BINDING_JSON="$(jq -c --arg id "$INITIAL_GENERATOR_ID" 'map(select(.generator_id == $id)) | if length == 1 then .[0] else empty end' "${RC_RAPID_BINDINGS:-/var/lib/rc-geradores/rapid-bindings.json}")"
+  [[ -n "$BINDING_JSON" ]] || { echo "ERRO: binding do $IG200_TAG não encontrado." >&2; exit 5; }
+  RAPID_LINE="$(jq -r '.rapid_line_num' <<<"$BINDING_JSON")"
+  RAPID_DEVICE="$(jq -r '.rapid_device_num' <<<"$BINDING_JSON")"
+  python3 - /opt/scada/ScadaComm/Config/ScadaCommConfig.xml "$RAPID_LINE" "$RAPID_DEVICE" <<'PY'
+import sys
+import xml.etree.ElementTree as ET
+cfg, line_num, device_num = sys.argv[1], sys.argv[2], sys.argv[3]
+root = ET.parse(cfg).getroot()
+line = next((x for x in root.findall('./Lines/Line') if x.get('number') == line_num), None)
+if line is None:
+    raise SystemExit(f'Line {line_num} não encontrada no Communicator')
+device = next((x for x in line.findall('./DevicePolling/Device') if x.get('number') == device_num), None)
+if device is None:
+    raise SystemExit(f'Device {device_num} não encontrado na Line {line_num}')
+print(f'Rapid materializado: Line {line_num} / Device {device_num}')
+PY
+fi
+
+echo "[14/15] Smoke test completo da VM..."
+if (( SKIP_INITIAL_GENERATOR == 0 )); then
+  "$BASE/ops/vm-smoke.sh" --require-generator
+else
+  "$BASE/ops/vm-smoke.sh"
+fi
 "$BASE/ops/status.sh" || true
 
 echo "[15/15] Instalação concluída."
@@ -384,8 +441,12 @@ echo " Usuário inicial: $ADMIN_EMAIL"
 echo " API health:      http://${IP:-IP_DA_VM}/api/health"
 echo " Banco:           /var/lib/rc-geradores/rc-geradores.db"
 echo " Rapid SCADA:     /opt/scada"
-echo " IG200 inicial:   ${IG200_TAG} / TCP 15001 / Unit 2 / Device 200"
-echo " Bridge Rapid:    127.0.0.1:25001"
+if (( SKIP_INITIAL_GENERATOR == 0 )); then
+  echo " IG200 inicial:   ${IG200_TAG} / TCP ${IG200_PORT} / Unit ${IG200_UNIT} / Device ${IG200_DEVICE}"
+  echo " Bridge Rapid:    127.0.0.1:${INITIAL_LOCAL_PORT}"
+else
+  echo " Gerador inicial: não criado (--skip-initial-generator)"
+fi
 echo " Worker:          ativo"
 echo " Provisionador:   ativo (socket local privilegiado)"
 echo " SMTP/WhatsApp:   desabilitados até configurar credenciais reais"
@@ -397,4 +458,5 @@ else
 fi
 echo
 echo " Diagnóstico: sudo $BASE/ops/status.sh"
+echo " Smoke test:  sudo $BASE/ops/vm-smoke.sh"
 echo "============================================================"
