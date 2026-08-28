@@ -1,8 +1,9 @@
 {
-  "schema": 1,
+  "schema": 2,
   "manufacturer": "ComAp",
   "family": "InteliGen",
   "model": "InteliGen 200",
+  "aliases": ["IG200", "IG 200"],
   "status": "field_validated",
   "protocols": ["modbus"],
   "transports": [
@@ -13,7 +14,17 @@
   ],
   "rapid": {
     "template": "rapid/templates/DrvModbus_RC_IG200.xml",
-    "bindingDevice": 200
+    "driver": "DrvModbus",
+    "channels": [
+      {"key": "rpm", "tagCode": "rpm", "name": "RPM", "scale": 1.0},
+      {"key": "voltage_l1", "tagCode": "voltage_l1", "name": "Tensão L1-N", "scale": 1.0},
+      {"key": "voltage_l2", "tagCode": "voltage_l2", "name": "Tensão L2-N", "scale": 1.0},
+      {"key": "voltage_l3", "tagCode": "voltage_l3", "name": "Tensão L3-N", "scale": 1.0},
+      {"key": "voltage_l1_l2", "tagCode": "voltage_l1_l2", "name": "Tensão L1-L2", "scale": 1.0},
+      {"key": "voltage_l2_l3", "tagCode": "voltage_l2_l3", "name": "Tensão L2-L3", "scale": 1.0},
+      {"key": "voltage_l3_l1", "tagCode": "voltage_l3_l1", "name": "Tensão L3-L1", "scale": 1.0},
+      {"key": "frequency", "tagCode": "frequency_raw", "name": "Frequência", "scale": 0.01}
+    ]
   },
   "capabilities": {
     "telemetry": true,
