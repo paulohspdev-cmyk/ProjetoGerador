@@ -48,13 +48,25 @@ jobs:
           python-version: '3.12'
 
       - name: Backend dependencies
-        run: pip install -r backend/requirements.txt
+        run: |
+          pip install -r backend/requirements.txt
+          pip install 'httpx>=0.27,<1'
 
       - name: Backend syntax
-        run: python -m compileall -q backend/app
+        run: python -m compileall -q backend/app backend/tests rapid/provisioning
 
       - name: Backend import
         working-directory: backend
         env:
-          RC_DATA_DIR: ${{ runner.temp }}/rc-geradores
+          RC_DATA_DIR: ${{ runner.temp }}/rc-geradores-import
         run: python -c "from app.main import app; print(app.title, app.version)"
+
+      - name: Backend auth RBAC smoke
+        working-directory: backend
+        run: python tests/smoke.py
+
+      - name: Instaladores Bash
+        run: |
+          bash -n ops/install.sh
+          bash -n ops/status.sh
+          bash -n rapid/provisioning/provision_ig200.sh
