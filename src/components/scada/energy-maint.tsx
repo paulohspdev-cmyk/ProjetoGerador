@@ -1,151 +1,204 @@
-import { type FormEvent, useState } from "react";
-import { AlertTriangle, ArrowLeftRight, BatteryCharging, CalendarDays, CheckCircle2, ClipboardList, Factory, Fan, Fuel, Gauge, GitMerge, HardHat, Percent, Power, Timer, TrendingUp, UtilityPole, Waves } from "lucide-react";
+import { type FormEvent, useMemo, useState } from "react";
+import {
+  AlertTriangle,
+  ArrowLeftRight,
+  BatteryCharging,
+  CalendarDays,
+  ClipboardList,
+  Factory,
+  Fan,
+  Fuel,
+  Gauge,
+  GitMerge,
+  HardHat,
+  Power,
+  Timer,
+  UtilityPole,
+  Waves,
+} from "lucide-react";
 
-import { fmt, spark } from "@/data/scada";
+import type { Generator } from "@/data/generators";
+import { fmt } from "@/data/scada";
 import { useGenerators } from "@/components/generators/GeneratorsProvider";
 import { useScadaOps } from "./ScadaOpsProvider";
-import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats, Tone, Trend } from "./kit";
+import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats, Tone } from "./kit";
 
-function EnergyBlock({
-  title,
-  kpis,
-  chart,
+function hasMetric(g: Generator, key: string) {
+  return (g.availableMetrics ?? []).includes(key);
+}
+
+function valueOrDash(g: Generator, key: string, value: number | null | undefined, unit = "", digits = 1) {
+  if (!hasMetric(g, key) || value == null) return "—";
+  return `${fmt(value, digits)}${unit ? ` ${unit}` : ""}`;
+}
+
+function supportedCount(generators: Generator[], metric: string) {
+  return generators.filter((g) => hasMetric(g, metric)).length;
+}
+
+function InfoNotice({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="rounded-md border border-border bg-secondary/20 px-3 py-2 text-[11px] text-muted-foreground">
+      {children}
+    </p>
+  );
+}
+
+function EnergyTable({
   rows,
 }: {
-  title: string;
-  kpis: Parameters<typeof Stats>[0]["items"];
-  chart: { data: ReturnType<typeof spark>; unit: string; color?: string };
   rows: Array<{ id: string; gen: string; a: string; b: string; c: string }>;
 }) {
   return (
-    <ScreenBody>
-      <Stats items={kpis} />
-      <Panel title={title}>
-        <Trend data={chart.data} unit={chart.unit} color={chart.color} />
-      </Panel>
-      <Panel title="Por gerador">
-        <ScadaTable
-          rows={rows}
-          columns={[
-            { label: "Gerador", render: (r) => <b>{r.gen}</b> },
-            { label: "Principal", render: (r) => <span className="num">{r.a}</span> },
-            { label: "Secundário", render: (r) => <span className="num">{r.b}</span> },
-            { label: "Estado", render: (r) => r.c },
-          ]}
-        />
-      </Panel>
-    </ScreenBody>
+    <Panel title="Por gerador">
+      <ScadaTable
+        rows={rows}
+        columns={[
+          { label: "Gerador", render: (r) => <b>{r.gen}</b> },
+          { label: "Principal", render: (r) => <span className="num">{r.a}</span> },
+          { label: "Secundário", render: (r) => <span className="num">{r.b}</span> },
+          { label: "Estado", render: (r) => r.c },
+        ]}
+      />
+    </Panel>
   );
 }
 
 export function EnergyRede() {
   const { generators } = useGenerators();
+  const mainsVoltage = generators.filter((g) => hasMetric(g, "mains_voltage_l1"));
+  const mainsFreq = generators.filter((g) => hasMetric(g, "mains_frequency"));
+  const mcb = generators.filter((g) => hasMetric(g, "mcb_closed"));
   return (
-    <EnergyBlock
-      title="Tensão da rede (média L-N)"
-      kpis={[
-        { icon: UtilityPole, label: "Tensão L1", value: "220 V", tone: "text-online" },
-        { icon: Waves, label: "Frequência", value: "60,0 Hz", tone: "text-online" },
-        { icon: Power, label: "MCB fechados", value: String(generators.filter((g) => g.mcb).length) },
-      ]}
-      chart={{ data: spark(1, 24, 219, 4), unit: "V" }}
-      rows={generators.map((g) => ({
-        id: g.id,
-        gen: g.tag,
-        a: `${g.mains.l1} V`,
-        b: `${g.mains.l12} V`,
-        c: g.mcb ? "Rede acoplada" : "Isolada",
-      }))}
-    />
+    <ScreenBody>
+      <Stats
+        items={[
+          { icon: UtilityPole, label: "Tensão de rede disponível", value: `${mainsVoltage.length}/${generators.length}` },
+          { icon: Waves, label: "Frequência de rede disponível", value: `${mainsFreq.length}/${generators.length}` },
+          { icon: Power, label: "MCB monitorados", value: `${mcb.length}/${generators.length}` },
+        ]}
+      />
+      <InfoNotice>
+        Esta tela só mostra grandezas de REDE quando o Controller Pack possui canais específicos de rede. Tensão do gerador não é reutilizada como tensão da rede.
+      </InfoNotice>
+      <EnergyTable
+        rows={generators.map((g) => ({
+          id: g.id,
+          gen: g.tag,
+          a: valueOrDash(g, "mains_voltage_l1", g.mains.l1, "V", 1),
+          b: valueOrDash(g, "mains_frequency", null, "Hz", 2),
+          c: hasMetric(g, "mcb_closed") ? (g.mcb ? "MCB fechado" : "MCB aberto") : "MCB N/D",
+        }))}
+      />
+    </ScreenBody>
   );
 }
 
 export function EnergyGens() {
   const { generators } = useGenerators();
+  const running = generators.filter((g) => hasMetric(g, "rpm") && g.rpm > 300).length;
+  const powerSupported = supportedCount(generators, "power_kw");
+  const freqSupported = supportedCount(generators, "frequency");
+  const totalKw = generators
+    .filter((g) => hasMetric(g, "power_kw"))
+    .reduce((sum, g) => sum + g.load, 0);
+
   return (
-    <EnergyBlock
-      title="Potência dos geradores"
-      kpis={[
-        { icon: Gauge, label: "kW total", value: `${generators.reduce((s, g) => s + g.load, 0)}`, tone: "text-online" },
-        { icon: Power, label: "GCB fechados", value: String(generators.filter((g) => g.gcb).length) },
-        { icon: Fan, label: "RPM médio", value: String(Math.round(generators.reduce((s, g) => s + g.rpm, 0) / generators.length)) },
-      ]}
-      chart={{ data: spark(4, 24, 160, 50), unit: "kW", color: "var(--chart-2)" }}
-      rows={generators.map((g) => ({
-        id: g.id,
-        gen: g.tag,
-        a: `${g.load} kW`,
-        b: `${fmt(g.frequency ?? 0)} Hz`,
-        c: g.gcb ? "Gerador na barra" : "Aberto",
-      }))}
-    />
+    <ScreenBody>
+      <Stats
+        items={[
+          { icon: Gauge, label: "Potência ativa", value: powerSupported ? `${fmt(totalKw)} kW` : "N/D", tone: powerSupported ? "text-online" : undefined },
+          { icon: Fan, label: "Geradores em rotação", value: running },
+          { icon: Waves, label: "Frequência monitorada", value: `${freqSupported}/${generators.length}` },
+        ]}
+      />
+      <InfoNotice>
+        kW, GCB, fator de potência e outras grandezas só aparecem quando existem canais homologados no pack da controladora. O IG200 atual não recebe valores inventados para completar a tela.
+      </InfoNotice>
+      <EnergyTable
+        rows={generators.map((g) => ({
+          id: g.id,
+          gen: g.tag,
+          a: valueOrDash(g, "power_kw", g.load, "kW", 1),
+          b: valueOrDash(g, "frequency", g.frequency, "Hz", 2),
+          c: hasMetric(g, "gcb_closed") ? (g.gcb ? "GCB fechado" : "GCB aberto") : valueOrDash(g, "rpm", g.rpm, "rpm", 0),
+        }))}
+      />
+    </ScreenBody>
   );
 }
 
 export function EnergyLoad() {
   const { generators } = useGenerators();
+  const rows = generators.map((g) => ({
+    id: g.id,
+    gen: g.tag,
+    a: valueOrDash(g, "power_kw", g.load, "kW", 1),
+    b: g.site || "—",
+    c: hasMetric(g, "power_kw") ? "Medido" : "Sem canal de potência",
+  }));
+  const measured = generators.filter((g) => hasMetric(g, "power_kw"));
+  const total = measured.reduce((s, g) => s + g.load, 0);
   return (
-    <EnergyBlock
-      title="Carga do consumidor"
-      kpis={[
-        { icon: Factory, label: "Carga", value: `${generators.reduce((s, g) => s + g.load, 0)} kW`, tone: "text-online" },
-        { icon: Percent, label: "Fator de p", value: "0,92" },
-        { icon: TrendingUp, label: "Pico 24 h", value: "612 kW", tone: "text-alert" },
-      ]}
-      chart={{ data: spark(6, 24, 240, 90), unit: "kW", color: "var(--alert)" }}
-      rows={generators.map((g) => ({
-        id: g.id,
-        gen: g.tag,
-        a: `${g.load} kW`,
-        b: g.site,
-        c: g.load > 400 ? "Alta" : "Normal",
-      }))}
-    />
+    <ScreenBody>
+      <Stats
+        items={[
+          { icon: Factory, label: "Carga medida", value: measured.length ? `${fmt(total)} kW` : "N/D" },
+          { icon: Gauge, label: "Geradores com kW", value: `${measured.length}/${generators.length}` },
+        ]}
+      />
+      <InfoNotice>Fator de potência, pico e histórico não são calculados por estimativa. Quando os canais existirem, o histórico será lido do archive do Rapid SCADA.</InfoNotice>
+      <EnergyTable rows={rows} />
+    </ScreenBody>
   );
 }
 
 export function EnergyTransfer() {
   const { generators } = useGenerators();
+  const monitored = generators.filter((g) => hasMetric(g, "mcb_closed") || hasMetric(g, "gcb_closed"));
   return (
-    <EnergyBlock
-      title="Transferência rede / gerador"
-      kpis={[
-        { icon: UtilityPole, label: "Em rede", value: String(generators.filter((g) => g.mcb && !g.gcb).length) },
-        { icon: Fan, label: "Em gerador", value: String(generators.filter((g) => g.gcb).length), tone: "text-online" },
-        { icon: ArrowLeftRight, label: "Transição", value: "0" },
-      ]}
-      chart={{ data: spark(9, 24, 1, 1), unit: "" }}
-      rows={generators.map((g) => ({
-        id: g.id,
-        gen: g.tag,
-        a: g.mcb ? "MCB I" : "MCB O",
-        b: g.gcb ? "GCB I" : "GCB O",
-        c: g.mcb && g.gcb ? "Paralelo" : g.gcb ? "Ilha" : g.mcb ? "Rede" : "Aberto",
-      }))}
-    />
+    <ScreenBody>
+      <Stats
+        items={[
+          { icon: ArrowLeftRight, label: "Transferência monitorada", value: `${monitored.length}/${generators.length}` },
+          { icon: UtilityPole, label: "MCB monitorados", value: supportedCount(generators, "mcb_closed") },
+          { icon: Fan, label: "GCB monitorados", value: supportedCount(generators, "gcb_closed") },
+        ]}
+      />
+      <InfoNotice>Estados ATS/MCB/GCB não são inferidos por RPM. Sem canal homologado, o estado permanece N/D.</InfoNotice>
+      <EnergyTable
+        rows={generators.map((g) => {
+          const mcb = hasMetric(g, "mcb_closed") ? (g.mcb ? "MCB fechado" : "MCB aberto") : "MCB N/D";
+          const gcb = hasMetric(g, "gcb_closed") ? (g.gcb ? "GCB fechado" : "GCB aberto") : "GCB N/D";
+          return { id: g.id, gen: g.tag, a: mcb, b: gcb, c: hasMetric(g, "mcb_closed") && hasMetric(g, "gcb_closed") ? "Monitorado" : "Parcial/N/D" };
+        })}
+      />
+    </ScreenBody>
   );
 }
 
 export function EnergyParallel() {
   const { generators } = useGenerators();
-  const n = generators.filter((g) => g.mcb && g.gcb).length;
+  const capable = generators.filter((g) => hasMetric(g, "paralleling_active"));
   return (
-    <EnergyBlock
-      title="Paralelismo"
-      kpis={[
-        { icon: GitMerge, label: "PRLL ON", value: String(n), tone: n ? "text-online" : "text-muted-foreground" },
-        { icon: CheckCircle2, label: "Sync OK", value: n ? "Sim" : "—" },
-        { icon: Waves, label: "Desvio Hz", value: "0,04" },
-      ]}
-      chart={{ data: spark(11, 24, 60, 0.2), unit: "Hz" }}
-      rows={generators.map((g) => ({
-        id: g.id,
-        gen: g.tag,
-        a: `${fmt(g.frequency ?? 0)} Hz`,
-        b: `${g.rpm} rpm`,
-        c: g.mcb && g.gcb ? "PRLL ON" : "PRLL OFF",
-      }))}
-    />
+    <ScreenBody>
+      <Stats
+        items={[
+          { icon: GitMerge, label: "Paralelismo monitorado", value: `${capable.length}/${generators.length}` },
+          { icon: Waves, label: "Sincronismo", value: supportedCount(generators, "sync_ok") ? "Disponível" : "N/D" },
+        ]}
+      />
+      <InfoNotice>Paralelismo, sincronismo e comandos de disjuntores permanecem bloqueados até homologação específica da controladora.</InfoNotice>
+      <EnergyTable
+        rows={generators.map((g) => ({
+          id: g.id,
+          gen: g.tag,
+          a: valueOrDash(g, "frequency", g.frequency, "Hz", 2),
+          b: valueOrDash(g, "rpm", g.rpm, "rpm", 0),
+          c: hasMetric(g, "paralleling_active") ? "Monitorado" : "Paralelismo N/D",
+        }))}
+      />
+    </ScreenBody>
   );
 }
 
@@ -158,7 +211,8 @@ export function MaintenanceScreen() {
   const onCreate = (e: FormEvent) => {
     e.preventDefault();
     const g = generators.find((x) => x.tag === gen);
-    addWorkOrder({ gen, type, site: g?.site ?? "" });
+    if (!g) return;
+    void addWorkOrder({ gen, type, site: g.site });
   };
 
   return (
@@ -174,35 +228,18 @@ export function MaintenanceScreen() {
         <form onSubmit={onCreate} className="grid gap-2 sm:grid-cols-3">
           <label className="text-[11px] font-semibold text-muted-foreground">
             Gerador
-            <select
-              value={gen}
-              onChange={(e) => setGen(e.target.value)}
-              className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-            >
-              {generators.map((g) => (
-                <option key={g.id} value={g.tag}>
-                  {g.tag}
-                </option>
-              ))}
+            <select value={gen} onChange={(e) => setGen(e.target.value)} className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm" required>
+              <option value="" disabled>Selecione</option>
+              {generators.map((g) => <option key={g.id} value={g.tag}>{g.tag}</option>)}
             </select>
           </label>
           <label className="text-[11px] font-semibold text-muted-foreground">
             Tipo
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-            >
-              <option>Preventiva</option>
-              <option>Corretiva</option>
-              <option>Inspeção</option>
+            <select value={type} onChange={(e) => setType(e.target.value)} className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm">
+              <option>Preventiva</option><option>Corretiva</option><option>Inspeção</option>
             </select>
           </label>
-          <div className="flex items-end">
-            <button type="submit" className="h-9 w-full rounded-md bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90">
-              Abrir OS
-            </button>
-          </div>
+          <div className="flex items-end"><button type="submit" className="h-9 w-full rounded-md bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90">Abrir OS</button></div>
         </form>
       </Panel>
       <Panel title="Ordens de serviço">
@@ -212,32 +249,10 @@ export function MaintenanceScreen() {
             { label: "OS", render: (r) => <span className="num">{r.id}</span> },
             { label: "Gerador", render: (r) => <b>{r.gen}</b> },
             { label: "Tipo", render: (r) => r.type },
-            { label: "Horas p/ manut.", render: (r) => <span className="num">{r.due} h</span> },
-            { label: "Técnico", render: (r) => r.tech, hide: "hidden md:table-cell" },
-            {
-              label: "Status",
-              render: (r) => (
-                <Pill tone={r.status === "Urgente" ? "err" : r.status === "Em andamento" ? "warn" : r.status === "Concluída" ? "ok" : "info"}>
-                  {r.status}
-                </Pill>
-              ),
-            },
-            {
-              label: "Ações",
-              render: (r) =>
-                r.status === "Concluída" ? (
-                  "—"
-                ) : (
-                  <span className="flex flex-wrap gap-1">
-                    {r.status !== "Em andamento" && (
-                      <ActionBtn onClick={() => setWorkOrderStatus(r.id, "Em andamento")}>Iniciar</ActionBtn>
-                    )}
-                    <ActionBtn tone="ok" onClick={() => setWorkOrderStatus(r.id, "Concluída")}>
-                      Concluir
-                    </ActionBtn>
-                  </span>
-                ),
-            },
+            { label: "Referência", render: (r) => r.due > 0 ? <span className="num">{r.due} h</span> : "—" },
+            { label: "Técnico", render: (r) => r.tech || "—", hide: "hidden md:table-cell" },
+            { label: "Status", render: (r) => <Pill tone={r.status === "Urgente" ? "err" : r.status === "Em andamento" ? "warn" : r.status === "Concluída" ? "ok" : "info"}>{r.status}</Pill> },
+            { label: "Ações", render: (r) => r.status === "Concluída" ? "—" : <span className="flex flex-wrap gap-1">{r.status !== "Em andamento" && <ActionBtn onClick={() => void setWorkOrderStatus(r.id, "Em andamento")}>Iniciar</ActionBtn>}<ActionBtn tone="ok" onClick={() => void setWorkOrderStatus(r.id, "Concluída")}>Concluir</ActionBtn></span> },
           ]}
         />
       </Panel>
@@ -247,27 +262,21 @@ export function MaintenanceScreen() {
 
 export function FuelScreen() {
   const { generators } = useGenerators();
+  const measured = generators.filter((g) => hasMetric(g, "fuel_level"));
+  const mean = measured.length ? measured.reduce((s, g) => s + g.fuelLevel, 0) / measured.length : null;
   return (
     <ScreenBody>
-      <Stats
-        items={[
-          { icon: Fuel, label: "Nível médio", value: `${Math.round(generators.reduce((s, g) => s + g.fuelLevel, 0) / generators.length)} %` },
-          { icon: Fuel, label: "Abaixo de 40%", value: String(generators.filter((g) => g.fuelLevel < 40).length), tone: "text-alert" },
-        ]}
-      />
+      <Stats items={[
+        { icon: Fuel, label: "Nível médio medido", value: mean == null ? "N/D" : `${fmt(mean, 0)} %` },
+        { icon: Fuel, label: "Tanques monitorados", value: `${measured.length}/${generators.length}` },
+      ]} />
       <Panel title="Tanques / geradores">
-        <ScadaTable
-          rows={generators.map((g) => ({ id: g.id, ...g }))}
-          columns={[
-            { label: "Gerador", render: (r) => <b>{r.tag}</b> },
-            { label: "Site", render: (r) => r.site },
-            { label: "Nível", render: (r) => <span className="num">{r.fuelLevel} %</span> },
-            {
-              label: "Estado",
-              render: (r) => <Tone tone={r.fuelLevel < 40 ? "warn" : "ok"}>{r.fuelLevel < 40 ? "Reabastecer" : "OK"}</Tone>,
-            },
-          ]}
-        />
+        <ScadaTable rows={generators} columns={[
+          { label: "Gerador", render: (r) => <b>{r.tag}</b> },
+          { label: "Site", render: (r) => r.site },
+          { label: "Nível", render: (r) => valueOrDash(r, "fuel_level", r.fuelLevel, "%", 0) },
+          { label: "Estado", render: (r) => hasMetric(r, "fuel_level") ? <Tone tone={r.fuelLevel < 40 ? "warn" : "ok"}>{r.fuelLevel < 40 ? "Baixo" : "Monitorado"}</Tone> : <Tone tone="muted">N/D</Tone> },
+        ]} />
       </Panel>
     </ScreenBody>
   );
@@ -275,30 +284,20 @@ export function FuelScreen() {
 
 export function BatteriesScreen() {
   const { generators } = useGenerators();
+  const measured = generators.filter((g) => hasMetric(g, "battery_voltage") && g.battery != null);
+  const mean = measured.length ? measured.reduce((s, g) => s + Number(g.battery), 0) / measured.length : null;
   return (
     <ScreenBody>
-      <Stats
-        items={[
-          { icon: BatteryCharging, label: "Média", value: `${fmt(generators.reduce((s, g) => s + (g.battery ?? 0), 0) / generators.length)} V` },
-          { icon: BatteryCharging, label: "< 12 V", value: String(generators.filter((g) => (g.battery ?? 0) < 12 && g.battery).length), tone: "text-alert" },
-        ]}
-      />
+      <Stats items={[
+        { icon: BatteryCharging, label: "Média medida", value: mean == null ? "N/D" : `${fmt(mean)} V` },
+        { icon: BatteryCharging, label: "Baterias monitoradas", value: `${measured.length}/${generators.length}` },
+      ]} />
       <Panel title="Bancos de baterias">
-        <ScadaTable
-          rows={generators.map((g) => ({ id: g.id, ...g }))}
-          columns={[
-            { label: "Gerador", render: (r) => <b>{r.tag}</b> },
-            { label: "Tensão", render: (r) => <span className="num">{r.battery ? `${fmt(r.battery)} V` : "—"}</span> },
-            {
-              label: "Saúde",
-              render: (r) => (
-                <Tone tone={!r.battery ? "muted" : r.battery < 12 ? "warn" : "ok"}>
-                  {!r.battery ? "N/D" : r.battery < 12 ? "Baixa" : "Normal"}
-                </Tone>
-              ),
-            },
-          ]}
-        />
+        <ScadaTable rows={generators} columns={[
+          { label: "Gerador", render: (r) => <b>{r.tag}</b> },
+          { label: "Tensão", render: (r) => valueOrDash(r, "battery_voltage", r.battery, "V", 1) },
+          { label: "Saúde", render: (r) => !hasMetric(r, "battery_voltage") || r.battery == null ? <Tone tone="muted">N/D</Tone> : <Tone tone={r.battery < 12 ? "warn" : "ok"}>{r.battery < 12 ? "Baixa" : "Monitorada"}</Tone> },
+        ]} />
       </Panel>
     </ScreenBody>
   );
@@ -306,27 +305,21 @@ export function BatteriesScreen() {
 
 export function HourmetersScreen() {
   const { generators } = useGenerators();
+  const measured = generators.filter((g) => hasMetric(g, "run_hours"));
+  const total = measured.reduce((s, g) => s + g.runHours, 0);
   return (
     <ScreenBody>
-      <Stats
-        items={[
-          { icon: Timer, label: "Horas totais", value: fmt(generators.reduce((s, g) => s + g.runHours, 0), 0) },
-          { icon: Timer, label: "Manut. < 80 h", value: String(generators.filter((g) => g.maintenance < 80).length), tone: "text-alert" },
-        ]}
-      />
+      <Stats items={[
+        { icon: Timer, label: "Horas medidas", value: measured.length ? `${fmt(total, 0)} h` : "N/D" },
+        { icon: Timer, label: "Horímetros monitorados", value: `${measured.length}/${generators.length}` },
+      ]} />
       <Panel title="Horímetros">
-        <ScadaTable
-          rows={generators.map((g) => ({ id: g.id, ...g }))}
-          columns={[
-            { label: "Gerador", render: (r) => <b>{r.tag}</b> },
-            { label: "Horas trabalhadas", render: (r) => <span className="num">{fmt(r.runHours)} h</span> },
-            { label: "Horas p/ manutenção", render: (r) => <span className="num">{r.maintenance} h</span> },
-            {
-              label: "Prioridade",
-              render: (r) => <Pill tone={r.maintenance < 80 ? "warn" : "ok"}>{r.maintenance < 80 ? "Próxima" : "OK"}</Pill>,
-            },
-          ]}
-        />
+        <ScadaTable rows={generators} columns={[
+          { label: "Gerador", render: (r) => <b>{r.tag}</b> },
+          { label: "Horas trabalhadas", render: (r) => valueOrDash(r, "run_hours", r.runHours, "h", 1) },
+          { label: "Próxima manutenção", render: (r) => valueOrDash(r, "maintenance_hours", r.maintenance, "h", 1) },
+          { label: "Fonte", render: (r) => hasMetric(r, "run_hours") ? <Pill tone="ok">Rapid SCADA</Pill> : <Pill>N/D</Pill> },
+        ]} />
       </Panel>
     </ScreenBody>
   );
@@ -335,16 +328,15 @@ export function HourmetersScreen() {
 export function AgendaScreen() {
   const { agenda, addAgenda } = useScadaOps();
   const { generators } = useGenerators();
-  const sites = [...new Set(generators.map((g) => g.site))];
+  const sites = useMemo(() => [...new Set(generators.map((g) => g.site).filter(Boolean))], [generators]);
   const [title, setTitle] = useState("");
   const [when, setWhen] = useState("");
-  const [site, setSite] = useState(sites[0] ?? "");
+  const [site, setSite] = useState("");
 
   const onCreate = (e: FormEvent) => {
     e.preventDefault();
-    addAgenda({ title, when, site });
-    setTitle("");
-    setWhen("");
+    void addAgenda({ title, when, site });
+    setTitle(""); setWhen("");
   };
 
   return (
@@ -352,53 +344,18 @@ export function AgendaScreen() {
       <Stats items={[{ icon: CalendarDays, label: "Compromissos", value: agenda.length }]} />
       <Panel title="Novo compromisso">
         <form onSubmit={onCreate} className="grid gap-2 sm:grid-cols-4">
-          <label className="text-[11px] font-semibold text-muted-foreground sm:col-span-2">
-            Atividade
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-              className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-            />
-          </label>
-          <label className="text-[11px] font-semibold text-muted-foreground">
-            Quando
-            <input
-              value={when}
-              onChange={(e) => setWhen(e.target.value)}
-              placeholder="28/08 09:00"
-              required
-              className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-            />
-          </label>
-          <label className="text-[11px] font-semibold text-muted-foreground">
-            Local
-            <select
-              value={site}
-              onChange={(e) => setSite(e.target.value)}
-              className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-            >
-              {sites.map((s) => (
-                <option key={s}>{s}</option>
-              ))}
-            </select>
-          </label>
-          <div className="sm:col-span-4">
-            <button type="submit" className="h-9 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground hover:bg-primary/90">
-              Agendar
-            </button>
-          </div>
+          <label className="text-[11px] font-semibold text-muted-foreground sm:col-span-2">Atividade<input value={title} onChange={(e) => setTitle(e.target.value)} required className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm" /></label>
+          <label className="text-[11px] font-semibold text-muted-foreground">Quando<input value={when} onChange={(e) => setWhen(e.target.value)} placeholder="28/08 09:00" required className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm" /></label>
+          <label className="text-[11px] font-semibold text-muted-foreground">Local<input list="agenda-sites" value={site} onChange={(e) => setSite(e.target.value)} className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm" /><datalist id="agenda-sites">{sites.map((s) => <option key={s} value={s} />)}</datalist></label>
+          <div className="sm:col-span-4"><button type="submit" className="h-9 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground hover:bg-primary/90">Agendar</button></div>
         </form>
       </Panel>
       <Panel title="Agenda operacional">
-        <ScadaTable
-          rows={agenda}
-          columns={[
-            { label: "Quando", render: (r) => <span className="num">{r.when}</span> },
-            { label: "Atividade", render: (r) => <b>{r.title}</b> },
-            { label: "Local", render: (r) => r.site },
-          ]}
-        />
+        <ScadaTable rows={agenda} columns={[
+          { label: "Quando", render: (r) => <span className="num">{r.when}</span> },
+          { label: "Atividade", render: (r) => <b>{r.title}</b> },
+          { label: "Local", render: (r) => r.site || "—" },
+        ]} />
       </Panel>
     </ScreenBody>
   );
