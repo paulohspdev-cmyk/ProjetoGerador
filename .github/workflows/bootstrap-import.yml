@@ -1,51 +1,85 @@
 name: Bootstrap frontend import
 
 on:
-  issues:
-    types: [closed]
+  push:
+    paths:
+      - '.github/workflows/bootstrap-import.yml'
+      - 'generator-vision-main.zip'
   workflow_dispatch:
 
 permissions:
   contents: write
-  issues: read
 
 jobs:
   import-frontend:
-    if: github.event_name == 'workflow_dispatch' || github.event.issue.number == 1
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Rebuild uploaded frontend package
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Validar e extrair frontend enviado
         run: |
           set -euo pipefail
-          gh api --paginate "repos/${GITHUB_REPOSITORY}/issues/1/comments" --jq '.[] | .body' \
-            | tr -d '\r\n\t ' > /tmp/generator-vision.b64
-          echo "B64_BYTES=$(wc -c < /tmp/generator-vision.b64)"
-          sha256sum /tmp/generator-vision.b64
-          tail -c 80 /tmp/generator-vision.b64; echo
-          base64 --decode /tmp/generator-vision.b64 > /tmp/generator-vision.zip
-          echo "ZIP_BYTES=$(wc -c < /tmp/generator-vision.zip)"
-          sha256sum /tmp/generator-vision.zip
-          unzip -tq /tmp/generator-vision.zip
-          rm -rf /tmp/generator-vision
-          mkdir -p /tmp/generator-vision
-          unzip -q /tmp/generator-vision.zip -d /tmp/generator-vision
-          test -f /tmp/generator-vision/package.json
-          test -f /tmp/generator-vision/package-lock.json
-          test -d /tmp/generator-vision/src
-          test -d /tmp/generator-vision/public
-          rsync -a /tmp/generator-vision/ ./
-          rm -f .github/workflows/bootstrap-import.yml
+          test -f generator-vision-main.zip
+          echo "ZIP_BYTES=$(wc -c < generator-vision-main.zip)"
+          sha256sum generator-vision-main.zip
+          unzip -tq generator-vision-main.zip
 
-      - name: Commit imported frontend
+          rm -rf /tmp/generator-import
+          mkdir -p /tmp/generator-import
+          unzip -q generator-vision-main.zip -d /tmp/generator-import
+
+          SOURCE=/tmp/generator-import/generator-vision-main
+          test -f "$SOURCE/package.json"
+          test -f "$SOURCE/package-lock.json"
+          test -d "$SOURCE/src"
+          test -d "$SOURCE/public"
+
+          echo "Arquivos fonte:"
+          find "$SOURCE" -type f \
+            -not -path '*/node_modules/*' \
+            -not -path '*/.tanstack/*' | wc -l
+
+      - name: Instalar dependências e validar build
+        working-directory: /tmp/generator-import/generator-vision-main
+        run: |
+          set -euo pipefail
+          rm -rf node_modules
+          npm ci
+          npm run build
+
+      - name: Importar somente código-fonte
+        run: |
+          set -euo pipefail
+          SOURCE=/tmp/generator-import/generator-vision-main/
+          rsync -a --delete \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='node_modules/' \
+            --exclude='.tanstack/' \
+            --exclude='dist/' \
+            --exclude='.output/' \
+            --exclude='.vinxi/' \
+            --exclude='.wrangler/' \
+            "$SOURCE" ./
+
+          rm -f generator-vision-main.zip
+          rm -f .github/workflows/bootstrap-import.yml
+          rmdir .github/workflows 2>/dev/null || true
+          rmdir .github 2>/dev/null || true
+
+          test -f package.json
+          test -f package-lock.json
+          test -d src
+          test -d public
+          test ! -d node_modules
+
+      - name: Commit frontend validado
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
+          git status --short
           git commit -m "feat: importa frontend completo Generator Vision"
           git push origin HEAD:main
