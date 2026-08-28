@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Frontend dependencies
+        run: npm ci
+
+      - name: Frontend build
+        run: npm run build
+
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Backend dependencies
+        run: pip install -r backend/requirements.txt
+
+      - name: Backend syntax
+        run: python -m compileall -q backend/app
+
+      - name: Backend import
+        working-directory: backend
+        env:
+          RC_DATA_DIR: ${{ runner.temp }}/rc-geradores
+        run: python -c "from app.main import app; print(app.title, app.version)"
