@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "manufacturer": "ComAp",
+  "family": "InteliCompact",
+  "model": "InteliCompact NT",
+  "status": "investigation",
+  "protocols": ["modbus"],
+  "transports": ["reverse_tcp", "rtu_over_tcp", "modbus_rtu_serial"],
+  "capabilities": {
+    "telemetry": false,
+    "start": false,
+    "stop": false,
+    "auto": false,
+    "manual": false,
+    "test": false,
+    "mcb_open": false,
+    "mcb_close": false,
+    "gcb_open": false,
+    "gcb_close": false,
+    "paralleling": false
+  },
+  "notes": "Modelo ainda não homologado. Não promover para production sem endereço Modbus, parâmetros seriais, mapa/firmware e telemetria confirmados em campo."
+}
