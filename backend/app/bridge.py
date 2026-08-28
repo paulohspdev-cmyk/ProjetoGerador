@@ -229,8 +229,6 @@ class BridgePort:
         log(f"porta {self.remote_port}: modem conectado de {peer}")
 
         try:
-            # Não consumimos bytes aqui. A leitura do socket remoto acontece
-            # somente enquanto uma requisição local está sob lock.
             await writer.wait_closed()
         except Exception:
             pass
@@ -266,8 +264,6 @@ class BridgePort:
                 raise asyncio.TimeoutError()
             pdu = await asyncio.wait_for(reader.readexactly(length - 1), remaining)
 
-            # Sempre consumimos o frame inteiro antes de descartar respostas
-            # atrasadas de outro TID ou Unit ID.
             if tid != expected_tid or unit != expected_unit:
                 log(
                     f"porta {self.remote_port}: descartado frame atrasado "
@@ -304,8 +300,6 @@ class BridgePort:
 
         function = pdu[0]
         if function not in READ_FUNCTIONS:
-            # Caminho Rapid SCADA permanece somente leitura. Escritas não são
-            # liberadas por TCP, mesmo quando o controle privilegiado está ativo.
             return exception_pdu(function, 1)
 
         async with self.remote_lock:
@@ -487,7 +481,7 @@ async def handle_control(reader, writer):
             f"retorno={result.get('return_value', '-')}; rpm={result.get('rpm_before', '-')}",
         )
         log(
-            f"controle IG200 {action}: gerador={generator.get('code')} unit={unit} "
+            f"controle IG200 {action}: gerador={generator.get('tag')} unit={unit} "
             f"aceito={result.get('accepted')} retorno={result.get('return_value')}"
         )
     except Exception as exc:
@@ -541,7 +535,9 @@ async def reconcile():
     while True:
         enabled = [
             g for g in db.list_generators()
-            if g.get("enabled") and g.get("transport") in ("reverse_tcp", "rtu_over_tcp")
+            if g.get("enabled")
+            and g.get("transport") in ("reverse_tcp", "rtu_over_tcp")
+            and 1 <= int(g.get("listen_port") or 0) <= 65535
         ]
         wanted_ports = sorted({int(g["listen_port"]) for g in enabled})
 
