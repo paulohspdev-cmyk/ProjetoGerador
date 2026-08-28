@@ -42,6 +42,14 @@ jobs:
           cat /tmp/frontend.log
           exit 1
 
+      - name: Sem dados demonstrativos conhecidos
+        run: |
+          set -euo pipefail
+          if grep -R -n -E 'Teltonika RUT241|Sierra AirLink|Atlas Data Centers|23/05/2025|612 kW|0,92' src --include='*.ts' --include='*.tsx'; then
+            echo 'ERRO: dado demonstrativo conhecido voltou ao frontend.' >&2
+            exit 1
+          fi
+
       - name: Python
         uses: actions/setup-python@v5
         with:
@@ -53,7 +61,8 @@ jobs:
           pip install 'httpx>=0.27,<1'
 
       - name: Backend syntax
-        run: python -m compileall -q backend/app backend/tests rapid/provisioning
+        run: |
+          python -m compileall -q backend/app backend/tests rapid/provisioning ops
 
       - name: Backend import
         working-directory: backend
@@ -69,6 +78,36 @@ jobs:
 
       - name: Instaladores Bash
         run: |
+          set -euo pipefail
           bash -n ops/install.sh
           bash -n ops/status.sh
           bash -n rapid/provisioning/provision_ig200.sh
+          test -f ops/systemd/rc-geradores-api.service
+          test -f ops/systemd/rc-geradores-frontend.service
+          test -f ops/systemd/rc-geradores-bridge.service
+          test -f ops/systemd/rc-geradores-worker.service
+          test -f ops/systemd/rc-geradores-provision.service
+          grep -q 'app.bridge_runtime' ops/systemd/rc-geradores-bridge.service
+          grep -q 'app.worker' ops/systemd/rc-geradores-worker.service
+          grep -q 'app.provision_service' ops/systemd/rc-geradores-provision.service
+          grep -q 'rc-geradores-worker.service' ops/install.sh
+          grep -q 'rc-geradores-provision.service' ops/install.sh
+          grep -q '^RC_PROVISION_SOCKET=' ops/rc-geradores.env.example
+          grep -q '^RC_LOGIN_MAX_FAILURES=' ops/rc-geradores.env.example
+          grep -q '^RC_BACKUP_RETENTION=' ops/rc-geradores.env.example
+
+      - name: Política industrial segura
+        run: |
+          set -euo pipefail
+          grep -q 'g.get("transport") == "reverse_tcp"' backend/app/bridge_runtime.py
+          grep -q 'ALLOWED_ACTIONS = {"notify", "work_order"}' backend/app/automation_engine.py
+          grep -q 'CmdEnabled.*false' rapid/provisioning/provision_generator.py
+          python - <<'PY'
+          import json
+          data=json.load(open('controllers/production/comap/inteligen-200/manifest.json'))
+          caps=data['capabilities']
+          assert caps['start'] and caps['stop']
+          for key in ('auto','manual','test','mcb_open','mcb_close','gcb_open','gcb_close','paralleling'):
+              assert caps[key] is False, key
+          print('Política industrial: OK')
+          PY
