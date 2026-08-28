@@ -41,28 +41,28 @@ async function download(path: string, fallback: string) {
 }
 
 export type GeneratorTransport = "reverse_tcp" | "modbus_tcp_direct" | "rtu_over_tcp" | "modbus_rtu_serial";
-export type CreateGeneratorPayload = { tag: string; controller: string; site: string; ip?: string; transport?: GeneratorTransport; listenPort?: number; modbusUnit?: number; rapidDeviceNum?: number };
+export type CreateGeneratorPayload = { tag: string; controller: string; site: string; ip?: string | undefined; transport?: GeneratorTransport | undefined; listenPort?: number | undefined; modbusUnit?: number | undefined; rapidDeviceNum?: number | undefined };
 export type UserCreatePayload = { name: string; email: string; password: string; role: UserRole };
-export type UserUpdatePayload = { name?: string; password?: string; role?: UserRole; active?: boolean };
-export type CommandResult = { ok: boolean; accepted: boolean; action?: string; reason?: string; return_value?: string; rpm_before?: number; rpm_after?: number | null };
+export type UserUpdatePayload = { name?: string | undefined; password?: string | undefined; role?: UserRole | undefined; active?: boolean | undefined };
+export type CommandResult = { ok: boolean; accepted: boolean; action?: string | undefined; reason?: string | undefined; return_value?: string | undefined; rpm_before?: number | undefined; rpm_after?: number | null | undefined };
 export type AuditItem = { id: number; created_at: number; actor: string; action: string; entity_type: string; entity_id: string; detail: string };
-export type EventItemApi = { id: number; generator_id: string | null; level: string; message: string; created_at: number; tag?: string | null; name?: string | null; site?: string | null };
+export type EventItemApi = { id: number; generator_id: string | null; level: string; message: string; created_at: number; tag?: string | null | undefined; name?: string | null | undefined; site?: string | null | undefined };
 export type RapidMetric = { key: string; cnl: number; scale: number };
 export type RapidTrendPoint = { timestamp: string; value: number; stat: number };
 export type RapidTrend = { generatorId: string; tag: string; metric: string; cnl: number; scale: number; archiveBit: number; start: string; end: string; points: RapidTrendPoint[] };
-export type OpsClient = { id: string; name: string; units: number; gens: number; sla: string; active?: boolean };
-export type OpsSite = { id: string; name: string; clientId?: string | null; clientName?: string; city: string; state?: string; address?: string; lat?: number | null; lng?: number | null; timezone?: string; active?: boolean };
-export type WorkOrderApi = { id: string; generator_id?: string | null; gen: string; site: string; type: string; due: number; tech: string; status: "Urgente" | "Em andamento" | "Planejada" | "Concluída" | string; description?: string };
-export type AgendaItemApi = { id: string; title: string; when: string; site: string; generatorId?: string | null; kind?: string; enabled?: boolean };
-export type AutomationRuleApi = { id: string; name: string; trigger: string; action: string; enabled: boolean; safetyState?: string };
+export type OpsClient = { id: string; name: string; units: number; gens: number; sla: string; active?: boolean | undefined };
+export type OpsSite = { id: string; name: string; clientId?: string | null | undefined; clientName?: string | undefined; city: string; state?: string | undefined; address?: string | undefined; lat?: number | null | undefined; lng?: number | null | undefined; timezone?: string | undefined; active?: boolean | undefined };
+export type WorkOrderApi = { id: string; generator_id?: string | null | undefined; gen: string; site: string; type: string; due: number; tech: string; status: "Urgente" | "Em andamento" | "Planejada" | "Concluída" | string; description?: string | undefined };
+export type AgendaItemApi = { id: string; title: string; when: string; site: string; generatorId?: string | null | undefined; kind?: string | undefined; enabled?: boolean | undefined };
+export type AutomationRuleApi = { id: string; name: string; trigger: string; action: string; enabled: boolean; safetyState?: string | undefined };
 export type ReportApi = { id: string; name: string; period: string; format: string; status: string };
-export type WebhookApi = { id: string; url: string; event: string; status: "Ativo" | "Pausado" | string; failures?: number };
-export type BackupApi = { id: string; when: string; size: string; type: string; result: string; path?: string };
+export type WebhookApi = { id: string; url: string; event: string; status: "Ativo" | "Pausado" | string; failures?: number | undefined };
+export type BackupApi = { id: string; when: string; size: string; type: string; result: string; path?: string | undefined };
 export type AlarmAckApi = { alarmKey: string; ackedBy: string; ackedAt: number };
-export type FieldDevice = { id: string; kind: "modem" | "gateway"; name: string; site_id?: string | null; generator_id?: string | null; model: string; serial: string; imei: string; sim_iccid: string; carrier: string; host: string; rssi?: number | null; status: string; last_seen?: number | null; metadata?: Record<string, unknown>; active: boolean };
+export type FieldDevice = { id: string; kind: "modem" | "gateway"; name: string; site_id?: string | null | undefined; generator_id?: string | null | undefined; model: string; serial: string; imei: string; sim_iccid: string; carrier: string; host: string; rssi?: number | null | undefined; status: string; last_seen?: number | null | undefined; metadata?: Record<string, unknown> | undefined; active: boolean };
 export type NotificationItem = { id: number; event_type: string; channel: string; destination: string; subject: string; body: string; status: string; attempts: number; max_attempts: number; next_attempt_at: number; last_error: string; created_at: number };
-export type SchedulerJob = { id: string; name: string; kind: string; interval_seconds: number; payload?: Record<string, unknown>; enabled: boolean; next_run: number; last_run?: number | null; last_result: string };
-export type ControllerPack = { packId: string; lifecycle: "production" | "lab"; manufacturer: string; family?: string; model: string; status: string; protocols?: string[]; transports?: string[]; capabilities?: Record<string, boolean>; validatedTelemetry?: string[]; notes?: string };
+export type SchedulerJob = { id: string; name: string; kind: string; interval_seconds: number; payload?: Record<string, unknown> | undefined; enabled: boolean; next_run: number; last_run?: number | null | undefined; last_result: string };
+export type ControllerPack = { packId: string; lifecycle: "production" | "lab"; manufacturer: string; family?: string | undefined; model: string; status: string; protocols?: string[] | undefined; transports?: string[] | undefined; capabilities?: Record<string, boolean> | undefined; validatedTelemetry?: string[] | undefined; notes?: string | undefined };
 export type ControllerLibrary = { packs: ControllerPack[]; manufacturers: Array<{ id: string; name: string; models: number; production: number; lab: number }>; protocols: Array<{ id: string; name: string; packs: number }>; transports: Array<{ id: string; name: string; packs: number }>; counts: { total: number; production: number; lab: number } };
 export type ChannelCatalogItem = { id: string; name: string; model: string; cnl: number; scale: number; access: string; source: string };
 export type ServiceHealth = { id: string; name: string; status: string; detail: string };
@@ -73,11 +73,12 @@ export type SystemDiagnostics = {
   rapid: { bindingsExists: boolean; readerExists: boolean; commConfigExists: boolean };
   bridge: { controlSocket: string; controlSocketExists: boolean; listeners: ReverseTcpListener[] };
   host: { loadAverage: number[]; memory: { total: number; available: number; used: number; usedPercent: number } | null; disk: { total: number; used: number; free: number; usedPercent: number } };
-  generators: Array<{ id: string; tag: string; status: string; rapidDeviceNum?: number | null; source?: string; lastError?: string; availableMetrics?: string[] }>;
+  generators: Array<{ id: string; tag: string; status: string; rapidDeviceNum?: number | null | undefined; source?: string | undefined; lastError?: string | undefined; availableMetrics?: string[] | undefined }>;
   version: { application: string; apiVersion: string; gitSha: string; gitBranch: string; rapidScada: string };
 };
-export type ApiTokenItem = { id: string; name: string; token_prefix: string; scopes: string[]; rate_limit: number; active: boolean; expires_at?: number | null; last_used?: number | null; token?: string; warning?: string };
-export type OpsBootstrap = { clients: OpsClient[]; sites: OpsSite[]; workOrders: WorkOrderApi[]; agenda: AgendaItemApi[]; rules: AutomationRuleApi[]; reports: ReportApi[]; webhooks: WebhookApi[]; settings: Record<string, unknown>; backups: BackupApi[]; alarmAcks: AlarmAckApi[]; fieldDevices?: FieldDevice[]; notifications?: NotificationItem[]; scheduler?: SchedulerJob[] };
+export type SystemHealth = SystemDiagnostics;
+export type ApiTokenItem = { id: string; name: string; token_prefix: string; scopes: string[]; rate_limit: number; active: boolean; expires_at?: number | null | undefined; last_used?: number | null | undefined; token?: string | undefined; warning?: string | undefined };
+export type OpsBootstrap = { clients: OpsClient[]; sites: OpsSite[]; workOrders: WorkOrderApi[]; agenda: AgendaItemApi[]; rules: AutomationRuleApi[]; reports: ReportApi[]; webhooks: WebhookApi[]; settings: Record<string, unknown>; backups: BackupApi[]; alarmAcks: AlarmAckApi[]; fieldDevices?: FieldDevice[] | undefined; notifications?: NotificationItem[] | undefined; scheduler?: SchedulerJob[] | undefined };
 
 export const rcApi = {
   auth: {
@@ -103,7 +104,7 @@ export const rcApi = {
     list: () => request<Generator[]>("/api/generators"),
     get: (id: string) => request<Generator>(`/api/generators/${encodeURIComponent(id)}`),
     create: (payload: CreateGeneratorPayload) => request<Generator>("/api/generators", { method: "POST", body: JSON.stringify(payload) }),
-    update: (id: string, payload: Partial<CreateGeneratorPayload> & { enabled?: boolean }) => request<Generator>(`/api/generators/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(payload) }),
+    update: (id: string, payload: Partial<CreateGeneratorPayload> & { enabled?: boolean | undefined }) => request<Generator>(`/api/generators/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(payload) }),
     remove: (id: string) => request<void>(`/api/generators/${encodeURIComponent(id)}`, { method: "DELETE" }),
     command: (id: string, action: "start" | "stop") => request<CommandResult>(`/api/generators/${encodeURIComponent(id)}/commands/${action}`, { method: "POST", body: JSON.stringify({ confirmation: action.toUpperCase() }) }),
     metrics: (id: string) => request<RapidMetric[]>(`/api/generators/${encodeURIComponent(id)}/metrics`),
@@ -121,16 +122,16 @@ export const rcApi = {
   },
   sites: {
     list: () => request<OpsSite[]>("/api/sites"),
-    create: (payload: { name: string; clientId?: string; city?: string; state?: string; address?: string; latitude?: number; longitude?: number; timezone?: string }) => request<OpsSite>("/api/sites", { method: "POST", body: JSON.stringify(payload) }),
+    create: (payload: { name: string; clientId?: string | undefined; city?: string | undefined; state?: string | undefined; address?: string | undefined; latitude?: number | undefined; longitude?: number | undefined; timezone?: string | undefined }) => request<OpsSite>("/api/sites", { method: "POST", body: JSON.stringify(payload) }),
   },
   workOrders: {
     list: () => request<WorkOrderApi[]>("/api/work-orders"),
-    create: (payload: { generatorId?: string; gen?: string; site?: string; type: string; due?: number; tech?: string; status?: string; description?: string }) => request<WorkOrderApi>("/api/work-orders", { method: "POST", body: JSON.stringify(payload) }),
+    create: (payload: { generatorId?: string | undefined; gen?: string | undefined; site?: string | undefined; type: string; due?: number | undefined; tech?: string | undefined; status?: string | undefined; description?: string | undefined }) => request<WorkOrderApi>("/api/work-orders", { method: "POST", body: JSON.stringify(payload) }),
     update: (id: string, payload: Partial<Pick<WorkOrderApi, "type" | "due" | "tech" | "status" | "description">>) => request<WorkOrderApi>(`/api/work-orders/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(payload) }),
   },
   agenda: {
     list: () => request<AgendaItemApi[]>("/api/agenda"),
-    create: (payload: { title: string; when: string; site: string; generatorId?: string; kind?: string }) => request<AgendaItemApi>("/api/agenda", { method: "POST", body: JSON.stringify(payload) }),
+    create: (payload: { title: string; when: string; site: string; generatorId?: string | undefined; kind?: string | undefined }) => request<AgendaItemApi>("/api/agenda", { method: "POST", body: JSON.stringify(payload) }),
   },
   rules: {
     list: () => request<AutomationRuleApi[]>("/api/automation/rules"),
@@ -168,7 +169,7 @@ export const rcApi = {
   },
   fieldDevices: {
     list: (kind?: "modem" | "gateway") => request<FieldDevice[]>(`/api/field-devices${kind ? `?kind=${kind}` : ""}`),
-    create: (payload: Omit<FieldDevice, "id" | "active"> & { active?: boolean }) => request<FieldDevice>("/api/field-devices", { method: "POST", body: JSON.stringify(payload) }),
+    create: (payload: Omit<FieldDevice, "id" | "active"> & { active?: boolean | undefined }) => request<FieldDevice>("/api/field-devices", { method: "POST", body: JSON.stringify(payload) }),
     update: (id: string, payload: Partial<FieldDevice>) => request<FieldDevice>(`/api/field-devices/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(payload) }),
     remove: (id: string) => request<void>(`/api/field-devices/${encodeURIComponent(id)}`, { method: "DELETE" }),
   },
@@ -178,12 +179,12 @@ export const rcApi = {
   },
   scheduler: {
     list: () => request<SchedulerJob[]>("/api/scheduler"),
-    create: (payload: { id?: string; name: string; kind: "backup" | "report" | "notification"; interval_seconds: number; payload?: Record<string, unknown>; enabled?: boolean }) => request<SchedulerJob>("/api/scheduler", { method: "POST", body: JSON.stringify(payload) }),
+    create: (payload: { id?: string | undefined; name: string; kind: "backup" | "report" | "notification"; interval_seconds: number; payload?: Record<string, unknown> | undefined; enabled?: boolean | undefined }) => request<SchedulerJob>("/api/scheduler", { method: "POST", body: JSON.stringify(payload) }),
     remove: (id: string) => request<void>(`/api/scheduler/${encodeURIComponent(id)}`, { method: "DELETE" }),
   },
   apiTokens: {
     list: () => request<ApiTokenItem[]>("/api/api-tokens"),
-    create: (payload: { name: string; scopes: string[]; rateLimit?: number; expiresAt?: number }) => request<ApiTokenItem>("/api/api-tokens", { method: "POST", body: JSON.stringify(payload) }),
+    create: (payload: { name: string; scopes: string[]; rateLimit?: number | undefined; expiresAt?: number | undefined }) => request<ApiTokenItem>("/api/api-tokens", { method: "POST", body: JSON.stringify(payload) }),
     revoke: (id: string) => request<void>(`/api/api-tokens/${encodeURIComponent(id)}`, { method: "DELETE" }),
   },
   system: {
