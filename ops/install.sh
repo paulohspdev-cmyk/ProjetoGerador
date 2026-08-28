@@ -27,13 +27,16 @@ Opções:
   --ig200-site SITE         site do primeiro IG200
   -h, --help                mostra esta ajuda
 
-Instala em VM limpa:
-  Rapid SCADA 6.4.7 + Line 100/Device 200/canais 2001..2008
-  RC Reverse TCP Bridge + API FastAPI + frontend + Nginx
-  banco do produto + primeiro administrador + cadastro IG200 homologado
+Instala em VM Ubuntu limpa:
+  Rapid SCADA 6.4.7
+  IG200 validado: Line 100 / Device 200 / canais 2001..2008
+  bridge reverse TCP somente leitura para o Rapid
+  API FastAPI + frontend TanStack + worker + provisionador privilegiado
+  SQLite do produto + login/RBAC + relatórios/backups/notificações
+  Nginx na porta 80
 
-A senha inicial do administrador é solicitada de forma interativa e não é
-persistida em texto claro no arquivo de ambiente.
+A senha inicial é solicitada no terminal e nunca é persistida em texto claro.
+SMTP, WhatsApp e HTTPS permanecem desabilitados até receberem configuração real.
 EOF
 }
 
@@ -54,21 +57,21 @@ if [[ $EUID -ne 0 ]]; then
   echo "Execute como root: sudo bash $0"
   exit 1
 fi
-
 if [[ ! -t 0 ]]; then
-  echo "ERRO: execute o instalador em um terminal interativo para criar a senha do administrador."
+  echo "ERRO: execute em terminal interativo para criar a senha inicial."
   exit 2
 fi
 
 export DEBIAN_FRONTEND=noninteractive
+VM_IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
 
 echo "============================================================"
-echo " RC GERADORES - INSTALAÇÃO LIMPA"
+echo " RC GERADORES - INSTALAÇÃO LIMPA DE PRODUÇÃO"
 echo "============================================================"
-echo "Arquitetura: modem -> bridge -> Rapid SCADA -> API -> painel"
+echo "Rapid SCADA -> API -> painel; bridge apenas para reverse TCP"
 echo
 
-echo "[1/12] Dependências do sistema..."
+echo "[1/15] Dependências do sistema..."
 apt-get update
 apt-get install -y \
   git curl ca-certificates unzip nginx jq openssl sudo \
@@ -86,7 +89,6 @@ fi
 
 if ! command -v dotnet >/dev/null 2>&1; then
   apt-get install -y dotnet-sdk-8.0 || {
-    echo "Pacote dotnet-sdk-8.0 não disponível no repositório atual; configurando Microsoft packages..."
     . /etc/os-release
     curl -fsSL "https://packages.microsoft.com/config/ubuntu/${VERSION_ID}/packages-microsoft-prod.deb" \
       -o /tmp/packages-microsoft-prod.deb
@@ -96,18 +98,19 @@ if ! command -v dotnet >/dev/null 2>&1; then
   }
 fi
 
-command -v node >/dev/null
-command -v npm >/dev/null
-command -v dotnet >/dev/null
+node --version
+npm --version
+dotnet --version
+python3 --version
 
-echo "[2/12] Instalando/validando Rapid SCADA ${RAPID_VERSION}..."
+echo "[2/15] Instalando/validando Rapid SCADA ${RAPID_VERSION}..."
 if [[ ! -f /opt/scada/ScadaComm/Config/ScadaCommConfig.xml || ! -f /opt/scada/BaseDAT/cnl.dat ]]; then
   rm -rf "$TMP"
   mkdir -p "$TMP/pkg"
   curl -fL "$RAPID_URL" -o "$TMP/rapidscada.zip"
+  unzip -tq "$TMP/rapidscada.zip"
   unzip -q "$TMP/rapidscada.zip" -d "$TMP/pkg"
   DEB="$(find "$TMP/pkg" -type f -name 'rapidscada_*_all.deb' | head -n1 || true)"
-
   if [[ -n "$DEB" ]]; then
     dpkg -i "$DEB" || { apt-get -f install -y; dpkg -i "$DEB"; }
   else
@@ -124,7 +127,7 @@ if [[ ! -f /opt/scada/ScadaComm/Config/ScadaCommConfig.xml || ! -f /opt/scada/Ba
     cp -a "$DAEMONS_DIR"/. /etc/systemd/system/
   fi
 else
-  echo "Rapid SCADA já encontrado em /opt/scada; mantendo instalação existente."
+  echo "Rapid SCADA já encontrado; preservando a instalação."
 fi
 
 for file in \
@@ -136,26 +139,39 @@ for file in \
 done
 systemctl daemon-reload
 
-echo "[3/12] Baixando/atualizando ProjetoGerador..."
+echo "[3/15] Baixando/atualizando ProjetoGerador..."
 if [[ -d "$BASE/.git" ]]; then
   git -C "$BASE" fetch origin main
   git -C "$BASE" checkout main
   git -C "$BASE" pull --ff-only origin main
 else
   rm -rf "$BASE"
-  git clone "$REPO" "$BASE"
+  git clone --branch main --single-branch "$REPO" "$BASE"
 fi
+
+test -f "$BASE/package.json"
+test -f "$BASE/backend/requirements.txt"
+test -f "$BASE/controllers/production/comap/inteligen-200/manifest.json"
 
 if ! id rcgeradores >/dev/null 2>&1; then
   useradd --system --home "$BASE" --shell /usr/sbin/nologin rcgeradores
 fi
-mkdir -p /var/lib/rc-geradores /var/log/rc-geradores
-chown -R rcgeradores:rcgeradores /var/lib/rc-geradores /var/log/rc-geradores
-chmod +x "$BASE/ops/install.sh" "$BASE/ops/status.sh" \
-  "$BASE/rapid/provisioning/provision_ig200.sh" "$BASE/rapid/provisioning/rapid_dat.py" \
-  "$BASE/ops/bootstrap_admin.py" "$BASE/ops/bootstrap_ig200.py"
+install -d -m 0750 -o rcgeradores -g rcgeradores \
+  /var/lib/rc-geradores \
+  /var/lib/rc-geradores/backups \
+  /var/lib/rc-geradores/reports \
+  /var/lib/rc-geradores/rapid-provision \
+  /var/log/rc-geradores
+install -d -m 0770 -o root -g rcgeradores /run/rc-geradores
 
-echo "[4/12] Configuração do ambiente..."
+chmod +x \
+  "$BASE/ops/install.sh" "$BASE/ops/status.sh" \
+  "$BASE/ops/bootstrap_admin.py" "$BASE/ops/bootstrap_ig200.py" \
+  "$BASE/rapid/provisioning/provision_ig200.sh" \
+  "$BASE/rapid/provisioning/provision_generator.py" \
+  "$BASE/rapid/provisioning/rapid_dat.py"
+
+echo "[4/15] Configuração do ambiente..."
 if [[ ! -f "$ENV_FILE" ]]; then
   cp "$BASE/ops/rc-geradores.env.example" "$ENV_FILE"
 fi
@@ -169,10 +185,17 @@ set_env() {
   fi
 }
 
+set_env RC_PROJECT_ROOT "$BASE"
 set_env RC_ADMIN_NAME "$ADMIN_NAME"
 set_env RC_ADMIN_EMAIL "$ADMIN_EMAIL"
 set_env RC_ADMIN_PASSWORD ""
 set_env RC_ENABLE_IG200_CONTROL "$ENABLE_CONTROL"
+set_env RC_RAPID_BINDINGS "/var/lib/rc-geradores/rapid-bindings.json"
+set_env RC_PROVISION_SOCKET "/run/rc-geradores/provision.sock"
+if [[ -n "$VM_IP" ]]; then
+  set_env RC_CORS_ORIGINS "http://localhost,http://127.0.0.1,http://${VM_IP}"
+  set_env RC_PUBLIC_BASE_URL "http://${VM_IP}"
+fi
 chmod 640 "$ENV_FILE"
 chown root:rcgeradores "$ENV_FILE"
 
@@ -181,31 +204,64 @@ set -a
 source "$ENV_FILE"
 set +a
 
-echo "[5/12] Backend e banco do produto..."
+echo "[5/15] Backend, migrations e banco do produto..."
 python3 -m venv "$BASE/backend/.venv"
 "$BASE/backend/.venv/bin/pip" install --upgrade pip
 "$BASE/backend/.venv/bin/pip" install -r "$BASE/backend/requirements.txt"
 
 export PYTHONPATH="$BASE/backend"
 "$BASE/backend/.venv/bin/python" - <<'PY'
-from app import db
+from app import db, ops_store, platform_store, transport_store
 db.init_db()
-print("Banco RC Geradores: OK")
+ops_store.init_ops_db()
+platform_store.init_platform_db()
+transport_store.init_transport_db()
+print("Banco/migrations RC Geradores: OK")
 PY
 
 echo
 echo "Primeiro acesso ao RC Geradores"
 "$BASE/backend/.venv/bin/python" "$BASE/ops/bootstrap_admin.py" \
   --name "$ADMIN_NAME" --email "$ADMIN_EMAIL"
-
 "$BASE/backend/.venv/bin/python" "$BASE/ops/bootstrap_ig200.py" \
   --tag "$IG200_TAG" --name "$IG200_NAME" --site "$IG200_SITE"
-chown -R rcgeradores:rcgeradores /var/lib/rc-geradores
 
-echo "[6/12] Provisionando IG200 no Rapid SCADA..."
+echo "[6/15] Provisionando o primeiro IG200 validado no Rapid SCADA..."
 bash "$BASE/rapid/provisioning/provision_ig200.sh" --no-restart
 
-echo "[7/12] Compilando leitor oficial do Rapid SCADA Server..."
+# Runtime bindings ficam fora do Git. Incluímos o ID real do cadastro para que
+# o provisionador genérico reconheça o IG200 inicial como já provisionado.
+"$BASE/backend/.venv/bin/python" - "$IG200_TAG" <<'PY'
+import json
+import os
+import sys
+from pathlib import Path
+from app import db
+
+tag = sys.argv[1]
+g = db.get_generator(tag)
+if not g:
+    raise SystemExit(f"gerador {tag} não encontrado")
+canonical = Path('/opt/rc-geradores/rapid/bindings.json')
+data = json.loads(canonical.read_text(encoding='utf-8'))
+if not data:
+    raise SystemExit('bindings canônicos vazios')
+b = dict(data[0])
+b.update({
+    'generator_id': g['id'],
+    'tag': g['tag'],
+    'transport': 'reverse_tcp',
+    'rapid_line_num': 100,
+    'rapid_device_num': 200,
+})
+target = Path(os.environ.get('RC_RAPID_BINDINGS', '/var/lib/rc-geradores/rapid-bindings.json'))
+target.parent.mkdir(parents=True, exist_ok=True)
+target.write_text(json.dumps([b], ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+print(f'Runtime binding: {target}')
+PY
+chown -R rcgeradores:rcgeradores /var/lib/rc-geradores /var/log/rc-geradores
+
+echo "[7/15] Compilando leitor oficial do Rapid SCADA Server..."
 SCADA_COMMON="$(find /opt/scada -type f -name ScadaCommon.dll -print -quit 2>/dev/null || true)"
 [[ -n "$SCADA_COMMON" && -f "$SCADA_COMMON" ]] || {
   echo "ERRO: ScadaCommon.dll não encontrado."
@@ -221,20 +277,27 @@ find "$SCADA_DLL_DIR" -maxdepth 1 -type f -name 'Scada*.dll' \
   -exec cp --update=none {} "$OUT/" \; 2>/dev/null || true
 chmod -R a+rX "$OUT"
 
-echo "[8/12] Compilando frontend para a VM..."
+echo "[8/15] Compilando frontend para Linux/Node..."
 cd "$BASE"
 npm ci
 NITRO_PRESET=node-server npm run build
 test -f "$BASE/.output/server/index.mjs"
 
-echo "[9/12] Instalando serviços RC..."
-cp "$BASE/ops/systemd/rc-geradores-api.service" /etc/systemd/system/
-cp "$BASE/ops/systemd/rc-geradores-frontend.service" /etc/systemd/system/
-cp "$BASE/ops/systemd/rc-geradores-bridge.service" /etc/systemd/system/
+echo "[9/15] Instalando serviços systemd RC..."
+for unit in \
+  rc-geradores-api.service \
+  rc-geradores-frontend.service \
+  rc-geradores-bridge.service \
+  rc-geradores-worker.service \
+  rc-geradores-provision.service; do
+  cp "$BASE/ops/systemd/$unit" "/etc/systemd/system/$unit"
+done
 systemctl daemon-reload
 
-# A bridge sobe primeiro para que o Communicator tenha 127.0.0.1:25001 disponível.
-systemctl enable --now rc-geradores-bridge.service
+# A bridge precisa existir antes do Communicator porque o IG200 inicial usa
+# reverse TCP: modem :15001 -> bridge -> Rapid 127.0.0.1:25001.
+systemctl enable rc-geradores-bridge.service >/dev/null
+systemctl restart rc-geradores-bridge.service
 
 for svc in scadaagent6.service scadaserver6.service scadacomm6.service scadaweb6.service; do
   if systemctl list-unit-files "$svc" --no-legend 2>/dev/null | grep -q "$svc"; then
@@ -247,49 +310,71 @@ sleep 2
 systemctl restart scadacomm6.service
 systemctl restart scadaweb6.service 2>/dev/null || true
 
-systemctl enable --now rc-geradores-api.service rc-geradores-frontend.service
+# Provisionador é root restrito por socket; API e worker continuam sem root.
+systemctl enable rc-geradores-provision.service rc-geradores-api.service \
+  rc-geradores-worker.service rc-geradores-frontend.service >/dev/null
+systemctl restart rc-geradores-provision.service
+systemctl restart rc-geradores-api.service
+systemctl restart rc-geradores-worker.service
+systemctl restart rc-geradores-frontend.service
 
-echo "[10/12] Configurando Nginx..."
+echo "[10/15] Configurando Nginx..."
 cp "$BASE/ops/nginx/rc-geradores.conf" /etc/nginx/sites-available/rc-geradores
 ln -sfn /etc/nginx/sites-available/rc-geradores /etc/nginx/sites-enabled/rc-geradores
 rm -f /etc/nginx/sites-enabled/default /etc/nginx/sites-enabled/rc-scada
 nginx -t
-systemctl enable --now nginx
+systemctl enable nginx >/dev/null
 systemctl restart nginx
 
-echo "[11/12] Validando serviços..."
-for i in $(seq 1 30); do
-  if curl -fsS http://127.0.0.1:8090/api/health >/tmp/rc-health.json 2>/dev/null; then
-    break
-  fi
+echo "[11/15] Validando API, frontend e proxy..."
+for _ in $(seq 1 30); do
+  curl -fsS http://127.0.0.1:8090/api/health >/tmp/rc-health.json 2>/dev/null && break
   sleep 1
 done
 curl -fsS http://127.0.0.1:8090/api/health | jq .
 curl -fsS http://127.0.0.1:3000/ >/dev/null
 curl -fsS http://127.0.0.1/api/health | jq .
 
-for svc in rc-geradores-bridge rc-geradores-api rc-geradores-frontend scadaserver6 scadacomm6 nginx; do
+echo "[12/15] Validando serviços e sockets..."
+for svc in \
+  rc-geradores-bridge \
+  rc-geradores-provision \
+  rc-geradores-api \
+  rc-geradores-worker \
+  rc-geradores-frontend \
+  scadaserver6 scadacomm6 nginx; do
   if ! systemctl is-active --quiet "$svc"; then
     echo "ERRO: serviço $svc não está ativo."
     systemctl --no-pager --full status "$svc" || true
     exit 5
   fi
 done
+[[ -S /run/rc-geradores/control.sock ]] || {
+  echo "ERRO: socket de controle local não foi criado."
+  exit 5
+}
+[[ -S /run/rc-geradores/provision.sock ]] || {
+  echo "ERRO: socket do provisionador não foi criado."
+  exit 5
+}
 
-echo "[12/12] Verificação final..."
+echo "[13/15] Validando BaseDAT, template e runtime binding..."
 python3 "$BASE/rapid/provisioning/rapid_dat.py" check \
-  /opt/scada/BaseDAT/commline.dat /opt/scada/BaseDAT/device.dat /opt/scada/BaseDAT/cnl.dat
-
+  /opt/scada/BaseDAT/commline.dat \
+  /opt/scada/BaseDAT/device.dat \
+  /opt/scada/BaseDAT/cnl.dat
 grep -q 'number="100"' /opt/scada/ScadaComm/Config/ScadaCommConfig.xml
 grep -q 'number="200"' /opt/scada/ScadaComm/Config/ScadaCommConfig.xml
-ss -lnt 2>/dev/null | grep -q ':15001 ' || {
-  echo "AVISO: a porta 15001 ainda não apareceu em ss; consulte journalctl -u rc-geradores-bridge."
-}
-ss -lnt 2>/dev/null | grep -q ':25001 ' || {
-  echo "AVISO: a porta local 25001 ainda não apareceu em ss."
-}
+test -s /var/lib/rc-geradores/rapid-bindings.json
+jq -e '.[0].rapid_device_num == 200 and .[0].generator_id != null' \
+  /var/lib/rc-geradores/rapid-bindings.json >/dev/null
 
-IP="$(hostname -I | awk '{print $1}')"
+echo "[14/15] Diagnóstico local..."
+ss -lnt 2>/dev/null | grep -E ':(80|3000|8090|15001|25001)\b' || true
+"$BASE/ops/status.sh" || true
+
+echo "[15/15] Instalação concluída."
+IP="${VM_IP:-$(hostname -I | awk '{print $1}')}"
 echo
 echo "============================================================"
 echo " RC GERADORES INSTALADO"
@@ -297,15 +382,18 @@ echo "============================================================"
 echo " Interface:       http://${IP:-IP_DA_VM}/"
 echo " Usuário inicial: $ADMIN_EMAIL"
 echo " API health:      http://${IP:-IP_DA_VM}/api/health"
-echo " Banco produto:   /var/lib/rc-geradores/rc-geradores.db"
+echo " Banco:           /var/lib/rc-geradores/rc-geradores.db"
 echo " Rapid SCADA:     /opt/scada"
-echo " Line/Device:     100 / 200"
-echo " IG200:           ${IG200_TAG} - TCP 15001 - Unit 2"
-echo " Bridge local:    127.0.0.1:25001"
+echo " IG200 inicial:   ${IG200_TAG} / TCP 15001 / Unit 2 / Device 200"
+echo " Bridge Rapid:    127.0.0.1:25001"
+echo " Worker:          ativo"
+echo " Provisionador:   ativo (socket local privilegiado)"
+echo " SMTP/WhatsApp:   desabilitados até configurar credenciais reais"
+echo " HTTPS:           configure certificado real antes de acesso público"
 if (( ENABLE_CONTROL == 1 )); then
-  echo " START/STOP:      HABILITADO para IG200 homologado"
+  echo " START/STOP:      HABILITADO somente para IG200 homologado"
 else
-  echo " START/STOP:      DESABILITADO (use --enable-control na instalação)"
+  echo " START/STOP:      DESABILITADO por padrão"
 fi
 echo
 echo " Diagnóstico: sudo $BASE/ops/status.sh"
