@@ -29,6 +29,7 @@ export function RegisterGeneratorButton({
   const [site, setSite] = useState(GEN_SITES[0]!);
   const [ip, setIp] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const reset = () => {
     setTag("");
@@ -36,13 +37,17 @@ export function RegisterGeneratorButton({
     setSite(GEN_SITES[0]!);
     setIp("");
     setError(null);
+    setSaving(false);
   };
 
-  const onSubmit = (e: FormEvent) => {
+  const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const err = addGenerator({ tag: tag || preview, controller, site, ip });
+    setSaving(true);
+    setError(null);
+    const err = await addGenerator({ tag: tag || preview, controller, site, ip });
     if (err) {
       setError(err);
+      setSaving(false);
       return;
     }
     reset();
@@ -79,7 +84,7 @@ export function RegisterGeneratorButton({
           <DialogHeader>
             <DialogTitle>Cadastrar gerador</DialogTitle>
             <DialogDescription>
-              O gerador entra de imediato nos cards compactos, cards horizontais e na lista.
+              O cadastro é salvo no backend RC Geradores. A telemetria passa a aparecer quando existir binding homologado no Rapid SCADA.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={onSubmit} className="grid gap-3">
@@ -121,7 +126,7 @@ export function RegisterGeneratorButton({
               </select>
             </label>
             <label className="text-[12px] font-semibold text-muted-foreground">
-              IP
+              IP / identificação de rede
               <input
                 value={ip}
                 onChange={(e) => setIp(e.target.value)}
@@ -132,9 +137,10 @@ export function RegisterGeneratorButton({
             {error && <p className="text-[12px] text-offline">{error}</p>}
             <button
               type="submit"
-              className="mt-1 h-9 rounded-md bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90"
+              disabled={saving}
+              className="mt-1 h-9 rounded-md bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
             >
-              Cadastrar
+              {saving ? "Cadastrando..." : "Cadastrar"}
             </button>
           </form>
         </DialogContent>
