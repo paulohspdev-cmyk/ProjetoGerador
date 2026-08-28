@@ -1,6 +1,7 @@
 import json
 import subprocess
 import time
+from datetime import datetime, timedelta, timezone
 
 from .config import RAPID_BINDINGS_FILE, RAPID_CACHE_TTL, RAPID_COMM_CONFIG, RAPID_READER_DLL
 
@@ -34,6 +35,14 @@ def binding_for(generator, bindings):
     return None
 
 
+def _reader_ready():
+    if not RAPID_READER_DLL.exists():
+        return f"Leitor Rapid SCADA não instalado: {RAPID_READER_DLL}"
+    if not RAPID_COMM_CONFIG.exists():
+        return f"Configuração Rapid SCADA não encontrada: {RAPID_COMM_CONFIG}"
+    return ""
+
+
 def read_channels(channel_nums):
     nums = sorted({int(n) for n in channel_nums})
     if not nums:
@@ -43,12 +52,11 @@ def read_channels(channel_nums):
     if now - _cache["at"] < RAPID_CACHE_TTL and all(n in _cache["channels"] for n in nums):
         return {n: _cache["channels"][n] for n in nums}, _cache["error"]
 
-    if not RAPID_READER_DLL.exists():
-        return {}, f"Leitor Rapid SCADA não instalado: {RAPID_READER_DLL}"
-    if not RAPID_COMM_CONFIG.exists():
-        return {}, f"Configuração Rapid SCADA não encontrada: {RAPID_COMM_CONFIG}"
+    ready_error = _reader_ready()
+    if ready_error:
+        return {}, ready_error
 
-    cmd = ["dotnet", str(RAPID_READER_DLL), str(RAPID_COMM_CONFIG), *[str(n) for n in nums]]
+    cmd = ["dotnet", str(RAPID_READER_DLL), str(RAPID_COMM_CONFIG), "current", *[str(n) for n in nums]]
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=4, check=False)
     except Exception as exc:
@@ -75,6 +83,103 @@ def read_channels(channel_nums):
     _cache["channels"] = channels
     _cache["error"] = ""
     return channels, ""
+
+
+def trend_for_generator(generator, metric, hours=24, archive_bit=1):
+    hours = max(1, min(int(hours), 24 * 31))
+    archive_bit = int(archive_bit)
+    if archive_bit not in {1, 2, 3}:
+        raise ValueError("ArchiveBit permitido: 1 minuto, 2 horário ou 3 diário")
+
+    binding = binding_for(generator, load_bindings())
+    if not binding:
+        raise ValueError("Gerador sem binding Rapid SCADA")
+    channel_cfg = (binding.get("channels") or {}).get(metric)
+    if not channel_cfg or "cnl" not in channel_cfg:
+        available = ", ".join(sorted((binding.get("channels") or {}).keys()))
+        raise ValueError(f"Métrica não disponível neste Controller Pack. Disponíveis: {available}")
+
+    ready_error = _reader_ready()
+    if ready_error:
+        raise ConnectionError(ready_error)
+
+    cnl = int(channel_cfg["cnl"])
+    scale = float(channel_cfg.get("scale", 1.0))
+    end = datetime.now(timezone.utc)
+    start = end - timedelta(hours=hours)
+    cmd = [
+        "dotnet",
+        str(RAPID_READER_DLL),
+        str(RAPID_COMM_CONFIG),
+        "trend",
+        str(archive_bit),
+        str(cnl),
+        start.isoformat(),
+        end.isoformat(),
+    ]
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=15, check=False)
+    except subprocess.TimeoutExpired as exc:
+        raise TimeoutError("Timeout ao consultar histórico do Rapid SCADA") from exc
+    except Exception as exc:
+        raise ConnectionError(f"Falha ao consultar histórico do Rapid SCADA: {exc}") from exc
+
+    if proc.returncode != 0:
+        detail = (proc.stderr or proc.stdout or "erro desconhecido").strip()
+        raise ConnectionError(f"Rapid SCADA: {detail[:500]}")
+
+    try:
+        payload = json.loads(proc.stdout)
+    except Exception as exc:
+        raise ConnectionError(f"Resposta inválida do histórico Rapid SCADA: {exc}") from exc
+
+    points = []
+    for item in payload.get("points", []):
+        if not item.get("defined"):
+            continue
+        points.append(
+            {
+                "timestamp": item.get("timestamp"),
+                "value": round(float(item.get("val", 0)) * scale, 4),
+                "stat": int(item.get("stat", 0)),
+            }
+        )
+
+    # Evita respostas gigantes em períodos longos. Mantém começo/fim e amostra uniforme.
+    max_points = 2000
+    if len(points) > max_points:
+        step = max(1, len(points) // max_points)
+        sampled = points[::step]
+        if sampled[-1] != points[-1]:
+            sampled.append(points[-1])
+        points = sampled[: max_points + 1]
+
+    return {
+        "generatorId": generator["id"],
+        "tag": generator["tag"],
+        "metric": metric,
+        "cnl": cnl,
+        "scale": scale,
+        "archiveBit": archive_bit,
+        "start": start.isoformat(),
+        "end": end.isoformat(),
+        "points": points,
+    }
+
+
+def available_metrics(generator):
+    binding = binding_for(generator, load_bindings())
+    if not binding:
+        return []
+    return [
+        {
+            "key": key,
+            "cnl": int(cfg["cnl"]),
+            "scale": float(cfg.get("scale", 1.0)),
+        }
+        for key, cfg in (binding.get("channels") or {}).items()
+        if "cnl" in cfg
+    ]
 
 
 def _mode(values):
