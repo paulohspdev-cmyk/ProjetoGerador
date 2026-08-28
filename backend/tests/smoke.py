@@ -81,6 +81,89 @@ with TestClient(app) as client:
     assert generator["tag"] == "GEN001"
     assert generator["rapidDeviceNum"] == 200
 
+    # Módulos de produto não podem depender de localStorage.
+    client_row = expect(
+        client.post("/api/clients", json={"name": "Cliente Teste", "units": 1, "gens": 1, "sla": "99,9%"}),
+        201,
+    ).json()
+    site = expect(
+        client.post(
+            "/api/sites",
+            json={
+                "name": "Unidade Teste",
+                "clientId": client_row["id"],
+                "city": "São Paulo",
+                "state": "SP",
+                "latitude": -23.55,
+                "longitude": -46.63,
+            },
+        ),
+        201,
+    ).json()
+    assert site["clientId"] == client_row["id"]
+
+    work_order = expect(
+        client.post(
+            "/api/work-orders",
+            json={"generatorId": generator["id"], "type": "Preventiva", "due": 50, "tech": "Equipe campo"},
+        ),
+        201,
+    ).json()
+    assert work_order["gen"] == "GEN001"
+    work_order = expect(
+        client.patch(f"/api/work-orders/{work_order['id']}", json={"status": "Em andamento"}),
+        200,
+    ).json()
+    assert work_order["status"] == "Em andamento"
+
+    agenda = expect(
+        client.post("/api/agenda", json={"title": "Inspeção", "when": "30/08 09:00", "site": "Unidade Teste"}),
+        201,
+    ).json()
+    assert agenda["when"] == "30/08 09:00"
+
+    rule = expect(
+        client.post(
+            "/api/automation/rules",
+            json={"name": "Regra teste", "trigger": "rpm > 0", "action": "somente notificar"},
+        ),
+        201,
+    ).json()
+    assert rule["enabled"] is False
+    rule = expect(
+        client.patch(f"/api/automation/rules/{rule['id']}", json={"enabled": True}),
+        200,
+    ).json()
+    assert rule["enabled"] is True
+
+    report = expect(
+        client.post("/api/reports", json={"name": "Parque", "period": "Hoje", "format": "CSV"}),
+        201,
+    ).json()
+    download = expect(client.get(f"/api/reports/{report['id']}/download"), 200)
+    assert "Gerador;Site" in download.text
+
+    webhook = expect(
+        client.post("/api/webhooks", json={"url": "https://example.test/hook", "event": "alarme.criado"}),
+        201,
+    ).json()
+    webhook = expect(
+        client.patch(f"/api/webhooks/{webhook['id']}", json={"status": "Ativo"}),
+        200,
+    ).json()
+    assert webhook["status"] == "Ativo"
+
+    expect(client.put("/api/settings/cfg.test", json={"value": True}), 200)
+    backup = expect(client.post("/api/backups"), 201).json()
+    assert backup["result"] == "OK"
+    assert Path(backup["path"]).exists()
+
+    bootstrap = expect(client.get("/api/ops/bootstrap"), 200).json()
+    assert len(bootstrap["clients"]) == 1
+    assert len(bootstrap["workOrders"]) == 1
+    assert len(bootstrap["agenda"]) == 1
+    assert len(bootstrap["rules"]) == 1
+
     # Sem socket privilegiado, o endpoint deve falhar fechado.
     expect(
         client.post(
@@ -102,6 +185,7 @@ with TestClient(app) as viewer_client:
         200,
     )
     expect(viewer_client.get("/api/generators"), 200)
+    expect(viewer_client.get("/api/ops/bootstrap"), 200)
     expect(
         viewer_client.post(
             "/api/generators",
@@ -115,6 +199,9 @@ with TestClient(app) as viewer_client:
         ),
         403,
     )
+    expect(viewer_client.post("/api/clients", json={"name": "Bloqueado"}), 403)
+    expect(viewer_client.post("/api/backups"), 403)
+    expect(viewer_client.post("/api/alarms/ack", json={"alarmKey": "X"}), 403)
     expect(
         viewer_client.post(
             f"/api/generators/{generator['id']}/commands/stop",
