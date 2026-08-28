@@ -1,7 +1,7 @@
 import type { Generator } from "@/data/generators";
 import type { AppUser, UserRole } from "@/lib/auth";
 
-const API_BASE = (import.meta.env.VITE_RC_API_BASE_URL ?? "").replace(/\/$/, "");
+const API_BASE = (import.meta.env["VITE_RC_API_BASE_URL"] ?? "").replace(/\/$/, "");
 function url(path: string) { return `${API_BASE}${path}`; }
 
 export class ApiError extends Error {
@@ -66,11 +66,12 @@ export type ControllerPack = { packId: string; lifecycle: "production" | "lab"; 
 export type ControllerLibrary = { packs: ControllerPack[]; manufacturers: Array<{ id: string; name: string; models: number; production: number; lab: number }>; protocols: Array<{ id: string; name: string; packs: number }>; transports: Array<{ id: string; name: string; packs: number }>; counts: { total: number; production: number; lab: number } };
 export type ChannelCatalogItem = { id: string; name: string; model: string; cnl: number; scale: number; access: string; source: string };
 export type ServiceHealth = { id: string; name: string; status: string; detail: string };
+export type ReverseTcpListener = { generatorId: string; tag: string; remotePort: number; localPort: number; remoteListening: boolean; localListening: boolean };
 export type SystemDiagnostics = {
   ok: boolean;
   services: ServiceHealth[];
   rapid: { bindingsExists: boolean; readerExists: boolean; commConfigExists: boolean };
-  bridge: { controlSocket: string; controlSocketExists: boolean; reverseTcp15001Listening: boolean; rapidLocal25001Listening: boolean };
+  bridge: { controlSocket: string; controlSocketExists: boolean; listeners: ReverseTcpListener[] };
   host: { loadAverage: number[]; memory: { total: number; available: number; used: number; usedPercent: number } | null; disk: { total: number; used: number; free: number; usedPercent: number } };
   generators: Array<{ id: string; tag: string; status: string; rapidDeviceNum?: number | null; source?: string; lastError?: string; availableMetrics?: string[] }>;
   version: { application: string; apiVersion: string; gitSha: string; gitBranch: string; rapidScada: string };
