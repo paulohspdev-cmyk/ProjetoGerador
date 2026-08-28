@@ -14,7 +14,7 @@ from .config import (
 )
 
 ROLE_PERMISSIONS = {
-    "administrador": {"view", "operate", "create", "edit", "remove", "manage_users", "audit"},
+    "administrador": {"view", "operate", "create", "edit", "remove", "manage_users", "audit", "admin"},
     "cadastro": {"view", "create", "edit"},
     "visualizacao": {"view"},
 }
@@ -149,3 +149,4 @@ require_edit = require("edit")
 require_remove = require("remove")
 require_manage_users = require("manage_users")
 require_audit = require("audit")
+require_admin = require("admin")
