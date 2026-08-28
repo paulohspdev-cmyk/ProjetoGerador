@@ -63,7 +63,7 @@ jobs:
           cat /tmp/frontend.log
           exit 1
 
-      - name: Sem dados ou séries industriais demonstrativas
+      - name: Layout industrial e fluxo sem dados simulados
         run: |
           set -euo pipefail
           if grep -R -n -E 'Teltonika RUT241|Sierra AirLink|Atlas Data Centers|23/05/2025|14:32:18|612 kW|0,92|phaseSeries|kwSeries' src --include='*.ts' --include='*.tsx'; then
@@ -74,6 +74,15 @@ jobs:
           grep -q 'availableMetrics' src/components/generators/PowerFlowCard.tsx
           grep -q 'availableMetrics' src/components/generators/GeneratorDetailScreen.tsx
           grep -q -E 'BLOQUEADO|não homologado' src/components/generators/GeneratorDetailScreen.tsx
+          grep -q 'className="gen-top"' src/components/generators/GeneratorDetailScreen.tsx
+          grep -q 'className="comap-panel gen-flow"' src/components/generators/GeneratorDetailScreen.tsx
+          grep -q 'const genPre = runningKnown && running && genHzKnown && genHz > 1' src/components/generators/PowerFlowCard.tsx
+          grep -q 'const genPost = genPre && gcbKnown && gcb' src/components/generators/PowerFlowCard.tsx
+          grep -q 'Math.abs(loadKw) > 0.1' src/components/generators/PowerFlowCard.tsx
+          if grep -q 'rapidDeviceNum === 200' src/components/generators/PowerFlowCard.tsx; then
+            echo 'ERRO: frontend voltou a restringir o IG200 ao Rapid Device 200.' >&2
+            exit 1
+          fi
           if grep -n -E 'gridHz[[:space:]]*=.*60|Math\.max\(gen\.mains.*> 50' src/components/generators/PowerFlowCard.tsx; then
             echo 'ERRO: power-flow voltou a inferir rede/Hz sem canal homologado.' >&2
             exit 1
@@ -104,6 +113,12 @@ jobs:
         env:
           PYTHONPATH: .
         run: python tests/smoke.py
+
+      - name: Backend IG200 multi-device smoke
+        working-directory: backend
+        env:
+          PYTHONPATH: .
+        run: python tests/control_multi_device.py
 
       - name: Instaladores Bash
         run: |
@@ -151,6 +166,13 @@ jobs:
         run: |
           set -euo pipefail
           grep -q 'g.get("transport") == "reverse_tcp"' backend/app/bridge_runtime.py
+          grep -q 'bridge.resolve_ig200 = resolve_ig200_bound_device' backend/app/bridge_runtime.py
+          grep -q 'int(item.get("rapid_device_num") or 0) == device_num' backend/app/bridge_runtime.py
+          grep -q '"device": rapid_device' backend/app/control.py
+          if grep -q 'rapid_device != 200' backend/app/control.py; then
+            echo 'ERRO: control.py voltou a restringir o controle ao Device 200.' >&2
+            exit 1
+          fi
           grep -q 'ALLOWED_ACTIONS = {"notify", "work_order"}' backend/app/automation_engine.py
           grep -q 'CmdEnabled.*false' rapid/provisioning/provision_generator.py
           grep -q 'unit_conflict' rapid/provisioning/provision_generator.py

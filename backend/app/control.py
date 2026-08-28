@@ -14,8 +14,8 @@ async def send_homologated_command(generator: dict, action: str) -> dict:
     controller_model = str(generator.get("controller_model") or "").strip().lower()
     rapid_device = int(generator.get("rapid_device_num") or 0)
 
-    if controller_type != "COMAP" or controller_model != "inteligen 200" or rapid_device != 200:
-        raise ValueError("Controle remoto disponível somente para o ComAp InteliGen 200 homologado")
+    if controller_type != "COMAP" or controller_model != "inteligen 200" or rapid_device <= 0:
+        raise ValueError("Controle remoto disponível somente para o ComAp InteliGen 200 provisionado no Rapid SCADA")
 
     socket_path = Path(CONTROL_SOCKET)
     if not socket_path.exists():
@@ -28,7 +28,7 @@ async def send_homologated_command(generator: dict, action: str) -> dict:
             timeout=3,
         )
         payload = {
-            "device": 200,
+            "device": rapid_device,
             "action": action,
             "confirm": "REMOTE_CONTROL_CONFIRMED",
         }

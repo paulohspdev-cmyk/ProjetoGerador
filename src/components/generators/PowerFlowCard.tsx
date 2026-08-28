@@ -182,10 +182,14 @@ export function PowerFlowSld({
   loadKnown?: boolean;
 }) {
   const mainsPre = mainsKnown && mainsOk;
-  const mainsPost = mainsKnown && mcbKnown && mainsOk && mcb;
-  const genPre = runningKnown && gcbKnown && running && gcb;
-  const genPost = genPre;
-  const loadLive = loadKnown && (mainsPost || genPost);
+  const mainsPost = mainsPre && mcbKnown && mcb;
+
+  // Geração conhecida antes do GCB: RPM em marcha + frequência real disponível.
+  const genPre = runningKnown && running && genHzKnown && genHz > 1;
+  // O fluxo só atravessa o GCB quando seu estado real estiver disponível e fechado.
+  const genPost = genPre && gcbKnown && gcb;
+  // A carga só recebe animação quando existe potência real medida.
+  const loadLive = loadKnown && Math.abs(loadKw) > 0.1 && (mainsPost || genPost);
 
   return (
     <svg viewBox="0 0 230 400" className="flow-diagram" preserveAspectRatio="xMidYMid meet" aria-label="Fluxo de energia">
@@ -226,8 +230,8 @@ export function PowerFlowSld({
 
       <FlowWire d="M80 68 V110" live={mainsPre} />
       <FlowWire d="M80 140 V200" live={mainsPost} />
-      <FlowWire d="M80 200 V260" live={genPre} reverse />
-      <FlowWire d="M80 290 V332" live={genPost} reverse />
+      <FlowWire d="M80 200 V260" live={genPost} reverse />
+      <FlowWire d="M80 290 V332" live={genPre} reverse />
       <FlowWire d="M80 200 H142" live={loadLive} />
       <FlowWire d="M80 150 H42" live={mainsPost} />
       <FlowWire d="M80 250 H42" live={genPost} />
@@ -285,7 +289,8 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     metricNumber(gen, "mains_voltage_l1_l2", gen.mains.l12) ?? 0,
   ) > 50;
 
-  const ig200Homologated = gen.controller.trim().toLowerCase() === "inteligen 200" && gen.rapidDeviceNum === 200;
+  const ig200Homologated =
+    gen.controller.trim().toLowerCase() === "inteligen 200" && Number(gen.rapidDeviceNum) > 0;
   const canOperate = can("operate") && ig200Homologated && gen.status !== "nao_configurado";
 
   const runCommand = async (action: "start" | "stop") => {
