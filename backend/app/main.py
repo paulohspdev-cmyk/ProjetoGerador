@@ -49,7 +49,7 @@ from .ops_schemas import (
     WorkOrderCreate,
     WorkOrderUpdate,
 )
-from .rapid import dashboard, overlay_generators
+from .rapid import available_metrics, dashboard, overlay_generators, trend_for_generator
 from .schemas import (
     CommandRequest,
     GeneratorCreate,
@@ -78,8 +78,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="RC Geradores API",
-    version="1.1.0",
-    description="Backend do RC Geradores. Rapid SCADA é a fonte industrial de telemetria.",
+    version="1.2.0",
+    description="Backend do RC Geradores. Rapid SCADA é a fonte industrial de telemetria e histórico.",
     docs_url="/api/docs" if API_DOCS_ENABLED else None,
     redoc_url="/api/redoc" if API_DOCS_ENABLED else None,
     openapi_url="/api/openapi.json" if API_DOCS_ENABLED else None,
@@ -104,11 +104,7 @@ def actor(user: dict) -> str:
 
 
 def _agenda_public(item: dict) -> dict:
-    return {
-        **item,
-        "when": item.get("when_text") or "",
-        "generatorId": item.get("generator_id"),
-    }
+    return {**item, "when": item.get("when_text") or "", "generatorId": item.get("generator_id")}
 
 
 def _rule_public(item: dict) -> dict:
@@ -378,6 +374,35 @@ async def generator_command(
     return result
 
 
+@app.get("/api/generators/{generator_id}/metrics")
+def generator_metrics(generator_id: str, user: dict = Depends(require_view)):
+    generator = db.get_generator(generator_id)
+    if not generator:
+        raise HTTPException(status_code=404, detail="Gerador não encontrado")
+    return available_metrics(generator)
+
+
+@app.get("/api/generators/{generator_id}/trends/{metric}")
+def generator_trend(
+    generator_id: str,
+    metric: str,
+    hours: int = 24,
+    archiveBit: int = 1,
+    user: dict = Depends(require_view),
+):
+    generator = db.get_generator(generator_id)
+    if not generator:
+        raise HTTPException(status_code=404, detail="Gerador não encontrado")
+    try:
+        return trend_for_generator(generator, metric, hours=hours, archive_bit=archiveBit)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except TimeoutError as exc:
+        raise HTTPException(status_code=504, detail=str(exc)) from exc
+    except ConnectionError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
 @app.get("/api/dashboard")
 def dashboard_get(user: dict = Depends(require_view)):
     return dashboard(live_generators())
@@ -499,8 +524,6 @@ def reports_download(report_id: str, user: dict = Depends(require_view)):
     report = next((x for x in ops_store.list_reports() if x["id"] == report_id), None)
     if not report:
         raise HTTPException(status_code=404, detail="Relatório não encontrado")
-    # Nesta etapa o conteúdo industrial é sempre exportado como CSV real. PDF/XLSX serão
-    # renderizações da mesma fonte na etapa de relatórios avançados.
     out = io.StringIO()
     writer = csv.writer(out, delimiter=";")
     writer.writerow(["Gerador", "Site", "Status", "RPM", "Frequencia Hz", "Carga kW", "Controladora"])
