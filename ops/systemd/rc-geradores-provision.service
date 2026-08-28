@@ -1,0 +1,21 @@
+[Unit]
+Description=RC Geradores Rapid Provision Helper
+After=network-online.target scadaserver6.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+Group=rcgeradores
+WorkingDirectory=/opt/rc-geradores/backend
+EnvironmentFile=-/etc/rc-geradores.env
+ExecStart=/opt/rc-geradores/backend/.venv/bin/python -m app.provision_service
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ReadWritePaths=/run/rc-geradores /var/lib/rc-geradores /opt/scada /etc/rc-geradores.env
+
+[Install]
+WantedBy=multi-user.target
