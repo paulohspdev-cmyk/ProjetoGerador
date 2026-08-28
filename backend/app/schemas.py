@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field, model_validator
 class LoginRequest(BaseModel):
     email: str = Field(min_length=3, max_length=254)
     password: str = Field(min_length=1, max_length=256)
+    otp: str | None = Field(default=None, min_length=6, max_length=8)
 
 
 class UserCreate(BaseModel):
@@ -36,6 +37,10 @@ class GeneratorCreate(BaseModel):
 
     @model_validator(mode="after")
     def normalize_controller(self):
+        if self.transport not in {"reverse_tcp", "modbus_tcp_direct", "rtu_over_tcp", "modbus_rtu_serial"}:
+            raise ValueError("Transporte inválido")
+        if self.transport == "modbus_tcp_direct" and self.listenPort == 0:
+            self.listenPort = 502
         if not self.controllerType:
             text = self.controller.strip().lower()
             if text.startswith("comap"):
@@ -79,6 +84,12 @@ class GeneratorUpdate(BaseModel):
     modbusUnit: int | None = Field(default=None, ge=1, le=247)
     rapidDeviceNum: int | None = Field(default=None, ge=1)
     enabled: bool | None = None
+
+    @model_validator(mode="after")
+    def validate_transport(self):
+        if self.transport is not None and self.transport not in {"reverse_tcp", "modbus_tcp_direct", "rtu_over_tcp", "modbus_rtu_serial"}:
+            raise ValueError("Transporte inválido")
+        return self
 
     def to_db(self):
         mapping = {
