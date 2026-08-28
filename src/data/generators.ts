@@ -3,7 +3,10 @@ export type GenStatus = "online" | "alerta" | "offline" | "nao_configurado";
 export type Generator = {
   id: string;
   tag: string;
+  name?: string;
+  customer?: string;
   controller: string;
+  controllerType?: string;
   site: string;
   status: GenStatus;
   mode: "AUTO" | "MANUAL" | "STOP" | "TESTE" | "OFF";
@@ -24,11 +27,15 @@ export type Generator = {
   gcb: boolean;
   mains: { l1: number; l2: number; l3: number; l12: number };
   gen: { l1: number; l2: number; l3: number; l12: number };
+  telemetrySource?: "rapid_scada" | "none" | string;
+  rapidDeviceNum?: number | null;
+  lastError?: string;
 };
 
 export const GEN_SITES = ["Data Center SP-01", "Hospital Norte", "Shopping Leste", "Fábrica Osasco"];
 
 export const CONTROLLER_MODELS = [
+  "ComAp InteliGen 200",
   "DSE8610",
   "ComAp InteliLite 9",
   "DSE7320 MKII",
@@ -39,21 +46,11 @@ export const CONTROLLER_MODELS = [
 
 function make(i: number): Generator {
   const statuses: GenStatus[] = [
-    "online",
-    "online",
-    "alerta",
-    "offline",
-    "nao_configurado",
-    "online",
-    "offline",
-    "online",
-    "nao_configurado",
-    "online",
-    "alerta",
-    "offline",
+    "online", "online", "alerta", "offline", "nao_configurado", "online",
+    "offline", "online", "nao_configurado", "online", "alerta", "offline",
   ];
   const controllers = CONTROLLER_MODELS;
-  const status = statuses[i % statuses.length];
+  const status = statuses[i % statuses.length]!;
   const running = status === "online";
   const alert = status === "alerta";
   const configured = status !== "nao_configurado";
@@ -63,7 +60,7 @@ function make(i: number): Generator {
     tag: `GEN${String(i + 1).padStart(3, "0")}`,
     controller: controllers[i % controllers.length]!,
     site: GEN_SITES[i % GEN_SITES.length]!,
-    status: status!,
+    status,
     mode: !configured ? "OFF" : running ? "AUTO" : alert ? "MANUAL" : "STOP",
     ip: configured ? `10.50.1.${130 + i}` : "—",
     battery: configured ? Number((11.6 + ((i * 7) % 20) / 10).toFixed(1)) : null,
@@ -80,16 +77,13 @@ function make(i: number): Generator {
     alarms: alert ? 2 : status === "offline" ? 1 : 0,
     mcb: configured && !running,
     gcb: running,
-    mains: configured
-      ? { l1: 127, l2: 126, l3: 125, l12: 220 }
-      : { l1: 0, l2: 0, l3: 0, l12: 0 },
+    mains: configured ? { l1: 127, l2: 126, l3: 125, l12: 220 } : { l1: 0, l2: 0, l3: 0, l12: 0 },
     gen: running ? { l1: 218, l2: 220, l3: 219, l12: 379 } : { l1: 0, l2: 0, l3: 0, l12: 0 },
   };
 }
 
 export const SEED_GENERATORS: Generator[] = Array.from({ length: 12 }, (_, i) => make(i));
 export const generators: Generator[] = SEED_GENERATORS;
-
 export const GENERATORS_KEY = "rc-generators";
 
 let liveGenerators: Generator[] = SEED_GENERATORS.map((g) => ({ ...g, mains: { ...g.mains }, gen: { ...g.gen } }));
