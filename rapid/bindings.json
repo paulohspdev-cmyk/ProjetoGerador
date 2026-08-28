@@ -2,8 +2,11 @@
   {
     "controller_type": "COMAP",
     "controller_model": "InteliGen 200",
+    "transport": "reverse_tcp",
+    "host": "",
     "listen_port": 15001,
     "modbus_unit": 2,
+    "rapid_line_num": 100,
     "rapid_device_num": 200,
     "status": "field_validated",
     "channels": {
