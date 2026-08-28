@@ -18,7 +18,7 @@ function hasMetric(gen: Generator, key: string) {
   return (gen.availableMetrics ?? []).includes(key);
 }
 
-function Metric({ icon, label, value, tone }: { icon: ReactNode; label: string; value: string; tone?: string }) {
+function Metric({ icon, label, value, tone }: { icon: ReactNode; label: string; value: string; tone?: string | undefined }) {
   return (
     <div className="flex min-w-0 items-center gap-1 text-[10px] leading-none">
       <span className="grid size-3 shrink-0 place-items-center text-muted-foreground">{icon}</span>
