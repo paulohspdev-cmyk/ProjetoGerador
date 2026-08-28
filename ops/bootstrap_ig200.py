@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import os
 
 from app import db
 
@@ -23,6 +24,20 @@ def _device(value: str) -> int:
     if not 1 <= device <= 2_147_483_647:
         raise argparse.ArgumentTypeError("Rapid Device deve ser um inteiro positivo")
     return device
+
+
+def _control_enabled() -> bool:
+    return os.environ.get("RC_ENABLE_IG200_CONTROL", "0").strip() == "1"
+
+
+def _validate_control_identity(device: int) -> bool:
+    if _control_enabled() and int(device) != 200:
+        print(
+            "ERRO: START/STOP homologado permanece restrito ao Rapid Device 200. "
+            "Use outro Rapid Device apenas com controle remoto desabilitado até nova validação de campo."
+        )
+        return False
+    return True
 
 
 def main() -> int:
@@ -51,12 +66,18 @@ def main() -> int:
                 "o instalador não altera cadastro existente automaticamente."
             )
             return 3
+        current_device = int(current.get("rapid_device_num") or 0)
+        if not _validate_control_identity(current_device):
+            return 4
         print(
             f"{current['tag']} já cadastrado; preservando identidade atual: "
             f"porta={current['listen_port']} unit={current['modbus_unit']} "
             f"rapid={current.get('rapid_device_num')}"
         )
         return 0
+
+    if not _validate_control_identity(args.rapid_device):
+        return 4
 
     created = db.create_generator(
         {
