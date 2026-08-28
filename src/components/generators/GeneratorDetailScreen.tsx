@@ -90,7 +90,7 @@ function BoolFlag({ label, value, goodWhenTrue = false }: { label: string; value
   );
 }
 
-function FlowChip({ icon, label, value, tone }: { icon: ReactNode; label: string; value: string; tone?: "ok" | "warn" | "bad" }) {
+function FlowChip({ icon, label, value, tone }: { icon: ReactNode; label: string; value: string; tone?: "ok" | "warn" | "bad" | undefined }) {
   return (
     <div className={cn("flow-chip", tone)}>
       <span className="flow-chip-icon">{icon}</span>
@@ -102,7 +102,7 @@ function FlowChip({ icon, label, value, tone }: { icon: ReactNode; label: string
   );
 }
 
-function Readout({ label, value, unit, tone }: { label: string; value: number | null; unit: string; tone?: "ok" | "warn" | "bad" }) {
+function Readout({ label, value, unit, tone }: { label: string; value: number | null; unit: string; tone?: "ok" | "warn" | "bad" | undefined }) {
   return (
     <div className={cn("gen-read", tone ?? "ok", value == null && "opacity-60")}>
       <p>{label}</p>
