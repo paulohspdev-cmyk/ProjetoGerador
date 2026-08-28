@@ -1,6 +1,10 @@
 import type { ReactNode } from "react";
 
-type IconProps = { className?: string; size?: number; color?: string };
+type IconProps = {
+  className?: string | undefined;
+  size?: number | undefined;
+  color?: string | undefined;
+};
 
 function Svg({
   size = 16,
@@ -106,7 +110,7 @@ export function IconHouse({ size = 16, className }: IconProps) {
   );
 }
 
-export function IconFactory({ color = "#d7e3ee" }: { color?: string }) {
+export function IconFactory({ color = "#d7e3ee" }: { color?: string | undefined }) {
   return (
     <g stroke={color} fill="none" strokeWidth="1.6" strokeLinejoin="round">
       <path d="M-12 10 V-2 l 7 2 V-12 l 8 2 V10 M 3 -1 l 7 2 V10" />
