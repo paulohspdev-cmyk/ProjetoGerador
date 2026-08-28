@@ -127,6 +127,30 @@ export type EventItemApi = {
   site?: string | null;
 };
 
+export type RapidMetric = {
+  key: string;
+  cnl: number;
+  scale: number;
+};
+
+export type RapidTrendPoint = {
+  timestamp: string;
+  value: number;
+  stat: number;
+};
+
+export type RapidTrend = {
+  generatorId: string;
+  tag: string;
+  metric: string;
+  cnl: number;
+  scale: number;
+  archiveBit: number;
+  start: string;
+  end: string;
+  points: RapidTrendPoint[];
+};
+
 export type OpsClient = {
   id: string;
   name: string;
@@ -278,6 +302,11 @@ export const rcApi = {
         method: "POST",
         body: JSON.stringify({ confirmation: action.toUpperCase() }),
       }),
+    metrics: (id: string) => request<RapidMetric[]>(`/api/generators/${encodeURIComponent(id)}/metrics`),
+    trend: (id: string, metric: string, hours = 24, archiveBit = 1) =>
+      request<RapidTrend>(
+        `/api/generators/${encodeURIComponent(id)}/trends/${encodeURIComponent(metric)}?hours=${hours}&archiveBit=${archiveBit}`,
+      ),
   },
   audit: {
     list: (limit = 200) => request<AuditItem[]>(`/api/audit?limit=${limit}`),
