@@ -78,9 +78,7 @@ def generator_create(payload: GeneratorCreate):
         created = db.create_generator(payload.to_db())
     except sqlite3.IntegrityError as exc:
         raise HTTPException(status_code=409, detail="Tag de gerador já cadastrada") from exc
-    return next(
-        g for g in overlay_generators([created]) if g["id"] == created["id"]
-    )
+    return next(g for g in overlay_generators([created]) if g["id"] == created["id"])
 
 
 @app.delete("/api/generators/{generator_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -93,6 +91,16 @@ def generator_delete(generator_id: str):
 @app.get("/api/dashboard")
 def dashboard_get():
     return dashboard(live_generators())
+
+
+@app.get("/api/events")
+def events_get(limit: int = 200):
+    return db.list_events(limit)
+
+
+@app.get("/api/audit")
+def audit_get(limit: int = 200):
+    return db.list_audit(limit)
 
 
 @app.get("/api/controller-bindings")
