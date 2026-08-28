@@ -31,6 +31,9 @@ jobs:
       - name: Frontend dependencies
         run: npm ci
 
+      - name: Frontend TypeScript
+        run: npx tsc --noEmit
+
       - name: Frontend build para VM
         env:
           NITRO_PRESET: node-server
@@ -99,7 +102,18 @@ jobs:
           set -euo pipefail
           bash -n ops/install.sh
           bash -n ops/status.sh
+          bash -n ops/vm-smoke.sh
           bash -n rapid/provisioning/provision_ig200.sh
+          bash ops/install.sh --help >/tmp/install-help.txt
+          grep -q -- '--skip-initial-generator' /tmp/install-help.txt
+          grep -q -- '--ig200-port' /tmp/install-help.txt
+          grep -q -- '--ig200-unit' /tmp/install-help.txt
+          grep -q -- '--ig200-device' /tmp/install-help.txt
+          grep -q -- '--admin-password-file' /tmp/install-help.txt
+          grep -q 'dotnet --list-sdks' ops/install.sh
+          grep -q 'dotnet --list-runtimes' ops/install.sh
+          grep -q 'provision_generator.py' ops/install.sh
+          grep -q 'vm-smoke.sh' ops/install.sh
           test -f ops/systemd/rc-geradores-api.service
           test -f ops/systemd/rc-geradores-frontend.service
           test -f ops/systemd/rc-geradores-bridge.service
@@ -113,6 +127,15 @@ jobs:
           grep -q '^RC_PROVISION_SOCKET=' ops/rc-geradores.env.example
           grep -q '^RC_LOGIN_MAX_FAILURES=' ops/rc-geradores.env.example
           grep -q '^RC_BACKUP_RETENTION=' ops/rc-geradores.env.example
+
+      - name: Provisionamento idempotente e seguro
+        run: |
+          set -euo pipefail
+          grep -q '_binding_is_materialized' rapid/provisioning/provision_generator.py
+          grep -q '_binding_identity_matches' rapid/provisioning/provision_generator.py
+          grep -q 'não pode fazer uma' rapid/provisioning/provision_generator.py
+          grep -q 'Binding Rapid existente diverge' rapid/provisioning/provision_generator.py
+          grep -q 'preservando identidade atual' ops/bootstrap_ig200.py
 
       - name: Política industrial segura
         run: |
