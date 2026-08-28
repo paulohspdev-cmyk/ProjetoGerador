@@ -4,24 +4,36 @@ import { ArrowLeft } from "lucide-react";
 import { Topbar } from "@/components/layout/Topbar";
 import { GeneratorDetailScreen } from "@/components/generators/GeneratorDetailScreen";
 import { useGenerators } from "@/components/generators/GeneratorsProvider";
-import { displayGenName, getGenerator } from "@/data/generators";
+import { displayGenName } from "@/data/generators";
 
 export const Route = createFileRoute("/p/geradores/$id")({
   component: GeneratorPage,
-  head: ({ params }) => {
-    const gen = getGenerator(params.id);
-    const name = gen ? displayGenName(gen.tag) : "Gerador";
-    const title = `${name} | RC Geradores SCADA`;
-    return {
-      meta: [{ title }, { name: "description", content: `Painel completo de ${name}` }],
-    };
-  },
+  head: () => ({
+    meta: [
+      { title: "Gerador | RC Geradores SCADA" },
+      { name: "description", content: "Painel completo do grupo gerador" },
+    ],
+  }),
 });
 
 function GeneratorPage() {
   const { id } = Route.useParams();
-  const { getById } = useGenerators();
-  const gen = getById(id) ?? getGenerator(id);
+  const { getById, ready, error } = useGenerators();
+  const gen = getById(id);
+
+  if (!ready) {
+    return <div className="p-6 text-sm text-muted-foreground">Carregando gerador...</div>;
+  }
+
+  if (!gen && error) {
+    return (
+      <div className="p-6">
+        <h1 className="text-lg font-bold">Backend indisponível</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{error}</p>
+      </div>
+    );
+  }
+
   if (!gen) throw notFound();
   const name = displayGenName(gen.tag);
 
@@ -39,7 +51,7 @@ function GeneratorPage() {
           </Link>
         }
       />
-      <div className="flex h-full min-h-0 flex-1 overflow-hidden p-1">
+      <div className="flex h-full min-h-0 flex-1 overflow-hidden p-1" aria-label={name}>
         <GeneratorDetailScreen gen={gen} />
       </div>
     </div>
