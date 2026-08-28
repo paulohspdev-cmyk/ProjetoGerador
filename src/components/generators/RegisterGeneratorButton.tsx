@@ -13,10 +13,8 @@ import { useGenerators } from "./GeneratorsProvider";
 import { cn } from "@/lib/utils";
 import type { GeneratorTransport } from "@/lib/api";
 
-const CONTROLLERS = [
-  "ComAp InteliGen 200",
-  ...CONTROLLER_MODELS.filter((item) => item !== "ComAp InteliGen 200"),
-];
+const IG200 = "ComAp InteliGen 200";
+const CONTROLLERS = [IG200, ...CONTROLLER_MODELS.filter((item) => item !== IG200)];
 
 export function RegisterGeneratorButton({
   collapsed,
@@ -31,37 +29,45 @@ export function RegisterGeneratorButton({
   const [open, setOpen] = useState(false);
   const preview = useMemo(() => nextGeneratorTag(generators).tag, [generators]);
   const [tag, setTag] = useState("");
-  const [controller, setController] = useState(CONTROLLERS[0]!);
+  const [controller, setController] = useState(IG200);
   const [site, setSite] = useState(GEN_SITES[0]!);
   const [ip, setIp] = useState("");
   const [transport, setTransport] = useState<GeneratorTransport>("reverse_tcp");
   const [listenPort, setListenPort] = useState("15001");
-  const [modbusUnit, setModbusUnit] = useState("1");
-  const [rapidDeviceNum, setRapidDeviceNum] = useState("");
+  const [modbusUnit, setModbusUnit] = useState("2");
+  const [rapidDeviceNum, setRapidDeviceNum] = useState("200");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const reset = () => {
     setTag("");
-    setController(CONTROLLERS[0]!);
+    setController(IG200);
     setSite(GEN_SITES[0]!);
     setIp("");
     setTransport("reverse_tcp");
     setListenPort("15001");
-    setModbusUnit("1");
-    setRapidDeviceNum("");
+    setModbusUnit("2");
+    setRapidDeviceNum("200");
     setError(null);
     setSaving(false);
   };
 
+  const changeController = (value: string) => {
+    setController(value);
+    if (value === IG200) {
+      setTransport("reverse_tcp");
+      setListenPort("15001");
+      setModbusUnit("2");
+      setRapidDeviceNum("200");
+    } else {
+      setRapidDeviceNum("");
+    }
+  };
+
   const changeTransport = (value: GeneratorTransport) => {
     setTransport(value);
-    if (value === "modbus_tcp_direct" && (!listenPort || listenPort === "15001")) {
-      setListenPort("502");
-    }
-    if (value === "reverse_tcp" && (!listenPort || listenPort === "502")) {
-      setListenPort("15001");
-    }
+    if (value === "modbus_tcp_direct" && (!listenPort || listenPort === "15001")) setListenPort("502");
+    if (value === "reverse_tcp" && (!listenPort || listenPort === "502")) setListenPort("15001");
   };
 
   const onSubmit = async (e: FormEvent) => {
@@ -160,9 +166,7 @@ export function RegisterGeneratorButton({
                   className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
                 >
                   {GEN_SITES.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
+                    <option key={s} value={s}>{s}</option>
                   ))}
                 </select>
               </label>
@@ -172,16 +176,20 @@ export function RegisterGeneratorButton({
               Controladora
               <select
                 value={controller}
-                onChange={(e) => setController(e.target.value)}
+                onChange={(e) => changeController(e.target.value)}
                 className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
               >
                 {CONTROLLERS.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
+                  <option key={m} value={m}>{m}</option>
                 ))}
               </select>
             </label>
+
+            {controller === IG200 && (
+              <p className="rounded-md border border-online/30 bg-online/10 px-3 py-2 text-[11px] text-muted-foreground">
+                Perfil homologado: TCP reverso 15001 · Unit ID 2 · Rapid Device 200.
+              </p>
+            )}
 
             <label className="text-[12px] font-semibold text-muted-foreground">
               Tipo de conexão
