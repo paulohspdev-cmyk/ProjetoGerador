@@ -316,9 +316,14 @@ chmod -R a+rX "$OUT"
 
 echo "[8/15] Compilando frontend para Linux/Node..."
 cd "$BASE"
-npm ci
+# /etc/rc-geradores.env define NODE_ENV=production para o runtime. O npm,
+# nesse modo, omite devDependencies por padrão; porém Vite, TypeScript e o
+# adaptador de configuração são necessários durante a compilação.
+npm ci --include=dev
 NITRO_PRESET=node-server npm run build
 test -f "$BASE/.output/server/index.mjs"
+# Depois do build, mantenha somente dependências de runtime na VM.
+npm prune --omit=dev
 
 echo "[9/15] Instalando serviços systemd RC..."
 for unit in \
