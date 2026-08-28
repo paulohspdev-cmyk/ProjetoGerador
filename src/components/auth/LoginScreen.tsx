@@ -9,22 +9,22 @@ export function LoginScreen() {
   const { login } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("admin@admin.cm");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const onSubmit = (e: FormEvent) => {
+  const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    const err = login(email, password);
+    setError(null);
+    const err = await login(email, password);
     setBusy(false);
     if (err) {
       setError(err);
       return;
     }
-    setError(null);
     void navigate({ to: "/" });
   };
 
@@ -45,7 +45,7 @@ export function LoginScreen() {
             <Zap className="size-9" />
           </span>
           <h1 className="mt-3 text-2xl font-extrabold tracking-tight">RC GERADORES</h1>
-          <p className="mt-1 text-[12px] text-muted-foreground">SCADA · Acesso ao sistema</p>
+          <p className="mt-1 text-[12px] text-muted-foreground">SCADA · Acesso seguro ao sistema</p>
         </div>
 
         <form
@@ -55,7 +55,7 @@ export function LoginScreen() {
           <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-muted-foreground">Login</h2>
 
           <label className="mt-4 block text-[12px] font-semibold text-muted-foreground">
-            Usuário
+            E-mail
             <span className="mt-1.5 flex h-10 items-center gap-2 rounded-md border border-input bg-background px-3">
               <Mail className="size-4 shrink-0 text-primary" />
               <input
@@ -67,7 +67,8 @@ export function LoginScreen() {
                   setError(null);
                 }}
                 className="min-w-0 flex-1 bg-transparent text-sm outline-none"
-                placeholder="admin@admin.cm"
+                placeholder="admin@rcgeradores.local"
+                required
               />
             </span>
           </label>
@@ -86,6 +87,7 @@ export function LoginScreen() {
                 }}
                 className="min-w-0 flex-1 bg-transparent text-sm outline-none"
                 placeholder="••••••••"
+                required
               />
               <button
                 type="button"
@@ -109,7 +111,7 @@ export function LoginScreen() {
             disabled={busy}
             className="mt-5 flex h-10 w-full items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
           >
-            Entrar
+            {busy ? "Entrando…" : "Entrar"}
           </button>
         </form>
       </div>
