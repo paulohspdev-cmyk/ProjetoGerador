@@ -28,20 +28,28 @@ jobs:
           node-version: '22'
           cache: npm
 
-      - name: Frontend dependencies
-        run: npm ci
+      - name: Frontend dependencies como VM de produção
+        env:
+          NODE_ENV: production
+        run: npm ci --include=dev
 
       - name: Frontend TypeScript
+        env:
+          NODE_ENV: production
         run: npx tsc --noEmit
 
       - name: Frontend build para VM
         env:
+          NODE_ENV: production
           NITRO_PRESET: node-server
         run: npm run build
 
       - name: Frontend Node smoke test
+        env:
+          NODE_ENV: production
         run: |
           set -euo pipefail
+          npm prune --omit=dev
           test -f .output/server/index.mjs
           PORT=3000 HOST=127.0.0.1 node .output/server/index.mjs > /tmp/frontend.log 2>&1 &
           PID=$!
@@ -114,6 +122,8 @@ jobs:
           grep -q 'dotnet --list-runtimes' ops/install.sh
           grep -q 'provision_generator.py' ops/install.sh
           grep -q 'vm-smoke.sh' ops/install.sh
+          grep -q 'npm ci --include=dev' ops/install.sh
+          grep -q 'npm prune --omit=dev' ops/install.sh
           test -f ops/systemd/rc-geradores-api.service
           test -f ops/systemd/rc-geradores-frontend.service
           test -f ops/systemd/rc-geradores-bridge.service
