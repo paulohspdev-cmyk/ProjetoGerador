@@ -1,9 +1,10 @@
 import { Trash2 } from "lucide-react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useGenerators } from "./GeneratorsProvider";
+import { industrialApi } from "@/lib/industrial-api";
 import { cn } from "@/lib/utils";
 import type { Permission } from "@/lib/auth";
+import { useGenerators } from "./GeneratorsProvider";
 
 // Mantido para o Sidebar: cadastrar geradores depende da permissão create.
 export function canManageGenerators(can: (perm: Permission) => boolean) {
@@ -20,14 +21,14 @@ export function DeleteGeneratorButton({
   className?: string;
 }) {
   const { can } = useAuth();
-  const { removeGenerator } = useGenerators();
+  const { refresh } = useGenerators();
   if (!can("remove")) return null;
 
   return (
     <button
       type="button"
-      aria-label={`Excluir ${tag}`}
-      title="Excluir gerador"
+      aria-label={`Retirar ${tag}`}
+      title="Retirar gerador com ciclo de vida seguro"
       className={cn(
         "grid size-7 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-offline/15 hover:text-offline",
         className,
@@ -35,11 +36,27 @@ export function DeleteGeneratorButton({
       onClick={async (e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (!window.confirm(`Excluir o gerador ${tag}? Ele sairá dos cards compactos, horizontais e da lista.`)) {
+        let lifecycle;
+        try {
+          lifecycle = await industrialApi.lifecycle.get(id);
+        } catch (err) {
+          window.alert(err instanceof Error ? err.message : "Falha ao verificar ciclo de vida do gerador.");
           return;
         }
-        const err = await removeGenerator(id);
-        if (err) window.alert(err);
+        const detail = lifecycle.provisioned
+          ? "O equipamento está provisionado no Rapid SCADA. A retirada fará backup, desativará canais preservando histórico, removerá Device/Line quando aplicável e só depois excluirá o cadastro."
+          : "O equipamento não possui binding Rapid ativo; somente o cadastro será retirado.";
+        const typed = window.prompt(`${detail}\n\nPara confirmar, digite exatamente: RETIRAR ${tag}`);
+        if ((typed ?? "").trim().toUpperCase() !== `RETIRAR ${tag}`.toUpperCase()) return;
+        try {
+          const result = await industrialApi.lifecycle.retire(id, tag);
+          await refresh();
+          window.alert(result.deprovisioned
+            ? `${tag} retirado. Configuração ativa removida e histórico Rapid preservado.`
+            : `${tag} retirado do cadastro.`);
+        } catch (err) {
+          window.alert(err instanceof Error ? err.message : "Falha ao retirar gerador.");
+        }
       }}
     >
       <Trash2 className="size-3.5" />
