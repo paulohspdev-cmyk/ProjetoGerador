@@ -35,7 +35,7 @@ export function KpiStrip() {
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6 3xl:gap-3">
+    <div className="grid min-w-0 grid-cols-1 gap-2 min-[420px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 3xl:gap-3">
       {cards.map((c) => (
         <div key={c.label} className="flex min-w-0 items-center gap-2 rounded-lg border border-border bg-card p-2.5 sm:gap-3 sm:p-3">
           <span className="grid size-8 shrink-0 place-items-center rounded-md bg-secondary sm:size-9">
@@ -43,7 +43,7 @@ export function KpiStrip() {
           </span>
           <div className="min-w-0">
             <p className="truncate text-[11px] text-muted-foreground">{c.label}</p>
-            <p className={`num text-lg font-bold leading-tight sm:text-xl ${c.tone}`}>
+            <p className={`num break-words text-lg font-bold leading-tight sm:text-xl ${c.tone}`}>
               {c.value}
               {c.unit && <span className="ml-1 text-[11px] font-normal">{c.unit}</span>}
             </p>
