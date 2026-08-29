@@ -42,23 +42,113 @@
 }
 
 .generator-six-card-grid .flow-generator-letter {
-  font-size: 34px;
+  font-size: 30px;
 }
 
-/* Mantém as barras e valores legíveis quando seis cards dividem a largura Full HD. */
+/* Usa o pequeno espaço vertical restante para ganhar legibilidade sem aumentar a grade. */
+.generator-six-card-grid .comap-title {
+  font-size: 10.5px;
+}
+
+.generator-six-card-grid .engine-status-block {
+  padding-top: 5px !important;
+  padding-bottom: 5px !important;
+}
+
 .generator-six-card-grid .comap-engine {
-  grid-template-columns: 14px minmax(58px, 0.9fr) minmax(52px, 1.25fr) minmax(46px, auto);
+  grid-template-columns: 14px minmax(56px, 0.82fr) minmax(70px, 1.5fr) minmax(48px, auto);
+  min-height: 17.5px;
   column-gap: 4px;
-  font-size: 9px;
+  font-size: 9.5px;
+}
+
+.generator-six-card-grid .comap-engine .icon {
+  width: 13px;
+  height: 13px;
+}
+
+.generator-six-card-grid .comap-engine .engine-label {
+  white-space: nowrap;
 }
 
 .generator-six-card-grid .comap-engine .engine-value {
-  min-width: 46px;
+  min-width: 48px;
+  font-size: 10px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.generator-six-card-grid .comap-meter {
+  height: 6.5px;
+}
+
+/*
+ * O backend continua preservando known=false. Aqui alteramos somente a apresentacao:
+ * grandezas numericas desconhecidas aparecem como 0 ate a primeira leitura real.
+ */
+.generator-six-card-grid .comap-engine.opacity-65 {
+  opacity: 1;
+}
+
+.generator-six-card-grid .comap-engine.opacity-65 .engine-value {
+  font-size: 0;
+  color: #dce8ef;
+}
+
+.generator-six-card-grid .comap-engine.opacity-65 .engine-value::after {
+  content: "0";
+  font-size: 10px;
+  font-weight: 800;
 }
 
 .generator-six-card-grid .controller-mode-btn {
   min-height: 23px;
   font-size: 8px;
+}
+
+/* Potencia: elimina o texto redundante do canto e usa o espaco no valor principal. */
+.generator-six-card-grid .power-gauge-heading > span {
+  display: none;
+}
+
+.generator-six-card-grid .comap-power-gauge-block {
+  padding-top: 5px;
+  padding-bottom: 3px;
+}
+
+.generator-six-card-grid .kw-gauge-wrap {
+  min-height: 110px;
+}
+
+.generator-six-card-grid .kw-gauge-svg {
+  width: min(100%, 212px);
+  height: 110px;
+}
+
+.generator-six-card-grid .kw-gauge-unit {
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.generator-six-card-grid .kw-gauge-value {
+  bottom: 4px;
+  font-size: 31px;
+  line-height: 1;
+}
+
+.generator-six-card-grid .kw-gauge-svg[aria-label="Potência indisponível"] + .kw-gauge-value {
+  font-size: 0;
+}
+
+.generator-six-card-grid .kw-gauge-svg[aria-label="Potência indisponível"] + .kw-gauge-value::after {
+  content: "0";
+  font-size: 31px;
+  font-weight: 900;
+}
+
+.generator-six-card-grid .mains-generator-block .comap-table-row {
+  min-height: 17px;
+  font-size: 9.5px;
 }
 
 @media (min-width: 640px) {
