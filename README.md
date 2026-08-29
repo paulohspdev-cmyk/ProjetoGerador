@@ -1,11 +1,11 @@
 # RC Geradores — ProjetoGerador
 
-Plataforma de supervisão e operação de grupos geradores com **Rapid SCADA como motor industrial** e o painel RC Geradores como camada de produto.
+Plataforma SCADA/gestão para grupos geradores e ativos elétricos, com **Rapid SCADA como motor industrial** e o painel RC Geradores como camada de produto.
 
 ## Arquitetura
 
 ```text
-Controladora / gerador
+Controladora / ativo
         │
         ├─ Modbus TCP direto ───────────────┐
         ├─ Modbus RTU serial ───────────────┤
@@ -26,6 +26,29 @@ Controladora / gerador
                                       Frontend TanStack
 ```
 
+O domínio v3 separa as entidades industriais:
+
+```text
+Cliente / Site
+      │
+      ▼
+    Asset ───────────────┐
+      │                  │ relações de topologia
+      ▼                  ▼
+Controller Instance ── Asset (rede / ATS / bus / BESS / gerador ...)
+      │
+      ▼
+ Connection
+      │
+      ▼
+Controller Pack
+      │
+      ▼
+Rapid Device / Channels
+```
+
+Isso permite representar geradores, rede, ATS, barramento, BESS, motores, switchgear, torres, gateways e instalações com várias controladoras no mesmo site.
+
 Regras de arquitetura:
 
 - **Rapid SCADA é o mestre industrial e a fonte de telemetria/histórico.**
@@ -34,6 +57,7 @@ Regras de arquitetura:
 - O caminho normal Rapid → controladora aceita somente leitura Modbus FC03/FC04 pela bridge.
 - O frontend não inventa telemetria. Canal não homologado aparece como **N/D**.
 - Comandos genéricos são proibidos. O Controller Pack determina capacidades liberadas.
+- Estar presente no catálogo não significa estar homologado: somente Controller Packs `production` podem provisionar operação industrial.
 
 ## Controller Pack homologado
 
@@ -42,13 +66,13 @@ O primeiro pack de produção é:
 ```text
 ComAp InteliGen 200
 status: field_validated
-telemetria: RPM, frequência e tensões do gerador
-comandos: START e STOP
+telemetria atual homologada: RPM, frequência e tensões do gerador
+comandos homologados: START e STOP
 ```
 
 AUTO, MANUAL, TEST, MCB, GCB e paralelismo permanecem bloqueados até homologação específica.
 
-A configuração de campo originalmente validada utiliza:
+A configuração de campo original utilizou:
 
 ```text
 Reverse TCP externo: 15001
@@ -58,9 +82,36 @@ Rapid Device:         200
 Rapid Channels:       2001..2008
 ```
 
-Porta, Unit ID e Rapid Device do primeiro IG200 podem ser definidos para **telemetria/provisionamento**. Mais de um Unit ID pode compartilhar a mesma sessão física reverse TCP; o provisionador impede identidade Modbus duplicada na mesma porta.
+O runtime multi-device resolve a identidade pelo binding real do equipamento. Rapid Device não é usado como autorização de segurança. START/STOP exige simultaneamente Controller Pack de produção, modelo homologado, binding coerente com cadastro/porta/Unit/Device, controle explicitamente habilitado e retorno válido do controlador. AUTO, TEST, MCB, GCB e paralelismo continuam bloqueados.
 
-**Limite de segurança atual:** o caminho de controle remoto START/STOP que foi validado em campo permanece deliberadamente restrito ao **Rapid Device 200**. Um IG200 com outro Rapid Device pode ser monitorado, mas `--enable-control` será recusado para esse gerador até existir nova validação de campo do caminho de comando.
+## Catálogo de controladoras
+
+`controllers/catalog/catalog-v1.json` mantém o catálogo de modelos alvo ComAp e DSE. O catálogo é separado dos Controller Packs:
+
+```text
+CATÁLOGO  → modelo conhecido pelo produto; sem polling/comando automático
+LAB       → pack em investigação; não provisionável em produção
+PRODUCTION→ pack homologado e autorizado pelo provisionador
+```
+
+Essa separação evita transformar uma lista de compatibilidade desejada em suporte industrial não testado.
+
+## Operação industrial v3
+
+A plataforma possui módulos persistentes para:
+
+- alarmes industriais ativos e reconhecimento;
+- histórico de processo separado da auditoria administrativa;
+- tendências analógicas pelo archive do Rapid SCADA;
+- planos preventivos por horímetro e/ou calendário;
+- histórico de manutenção;
+- escalonamento de alarmes somente para notificações;
+- topologia entre assets;
+- relatórios CSV/XLSX/PDF;
+- scheduler de backup, relatório e notificação;
+- tokens de API e integrações.
+
+Alarmes nativos individuais da controladora só são exibidos quando seus códigos/bitfields forem homologados no Controller Pack. Enquanto isso, a plataforma registra apenas condições que consegue provar (por exemplo, perda de comunicação, estado de alerta ou `alarm_count` quando o canal existe).
 
 ## Estrutura
 
@@ -68,14 +119,16 @@ Porta, Unit ID e Rapid Device do primeiro IG200 podem ser definidos para **telem
 src/                         frontend React/TanStack
 public/                      ativos visuais
 backend/                     API FastAPI, auth, RBAC, worker e integrações
+controllers/catalog/         catálogo alvo, sem poder industrial
 controllers/production/      Controller Packs homologados
 controllers/lab/             controladoras em investigação
 rapid/reader/                leitor oficial do Rapid SCADA Server
 rapid/templates/             templates do Communicator
-rapid/provisioning/          provisionamento seguro de linhas/devices/canais
+rapid/provisioning/          provisionamento/reconcile/deprovision seguro
 ops/systemd/                 serviços Linux
 ops/nginx/                   proxy da aplicação
 ops/install.sh               instalação/reaplicação da VM
+ops/deploy_release.sh         deploy controlado por commit
 ops/status.sh                diagnóstico detalhado
 ops/vm-smoke.sh              teste de aceitação pós-instalação
 docs/                        arquitetura e auditorias
@@ -88,9 +141,9 @@ Após a instalação:
 
 ```text
 rc-geradores-bridge       reverse TCP + socket de controle homologado
-rc-geradores-provision    helper root local para provisionar Rapid SCADA
+rc-geradores-provision    helper root para provisionar/reconciliar/deprovisionar Rapid
 rc-geradores-api          FastAPI em 127.0.0.1:8090
-rc-geradores-worker       notificações, scheduler e automação não industrial
+rc-geradores-worker       alarmes, notificações, scheduler e automação não industrial
 rc-geradores-frontend     TanStack/Node em 127.0.0.1:3000
 nginx                     entrada HTTP na porta 80
 scadaserver6              Rapid SCADA Server
@@ -123,15 +176,11 @@ O instalador:
 
 ### Instalar sem gerador inicial
 
-Para montar apenas a plataforma e cadastrar os equipamentos depois pelo painel:
-
 ```bash
 sudo bash ops/install.sh --skip-initial-generator
 ```
 
 ### Configurar o primeiro IG200
-
-Exemplo com identidade de telemetria diferente da configuração de campo original:
 
 ```bash
 sudo bash ops/install.sh \
@@ -143,13 +192,11 @@ sudo bash ops/install.sh \
   --ig200-device 210
 ```
 
-Nesse exemplo o monitoramento/provisionamento pode usar Device 210, mas o controle remoto permanece desabilitado. Para o START/STOP homologado atual, mantenha Rapid Device 200.
+Porta, Unit ID e Rapid Device são identidades de comunicação/provisionamento. O provisionador impede identidade Modbus duplicada na mesma sessão reverse TCP e o controle usa o binding real, não um número de Device hardcoded.
 
 Se a tag já existir, o instalador **preserva a identidade industrial existente** em vez de sobrescrever silenciosamente porta, Unit ID ou Rapid Device. O provisionador também recusa reutilizar um runtime binding que tenha divergido do cadastro.
 
 ### Bootstrap automatizado de administrador
-
-Para uma instalação automatizada, a senha inicial pode vir de arquivo protegido, sem aparecer na linha de comando:
 
 ```bash
 sudo install -m 600 /dev/null /root/rc-admin-password
@@ -162,18 +209,35 @@ O arquivo deve ser regular, pertencente ao root e `chmod 600` quando o bootstrap
 
 ## Controle remoto
 
-Por segurança, START/STOP ficam desabilitados na primeira instalação. Depois de confirmar telemetria e comunicação do equipamento de campo, a configuração pode ser reaplicada explicitamente com:
+Por segurança, START/STOP ficam desabilitados na primeira instalação. Depois de confirmar telemetria, identidade e comunicação do equipamento de campo, a configuração pode ser reaplicada explicitamente com:
 
 ```bash
 cd /opt/rc-geradores
 sudo bash ops/install.sh --enable-control
 ```
 
-Isso habilita somente o caminho START/STOP do **InteliGen 200 homologado** e, na validação de campo atual, somente quando o cadastro usa **Rapid Device 200**. O bootstrap falha fechado se o controle for solicitado para outro Rapid Device. AUTO, TEST, MCB, GCB e paralelismo continuam bloqueados.
+Isso habilita somente o caminho START/STOP do **InteliGen 200 homologado**. O backend/bridge valida o modelo, o Controller Pack, o binding do Rapid Device, a porta, o Modbus Unit e o cadastro antes de aceitar o comando. AUTO, TEST, MCB, GCB e paralelismo continuam bloqueados.
+
+## Provisionamento e ciclo de vida
+
+O provisionador é idempotente e possui reconcile:
+
+- preserva números de canais existentes;
+- adiciona canais novos do pack sem renumerar históricos;
+- reconcilia Device/Unit/XML/template quando a identidade cadastrada é comprovada;
+- faz backup e rollback antes de alterar Rapid SCADA;
+- mantém `CmdEnabled=false` no Communicator.
+
+A retirada de um gerador provisionado deve usar o fluxo de **retirada segura** do painel. Esse fluxo:
+
+1. exige confirmação explícita;
+2. faz backup;
+3. desativa os canais sem apagar/renumerar o histórico;
+4. remove Device e Line quando ela fica vazia;
+5. arquiva o binding retirado;
+6. só depois remove o cadastro do produto.
 
 ## Validação da VM
-
-Teste de aceitação pós-instalação:
 
 ```bash
 sudo /opt/rc-geradores/ops/vm-smoke.sh
@@ -206,20 +270,21 @@ sudo /opt/rc-geradores/ops/status.sh
 ## Runtime e dados persistentes
 
 ```text
-/etc/rc-geradores.env                         configuração da VM
-/var/lib/rc-geradores/rc-geradores.db        banco do produto
-/var/lib/rc-geradores/rapid-bindings.json    bindings Rapid em runtime
-/var/lib/rc-geradores/backups/               backups
-/var/lib/rc-geradores/reports/               relatórios
-/var/lib/rc-geradores/rapid-provision/       checkpoints do provisionador
-/run/rc-geradores/control.sock               controle IG200 local
-/run/rc-geradores/provision.sock             provisionamento Rapid local
-/opt/scada                                    Rapid SCADA
+/etc/rc-geradores.env                              configuração da VM
+/var/lib/rc-geradores/rc-geradores.db             banco do produto
+/var/lib/rc-geradores/rapid-bindings.json         bindings Rapid ativos
+/var/lib/rc-geradores/rapid-retired-bindings.json bindings retirados
+/var/lib/rc-geradores/backups/                    backups
+/var/lib/rc-geradores/reports/                    relatórios
+/var/lib/rc-geradores/rapid-provision/            checkpoints do provisionador
+/run/rc-geradores/control.sock                    controle IG200 local
+/run/rc-geradores/provision.sock                  ciclo de vida Rapid local
+/opt/scada                                         Rapid SCADA
 ```
 
 `rapid/bindings.json` no repositório é apenas referência canônica. Uma VM limpa não é considerada provisionada por causa desse arquivo; o runtime só é adotado quando a configuração correspondente existe de fato no Rapid SCADA.
 
-O banco SQLite guarda cadastro e dados do produto; **não substitui o historiador nem os alarmes do Rapid SCADA**.
+O banco SQLite guarda cadastro, alarmes/estado e dados do produto; **não substitui o historiador Rapid SCADA para séries analógicas**.
 
 ## Segurança
 
@@ -227,11 +292,13 @@ O banco SQLite guarda cadastro e dados do produto; **não substitui o historiado
 - rate limiting de login e suporte a TOTP/2FA no backend;
 - API externa por token e escopos;
 - provisionador Rapid isolado em socket Unix local;
-- bridge industrial de leitura bloqueia funções Modbus de escrita;
+- bridge industrial de leitura bloqueia funções Modbus de escrita no caminho normal;
 - automação aceita somente ações não industriais (`notify` e `work_order`);
-- START/STOP passam por confirmação explícita, Controller Pack homologado, socket local e retorno do controlador;
-- START/STOP homologado falha fechado fora do Rapid Device 200 enquanto essa for a identidade validada em campo;
+- escalonamento de alarmes somente enfileira notificações;
+- START/STOP passam por confirmação explícita, Controller Pack homologado, binding real, socket local e retorno do controlador;
+- AUTO, TEST, MCB, GCB e paralelismo permanecem bloqueados no IG200 atual;
 - bindings divergentes não são reutilizados silenciosamente;
+- retirada de equipamento preserva canais/histórico antes de excluir cadastro;
 - SMTP, WhatsApp e acesso público devem receber credenciais/configuração reais antes do uso;
 - para exposição fora da rede confiável, configure HTTPS e `RC_AUTH_COOKIE_SECURE=1`.
 
@@ -266,8 +333,10 @@ O workflow valida, entre outros pontos:
 - build cliente + SSR/Node;
 - smoke test do servidor frontend;
 - backend, autenticação e RBAC;
+- domínio v3, catálogo e operações industriais;
+- alarmes, manutenção e escalonamento;
+- ciclo de vida/reconcile/deprovision;
 - sintaxe e contrato dos instaladores;
-- opções de instalação configurável;
 - ausência de `node_modules`, bytecode Python e artefatos de runtime no Git;
 - ausência de séries/dados industriais demonstrativos conhecidos;
 - política de Controller Packs e comandos bloqueados;
