@@ -1,10 +1,11 @@
 import type { ComponentType } from "react";
 
-import { AlarmsScreen, EventsScreen, HistoryScreen, OperationCenter, SitesScreen, TrendsScreen } from "./operations";
+import { EventsScreen, OperationCenter, SitesScreen, TrendsScreen } from "./operations";
 import { ReportsV3Screen } from "./ReportsV3Screen";
 import { ApiV3Screen } from "./ApiV3Screen";
 import { SchedulesV3Screen } from "./SchedulesV3Screen";
 import { EmailV3Screen, ErpBmsV3Screen, WhatsAppV3Screen } from "./IntegrationsV3Screens";
+import { IndustrialAlarmsScreen, MaintenanceV3Screen, ProcessHistoryScreen, EscalationV3Screen } from "./IndustrialOpsScreens";
 import { MapScreen } from "./MapScreen";
 import { ControllersV3Screen } from "./ControllersV3Screen";
 import {
@@ -17,12 +18,10 @@ import {
   EnergyTransfer,
   FuelScreen,
   HourmetersScreen,
-  MaintenanceScreen,
 } from "./energy-maint";
 import {
   CommunicationScreen,
   ConnectivityScreen,
-  EscalationScreen,
   ExerciseScreen,
   GatewaysScreen,
   ModemsScreen,
@@ -56,17 +55,17 @@ export const screens: Record<string, ComponentType> = {
   "central-de-operacao": OperationCenter,
   sites: SitesScreen,
   mapa: MapScreen,
-  alarmes: AlarmsScreen,
+  alarmes: IndustrialAlarmsScreen,
   eventos: EventsScreen,
   tendencias: TrendsScreen,
-  historico: HistoryScreen,
+  historico: ProcessHistoryScreen,
   relatorios: ReportsV3Screen,
   "energia-rede": EnergyRede,
   "energia-geradores": EnergyGens,
   "energia-carga": EnergyLoad,
   "energia-transferencia": EnergyTransfer,
   "energia-paralelismo": EnergyParallel,
-  manutencao: MaintenanceScreen,
+  manutencao: MaintenanceV3Screen,
   combustivel: FuelScreen,
   baterias: BatteriesScreen,
   horimetros: HourmetersScreen,
@@ -80,7 +79,7 @@ export const screens: Record<string, ComponentType> = {
   "exercicio-automatico": ExerciseScreen,
   agendamentos: SchedulesV3Screen,
   notificacoes: NotificationsScreen,
-  escalonamento: EscalationScreen,
+  escalonamento: EscalationV3Screen,
   canais: ChannelsScreen,
   tags: TagsScreen,
   templates: TemplatesScreen,
