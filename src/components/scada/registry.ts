@@ -1,6 +1,9 @@
 import type { ComponentType } from "react";
 
-import { AlarmsScreen, EventsScreen, HistoryScreen, OperationCenter, ReportsScreen, SitesScreen, TrendsScreen } from "./operations";
+import { AlarmsScreen, EventsScreen, HistoryScreen, OperationCenter, SitesScreen, TrendsScreen } from "./operations";
+import { ReportsV3Screen } from "./ReportsV3Screen";
+import { ApiV3Screen } from "./ApiV3Screen";
+import { SchedulesV3Screen } from "./SchedulesV3Screen";
 import { MapScreen } from "./MapScreen";
 import { ControllersV3Screen } from "./ControllersV3Screen";
 import {
@@ -24,7 +27,6 @@ import {
   ModemsScreen,
   NotificationsScreen,
   RulesScreen,
-  SchedulesScreen,
 } from "./equip-auto";
 import {
   BackupsScreen,
@@ -43,7 +45,6 @@ import {
   HealthScreen,
 } from "./scada-lib";
 import {
-  ApiScreen,
   ClientsScreen,
   EmailScreen,
   ErpScreen,
@@ -61,7 +62,7 @@ export const screens: Record<string, ComponentType> = {
   eventos: EventsScreen,
   tendencias: TrendsScreen,
   historico: HistoryScreen,
-  relatorios: ReportsScreen,
+  relatorios: ReportsV3Screen,
   "energia-rede": EnergyRede,
   "energia-geradores": EnergyGens,
   "energia-carga": EnergyLoad,
@@ -79,7 +80,7 @@ export const screens: Record<string, ComponentType> = {
   comunicacao: CommunicationScreen,
   regras: RulesScreen,
   "exercicio-automatico": ExerciseScreen,
-  agendamentos: SchedulesScreen,
+  agendamentos: SchedulesV3Screen,
   notificacoes: NotificationsScreen,
   escalonamento: EscalationScreen,
   canais: ChannelsScreen,
@@ -97,7 +98,7 @@ export const screens: Record<string, ComponentType> = {
   usuarios: UsersScreen,
   perfis: RolesScreen,
   auditoria: AuditScreen,
-  api: ApiScreen,
+  api: ApiV3Screen,
   webhooks: WebhooksScreen,
   email: EmailScreen,
   whatsapp: WhatsAppScreen,
