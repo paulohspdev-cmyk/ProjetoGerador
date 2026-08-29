@@ -1,6 +1,19 @@
+.generator-vertical-grid {
+  grid-auto-rows: max-content;
+  align-items: start;
+}
+
+.generator-vertical-grid > .comap-panel-v2 {
+  width: 100%;
+  height: max-content;
+  align-self: start;
+}
+
 .comap-panel-v2 {
-  height: auto;
+  display: block;
+  height: max-content;
   min-height: 0;
+  overflow: hidden;
 }
 
 .controller-model-line {
@@ -170,33 +183,33 @@
 }
 
 .comap-panel-v2 .comap-flow {
-  min-height: 275px;
+  min-height: 360px;
   flex: 0 0 auto;
   padding-top: 3px;
   padding-bottom: 3px;
 }
 
 .comap-panel-v2 .comap-sld {
-  height: 242px;
+  height: 326px;
   flex: 0 0 auto;
 }
 
 .comap-panel-v2 .comap-sld-stage {
-  width: min(100%, 218px);
-  height: 242px;
+  width: min(100%, 250px);
+  height: 326px;
   aspect-ratio: auto;
 }
 
 .comap-panel-v2 .comap-start,
 .comap-panel-v2 .comap-stop {
-  width: 41px;
-  height: 41px;
+  width: 43px;
+  height: 43px;
   font-size: 9px;
 }
 
 .breaker-single-control {
   display: grid;
-  width: 44px;
+  width: 46px;
   justify-items: center;
   gap: 2px;
 }
@@ -209,7 +222,7 @@
 
 .breaker-state-track {
   display: block;
-  width: 36px;
+  width: 38px;
   height: 4px;
   overflow: hidden;
   border: 1px solid #234e68;
@@ -242,8 +255,8 @@
 }
 
 .breaker-single-button {
-  width: 38px;
-  height: 29px;
+  width: 40px;
+  height: 31px;
   padding: 0;
   border: 1px solid #315a70;
   border-radius: 4px;
@@ -289,7 +302,7 @@
 }
 
 .flow-generator-circle {
-  transform: scale(1.18);
+  transform: scale(1.25);
   transform-box: fill-box;
   transform-origin: center;
 }
@@ -308,11 +321,11 @@
 }
 
 .comap-panel-v2 .flow-generator-letter {
-  font-size: 38px;
+  font-size: 42px;
 }
 
 .comap-panel-v2 .comap-engine {
-  grid-template-columns: 16px minmax(72px, 0.9fr) minmax(64px, 1.4fr) minmax(52px, auto);
+  grid-template-columns: 16px minmax(86px, 0.95fr) minmax(92px, 1.45fr) minmax(58px, auto);
   min-height: 16px;
   column-gap: 6px;
   font-size: 10px;
@@ -324,7 +337,7 @@
 }
 
 .comap-panel-v2 .comap-engine .engine-value {
-  min-width: 52px;
+  min-width: 58px;
   padding-left: 2px;
   text-align: right;
 }
@@ -355,9 +368,24 @@
   font-size: 10px;
 }
 
+@media (max-width: 760px) {
+  .comap-panel-v2 .comap-flow {
+    min-height: 330px;
+  }
+
+  .comap-panel-v2 .comap-sld,
+  .comap-panel-v2 .comap-sld-stage {
+    height: 296px;
+  }
+
+  .comap-panel-v2 .comap-sld-stage {
+    width: min(100%, 230px);
+  }
+}
+
 @media (max-width: 360px) {
   .comap-panel-v2 .comap-sld-stage {
-    width: 210px;
+    width: 215px;
   }
 
   .controller-mode-btn {
@@ -365,7 +393,7 @@
   }
 
   .comap-panel-v2 .comap-engine {
-    grid-template-columns: 15px minmax(64px, 0.9fr) minmax(55px, 1.25fr) minmax(48px, auto);
+    grid-template-columns: 15px minmax(70px, 0.9fr) minmax(62px, 1.25fr) minmax(52px, auto);
     column-gap: 4px;
   }
 }
