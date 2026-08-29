@@ -5,8 +5,9 @@ import { useGenerators } from "./GeneratorsProvider";
 import { cn } from "@/lib/utils";
 import type { Permission } from "@/lib/auth";
 
+// Mantido para o Sidebar: cadastrar geradores depende da permissão create.
 export function canManageGenerators(can: (perm: Permission) => boolean) {
-  return can("create") || can("remove");
+  return can("create");
 }
 
 export function DeleteGeneratorButton({
@@ -20,7 +21,7 @@ export function DeleteGeneratorButton({
 }) {
   const { can } = useAuth();
   const { removeGenerator } = useGenerators();
-  if (!canManageGenerators(can)) return null;
+  if (!can("remove")) return null;
 
   return (
     <button
