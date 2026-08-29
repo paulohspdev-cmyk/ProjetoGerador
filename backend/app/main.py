@@ -7,7 +7,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
-from . import db, ops_store, platform_store, transport_store
+from . import db, domain_store, ops_store, platform_store, transport_store
 from .auth import (
     authenticate,
     create_login_session,
@@ -40,6 +40,7 @@ from .config import (
 )
 from .control import send_homologated_command
 from .diagnostics import system_diagnostics
+from .domain_routes import router as domain_router
 from .extra_routes import router as extra_router
 from .ops_schemas import (
     AgendaCreate,
@@ -67,6 +68,8 @@ async def lifespan(app: FastAPI):
     ops_store.init_ops_db()
     platform_store.init_platform_db()
     transport_store.init_transport_db()
+    domain_store.init_domain_db()
+    domain_store.sync_legacy_generators()
     if ADMIN_PASSWORD:
         try:
             _, created = db.bootstrap_admin(ADMIN_NAME, ADMIN_EMAIL, hash_password(ADMIN_PASSWORD))
@@ -81,7 +84,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="RC Geradores API",
-    version="2.0.0",
+    version="3.0.0",
     description="Backend RC Geradores. Rapid SCADA é a fonte industrial de telemetria e histórico.",
     docs_url="/api/docs" if API_DOCS_ENABLED else None,
     redoc_url="/api/redoc" if API_DOCS_ENABLED else None,
@@ -287,6 +290,7 @@ def generator_create(payload: GeneratorCreate, user: dict = Depends(require_crea
         created = db.create_generator(payload.to_db(), actor=actor(user))
     except sqlite3.IntegrityError as exc:
         raise HTTPException(status_code=409, detail="Tag de gerador já cadastrada") from exc
+    domain_store.sync_legacy_generators()
     return overlay_generators([created])[0]
 
 
@@ -298,13 +302,18 @@ def generator_update(generator_id: str, payload: GeneratorUpdate, user: dict = D
         raise HTTPException(status_code=409, detail="Conflito no cadastro do gerador") from exc
     if not updated:
         raise HTTPException(status_code=404, detail="Gerador não encontrado")
+    domain_store.sync_legacy_generators()
     return overlay_generators([updated])[0]
 
 
 @app.delete("/api/generators/{generator_id}", status_code=status.HTTP_204_NO_CONTENT)
 def generator_delete(generator_id: str, user: dict = Depends(require_remove)):
+    current = db.get_generator(generator_id)
+    if not current:
+        raise HTTPException(status_code=404, detail="Gerador não encontrado")
     if not db.delete_generator(generator_id, actor=actor(user)):
         raise HTTPException(status_code=404, detail="Gerador não encontrado")
+    domain_store.remove_legacy_generator(current["id"])
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -552,3 +561,4 @@ def alarm_ack(payload: AlarmAckRequest, user: dict = Depends(require_operate)):
 
 
 app.include_router(extra_router)
+app.include_router(domain_router)
