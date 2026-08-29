@@ -50,7 +50,6 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
   const pages = Math.max(1, Math.ceil(items.length / pageSize));
   const page = Math.min(group, pages - 1);
   const visible = items.slice(page * pageSize, page * pageSize + pageSize);
-  const principalColumnCount = Math.max(1, Math.min(visible.length, 6));
 
   const setFilter = (id: GenStatus | "todos") => {
     setStatus(id);
@@ -141,12 +140,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
 
         <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
           {view === "principal" && (
-            <div
-              className={cn(
-                "generator-vertical-grid generator-six-card-grid scroll-slim grid h-full min-h-0 min-w-0 content-start gap-3 overflow-auto rounded-md bg-panel p-2",
-                `generator-count-${principalColumnCount}`,
-              )}
-            >
+            <div className="generator-vertical-grid generator-six-card-grid scroll-slim grid h-full min-h-0 min-w-0 content-start gap-3 overflow-auto rounded-md bg-panel p-2">
               {visible.map((g) => (
                 <PowerFlowCard key={g.id} gen={g} />
               ))}
