@@ -78,9 +78,17 @@ export type ControllerInstanceV3 = {
   connections?: ControllerConnectionV3[];
 };
 
+export type AssetLinkV3 = {
+  id: string;
+  from_asset_id: string;
+  to_asset_id: string;
+  relation: string;
+  metadata?: Record<string, unknown>;
+};
+
 export type TopologyV3 = {
   assets: AssetV3[];
-  links: Array<{ id: string; from_asset_id: string; to_asset_id: string; relation: string; metadata?: Record<string, unknown> }>;
+  links: AssetLinkV3[];
   counts: { assets: number; controllers: number; connections: number; links: number };
 };
 
@@ -126,4 +134,9 @@ export const domainApi = {
   topology: () => request<TopologyV3>("/api/topology"),
   createBundle: (payload: EquipmentBundlePayload) =>
     request<EquipmentBundleResult>("/api/equipment-bundles", { method: "POST", body: JSON.stringify(payload) }),
+  createLink: (fromAssetId: string, toAssetId: string, relation: string, metadata: Record<string, unknown> = {}) =>
+    request<AssetLinkV3>("/api/asset-links", { method: "POST", body: JSON.stringify({ from_asset_id: fromAssetId, to_asset_id: toAssetId, relation, metadata }) }),
+  updateAsset: (id: string, payload: Partial<Pick<AssetV3, "tag" | "name" | "kind" | "site" | "customer" | "enabled" | "metadata">>) =>
+    request<AssetV3>(`/api/assets/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(payload) }),
+  removeAsset: (id: string) => request<void>(`/api/assets/${encodeURIComponent(id)}`, { method: "DELETE" }),
 };
