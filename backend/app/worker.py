@@ -1,7 +1,7 @@
 import signal
 import time
 
-from . import db, ops_store, platform_store
+from . import db, industrial_store, ops_store, platform_store
 from .automation_engine import process_rules
 from .backup_manager import create_full_backup
 from .notifications import process_due_notifications
@@ -64,13 +64,19 @@ def main():
     db.init_db()
     ops_store.init_ops_db()
     platform_store.init_platform_db()
+    industrial_store.init_industrial_db()
     print("[worker] RC Geradores iniciado", flush=True)
     last_automation = 0.0
+    last_industrial = 0.0
     while running:
         try:
             process_due_notifications()
             process_scheduler()
             now = time.monotonic()
+            if now - last_industrial >= 10:
+                generators = overlay_generators(db.list_generators())
+                industrial_store.process_escalations(generators)
+                last_industrial = now
             if now - last_automation >= 10:
                 process_rules()
                 last_automation = now
