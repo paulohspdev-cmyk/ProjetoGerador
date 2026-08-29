@@ -114,6 +114,12 @@ jobs:
           PYTHONPATH: .
         run: python tests/smoke.py
 
+      - name: Backend domínio v3 e catálogo
+        working-directory: backend
+        env:
+          PYTHONPATH: .
+        run: python tests/domain_v3.py
+
       - name: Backend IG200 multi-device smoke
         working-directory: backend
         env:
