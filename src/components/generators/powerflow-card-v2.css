@@ -288,6 +288,12 @@
   }
 }
 
+.flow-generator-circle {
+  transform: scale(1.18);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
 .flow-generator-circle.generator-running {
   stroke: #43ef00;
   stroke-width: 3.2;
