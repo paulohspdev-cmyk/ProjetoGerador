@@ -11,6 +11,7 @@ import {
 import { useAuth } from "@/components/auth/AuthProvider";
 import { CONTROLLER_MODELS, GEN_SITES, type Generator } from "@/data/generators";
 import { ApiError, rcApi, type GeneratorTransport } from "@/lib/api";
+import { industrialApi } from "@/lib/industrial-api";
 
 type CreateInput = {
   tag?: string | undefined;
@@ -112,13 +113,14 @@ export function GeneratorsProvider({ children }: { children: ReactNode }) {
 
   const removeGenerator = useCallback(
     async (id: string) => {
-      if (!generators.some((g) => g.id === id)) return "Gerador não encontrado.";
+      const generator = generators.find((g) => g.id === id);
+      if (!generator) return "Gerador não encontrado.";
       try {
-        await rcApi.generators.remove(id);
+        await industrialApi.lifecycle.retire(generator.id, generator.tag);
         await refresh();
         return null;
       } catch (err) {
-        return err instanceof Error ? err.message : "Falha ao excluir gerador.";
+        return err instanceof Error ? err.message : "Falha ao retirar gerador com segurança.";
       }
     },
     [generators, refresh],

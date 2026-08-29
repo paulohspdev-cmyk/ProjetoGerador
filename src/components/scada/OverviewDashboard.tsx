@@ -87,7 +87,7 @@ export function OverviewDashboard() {
       ]} />
 
       <div className="grid gap-3 lg:grid-cols-3">
-        <Panel title="Estado do parque" className="lg:col-span-2" actions={<ModuleLink slug="central-operacao">Operação →</ModuleLink>}>
+        <Panel title="Estado do parque" className="lg:col-span-2" actions={<ModuleLink slug="central-de-operacao">Operação →</ModuleLink>}>
           {!generators.length && <p className="text-[12px] text-muted-foreground">Nenhum gerador cadastrado.</p>}
           <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
             {generators.map((g) => (
