@@ -9,7 +9,9 @@ from pydantic import BaseModel, Field
 
 from . import domain_bundle, domain_store
 from .auth import require_admin, require_create, require_edit, require_remove, require_view
+from .industrial_routes import router as industrial_router
 from .integration_status import safe_integration_status
+from .rapid import load_bindings
 
 router = APIRouter()
 PROVISION_SOCKET = os.environ.get("RC_PROVISION_SOCKET", "/run/rc-geradores/provision.sock")
@@ -115,7 +117,11 @@ class AssetLinkCreate(BaseModel):
 
 
 class DeprovisionRequest(BaseModel):
-    confirmation: str = Field(min_length=1, max_length=32)
+    confirmation: str = Field(min_length=1, max_length=64)
+
+
+class RetireRequest(BaseModel):
+    confirmation: str = Field(min_length=1, max_length=160)
 
 
 async def _privileged_deprovision(generator_id: str) -> dict:
@@ -143,6 +149,10 @@ async def _privileged_deprovision(generator_id: str) -> dict:
     return result
 
 
+def _active_binding(generator_id: str) -> dict | None:
+    return next((item for item in load_bindings() if str(item.get("generator_id") or "") == generator_id), None)
+
+
 @router.get("/api/integrations/status")
 def integrations_status(user: dict = Depends(require_view)):
     return safe_integration_status()
@@ -165,6 +175,22 @@ def equipment_bundle_create(payload: EquipmentBundleCreate, user: dict = Depends
         raise
 
 
+@router.get("/api/generators/{generator_id}/lifecycle")
+def generator_lifecycle(generator_id: str, user: dict = Depends(require_view)):
+    from . import db
+    generator = db.get_generator(generator_id)
+    if not generator:
+        raise HTTPException(status_code=404, detail="Gerador não encontrado")
+    binding = _active_binding(generator["id"])
+    return {
+        "generatorId": generator["id"],
+        "tag": generator["tag"],
+        "provisioned": binding is not None,
+        "binding": binding,
+        "canDeleteSafely": binding is None,
+    }
+
+
 @router.post("/api/generators/{generator_id}/deprovision")
 async def generator_deprovision(generator_id: str, payload: DeprovisionRequest, user: dict = Depends(require_admin)):
     if payload.confirmation.strip().upper() != "DEPROVISION":
@@ -176,6 +202,37 @@ async def generator_deprovision(generator_id: str, payload: DeprovisionRequest, 
     result = await _privileged_deprovision(generator["id"])
     db.add_audit(actor(user), "deprovision_requested", "generator", generator["id"], "Rapid SCADA; histórico preservado")
     return result
+
+
+@router.post("/api/generators/{generator_id}/retire")
+async def generator_retire(generator_id: str, payload: RetireRequest, user: dict = Depends(require_remove)):
+    from . import db
+    generator = db.get_generator(generator_id)
+    if not generator:
+        raise HTTPException(status_code=404, detail="Gerador não encontrado")
+    expected = f"RETIRAR {generator['tag']}"
+    if payload.confirmation.strip().upper() != expected.upper():
+        raise HTTPException(status_code=422, detail=f"Confirmação deve ser {expected}")
+
+    deprovision_result = None
+    if _active_binding(generator["id"]):
+        if str(user.get("role") or "") != "administrador":
+            raise HTTPException(status_code=403, detail="Gerador provisionado só pode ser retirado por administrador")
+        deprovision_result = await _privileged_deprovision(generator["id"])
+    if _active_binding(generator["id"]):
+        raise HTTPException(status_code=409, detail="Binding Rapid ainda está ativo; retirada recusada")
+
+    if not db.delete_generator(generator["id"], actor=actor(user)):
+        raise HTTPException(status_code=404, detail="Gerador não encontrado")
+    domain_store.remove_legacy_generator(generator["id"])
+    db.add_audit(actor(user), "retire", "generator", generator["id"], "cadastro removido após ciclo de vida seguro")
+    return {
+        "ok": True,
+        "generatorId": generator["id"],
+        "tag": generator["tag"],
+        "deprovisioned": bool(deprovision_result),
+        "historyPreserved": bool((deprovision_result or {}).get("historyPreserved", True)),
+    }
 
 
 @router.get("/api/assets")
@@ -293,3 +350,6 @@ def asset_links_create(payload: AssetLinkCreate, user: dict = Depends(require_cr
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+router.include_router(industrial_router)
