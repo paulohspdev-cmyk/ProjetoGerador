@@ -114,19 +114,20 @@ export function EngineRow({
   icon: ReactNode;
   label: string;
   value: string;
-  pct: number;
+  pct: number | null;
   bar?: boolean;
   kind?: string;
   known?: boolean;
 }) {
-  const fill = known ? Math.min(100, Math.max(0, pct)) : 0;
+  const hasScale = known && pct != null;
+  const fill = hasScale ? Math.min(100, Math.max(0, pct)) : 0;
   return (
     <div className={cn("comap-engine", kind === "maint" && "maint", !known && "opacity-65")}>
       {icon}
       <span className="engine-label">{label}</span>
       {bar ? (
-        <span className="comap-meter">
-          <i style={{ width: `${fill}%`, background: known ? meterColor(kind, fill) : "transparent" }} />
+        <span className={cn("comap-meter", !known && "is-unknown", known && pct == null && "is-unscaled")}>
+          <i style={{ width: `${fill}%`, background: hasScale ? meterColor(kind, fill) : "transparent" }} />
         </span>
       ) : (
         <span />
@@ -169,11 +170,7 @@ function ControllerModeBar({ gen, known }: { gen: Generator; known: boolean }) {
       ];
 
   return (
-    <div className="controller-mode-wrap">
-      <div className="controller-mode-meta">
-        <span>{vendor === "comap" ? "ComAp" : "DSE"}</span>
-        <small>modo da controladora</small>
-      </div>
+    <div className="controller-mode-wrap" aria-label={`Modos ${vendor === "comap" ? "ComAp" : "DSE"}`}>
       <div className="controller-mode-bar">
         {buttons.map((item) => (
           <button
@@ -326,21 +323,28 @@ export function PowerFlowSld({
       </g>
 
       <g transform="translate(80 360)">
-        <circle r="28" className={cn("flow-device-circle", "flow-generator-circle", runningKnown && running && "source-active")} />
-        <text x="0" y="11" textAnchor="middle" className="flow-generator-letter">G</text>
-        <text x="-35" y="5" fontSize="15" fontWeight="bold" fill="#eef4f8" textAnchor="end">{genHzKnown ? `${fmt(genHz)} Hz` : "N/D"}</text>
+        <circle
+          r="34"
+          className={cn(
+            "flow-device-circle",
+            "flow-generator-circle",
+            runningKnown && (running ? "generator-running" : "generator-stopped"),
+          )}
+        />
+        <text x="0" y="12" textAnchor="middle" className="flow-generator-letter">G</text>
+        <text x="-42" y="5" fontSize="15" fontWeight="bold" fill="#eef4f8" textAnchor="end">{genHzKnown ? `${fmt(genHz)} Hz` : "N/D"}</text>
       </g>
 
       <path d="M80 68 V110" className="flow-bus-base" />
       <path d="M80 140 V200" className="flow-bus-base" />
       <path d="M80 200 V260" className="flow-bus-base" />
-      <path d="M80 290 V332" className="flow-bus-base" />
+      <path d="M80 290 V326" className="flow-bus-base" />
       <path d="M80 200 H142" className="flow-bus-base" />
 
       <FlowWire d="M80 68 V110" live={mainsPre} />
       <FlowWire d="M80 140 V200" live={mainsPost} />
       <FlowWire d="M80 200 V260" live={genPost} reverse />
-      <FlowWire d="M80 290 V332" live={genPre} reverse />
+      <FlowWire d="M80 290 V326" live={genPre} reverse />
       <FlowWire d="M80 200 H142" live={loadLive} />
 
       <circle cx="80" cy="110" r="4" className={cn("flow-switch-node", !mcbKnown && "is-unknown")} />
@@ -453,14 +457,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         <DeleteGeneratorButton id={gen.id} tag={gen.tag} className="size-5" />
       </header>
 
-      <section className="comap-block comap-power-gauge-block">
-        <div className="power-gauge-heading">
-          <h2 className="comap-title">Generator P</h2>
-          <span>{load == null ? "POTÊNCIA N/D" : "POTÊNCIA ATIVA"}</span>
-        </div>
-        <PowerGaugeKw value={load} nominal={nominalPower} />
-      </section>
-
       <section className="comap-block controller-mode-section">
         <ControllerModeBar gen={gen} known={modeKnown} />
       </section>
@@ -473,15 +469,11 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
 
         <div className="comap-sld">
           <div className="comap-sld-stage">
-            <div className="comap-prll prll-status" style={{ position: "absolute", left: 0, top: "1%", zIndex: 20 }} title="Paralelismo não homologado">
-              PRLL<br />N/D
-            </div>
-
-            <div className="absolute left-0 top-[25%] z-10">
+            <div className="absolute left-0 top-[23%] z-10">
               <BreakerControl label="MCB" known={mcbKnown} closed={gen.mcb} />
             </div>
 
-            <div className="absolute left-0 top-[52%] z-10">
+            <div className="absolute left-0 top-[53%] z-10">
               <BreakerControl label="GCB" known={gcbKnown} closed={gen.gcb} />
             </div>
 
@@ -502,7 +494,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
               loadKnown={load != null}
             />
 
-            <div className="absolute bottom-[4%] right-0 z-10 flex flex-col gap-2">
+            <div className="absolute bottom-[3%] right-0 z-10 flex flex-col gap-2">
               <button type="button" className="comap-start" disabled={!canOperate || commandBusy !== null} onClick={() => void runCommand("start")} aria-label="Partir gerador">
                 {commandBusy === "start" ? "..." : "START"}
               </button>
@@ -515,20 +507,28 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         {commandMessage && <p className="px-2 pb-1 text-[10px] text-muted-foreground">{commandMessage}</p>}
       </section>
 
-      <section className="comap-block shrink-0 px-2 py-1.5">
+      <section className="comap-block engine-status-block shrink-0 px-2 py-1.5">
         <h2 className="comap-title mb-1">Engine Status</h2>
         <EngineRow icon={<Gauge className="icon" />} label="RPM" value={rpm == null ? "N/D" : `${fmt(rpm, 0)} rpm`} pct={((rpm ?? 0) / 3600) * 100} kind="rpm" known={rpm != null} />
         <EngineRow icon={<IconOilCan />} label="Oil Pressure" value={oil == null ? "N/D" : `${fmt(oil)} bar`} pct={(oil ?? 0) * 20} kind="oil" known={oil != null} />
         <EngineRow icon={<IconThermometer />} label="Coolant Temp." value={temp == null ? "N/D" : `${fmt(temp, 0)} °C`} pct={((temp ?? 0) / 120) * 100} kind="temp" known={temp != null} />
         <EngineRow icon={<IconFuelPump />} label="Fuel Level" value={fuel == null ? "N/D" : `${fmt(fuel, 0)} %`} pct={fuel ?? 0} kind="fuel" known={fuel != null} />
-        <EngineRow icon={<IconBattery />} label="Battery Voltage" value={batt == null ? "N/D" : `${fmt(batt)} V`} pct={0} bar={false} known={batt != null} />
-        <EngineRow icon={<IconBolt />} label="Alternator Volt." value={alt == null ? "N/D" : `${fmt(alt)} V`} pct={0} bar={false} known={alt != null} />
+        <EngineRow icon={<IconBattery />} label="Battery Voltage" value={batt == null ? "N/D" : `${fmt(batt)} V`} pct={null} known={batt != null} />
+        <EngineRow icon={<IconBolt />} label="Alternator Volt." value={alt == null ? "N/D" : `${fmt(alt)} V`} pct={null} known={alt != null} />
         <EngineRow icon={<IconClock />} label="Maintenance" value={maintenance == null ? "N/D" : `${fmt(maintenance, 0)} h`} pct={((maintenance ?? 0) / 250) * 100} kind="maint" known={maintenance != null} />
-        <EngineRow icon={<IconRunHours />} label="Run Hours" value={runHours == null ? "N/D" : `${fmt(runHours)} h`} pct={0} bar={false} known={runHours != null} />
-        <EngineRow icon={<IconBolt />} label="Generator Freq." value={frequency == null ? "N/D" : `${fmt(frequency, 2)} Hz`} pct={0} bar={false} known={frequency != null} />
+        <EngineRow icon={<IconRunHours />} label="Run Hours" value={runHours == null ? "N/D" : `${fmt(runHours)} h`} pct={null} known={runHours != null} />
+        <EngineRow icon={<IconBolt />} label="Generator Freq." value={frequency == null ? "N/D" : `${fmt(frequency, 2)} Hz`} pct={null} known={frequency != null} />
       </section>
 
-      <section className="comap-block mb-1.5 shrink-0 px-2 py-1.5">
+      <section className="comap-block comap-power-gauge-block">
+        <div className="power-gauge-heading">
+          <h2 className="comap-title">Generator P</h2>
+          <span>{load == null ? "POTÊNCIA N/D" : "POTÊNCIA ATIVA"}</span>
+        </div>
+        <PowerGaugeKw value={load} nominal={nominalPower} />
+      </section>
+
+      <section className="comap-block mains-generator-block mb-1.5 shrink-0 px-2 py-1.5">
         <h2 className="comap-title">Mains / Generator</h2>
         <div className="comap-table-head"><span /><span>Mains</span><span>Generator</span></div>
         {tableRows.map(([label, mainsKey, mainsValue, genKey, genValue]) => (
