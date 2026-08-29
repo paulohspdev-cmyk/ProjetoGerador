@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Leitor/escritor mínimo e seguro para tabelas BaseDAT do Rapid SCADA 6.x.
 
-Usado somente para acrescentar ou reconciliar registros RC necessários. O
-formato segue BaseTableAdapter do Rapid SCADA: cabeçalho v4, definições de campo
-de 60 bytes, blocos 0x0E0E e CRC-16 Modbus.
+Usado somente para acrescentar, reconciliar ou retirar registros RC necessários.
+O formato segue BaseTableAdapter do Rapid SCADA: cabeçalho v4, definições de
+campo de 60 bytes, blocos 0x0E0E e CRC-16 Modbus.
 
 Regras de segurança:
 - preserva cabeçalho e definições de campo byte a byte;
 - atualização substitui somente o bloco da linha selecionada;
+- remoção retira somente o bloco selecionado, sem reserializar outras linhas;
 - gravação é feita em arquivo temporário + os.replace;
 - toda escrita é relida e validada antes de retornar.
 """
@@ -316,6 +317,45 @@ def update_row(path: str, pk_name: str, pk_value: Any, patch: dict[str, Any]) ->
     return {"status": "updated", "before": before, "after": verified, "changed": changed}
 
 
+def delete_row(path: str, pk_name: str, pk_value: Any) -> dict[str, Any]:
+    """Remove uma única linha BaseDAT sem reescrever ou renumerar as demais."""
+    fields, rows = read_table(path)
+    field_names = {field.name for field in fields}
+    if pk_name not in field_names:
+        raise ValueError(f"{path}: chave {pk_name} não existe")
+    matches = [index for index, row in enumerate(rows) if row.get(pk_name) == pk_value]
+    if not matches:
+        return {"status": "absent", "removed": None}
+    if len(matches) != 1:
+        raise ValueError(f"{path}: {pk_name}={pk_value} aparece {len(matches)} vezes")
+
+    index = matches[0]
+    removed = dict(rows[index])
+    raw = Path(path).read_bytes()
+    spans = _row_spans(raw, len(fields))
+    if len(spans) != len(rows):
+        raise ValueError(f"{path}: quantidade de blocos diverge das linhas decodificadas")
+    start, end = spans[index]
+    _atomic_replace(path, raw[:start] + raw[end:])
+
+    _, verified_rows = read_table(path)
+    if any(row.get(pk_name) == pk_value for row in verified_rows):
+        raise ValueError(f"{path}: validação pós-remoção falhou para {pk_name}={pk_value}")
+    return {"status": "deleted", "removed": removed}
+
+
+def _cli_pk_value(path: str, pk_name: str, raw_value: str) -> Any:
+    _, rows = read_table(path)
+    sample = rows[0].get(pk_name) if rows else raw_value
+    if isinstance(sample, bool):
+        return raw_value.lower() in {"1", "true", "yes", "on"}
+    if isinstance(sample, int):
+        return int(raw_value)
+    if isinstance(sample, float):
+        return float(raw_value)
+    return raw_value
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -336,6 +376,11 @@ def main() -> int:
     p_update.add_argument("pk_name")
     p_update.add_argument("pk_value")
     p_update.add_argument("json_patch")
+
+    p_delete = sub.add_parser("delete")
+    p_delete.add_argument("path")
+    p_delete.add_argument("pk_name")
+    p_delete.add_argument("pk_value")
 
     args = parser.parse_args()
 
@@ -359,12 +404,14 @@ def main() -> int:
 
     if args.cmd == "update":
         patch = json.loads(args.json_patch)
-        _, rows = read_table(args.path)
-        sample = rows[0].get(args.pk_name) if rows else args.pk_value
-        value: Any = args.pk_value
-        if isinstance(sample, int):
-            value = int(args.pk_value)
+        value = _cli_pk_value(args.path, args.pk_name, args.pk_value)
         result = update_row(args.path, args.pk_name, value, patch)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+
+    if args.cmd == "delete":
+        value = _cli_pk_value(args.path, args.pk_name, args.pk_value)
+        result = delete_row(args.path, args.pk_name, value)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
 
