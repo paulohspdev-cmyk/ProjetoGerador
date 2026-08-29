@@ -1,6 +1,6 @@
 .comap-panel-v2 {
   height: auto;
-  min-height: 100%;
+  min-height: 0;
 }
 
 .controller-model-line {
@@ -15,7 +15,7 @@
 
 .comap-power-gauge-block {
   flex: 0 0 auto;
-  padding: 6px 8px 4px;
+  padding: 4px 7px 2px;
 }
 
 .power-gauge-heading {
@@ -27,7 +27,7 @@
 
 .power-gauge-heading > span {
   color: #7f94a4;
-  font-size: 8px;
+  font-size: 7px;
   font-weight: 700;
   letter-spacing: 0.08em;
 }
@@ -35,13 +35,13 @@
 .kw-gauge-wrap {
   position: relative;
   display: grid;
-  min-height: 142px;
+  min-height: 102px;
   place-items: center;
 }
 
 .kw-gauge-svg {
-  width: min(100%, 235px);
-  height: 142px;
+  width: min(100%, 205px);
+  height: 102px;
   overflow: visible;
 }
 
@@ -49,7 +49,7 @@
 .kw-gauge-zone {
   fill: none;
   stroke-linecap: butt;
-  stroke-width: 22;
+  stroke-width: 20;
 }
 
 .kw-gauge-base {
@@ -98,12 +98,12 @@
 
 .kw-gauge-value {
   position: absolute;
-  bottom: 8px;
+  bottom: 5px;
   left: 50%;
   transform: translateX(-50%);
   color: #f5fbff;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 26px;
+  font-size: 23px;
   font-weight: 800;
   letter-spacing: -0.04em;
 }
@@ -111,38 +111,21 @@
 .kw-gauge-caption {
   position: absolute;
   right: 2px;
-  bottom: 2px;
+  bottom: 1px;
   color: #617b8d;
-  font-size: 7px;
+  font-size: 6px;
   font-weight: 700;
   text-transform: uppercase;
 }
 
 .controller-mode-section {
   flex: 0 0 auto;
-  padding: 5px 6px;
+  margin-top: 1px;
+  padding: 3px 5px;
 }
 
 .controller-mode-wrap {
-  display: grid;
-  gap: 4px;
-}
-
-.controller-mode-meta {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  color: #8ea1af;
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.controller-mode-meta small {
-  color: #5d7485;
-  font-size: 7px;
+  display: block;
 }
 
 .controller-mode-bar {
@@ -153,8 +136,8 @@
 
 .controller-mode-btn {
   min-width: 0;
-  min-height: 28px;
-  padding: 3px 2px;
+  min-height: 25px;
+  padding: 2px;
   border: 1px solid #173b52;
   border-radius: 3px;
   background: linear-gradient(180deg, #102636, #081923);
@@ -176,7 +159,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  min-height: 28px;
+  min-height: 25px;
   color: #8296a5;
   font-size: 9px;
   font-weight: 800;
@@ -187,26 +170,35 @@
 }
 
 .comap-panel-v2 .comap-flow {
-  min-height: 405px;
+  min-height: 275px;
   flex: 0 0 auto;
+  padding-top: 3px;
+  padding-bottom: 3px;
 }
 
 .comap-panel-v2 .comap-sld {
-  height: 365px;
+  height: 242px;
   flex: 0 0 auto;
 }
 
 .comap-panel-v2 .comap-sld-stage {
-  width: min(100%, 230px);
-  height: 365px;
+  width: min(100%, 218px);
+  height: 242px;
   aspect-ratio: auto;
+}
+
+.comap-panel-v2 .comap-start,
+.comap-panel-v2 .comap-stop {
+  width: 41px;
+  height: 41px;
+  font-size: 9px;
 }
 
 .breaker-single-control {
   display: grid;
-  width: 46px;
+  width: 44px;
   justify-items: center;
-  gap: 3px;
+  gap: 2px;
 }
 
 .breaker-single-label {
@@ -217,7 +209,7 @@
 
 .breaker-state-track {
   display: block;
-  width: 34px;
+  width: 36px;
   height: 4px;
   overflow: hidden;
   border: 1px solid #234e68;
@@ -251,7 +243,7 @@
 
 .breaker-single-button {
   width: 38px;
-  height: 31px;
+  height: 29px;
   padding: 0;
   border: 1px solid #315a70;
   border-radius: 4px;
@@ -275,10 +267,6 @@
   font-weight: 800;
 }
 
-.prll-status {
-  cursor: default;
-}
-
 .flow-switch-node.is-unknown {
   fill: #173447;
   stroke: #527085;
@@ -289,23 +277,98 @@
   stroke-dasharray: 4 3;
 }
 
+@keyframes generator-ring-pulse {
+  0%, 100% {
+    stroke: #43ef00;
+    filter: drop-shadow(0 0 3px rgba(67, 239, 0, 0.5));
+  }
+  50% {
+    stroke: #7dff4f;
+    filter: drop-shadow(0 0 11px rgba(67, 239, 0, 0.95));
+  }
+}
+
+.flow-generator-circle.generator-running {
+  stroke: #43ef00;
+  stroke-width: 3.2;
+  animation: generator-ring-pulse 1.15s ease-in-out infinite;
+}
+
+.flow-generator-circle.generator-stopped {
+  stroke: #ff2f25;
+  stroke-width: 3.2;
+  filter: none;
+  animation: none;
+}
+
+.comap-panel-v2 .flow-generator-letter {
+  font-size: 38px;
+}
+
 .comap-panel-v2 .comap-engine {
-  min-height: 20px;
+  grid-template-columns: 16px minmax(72px, 0.9fr) minmax(64px, 1.4fr) minmax(52px, auto);
+  min-height: 16px;
+  column-gap: 6px;
+  font-size: 10px;
+}
+
+.comap-panel-v2 .comap-engine .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.comap-panel-v2 .comap-engine .engine-value {
+  min-width: 52px;
+  padding-left: 2px;
+  text-align: right;
+}
+
+.comap-panel-v2 .comap-meter {
+  width: 100%;
+  height: 6px;
+}
+
+.comap-panel-v2 .comap-meter.is-unscaled,
+.comap-panel-v2 .comap-meter.is-unknown {
+  border-color: #1c4055;
+  background: #061521;
+}
+
+.engine-status-block {
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+
+.mains-generator-block .comap-table-head {
+  margin-top: 1px;
+  margin-bottom: 2px;
+}
+
+.mains-generator-block .comap-table-row {
+  min-height: 16px;
+  font-size: 10px;
 }
 
 @media (max-width: 360px) {
   .comap-panel-v2 .comap-sld-stage {
-    width: 220px;
+    width: 210px;
   }
 
   .controller-mode-btn {
     font-size: 8px;
   }
+
+  .comap-panel-v2 .comap-engine {
+    grid-template-columns: 15px minmax(64px, 0.9fr) minmax(55px, 1.25fr) minmax(48px, auto);
+    column-gap: 4px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .kw-gauge-needle,
-  .breaker-state-track i {
+  .breaker-state-track i,
+  .flow-generator-circle.generator-running {
     transition: none;
+    animation: none;
   }
 }
