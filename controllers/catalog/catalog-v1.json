@@ -1,0 +1,1051 @@
+{
+  "schema": 1,
+  "title": "RC Geradores - Catálogo alvo de controladoras",
+  "policy": {
+    "catalogStatus": "inventory_only",
+    "provisioningRule": "Somente modelos com Controller Pack lifecycle=production podem ser provisionados no Rapid SCADA.",
+    "safety": "Entradas de catálogo não habilitam telemetria nem comandos industriais."
+  },
+  "controllers": [
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliLite 4",
+      "model": "InteliLite 4 AMF 8",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliLite 4",
+      "model": "InteliLite 4 AMF 9",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliLite 4",
+      "model": "InteliLite 4 AMF 20",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliLite 4",
+      "model": "InteliLite 4 AMF 25",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliLite 4",
+      "model": "InteliLite 4 MRS 16",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliNano",
+      "model": "InteliNano AMF 5",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliNano",
+      "model": "InteliNano MRS 3",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliLite NT / II",
+      "model": "IL-NT AMF 8",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliLite NT / II",
+      "model": "IL-NT AMF 20",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliLite NT / II",
+      "model": "IL-NT AMF 25",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliLite NT / II",
+      "model": "IL-NT MRS 10",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliLite NT / II",
+      "model": "IL-NT MRS 16",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliLite NT / II",
+      "model": "InteliLite 9",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliLite NT / II",
+      "model": "InteliLite AMF 25 G2",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliCompact",
+      "model": "InteliCompact NT MINT",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliCompact",
+      "model": "InteliCompact NT SPtM",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliGen",
+      "model": "InteliGen 1000",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliGen",
+      "model": "InteliGen 1000 SC",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliGen",
+      "model": "InteliGen 500 G2",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliGen",
+      "model": "InteliGen 500",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliGen",
+      "model": "InteliGen4 200",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliGen",
+      "model": "InteliGen 200",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliGen",
+      "model": "InteliGen NT BaseBox",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliGen",
+      "model": "InteliGen NT GeSys",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliSys",
+      "model": "InteliSys 2000",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliSys",
+      "model": "InteliSys NT BaseBox",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliSys",
+      "model": "InteliSys NTC BaseBox",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliSys",
+      "model": "InteliSys Gas",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliMains",
+      "model": "InteliMains 1010",
+      "application": "mains",
+      "category": "mains_switchgear",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliMains",
+      "model": "InteliMains 1000",
+      "application": "mains",
+      "category": "mains_switchgear",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliMains",
+      "model": "InteliMains 210",
+      "application": "mains",
+      "category": "mains_switchgear",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliMains",
+      "model": "InteliMains 210 G2",
+      "application": "mains",
+      "category": "mains_switchgear",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliMains",
+      "model": "InteliMains NT GC",
+      "application": "mains",
+      "category": "mains_switchgear",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliMains",
+      "model": "InteliMains NT BaseBox",
+      "application": "mains",
+      "category": "mains_switchgear",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliMains",
+      "model": "InteliMains GSC",
+      "application": "mains",
+      "category": "mains_switchgear",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliNeo",
+      "model": "InteliNeo 6000",
+      "application": "bess",
+      "category": "microgrid_bess",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliNeo",
+      "model": "InteliNeo 5500",
+      "application": "bess",
+      "category": "microgrid_bess",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliNeo",
+      "model": "InteliNeo 530 BESS",
+      "application": "bess",
+      "category": "microgrid_bess",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliField",
+      "model": "InteliField",
+      "application": "field_gateway",
+      "category": "microgrid_bess",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliDrive",
+      "model": "InteliDrive DCU Industrial",
+      "application": "engine",
+      "category": "engine_controller",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliDrive",
+      "model": "InteliDrive IPC",
+      "application": "engine",
+      "category": "engine_controller",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliDrive",
+      "model": "InteliDrive Lite",
+      "application": "engine",
+      "category": "engine_controller",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliDrive",
+      "model": "InteliDrive FLX",
+      "application": "engine",
+      "category": "engine_controller",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliBifuel",
+      "model": "InteliBifuel INCON 6",
+      "application": "engine",
+      "category": "bifuel",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliBifuel",
+      "model": "InteliBifuel INCON 12",
+      "application": "engine",
+      "category": "bifuel",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliBifuel",
+      "model": "InteliBifuel Mobile Set",
+      "application": "engine",
+      "category": "bifuel",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliBifuel",
+      "model": "InteliBifuel Lite 100 Set",
+      "application": "engine",
+      "category": "bifuel",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "Marine",
+      "model": "InteliDrive 700 Marine",
+      "application": "genset",
+      "category": "marine",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "Marine",
+      "model": "InteliDrive DCU Marine",
+      "application": "genset",
+      "category": "marine",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "Marine",
+      "model": "InteliGen 1000 Marine",
+      "application": "genset",
+      "category": "marine",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliATS",
+      "model": "InteliATS2 70",
+      "application": "ats",
+      "category": "ats",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliATS",
+      "model": "InteliATS2 50",
+      "application": "ats",
+      "category": "ats",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliATS",
+      "model": "InteliATS NT",
+      "application": "ats",
+      "category": "ats",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliLTC",
+      "model": "InteliLTC 10",
+      "application": "light_tower",
+      "category": "light_tower",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE G-Series",
+      "model": "DSEG7400",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE G-Series",
+      "model": "DSEG7300",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE G-Series",
+      "model": "DSEG4500",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE G-Series",
+      "model": "DSEG4501",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 7xxx MKII",
+      "model": "DSE7410 MKII",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 7xxx MKII",
+      "model": "DSE7420 MKII",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 7xxx MKII",
+      "model": "DSE7310 MKII",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 7xxx MKII",
+      "model": "DSE7320 MKII",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 7xxx MKII",
+      "model": "DSE7110 MKII",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 7xxx MKII",
+      "model": "DSE7120 MKII",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 6xxx",
+      "model": "DSE6110 MKIII",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 6xxx",
+      "model": "DSE6120 MKIII",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 6xxx",
+      "model": "DSE6010 MKII",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 6xxx",
+      "model": "DSE6020 MKII",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 4xxx",
+      "model": "DSE4610",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 4xxx",
+      "model": "DSE4620",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 4xxx",
+      "model": "DSE4510 MKII",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 4xxx",
+      "model": "DSE4520 MKII",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 3xxx",
+      "model": "DSE3110",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 8xxx",
+      "model": "DSE8910",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 8xxx",
+      "model": "DSE8920",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 8xxx",
+      "model": "DSE8610 MKII",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 8xxx",
+      "model": "DSE8620 MKII",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 8xxx",
+      "model": "DSE8660 MKII",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 8xxx",
+      "model": "DSE8680",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 8xxx",
+      "model": "DSE8810 MKII",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 75xx",
+      "model": "DSE7510",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 75xx",
+      "model": "DSE7520",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 75xx",
+      "model": "DSE7560",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 75xx",
+      "model": "DSE7570",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE ATS",
+      "model": "DSE334",
+      "application": "ats",
+      "category": "ats",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE ATS",
+      "model": "DSE335",
+      "application": "ats",
+      "category": "ats",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE E-Series",
+      "model": "DSE E800",
+      "application": "engine",
+      "category": "engine_controller",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE E-Series",
+      "model": "DSE E400",
+      "application": "engine",
+      "category": "engine_controller",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE E-Series",
+      "model": "DSE E100",
+      "application": "engine",
+      "category": "engine_controller",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE E-Series",
+      "model": "DSE E050",
+      "application": "engine",
+      "category": "engine_controller",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE M-Series",
+      "model": "DSE M640",
+      "application": "engine",
+      "category": "engine_controller",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE M-Series",
+      "model": "DSE M643",
+      "application": "engine",
+      "category": "engine_controller",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE M-Series",
+      "model": "DSE M870",
+      "application": "engine",
+      "category": "engine_controller",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE M-Series",
+      "model": "DSE M840",
+      "application": "engine",
+      "category": "engine_controller",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE L-Series",
+      "model": "DSE L401 MKII",
+      "application": "light_tower",
+      "category": "light_tower",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE L-Series",
+      "model": "DSE L400",
+      "application": "light_tower",
+      "category": "light_tower",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE Legacy",
+      "model": "DSE5510",
+      "application": "genset",
+      "category": "legacy",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE Legacy",
+      "model": "DSE5520",
+      "application": "genset",
+      "category": "legacy",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE Legacy",
+      "model": "DSE5310",
+      "application": "genset",
+      "category": "legacy",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE Legacy",
+      "model": "DSE5210",
+      "application": "genset",
+      "category": "legacy",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE Legacy",
+      "model": "DSE5110",
+      "application": "genset",
+      "category": "legacy",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE Legacy",
+      "model": "DSE710",
+      "application": "genset",
+      "category": "legacy",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE Legacy",
+      "model": "DSE720",
+      "application": "genset",
+      "category": "legacy",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE Legacy",
+      "model": "DSE501",
+      "application": "genset",
+      "category": "legacy",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    }
+  ]
+}
