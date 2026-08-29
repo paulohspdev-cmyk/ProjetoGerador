@@ -1,0 +1,104 @@
+.generator-six-card-grid {
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-rows: max-content;
+  align-items: start;
+}
+
+.generator-six-card-grid > .comap-panel-v2 {
+  width: 100%;
+  min-width: 0;
+  height: max-content;
+}
+
+/* O destaque maior pertence ao identificador do card no cabeçalho. */
+.generator-six-card-grid .comap-header {
+  min-height: 32px;
+  gap: 6px;
+  padding: 4px 6px 3px;
+}
+
+.generator-six-card-grid .comap-logo {
+  width: 25px;
+  height: 25px;
+  font-size: 13px;
+  border-width: 2px;
+}
+
+.generator-six-card-grid .comap-name {
+  font-size: 14px;
+  line-height: 1.05;
+}
+
+.generator-six-card-grid .controller-model-line {
+  margin-top: 2px;
+  font-size: 9.5px;
+}
+
+/* O símbolo do gerador deve ter a mesma presença visual do círculo da rede. */
+.generator-six-card-grid .flow-generator-circle {
+  transform: scale(0.82);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.generator-six-card-grid .flow-generator-letter {
+  font-size: 34px;
+}
+
+/* Mantém as barras e valores legíveis quando seis cards dividem a largura Full HD. */
+.generator-six-card-grid .comap-engine {
+  grid-template-columns: 14px minmax(58px, 0.9fr) minmax(52px, 1.25fr) minmax(46px, auto);
+  column-gap: 4px;
+  font-size: 9px;
+}
+
+.generator-six-card-grid .comap-engine .engine-value {
+  min-width: 46px;
+}
+
+.generator-six-card-grid .controller-mode-btn {
+  min-height: 23px;
+  font-size: 8px;
+}
+
+@media (min-width: 640px) {
+  .generator-six-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 900px) {
+  .generator-six-card-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1180px) {
+  .generator-six-card-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1380px) {
+  .generator-six-card-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1540px) {
+  .generator-six-card-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .generator-six-card-grid .comap-panel-v2 .comap-sld-stage {
+    width: min(100%, 220px);
+  }
+
+  .generator-six-card-grid .comap-panel-v2 .comap-start,
+  .generator-six-card-grid .comap-panel-v2 .comap-stop {
+    width: 41px;
+    height: 41px;
+  }
+}
