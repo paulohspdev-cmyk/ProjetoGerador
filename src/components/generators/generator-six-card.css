@@ -12,9 +12,9 @@
 
 /* O destaque maior pertence ao identificador do card no cabeçalho. */
 .generator-six-card-grid .comap-header {
-  min-height: 32px;
+  min-height: 31px;
   gap: 6px;
-  padding: 4px 6px 3px;
+  padding: 3px 6px 2px;
 }
 
 .generator-six-card-grid .comap-logo {
@@ -30,7 +30,7 @@
 }
 
 .generator-six-card-grid .controller-model-line {
-  margin-top: 2px;
+  margin-top: 1px;
   font-size: 9.5px;
 }
 
@@ -45,19 +45,18 @@
   font-size: 30px;
 }
 
-/* Usa o pequeno espaço vertical restante para ganhar legibilidade sem aumentar a grade. */
 .generator-six-card-grid .comap-title {
   font-size: 10.5px;
 }
 
 .generator-six-card-grid .engine-status-block {
-  padding-top: 5px !important;
-  padding-bottom: 5px !important;
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
 }
 
 .generator-six-card-grid .comap-engine {
   grid-template-columns: 14px minmax(56px, 0.82fr) minmax(70px, 1.5fr) minmax(48px, auto);
-  min-height: 17.5px;
+  min-height: 16.5px;
   column-gap: 4px;
   font-size: 9.5px;
 }
@@ -87,10 +86,7 @@
   display: none;
 }
 
-/*
- * O backend continua preservando known=false. Aqui alteramos somente a apresentacao:
- * grandezas numericas desconhecidas aparecem como 0 ate a primeira leitura real.
- */
+/* O backend preserva known=false; aqui só mudamos a apresentação numérica para 0. */
 .generator-six-card-grid .comap-engine.opacity-65 {
   opacity: 1;
 }
@@ -107,26 +103,25 @@
 }
 
 .generator-six-card-grid .controller-mode-btn {
-  min-height: 23px;
+  min-height: 22px;
   font-size: 8px;
 }
 
 /*
- * O retorno de START/STOP usa uma linha fixa abaixo do diagrama.
- * Sem caixa, sem fundo e sem borda: somente texto branco forte.
- * O espaço é reservado sempre para não alterar a altura quando a mensagem aparece.
+ * Feedback de START/STOP em linha fixa abaixo do diagrama.
+ * Somente texto branco forte, sem caixa, e sem alterar a altura quando aparece.
  */
 .generator-six-card-grid .comap-flow-v2 {
-  padding-bottom: 16px;
+  padding-bottom: 14px;
 }
 
 .generator-six-card-grid .comap-flow-v2 > p {
   position: absolute;
   z-index: 24;
   right: 6px;
-  bottom: 1px;
+  bottom: 0;
   left: 6px;
-  height: 14px;
+  height: 13px;
   margin: 0;
   overflow: hidden;
   padding: 0 !important;
@@ -136,7 +131,7 @@
   color: #ffffff;
   font-size: 9px !important;
   font-weight: 900;
-  line-height: 14px;
+  line-height: 13px;
   text-shadow: 0 0 4px rgba(255, 255, 255, 0.24);
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -150,17 +145,17 @@
 }
 
 .generator-six-card-grid .comap-power-gauge-block {
-  padding-top: 5px;
-  padding-bottom: 3px;
+  padding-top: 4px;
+  padding-bottom: 2px;
 }
 
 .generator-six-card-grid .kw-gauge-wrap {
-  min-height: 110px;
+  min-height: 104px;
 }
 
 .generator-six-card-grid .kw-gauge-svg {
   width: min(100%, 212px);
-  height: 110px;
+  height: 104px;
 }
 
 .generator-six-card-grid .kw-gauge-unit {
@@ -169,7 +164,7 @@
 }
 
 .generator-six-card-grid .kw-gauge-value {
-  bottom: 4px;
+  bottom: 3px;
   font-size: 31px;
   line-height: 1;
 }
@@ -185,7 +180,7 @@
 }
 
 .generator-six-card-grid .mains-generator-block .comap-table-row {
-  min-height: 17px;
+  min-height: 16px;
   font-size: 9.5px;
 }
 
@@ -214,35 +209,11 @@
 }
 
 @media (min-width: 1540px) {
+  /* Tela grande: seis posições fixas por página, mesmo quando ainda existem só cinco geradores. */
   .generator-six-card-grid {
     grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 5px;
-    padding: 2px;
-  }
-
-  /* Em tela grande, os cards visíveis ocupam 100% da largura até o limite de seis. */
-  .generator-six-card-grid.generator-count-1 {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .generator-six-card-grid.generator-count-2 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .generator-six-card-grid.generator-count-3 {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .generator-six-card-grid.generator-count-4 {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .generator-six-card-grid.generator-count-5 {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
-
-  .generator-six-card-grid.generator-count-6 {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 4px;
+    padding: 0;
   }
 
   .generator-six-card-grid .comap-panel-v2 .comap-sld-stage {
@@ -251,7 +222,7 @@
 
   .generator-six-card-grid .comap-panel-v2 .comap-start,
   .generator-six-card-grid .comap-panel-v2 .comap-stop {
-    width: 41px;
-    height: 41px;
+    width: 40px;
+    height: 40px;
   }
 }
