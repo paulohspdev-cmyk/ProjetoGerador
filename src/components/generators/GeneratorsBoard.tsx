@@ -4,16 +4,16 @@ import { LayoutGrid, List, Rows3 } from "lucide-react";
 import { statusLabel, type GenStatus } from "@/data/generators";
 import { Topbar } from "@/components/layout/Topbar";
 import { CompactCard } from "./CompactCard";
+import { GeneratorOverviewCard } from "./GeneratorOverviewCard";
 import { GeneratorTable } from "./GeneratorTable";
 import { KpiStrip } from "./KpiStrip";
-import { PowerFlowCard } from "./PowerFlowCard";
 import { useGenerators } from "./GeneratorsProvider";
 import { cn } from "@/lib/utils";
 
 type View = "horizontal" | "vertical" | "lista";
 
 const views: Array<{ id: View; label: string; icon: typeof List }> = [
-  { id: "horizontal", label: "Cards horizontais", icon: Rows3 },
+  { id: "horizontal", label: "Cards resumo", icon: Rows3 },
   { id: "vertical", label: "Cards compactos", icon: LayoutGrid },
   { id: "lista", label: "Lista", icon: List },
 ];
@@ -45,7 +45,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
     [generators, status, query],
   );
 
-  const pageSize = view === "horizontal" ? 6 : 8;
+  const pageSize = view === "lista" ? 12 : 8;
   const pages = Math.max(1, Math.ceil(items.length / pageSize));
   const page = Math.min(group, pages - 1);
   const visible = items.slice(page * pageSize, page * pageSize + pageSize);
@@ -95,25 +95,27 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
         ))}
       </div>
 
-      <div className="ml-1 flex shrink-0 items-center gap-1 border-l border-border pl-2">
-        {Array.from({ length: pages }, (_, i) => (
-          <button
-            key={i}
-            type="button"
-            onClick={() => setGroup(i)}
-            aria-label={`Grupo de geradores ${i + 1}`}
-            aria-pressed={page === i}
-            className={cn(
-              "num h-7 min-w-8 rounded-md border px-2 text-[11px] font-extrabold transition-colors",
-              page === i
-                ? "border-primary bg-primary/20 text-primary"
-                : "border-border text-muted-foreground hover:text-foreground",
-            )}
-          >
-            G{i + 1}
-          </button>
-        ))}
-      </div>
+      {pages > 1 && (
+        <div className="ml-1 flex shrink-0 items-center gap-1 border-l border-border pl-2">
+          {Array.from({ length: pages }, (_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setGroup(i)}
+              aria-label={`Grupo de geradores ${i + 1}`}
+              aria-pressed={page === i}
+              className={cn(
+                "num h-7 min-w-8 rounded-md border px-2 text-[11px] font-extrabold transition-colors",
+                page === i
+                  ? "border-primary bg-primary/20 text-primary"
+                  : "border-border text-muted-foreground hover:text-foreground",
+              )}
+            >
+              G{i + 1}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 
@@ -137,11 +139,9 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
 
         <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
           {view === "horizontal" && (
-            <div className="scroll-slim grid h-full min-h-0 min-w-0 grid-cols-[repeat(auto-fill,minmax(min(100%,290px),1fr))] content-start gap-2 overflow-auto rounded-md border border-transparent bg-panel p-2">
+            <div className="scroll-slim grid h-full min-h-0 min-w-0 grid-cols-1 content-start gap-3 overflow-auto rounded-md bg-panel p-2 md:grid-cols-2 xl:grid-cols-3 min-[2400px]:grid-cols-4">
               {visible.map((g) => (
-                <div key={g.id} className="min-h-[660px] min-w-0">
-                  <PowerFlowCard gen={g} />
-                </div>
+                <GeneratorOverviewCard key={g.id} gen={g} />
               ))}
               {visible.length === 0 && (
                 <p className="col-span-full p-6 text-sm text-muted-foreground">Nenhum gerador encontrado.</p>
@@ -150,7 +150,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
           )}
 
           {view === "vertical" && (
-            <div className="scroll-slim grid h-full min-h-0 min-w-0 grid-cols-[repeat(auto-fill,minmax(min(100%,250px),1fr))] content-start gap-2 overflow-auto p-0.5">
+            <div className="scroll-slim grid h-full min-h-0 min-w-0 grid-cols-1 content-start gap-2 overflow-auto p-0.5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
               {visible.map((g) => (
                 <CompactCard key={g.id} gen={g} />
               ))}
