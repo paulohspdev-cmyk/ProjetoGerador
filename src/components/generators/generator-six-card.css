@@ -112,32 +112,32 @@
 }
 
 /*
- * O retorno de START/STOP volta para uma faixa própria abaixo do diagrama.
- * A faixa é reservada o tempo todo: a mensagem não cobre o G e também não muda
- * a altura do card quando aparece ou desaparece.
+ * O retorno de START/STOP usa uma linha fixa abaixo do diagrama.
+ * Sem caixa, sem fundo e sem borda: somente texto branco forte.
+ * O espaço é reservado sempre para não alterar a altura quando a mensagem aparece.
  */
 .generator-six-card-grid .comap-flow-v2 {
-  padding-bottom: 24px;
+  padding-bottom: 16px;
 }
 
 .generator-six-card-grid .comap-flow-v2 > p {
   position: absolute;
   z-index: 24;
   right: 6px;
-  bottom: 4px;
+  bottom: 1px;
   left: 6px;
-  height: 16px;
+  height: 14px;
   margin: 0;
   overflow: hidden;
-  padding: 2px 5px !important;
-  border: 1px solid #214b64;
-  border-radius: 4px;
-  background: rgba(2, 17, 28, 0.96);
+  padding: 0 !important;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: #ffffff;
-  font-size: 8.5px !important;
-  font-weight: 800;
-  line-height: 1.15;
-  text-shadow: 0 0 3px rgba(255, 255, 255, 0.18);
+  font-size: 9px !important;
+  font-weight: 900;
+  line-height: 14px;
+  text-shadow: 0 0 4px rgba(255, 255, 255, 0.24);
   text-overflow: ellipsis;
   white-space: nowrap;
   pointer-events: none;
@@ -216,8 +216,33 @@
 @media (min-width: 1540px) {
   .generator-six-card-grid {
     grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 6px;
-    padding: 6px;
+    gap: 5px;
+    padding: 2px;
+  }
+
+  /* Em tela grande, os cards visíveis ocupam 100% da largura até o limite de seis. */
+  .generator-six-card-grid.generator-count-1 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .generator-six-card-grid.generator-count-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .generator-six-card-grid.generator-count-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .generator-six-card-grid.generator-count-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .generator-six-card-grid.generator-count-5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .generator-six-card-grid.generator-count-6 {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 
   .generator-six-card-grid .comap-panel-v2 .comap-sld-stage {
