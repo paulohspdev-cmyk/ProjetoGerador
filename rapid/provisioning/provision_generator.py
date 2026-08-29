@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Provisiona um gerador no Rapid SCADA usando somente Controller Packs production.
+"""Provisiona e reconcilia equipamentos no Rapid SCADA por Controller Pack.
 
 Transportes:
 - reverse_tcp: modem/DTU inicia sessão na bridge; Rapid usa localhost + offset.
@@ -7,7 +7,14 @@ Transportes:
 - rtu_over_tcp: Rapid conecta TCP e DrvModbus usa TransMode=RTU.
 - modbus_rtu_serial: Rapid usa SerialPort com parâmetros explícitos.
 
-Nunca habilita comandos no Rapid. CmdEnabled=false para todas as linhas.
+Princípios:
+- somente Controller Pack production pode materializar configuração industrial;
+- provisioning é idempotente e reconcilia drift de metadados/canais;
+- números de canais existentes são preservados para manter histórico;
+- canais antigos que saíram do pack não são apagados do BaseDAT; viram órfãos no
+  binding e deixam de ser expostos como telemetria homologada;
+- toda mutação faz backup e possui rollback local;
+- nunca habilita comandos no Rapid. CmdEnabled=false para todas as linhas.
 """
 
 from __future__ import annotations
@@ -36,7 +43,7 @@ sys.path.insert(0, str(BASE / "rapid/provisioning"))
 from app import db  # noqa: E402
 from app.controller_library import pack_for_model  # noqa: E402
 from app.transport_store import get_transport_config, validate_for_transport  # noqa: E402
-from rapid_dat import append_row, read_table  # noqa: E402
+from rapid_dat import append_row, read_table, update_row  # noqa: E402
 
 
 def _max_pk(path: Path, key: str, floor: int) -> int:
@@ -64,7 +71,13 @@ def _binding_is_materialized(binding: dict) -> bool:
         if not _row_by_pk(DAT / "device.dat", "DeviceNum", device_num):
             return False
         root = ET.parse(CFG).getroot()
-        return _find_line(root, line_num) is not None
+        line = _find_line(root, line_num)
+        if line is None:
+            return False
+        polling = line.find("DevicePolling")
+        if polling is None:
+            return False
+        return any(int(dev.get("number") or 0) == device_num for dev in polling.findall("Device"))
     except Exception:
         return False
 
@@ -97,6 +110,8 @@ def _save_bindings(items):
     RUNTIME_BINDINGS.parent.mkdir(parents=True, exist_ok=True)
     tmp = RUNTIME_BINDINGS.with_suffix(".tmp")
     tmp.write_text(json.dumps(items, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    with tmp.open("rb") as fh:
+        os.fsync(fh.fileno())
     os.replace(tmp, RUNTIME_BINDINGS)
 
 
@@ -117,6 +132,18 @@ def _backup(paths):
             else:
                 shutil.copy2(p, dst)
     return target
+
+
+def _restore_backup(backup: Path, targets: list[tuple[str, Path]], runtime_existed: bool, template_existed: bool, template_dst: Path):
+    for name, target in targets:
+        source = backup / name
+        if source.exists():
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, target)
+    if not runtime_existed:
+        RUNTIME_BINDINGS.unlink(missing_ok=True)
+    if not template_existed:
+        template_dst.unlink(missing_ok=True)
 
 
 def _channel_options(parent, options: dict):
@@ -254,6 +281,36 @@ def _add_device_to_line(line, device_num: int, generator: dict, template_name: s
     )
 
 
+def _reconcile_device_on_line(line, device_num: int, generator: dict, template_name: str, config: dict) -> list[str]:
+    polling = line.find("DevicePolling")
+    if polling is None:
+        polling = ET.SubElement(line, "DevicePolling")
+    device = next((dev for dev in polling.findall("Device") if int(dev.get("number") or 0) == device_num), None)
+    if device is None:
+        raise ValueError(f"Device {device_num} não existe na Line materializada")
+    desired = {
+        "active": "true",
+        "isBound": "true",
+        "number": str(device_num),
+        "name": generator.get("name") or generator["tag"],
+        "driver": "DrvModbus",
+        "numAddress": str(int(generator.get("modbus_unit") or 1)),
+        "strAddress": "",
+        "pollOnCmd": "false",
+        "timeout": str(int(config.get("timeoutMs") or 2500)),
+        "delay": str(int(config.get("pollDelayMs") or 1000)),
+        "time": "00:00:00",
+        "period": "00:00:00",
+        "cmdLine": template_name,
+    }
+    changes = []
+    for key, value in desired.items():
+        if device.get(key) != value:
+            changes.append(f"xml.device.{key}:{device.get(key)!r}->{value!r}")
+            device.set(key, value)
+    return changes
+
+
 def _binding_identity_matches(binding: dict, generator: dict) -> bool:
     requested_device = int(generator.get("rapid_device_num") or 0)
     same = (
@@ -296,6 +353,185 @@ def _ensure_unique_reverse_identity(generator: dict):
         )
 
 
+def _channel_row(generator: dict, pack: dict, device_num: int, spec: dict, cnl: int) -> dict:
+    key = spec["key"]
+    return {
+        "CnlNum": cnl,
+        "Active": True,
+        "Name": f"{generator['tag']} {spec.get('name') or key}",
+        "Code": f"{generator['tag'].lower()}_{key}",
+        "DataTypeID": None,
+        "DataLen": None,
+        "CnlTypeID": 1,
+        "ObjNum": None,
+        "DeviceNum": device_num,
+        "TagNum": None,
+        "TagCode": spec.get("tagCode") or key,
+        "FormulaEnabled": False,
+        "InFormula": None,
+        "OutFormula": None,
+        "FormatID": None,
+        "OutFormatID": None,
+        "QuantityID": None,
+        "UnitID": None,
+        "LimID": None,
+        "ArchiveMask": None,
+        "EventMask": None,
+    }
+
+
+def _reconcile_existing(binding: dict, bindings: list[dict], generator: dict, pack: dict, config: dict, template_src: Path, restart: bool):
+    line_num = int(binding["rapid_line_num"])
+    device_num = int(binding["rapid_device_num"])
+    template_dst = SCADA / "ScadaComm/Config" / template_src.name
+    runtime_existed = RUNTIME_BINDINGS.exists()
+    template_existed = template_dst.exists()
+    backup = _backup([DAT / "commline.dat", DAT / "device.dat", DAT / "cnl.dat", CFG, RUNTIME_BINDINGS, template_dst])
+    services_stopped = False
+    changes: list[str] = []
+
+    try:
+        subprocess.run(["systemctl", "stop", "scadacomm6.service"], check=False)
+        subprocess.run(["systemctl", "stop", "scadaserver6.service"], check=False)
+        services_stopped = True
+
+        if not template_dst.exists() or template_dst.read_bytes() != template_src.read_bytes():
+            shutil.copy2(template_src, template_dst)
+            changes.append(f"template:{template_src.name}")
+
+        tree = ET.parse(CFG)
+        root = tree.getroot()
+        if generator.get("transport") == "reverse_tcp":
+            line = _validate_shared_reverse_line(root, binding, generator)
+        else:
+            line = _find_line(root, line_num)
+            if line is None:
+                raise ValueError(f"Line {line_num} não existe no ScadaCommConfig.xml")
+
+        device_patch = {
+            "Name": generator.get("name") or generator["tag"],
+            "Code": generator["tag"],
+            "NumAddress": int(generator.get("modbus_unit") or 1),
+            "StrAddress": "",
+            "CommLineNum": line_num,
+            "Descr": f"{pack.get('manufacturer')} {pack.get('model')}",
+        }
+        device_update = update_row(str(DAT / "device.dat"), "DeviceNum", device_num, device_patch)
+        if device_update["status"] == "updated":
+            for key in device_update["changed"]:
+                changes.append(f"device.dat.{key}")
+
+        changes.extend(_reconcile_device_on_line(line, device_num, generator, template_src.name, config))
+
+        rapid = pack.get("rapid") or {}
+        channel_specs = rapid.get("channels") or []
+        old_channels = dict(binding.get("channels") or {})
+        desired_channels: dict[str, dict] = {}
+        next_cnl = _max_pk(DAT / "cnl.dat", "CnlNum", 1999) + 1
+
+        for spec in channel_specs:
+            key = spec["key"]
+            previous = old_channels.get(key) or {}
+            cnl = int(previous.get("cnl") or 0)
+            if cnl <= 0:
+                cnl = next_cnl
+                next_cnl += 1
+                append_row(str(DAT / "cnl.dat"), "CnlNum", _channel_row(generator, pack, device_num, spec, cnl))
+                changes.append(f"channel.add:{key}@{cnl}")
+            else:
+                existing_row = _row_by_pk(DAT / "cnl.dat", "CnlNum", cnl)
+                desired_row = _channel_row(generator, pack, device_num, spec, cnl)
+                if existing_row is None:
+                    append_row(str(DAT / "cnl.dat"), "CnlNum", desired_row)
+                    changes.append(f"channel.restore:{key}@{cnl}")
+                else:
+                    patch = {
+                        "Active": True,
+                        "Name": desired_row["Name"],
+                        "Code": desired_row["Code"],
+                        "CnlTypeID": 1,
+                        "DeviceNum": device_num,
+                        "TagCode": desired_row["TagCode"],
+                    }
+                    result = update_row(str(DAT / "cnl.dat"), "CnlNum", cnl, patch)
+                    if result["status"] == "updated":
+                        changes.append(f"channel.update:{key}@{cnl}")
+            desired_channels[key] = {"cnl": cnl, "scale": float(spec.get("scale", 1.0))}
+
+        orphaned = {
+            key: value for key, value in old_channels.items()
+            if key not in desired_channels
+        }
+        if orphaned:
+            changes.extend(f"channel.orphaned:{key}@{value.get('cnl')}" for key, value in sorted(orphaned.items()))
+
+        ET.indent(tree, space="  ")
+        tree.write(CFG, encoding="utf-8", xml_declaration=True)
+        ET.parse(CFG)
+        ET.parse(template_dst)
+        read_table(str(DAT / "commline.dat"))
+        read_table(str(DAT / "device.dat"))
+        read_table(str(DAT / "cnl.dat"))
+
+        binding.update({
+            "generator_id": generator["id"],
+            "tag": generator["tag"],
+            "controller_type": generator.get("controller_type"),
+            "controller_model": generator.get("controller_model"),
+            "transport": generator.get("transport"),
+            "host": generator.get("host") or "",
+            "listen_port": int(generator.get("listen_port") or 0),
+            "modbus_unit": int(generator.get("modbus_unit") or 1),
+            "rapid_line_num": line_num,
+            "rapid_device_num": device_num,
+            "status": pack.get("status") or "production",
+            "pack_id": pack.get("packId"),
+            "pack_schema": int(pack.get("schema") or 1),
+            "channels": desired_channels,
+            "orphaned_channels": orphaned,
+            "reconciled_at": int(time.time()),
+        })
+        _save_bindings(bindings)
+        db.update_generator(generator["id"], {"rapid_device_num": device_num}, actor="rapid-provisioner")
+        db.add_audit(
+            "rapid-provisioner",
+            "reconcile",
+            "generator",
+            generator["id"],
+            f"line={line_num};device={device_num};changes={len(changes)};backup={backup}",
+        )
+    except Exception:
+        _restore_backup(
+            backup,
+            [
+                ("commline.dat", DAT / "commline.dat"),
+                ("device.dat", DAT / "device.dat"),
+                ("cnl.dat", DAT / "cnl.dat"),
+                ("ScadaCommConfig.xml", CFG),
+                (RUNTIME_BINDINGS.name, RUNTIME_BINDINGS),
+                (template_dst.name, template_dst),
+            ],
+            runtime_existed,
+            template_existed,
+            template_dst,
+        )
+        raise
+    finally:
+        if restart and services_stopped:
+            subprocess.run(["systemctl", "start", "scadaserver6.service"], check=False)
+            time.sleep(2)
+            subprocess.run(["systemctl", "restart", "scadacomm6.service"], check=False)
+
+    return {
+        "ok": True,
+        "existing": True,
+        "reconciled": True,
+        "changes": changes,
+        "binding": binding,
+        "backup": str(backup),
+    }
+
+
 def provision(generator_id: str, restart: bool = True):
     if os.geteuid() != 0:
         raise PermissionError("Provisionamento do Rapid SCADA exige root")
@@ -326,6 +562,7 @@ def provision(generator_id: str, restart: bool = True):
         if not path.exists():
             raise FileNotFoundError(path)
 
+    template_src = BASE / template_rel
     bindings = _load_bindings()
     existing = next((b for b in bindings if str(b.get("generator_id") or "") == generator["id"]), None)
     if existing:
@@ -336,7 +573,7 @@ def provision(generator_id: str, restart: bool = True):
             )
         if not _binding_is_materialized(existing):
             raise ValueError("Binding Rapid existe no runtime, mas Line/Device correspondentes não existem no Rapid SCADA")
-        return {"ok": True, "existing": True, "binding": existing}
+        return _reconcile_existing(existing, bindings, generator, pack, config, template_src, restart)
 
     existing = next((b for b in bindings if _canonical_identity_matches(b, generator)), None)
     if existing:
@@ -349,7 +586,7 @@ def provision(generator_id: str, restart: bool = True):
             "host": generator.get("host") or "",
         })
         _save_bindings(bindings)
-        return {"ok": True, "existing": True, "binding": existing}
+        return _reconcile_existing(existing, bindings, generator, pack, config, template_src, restart)
 
     shared = None
     if generator["transport"] == "reverse_tcp":
@@ -375,7 +612,6 @@ def provision(generator_id: str, restart: bool = True):
     if device_existing:
         raise ValueError(f"Rapid Device {device_num} já existe no BaseDAT; escolha outro número ou deixe automático")
 
-    template_src = BASE / template_rel
     template_dst = SCADA / "ScadaComm/Config" / template_src.name
     runtime_existed = RUNTIME_BINDINGS.exists()
     template_existed = template_dst.exists()
@@ -416,29 +652,7 @@ def provision(generator_id: str, restart: bool = True):
         for index, spec in enumerate(channel_specs):
             cnl = first_cnl + index
             key = spec["key"]
-            append_row(str(DAT / "cnl.dat"), "CnlNum", {
-                "CnlNum": cnl,
-                "Active": True,
-                "Name": f"{generator['tag']} {spec.get('name') or key}",
-                "Code": f"{generator['tag'].lower()}_{key}",
-                "DataTypeID": None,
-                "DataLen": None,
-                "CnlTypeID": 1,
-                "ObjNum": None,
-                "DeviceNum": device_num,
-                "TagNum": None,
-                "TagCode": spec.get("tagCode") or key,
-                "FormulaEnabled": False,
-                "InFormula": None,
-                "OutFormula": None,
-                "FormatID": None,
-                "OutFormatID": None,
-                "QuantityID": None,
-                "UnitID": None,
-                "LimID": None,
-                "ArchiveMask": None,
-                "EventMask": None,
-            })
+            append_row(str(DAT / "cnl.dat"), "CnlNum", _channel_row(generator, pack, device_num, spec, cnl))
             channels[key] = {"cnl": cnl, "scale": float(spec.get("scale", 1.0))}
 
         _add_device_to_line(line, device_num, generator, template_src.name, config)
@@ -462,28 +676,31 @@ def provision(generator_id: str, restart: bool = True):
             "rapid_line_num": line_num,
             "rapid_device_num": device_num,
             "status": pack.get("status") or "production",
+            "pack_id": pack.get("packId"),
+            "pack_schema": int(pack.get("schema") or 1),
             "channels": channels,
+            "orphaned_channels": {},
+            "reconciled_at": int(time.time()),
         }
         bindings.append(binding)
         _save_bindings(bindings)
         db.update_generator(generator["id"], {"rapid_device_num": device_num}, actor="rapid-provisioner")
         db.add_audit("rapid-provisioner", "provision", "generator", generator["id"], f"line={line_num};device={device_num};transport={generator['transport']}")
     except Exception:
-        for name, target in [
-            ("commline.dat", DAT / "commline.dat"),
-            ("device.dat", DAT / "device.dat"),
-            ("cnl.dat", DAT / "cnl.dat"),
-            ("ScadaCommConfig.xml", CFG),
-            (RUNTIME_BINDINGS.name, RUNTIME_BINDINGS),
-            (template_dst.name, template_dst),
-        ]:
-            source = backup / name
-            if source.exists():
-                shutil.copy2(source, target)
-        if not runtime_existed:
-            RUNTIME_BINDINGS.unlink(missing_ok=True)
-        if not template_existed:
-            template_dst.unlink(missing_ok=True)
+        _restore_backup(
+            backup,
+            [
+                ("commline.dat", DAT / "commline.dat"),
+                ("device.dat", DAT / "device.dat"),
+                ("cnl.dat", DAT / "cnl.dat"),
+                ("ScadaCommConfig.xml", CFG),
+                (RUNTIME_BINDINGS.name, RUNTIME_BINDINGS),
+                (template_dst.name, template_dst),
+            ],
+            runtime_existed,
+            template_existed,
+            template_dst,
+        )
         raise
     finally:
         if restart and services_stopped:
@@ -491,7 +708,7 @@ def provision(generator_id: str, restart: bool = True):
             time.sleep(2)
             subprocess.run(["systemctl", "restart", "scadacomm6.service"], check=False)
 
-    return {"ok": True, "existing": False, "binding": binding, "backup": str(backup)}
+    return {"ok": True, "existing": False, "reconciled": True, "changes": ["initial-provision"], "binding": binding, "backup": str(backup)}
 
 
 def main():
