@@ -13,6 +13,8 @@ export type Generator = {
   ip: string;
   battery: number | null;
   frequency: number | null;
+  mainsFrequency?: number | null;
+  nominalPower?: number | null;
   rpm: number;
   load: number;
   oilPressure: number;
