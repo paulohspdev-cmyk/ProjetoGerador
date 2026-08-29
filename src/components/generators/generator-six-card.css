@@ -112,25 +112,32 @@
 }
 
 /*
- * O feedback de START/STOP e informativo e nao pode alterar a altura de um unico card.
- * Mantemos a mensagem dentro do Power Flow como sobreposicao temporaria, sem participar
- * do fluxo de layout da grade.
+ * O retorno de START/STOP volta para uma faixa própria abaixo do diagrama.
+ * A faixa é reservada o tempo todo: a mensagem não cobre o G e também não muda
+ * a altura do card quando aparece ou desaparece.
  */
+.generator-six-card-grid .comap-flow-v2 {
+  padding-bottom: 24px;
+}
+
 .generator-six-card-grid .comap-flow-v2 > p {
   position: absolute;
   z-index: 24;
-  right: 54px;
+  right: 6px;
   bottom: 4px;
   left: 6px;
+  height: 16px;
   margin: 0;
   overflow: hidden;
   padding: 2px 5px !important;
-  border: 1px solid #173b52;
+  border: 1px solid #214b64;
   border-radius: 4px;
-  background: rgba(2, 17, 28, 0.94);
-  color: #9fb0bc;
-  font-size: 8px !important;
+  background: rgba(2, 17, 28, 0.96);
+  color: #ffffff;
+  font-size: 8.5px !important;
+  font-weight: 800;
   line-height: 1.15;
+  text-shadow: 0 0 3px rgba(255, 255, 255, 0.18);
   text-overflow: ellipsis;
   white-space: nowrap;
   pointer-events: none;
