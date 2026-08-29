@@ -59,6 +59,10 @@ export function ControllersV3Screen() {
   const [rapidDevice, setRapidDevice] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const [linkFrom, setLinkFrom] = useState("");
+  const [linkTo, setLinkTo] = useState("");
+  const [relation, setRelation] = useState("feeds");
+
   const load = async () => {
     setLoading(true);
     try {
@@ -68,6 +72,8 @@ export function ControllersV3Screen() {
       setCatalog(rows);
       setSites(siteRows.map((row) => row.name).filter(Boolean));
       setError("");
+      setLinkFrom((value) => value || topologyData.assets[0]?.id || "");
+      setLinkTo((value) => value || topologyData.assets[1]?.id || topologyData.assets[0]?.id || "");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha ao carregar inventário de controladoras.");
     } finally {
@@ -90,6 +96,7 @@ export function ControllersV3Screen() {
     }
     return [...map.entries()];
   }, [catalog]);
+  const assetById = useMemo(() => new Map(topology.assets.map((asset) => [asset.id, asset])), [topology.assets]);
 
   const rows = useMemo(() => topology.assets.flatMap((asset) =>
     (asset.controllers ?? []).map((controller) => ({
@@ -152,6 +159,17 @@ export function ControllersV3Screen() {
     }
   };
 
+  const onCreateLink = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(""); setMessage("");
+    if (!linkFrom || !linkTo || linkFrom === linkTo) { setError("Selecione dois assets diferentes para a relação."); return; }
+    try {
+      await domainApi.createLink(linkFrom, linkTo, relation);
+      setMessage("Relação de topologia cadastrada.");
+      await load();
+    } catch (err) { setError(err instanceof Error ? err.message : "Falha ao cadastrar relação."); }
+  };
+
   return (
     <ScreenBody>
       <Stats items={[
@@ -198,6 +216,23 @@ export function ControllersV3Screen() {
           { label: "Conexões", render: (r) => <span className="num">{r.connections}</span> },
           { label: "Estado", render: (r) => <Tone tone={r.enabled ? "ok" : "muted"}>{r.enabled ? (r.legacy ? "LEGADO/V3" : "ATIVO") : "INATIVO"}</Tone> },
         ]} />}
+      </Panel>
+
+      <Panel title="Topologia elétrica / funcional">
+        <p className="mb-3 text-[11px] text-muted-foreground">As relações descrevem a planta sem assumir que uma controladora pertence a um gerador. Exemplos: REDE feeds ATS, ATS feeds BUS, GEN001 feeds BUS, BESS01 connects BUS.</p>
+        {can("create") && topology.assets.length >= 2 && <form onSubmit={onCreateLink} className="mb-3 grid gap-2 sm:grid-cols-4">
+          <label className="text-[11px] font-semibold text-muted-foreground">Origem<select value={linkFrom} onChange={(e) => setLinkFrom(e.target.value)} className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm">{topology.assets.map((a) => <option key={a.id} value={a.id}>{a.tag} · {a.kind}</option>)}</select></label>
+          <label className="text-[11px] font-semibold text-muted-foreground">Relação<select value={relation} onChange={(e) => setRelation(e.target.value)} className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"><option value="feeds">feeds / alimenta</option><option value="connects">connects / conecta</option><option value="controls">controls / controla</option><option value="measures">measures / mede</option><option value="backs_up">backs_up / backup</option><option value="shares_bus">shares_bus / compartilha barramento</option></select></label>
+          <label className="text-[11px] font-semibold text-muted-foreground">Destino<select value={linkTo} onChange={(e) => setLinkTo(e.target.value)} className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm">{topology.assets.map((a) => <option key={a.id} value={a.id}>{a.tag} · {a.kind}</option>)}</select></label>
+          <div className="flex items-end"><button type="submit" className="h-9 w-full rounded-md bg-primary text-sm font-bold text-primary-foreground">Adicionar relação</button></div>
+        </form>}
+        <ScadaTable rows={topology.links} columns={[
+          { label: "Origem", render: (r) => <b>{assetById.get(r.from_asset_id)?.tag || r.from_asset_id}</b> },
+          { label: "Relação", render: (r) => <span className="num">{r.relation}</span> },
+          { label: "Destino", render: (r) => <b>{assetById.get(r.to_asset_id)?.tag || r.to_asset_id}</b> },
+          { label: "Site origem", render: (r) => assetById.get(r.from_asset_id)?.site || "—" },
+          { label: "Site destino", render: (r) => assetById.get(r.to_asset_id)?.site || "—" },
+        ]} />
       </Panel>
     </ScreenBody>
   );
