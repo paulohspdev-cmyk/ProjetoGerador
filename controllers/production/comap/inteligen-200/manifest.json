@@ -1,10 +1,18 @@
 {
-  "schema": 2,
+  "schema": 3,
   "manufacturer": "ComAp",
   "family": "InteliGen",
   "model": "InteliGen 200",
-  "aliases": ["IG200", "IG 200"],
+  "aliases": ["IG200", "IG 200", "ComAp InteliGen 200"],
   "status": "field_validated",
+  "application": "genset",
+  "category": "paralleling_genset",
+  "firmware": {
+    "tested": [],
+    "minimum": null,
+    "maximum": null,
+    "notes": "Registrar a versão exata do firmware em cada homologação de campo. O mapa Modbus pode ser configurável."
+  },
   "protocols": ["modbus"],
   "transports": [
     "reverse_tcp",
@@ -12,18 +20,23 @@
     "rtu_over_tcp",
     "modbus_rtu_serial"
   ],
+  "defaults": {
+    "batteryNominalVoltage": null,
+    "modbusUnit": null,
+    "tcpPort": 502
+  },
   "rapid": {
     "template": "rapid/templates/DrvModbus_RC_IG200.xml",
     "driver": "DrvModbus",
     "channels": [
-      {"key": "rpm", "tagCode": "rpm", "name": "RPM", "scale": 1.0},
-      {"key": "voltage_l1", "tagCode": "voltage_l1", "name": "Tensão L1-N", "scale": 1.0},
-      {"key": "voltage_l2", "tagCode": "voltage_l2", "name": "Tensão L2-N", "scale": 1.0},
-      {"key": "voltage_l3", "tagCode": "voltage_l3", "name": "Tensão L3-N", "scale": 1.0},
-      {"key": "voltage_l1_l2", "tagCode": "voltage_l1_l2", "name": "Tensão L1-L2", "scale": 1.0},
-      {"key": "voltage_l2_l3", "tagCode": "voltage_l2_l3", "name": "Tensão L2-L3", "scale": 1.0},
-      {"key": "voltage_l3_l1", "tagCode": "voltage_l3_l1", "name": "Tensão L3-L1", "scale": 1.0},
-      {"key": "frequency", "tagCode": "frequency_raw", "name": "Frequência", "scale": 0.01}
+      {"key": "rpm", "tagCode": "rpm", "name": "RPM", "scale": 1.0, "unit": "rpm", "source": "field_validated_map"},
+      {"key": "voltage_l1", "tagCode": "voltage_l1", "name": "Tensão L1-N", "scale": 1.0, "unit": "V", "source": "field_validated_map"},
+      {"key": "voltage_l2", "tagCode": "voltage_l2", "name": "Tensão L2-N", "scale": 1.0, "unit": "V", "source": "field_validated_map"},
+      {"key": "voltage_l3", "tagCode": "voltage_l3", "name": "Tensão L3-N", "scale": 1.0, "unit": "V", "source": "field_validated_map"},
+      {"key": "voltage_l1_l2", "tagCode": "voltage_l1_l2", "name": "Tensão L1-L2", "scale": 1.0, "unit": "V", "source": "field_validated_map"},
+      {"key": "voltage_l2_l3", "tagCode": "voltage_l2_l3", "name": "Tensão L2-L3", "scale": 1.0, "unit": "V", "source": "field_validated_map"},
+      {"key": "voltage_l3_l1", "tagCode": "voltage_l3_l1", "name": "Tensão L3-L1", "scale": 1.0, "unit": "V", "source": "field_validated_map"},
+      {"key": "frequency", "tagCode": "frequency_raw", "name": "Frequência", "scale": 0.01, "unit": "Hz", "source": "field_validated_map"}
     ]
   },
   "capabilities": {
@@ -49,5 +62,11 @@
     "voltage_l2_l3",
     "voltage_l3_l1"
   ],
-  "notes": "Telemetria e START/STOP foram validados em campo. Demais comandos permanecem bloqueados até homologação específica."
+  "validation": {
+    "documentation": ["ComAp InteliGen 200 Global Guide"],
+    "lab": true,
+    "field": true,
+    "commandSafety": "START/STOP validados em campo. AUTO/TEST/MCB/GCB/paralelismo permanecem bloqueados até homologação específica."
+  },
+  "notes": "Mapa de campo validado para RPM, tensões do gerador e frequência. O endereço 1053 do mapa genérico não representa bateria na configuração de campo observada; não promover métricas adicionais sem evidência documental e validação."
 }
