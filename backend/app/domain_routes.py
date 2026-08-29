@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 from . import domain_bundle, domain_store
 from .auth import require_create, require_edit, require_remove, require_view
+from .integration_status import safe_integration_status
 
 router = APIRouter()
 
@@ -21,7 +22,7 @@ class AssetCreate(BaseModel):
     site_id: str | None = None
     customer: str = Field(default="", max_length=160)
     enabled: bool = True
-    metadata: dict = {}
+    metadata: dict = Field(default_factory=dict)
 
 
 class AssetUpdate(BaseModel):
@@ -42,7 +43,7 @@ class ControllerCreate(BaseModel):
     model: str = Field(min_length=1, max_length=180)
     firmware: str = Field(default="", max_length=120)
     enabled: bool = True
-    metadata: dict = {}
+    metadata: dict = Field(default_factory=dict)
 
 
 class ControllerUpdate(BaseModel):
@@ -61,7 +62,7 @@ class ConnectionCreate(BaseModel):
     modbus_unit: int = Field(default=1, ge=1, le=247)
     rapid_device_num: int | None = Field(default=None, ge=1)
     enabled: bool = True
-    config: dict = {}
+    config: dict = Field(default_factory=dict)
 
 
 class ConnectionUpdate(BaseModel):
@@ -81,7 +82,7 @@ class BundleController(BaseModel):
     model: str = Field(min_length=1, max_length=180)
     firmware: str = Field(default="", max_length=120)
     enabled: bool = True
-    metadata: dict = {}
+    metadata: dict = Field(default_factory=dict)
 
 
 class BundleConnection(BaseModel):
@@ -92,7 +93,7 @@ class BundleConnection(BaseModel):
     modbus_unit: int = Field(default=1, ge=1, le=247)
     rapid_device_num: int | None = Field(default=None, ge=1)
     enabled: bool = True
-    config: dict = {}
+    config: dict = Field(default_factory=dict)
 
 
 class EquipmentBundleCreate(BaseModel):
@@ -105,7 +106,12 @@ class AssetLinkCreate(BaseModel):
     from_asset_id: str
     to_asset_id: str
     relation: str = Field(min_length=1, max_length=80)
-    metadata: dict = {}
+    metadata: dict = Field(default_factory=dict)
+
+
+@router.get("/api/integrations/status")
+def integrations_status(user: dict = Depends(require_view)):
+    return safe_integration_status()
 
 
 @router.get("/api/topology")
