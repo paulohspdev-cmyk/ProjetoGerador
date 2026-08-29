@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel, Field
 
-from . import domain_store
+from . import domain_bundle, domain_store
 from .auth import require_create, require_edit, require_remove, require_view
 
 router = APIRouter()
@@ -75,6 +75,32 @@ class ConnectionUpdate(BaseModel):
     config: dict | None = None
 
 
+class BundleController(BaseModel):
+    manufacturer: str | None = None
+    family: str | None = None
+    model: str = Field(min_length=1, max_length=180)
+    firmware: str = Field(default="", max_length=120)
+    enabled: bool = True
+    metadata: dict = {}
+
+
+class BundleConnection(BaseModel):
+    name: str = Field(default="Principal", max_length=120)
+    transport: str = "reverse_tcp"
+    host: str = Field(default="", max_length=255)
+    listen_port: int = Field(default=0, ge=0, le=65535)
+    modbus_unit: int = Field(default=1, ge=1, le=247)
+    rapid_device_num: int | None = Field(default=None, ge=1)
+    enabled: bool = True
+    config: dict = {}
+
+
+class EquipmentBundleCreate(BaseModel):
+    asset: AssetCreate
+    controller: BundleController
+    connection: BundleConnection | None = None
+
+
 class AssetLinkCreate(BaseModel):
     from_asset_id: str
     to_asset_id: str
@@ -85,6 +111,18 @@ class AssetLinkCreate(BaseModel):
 @router.get("/api/topology")
 def topology(user: dict = Depends(require_view)):
     return domain_store.topology_snapshot()
+
+
+@router.post("/api/equipment-bundles", status_code=status.HTTP_201_CREATED)
+def equipment_bundle_create(payload: EquipmentBundleCreate, user: dict = Depends(require_create)):
+    try:
+        return domain_bundle.create_equipment_bundle(payload.model_dump(), actor(user))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        if "UNIQUE constraint failed" in str(exc):
+            raise HTTPException(status_code=409, detail="Já existe um asset com esta tag ou vínculo duplicado") from exc
+        raise
 
 
 @router.get("/api/assets")
