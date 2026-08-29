@@ -56,7 +56,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
   };
 
   const tools = (
-    <div className="flex min-w-0 flex-1 items-center gap-1 px-2">
+    <div className="flex min-w-max items-center gap-1 pr-2 lg:min-w-0 lg:flex-1 lg:px-2">
       <div className="flex shrink-0 rounded-md border border-border p-px">
         {views.map((v) => (
           <button
@@ -77,7 +77,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
         ))}
       </div>
 
-      <div className="flex min-w-0 shrink-0 items-center gap-1">
+      <div className="flex shrink-0 items-center gap-1">
         {filters.map((f) => (
           <button
             key={f.id}
@@ -118,7 +118,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
   );
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       <Topbar
         breadcrumb={["RC Geradores", "Geradores"]}
         title="Geradores"
@@ -132,14 +132,16 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
         }}
       />
 
-      <div className={cn("flex min-h-0 flex-1 flex-col gap-1 overflow-hidden p-1", showKpis && "p-2 sm:p-3")}>
+      <div className={cn("flex min-h-0 min-w-0 flex-1 flex-col gap-1 overflow-hidden p-1", showKpis && "p-2 sm:p-3")}>
         {showKpis && <KpiStrip />}
 
-        <div className="min-h-0 flex-1 overflow-hidden">
+        <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
           {view === "horizontal" && (
-            <div className="grid h-full min-h-0 grid-cols-2 gap-2 overflow-hidden rounded-md border border-transparent bg-panel p-2 sm:grid-cols-3 xl:grid-cols-6">
+            <div className="scroll-slim grid h-full min-h-0 min-w-0 grid-cols-[repeat(auto-fill,minmax(min(100%,290px),1fr))] content-start gap-2 overflow-auto rounded-md border border-transparent bg-panel p-2">
               {visible.map((g) => (
-                <PowerFlowCard key={g.id} gen={g} />
+                <div key={g.id} className="min-h-[660px] min-w-0">
+                  <PowerFlowCard gen={g} />
+                </div>
               ))}
               {visible.length === 0 && (
                 <p className="col-span-full p-6 text-sm text-muted-foreground">Nenhum gerador encontrado.</p>
@@ -148,7 +150,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
           )}
 
           {view === "vertical" && (
-            <div className="grid grid-cols-1 content-start gap-2 overflow-auto p-0.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="scroll-slim grid h-full min-h-0 min-w-0 grid-cols-[repeat(auto-fill,minmax(min(100%,250px),1fr))] content-start gap-2 overflow-auto p-0.5">
               {visible.map((g) => (
                 <CompactCard key={g.id} gen={g} />
               ))}
@@ -159,7 +161,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
           )}
 
           {view === "lista" && (
-            <div className="h-full min-h-0 overflow-hidden">
+            <div className="scroll-slim h-full min-h-0 min-w-0 overflow-auto">
               <GeneratorTable items={visible} />
             </div>
           )}
