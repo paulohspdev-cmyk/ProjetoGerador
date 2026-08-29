@@ -4,6 +4,7 @@ import { AlarmsScreen, EventsScreen, HistoryScreen, OperationCenter, SitesScreen
 import { ReportsV3Screen } from "./ReportsV3Screen";
 import { ApiV3Screen } from "./ApiV3Screen";
 import { SchedulesV3Screen } from "./SchedulesV3Screen";
+import { EmailV3Screen, ErpBmsV3Screen, WhatsAppV3Screen } from "./IntegrationsV3Screens";
 import { MapScreen } from "./MapScreen";
 import { ControllersV3Screen } from "./ControllersV3Screen";
 import {
@@ -46,11 +47,8 @@ import {
 } from "./scada-lib";
 import {
   ClientsScreen,
-  EmailScreen,
-  ErpScreen,
   UnitsScreen,
   WebhooksScreen,
-  WhatsAppScreen,
 } from "./mgmt";
 import { AuditScreen, RolesScreen, UsersScreen } from "./security";
 
@@ -100,9 +98,9 @@ export const screens: Record<string, ComponentType> = {
   auditoria: AuditScreen,
   api: ApiV3Screen,
   webhooks: WebhooksScreen,
-  email: EmailScreen,
-  whatsapp: WhatsAppScreen,
-  "erp-bms": ErpScreen,
+  email: EmailV3Screen,
+  whatsapp: WhatsAppV3Screen,
+  "erp-bms": ErpBmsV3Screen,
   configuracoes: SettingsScreen,
   backups: BackupsScreen,
   saude: HealthScreen,
