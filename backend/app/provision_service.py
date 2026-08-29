@@ -4,9 +4,12 @@ import os
 from pathlib import Path
 
 SOCKET = os.environ.get("RC_PROVISION_SOCKET", "/run/rc-geradores/provision.sock")
-BASE = Path("/opt/rc-geradores")
+BASE = Path(os.environ.get("RC_PROJECT_ROOT", "/opt/rc-geradores"))
 PYTHON = BASE / "backend/.venv/bin/python"
-SCRIPT = BASE / "rapid/provisioning/provision_generator.py"
+SCRIPTS = {
+    "provision": (BASE / "rapid/provisioning/provision_generator.py", "PROVISION_CONFIRMED"),
+    "deprovision": (BASE / "rapid/provisioning/deprovision_generator.py", "DEPROVISION_CONFIRMED"),
+}
 lock = asyncio.Lock()
 
 
@@ -21,22 +24,29 @@ async def handle(reader, writer):
         if not raw or len(raw) > 4096:
             raise ValueError("requisição vazia ou grande demais")
         req = json.loads(raw.decode("utf-8"))
-        if req.get("confirm") != "PROVISION_CONFIRMED":
-            raise PermissionError("confirmação de provisionamento ausente")
+        operation = str(req.get("operation") or "provision").strip().lower()
+        if operation not in SCRIPTS:
+            raise ValueError("operação inválida")
+        script, confirmation = SCRIPTS[operation]
+        if req.get("confirm") != confirmation:
+            raise PermissionError(f"confirmação de {operation} ausente")
         generator_id = str(req.get("generator_id") or "").strip()
         if not generator_id or len(generator_id) > 100:
             raise ValueError("generator_id inválido")
+        if not script.is_file():
+            raise FileNotFoundError(script)
+
         async with lock:
             proc = await asyncio.create_subprocess_exec(
-                str(PYTHON), str(SCRIPT), generator_id,
+                str(PYTHON), str(script), generator_id,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
-            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=60)
+            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=90)
             if proc.returncode != 0:
                 raise RuntimeError((stderr or stdout).decode("utf-8", errors="replace")[-2000:])
             response = json.loads(stdout.decode("utf-8"))
-            log(f"gerador {generator_id}: provisionado")
+            log(f"gerador {generator_id}: {operation} concluído")
     except Exception as exc:
         response = {"ok": False, "error": str(exc)[:2000]}
         log(f"falha: {exc}")
