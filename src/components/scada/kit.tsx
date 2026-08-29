@@ -7,7 +7,7 @@ import { useScadaOps } from "./ScadaOpsProvider";
 
 export function ScreenBody({ children }: { children: ReactNode }) {
   return (
-    <div className="space-y-3 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-4 lg:p-6 3xl:p-8">
+    <div className="min-w-0 space-y-3 overflow-x-hidden p-2 pb-[max(1rem,env(safe-area-inset-bottom))] min-[420px]:p-3 sm:p-4 lg:p-6 3xl:p-8">
       {children}
     </div>
   );
@@ -25,11 +25,11 @@ export function Stats({ items }: { items: StatItem[] }) {
   return (
     <div
       className={cn(
-        "grid gap-2",
-        items.length <= 2 && "grid-cols-2",
-        items.length === 3 && "grid-cols-2 md:grid-cols-3",
-        items.length === 4 && "grid-cols-2 lg:grid-cols-4",
-        items.length >= 5 && "grid-cols-2 md:grid-cols-3 xl:grid-cols-6",
+        "grid min-w-0 gap-2",
+        items.length <= 2 && "grid-cols-1 min-[420px]:grid-cols-2",
+        items.length === 3 && "grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-3",
+        items.length === 4 && "grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-4",
+        items.length >= 5 && "grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-6",
       )}
     >
       {items.map((c) => (
@@ -41,7 +41,7 @@ export function Stats({ items }: { items: StatItem[] }) {
           )}
           <div className="min-w-0">
             <p className="truncate text-[11px] text-muted-foreground">{c.label}</p>
-            <p className={cn("num text-lg font-bold leading-tight", c.tone)}>{c.value}</p>
+            <p className={cn("num break-words text-lg font-bold leading-tight", c.tone)}>{c.value}</p>
             {c.sub && <p className="truncate text-[10px] text-muted-foreground">{c.sub}</p>}
           </div>
         </div>
@@ -62,12 +62,12 @@ export function Panel({
   className?: string | undefined;
 }) {
   return (
-    <section className={cn("rounded-lg border border-border bg-card", className)}>
-      <header className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
-        <h2 className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">{title}</h2>
-        {actions}
+    <section className={cn("min-w-0 overflow-hidden rounded-lg border border-border bg-card", className)}>
+      <header className="flex min-w-0 flex-wrap items-center justify-between gap-2 border-b border-border px-2.5 py-2 sm:px-3">
+        <h2 className="min-w-0 break-words text-[12px] font-bold uppercase tracking-wider text-muted-foreground">{title}</h2>
+        {actions && <div className="scroll-slim max-w-full overflow-x-auto">{actions}</div>}
       </header>
-      <div className="p-3">{children}</div>
+      <div className="min-w-0 p-2.5 sm:p-3">{children}</div>
     </section>
   );
 }
@@ -104,7 +104,7 @@ export function Pill({
     muted: "border-border bg-secondary text-muted-foreground",
   };
   return (
-    <span className={cn("num rounded-sm border px-1.5 py-0.5 text-[10px] font-bold", map[tone])}>
+    <span className={cn("num inline-flex max-w-full rounded-sm border px-1.5 py-0.5 text-[10px] font-bold", map[tone])}>
       {children}
     </span>
   );
@@ -115,14 +115,14 @@ type Col<T> = { label: string; hide?: string | undefined; render: (row: T) => Re
 export function ScadaTable<T extends { id: string | number }>({
   columns,
   rows,
-  min = "720px",
+  min = "640px",
 }: {
   columns: Col<T>[];
   rows: T[];
   min?: string | undefined;
 }) {
   return (
-    <div className="scroll-slim overflow-x-auto">
+    <div className="scroll-slim min-w-0 max-w-full overflow-x-auto overscroll-x-contain">
       <table className="w-full border-collapse text-[12px]" style={{ minWidth: min }}>
         <thead>
           <tr className="border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground">
@@ -137,7 +137,7 @@ export function ScadaTable<T extends { id: string | number }>({
           {rows.map((row) => (
             <tr key={row.id} className="border-b border-border/50 hover:bg-secondary/30">
               {columns.map((c) => (
-                <td key={c.label} className={cn("px-2 py-2", c.hide)}>
+                <td key={c.label} className={cn("px-2 py-2 align-top", c.hide)}>
                   {c.render(row)}
                 </td>
               ))}
@@ -162,7 +162,7 @@ export function Trend({
   unit?: string | undefined;
 }) {
   return (
-    <div className="h-48 w-full">
+    <div className="h-48 min-w-0 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
@@ -196,15 +196,15 @@ export function SwitchRow({
     <button
       type="button"
       onClick={() => toggleSwitch(id, on)}
-      className="flex w-full items-center justify-between gap-3 rounded-md border border-border px-3 py-2 text-left hover:bg-secondary/40"
+      className="flex w-full min-w-0 items-center justify-between gap-3 rounded-md border border-border px-3 py-2 text-left hover:bg-secondary/40"
     >
       <div className="min-w-0">
-        <p className="text-[13px] font-semibold">{label}</p>
-        {desc && <p className="text-[11px] text-muted-foreground">{desc}</p>}
+        <p className="break-words text-[13px] font-semibold">{label}</p>
+        {desc && <p className="break-words text-[11px] text-muted-foreground">{desc}</p>}
       </div>
       <span
         className={cn(
-          "num rounded-full px-2 py-0.5 text-[10px] font-bold",
+          "num shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold",
           checked ? "bg-online/20 text-online" : "bg-secondary text-muted-foreground",
         )}
       >
@@ -231,7 +231,7 @@ export function ActionBtn({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "rounded border px-2 py-0.5 text-[11px] font-semibold hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50",
+        "max-w-full rounded border px-2 py-0.5 text-[11px] font-semibold hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50",
         tone === "danger" && "border-offline/40 text-offline hover:bg-offline/10",
         tone === "ok" && "border-online/40 text-online hover:bg-online/10",
         tone === "default" && "border-border",
