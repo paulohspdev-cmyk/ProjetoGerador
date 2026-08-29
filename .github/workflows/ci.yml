@@ -143,6 +143,7 @@ jobs:
           bash -n ops/install.sh
           bash -n ops/status.sh
           bash -n ops/vm-smoke.sh
+          bash -n ops/deploy_release.sh
           bash -n rapid/provisioning/provision_ig200.sh
           bash ops/install.sh --help >/tmp/install-help.txt
           grep -q -- '--skip-initial-generator' /tmp/install-help.txt
@@ -169,6 +170,10 @@ jobs:
           grep -q '^RC_PROVISION_SOCKET=' ops/rc-geradores.env.example
           grep -q '^RC_LOGIN_MAX_FAILURES=' ops/rc-geradores.env.example
           grep -q '^RC_BACKUP_RETENTION=' ops/rc-geradores.env.example
+          if grep -q -E 'rapid_device.*!= *200|device.*!= *200' ops/bootstrap_ig200.py; then
+            echo 'ERRO: bootstrap voltou a tratar Device 200 como autorização de controle.' >&2
+            exit 1
+          fi
 
       - name: Provisionamento idempotente e seguro
         run: |
@@ -181,6 +186,8 @@ jobs:
           grep -q 'historyPreserved' rapid/provisioning/deprovision_generator.py
           grep -q 'DEPROVISION_CONFIRMED' backend/app/provision_service.py
           grep -q 'RETIRAR' backend/app/domain_routes.py
+          grep -q 'Git HEAD: OK' ops/deploy_release.sh
+          grep -q 'deployed-commit' ops/deploy_release.sh
 
       - name: Política industrial segura
         run: |
