@@ -106,6 +106,31 @@
   font-size: 8px;
 }
 
+/*
+ * O feedback de START/STOP e informativo e nao pode alterar a altura de um unico card.
+ * Mantemos a mensagem dentro do Power Flow como sobreposicao temporaria, sem participar
+ * do fluxo de layout da grade.
+ */
+.generator-six-card-grid .comap-flow-v2 > p {
+  position: absolute;
+  z-index: 24;
+  right: 54px;
+  bottom: 4px;
+  left: 6px;
+  margin: 0;
+  overflow: hidden;
+  padding: 2px 5px !important;
+  border: 1px solid #173b52;
+  border-radius: 4px;
+  background: rgba(2, 17, 28, 0.94);
+  color: #9fb0bc;
+  font-size: 8px !important;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 /* Potencia: elimina o texto redundante do canto e usa o espaco no valor principal. */
 .generator-six-card-grid .power-gauge-heading > span {
   display: none;
