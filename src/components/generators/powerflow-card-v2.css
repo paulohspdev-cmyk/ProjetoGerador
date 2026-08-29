@@ -1,0 +1,311 @@
+.comap-panel-v2 {
+  height: auto;
+  min-height: 100%;
+}
+
+.controller-model-line {
+  margin-top: 2px;
+  overflow: hidden;
+  color: #7890a2;
+  font-size: 9px;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.comap-power-gauge-block {
+  flex: 0 0 auto;
+  padding: 6px 8px 4px;
+}
+
+.power-gauge-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.power-gauge-heading > span {
+  color: #7f94a4;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.kw-gauge-wrap {
+  position: relative;
+  display: grid;
+  min-height: 142px;
+  place-items: center;
+}
+
+.kw-gauge-svg {
+  width: min(100%, 235px);
+  height: 142px;
+  overflow: visible;
+}
+
+.kw-gauge-base,
+.kw-gauge-zone {
+  fill: none;
+  stroke-linecap: butt;
+  stroke-width: 22;
+}
+
+.kw-gauge-base {
+  stroke: #173447;
+}
+
+.kw-gauge-green {
+  stroke: #2cc91d;
+  filter: drop-shadow(0 0 3px rgba(67, 239, 0, 0.32));
+}
+
+.kw-gauge-amber {
+  stroke: #ffc21a;
+  filter: drop-shadow(0 0 3px rgba(255, 194, 26, 0.26));
+}
+
+.kw-gauge-needle {
+  stroke: #f6fbff;
+  stroke-width: 4;
+  stroke-linecap: round;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.9));
+  transition: all 0.35s ease;
+}
+
+.kw-gauge-needle.is-unknown {
+  opacity: 0;
+}
+
+.kw-gauge-hub {
+  fill: #e8f1f7;
+  stroke: #173447;
+  stroke-width: 3;
+}
+
+.kw-gauge-scale {
+  fill: #dce8ef;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.kw-gauge-unit {
+  fill: #dce8ef;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.kw-gauge-value {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #f5fbff;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.kw-gauge-caption {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  color: #617b8d;
+  font-size: 7px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.controller-mode-section {
+  flex: 0 0 auto;
+  padding: 5px 6px;
+}
+
+.controller-mode-wrap {
+  display: grid;
+  gap: 4px;
+}
+
+.controller-mode-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  color: #8ea1af;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.controller-mode-meta small {
+  color: #5d7485;
+  font-size: 7px;
+}
+
+.controller-mode-bar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 3px;
+}
+
+.controller-mode-btn {
+  min-width: 0;
+  min-height: 28px;
+  padding: 3px 2px;
+  border: 1px solid #173b52;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #102636, #081923);
+  color: #8195a4;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.controller-mode-btn.is-active {
+  border-color: #43ef00;
+  background: linear-gradient(180deg, #2fc900, #1a8c00);
+  color: #fff;
+  box-shadow: 0 0 7px rgba(67, 239, 0, 0.28);
+}
+
+.controller-mode-generic {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 28px;
+  color: #8296a5;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.controller-mode-generic b {
+  color: #43ef00;
+}
+
+.comap-panel-v2 .comap-flow {
+  min-height: 405px;
+  flex: 0 0 auto;
+}
+
+.comap-panel-v2 .comap-sld {
+  height: 365px;
+  flex: 0 0 auto;
+}
+
+.comap-panel-v2 .comap-sld-stage {
+  width: min(100%, 230px);
+  height: 365px;
+  aspect-ratio: auto;
+}
+
+.breaker-single-control {
+  display: grid;
+  width: 46px;
+  justify-items: center;
+  gap: 3px;
+}
+
+.breaker-single-label {
+  color: #b6c5cf;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.breaker-state-track {
+  display: block;
+  width: 34px;
+  height: 4px;
+  overflow: hidden;
+  border: 1px solid #234e68;
+  border-radius: 999px;
+  background: #071725;
+}
+
+.breaker-state-track i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: left center;
+  transition: transform 0.25s ease, background 0.25s ease;
+}
+
+.breaker-single-control.is-closed .breaker-state-track i {
+  transform: scaleX(1);
+  background: #43ef00;
+  box-shadow: 0 0 5px rgba(67, 239, 0, 0.7);
+}
+
+.breaker-single-control.is-open .breaker-state-track i {
+  transform: scaleX(0.22);
+  background: #8395a1;
+}
+
+.breaker-single-control.is-unknown .breaker-state-track i {
+  transform: scaleX(0.5);
+  background: #38586b;
+}
+
+.breaker-single-button {
+  width: 38px;
+  height: 31px;
+  padding: 0;
+  border: 1px solid #315a70;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #f6f8fa, #cbd5dc);
+  color: #0d2432;
+  font-size: 10px;
+  font-weight: 900;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.55);
+  cursor: not-allowed;
+}
+
+.breaker-single-control.is-closed .breaker-single-button {
+  border-color: #43ef00;
+  background: linear-gradient(180deg, #3fe100, #208c00);
+  color: #fff;
+}
+
+.breaker-single-control small {
+  color: #688092;
+  font-size: 6px;
+  font-weight: 800;
+}
+
+.prll-status {
+  cursor: default;
+}
+
+.flow-switch-node.is-unknown {
+  fill: #173447;
+  stroke: #527085;
+}
+
+.flow-switch-blade.is-unknown {
+  stroke: #527085;
+  stroke-dasharray: 4 3;
+}
+
+.comap-panel-v2 .comap-engine {
+  min-height: 20px;
+}
+
+@media (max-width: 360px) {
+  .comap-panel-v2 .comap-sld-stage {
+    width: 220px;
+  }
+
+  .controller-mode-btn {
+    font-size: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kw-gauge-needle,
+  .breaker-state-track i {
+    transition: none;
+  }
+}
