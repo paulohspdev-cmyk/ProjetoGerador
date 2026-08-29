@@ -13,6 +13,9 @@ OLD_OUTPUT="${BASE}/.output.before-${STAMP}"
 TEST_PORT="${RC_DEPLOY_TEST_PORT:-3101}"
 TEST_PID=""
 CONTROL_SOCKET="/run/rc-geradores/control.sock"
+PREV_HEAD=""
+PREV_BRANCH=""
+MARKER_EXISTED=0
 
 log() {
   printf '\n=== %s ===\n' "$*"
@@ -45,11 +48,23 @@ if [[ -f "${ENV_FILE}" ]]; then
   CONTROL_SOCKET="${RC_RAPID_CONTROL_SOCKET:-${CONTROL_SOCKET}}"
 fi
 
-for cmd in git tar npm node curl systemctl runuser; do
+for cmd in git tar npm node curl systemctl runuser ss; do
   command -v "${cmd}" >/dev/null 2>&1 || fail "comando obrigatório não encontrado: ${cmd}"
 done
 
+log "VALIDANDO CHECKOUT ATUAL"
+PREV_HEAD="$(git -c safe.directory="${BASE}" -C "${BASE}" rev-parse HEAD)"
+PREV_BRANCH="$(git -c safe.directory="${BASE}" -C "${BASE}" symbolic-ref --short -q HEAD || true)"
+DIRTY="$(git -c safe.directory="${BASE}" -C "${BASE}" status --porcelain --untracked-files=no)"
+if [[ -n "${DIRTY}" ]]; then
+  echo "${DIRTY}" >&2
+  fail "há alterações locais rastreadas em ${BASE}; o deploy não sobrescreve código manual"
+fi
+echo "HEAD atual: ${PREV_HEAD}"
+echo "Branch atual: ${PREV_BRANCH:-detached}"
+
 log "RESOLVENDO RELEASE ${REF}"
+git -c safe.directory="${BASE}" -C "${BASE}" fetch --prune origin
 git -c safe.directory="${BASE}" -C "${BASE}" fetch origin main
 COMMIT="$(git -c safe.directory="${BASE}" -C "${BASE}" rev-parse "${REF}^{commit}")"
 echo "Commit: ${COMMIT}"
@@ -72,7 +87,6 @@ npm ci --include=dev
 NITRO_PRESET=node-server npm run build
 npm prune --omit=dev
 [[ -f .output/server/index.mjs ]] || fail "build não gerou .output/server/index.mjs"
-
 echo "Build: OK"
 
 log "SMOKE ISOLADO NA PORTA ${TEST_PORT}"
@@ -116,11 +130,16 @@ tar \
   --exclude='.output.*' \
   --exclude='backend/.venv' \
   -C "${BASE}" -czf "${BACKUP}/source-before.tgz" .
+printf '%s\n' "${PREV_HEAD}" > "${BACKUP}/git-head-before"
+printf '%s\n' "${PREV_BRANCH}" > "${BACKUP}/git-branch-before"
 
 [[ -f "${ENV_FILE}" ]] && cp -a "${ENV_FILE}" "${BACKUP}/rc-geradores.env" || true
 [[ -f /var/lib/rc-geradores/rapid-bindings.json ]] \
   && cp -a /var/lib/rc-geradores/rapid-bindings.json "${BACKUP}/rapid-bindings.json" || true
-
+if [[ -f /var/lib/rc-geradores/deployed-commit ]]; then
+  cp -a /var/lib/rc-geradores/deployed-commit "${BACKUP}/deployed-commit-before"
+  MARKER_EXISTED=1
+fi
 echo "Backup: ${BACKUP}"
 
 log "PREPARANDO OUTPUT NOVO"
@@ -128,11 +147,13 @@ rm -rf "${NEW_OUTPUT}"
 cp -a "${STAGE}/.output" "${NEW_OUTPUT}"
 chown -R rcgeradores:rcgeradores "${NEW_OUTPUT}"
 
-log "INSTALANDO FONTES DO COMMIT ${COMMIT}"
-git -c safe.directory="${BASE}" -C "${BASE}" archive "${COMMIT}" | tar -x -C "${BASE}"
-printf '%s\n' "${COMMIT}" > /var/lib/rc-geradores/deployed-commit
-chown root:rcgeradores /var/lib/rc-geradores/deployed-commit
-chmod 0640 /var/lib/rc-geradores/deployed-commit
+log "ALINHANDO CHECKOUT AO COMMIT ${COMMIT}"
+# A VM de produção usa a branch local main como checkout oficial. Arquivos de
+# runtime ignorados (.venv, node_modules, .output) não são apagados pelo reset.
+git -c safe.directory="${BASE}" -C "${BASE}" checkout -B main "${COMMIT}"
+git -c safe.directory="${BASE}" -C "${BASE}" reset --hard "${COMMIT}"
+INSTALLED_HEAD="$(git -c safe.directory="${BASE}" -C "${BASE}" rev-parse HEAD)"
+[[ "${INSTALLED_HEAD}" == "${COMMIT}" ]] || fail "HEAD não ficou no commit solicitado"
 
 log "TROCA ATÔMICA DO FRONTEND"
 rm -rf "${OLD_OUTPUT}"
@@ -160,7 +181,19 @@ rollback() {
     mv "${OLD_OUTPUT}" "${BASE}/.output"
   fi
 
+  if [[ -n "${PREV_BRANCH}" ]]; then
+    git -c safe.directory="${BASE}" -C "${BASE}" checkout -B "${PREV_BRANCH}" "${PREV_HEAD}" || true
+  else
+    git -c safe.directory="${BASE}" -C "${BASE}" checkout --detach "${PREV_HEAD}" || true
+  fi
+  git -c safe.directory="${BASE}" -C "${BASE}" reset --hard "${PREV_HEAD}" || true
   tar -C "${BASE}" -xzf "${BACKUP}/source-before.tgz"
+
+  if [[ ${MARKER_EXISTED} -eq 1 && -f "${BACKUP}/deployed-commit-before" ]]; then
+    cp -a "${BACKUP}/deployed-commit-before" /var/lib/rc-geradores/deployed-commit
+  else
+    rm -f /var/lib/rc-geradores/deployed-commit
+  fi
 
   systemctl start rc-geradores-provision 2>/dev/null || true
   systemctl start rc-geradores-worker 2>/dev/null || true
@@ -168,7 +201,7 @@ rollback() {
   systemctl start rc-geradores-api
   systemctl start rc-geradores-frontend
 
-  echo "Rollback concluído."
+  echo "Rollback concluído para ${PREV_HEAD}."
 }
 
 log "REINICIANDO SERVIÇOS"
@@ -181,7 +214,7 @@ sleep 4
 
 log "VALIDAÇÃO DE PRODUÇÃO"
 FAIL=0
-for svc in rc-geradores-bridge rc-geradores-api rc-geradores-frontend; do
+for svc in rc-geradores-bridge rc-geradores-api rc-geradores-frontend rc-geradores-worker rc-geradores-provision; do
   if systemctl is-active --quiet "${svc}"; then
     echo "${svc}: OK"
   else
@@ -205,8 +238,6 @@ else
 fi
 
 # IMPORTANTE: este teste precisa rodar como root (este script exige EUID=0).
-# /run/rc-geradores é 0770 rcgeradores:rcgeradores; um usuário comum fora do
-# grupo não consegue nem fazer stat() no socket e produz falso negativo.
 if test -S "${CONTROL_SOCKET}"; then
   echo "Controle socket: OK (${CONTROL_SOCKET})"
 else
@@ -214,12 +245,41 @@ else
   FAIL=1
 fi
 
+CURRENT_HEAD="$(git -c safe.directory="${BASE}" -C "${BASE}" rev-parse HEAD)"
+if [[ "${CURRENT_HEAD}" == "${COMMIT}" ]]; then
+  echo "Git HEAD: OK (${CURRENT_HEAD})"
+else
+  echo "Git HEAD: FALHOU (${CURRENT_HEAD} != ${COMMIT})"
+  FAIL=1
+fi
+
+if [[ -n "$(git -c safe.directory="${BASE}" -C "${BASE}" status --porcelain --untracked-files=no)" ]]; then
+  echo "Git tracked status: FALHOU (árvore modificada)"
+  FAIL=1
+else
+  echo "Git tracked status: OK"
+fi
+
 if [[ ${FAIL} -ne 0 ]]; then
   rollback
   exit 1
 fi
 
+log "REGISTRANDO RELEASE VALIDADA"
+printf '%s\n' "${COMMIT}" > /var/lib/rc-geradores/deployed-commit
+chown root:rcgeradores /var/lib/rc-geradores/deployed-commit
+chmod 0640 /var/lib/rc-geradores/deployed-commit
+[[ "$(cat /var/lib/rc-geradores/deployed-commit)" == "${CURRENT_HEAD}" ]] || {
+  rollback
+  fail "deployed-commit divergiu do HEAD"
+}
+
+# O output anterior já está coberto pelo backup da release; não deixa lixo na
+# árvore de produção depois de uma implantação bem sucedida.
+rm -rf "${OLD_OUTPUT}"
+
 log "RELEASE INSTALADA COM SUCESSO"
 echo "Commit: ${COMMIT}"
+echo "HEAD: ${CURRENT_HEAD}"
 echo "Controle: ${RC_ENABLE_IG200_CONTROL:-0}"
 echo "Backup: ${BACKUP}"
