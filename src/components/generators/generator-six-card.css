@@ -82,6 +82,11 @@
   height: 6.5px;
 }
 
+/* A frequência já aparece ao lado do G no Power Flow; não repetimos no Engine Status. */
+.generator-six-card-grid .engine-status-block .comap-engine:last-child {
+  display: none;
+}
+
 /*
  * O backend continua preservando known=false. Aqui alteramos somente a apresentacao:
  * grandezas numericas desconhecidas aparecem como 0 ate a primeira leitura real.
@@ -131,8 +136,9 @@
   pointer-events: none;
 }
 
-/* Potencia: elimina o texto redundante do canto e usa o espaco no valor principal. */
-.generator-six-card-grid .power-gauge-heading > span {
+/* Potência: sem texto redundante no canto e sem legenda/caption abaixo do gauge. */
+.generator-six-card-grid .power-gauge-heading > span,
+.generator-six-card-grid .kw-gauge-caption {
   display: none;
 }
 
