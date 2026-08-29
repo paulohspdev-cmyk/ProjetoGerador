@@ -4,17 +4,17 @@ import { LayoutGrid, List, Rows3 } from "lucide-react";
 import { statusLabel, type GenStatus } from "@/data/generators";
 import { Topbar } from "@/components/layout/Topbar";
 import { CompactCard } from "./CompactCard";
-import { GeneratorOverviewCard } from "./GeneratorOverviewCard";
 import { GeneratorTable } from "./GeneratorTable";
 import { KpiStrip } from "./KpiStrip";
+import { PowerFlowCard } from "./PowerFlowCard";
 import { useGenerators } from "./GeneratorsProvider";
 import { cn } from "@/lib/utils";
 
-type View = "horizontal" | "vertical" | "lista";
+type View = "principal" | "compacto" | "lista";
 
 const views: Array<{ id: View; label: string; icon: typeof List }> = [
-  { id: "horizontal", label: "Cards resumo", icon: Rows3 },
-  { id: "vertical", label: "Cards compactos", icon: LayoutGrid },
+  { id: "principal", label: "Cards verticais", icon: Rows3 },
+  { id: "compacto", label: "Cards compactos", icon: LayoutGrid },
   { id: "lista", label: "Lista", icon: List },
 ];
 
@@ -28,7 +28,7 @@ const filters: Array<{ id: GenStatus | "todos"; label: string }> = [
 
 export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
   const { generators } = useGenerators();
-  const [view, setView] = useState<View>("horizontal");
+  const [view, setView] = useState<View>("principal");
   const [status, setStatus] = useState<GenStatus | "todos">("todos");
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState(0);
@@ -45,7 +45,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
     [generators, status, query],
   );
 
-  const pageSize = view === "lista" ? 12 : 8;
+  const pageSize = view === "principal" ? 6 : view === "lista" ? 12 : 8;
   const pages = Math.max(1, Math.ceil(items.length / pageSize));
   const page = Math.min(group, pages - 1);
   const visible = items.slice(page * pageSize, page * pageSize + pageSize);
@@ -138,10 +138,10 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
         {showKpis && <KpiStrip />}
 
         <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
-          {view === "horizontal" && (
-            <div className="scroll-slim grid h-full min-h-0 min-w-0 grid-cols-1 content-start gap-3 overflow-auto rounded-md bg-panel p-2 md:grid-cols-2 xl:grid-cols-3 min-[2400px]:grid-cols-4">
+          {view === "principal" && (
+            <div className="scroll-slim grid h-full min-h-0 min-w-0 grid-cols-1 content-start items-start gap-3 overflow-auto rounded-md bg-panel p-2 md:grid-cols-2 2xl:grid-cols-3 min-[2500px]:grid-cols-4">
               {visible.map((g) => (
-                <GeneratorOverviewCard key={g.id} gen={g} />
+                <PowerFlowCard key={g.id} gen={g} />
               ))}
               {visible.length === 0 && (
                 <p className="col-span-full p-6 text-sm text-muted-foreground">Nenhum gerador encontrado.</p>
@@ -149,7 +149,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
             </div>
           )}
 
-          {view === "vertical" && (
+          {view === "compacto" && (
             <div className="scroll-slim grid h-full min-h-0 min-w-0 grid-cols-1 content-start gap-2 overflow-auto p-0.5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
               {visible.map((g) => (
                 <CompactCard key={g.id} gen={g} />
