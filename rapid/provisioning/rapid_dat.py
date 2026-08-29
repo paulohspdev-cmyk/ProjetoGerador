@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 """Leitor/escritor mínimo e seguro para tabelas BaseDAT do Rapid SCADA 6.x.
 
-Usado somente para acrescentar os registros RC necessários. O formato segue
-BaseTableAdapter do Rapid SCADA: cabeçalho v4, definições de campo de 60 bytes,
-blocos 0x0E0E e CRC-16 Modbus.
+Usado somente para acrescentar ou reconciliar registros RC necessários. O
+formato segue BaseTableAdapter do Rapid SCADA: cabeçalho v4, definições de campo
+de 60 bytes, blocos 0x0E0E e CRC-16 Modbus.
+
+Regras de segurança:
+- preserva cabeçalho e definições de campo byte a byte;
+- atualização substitui somente o bloco da linha selecionada;
+- gravação é feita em arquivo temporário + os.replace;
+- toda escrita é relida e validada antes de retornar.
 """
 
 from __future__ import annotations
@@ -13,7 +19,9 @@ import json
 import os
 import struct
 import sys
+import tempfile
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 HEADER_SIZE = 20
@@ -122,6 +130,60 @@ def _encode_value(field: FieldDef, value: Any) -> bytes:
     return bytes(out)
 
 
+def _encode_row(fields: list[FieldDef], values: dict[str, Any]) -> bytes:
+    payload = bytearray()
+    for field in fields:
+        payload += _encode_value(field, values.get(field.name, _default_value(field)))
+    row_data_size = len(payload) + 2
+    block = bytearray(struct.pack("<Hi", BLOCK_MARKER, row_data_size))
+    block += payload
+    block += struct.pack("<H", crc16(block))
+    return bytes(block)
+
+
+def _row_spans(data: bytes, field_count: int) -> list[tuple[int, int]]:
+    pos = HEADER_SIZE + field_count * FIELD_DEF_SIZE
+    spans: list[tuple[int, int]] = []
+    while pos < len(data):
+        if len(data) - pos < 6:
+            raise ValueError("bloco final BaseDAT truncado")
+        marker, row_data_size = struct.unpack_from("<Hi", data, pos)
+        if marker != BLOCK_MARKER:
+            raise ValueError(f"marcador de linha inválido em offset {pos}: {marker:04X}")
+        end = pos + 6 + row_data_size
+        if end > len(data):
+            raise ValueError("linha BaseDAT truncada")
+        spans.append((pos, end))
+        pos = end
+    return spans
+
+
+def _atomic_replace(path: str, data: bytes) -> None:
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{target.name}.", suffix=".tmp", dir=str(target.parent))
+    try:
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(data)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp_name, target)
+        try:
+            dir_fd = os.open(target.parent, os.O_RDONLY)
+            try:
+                os.fsync(dir_fd)
+            finally:
+                os.close(dir_fd)
+        except OSError:
+            pass
+    except Exception:
+        try:
+            os.unlink(tmp_name)
+        except FileNotFoundError:
+            pass
+        raise
+
+
 def read_table(path: str) -> tuple[list[FieldDef], list[dict[str, Any]]]:
     with open(path, "rb") as fh:
         data = fh.read()
@@ -204,15 +266,7 @@ def append_row(path: str, pk_name: str, values: dict[str, Any]) -> str:
                     )
             return "exists"
 
-    payload = bytearray()
-    for field in fields:
-        payload += _encode_value(field, values.get(field.name, _default_value(field)))
-
-    row_data_size = len(payload) + 2
-    block = bytearray(struct.pack("<Hi", BLOCK_MARKER, row_data_size))
-    block += payload
-    block += struct.pack("<H", crc16(block))
-
+    block = _encode_row(fields, values)
     with open(path, "ab") as fh:
         fh.write(block)
         fh.flush()
@@ -220,6 +274,46 @@ def append_row(path: str, pk_name: str, values: dict[str, Any]) -> str:
 
     read_table(path)
     return "added"
+
+
+def update_row(path: str, pk_name: str, pk_value: Any, patch: dict[str, Any]) -> dict[str, Any]:
+    """Atualiza uma linha BaseDAT preservando todo o restante byte a byte."""
+    fields, rows = read_table(path)
+    field_names = {field.name for field in fields}
+    if pk_name not in field_names:
+        raise ValueError(f"{path}: chave {pk_name} não existe")
+    unknown = sorted(set(patch) - field_names)
+    if unknown:
+        raise ValueError(f"{path}: campos desconhecidos: {', '.join(unknown)}")
+    if pk_name in patch and patch[pk_name] != pk_value:
+        raise ValueError(f"{path}: update_row não permite alterar a chave primária {pk_name}")
+
+    matches = [index for index, row in enumerate(rows) if row.get(pk_name) == pk_value]
+    if not matches:
+        raise KeyError(f"{path}: {pk_name}={pk_value} não encontrado")
+    if len(matches) != 1:
+        raise ValueError(f"{path}: {pk_name}={pk_value} aparece {len(matches)} vezes")
+
+    index = matches[0]
+    before = dict(rows[index])
+    after = {**before, **patch}
+    changed = {key: {"from": before.get(key), "to": after.get(key)} for key in patch if before.get(key) != after.get(key)}
+    if not changed:
+        return {"status": "unchanged", "before": before, "after": before, "changed": {}}
+
+    raw = Path(path).read_bytes()
+    spans = _row_spans(raw, len(fields))
+    if len(spans) != len(rows):
+        raise ValueError(f"{path}: quantidade de blocos diverge das linhas decodificadas")
+    start, end = spans[index]
+    updated = raw[:start] + _encode_row(fields, after) + raw[end:]
+    _atomic_replace(path, updated)
+
+    _, verified_rows = read_table(path)
+    verified = next((row for row in verified_rows if row.get(pk_name) == pk_value), None)
+    if verified is None or any(verified.get(key) != value for key, value in patch.items()):
+        raise ValueError(f"{path}: validação pós-escrita falhou para {pk_name}={pk_value}")
+    return {"status": "updated", "before": before, "after": verified, "changed": changed}
 
 
 def main() -> int:
@@ -236,6 +330,12 @@ def main() -> int:
     p_append.add_argument("path")
     p_append.add_argument("pk_name")
     p_append.add_argument("json_values")
+
+    p_update = sub.add_parser("update")
+    p_update.add_argument("path")
+    p_update.add_argument("pk_name")
+    p_update.add_argument("pk_value")
+    p_update.add_argument("json_patch")
 
     args = parser.parse_args()
 
@@ -255,6 +355,17 @@ def main() -> int:
         values = json.loads(args.json_values)
         result = append_row(args.path, args.pk_name, values)
         print(f"{result.upper()} {args.path}: {args.pk_name}={values[args.pk_name]}")
+        return 0
+
+    if args.cmd == "update":
+        patch = json.loads(args.json_patch)
+        _, rows = read_table(args.path)
+        sample = rows[0].get(args.pk_name) if rows else args.pk_value
+        value: Any = args.pk_value
+        if isinstance(sample, int):
+            value = int(args.pk_value)
+        result = update_row(args.path, args.pk_name, value, patch)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
 
     return 1
