@@ -58,7 +58,7 @@ function ModeStrip({ gen, known }: { gen: Generator; known: boolean }) {
 }
 
 function KwGauge({ gen, kw }: { gen: Generator; kw: number | null }) {
-  const nominal = gen.nominalPowerKw != null && gen.nominalPowerKw > 0 ? gen.nominalPowerKw : null;
+  const nominal = gen.nominalPower != null && gen.nominalPower > 0 ? gen.nominalPower : null;
   const pct = kw != null && nominal != null ? Math.max(0, Math.min(1, kw / nominal)) : null;
   const angle = pct == null ? null : -135 + pct * 270;
   const rad = angle == null ? 0 : (angle * Math.PI) / 180;
@@ -117,7 +117,6 @@ function MiniPowerFlow({ gen, rpm, frequency, kw }: { gen: Generator; rpm: numbe
   const mainsLive = mainsKnown && mainsVoltage > 50;
   const running = rpm != null && rpm > 300 && frequency != null && frequency > 1;
   const busLive = (mainsLive && mcbKnown && gen.mcb) || (running && gcbKnown && gen.gcb);
-  const loadKnown = kw != null;
 
   return (
     <div className="relative min-h-[220px] rounded-md border border-border/80 bg-background/35 p-2">
@@ -135,7 +134,7 @@ function MiniPowerFlow({ gen, rpm, frequency, kw }: { gen: Generator; rpm: numbe
 
       <div className="absolute right-2 top-[88px] flex h-[42px] w-[76px] flex-col items-center justify-center rounded border border-border bg-card/70">
         <span className="text-[8px] font-extrabold">LOAD</span>
-        <span className={cn("num text-[10px] font-black", loadKnown && "text-online")}>{fmt(kw, "kW", 0)}</span>
+        <span className={cn("num text-[10px] font-black", kw != null && "text-online")}>{fmt(kw, "kW", 0)}</span>
       </div>
 
       <div className="absolute left-2 top-[139px]"><Breaker label="GCB" known={gcbKnown} closed={gen.gcb} /></div>
