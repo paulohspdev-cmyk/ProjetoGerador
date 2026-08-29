@@ -139,7 +139,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
 
         <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
           {view === "principal" && (
-            <div className="scroll-slim grid h-full min-h-0 min-w-0 grid-cols-1 content-start items-start gap-3 overflow-auto rounded-md bg-panel p-2 md:grid-cols-2 2xl:grid-cols-3 min-[2500px]:grid-cols-4">
+            <div className="generator-vertical-grid scroll-slim grid h-full min-h-0 min-w-0 grid-cols-1 content-start gap-3 overflow-auto rounded-md bg-panel p-2 md:grid-cols-2 2xl:grid-cols-3 min-[2500px]:grid-cols-4">
               {visible.map((g) => (
                 <PowerFlowCard key={g.id} gen={g} />
               ))}
