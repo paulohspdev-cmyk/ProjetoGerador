@@ -33,7 +33,6 @@ generator = db.create_generator(
     actor="test",
 )
 
-# Condição observada vira alarme persistente e evento de processo.
 live = [{
     **generator,
     "status": "offline",
@@ -50,14 +49,12 @@ assert alarms[0]["severity"] == "fault"
 acked = industrial_store.acknowledge_alarm(alarms[0]["alarm_key"], "admin@test")
 assert acked and acked["acked_by"] == "admin@test"
 
-# Normalização limpa o alarme e cria transição no histórico.
 live[0]["status"] = "online"
 assert industrial_store.refresh_observed_alarms(live) == 1
 assert industrial_store.list_alarms(True) == []
 events = industrial_store.list_process_events(20, generator["id"])
 assert {event["event_type"] for event in events} >= {"alarm_raised", "alarm_ack", "alarm_cleared"}
 
-# Plano por horímetro usa somente run_hours explicitamente disponível.
 plan = industrial_store.create_maintenance_plan(
     {
         "generator_id": generator["id"],
@@ -92,13 +89,20 @@ policy = industrial_store.create_escalation_policy(
     "admin@test",
 )
 assert policy["enabled"] is True
-# O alarme reaberto não está reconhecido e deve gerar uma notificação.
 assert industrial_store.process_escalations(live) == 1
 notifications = platform_store.list_notifications(10)
 assert notifications[0]["event_type"] == "industrial.alarm.escalation"
 assert notifications[0]["channel"] == "panel"
-# Máximo de uma repetição impede duplicação imediata.
 assert industrial_store.process_escalations(live) == 0
+
+# ACK impede novo escalonamento; clear mantém a trilha de processo.
+active = industrial_store.list_alarms(True)[0]
+industrial_store.acknowledge_alarm(active["alarm_key"], "admin@test")
+assert industrial_store.process_escalations(live) == 0
+live[0]["status"] = "online"
+industrial_store.refresh_observed_alarms(live)
+assert industrial_store.list_alarms(True) == []
+assert any(event["event_type"] == "alarm_cleared" for event in industrial_store.list_process_events(50, generator["id"]))
 
 print("RC Geradores industrial v3 smoke: OK")
 tmp.cleanup()
