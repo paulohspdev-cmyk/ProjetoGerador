@@ -2,6 +2,7 @@ import type { ComponentType } from "react";
 
 import { AlarmsScreen, EventsScreen, HistoryScreen, OperationCenter, ReportsScreen, SitesScreen, TrendsScreen } from "./operations";
 import { MapScreen } from "./MapScreen";
+import { ControllersV3Screen } from "./ControllersV3Screen";
 import {
   AgendaScreen,
   BatteriesScreen,
@@ -17,7 +18,6 @@ import {
 import {
   CommunicationScreen,
   ConnectivityScreen,
-  ControllersScreen,
   EscalationScreen,
   ExerciseScreen,
   GatewaysScreen,
@@ -72,7 +72,7 @@ export const screens: Record<string, ComponentType> = {
   baterias: BatteriesScreen,
   horimetros: HourmetersScreen,
   agenda: AgendaScreen,
-  controladoras: ControllersScreen,
+  controladoras: ControllersV3Screen,
   modems: ModemsScreen,
   gateways: GatewaysScreen,
   conectividade: ConnectivityScreen,
