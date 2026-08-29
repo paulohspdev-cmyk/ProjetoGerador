@@ -11,6 +11,32 @@ import {
 import { useScadaOps } from "./ScadaOpsProvider";
 import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats, Tone } from "./kit";
 
+type CatalogController = {
+  catalogId: string;
+  manufacturer: string;
+  family: string;
+  model: string;
+  application: string;
+  category: string;
+  catalogStatus: string;
+  packId?: string | null;
+  packLifecycle?: "production" | "lab" | null;
+  packStatus?: string | null;
+  provisionable: boolean;
+  protocols?: string[];
+  transports?: string[];
+};
+
+type LibraryV3 = ControllerLibrary & {
+  catalog?: CatalogController[];
+  manufacturers: Array<ControllerLibrary["manufacturers"][number] & { inventoryOnly?: number }>;
+  counts: ControllerLibrary["counts"] & {
+    catalogTotal?: number;
+    catalogProvisionable?: number;
+    catalogInventoryOnly?: number;
+  };
+};
+
 function useRemote<T>(loader: () => Promise<T>, initial: T) {
   const [data, setData] = useState<T>(initial);
   const [error, setError] = useState("");
@@ -84,9 +110,7 @@ export function TemplatesScreen() {
           {packs.map((p) => (
             <div key={p.packId} className="rounded-lg border border-border p-3">
               <p className="font-bold">{p.manufacturer} {p.model}</p>
-              <p className="text-[11px] text-muted-foreground">
-                {p.validatedTelemetry?.length ?? 0} telemetrias validadas · {p.status}
-              </p>
+              <p className="text-[11px] text-muted-foreground">{p.validatedTelemetry?.length ?? 0} telemetrias validadas · {p.status}</p>
             </div>
           ))}
         </div>
@@ -130,7 +154,7 @@ export function DiagnosticScreen() {
             { label: "Status", render: (r) => <Tone tone={r.status === "active" || r.status === "OK" ? "ok" : "warn"}>{r.status}</Tone> },
             { label: "Detalhe", render: (r) => r.detail || "—" },
           ]} />
-          <div className="mt-3 grid gap-2 sm:grid-cols-3 text-[12px]">
+          <div className="mt-3 grid gap-2 text-[12px] sm:grid-cols-3">
             <div className="rounded-md border border-border p-2">Memória: <b>{data.host.memory ? `${data.host.memory.usedPercent}%` : "N/D"}</b></div>
             <div className="rounded-md border border-border p-2">Disco: <b>{data.host.disk ? `${data.host.disk.usedPercent}%` : "N/D"}</b></div>
             <div className="rounded-md border border-border p-2">Geradores: <b>{data.generators.length}</b></div>
@@ -143,17 +167,23 @@ export function DiagnosticScreen() {
 
 export function ManufacturersScreen() {
   const { data, error, loading } = useRemote<ControllerLibrary | null>(() => rcApi.library.get(), null);
-  const rows = data?.manufacturers ?? [];
+  const lib = data as LibraryV3 | null;
+  const rows = lib?.manufacturers ?? [];
   return (
     <ScreenBody>
-      <Stats items={[{ icon: Library, label: "Fabricantes reais", value: rows.length }]} />
-      <Panel title="Fabricantes presentes nos manifests">
+      <Stats items={[
+        { icon: Library, label: "Fabricantes", value: rows.length },
+        { icon: Library, label: "Modelos no catálogo", value: lib?.counts.catalogTotal ?? data?.counts.total ?? 0 },
+        { icon: Package, label: "Provisionáveis", value: lib?.counts.catalogProvisionable ?? data?.counts.production ?? 0, tone: "text-online" },
+      ]} />
+      <Panel title="Fabricantes — catálogo e homologação">
         <RemoteState loading={loading} error={error} empty={!rows.length} />
         {!!rows.length && <ScadaTable rows={rows} columns={[
           { label: "Nome", render: (r) => <b>{r.name}</b> },
           { label: "Modelos", render: (r) => r.models },
           { label: "Produção", render: (r) => <Tone tone={r.production ? "ok" : "muted"}>{r.production}</Tone> },
           { label: "Lab", render: (r) => r.lab },
+          { label: "Somente catálogo", render: (r) => r.inventoryOnly ?? 0 },
         ]} />}
       </Panel>
     </ScreenBody>
@@ -162,25 +192,29 @@ export function ManufacturersScreen() {
 
 export function LibControllersScreen() {
   const { data, error, loading } = useRemote<ControllerLibrary | null>(() => rcApi.library.get(), null);
-  const packs = data?.packs ?? [];
+  const lib = data as LibraryV3 | null;
+  const catalog = lib?.catalog ?? [];
   return (
     <ScreenBody>
+      <Stats items={[
+        { icon: Library, label: "Modelos catalogados", value: catalog.length },
+        { icon: Package, label: "Produção", value: catalog.filter((item) => item.provisionable).length, tone: "text-online" },
+        { icon: FlaskConical, label: "Em lab", value: catalog.filter((item) => item.packLifecycle === "lab").length },
+        { icon: Info, label: "A homologar", value: catalog.filter((item) => !item.packLifecycle).length },
+      ]} />
+      <p className="rounded-md border border-border bg-card px-3 py-2 text-[11px] text-muted-foreground">
+        Catálogo identifica os modelos suportados pelo produto. Somente linhas marcadas como PRODUÇÃO possuem Controller Pack autorizado para provisionamento industrial; catálogo/lab não habilita polling nem comandos.
+      </p>
       <Panel title="Biblioteca de controladoras">
-        <RemoteState loading={loading} error={error} empty={!packs.length} />
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {packs.map((p) => (
-            <div key={p.packId} className="rounded-lg border border-border p-3">
-              <div className="flex items-start justify-between gap-2">
-                <p className="font-bold">{p.manufacturer} {p.model}</p>
-                <Pill tone={p.lifecycle === "production" ? "ok" : "warn"}>{p.lifecycle}</Pill>
-              </div>
-              <p className="text-[11px] text-muted-foreground">{p.status}</p>
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                {(p.transports ?? []).join(" · ") || "Sem transporte homologado"}
-              </p>
-            </div>
-          ))}
-        </div>
+        <RemoteState loading={loading} error={error} empty={!catalog.length} />
+        {!!catalog.length && <ScadaTable rows={catalog} columns={[
+          { label: "Fabricante", render: (r) => <b>{r.manufacturer}</b> },
+          { label: "Família", render: (r) => r.family || "—" },
+          { label: "Modelo", render: (r) => <b>{r.model}</b> },
+          { label: "Aplicação", render: (r) => r.application },
+          { label: "Controller Pack", render: (r) => r.provisionable ? <Pill tone="ok">PRODUÇÃO</Pill> : r.packLifecycle === "lab" ? <Pill tone="warn">LAB</Pill> : <Pill>CATÁLOGO</Pill> },
+          { label: "Estado", render: (r) => r.packStatus || r.catalogStatus },
+        ]} />}
       </Panel>
     </ScreenBody>
   );
@@ -191,8 +225,8 @@ export function ProtocolsScreen() {
   const rows = data?.protocols ?? [];
   return (
     <ScreenBody>
-      <Stats items={[{ icon: Cable, label: "Protocolos", value: rows.length }]} />
-      <Panel title="Protocolos declarados nos packs">
+      <Stats items={[{ icon: Cable, label: "Protocolos homologados", value: rows.length }]} />
+      <Panel title="Protocolos declarados nos Controller Packs">
         <RemoteState loading={loading} error={error} empty={!rows.length} />
         {!!rows.length && <ScadaTable rows={rows} columns={[
           { label: "Protocolo", render: (r) => <b>{r.name}</b> },
@@ -205,19 +239,21 @@ export function ProtocolsScreen() {
 
 export function PacksScreen() {
   const { data, error, loading } = useRemote<ControllerLibrary | null>(() => rcApi.library.get(), null);
+  const lib = data as LibraryV3 | null;
   return (
     <ScreenBody>
       <Stats items={[
         { icon: Package, label: "Controller Packs", value: data?.counts.total ?? 0 },
         { icon: Package, label: "Produção", value: data?.counts.production ?? 0, tone: "text-online" },
         { icon: FlaskConical, label: "Lab", value: data?.counts.lab ?? 0 },
+        { icon: Library, label: "Catálogo alvo", value: lib?.counts.catalogTotal ?? 0 },
       ]} />
       <Panel title="Controller Packs">
         <RemoteState loading={loading} error={error} empty={!data?.packs.length} />
         <div className="space-y-2 text-[13px]">
           {data?.packs.map((p) => (
             <div key={p.packId} className="flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2">
-              <span><b>{p.manufacturer} {p.model}</b> · {p.status}</span>
+              <span><b>{p.manufacturer} {p.model}</b> · schema {String((p as { schema?: number }).schema ?? "—")} · {p.status}</span>
               <Pill tone={p.lifecycle === "production" ? "ok" : "warn"}>{p.lifecycle}</Pill>
             </div>
           ))}
@@ -230,9 +266,13 @@ export function PacksScreen() {
 export function LabScreen() {
   const { data, error, loading } = useRemote<ControllerLibrary | null>(() => rcApi.library.get(), null);
   const lab = data?.packs.filter((p) => p.lifecycle === "lab") ?? [];
+  const lib = data as LibraryV3 | null;
   return (
     <ScreenBody>
-      <Stats items={[{ icon: FlaskConical, label: "Packs em laboratório", value: lab.length }]} />
+      <Stats items={[
+        { icon: FlaskConical, label: "Packs em laboratório", value: lab.length },
+        { icon: Library, label: "Fila de homologação", value: lib?.counts.catalogInventoryOnly ?? 0 },
+      ]} />
       <Panel title="Laboratório / investigação">
         <RemoteState loading={loading} error={error} empty={!lab.length} />
         <div className="space-y-2">
@@ -297,11 +337,7 @@ export function SettingsScreen() {
   return (
     <ScreenBody>
       <Panel title="Configurações da interface">
-        <button
-          type="button"
-          onClick={() => setTheme(dark ? "light" : "dark")}
-          className="flex w-full items-center justify-between gap-3 rounded-md border border-border px-3 py-2 text-left hover:bg-secondary/40"
-        >
+        <button type="button" onClick={() => setTheme(dark ? "light" : "dark")} className="flex w-full items-center justify-between gap-3 rounded-md border border-border px-3 py-2 text-left hover:bg-secondary/40">
           <div className="min-w-0">
             <p className="text-[13px] font-semibold">Tema escuro</p>
             <p className="text-[11px] text-muted-foreground">Preferência visual local; não altera configuração industrial.</p>
