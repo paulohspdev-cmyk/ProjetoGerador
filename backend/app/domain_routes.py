@@ -1,13 +1,18 @@
 from __future__ import annotations
 
+import asyncio
+import json
+import os
+
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel, Field
 
 from . import domain_bundle, domain_store
-from .auth import require_create, require_edit, require_remove, require_view
+from .auth import require_admin, require_create, require_edit, require_remove, require_view
 from .integration_status import safe_integration_status
 
 router = APIRouter()
+PROVISION_SOCKET = os.environ.get("RC_PROVISION_SOCKET", "/run/rc-geradores/provision.sock")
 
 
 def actor(user: dict) -> str:
@@ -109,6 +114,35 @@ class AssetLinkCreate(BaseModel):
     metadata: dict = Field(default_factory=dict)
 
 
+class DeprovisionRequest(BaseModel):
+    confirmation: str = Field(min_length=1, max_length=32)
+
+
+async def _privileged_deprovision(generator_id: str) -> dict:
+    try:
+        reader, writer = await asyncio.open_unix_connection(PROVISION_SOCKET)
+    except OSError as exc:
+        raise HTTPException(status_code=503, detail="Serviço privilegiado de provisionamento não está disponível") from exc
+    writer.write((json.dumps({
+        "operation": "deprovision",
+        "generator_id": generator_id,
+        "confirm": "DEPROVISION_CONFIRMED",
+    }) + "\n").encode())
+    await writer.drain()
+    try:
+        raw = await asyncio.wait_for(reader.readline(), timeout=100)
+    finally:
+        writer.close()
+        await writer.wait_closed()
+    try:
+        result = json.loads(raw.decode())
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail="Resposta inválida do serviço de deprovisionamento") from exc
+    if not result.get("ok"):
+        raise HTTPException(status_code=409, detail=result.get("error") or "Deprovisionamento recusado")
+    return result
+
+
 @router.get("/api/integrations/status")
 def integrations_status(user: dict = Depends(require_view)):
     return safe_integration_status()
@@ -129,6 +163,19 @@ def equipment_bundle_create(payload: EquipmentBundleCreate, user: dict = Depends
         if "UNIQUE constraint failed" in str(exc):
             raise HTTPException(status_code=409, detail="Já existe um asset com esta tag ou vínculo duplicado") from exc
         raise
+
+
+@router.post("/api/generators/{generator_id}/deprovision")
+async def generator_deprovision(generator_id: str, payload: DeprovisionRequest, user: dict = Depends(require_admin)):
+    if payload.confirmation.strip().upper() != "DEPROVISION":
+        raise HTTPException(status_code=422, detail="Confirmação deve ser DEPROVISION")
+    from . import db
+    generator = db.get_generator(generator_id)
+    if not generator:
+        raise HTTPException(status_code=404, detail="Gerador não encontrado")
+    result = await _privileged_deprovision(generator["id"])
+    db.add_audit(actor(user), "deprovision_requested", "generator", generator["id"], "Rapid SCADA; histórico preservado")
+    return result
 
 
 @router.get("/api/assets")
