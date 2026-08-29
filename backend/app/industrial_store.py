@@ -136,15 +136,22 @@ def init_industrial_db() -> None:
         )
 
 
-def _event(generator_id: str | None, asset_id: str | None, source: str, event_type: str, severity: str, code: str, message: str, value: dict | None = None) -> None:
+def _insert_event(conn, generator_id: str | None, asset_id: str | None, source: str, event_type: str,
+                  severity: str, code: str, message: str, value: dict | None = None) -> None:
+    conn.execute(
+        "INSERT INTO process_events(created_at,generator_id,asset_id,source,event_type,severity,code,message,value_json) VALUES (?,?,?,?,?,?,?,?,?)",
+        (_now(), generator_id, asset_id, source, event_type, severity, code, message, _json(value)),
+    )
+
+
+def _event(generator_id: str | None, asset_id: str | None, source: str, event_type: str,
+           severity: str, code: str, message: str, value: dict | None = None) -> None:
     with db.connect() as conn:
-        conn.execute(
-            "INSERT INTO process_events(created_at,generator_id,asset_id,source,event_type,severity,code,message,value_json) VALUES (?,?,?,?,?,?,?,?,?)",
-            (_now(), generator_id, asset_id, source, event_type, severity, code, message, _json(value)),
-        )
+        _insert_event(conn, generator_id, asset_id, source, event_type, severity, code, message, value)
 
 
-def _desired_alarm(key: str, generator: dict, source: str, code: str, severity: str, message: str, metadata: dict | None = None) -> tuple[str, dict]:
+def _desired_alarm(key: str, generator: dict, source: str, code: str, severity: str,
+                   message: str, metadata: dict | None = None) -> tuple[str, dict]:
     return key, {
         "generator_id": generator.get("id"),
         "asset_id": f"asset-{generator.get('id')}" if generator.get("id") else None,
@@ -157,10 +164,10 @@ def _desired_alarm(key: str, generator: dict, source: str, code: str, severity: 
 
 
 def refresh_observed_alarms(generators: list[dict]) -> int:
-    """Materializa somente condições comprováveis pela API/Rapid atual.
+    """Persiste somente condições que a API/Rapid consegue comprovar.
 
-    Fontes nativas de controladora poderão usar a mesma tabela quando um
-    Controller Pack homologar códigos/bitfields específicos.
+    Alarmes nativos detalhados entram pela mesma estrutura somente quando um
+    Controller Pack homologar seus códigos ou bitfields.
     """
     init_industrial_db()
     desired: dict[str, dict] = {}
@@ -195,9 +202,13 @@ def refresh_observed_alarms(generators: list[dict]) -> int:
 
     now = _now()
     changed = 0
+    # Alarme e seu evento de transição são gravados na MESMA transação. Isto
+    # evita uma segunda conexão escritora concorrendo com o SQLite bloqueado.
     with db.connect() as conn:
-        existing_rows = conn.execute("SELECT * FROM industrial_alarms WHERE source LIKE 'derived.%' OR source='rapid.metric'").fetchall()
-        existing = {row["alarm_key"]: dict(row) for row in existing_rows}
+        rows = conn.execute(
+            "SELECT * FROM industrial_alarms WHERE source LIKE 'derived.%' OR source='rapid.metric'"
+        ).fetchall()
+        existing = {row["alarm_key"]: dict(row) for row in rows}
 
         for key, item in desired.items():
             previous = existing.get(key)
@@ -207,14 +218,16 @@ def refresh_observed_alarms(generators: list[dict]) -> int:
                        VALUES (?,?,?,?,?,?,?,1,?,?,?)""",
                     (key, item["generator_id"], item["asset_id"], item["source"], item["code"], item["severity"], item["message"], now, now, _json(item["metadata"])),
                 )
-                _event(item["generator_id"], item["asset_id"], item["source"], "alarm_raised", item["severity"], item["code"], item["message"], item["metadata"])
+                _insert_event(conn, item["generator_id"], item["asset_id"], item["source"], "alarm_raised",
+                              item["severity"], item["code"], item["message"], item["metadata"])
                 changed += 1
             elif not bool(previous["active"]):
                 conn.execute(
                     "UPDATE industrial_alarms SET active=1,first_seen=?,last_seen=?,cleared_at=NULL,acked_by=NULL,acked_at=NULL,message=?,severity=?,metadata_json=? WHERE alarm_key=?",
                     (now, now, item["message"], item["severity"], _json(item["metadata"]), key),
                 )
-                _event(item["generator_id"], item["asset_id"], item["source"], "alarm_raised", item["severity"], item["code"], item["message"], item["metadata"])
+                _insert_event(conn, item["generator_id"], item["asset_id"], item["source"], "alarm_raised",
+                              item["severity"], item["code"], item["message"], item["metadata"])
                 changed += 1
             else:
                 conn.execute(
@@ -226,7 +239,8 @@ def refresh_observed_alarms(generators: list[dict]) -> int:
             if key in desired or not bool(previous["active"]):
                 continue
             conn.execute("UPDATE industrial_alarms SET active=0,cleared_at=?,last_seen=? WHERE alarm_key=?", (now, now, key))
-            _event(previous.get("generator_id"), previous.get("asset_id"), previous["source"], "alarm_cleared", "info", previous.get("code") or "", previous.get("message") or key)
+            _insert_event(conn, previous.get("generator_id"), previous.get("asset_id"), previous["source"],
+                          "alarm_cleared", "info", previous.get("code") or "", previous.get("message") or key)
             changed += 1
     return changed
 
@@ -235,7 +249,9 @@ def list_alarms(active_only: bool = False) -> list[dict]:
     init_industrial_db()
     with db.connect() as conn:
         if active_only:
-            rows = conn.execute("SELECT * FROM industrial_alarms WHERE active=1 ORDER BY CASE severity WHEN 'fault' THEN 0 WHEN 'alarm' THEN 1 WHEN 'warning' THEN 2 ELSE 3 END, first_seen").fetchall()
+            rows = conn.execute(
+                "SELECT * FROM industrial_alarms WHERE active=1 ORDER BY CASE severity WHEN 'fault' THEN 0 WHEN 'alarm' THEN 1 WHEN 'warning' THEN 2 ELSE 3 END, first_seen"
+            ).fetchall()
         else:
             rows = conn.execute("SELECT * FROM industrial_alarms ORDER BY active DESC,last_seen DESC LIMIT 2000").fetchall()
     return [_row(row) for row in rows]
@@ -249,13 +265,13 @@ def acknowledge_alarm(alarm_key: str, actor: str) -> dict | None:
         if not row:
             return None
         conn.execute("UPDATE industrial_alarms SET acked_by=?,acked_at=? WHERE alarm_key=?", (actor, now, alarm_key))
-    item = next((x for x in list_alarms(False) if x["alarm_key"] == alarm_key), None)
-    if item:
-        _event(item.get("generator_id"), item.get("asset_id"), "operator", "alarm_ack", "info", item.get("code") or "", f"Alarme reconhecido por {actor}", {"alarm_key": alarm_key})
-    return item
+        _insert_event(conn, row["generator_id"], row["asset_id"], "operator", "alarm_ack", "info",
+                      row["code"] or "", f"Alarme reconhecido por {actor}", {"alarm_key": alarm_key})
+    return next((x for x in list_alarms(False) if x["alarm_key"] == alarm_key), None)
 
 
-def list_process_events(limit: int = 500, generator_id: str | None = None, severity: str | None = None) -> list[dict]:
+def list_process_events(limit: int = 500, generator_id: str | None = None,
+                        severity: str | None = None) -> list[dict]:
     init_industrial_db()
     limit = max(1, min(int(limit), 5000))
     clauses: list[str] = []
@@ -269,7 +285,9 @@ def list_process_events(limit: int = 500, generator_id: str | None = None, sever
     where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
     values.append(limit)
     with db.connect() as conn:
-        rows = conn.execute(f"SELECT * FROM process_events{where} ORDER BY created_at DESC,id DESC LIMIT ?", values).fetchall()
+        rows = conn.execute(
+            f"SELECT * FROM process_events{where} ORDER BY created_at DESC,id DESC LIMIT ?", values
+        ).fetchall()
     result = []
     for row in rows:
         item = dict(row)
@@ -301,7 +319,8 @@ def create_maintenance_plan(data: dict, actor: str) -> dict:
             """INSERT INTO maintenance_plans(id,generator_id,asset_id,name,kind,interval_hours,interval_days,warning_hours,warning_days,last_service_hours,last_service_at,notes,enabled,created_at,updated_at)
                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,1,?,?)""",
             (
-                item_id, generator_id, asset_id, str(data.get("name") or "Preventiva").strip(), str(data.get("kind") or "preventiva").strip().lower(),
+                item_id, generator_id, asset_id, str(data.get("name") or "Preventiva").strip(),
+                str(data.get("kind") or "preventiva").strip().lower(),
                 float(interval_hours) if interval_hours is not None else None,
                 int(interval_days) if interval_days is not None else None,
                 float(data.get("warning_hours") or 25), int(data.get("warning_days") or 7),
@@ -352,27 +371,38 @@ def update_maintenance_plan(item_id: str, patch: dict, actor: str) -> dict | Non
     return get_maintenance_plan(item_id)
 
 
-def complete_maintenance(item_id: str, actor: str, serviced_hours: float | None = None, notes: str = "") -> dict | None:
+def complete_maintenance(item_id: str, actor: str, serviced_hours: float | None = None,
+                         notes: str = "") -> dict | None:
     current = get_maintenance_plan(item_id)
     if not current:
         return None
     now = _now()
     with db.connect() as conn:
-        conn.execute("UPDATE maintenance_plans SET last_service_hours=?,last_service_at=?,updated_at=? WHERE id=?", (serviced_hours, now, now, item_id))
+        conn.execute(
+            "UPDATE maintenance_plans SET last_service_hours=?,last_service_at=?,updated_at=? WHERE id=?",
+            (serviced_hours, now, now, item_id),
+        )
         conn.execute(
             "INSERT INTO maintenance_history(plan_id,generator_id,asset_id,serviced_hours,serviced_at,notes,actor) VALUES (?,?,?,?,?,?,?)",
             (item_id, current.get("generator_id"), current.get("asset_id"), serviced_hours, now, notes[:2000], actor),
         )
-    db.add_audit(actor, "complete", "maintenance_plan", item_id, f"hours={serviced_hours if serviced_hours is not None else 'N/D'}")
-    _event(current.get("generator_id"), current.get("asset_id"), "maintenance", "maintenance_completed", "info", "MAINT_DONE", current.get("name") or "Manutenção concluída", {"hours": serviced_hours})
+        _insert_event(conn, current.get("generator_id"), current.get("asset_id"), "maintenance",
+                      "maintenance_completed", "info", "MAINT_DONE",
+                      current.get("name") or "Manutenção concluída", {"hours": serviced_hours})
+    db.add_audit(actor, "complete", "maintenance_plan", item_id,
+                 f"hours={serviced_hours if serviced_hours is not None else 'N/D'}")
     return get_maintenance_plan(item_id)
 
 
 def list_maintenance_history(plan_id: str | None = None, limit: int = 500) -> list[dict]:
     init_industrial_db()
+    limit = max(1, min(int(limit), 2000))
     with db.connect() as conn:
         if plan_id:
-            rows = conn.execute("SELECT * FROM maintenance_history WHERE plan_id=? ORDER BY serviced_at DESC LIMIT ?", (plan_id, limit)).fetchall()
+            rows = conn.execute(
+                "SELECT * FROM maintenance_history WHERE plan_id=? ORDER BY serviced_at DESC LIMIT ?",
+                (plan_id, limit),
+            ).fetchall()
         else:
             rows = conn.execute("SELECT * FROM maintenance_history ORDER BY serviced_at DESC LIMIT ?", (limit,)).fetchall()
     return [dict(row) for row in rows]
@@ -400,7 +430,14 @@ def maintenance_status(generators: list[dict]) -> list[dict]:
             day_remaining = (base + int(plan["interval_days"]) * 86400 - now) / 86400
             states.append("due" if day_remaining <= 0 else "warning" if day_remaining <= int(plan.get("warning_days") or 0) else "ok")
         state = "due" if "due" in states else "warning" if "warning" in states else "unknown" if states and all(x == "unknown" for x in states) else "ok"
-        result.append({**plan, "current_hours": current_hours, "hour_remaining": hour_remaining, "day_remaining": day_remaining, "state": state, "generator_tag": generator.get("tag") if generator else None})
+        result.append({
+            **plan,
+            "current_hours": current_hours,
+            "hour_remaining": hour_remaining,
+            "day_remaining": day_remaining,
+            "state": state,
+            "generator_tag": generator.get("tag") if generator else None,
+        })
     return result
 
 
@@ -420,7 +457,8 @@ def create_escalation_policy(data: dict, actor: str) -> dict:
     with db.connect() as conn:
         conn.execute(
             "INSERT INTO escalation_policies(id,name,severity,after_seconds,channel,destination,repeat_seconds,max_repeats,enabled,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,1,?,?)",
-            (item_id, str(data.get("name") or "Escalonamento").strip(), severity, after, channel, str(data.get("destination") or "").strip(), repeat, max_repeats, now, now),
+            (item_id, str(data.get("name") or "Escalonamento").strip(), severity, after, channel,
+             str(data.get("destination") or "").strip(), repeat, max_repeats, now, now),
         )
     db.add_audit(actor, "create", "escalation_policy", item_id, channel)
     return next(x for x in list_escalation_policies() if x["id"] == item_id)
@@ -435,6 +473,10 @@ def list_escalation_policies() -> list[dict]:
 
 def update_escalation_policy(item_id: str, patch: dict, actor: str) -> dict | None:
     allowed = {"name", "severity", "after_seconds", "channel", "destination", "repeat_seconds", "max_repeats", "enabled"}
+    if patch.get("severity") is not None and str(patch["severity"]).lower() not in {"warning", "alarm", "fault", "any"}:
+        raise ValueError("Severidade inválida")
+    if patch.get("channel") is not None and str(patch["channel"]).lower() not in {"panel", "email", "whatsapp", "webhook"}:
+        raise ValueError("Canal inválido")
     fields: list[str] = []
     values: list[Any] = []
     for key, value in patch.items():
@@ -469,38 +511,49 @@ def delete_escalation_policy(item_id: str, actor: str) -> bool:
 def process_escalations(generators: list[dict]) -> int:
     init_industrial_db()
     refresh_observed_alarms(generators)
-    alarms = [x for x in list_alarms(True) if not x.get("acked_at")]
-    policies = [x for x in list_escalation_policies() if x.get("enabled")]
+    alarms = [item for item in list_alarms(True) if not item.get("acked_at")]
+    policies = [item for item in list_escalation_policies() if item.get("enabled")]
     now = _now()
     queued = 0
-    with db.connect() as conn:
-        for alarm in alarms:
-            age = now - int(alarm.get("first_seen") or now)
-            for policy in policies:
-                if policy["severity"] != "any" and policy["severity"] != alarm["severity"]:
-                    continue
-                if age < int(policy.get("after_seconds") or 0):
-                    continue
-                run = conn.execute("SELECT sends,last_sent FROM escalation_runs WHERE policy_id=? AND alarm_key=?", (policy["id"], alarm["alarm_key"])).fetchone()
-                sends = int(run["sends"]) if run else 0
-                last_sent = int(run["last_sent"] or 0) if run else 0
-                if sends >= int(policy.get("max_repeats") or 1):
-                    continue
-                repeat = int(policy.get("repeat_seconds") or 0)
-                if sends > 0 and (repeat <= 0 or now - last_sent < repeat):
-                    continue
-                platform_store.enqueue_notification(
-                    "industrial.alarm.escalation",
-                    policy["channel"],
-                    destination=policy.get("destination") or "",
-                    subject=f"[{alarm['severity'].upper()}] RC Geradores",
-                    body=f"{alarm.get('message') or alarm['alarm_key']}",
-                    payload={"alarmKey": alarm["alarm_key"], "generatorId": alarm.get("generator_id"), "severity": alarm["severity"], "policyId": policy["id"]},
-                )
+
+    for alarm in alarms:
+        age = now - int(alarm.get("first_seen") or now)
+        for policy in policies:
+            if policy["severity"] != "any" and policy["severity"] != alarm["severity"]:
+                continue
+            if age < int(policy.get("after_seconds") or 0):
+                continue
+            with db.connect() as conn:
+                run = conn.execute(
+                    "SELECT sends,last_sent FROM escalation_runs WHERE policy_id=? AND alarm_key=?",
+                    (policy["id"], alarm["alarm_key"]),
+                ).fetchone()
+            sends = int(run["sends"]) if run else 0
+            last_sent = int(run["last_sent"] or 0) if run else 0
+            if sends >= int(policy.get("max_repeats") or 1):
+                continue
+            repeat = int(policy.get("repeat_seconds") or 0)
+            if sends > 0 and (repeat <= 0 or now - last_sent < repeat):
+                continue
+
+            platform_store.enqueue_notification(
+                "industrial.alarm.escalation",
+                policy["channel"],
+                destination=policy.get("destination") or "",
+                subject=f"[{alarm['severity'].upper()}] RC Geradores",
+                body=alarm.get("message") or alarm["alarm_key"],
+                payload={
+                    "alarmKey": alarm["alarm_key"],
+                    "generatorId": alarm.get("generator_id"),
+                    "severity": alarm["severity"],
+                    "policyId": policy["id"],
+                },
+            )
+            with db.connect() as conn:
                 conn.execute(
                     """INSERT INTO escalation_runs(policy_id,alarm_key,sends,last_sent) VALUES (?,?,1,?)
                        ON CONFLICT(policy_id,alarm_key) DO UPDATE SET sends=escalation_runs.sends+1,last_sent=excluded.last_sent""",
                     (policy["id"], alarm["alarm_key"], now),
                 )
-                queued += 1
+            queued += 1
     return queued
