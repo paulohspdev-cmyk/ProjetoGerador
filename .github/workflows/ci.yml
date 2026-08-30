@@ -156,6 +156,8 @@ jobs:
           bash -n ops/status.sh
           bash -n ops/vm-smoke.sh
           bash -n ops/deploy_release.sh
+          bash -n ops/deploy_release_v2.sh
+          bash -n ops/configure_https.sh
           bash -n rapid/provisioning/provision_ig200.sh
           bash ops/install.sh --help >/tmp/install-help.txt
           grep -q -- '--skip-initial-generator' /tmp/install-help.txt
