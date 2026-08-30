@@ -1,0 +1,94 @@
+name: Quality and Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  quality-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Frontend dependencies
+        run: npm ci --include=dev
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: TypeScript
+        run: npx tsc --noEmit
+
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Python syntax
+        run: python -m compileall -q backend/app backend/tests rapid/provisioning ops
+
+      - name: Regressões de segurança e lifecycle
+        run: |
+          set -euo pipefail
+          grep -q 'require_remove = require_remove_permission' backend/app/auth.py
+          grep -q 'Exclusão direta de gerador bloqueada' backend/app/auth.py
+          grep -q 'POST /api/generators/{id}/retire' backend/app/auth.py
+          grep -q 'industrialApi.lifecycle.retire' src/components/generators/DeleteGeneratorButton.tsx
+          grep -q 'operation.*deprovision' backend/app/domain_routes.py
+          grep -q 'historyPreserved' rapid/provisioning/deprovision_generator.py
+
+          grep -q 'request_remote_ip' backend/app/security_service.py
+          grep -q 'TRUSTED_PROXY_PEERS' backend/app/auth.py
+          grep -q 'proxy_set_header X-Real-IP \$remote_addr' ops/nginx/rc-geradores.conf
+          grep -q 'proxy_set_header X-Forwarded-For \$remote_addr' ops/nginx/rc-geradores.conf
+
+          grep -q '^RC_AUTH_COOKIE_SECURE=1' ops/rc-geradores.env.example
+          grep -q '^RC_BACKUP_INCLUDE_SECRETS=0' ops/rc-geradores.env.example
+          grep -q 'listen 443 ssl' ops/nginx/rc-geradores.conf
+          grep -q 'return 301 https://' ops/nginx/rc-geradores.conf
+          grep -q 'https://127.0.0.1/api/health' ops/vm-smoke.sh
+
+          grep -q 'needsOtp' src/components/auth/LoginScreen.tsx
+          grep -q 'one-time-code' src/components/auth/LoginScreen.tsx
+          grep -q 'otp?: string' src/components/auth/AuthProvider.tsx
+
+          grep -q 'member.islnk()' backend/app/backup_manager.py
+          grep -q 'filter="data"' backend/app/backup_manager.py
+          grep -q 'rc-geradores-bridge.service' ops/restore_backup.py
+          grep -q 'rc-geradores-provision.service' ops/restore_backup.py
+
+          grep -q '_PinnedHTTPSConnection' backend/app/notifications.py
+          grep -q 'response.status < 200 or response.status >= 300' backend/app/notifications.py
+          if grep -q 'urllib.request.urlopen' backend/app/notifications.py; then
+            echo 'ERRO: webhook voltou a usar opener com redirect automático.' >&2
+            exit 1
+          fi
+
+      - name: Política industrial permanece restrita
+        run: |
+          set -euo pipefail
+          grep -q 'Somente START e STOP estão homologados' backend/app/control.py
+          python - <<'PY'
+          import json
+          data = json.load(open('controllers/production/comap/inteligen-200/manifest.json'))
+          caps = data['capabilities']
+          assert caps['start'] and caps['stop']
+          for key in ('auto','manual','test','mcb_open','mcb_close','gcb_open','gcb_close','paralleling'):
+              assert caps[key] is False, key
+          print('Política industrial: OK')
+          PY
+
+      - name: Scripts Bash
+        run: |
+          bash -n ops/install.sh
+          bash -n ops/status.sh
+          bash -n ops/vm-smoke.sh
+          bash -n ops/deploy_release.sh
