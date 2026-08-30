@@ -1,0 +1,40 @@
+name: One-shot format width check
+
+on:
+  push:
+    branches:
+      - fix/fechamento-funcional-pre-vm
+    paths:
+      - .github/workflows/one-shot-format-width-check.yml
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/fechamento-funcional-pre-vm
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Measure candidate widths
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            src/components/scada/ControllersV3Screen.tsx
+            src/components/scada/IndustrialOpsScreens.tsx
+            src/components/scada/mgmt.tsx
+            src/components/scada/operations.tsx
+          )
+          for width in 120 140 160 180 200; do
+            git restore -- "${files[@]}"
+            npx prettier --write --print-width "$width" "${files[@]}" >/dev/null
+            echo "WIDTH=$width"
+            wc -c "${files[@]}"
+          done
