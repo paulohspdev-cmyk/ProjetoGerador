@@ -21,6 +21,9 @@ jobs:
       - name: Frontend dependencies
         run: npm ci --include=dev
 
+      - name: Arquitetura frontend
+        run: npm run check:architecture
+
       - name: ESLint
         run: npm run lint
 
