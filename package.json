@@ -8,7 +8,7 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "check:architecture": "node scripts/check-architecture.mjs",
     "check:functional": "node scripts/check-functional-surfaces.mjs",
