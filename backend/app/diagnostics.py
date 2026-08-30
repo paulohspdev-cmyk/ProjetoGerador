@@ -1,10 +1,12 @@
+import json
 import os
 import shutil
 import subprocess
+import time
 from pathlib import Path
 
 from . import db
-from .config import APP_VERSION, CONTROL_SOCKET, PROJECT_ROOT, RAPID_BINDINGS_FILE, RAPID_COMM_CONFIG, RAPID_READER_DLL
+from .config import APP_VERSION, BRIDGE_STATUS_FILE, CONTROL_SOCKET, PROJECT_ROOT, RAPID_BINDINGS_FILE, RAPID_COMM_CONFIG, RAPID_READER_DLL
 from .rapid import overlay_generators
 
 SERVICES = [
@@ -53,6 +55,31 @@ def _listening_ports() -> set[int]:
         except (ValueError, IndexError):
             continue
     return ports
+
+
+def _bridge_runtime_status() -> dict:
+    try:
+        raw = json.loads(BRIDGE_STATUS_FILE.read_text(encoding="utf-8"))
+        updated = int(raw.get("updatedAt") or 0)
+        ports = raw.get("ports") if isinstance(raw.get("ports"), list) else []
+        age = max(0, int(time.time()) - updated) if updated else None
+        return {
+            "statusFile": str(BRIDGE_STATUS_FILE),
+            "statusAvailable": True,
+            "statusFresh": bool(age is not None and age <= 15),
+            "updatedAt": updated or None,
+            "ageSeconds": age,
+            "sessions": ports,
+        }
+    except Exception:
+        return {
+            "statusFile": str(BRIDGE_STATUS_FILE),
+            "statusAvailable": False,
+            "statusFresh": False,
+            "updatedAt": None,
+            "ageSeconds": None,
+            "sessions": [],
+        }
 
 
 def _memory():
@@ -118,6 +145,7 @@ def system_diagnostics():
             }
         )
 
+    runtime_bridge = _bridge_runtime_status()
     return {
         "ok": all(item["status"] == "OK" for item in services),
         "services": services,
@@ -130,6 +158,7 @@ def system_diagnostics():
             "controlSocket": CONTROL_SOCKET,
             "controlSocketExists": Path(CONTROL_SOCKET).exists(),
             "listeners": reverse_listeners,
+            **runtime_bridge,
         },
         "host": {
             "loadAverage": load_avg,
