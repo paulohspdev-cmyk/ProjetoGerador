@@ -45,7 +45,7 @@ const deleteButton = read("src/components/generators/DeleteGeneratorButton.tsx")
 if (!deleteButton.includes("industrialApi.lifecycle.retire"))
   failures.push("retirada de gerador não usa lifecycle seguro");
 
-const connectivity = read("src/components/scada/equip-auto.tsx");
+const connectivity = read("src/components/scada/equip-connectivity.tsx");
 for (const marker of [
   "statusFresh",
   "sessions",
@@ -57,6 +57,9 @@ for (const marker of [
   if (!connectivity.includes(marker))
     failures.push(`Conectividade física perdeu marcador obrigatório: ${marker}`);
 }
+const equipmentBarrel = read("src/components/scada/equip-auto.tsx");
+if (!equipmentBarrel.includes('from "./equip-connectivity"'))
+  failures.push("equip-auto deixou de exportar as telas de conectividade física");
 
 const automation = read("backend/app/automation_engine.py");
 if (!automation.includes('ALLOWED_ACTIONS = {"notify", "work_order"}'))
