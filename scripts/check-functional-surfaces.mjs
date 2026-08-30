@@ -123,11 +123,7 @@ for (const testFile of [
 }
 
 const rapid = read("backend/app/rapid.py");
-for (const marker of [
-  "def _overlay_generators",
-  "math.isfinite",
-  "Telemetria Rapid indisponível",
-])
+for (const marker of ["def _overlay_generators", "math.isfinite", "Telemetria Rapid indisponível"])
   if (!rapid.includes(marker))
     failures.push(`overlay Rapid perdeu proteção de inventário: ${marker}`);
 
