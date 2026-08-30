@@ -42,13 +42,25 @@ class GeneratorCreate(BaseModel):
         if self.transport == "modbus_tcp_direct" and self.listenPort == 0:
             self.listenPort = 502
         if not self.controllerType:
-            text = self.controller.strip().lower()
-            if text.startswith("comap"):
+            text = " ".join(self.controller.strip().lower().replace("-", " ").split())
+            comap_markers = (
+                "comap",
+                "inteligen",
+                "intelisys",
+                "inteli compact",
+                "inteli lite",
+                "inteli drive",
+                "inteli mains",
+                "inteli vision",
+            )
+            if any(marker in text for marker in comap_markers):
                 self.controllerType = "COMAP"
-            elif text.startswith("dse") or text.startswith("deep sea"):
+            elif text.startswith("dse") or text.startswith("deep sea") or "deep sea electronics" in text:
                 self.controllerType = "DSE"
             else:
                 self.controllerType = "GENERIC"
+        else:
+            self.controllerType = self.controllerType.strip().upper()
         return self
 
     def to_db(self):
