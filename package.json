@@ -9,8 +9,9 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
     "check:architecture": "node scripts/check-architecture.mjs",
-    "check": "npm run check:architecture && npm run lint && npm run build",
+    "check": "npm run check:architecture && npm run lint && npm run typecheck && npm run build",
     "format": "prettier --write ."
   },
   "overrides": {
