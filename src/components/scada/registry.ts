@@ -5,11 +5,12 @@ import { ReportsV3Screen } from "./ReportsV3Screen";
 import { ApiV3Screen } from "./ApiV3Screen";
 import { SchedulesV3Screen } from "./SchedulesV3Screen";
 import { EmailV3Screen, ErpBmsV3Screen, WhatsAppV3Screen } from "./IntegrationsV3Screens";
-import { IndustrialAlarmsScreen, MaintenanceV3Screen, ProcessHistoryScreen, EscalationV3Screen } from "./IndustrialOpsScreens";
+import { IndustrialAlarmsScreen, ProcessHistoryScreen, EscalationV3Screen } from "./IndustrialOpsScreens";
+import { MaintenanceHubScreen } from "./MaintenanceHubScreen";
+import { AgendaV3Screen } from "./AgendaV3Screen";
 import { MapScreen } from "./MapScreen";
 import { ControllersV3Screen } from "./ControllersV3Screen";
 import {
-  AgendaScreen,
   BatteriesScreen,
   EnergyGens,
   EnergyLoad,
@@ -44,11 +45,7 @@ import {
   VersionScreen,
   HealthScreen,
 } from "./scada-lib";
-import {
-  ClientsScreen,
-  UnitsScreen,
-  WebhooksScreen,
-} from "./mgmt";
+import { ClientsScreen, UnitsScreen, WebhooksScreen } from "./mgmt";
 import { AuditScreen, RolesScreen, UsersScreen } from "./security";
 
 export const screens: Record<string, ComponentType> = {
@@ -65,11 +62,11 @@ export const screens: Record<string, ComponentType> = {
   "energia-carga": EnergyLoad,
   "energia-transferencia": EnergyTransfer,
   "energia-paralelismo": EnergyParallel,
-  manutencao: MaintenanceV3Screen,
+  manutencao: MaintenanceHubScreen,
   combustivel: FuelScreen,
   baterias: BatteriesScreen,
   horimetros: HourmetersScreen,
-  agenda: AgendaScreen,
+  agenda: AgendaV3Screen,
   controladoras: ControllersV3Screen,
   modems: ModemsScreen,
   gateways: GatewaysScreen,
