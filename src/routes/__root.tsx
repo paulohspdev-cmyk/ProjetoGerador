@@ -17,8 +17,8 @@ import { AppSidebar } from "@/components/layout/AppSidebar";
 import { LayoutProvider } from "@/components/layout/LayoutContext";
 import { ThemeProvider, themeInitScript } from "@/components/layout/ThemeProvider";
 import { AuthProvider, useAuth } from "@/components/auth/AuthProvider";
-import { GeneratorsProvider } from "@/components/generators/GeneratorsProvider";
-import { ScadaOpsProvider } from "@/components/scada/ScadaOpsProvider";
+import { GeneratorsProvider, useGenerators } from "@/components/generators/GeneratorsProvider";
+import { ScadaOpsProvider, useScadaOps } from "@/components/scada/ScadaOpsProvider";
 
 function NotFoundComponent() {
   return (
@@ -167,13 +167,48 @@ function AppShell() {
   return (
     <GeneratorsProvider>
       <ScadaOpsProvider>
-        <div className="flex min-h-dvh w-full overflow-x-clip bg-background">
-          <AppSidebar />
-          <main className="flex h-dvh min-w-0 flex-1 flex-col overflow-x-clip overflow-y-auto">
-            <Outlet />
-          </main>
-        </div>
+        <AuthenticatedShell />
       </ScadaOpsProvider>
     </GeneratorsProvider>
+  );
+}
+
+function AuthenticatedShell() {
+  const {
+    error: generatorsError,
+    refresh: refreshGenerators,
+  } = useGenerators();
+  const {
+    error: opsError,
+    refresh: refreshOps,
+  } = useScadaOps();
+  const hasError = Boolean(generatorsError || opsError);
+
+  return (
+    <div className="flex min-h-dvh w-full overflow-x-clip bg-background">
+      <AppSidebar />
+      <main className="flex h-dvh min-w-0 flex-1 flex-col overflow-x-clip overflow-y-auto">
+        {hasError && (
+          <div className="z-50 flex flex-wrap items-center justify-between gap-2 border-b border-offline/40 bg-offline/10 px-3 py-2 text-[12px] text-offline">
+            <div className="min-w-0">
+              <b>Falha ao carregar dados do sistema.</b>
+              {generatorsError && <span className="ml-1">Geradores: {generatorsError}.</span>}
+              {opsError && <span className="ml-1">Operação: {opsError}.</span>}
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                void refreshGenerators();
+                void refreshOps();
+              }}
+              className="h-7 shrink-0 rounded-md border border-offline/40 px-2 font-semibold"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        )}
+        <Outlet />
+      </main>
+    </div>
   );
 }
