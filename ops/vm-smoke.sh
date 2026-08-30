@@ -7,6 +7,7 @@ CONTROL_SOCKET="/run/rc-geradores/control.sock"
 PROVISION_SOCKET="/run/rc-geradores/provision.sock"
 REQUIRE_GENERATOR=0
 FAILURES=0
+SMOKE_SESSION_HASH=""
 
 if [[ "${1:-}" == "--require-generator" ]]; then
   REQUIRE_GENERATOR=1
@@ -33,6 +34,31 @@ fi
 ok() { printf 'OK   %s\n' "$*"; }
 info() { printf 'INFO %s\n' "$*"; }
 fail() { printf 'ERRO %s\n' "$*" >&2; FAILURES=$((FAILURES + 1)); }
+
+python_as_service() {
+  runuser -u rcgeradores -- env \
+    PYTHONPATH="$BASE/backend" \
+    RC_DATA_DIR="${RC_DATA_DIR:-/var/lib/rc-geradores}" \
+    RC_DB_FILE="${RC_DB_FILE:-${RC_DATA_DIR:-/var/lib/rc-geradores}/rc-geradores.db}" \
+    RC_RAPID_BINDINGS="${RC_RAPID_BINDINGS:-/var/lib/rc-geradores/rapid-bindings.json}" \
+    RC_RAPID_READER="${RC_RAPID_READER:-$BASE/.rapid-reader/RcRapidReader.dll}" \
+    RC_RAPID_COMM_CONFIG="${RC_RAPID_COMM_CONFIG:-/opt/scada/ScadaComm/Config/ScadaCommConfig.xml}" \
+    RC_AUTH_COOKIE="${RC_AUTH_COOKIE:-rc_session}" \
+    RC_AUTH_SESSION_TTL="${RC_AUTH_SESSION_TTL:-43200}" \
+    "$BASE/backend/.venv/bin/python" "$@"
+}
+
+cleanup_smoke_session() {
+  [[ -n "$SMOKE_SESSION_HASH" ]] || return 0
+  python_as_service - "$SMOKE_SESSION_HASH" <<'PY' >/dev/null 2>&1 || true
+import sys
+from app import db
+
+db.delete_session(sys.argv[1])
+PY
+  SMOKE_SESSION_HASH=""
+}
+trap cleanup_smoke_session EXIT
 
 check_service() {
   local svc="$1"
@@ -62,7 +88,7 @@ echo "============================================================"
 echo " RC GERADORES - SMOKE TEST DA VM"
 echo "============================================================"
 
-for command in python3 node npm dotnet curl jq ss systemctl openssl nginx; do
+for command in python3 node npm dotnet curl jq ss systemctl openssl nginx runuser; do
   if command -v "$command" >/dev/null 2>&1; then ok "comando $command disponível"; else fail "comando $command ausente"; fi
 done
 
@@ -201,6 +227,84 @@ PY
     check_port "$local_port" "bridge local Rapid $tag"
   done < <(jq -r --argjson offset "$RAPID_LOCAL_OFFSET" '.[] | [.transport, (.listen_port|tostring), ((.listen_port + $offset)|tostring), (.tag // .generator_id // "gerador")] | @tsv' "$BINDINGS")
 fi
+
+# Jornada que o navegador realmente usa: sessão autenticada -> HTTPS/Nginx -> API -> inventário.
+# A sessão é efêmera, criada no banco pelo próprio usuário de serviço e removida ao final.
+SESSION_JSON=""
+if SESSION_JSON="$(python_as_service - <<'PY'
+import json
+import secrets
+import time
+from app import db
+from app.auth import token_hash
+from app.config import AUTH_COOKIE_NAME
+
+db.init_db()
+users = [u for u in db.list_users() if u.get("active")]
+if not users:
+    raise SystemExit("nenhum usuário ativo disponível para smoke autenticado")
+user = users[0]
+token = secrets.token_urlsafe(48)
+digest = token_hash(token)
+db.create_session(digest, user["id"], int(time.time()) + 300, "127.0.0.1", "rc-vm-smoke")
+print(json.dumps({
+    "cookie": AUTH_COOKIE_NAME,
+    "token": token,
+    "hash": digest,
+    "expected_generators": len(db.list_generators()),
+    "user": user["email"],
+}))
+PY
+)"; then
+  SMOKE_SESSION_HASH="$(jq -r '.hash // empty' <<<"$SESSION_JSON")"
+  SMOKE_COOKIE="$(jq -r '.cookie // empty' <<<"$SESSION_JSON")"
+  SMOKE_TOKEN="$(jq -r '.token // empty' <<<"$SESSION_JSON")"
+  EXPECTED_GENERATORS="$(jq -r '.expected_generators // -1' <<<"$SESSION_JSON")"
+  SMOKE_USER="$(jq -r '.user // "?"' <<<"$SESSION_JSON")"
+
+  if [[ -z "$SMOKE_SESSION_HASH" || -z "$SMOKE_COOKIE" || -z "$SMOKE_TOKEN" || ! "$EXPECTED_GENERATORS" =~ ^[0-9]+$ ]]; then
+    fail "sessão temporária do smoke retornou payload inválido"
+  else
+    GEN_RESPONSE=""
+    if GEN_RESPONSE="$(curl -kfsS --max-time 12 --cookie "${SMOKE_COOKIE}=${SMOKE_TOKEN}" https://127.0.0.1/api/generators 2>/tmp/rc-generators-api-smoke.err)"; then
+      if jq -e 'type == "array"' >/dev/null 2>&1 <<<"$GEN_RESPONSE"; then
+        API_GENERATORS="$(jq 'length' <<<"$GEN_RESPONSE")"
+        if [[ "$API_GENERATORS" == "$EXPECTED_GENERATORS" ]]; then
+          ok "sessão HTTPS vê $API_GENERATORS/$EXPECTED_GENERATORS gerador(es) do banco ($SMOKE_USER)"
+        else
+          fail "API autenticada devolveu $API_GENERATORS gerador(es), banco possui $EXPECTED_GENERATORS"
+        fi
+        if (( EXPECTED_GENERATORS > 0 )); then
+          if jq -e 'all(.[]; (.id | type == "string" and length > 0) and (.tag | type == "string" and length > 0) and (.status | type == "string" and length > 0))' >/dev/null 2>&1 <<<"$GEN_RESPONSE"; then
+            ok "payload autenticado de geradores possui id/tag/status"
+          else
+            fail "payload autenticado de geradores está incompleto"
+          fi
+        fi
+      else
+        fail "API autenticada /api/generators não retornou uma lista JSON"
+      fi
+    else
+      cat /tmp/rc-generators-api-smoke.err >&2 2>/dev/null || true
+      fail "jornada autenticada HTTPS /api/generators falhou"
+    fi
+
+    OPS_RESPONSE=""
+    if OPS_RESPONSE="$(curl -kfsS --max-time 12 --cookie "${SMOKE_COOKIE}=${SMOKE_TOKEN}" https://127.0.0.1/api/ops/bootstrap 2>/tmp/rc-ops-api-smoke.err)"; then
+      if jq -e '(.clients | type == "array") and (.sites | type == "array") and (.workOrders | type == "array") and (.agenda | type == "array") and (.rules | type == "array") and (.reports | type == "array") and (.webhooks | type == "array")' >/dev/null 2>&1 <<<"$OPS_RESPONSE"; then
+        ok "bootstrap operacional autenticado responde pelo HTTPS"
+      else
+        fail "bootstrap operacional autenticado retornou estrutura inválida"
+      fi
+    else
+      cat /tmp/rc-ops-api-smoke.err >&2 2>/dev/null || true
+      fail "jornada autenticada HTTPS /api/ops/bootstrap falhou"
+    fi
+  fi
+else
+  fail "não foi possível criar sessão temporária para smoke autenticado"
+fi
+cleanup_smoke_session
 
 if (( FAILURES > 0 )); then
   echo "============================================================"
