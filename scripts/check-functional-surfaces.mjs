@@ -67,6 +67,15 @@ const equipmentBarrel = read("src/components/scada/equip-auto.tsx");
 if (!equipmentBarrel.includes('from "./equip-connectivity"'))
   failures.push("equip-auto deixou de exportar as telas de conectividade física");
 
+const scadaLib = read("src/components/scada/scada-lib.tsx");
+const scadaLibEffects = [...scadaLib.matchAll(/\buseEffect\s*\(/g)].length;
+if (scadaLibEffects !== 1)
+  failures.push(
+    `scada-lib deve manter exatamente o useEffect mount-only revisado; encontrou ${scadaLibEffects}`,
+  );
+if (!scadaLib.includes("function useRemote<T>(loader: () => Promise<T>, initial: T)"))
+  failures.push("scada-lib perdeu o helper useRemote mount-only revisado");
+
 const automation = read("backend/app/automation_engine.py");
 if (!automation.includes('ALLOWED_ACTIONS = {"notify", "work_order"}'))
   failures.push("allowlist de automação não industrial foi alterada");
