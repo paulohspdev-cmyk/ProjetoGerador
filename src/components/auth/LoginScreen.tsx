@@ -6,7 +6,7 @@ import { useAuth } from "./AuthProvider";
 import { useTheme } from "@/components/layout/ThemeProvider";
 
 export function LoginScreen() {
-  const { login } = useAuth();
+  const { login, sessionError } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -64,6 +64,13 @@ export function LoginScreen() {
           <h1 className="mt-3 text-2xl font-extrabold tracking-tight">RC GERADORES</h1>
           <p className="mt-1 text-[12px] text-muted-foreground">SCADA · Acesso seguro ao sistema</p>
         </div>
+
+        {sessionError && (
+          <p className="mb-3 rounded-md border border-alert/40 bg-alert/10 px-3 py-2 text-[12px] text-alert">
+            Não foi possível verificar uma sessão existente: {sessionError}. Você ainda pode tentar
+            entrar novamente.
+          </p>
+        )}
 
         <form
           onSubmit={onSubmit}
