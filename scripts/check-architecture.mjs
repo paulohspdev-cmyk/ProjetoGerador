@@ -59,9 +59,15 @@ for (const file of walk(join(root, "src"))) {
 const stylesEntry = join(root, "src/styles.css");
 if (existsSync(stylesEntry)) {
   const source = readFileSync(stylesEntry, "utf8");
-  for (const forbidden of [":root", ".dark", "--background:", "--primary:"]) {
-    if (source.includes(forbidden)) {
-      failures.push(`src/styles.css deve ser apenas entrypoint; encontrou ${forbidden}`);
+  const forbiddenDefinitions = [
+    [/^\s*:root\s*\{/m, ":root {"],
+    [/^\s*\.dark\s*\{/m, ".dark {"],
+    [/--background\s*:/, "--background:"],
+    [/--primary\s*:/, "--primary:"],
+  ];
+  for (const [pattern, label] of forbiddenDefinitions) {
+    if (pattern.test(source)) {
+      failures.push(`src/styles.css deve ser apenas entrypoint; encontrou definição ${label}`);
     }
   }
 }
