@@ -40,6 +40,11 @@ check_url() {
   if curl -fsS --max-time 8 "$url" >/dev/null; then ok "$label responde em $url"; else fail "$label não respondeu em $url"; fi
 }
 
+check_https_url() {
+  local label="$1" url="$2"
+  if curl -kfsS --max-time 8 "$url" >/dev/null; then ok "$label responde em $url"; else fail "$label não respondeu em $url"; fi
+}
+
 check_port() {
   local port="$1" label="$2"
   if ss -lnt 2>/dev/null | awk '{print $4}' | grep -Eq "(^|[:.])${port}$"; then
@@ -53,7 +58,7 @@ echo "============================================================"
 echo " RC GERADORES - SMOKE TEST DA VM"
 echo "============================================================"
 
-for command in python3 node npm dotnet curl jq ss systemctl; do
+for command in python3 node npm dotnet curl jq ss systemctl openssl; do
   if command -v "$command" >/dev/null 2>&1; then ok "comando $command disponível"; else fail "comando $command ausente"; fi
 done
 
@@ -68,12 +73,20 @@ for file in \
   "$BASE/backend/.venv/bin/python" \
   "$BASE/.output/server/index.mjs" \
   "$BASE/.rapid-reader/RcRapidReader.dll" \
+  /etc/ssl/rc-geradores/fullchain.pem \
+  /etc/ssl/rc-geradores/privkey.pem \
   /opt/scada/ScadaComm/Config/ScadaCommConfig.xml \
   /opt/scada/BaseDAT/commline.dat \
   /opt/scada/BaseDAT/device.dat \
   /opt/scada/BaseDAT/cnl.dat; do
   if [[ -e "$file" ]]; then ok "arquivo $file"; else fail "arquivo ausente: $file"; fi
 done
+
+if openssl x509 -in /etc/ssl/rc-geradores/fullchain.pem -noout -checkend 86400 >/dev/null 2>&1; then
+  ok "certificado TLS válido por mais de 24h"
+else
+  fail "certificado TLS ausente, inválido ou próximo da expiração"
+fi
 
 for svc in \
   rc-geradores-bridge \
@@ -92,10 +105,16 @@ done
 
 check_url "API direta" "http://127.0.0.1:8090/api/health"
 check_url "frontend direto" "http://127.0.0.1:3000/"
-check_url "proxy Nginx" "http://127.0.0.1/api/health"
+check_https_url "proxy Nginx HTTPS" "https://127.0.0.1/api/health"
+if curl -sSI --max-time 8 http://127.0.0.1/api/health | grep -qi '^Location: https://'; then
+  ok "Nginx redireciona HTTP para HTTPS"
+else
+  fail "Nginx não redirecionou HTTP para HTTPS"
+fi
 check_port 8090 "API"
 check_port 3000 "frontend"
-check_port 80 "Nginx"
+check_port 80 "Nginx redirect"
+check_port 443 "Nginx HTTPS"
 
 if python3 "$BASE/rapid/provisioning/rapid_dat.py" check \
   /opt/scada/BaseDAT/commline.dat \
