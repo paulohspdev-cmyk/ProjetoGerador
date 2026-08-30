@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="65" height="65" fill="none" viewBox="0 0 65 65">
+  <g clip-path="url(#a)">
+    <rect width="65" height="65" fill="#7179C8" fill-opacity=".2" rx="11.5"/>
+    <rect width="52" height="52" x="6.5" y="6.5" fill="#7179C8" rx="5"/>
+    <g fill="#fff" fill-opacity=".35" stroke="#fff" stroke-width=".75">
+      <rect width="45" height="9" x="10" y="13" rx=".45"/><rect width="45" height="9" x="10" y="28" rx=".45"/><rect width="45" height="9" x="10" y="43" rx=".45"/>
+    </g>
+    <g fill="#fff"><circle cx="16.3" cy="17.6" r=".825"/><circle cx="19.9" cy="17.6" r=".825"/><circle cx="45.1" cy="17.6" r=".825"/><circle cx="48.7" cy="17.6" r=".825"/><circle cx="16.3" cy="32.6" r=".825"/><circle cx="19.9" cy="32.6" r=".825"/><circle cx="45.1" cy="32.6" r=".825"/><circle cx="48.7" cy="32.6" r=".825"/><circle cx="16.3" cy="47.6" r=".825"/><circle cx="19.9" cy="47.6" r=".825"/><circle cx="45.1" cy="47.6" r=".825"/><circle cx="48.7" cy="47.6" r=".825"/></g>
+    <g fill="none" stroke="#fff" stroke-width=".7"><path d="M27.5 17.5h3.2m1.6 0h4.2M27.5 32.5h3.2m1.6 0h4.2M27.5 47.5h3.2m1.6 0h4.2"/><path d="M29.1 15.9v3.2m5.3-1.6h-3.2M29.1 30.9v3.2m5.3-1.6h-3.2M29.1 45.9v3.2m5.3-1.6h-3.2"/></g>
+    <path fill="#fff" fill-opacity=".35" stroke="#fff" stroke-width=".5" d="M18 22h2l-1.5 6h-2L18 22Zm29 0h-2l1.5 6h2L47 22ZM18 37h2l-1.5 6h-2L18 37Zm29 0h-2l1.5 6h2L47 37Z"/>
+  </g>
+  <defs><clipPath id="a"><path fill="#fff" d="M0 0h65v65H0z"/></clipPath></defs>
+</svg>
