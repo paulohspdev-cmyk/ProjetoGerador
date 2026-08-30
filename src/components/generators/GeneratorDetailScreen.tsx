@@ -164,7 +164,6 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
       </div>
 
       <GeneratorDetailPowerFlow
-        gen={gen}
         model={model}
         operate={operate}
         commandBusy={commandBusy}
