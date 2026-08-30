@@ -1,10 +1,10 @@
+import http.client
 import ipaddress
 import json
 import smtplib
 import socket
 import ssl
 import urllib.parse
-import urllib.request
 from email.message import EmailMessage
 
 from . import ops_store, platform_store
@@ -29,33 +29,102 @@ def enqueue_event(event_type: str, subject: str, body: str, payload=None, channe
     return ids
 
 
-def _url_allowed(url: str) -> bool:
+def _resolve_http_target(url: str) -> tuple[urllib.parse.ParseResult, int, str]:
     parsed = urllib.parse.urlparse(url)
     if parsed.scheme not in {"https", "http"} or not parsed.hostname:
-        return False
+        raise ValueError("Destino HTTP inválido")
+    if parsed.username or parsed.password or parsed.fragment:
+        raise ValueError("Destino HTTP com credenciais/fragmento não é permitido")
     if parsed.scheme == "http" and not ALLOW_PRIVATE_WEBHOOKS:
-        return False
+        raise ValueError("Webhook HTTP sem TLS bloqueado pela política de segurança")
+
+    port = parsed.port or (443 if parsed.scheme == "https" else 80)
     try:
-        infos = socket.getaddrinfo(parsed.hostname, parsed.port or (443 if parsed.scheme == "https" else 80), type=socket.SOCK_STREAM)
-        for info in infos:
-            ip = ipaddress.ip_address(info[4][0])
-            if (ip.is_private or ip.is_loopback or ip.is_link_local) and not ALLOW_PRIVATE_WEBHOOKS:
-                return False
-    except Exception:
+        infos = socket.getaddrinfo(parsed.hostname, port, type=socket.SOCK_STREAM)
+    except OSError as exc:
+        raise ValueError("Não foi possível resolver o destino HTTP") from exc
+
+    approved: list[str] = []
+    for info in infos:
+        text = str(info[4][0])
+        try:
+            ip = ipaddress.ip_address(text)
+        except ValueError:
+            continue
+        if not ALLOW_PRIVATE_WEBHOOKS and not ip.is_global:
+            raise ValueError("Destino HTTP aponta para endereço não público")
+        canonical = str(ip)
+        if canonical not in approved:
+            approved.append(canonical)
+    if not approved:
+        raise ValueError("Destino HTTP não possui endereço permitido")
+
+    # O IP é escolhido uma vez e usado diretamente na conexão TCP. Assim uma
+    # segunda resolução DNS não consegue trocar o destino entre validação e POST.
+    return parsed, port, approved[0]
+
+
+def _url_allowed(url: str) -> bool:
+    try:
+        _resolve_http_target(url)
+        return True
+    except ValueError:
         return False
-    return True
+
+
+class _PinnedHTTPSConnection(http.client.HTTPSConnection):
+    def __init__(self, hostname: str, connect_ip: str, port: int, timeout: float):
+        super().__init__(hostname, port=port, timeout=timeout, context=ssl.create_default_context())
+        self._connect_ip = connect_ip
+
+    def connect(self):
+        self.sock = socket.create_connection(
+            (self._connect_ip, self.port),
+            self.timeout,
+            self.source_address,
+        )
+        if self._tunnel_host:
+            self._tunnel()
+        self.sock = self._context.wrap_socket(self.sock, server_hostname=self.host)
 
 
 def _post_json(url: str, payload: dict, headers=None, timeout=8):
-    if not _url_allowed(url):
-        raise ValueError("Destino HTTP bloqueado pela política de segurança")
+    parsed, port, connect_ip = _resolve_http_target(url)
     data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-    request = urllib.request.Request(url, data=data, method="POST", headers={"Content-Type": "application/json", **(headers or {})})
-    with urllib.request.urlopen(request, timeout=timeout) as response:
+    path = parsed.path or "/"
+    if parsed.query:
+        path = f"{path}?{parsed.query}"
+
+    default_port = 443 if parsed.scheme == "https" else 80
+    host_header = parsed.hostname or ""
+    if port != default_port:
+        host_header = f"{host_header}:{port}"
+    request_headers = {
+        "Content-Type": "application/json",
+        "Content-Length": str(len(data)),
+        "Host": host_header,
+        "User-Agent": "RC-Geradores/3 webhook",
+        **(headers or {}),
+    }
+
+    if parsed.scheme == "https":
+        conn: http.client.HTTPConnection = _PinnedHTTPSConnection(
+            parsed.hostname or "", connect_ip, port, timeout
+        )
+    else:
+        conn = http.client.HTTPConnection(connect_ip, port=port, timeout=timeout)
+
+    try:
+        conn.request("POST", path, body=data, headers=request_headers)
+        response = conn.getresponse()
         body = response.read(2048).decode("utf-8", errors="replace")
+        # http.client não segue redirect. Qualquer 3xx é recusado para impedir
+        # que um destino público redirecione a requisição para rede privada.
         if response.status < 200 or response.status >= 300:
             raise ConnectionError(f"HTTP {response.status}: {body}")
         return f"HTTP {response.status} {body[:500]}"
+    finally:
+        conn.close()
 
 
 def _deliver_webhooks(item: dict):
