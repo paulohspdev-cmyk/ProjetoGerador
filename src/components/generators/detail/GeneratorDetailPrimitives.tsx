@@ -13,19 +13,21 @@ import { cn } from "@/lib/utils";
 
 import { fmt } from "../generator-metrics";
 
+export type KpiTone = "success" | "info" | "warning" | "accent" | "danger";
+
 export function KpiTile({
   label,
   value,
   sub,
-  tone = "cyan",
+  tone = "info",
 }: {
   label: string;
   value: string;
   sub: string;
-  tone?: "green" | "cyan" | "gold" | "blue" | "red";
+  tone?: KpiTone;
 }) {
   return (
-    <div className={cn("gen-kpi", tone)}>
+    <div className={cn("gen-kpi", `is-${tone}`)}>
       <p>{label}</p>
       <strong>{value}</strong>
       <span>{sub}</span>
@@ -170,7 +172,7 @@ export function TrendCard({
               <Line
                 type="monotone"
                 dataKey="v"
-                stroke="var(--chart-2)"
+                stroke="var(--info)"
                 strokeWidth={2}
                 dot={false}
                 isAnimationActive={false}
