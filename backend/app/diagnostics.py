@@ -4,7 +4,7 @@ import subprocess
 from pathlib import Path
 
 from . import db
-from .config import CONTROL_SOCKET, PROJECT_ROOT, RAPID_BINDINGS_FILE, RAPID_COMM_CONFIG, RAPID_READER_DLL
+from .config import APP_VERSION, CONTROL_SOCKET, PROJECT_ROOT, RAPID_BINDINGS_FILE, RAPID_COMM_CONFIG, RAPID_READER_DLL
 from .rapid import overlay_generators
 
 SERVICES = [
@@ -79,7 +79,7 @@ def version_info():
     rc, rapid_pkg = _run(["dpkg-query", "-W", "-f=${Version}", "rapidscada"])
     return {
         "application": "RC Geradores",
-        "apiVersion": "2.0.0",
+        "apiVersion": APP_VERSION,
         "gitSha": git_sha if git_sha and "fatal:" not in git_sha else "N/D",
         "gitBranch": git_branch or "N/D",
         "rapidScada": rapid_pkg if rc == 0 else "detectar na VM",
