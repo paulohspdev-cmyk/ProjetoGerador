@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { KeyRound, Plug, ShieldCheck } from "lucide-react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -19,7 +19,7 @@ export function ApiV3Screen() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       const currentHealth = await rcApi.system.health();
       setHealth(currentHealth);
@@ -28,10 +28,10 @@ export function ApiV3Screen() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha ao consultar API.");
     }
-  };
+  }, [admin]);
   useEffect(() => {
     void load();
-  }, [admin]);
+  }, [load]);
 
   const create = async (e: FormEvent) => {
     e.preventDefault();
