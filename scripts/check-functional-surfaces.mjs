@@ -37,6 +37,25 @@ if (!existsSync(join(root, "src/routes/p.$slug.tsx")))
 if (!existsSync(join(root, "src/routes/p.geradores.$id.tsx")))
   failures.push("rota de detalhe de gerador ausente");
 
+const rootRoute = read("src/routes/__root.tsx");
+const rootComponent = rootRoute.split("function RootComponent()", 2)[1]?.split("function AppShell()", 1)[0] ?? "";
+const appShell = rootRoute.split("function AppShell()", 2)[1] ?? "";
+if (rootComponent.includes("<GeneratorsProvider>") || rootComponent.includes("<ScadaOpsProvider>"))
+  failures.push("providers autenticados voltaram a montar antes da confirmação de sessão");
+if (!appShell.includes("<GeneratorsProvider>") || !appShell.includes("<ScadaOpsProvider>"))
+  failures.push("AppShell autenticado perdeu providers de geradores/operação");
+if (appShell.indexOf("if (!user)") < 0 || appShell.indexOf("<GeneratorsProvider>") < appShell.indexOf("if (!user)"))
+  failures.push("providers de dados precisam montar somente depois do guard `if (!user)`");
+
+const generatorBoard = read("src/components/generators/GeneratorsBoard.tsx");
+for (const marker of ["error", "refresh", "Falha ao carregar geradores", "Nenhum gerador cadastrado"])
+  if (!generatorBoard.includes(marker))
+    failures.push(`tela de geradores perdeu diagnóstico obrigatório: ${marker}`);
+const overview = read("src/components/scada/OverviewDashboard.tsx");
+for (const marker of ["generatorsError", "refreshGenerators", "Falha ao carregar o parque"])
+  if (!overview.includes(marker))
+    failures.push(`dashboard voltou a mascarar falha do parque: ${marker}`);
+
 const api = read("src/lib/api.ts");
 const generatorsStart = api.indexOf("\n  generators: {");
 const generatorsEnd = generatorsStart >= 0 ? api.indexOf("\n  audit:", generatorsStart) : -1;
@@ -86,6 +105,17 @@ if (
 )
   failures.push("allowlist de gatilhos foi alterada");
 
+for (const testFile of [
+  "backend/tests/session_inventory.py",
+  "backend/tests/rapid_overlay_resilience.py",
+]) {
+  if (!existsSync(join(root, testFile))) failures.push(`teste de homologação pós-VM ausente: ${testFile}`);
+}
+
+const rapid = read("backend/app/rapid.py");
+for (const marker of ["def _overlay_generators", "math.isfinite", "Telemetria Rapid indisponível"])
+  if (!rapid.includes(marker)) failures.push(`overlay Rapid perdeu proteção de inventário: ${marker}`);
+
 const bridgeService = read("ops/systemd/rc-geradores-bridge.service");
 if (!bridgeService.includes("-m app.bridge_runtime"))
   failures.push("systemd da bridge não usa bridge_runtime canônico");
@@ -131,5 +161,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  "Functional surfaces check OK: 54 menus, rotas, lifecycles e guardrails críticos conferidos.",
+  "Functional surfaces check OK: 54 menus, rotas, autenticação, lifecycles e guardrails críticos conferidos.",
 );
