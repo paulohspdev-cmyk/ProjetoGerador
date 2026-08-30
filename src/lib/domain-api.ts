@@ -139,4 +139,11 @@ export const domainApi = {
   updateAsset: (id: string, payload: Partial<Pick<AssetV3, "tag" | "name" | "kind" | "site" | "customer" | "enabled" | "metadata">>) =>
     request<AssetV3>(`/api/assets/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(payload) }),
   removeAsset: (id: string) => request<void>(`/api/assets/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  updateController: (id: string, payload: Partial<Pick<ControllerInstanceV3, "asset_id" | "firmware" | "enabled" | "metadata">>) =>
+    request<ControllerInstanceV3>(`/api/controllers/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(payload) }),
+  removeController: (id: string) => request<void>(`/api/controllers/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  updateConnection: (id: string, payload: Partial<Pick<ControllerConnectionV3, "name" | "transport" | "host" | "listen_port" | "modbus_unit" | "rapid_device_num" | "enabled" | "config">>) =>
+    request<ControllerConnectionV3>(`/api/connections/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(payload) }),
+  removeConnection: (id: string) => request<void>(`/api/connections/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  removeLink: (id: string) => request<void>(`/api/asset-links/${encodeURIComponent(id)}`, { method: "DELETE" }),
 };
