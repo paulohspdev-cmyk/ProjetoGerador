@@ -8,6 +8,8 @@ import { EmailV3Screen, ErpBmsV3Screen, WhatsAppV3Screen } from "./IntegrationsV
 import { IndustrialAlarmsScreen, ProcessHistoryScreen, EscalationV3Screen } from "./IndustrialOpsScreens";
 import { MaintenanceHubScreen } from "./MaintenanceHubScreen";
 import { AgendaV3Screen } from "./AgendaV3Screen";
+import { SystemSettingsV3Screen } from "./SystemSettingsV3Screen";
+import { BackupsV3Screen } from "./BackupsV3Screen";
 import { MapScreen } from "./MapScreen";
 import { ControllersV3Screen } from "./ControllersV3Screen";
 import {
@@ -30,7 +32,6 @@ import {
   RulesScreen,
 } from "./equip-auto";
 import {
-  BackupsScreen,
   ChannelsScreen,
   DiagnosticScreen,
   LabScreen,
@@ -39,7 +40,6 @@ import {
   PacksScreen,
   ProtocolsScreen,
   RapidScadaScreen,
-  SettingsScreen,
   TagsScreen,
   TemplatesScreen,
   VersionScreen,
@@ -97,8 +97,8 @@ export const screens: Record<string, ComponentType> = {
   email: EmailV3Screen,
   whatsapp: WhatsAppV3Screen,
   "erp-bms": ErpBmsV3Screen,
-  configuracoes: SettingsScreen,
-  backups: BackupsScreen,
+  configuracoes: SystemSettingsV3Screen,
+  backups: BackupsV3Screen,
   saude: HealthScreen,
   versao: VersionScreen,
 };
