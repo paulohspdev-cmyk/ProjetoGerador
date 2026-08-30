@@ -16,6 +16,10 @@ TEST_PORT="${RC_DEPLOY_TEST_PORT:-3101}"
 TEST_PID=""
 CONTROL_SOCKET="/run/rc-geradores/control.sock"
 DB_FILE="/var/lib/rc-geradores/rc-geradores.db"
+NGINX_SITE="/etc/nginx/sites-available/rc-geradores"
+NGINX_ENABLED_DIR="/etc/nginx/sites-enabled"
+TLS_DIR="/etc/ssl/rc-geradores"
+SCADA_COMMON=""
 PREV_HEAD=""
 PREV_BRANCH=""
 MARKER_EXISTED=0
@@ -23,6 +27,9 @@ VENV_SWAPPED=0
 READER_SWAPPED=0
 OUTPUT_SWAPPED=0
 DB_SNAPSHOT=""
+NGINX_SITE_EXISTED=0
+NGINX_ENABLED_EXISTED=0
+TLS_DIR_EXISTED=0
 
 SERVICES=(rc-geradores-provision rc-geradores-worker rc-geradores-bridge rc-geradores-api rc-geradores-frontend)
 
@@ -41,19 +48,22 @@ trap cleanup EXIT
 [[ ${EUID} -eq 0 ]] || fail "execute como root: sudo bash ops/deploy_release.sh [ref]"
 [[ -d "${BASE}/.git" ]] || fail "repositório não encontrado em ${BASE}"
 [[ -f "${BASE}/package.json" ]] || fail "package.json não encontrado em ${BASE}"
+[[ -f "${ENV_FILE}" ]] || fail "arquivo de ambiente não encontrado: ${ENV_FILE}"
 
-if [[ -f "${ENV_FILE}" ]]; then
-  # shellcheck disable=SC1090
-  source "${ENV_FILE}"
-  CONTROL_SOCKET="${RC_RAPID_CONTROL_SOCKET:-${CONTROL_SOCKET}}"
-  DB_FILE="${RC_DB_FILE:-${RC_DATA_DIR:-/var/lib/rc-geradores}/rc-geradores.db}"
-fi
+# shellcheck disable=SC1090
+source "${ENV_FILE}"
+CONTROL_SOCKET="${RC_RAPID_CONTROL_SOCKET:-${CONTROL_SOCKET}}"
+DB_FILE="${RC_DB_FILE:-${RC_DATA_DIR:-/var/lib/rc-geradores}/rc-geradores.db}"
 
-for cmd in git tar npm node curl systemctl runuser ss python3 dotnet install cp mv; do
+for cmd in git tar npm node curl systemctl runuser ss python3 dotnet install cp mv nginx openssl hostname id find awk; do
   command -v "${cmd}" >/dev/null 2>&1 || fail "comando obrigatório não encontrado: ${cmd}"
 done
+id rcgeradores >/dev/null 2>&1 || fail "usuário de serviço rcgeradores não existe"
 python3 -m venv --help >/dev/null 2>&1 || fail "python3-venv não está disponível"
 dotnet --list-sdks 2>/dev/null | grep -q '^8\.' || fail ".NET SDK 8 é obrigatório para publicar o leitor Rapid"
+SCADA_COMMON="$(find /opt/scada -type f -name ScadaCommon.dll -print -quit 2>/dev/null || true)"
+[[ -n "${SCADA_COMMON}" && -f "${SCADA_COMMON}" ]] || fail "ScadaCommon.dll não encontrado antes do deploy"
+nginx -t >/dev/null 2>&1 || fail "configuração Nginx atual é inválida; corrija antes do deploy"
 
 log "VALIDANDO CHECKOUT ATUAL"
 PREV_HEAD="$(git -c safe.directory="${BASE}" -C "${BASE}" rev-parse HEAD)"
@@ -77,6 +87,8 @@ test -f scripts/check-functional-surfaces.mjs || fail "release sem guardrail fun
 test -f backend/requirements.txt || fail "release sem requirements do backend"
 test -f rapid/reader/RcRapidReader.csproj || fail "release sem projeto do leitor Rapid"
 test -f ops/systemd/rc-geradores-api.service || fail "release sem unidades systemd"
+test -f ops/nginx/rc-geradores.conf || fail "release sem configuração Nginx"
+test -f ops/configure_https.sh || fail "release sem hardening HTTPS"
 grep -q 'require_remove = require_remove_permission' backend/app/auth.py || fail "release sem bloqueio da exclusão direta de gerador"
 grep -q '"device": rapid_device' backend/app/control.py || fail "controle IG200 ainda está fixando Rapid Device"
 
@@ -108,11 +120,11 @@ log "BACKUP TRANSACIONAL DA PRODUÇÃO"
 install -d -m 0750 -o root -g rcgeradores "${BACKUP}"
 printf '%s\n' "${PREV_HEAD}" >"${BACKUP}/git-head-before"
 printf '%s\n' "${PREV_BRANCH}" >"${BACKUP}/git-branch-before"
-[[ -f "${ENV_FILE}" ]] && cp -a "${ENV_FILE}" "${BACKUP}/rc-geradores.env" || true
+cp -a "${ENV_FILE}" "${BACKUP}/rc-geradores.env"
 [[ -f /var/lib/rc-geradores/rapid-bindings.json ]] && cp -a /var/lib/rc-geradores/rapid-bindings.json "${BACKUP}/rapid-bindings.json" || true
 if [[ -f /var/lib/rc-geradores/deployed-commit ]]; then cp -a /var/lib/rc-geradores/deployed-commit "${BACKUP}/deployed-commit-before"; MARKER_EXISTED=1; fi
 
-mkdir -p "${BACKUP}/systemd"
+mkdir -p "${BACKUP}/systemd" "${BACKUP}/web"
 : >"${BACKUP}/systemd-existing.txt"
 for unit in "${STAGE}"/ops/systemd/*.service; do
   name="$(basename "${unit}")"
@@ -121,6 +133,19 @@ for unit in "${STAGE}"/ops/systemd/*.service; do
     echo "${name}" >>"${BACKUP}/systemd-existing.txt"
   fi
 done
+
+if [[ -e "${NGINX_SITE}" || -L "${NGINX_SITE}" ]]; then
+  cp -a "${NGINX_SITE}" "${BACKUP}/web/nginx-site-before"
+  NGINX_SITE_EXISTED=1
+fi
+if [[ -d "${NGINX_ENABLED_DIR}" ]]; then
+  cp -a "${NGINX_ENABLED_DIR}" "${BACKUP}/web/sites-enabled-before"
+  NGINX_ENABLED_EXISTED=1
+fi
+if [[ -d "${TLS_DIR}" ]]; then
+  cp -a "${TLS_DIR}" "${BACKUP}/web/tls-before"
+  TLS_DIR_EXISTED=1
+fi
 
 if [[ -f "${DB_FILE}" ]]; then
   DB_SNAPSHOT="${BACKUP}/product-db-before.sqlite3"
@@ -144,6 +169,7 @@ tar --exclude='.git' --exclude='node_modules' --exclude='.output*' --exclude='ba
 echo "Backup: ${BACKUP}"
 
 rollback() {
+  trap - ERR
   set +e
   echo; echo "========================================="; echo " FALHA - ROLLBACK TRANSACIONAL"; echo "========================================="
   systemctl stop "${SERVICES[@]}" 2>/dev/null || true
@@ -176,12 +202,33 @@ PY
     chmod 0640 "${DB_FILE}" 2>/dev/null || true
   fi
 
-  [[ -f "${BACKUP}/rc-geradores.env" ]] && cp -a "${BACKUP}/rc-geradores.env" "${ENV_FILE}" || true
+  cp -a "${BACKUP}/rc-geradores.env" "${ENV_FILE}" 2>/dev/null || true
   if [[ ${MARKER_EXISTED} -eq 1 && -f "${BACKUP}/deployed-commit-before" ]]; then cp -a "${BACKUP}/deployed-commit-before" /var/lib/rc-geradores/deployed-commit; else rm -f /var/lib/rc-geradores/deployed-commit; fi
+
+  if [[ ${NGINX_SITE_EXISTED} -eq 1 && -e "${BACKUP}/web/nginx-site-before" ]]; then
+    rm -f "${NGINX_SITE}"
+    cp -a "${BACKUP}/web/nginx-site-before" "${NGINX_SITE}" 2>/dev/null || true
+  else
+    rm -f "${NGINX_SITE}"
+  fi
+  if [[ ${NGINX_ENABLED_EXISTED} -eq 1 && -d "${BACKUP}/web/sites-enabled-before" ]]; then
+    rm -rf "${NGINX_ENABLED_DIR}"
+    cp -a "${BACKUP}/web/sites-enabled-before" "${NGINX_ENABLED_DIR}" 2>/dev/null || true
+  fi
+  if [[ ${TLS_DIR_EXISTED} -eq 1 && -d "${BACKUP}/web/tls-before" ]]; then
+    rm -rf "${TLS_DIR}"
+    cp -a "${BACKUP}/web/tls-before" "${TLS_DIR}" 2>/dev/null || true
+  else
+    rm -rf "${TLS_DIR}"
+  fi
+  nginx -t >/dev/null 2>&1 && systemctl restart nginx >/dev/null 2>&1 || true
 
   systemctl start "${SERVICES[@]}" 2>/dev/null || true
   echo "Rollback concluído para ${PREV_HEAD}."
 }
+
+# A partir daqui qualquer erro inesperado também restaura a produção anterior.
+trap 'rc=$?; rollback; exit "$rc"' ERR
 
 log "PARANDO SERVIÇOS RC PARA TROCA DE RUNTIME"
 systemctl stop "${SERVICES[@]}" 2>/dev/null || true
@@ -200,8 +247,7 @@ if ! "${BASE}/backend/.venv/bin/pip" install --disable-pip-version-check -r "${B
 chown -R rcgeradores:rcgeradores "${BASE}/backend/.venv"
 
 log "COMPILANDO LEITOR RAPID"
-SCADA_COMMON="$(find /opt/scada -type f -name ScadaCommon.dll -print -quit 2>/dev/null || true)"
-[[ -n "${SCADA_COMMON}" && -f "${SCADA_COMMON}" ]] || { rollback; fail "ScadaCommon.dll não encontrado"; }
+[[ -f "${SCADA_COMMON}" ]] || { rollback; fail "ScadaCommon.dll desapareceu durante o deploy"; }
 rm -rf "${OLD_READER}"
 [[ -d "${BASE}/.rapid-reader" ]] && mv "${BASE}/.rapid-reader" "${OLD_READER}"
 READER_SWAPPED=1
@@ -216,7 +262,8 @@ systemctl daemon-reload
 
 log "EXECUTANDO MIGRAÇÕES/INICIALIZAÇÃO COM SNAPSHOT PRÉVIO"
 set -a
-[[ -f "${ENV_FILE}" ]] && source "${ENV_FILE}"
+# shellcheck disable=SC1090
+source "${ENV_FILE}"
 set +a
 export PYTHONPATH="${BASE}/backend"
 if ! "${BASE}/backend/.venv/bin/python" - <<'PY'
@@ -240,8 +287,10 @@ OUTPUT_SWAPPED=1
 
 log "APLICANDO HARDENING WEB/HTTPS"
 chmod +x "${BASE}/ops/configure_https.sh"
-if ! bash "${BASE}/ops/configure_https.sh"; then rollback; fail "não foi possível aplicar HTTPS"; fi
-if [[ -f "${ENV_FILE}" ]]; then source "${ENV_FILE}"; CONTROL_SOCKET="${RC_RAPID_CONTROL_SOCKET:-${CONTROL_SOCKET}}"; fi
+if ! RC_HTTPS_SKIP_APP_SMOKE=1 bash "${BASE}/ops/configure_https.sh"; then rollback; fail "não foi possível aplicar HTTPS"; fi
+# shellcheck disable=SC1090
+source "${ENV_FILE}"
+CONTROL_SOCKET="${RC_RAPID_CONTROL_SOCKET:-${CONTROL_SOCKET}}"
 
 log "REINICIANDO SERVIÇOS"
 for svc in "${SERVICES[@]}"; do systemctl restart "${svc}" 2>/dev/null || { rollback; fail "falha ao reiniciar ${svc}"; }; done
@@ -250,6 +299,7 @@ sleep 4
 log "VALIDAÇÃO DE PRODUÇÃO"
 FAIL=0
 for svc in "${SERVICES[@]}"; do if systemctl is-active --quiet "${svc}"; then echo "${svc}: OK"; else echo "${svc}: FALHOU"; FAIL=1; fi; done
+nginx -t >/dev/null 2>&1 && echo "Nginx: OK" || { echo "Nginx: FALHOU"; FAIL=1; }
 curl -fsS http://127.0.0.1:3000/ >/dev/null 2>&1 && echo "Frontend interno: OK" || { echo "Frontend interno: FALHOU"; FAIL=1; }
 curl -kfsS https://127.0.0.1/api/health >/dev/null 2>&1 && echo "API HTTPS: OK" || { echo "API HTTPS: FALHOU"; FAIL=1; }
 curl -sSI http://127.0.0.1/api/health 2>/dev/null | grep -qi '^Location: https://' && echo "Redirect HTTP->HTTPS: OK" || { echo "Redirect HTTP->HTTPS: FALHOU"; FAIL=1; }
@@ -267,6 +317,8 @@ chown root:rcgeradores /var/lib/rc-geradores/deployed-commit
 chmod 0640 /var/lib/rc-geradores/deployed-commit
 [[ "$(cat /var/lib/rc-geradores/deployed-commit)" == "${CURRENT_HEAD}" ]] || { rollback; fail "deployed-commit divergiu do HEAD"; }
 
+# A partir deste ponto a nova release foi integralmente validada.
+trap - ERR
 rm -rf "${OLD_OUTPUT}" "${OLD_VENV}" "${OLD_READER}"
 log "RELEASE INSTALADA COM SUCESSO"
 echo "Commit: ${COMMIT}"
