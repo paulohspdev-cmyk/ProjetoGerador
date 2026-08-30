@@ -1,5 +1,5 @@
 import { Network, Router, Signal } from "lucide-react";
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useGenerators } from "@/components/generators/GeneratorsProvider";
@@ -36,18 +36,18 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       setRows(await rcApi.fieldDevices.list(kind));
       setError("");
     } catch (loadError) {
       setError(errText(loadError));
     }
-  };
+  }, [kind]);
 
   useEffect(() => {
     void load();
-  }, [kind]);
+  }, [load]);
 
   const reset = () => {
     setEditing(null);
