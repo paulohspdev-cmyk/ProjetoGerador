@@ -148,9 +148,16 @@ export function OverviewDashboard() {
             icon: Gauge,
             label: "Geradores",
             value: generatorsError ? "ERRO" : generators.length,
-            sub: generatorsError ? "API de cadastro indisponível" : `${configured.length} configurados`,
+            sub: generatorsError
+              ? "API de cadastro indisponível"
+              : `${configured.length} configurados`,
           },
-          { icon: Activity, label: "Online", value: generatorsError ? "—" : online, tone: "text-online" },
+          {
+            icon: Activity,
+            label: "Online",
+            value: generatorsError ? "—" : online,
+            tone: "text-online",
+          },
           {
             icon: BellRing,
             label: "Em alerta",
