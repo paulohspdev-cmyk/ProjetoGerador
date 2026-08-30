@@ -20,6 +20,7 @@ IG200_UNIT=2
 IG200_DEVICE=200
 INITIAL_GENERATOR_ID=""
 INITIAL_LOCAL_PORT=""
+TLS_SELF_SIGNED=0
 
 usage() {
   cat <<'EOF'
@@ -44,14 +45,17 @@ Instala em VM Ubuntu limpa:
   bridge reverse TCP somente leitura para o Rapid
   API FastAPI + frontend TanStack + worker + provisionador privilegiado
   SQLite do produto + login/RBAC + relatórios/backups/notificações
-  Nginx na porta 80
+  Nginx HTTPS na porta 443, com redirecionamento da porta 80
 
 Por padrão cadastra e provisiona um ComAp InteliGen 200 com os parâmetros acima.
 Use --skip-initial-generator para instalar a plataforma vazia e cadastrar depois pelo painel.
 
 A senha inicial é solicitada no terminal e nunca é persistida em texto claro.
 Para automação, --admin-password-file lê a senha de arquivo proprietário chmod 600.
-SMTP, WhatsApp e HTTPS permanecem desabilitados até receberem configuração real.
+SMTP e WhatsApp permanecem desabilitados até receberem configuração real.
+HTTPS é obrigatório. Se RC_TLS_CERT_FILE/RC_TLS_KEY_FILE não apontarem para um
+certificado real, o instalador cria um certificado local autoassinado para evitar
+tráfego em texto claro; antes de exposição pública, substitua-o por certificado confiável.
 EOF
 }
 
@@ -236,9 +240,10 @@ set_env RC_ADMIN_PASSWORD ""
 set_env RC_ENABLE_IG200_CONTROL "$ENABLE_CONTROL"
 set_env RC_RAPID_BINDINGS "/var/lib/rc-geradores/rapid-bindings.json"
 set_env RC_PROVISION_SOCKET "/run/rc-geradores/provision.sock"
+set_env RC_AUTH_COOKIE_SECURE "1"
 if [[ -n "$VM_IP" ]]; then
-  set_env RC_CORS_ORIGINS "http://localhost,http://127.0.0.1,http://${VM_IP}"
-  set_env RC_PUBLIC_BASE_URL "http://${VM_IP}"
+  set_env RC_CORS_ORIGINS "https://localhost,https://127.0.0.1,https://${VM_IP}"
+  set_env RC_PUBLIC_BASE_URL "https://${VM_IP}"
 fi
 chmod 640 "$ENV_FILE"
 chown root:rcgeradores "$ENV_FILE"
@@ -360,7 +365,40 @@ systemctl restart rc-geradores-api.service
 systemctl restart rc-geradores-worker.service
 systemctl restart rc-geradores-frontend.service
 
-echo "[10/15] Configurando Nginx..."
+echo "[10/15] Configurando HTTPS/Nginx..."
+TLS_DIR="/etc/ssl/rc-geradores"
+TLS_CERT="$TLS_DIR/fullchain.pem"
+TLS_KEY="$TLS_DIR/privkey.pem"
+install -d -m 0755 -o root -g root "$TLS_DIR"
+
+if [[ -n "${RC_TLS_CERT_FILE:-}" || -n "${RC_TLS_KEY_FILE:-}" ]]; then
+  [[ -n "${RC_TLS_CERT_FILE:-}" && -n "${RC_TLS_KEY_FILE:-}" ]] || {
+    echo "ERRO: configure RC_TLS_CERT_FILE e RC_TLS_KEY_FILE juntos." >&2
+    exit 5
+  }
+  [[ -f "$RC_TLS_CERT_FILE" && -f "$RC_TLS_KEY_FILE" ]] || {
+    echo "ERRO: certificado/chave TLS configurados não existem." >&2
+    exit 5
+  }
+  install -m 0644 -o root -g root "$RC_TLS_CERT_FILE" "$TLS_CERT"
+  install -m 0600 -o root -g root "$RC_TLS_KEY_FILE" "$TLS_KEY"
+elif [[ ! -s "$TLS_CERT" || ! -s "$TLS_KEY" ]]; then
+  TLS_SELF_SIGNED=1
+  TLS_NAME="${VM_IP:-rc-geradores.local}"
+  if [[ "$TLS_NAME" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    TLS_SAN="IP:${TLS_NAME},DNS:rc-geradores.local"
+  else
+    TLS_SAN="DNS:${TLS_NAME},DNS:rc-geradores.local"
+  fi
+  openssl req -x509 -nodes -newkey rsa:3072 -sha256 -days 825 \
+    -keyout "$TLS_KEY" -out "$TLS_CERT" \
+    -subj "/CN=${TLS_NAME}" -addext "subjectAltName=${TLS_SAN}"
+  chmod 0600 "$TLS_KEY"
+  chmod 0644 "$TLS_CERT"
+fi
+
+openssl x509 -in "$TLS_CERT" -noout -subject -dates
+openssl pkey -in "$TLS_KEY" -noout -check >/dev/null
 cp "$BASE/ops/nginx/rc-geradores.conf" /etc/nginx/sites-available/rc-geradores
 ln -sfn /etc/nginx/sites-available/rc-geradores /etc/nginx/sites-enabled/rc-geradores
 rm -f /etc/nginx/sites-enabled/default /etc/nginx/sites-enabled/rc-scada
@@ -368,14 +406,14 @@ nginx -t
 systemctl enable nginx >/dev/null
 systemctl restart nginx
 
-echo "[11/15] Validando API, frontend e proxy..."
+echo "[11/15] Validando API, frontend e proxy HTTPS..."
 for _ in $(seq 1 30); do
   curl -fsS http://127.0.0.1:8090/api/health >/tmp/rc-health.json 2>/dev/null && break
   sleep 1
 done
 curl -fsS http://127.0.0.1:8090/api/health | jq .
 curl -fsS http://127.0.0.1:3000/ >/dev/null
-curl -fsS http://127.0.0.1/api/health | jq .
+curl -kfsS https://127.0.0.1/api/health | jq .
 
 echo "[12/15] Validando serviços e sockets..."
 for svc in \
@@ -441,9 +479,9 @@ echo
 echo "============================================================"
 echo " RC GERADORES INSTALADO"
 echo "============================================================"
-echo " Interface:       http://${IP:-IP_DA_VM}/"
+echo " Interface:       https://${IP:-IP_DA_VM}/"
 echo " Usuário inicial: $ADMIN_EMAIL"
-echo " API health:      http://${IP:-IP_DA_VM}/api/health"
+echo " API health:      https://${IP:-IP_DA_VM}/api/health"
 echo " Banco:           /var/lib/rc-geradores/rc-geradores.db"
 echo " Rapid SCADA:     /opt/scada"
 if (( SKIP_INITIAL_GENERATOR == 0 )); then
@@ -455,7 +493,11 @@ fi
 echo " Worker:          ativo"
 echo " Provisionador:   ativo (socket local privilegiado)"
 echo " SMTP/WhatsApp:   desabilitados até configurar credenciais reais"
-echo " HTTPS:           configure certificado real antes de acesso público"
+if (( TLS_SELF_SIGNED == 1 )); then
+  echo " HTTPS:           ATIVO com certificado autoassinado; substitua por certificado confiável antes de Internet pública"
+else
+  echo " HTTPS:           ATIVO"
+fi
 if (( ENABLE_CONTROL == 1 )); then
   echo " START/STOP:      HABILITADO somente para IG200 homologado"
 else
