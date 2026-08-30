@@ -270,12 +270,13 @@ export function FuelScreen() {
         { icon: Fuel, label: "Nível médio medido", value: mean == null ? "N/D" : `${fmt(mean, 0)} %` },
         { icon: Fuel, label: "Tanques monitorados", value: `${measured.length}/${generators.length}` },
       ]} />
+      <InfoNotice>O painel mostra o nível medido, mas não classifica combustível como baixo sem um limite homologado no Controller Pack/configuração do equipamento.</InfoNotice>
       <Panel title="Tanques / geradores">
         <ScadaTable rows={generators} columns={[
           { label: "Gerador", render: (r) => <b>{r.tag}</b> },
           { label: "Site", render: (r) => r.site },
           { label: "Nível", render: (r) => valueOrDash(r, "fuel_level", r.fuelLevel, "%", 0) },
-          { label: "Estado", render: (r) => hasMetric(r, "fuel_level") ? <Tone tone={r.fuelLevel < 40 ? "warn" : "ok"}>{r.fuelLevel < 40 ? "Baixo" : "Monitorado"}</Tone> : <Tone tone="muted">N/D</Tone> },
+          { label: "Estado", render: (r) => hasMetric(r, "fuel_level") ? <Tone tone="muted">Medido · sem limite homologado</Tone> : <Tone tone="muted">N/D</Tone> },
         ]} />
       </Panel>
     </ScreenBody>
@@ -292,11 +293,12 @@ export function BatteriesScreen() {
         { icon: BatteryCharging, label: "Média medida", value: mean == null ? "N/D" : `${fmt(mean)} V` },
         { icon: BatteryCharging, label: "Baterias monitoradas", value: `${measured.length}/${generators.length}` },
       ]} />
+      <InfoNotice>A tensão é exibida somente quando medida. Saúde/baixa tensão não é inferida por um corte genérico: nominal e limites devem vir do Controller Pack ou da configuração homologada do equipamento.</InfoNotice>
       <Panel title="Bancos de baterias">
         <ScadaTable rows={generators} columns={[
           { label: "Gerador", render: (r) => <b>{r.tag}</b> },
           { label: "Tensão", render: (r) => valueOrDash(r, "battery_voltage", r.battery, "V", 1) },
-          { label: "Saúde", render: (r) => !hasMetric(r, "battery_voltage") || r.battery == null ? <Tone tone="muted">N/D</Tone> : <Tone tone={r.battery < 12 ? "warn" : "ok"}>{r.battery < 12 ? "Baixa" : "Monitorada"}</Tone> },
+          { label: "Saúde", render: (r) => !hasMetric(r, "battery_voltage") || r.battery == null ? <Tone tone="muted">N/D</Tone> : <Tone tone="muted">Sem referência nominal</Tone> },
         ]} />
       </Panel>
     </ScreenBody>
