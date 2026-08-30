@@ -1,4 +1,3 @@
-import type { Generator } from "@/data/generators";
 import { cn } from "@/lib/utils";
 
 import { formatMetric } from "../generator-metrics";
@@ -6,13 +5,11 @@ import { IoBtn, PowerFlowSld } from "../power-flow/PowerFlowDiagram";
 import type { GeneratorDetailModel } from "./generator-detail-model";
 
 export function GeneratorDetailPowerFlow({
-  gen,
   model,
   operate,
   commandBusy,
   onCommand,
 }: {
-  gen: Generator;
   model: GeneratorDetailModel;
   operate: boolean;
   commandBusy: "start" | "stop" | null;
