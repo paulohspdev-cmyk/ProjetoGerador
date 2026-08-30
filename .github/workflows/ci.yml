@@ -86,7 +86,8 @@ jobs:
           grep -q 'industrialApi.lifecycle.retire' src/components/generators/DeleteGeneratorButton.tsx
           grep -q 'IndustrialAlarmsScreen' src/components/scada/registry.ts
           grep -q 'ProcessHistoryScreen' src/components/scada/registry.ts
-          grep -q 'MaintenanceV3Screen' src/components/scada/registry.ts
+          grep -q 'MaintenanceHubScreen' src/components/scada/registry.ts
+          grep -q 'MaintenanceV3Screen' src/components/scada/MaintenanceHubScreen.tsx
           grep -q 'EscalationV3Screen' src/components/scada/registry.ts
           if grep -R -n -E 'Generator Freq\.|autoKwScale|meterColor|batt < 12|n < 12\.2|n < 11\.5' src/components/generators --include='*.ts' --include='*.tsx'; then
             echo 'ERRO: voltou lógica visual/telemetria não homologada no frontend.' >&2
