@@ -16,6 +16,10 @@ import {
   hasMetric,
   metricNumber,
 } from "./generator-metrics";
+import {
+  hasPositiveMeasurement,
+  isPositiveMeasurement,
+} from "./generator-presence";
 import { PowerFlowSld } from "./power-flow/PowerFlowDiagram";
 import {
   BreakerControl,
@@ -38,11 +42,6 @@ import "./powerflow-card-v2.css";
 
 export { fmt } from "./generator-metrics";
 export { IoBtn, PowerFlowSld } from "./power-flow/PowerFlowDiagram";
-
-// Limiares de presença usados apenas para animação do diagrama. Não representam
-// alarme, proteção, nominal ou limite homologado da controladora.
-const ROTATION_PRESENT_RPM = 300;
-const MAINS_PRESENT_VOLTAGE = 50;
 
 export function PowerFlowCard({ gen }: { gen: Generator }) {
   const { can } = useAuth();
@@ -71,7 +70,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const modeKnown = hasMetric(gen, "controller_mode_raw");
   const alarmCountKnown = hasMetric(gen, "alarm_count");
   const runningKnown = rpm != null;
-  const running = runningKnown && rpm > ROTATION_PRESENT_RPM;
+  const running = runningKnown && isPositiveMeasurement(rpm);
 
   const mainsKeys = [
     "mains_voltage_l1",
@@ -84,12 +83,12 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const genVoltageKnown = genKeys.some((key) => hasMetric(gen, key));
   const mainsOk =
     mainsKnown &&
-    Math.max(
-      metricNumber(gen, "mains_voltage_l1", gen.mains.l1) ?? 0,
-      metricNumber(gen, "mains_voltage_l2", gen.mains.l2) ?? 0,
-      metricNumber(gen, "mains_voltage_l3", gen.mains.l3) ?? 0,
-      metricNumber(gen, "mains_voltage_l1_l2", gen.mains.l12) ?? 0,
-    ) > MAINS_PRESENT_VOLTAGE;
+    hasPositiveMeasurement([
+      metricNumber(gen, "mains_voltage_l1", gen.mains.l1),
+      metricNumber(gen, "mains_voltage_l2", gen.mains.l2),
+      metricNumber(gen, "mains_voltage_l3", gen.mains.l3),
+      metricNumber(gen, "mains_voltage_l1_l2", gen.mains.l12),
+    ]);
 
   const ig200Homologated =
     gen.controller.trim().toLowerCase() === "inteligen 200" && Number(gen.rapidDeviceNum) > 0;
