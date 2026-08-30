@@ -195,7 +195,7 @@ export function ScadaOpsProvider({ children }: { children: ReactNode }) {
               const keys = new Set(items.map((x) => x.alarmKey));
               return {
                 ...prev,
-                alarmAcks: [...items, ...prev.alarmAcks.filter((x) => !keys.has(x.alarmKey)],
+                alarmAcks: [...items, ...prev.alarmAcks.filter((x) => !keys.has(x.alarmKey))],
               };
             });
             notify("Alarmes reconhecidos");
