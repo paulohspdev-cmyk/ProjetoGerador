@@ -1,4 +1,5 @@
 export type GenStatus = "online" | "alerta" | "offline" | "nao_configurado";
+export type GeneratorTransport = "reverse_tcp" | "modbus_tcp_direct" | "rtu_over_tcp" | "modbus_rtu_serial";
 
 export type Generator = {
   id: string;
@@ -11,6 +12,9 @@ export type Generator = {
   status: GenStatus;
   mode: "AUTO" | "MANUAL" | "STOP" | "TESTE" | "OFF";
   ip: string;
+  transport?: GeneratorTransport;
+  listenPort?: number | null;
+  modbusUnit?: number | null;
   battery: number | null;
   frequency: number | null;
   mainsFrequency?: number | null;
