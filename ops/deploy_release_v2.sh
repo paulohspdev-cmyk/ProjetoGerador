@@ -89,8 +89,13 @@ test -f rapid/reader/RcRapidReader.csproj || fail "release sem projeto do leitor
 test -f ops/systemd/rc-geradores-api.service || fail "release sem unidades systemd"
 test -f ops/nginx/rc-geradores.conf || fail "release sem configuração Nginx"
 test -f ops/configure_https.sh || fail "release sem hardening HTTPS"
+test -f ops/preflight_vm.sh || fail "release sem preflight seguro da VM"
 grep -q 'require_remove = require_remove_permission' backend/app/auth.py || fail "release sem bloqueio da exclusão direta de gerador"
 grep -q '"device": rapid_device' backend/app/control.py || fail "controle IG200 ainda está fixando Rapid Device"
+
+log "PRE-FLIGHT DO RELEASE ANTES DE PARAR SERVIÇOS"
+RC_PROJECT_ROOT="${BASE}" RC_ENV_FILE="${ENV_FILE}" RC_DEPLOY_TEST_PORT="${TEST_PORT}" \
+  bash "${STAGE}/ops/preflight_vm.sh" "${REF}" "${COMMIT}"
 
 log "VALIDANDO FRONTEND FORA DA PRODUÇÃO"
 npm ci --include=dev
