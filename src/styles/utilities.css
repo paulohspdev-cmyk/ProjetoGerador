@@ -1,0 +1,4 @@
+@utility panel-surface {
+  background-color: var(--panel);
+  box-shadow: var(--shadow-panel);
+}
