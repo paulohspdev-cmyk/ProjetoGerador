@@ -10,8 +10,14 @@ cadastro habilitado com o mesmo Rapid Device, porta e Unit ID.
 """
 
 import asyncio
+import json
+import os
+import time
+from pathlib import Path
 
 from . import bridge, db
+
+STATUS_FILE = Path(os.environ.get("RC_BRIDGE_STATUS_FILE", "/run/rc-geradores/bridge-status.json"))
 
 
 def resolve_ig200_bound_device(device_num):
@@ -60,6 +66,37 @@ def resolve_ig200_bound_device(device_num):
 bridge.resolve_ig200 = resolve_ig200_bound_device
 
 
+def write_status(enabled: list[dict]) -> None:
+    by_port: dict[int, list[dict]] = {}
+    for generator in enabled:
+        port = int(generator.get("listen_port") or 0)
+        by_port.setdefault(port, []).append(
+            {
+                "generatorId": generator["id"],
+                "tag": generator.get("tag") or generator["id"],
+                "unit": int(generator.get("modbus_unit") or 1),
+                "rapidDeviceNum": generator.get("rapid_device_num"),
+            }
+        )
+
+    payload = {
+        "updatedAt": int(time.time()),
+        "pid": os.getpid(),
+        "ports": [
+            {
+                **item.snapshot(),
+                "generators": sorted(by_port.get(port, []), key=lambda x: (x["unit"], x["tag"])),
+            }
+            for port, item in sorted(bridge.bridges.items())
+        ],
+    }
+    STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    tmp = STATUS_FILE.with_name(f".{STATUS_FILE.name}.{os.getpid()}.tmp")
+    tmp.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    os.chmod(tmp, 0o640)
+    os.replace(tmp, STATUS_FILE)
+
+
 async def reconcile_reverse_tcp():
     while True:
         enabled = [
@@ -85,11 +122,20 @@ async def reconcile_reverse_tcp():
             await item.stop()
             bridge.log(f"porta {port}: ponte removida")
 
+        try:
+            write_status(enabled)
+        except Exception as exc:
+            bridge.log(f"falha ao publicar status da bridge: {exc}")
+
         await asyncio.sleep(bridge.RECONCILE_SECONDS)
 
 
 async def main():
     db.init_db()
+    try:
+        STATUS_FILE.unlink(missing_ok=True)
+    except Exception:
+        pass
     bridge.log("iniciando ponte reverse TCP; caminho Rapid somente leitura FC03/FC04")
     await bridge.start_control_server()
     try:
@@ -100,6 +146,10 @@ async def main():
             *(item.stop() for item in list(bridge.bridges.values())),
             return_exceptions=True,
         )
+        try:
+            STATUS_FILE.unlink(missing_ok=True)
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":
