@@ -1,6 +1,6 @@
 import { type FormEvent, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Eye, EyeOff, Lock, Mail, Moon, Sun, Zap } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, Moon, ShieldCheck, Sun, Zap } from "lucide-react";
 
 import { useAuth } from "./AuthProvider";
 import { useTheme } from "@/components/layout/ThemeProvider";
@@ -11,17 +11,34 @@ export function LoginScreen() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [needsOtp, setNeedsOtp] = useState(false);
   const [show, setShow] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const resetSecondFactor = () => {
+    setNeedsOtp(false);
+    setOtp("");
+  };
+
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (needsOtp && !/^\d{6}$/.test(otp.trim())) {
+      setError("Informe o código de 6 dígitos do autenticador.");
+      return;
+    }
+
     setBusy(true);
     setError(null);
-    const err = await login(email, password);
+    const err = await login(email, password, needsOtp ? otp : undefined);
     setBusy(false);
     if (err) {
+      if (!needsOtp && /2fa|totp|código.*obrigatório/i.test(err)) {
+        setNeedsOtp(true);
+        setError(null);
+        return;
+      }
       setError(err);
       return;
     }
@@ -52,7 +69,9 @@ export function LoginScreen() {
           onSubmit={onSubmit}
           className="rounded-xl border border-border bg-card p-5 shadow-[var(--shadow-panel)]"
         >
-          <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-muted-foreground">Login</h2>
+          <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-muted-foreground">
+            {needsOtp ? "Verificação em duas etapas" : "Login"}
+          </h2>
 
           <label className="mt-4 block text-[12px] font-semibold text-muted-foreground">
             E-mail
@@ -65,6 +84,7 @@ export function LoginScreen() {
                 onChange={(e) => {
                   setEmail(e.target.value);
                   setError(null);
+                  resetSecondFactor();
                 }}
                 className="min-w-0 flex-1 bg-transparent text-sm outline-none"
                 placeholder="admin@rcgeradores.local"
@@ -84,6 +104,7 @@ export function LoginScreen() {
                 onChange={(e) => {
                   setPassword(e.target.value);
                   setError(null);
+                  resetSecondFactor();
                 }}
                 className="min-w-0 flex-1 bg-transparent text-sm outline-none"
                 placeholder="••••••••"
@@ -100,6 +121,31 @@ export function LoginScreen() {
             </span>
           </label>
 
+          {needsOtp && (
+            <label className="mt-3 block text-[12px] font-semibold text-muted-foreground">
+              Código do autenticador
+              <span className="mt-1.5 flex h-10 items-center gap-2 rounded-md border border-input bg-background px-3">
+                <ShieldCheck className="size-4 shrink-0 text-primary" />
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]{6}"
+                  autoComplete="one-time-code"
+                  value={otp}
+                  onChange={(e) => {
+                    setOtp(e.target.value.replace(/\D/g, "").slice(0, 6));
+                    setError(null);
+                  }}
+                  className="min-w-0 flex-1 bg-transparent text-sm tracking-[0.3em] outline-none"
+                  placeholder="000000"
+                  aria-label="Código 2FA de 6 dígitos"
+                  autoFocus
+                  required
+                />
+              </span>
+            </label>
+          )}
+
           {error && (
             <p className="mt-3 rounded-md border border-offline/40 bg-offline/10 px-3 py-2 text-[12px] text-offline">
               {error}
@@ -111,7 +157,7 @@ export function LoginScreen() {
             disabled={busy}
             className="mt-5 flex h-10 w-full items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
           >
-            {busy ? "Entrando…" : "Entrar"}
+            {busy ? "Validando…" : needsOtp ? "Validar código" : "Entrar"}
           </button>
         </form>
       </div>
