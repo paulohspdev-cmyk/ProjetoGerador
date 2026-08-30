@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BellRing, Gauge, MapPin, Radio, Server } from "lucide-react";
+import { BellRing, Gauge, MapPin, Radio, RefreshCw, Server } from "lucide-react";
 
 import { StatusPill } from "@/components/generators/StatusPill";
 import { useGenerators } from "@/components/generators/GeneratorsProvider";
@@ -9,7 +9,12 @@ import { Panel, Pill, ScreenBody, Stats } from "./kit";
 import { fmt, hasMetric, realAlarms } from "./operation-helpers";
 
 export function OperationCenter() {
-  const { generators } = useGenerators();
+  const {
+    generators,
+    ready: generatorsReady,
+    error: generatorsError,
+    refresh: refreshGenerators,
+  } = useGenerators();
   const { isAcked } = useScadaOps();
   const loadRows = generators.filter((g) => hasMetric(g, "power_kw"));
   const measuredLoad = loadRows.length
@@ -28,35 +33,70 @@ export function OperationCenter() {
           {
             icon: Server,
             label: "Parque",
-            value: generators.length,
-            sub: "geradores",
+            value: generatorsError ? "ERRO" : generators.length,
+            sub: generatorsError ? "cadastro indisponível" : "geradores",
             tone: "text-foreground",
           },
           {
             icon: Gauge,
             label: "Carga medida",
-            value: measuredLoad == null ? "N/D" : `${fmt(measuredLoad, 1)} kW`,
-            sub: measuredLoad == null ? "sem canal power_kw" : `${loadRows.length} gerador(es)`,
+            value: generatorsError
+              ? "—"
+              : measuredLoad == null
+                ? "N/D"
+                : `${fmt(measuredLoad, 1)} kW`,
+            sub: generatorsError
+              ? "parque indisponível"
+              : measuredLoad == null
+                ? "sem canal power_kw"
+                : `${loadRows.length} gerador(es)`,
           },
           {
             icon: BellRing,
             label: "Condições ativas",
-            value: alarmRows.filter((a) => !a.ack).length,
+            value: generatorsError ? "—" : alarmRows.filter((a) => !a.ack).length,
             tone: alarmRows.length ? "text-alert" : "text-online",
           },
           {
             icon: Radio,
             label: "Telemetria Rapid",
-            value: configured.length ? `${rapidOk}/${configured.length}` : "0/0",
+            value: generatorsError
+              ? "—"
+              : configured.length
+                ? `${rapidOk}/${configured.length}`
+                : "0/0",
           },
         ]}
       />
 
+      {!generatorsReady && (
+        <p className="rounded-md border border-border bg-card px-3 py-2 text-sm text-muted-foreground">
+          Carregando estado do parque…
+        </p>
+      )}
+      {generatorsError && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-offline/40 bg-offline/10 p-3 text-sm text-offline">
+          <span>Falha ao carregar o parque: {generatorsError}</span>
+          <button
+            type="button"
+            onClick={() => void refreshGenerators()}
+            className="inline-flex h-8 items-center gap-1 rounded-md border border-offline/40 px-2 text-xs font-semibold"
+          >
+            <RefreshCw className="size-3.5" />
+            Tentar novamente
+          </button>
+        </div>
+      )}
+
       <div className="grid gap-3 lg:grid-cols-3">
         <Panel title="Estado do parque" className="lg:col-span-2">
-          {!generators.length ? (
+          {generatorsReady && !generatorsError && !generators.length ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
               Nenhum gerador cadastrado.
+            </p>
+          ) : generatorsError ? (
+            <p className="py-8 text-center text-sm text-offline">
+              Estado do parque indisponível até a API de geradores responder.
             </p>
           ) : (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
@@ -88,7 +128,11 @@ export function OperationCenter() {
         </Panel>
 
         <Panel title="Condições ativas">
-          {!alarmRows.length ? (
+          {generatorsError ? (
+            <p className="py-8 text-center text-sm text-offline">
+              Condições do parque indisponíveis.
+            </p>
+          ) : !alarmRows.length ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
               Nenhuma condição real ativa.
             </p>
@@ -112,26 +156,29 @@ export function OperationCenter() {
 }
 
 export function SitesScreen() {
-  const { generators } = useGenerators();
+  const {
+    generators,
+    error: generatorsError,
+    refresh: refreshGenerators,
+  } = useGenerators();
   const [sites, setSites] = useState<OpsSite[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const loadSites = async () => {
+    setLoading(true);
+    try {
+      setSites(await rcApi.sites.list());
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha ao consultar sites.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    let active = true;
-    void rcApi.sites
-      .list()
-      .then((rows) => {
-        if (active) {
-          setSites(rows);
-          setError(null);
-        }
-      })
-      .catch((err) => {
-        if (active) setError(err instanceof Error ? err.message : "Falha ao consultar sites.");
-      });
-    return () => {
-      active = false;
-    };
+    void loadSites();
   }, []);
 
   const rows = useMemo(
@@ -160,26 +207,51 @@ export function SitesScreen() {
     site.measuredLoad == null ? [] : [site.measuredLoad],
   );
   const parkLoad = allMeasured.length ? allMeasured.reduce((sum, value) => sum + value, 0) : null;
+  const hasFailure = Boolean(error || generatorsError);
 
   return (
     <ScreenBody>
       <Stats
         items={[
-          { icon: MapPin, label: "Sites cadastrados", value: sites.length },
-          { icon: Server, label: "Geradores", value: generators.length },
+          { icon: MapPin, label: "Sites cadastrados", value: error ? "ERRO" : sites.length },
+          { icon: Server, label: "Geradores", value: generatorsError ? "ERRO" : generators.length },
           {
             icon: Gauge,
             label: "Carga medida",
-            value: parkLoad == null ? "N/D" : `${fmt(parkLoad, 1)} kW`,
+            value: hasFailure ? "—" : parkLoad == null ? "N/D" : `${fmt(parkLoad, 1)} kW`,
           },
         ]}
       />
-      {error && (
-        <p className="rounded-md border border-offline/40 bg-offline/10 p-3 text-sm text-offline">
-          {error}
-        </p>
+      {(error || generatorsError) && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-offline/40 bg-offline/10 p-3 text-sm text-offline">
+          <span>
+            {error && `Sites: ${error}. `}
+            {generatorsError && `Geradores: ${generatorsError}.`}
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              void loadSites();
+              void refreshGenerators();
+            }}
+            className="inline-flex h-8 items-center gap-1 rounded-md border border-offline/40 px-2 text-xs font-semibold"
+          >
+            <RefreshCw className="size-3.5" />
+            Tentar novamente
+          </button>
+        </div>
       )}
-      {!rows.length ? (
+      {loading ? (
+        <Panel title="Sites">
+          <p className="py-8 text-center text-sm text-muted-foreground">Carregando sites…</p>
+        </Panel>
+      ) : hasFailure ? (
+        <Panel title="Sites">
+          <p className="py-8 text-center text-sm text-offline">
+            Não foi possível confirmar o inventário de sites e geradores.
+          </p>
+        </Panel>
+      ) : !rows.length ? (
         <Panel title="Sites">
           <p className="py-8 text-center text-sm text-muted-foreground">
             Nenhum site cadastrado. Cadastre em Gestão → Unidades.
