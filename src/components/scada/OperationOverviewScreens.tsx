@@ -156,11 +156,7 @@ export function OperationCenter() {
 }
 
 export function SitesScreen() {
-  const {
-    generators,
-    error: generatorsError,
-    refresh: refreshGenerators,
-  } = useGenerators();
+  const { generators, error: generatorsError, refresh: refreshGenerators } = useGenerators();
   const [sites, setSites] = useState<OpsSite[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
