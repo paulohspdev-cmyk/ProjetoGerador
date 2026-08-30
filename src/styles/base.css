@@ -1,0 +1,36 @@
+/* Regras globais mínimas. Layout visual de componentes não deve entrar aqui. */
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: clip;
+  }
+
+  @media (min-width: 1920px) {
+    html {
+      font-size: 17px;
+    }
+  }
+
+  @media (min-width: 2560px) {
+    html {
+      font-size: 18px;
+    }
+  }
+}
+
+@utility panel-surface {
+  background-color: var(--panel);
+  box-shadow: var(--shadow-panel);
+}
