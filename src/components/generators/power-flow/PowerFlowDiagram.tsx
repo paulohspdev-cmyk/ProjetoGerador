@@ -37,15 +37,7 @@ export function IoBtn({
   );
 }
 
-function FlowWire({
-  d,
-  live,
-  reverse = false,
-}: {
-  d: string;
-  live: boolean;
-  reverse?: boolean;
-}) {
+function FlowWire({ d, live, reverse = false }: { d: string; live: boolean; reverse?: boolean }) {
   if (!live) return null;
   return (
     <g>
@@ -142,7 +134,11 @@ export function PowerFlowSld({
         <rect x="-46" y="-32" width="90" height="64" rx="6" className="flow-load-card" />
         <g transform="translate(-22 0)" className="flow-device-icon">
           <path d="M-16 10 h32" strokeWidth="1.6" />
-          <path d="M-12 10 V-2 l 7 2 V-12 l 8 2 V10 M 3 -1 l 7 2 V10" strokeWidth="1.6" fill="none" />
+          <path
+            d="M-12 10 V-2 l 7 2 V-12 l 8 2 V10 M 3 -1 l 7 2 V10"
+            strokeWidth="1.6"
+            fill="none"
+          />
           <path
             d="M-8.5 3 v0 M-8.5 7 v0 M -1 -4 v0 M -1 2 v0 M -1 8 v0 M 6.5 4 v0 M 6.5 8 v0"
             strokeWidth="2.5"
@@ -193,8 +189,18 @@ export function PowerFlowSld({
       <FlowWire d="M80 290 V326" live={genPre} reverse />
       <FlowWire d="M80 200 H142" live={loadLive} />
 
-      <circle cx="80" cy="110" r="4" className={cn("flow-switch-node", !mcbKnown && "is-unknown")} />
-      <circle cx="80" cy="140" r="4" className={cn("flow-switch-node", !mcbKnown && "is-unknown")} />
+      <circle
+        cx="80"
+        cy="110"
+        r="4"
+        className={cn("flow-switch-node", !mcbKnown && "is-unknown")}
+      />
+      <circle
+        cx="80"
+        cy="140"
+        r="4"
+        className={cn("flow-switch-node", !mcbKnown && "is-unknown")}
+      />
       <line
         x1="80"
         y1="110"
@@ -203,8 +209,18 @@ export function PowerFlowSld({
         className={cn("flow-switch-blade", !mcbKnown && "is-unknown")}
       />
 
-      <circle cx="80" cy="260" r="4" className={cn("flow-switch-node", !gcbKnown && "is-unknown")} />
-      <circle cx="80" cy="290" r="4" className={cn("flow-switch-node", !gcbKnown && "is-unknown")} />
+      <circle
+        cx="80"
+        cy="260"
+        r="4"
+        className={cn("flow-switch-node", !gcbKnown && "is-unknown")}
+      />
+      <circle
+        cx="80"
+        cy="290"
+        r="4"
+        className={cn("flow-switch-node", !gcbKnown && "is-unknown")}
+      />
       <line
         x1="80"
         y1="290"

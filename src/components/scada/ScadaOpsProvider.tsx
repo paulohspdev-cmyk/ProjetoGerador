@@ -76,7 +76,10 @@ type Ctx = {
   ackAlarm: (id: string) => void;
   ackAll: (ids: string[]) => void;
   reports: ReportRow[];
-  generateReport: (input: { name: string; period: string; format: string }, gens: Generator[]) => void;
+  generateReport: (
+    input: { name: string; period: string; format: string },
+    gens: Generator[],
+  ) => void;
   downloadReport: (id: string, gens: Generator[]) => void;
   workOrders: WorkOrder[];
   setWorkOrderStatus: (id: string, status: string) => void;
@@ -204,7 +207,10 @@ export function ScadaOpsProvider({ children }: { children: ReactNode }) {
           .then((items) => {
             setState((prev) => {
               const keys = new Set(items.map((x) => x.alarmKey));
-              return { ...prev, alarmAcks: [...items, ...prev.alarmAcks.filter((x) => !keys.has(x.alarmKey))] };
+              return {
+                ...prev,
+                alarmAcks: [...items, ...prev.alarmAcks.filter((x) => !keys.has(x.alarmKey))],
+              };
             });
             notify("Alarmes reconhecidos");
           })

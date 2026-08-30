@@ -24,13 +24,9 @@ function Metric({
 }) {
   return (
     <div className="flex min-w-0 items-center gap-1 text-[10px] leading-none">
-      <span className="grid size-3 shrink-0 place-items-center text-muted-foreground">
-        {icon}
-      </span>
+      <span className="grid size-3 shrink-0 place-items-center text-muted-foreground">{icon}</span>
       <span className="min-w-0 flex-1 truncate text-muted-foreground">{label}</span>
-      <span className={cn("num shrink-0 font-semibold", tone ?? "text-foreground")}>
-        {value}
-      </span>
+      <span className={cn("num shrink-0 font-semibold", tone ?? "text-foreground")}>{value}</span>
     </div>
   );
 }
@@ -94,11 +90,7 @@ export function CompactCard({ gen }: { gen: Generator }) {
             <Metric
               icon={<IconBolt size={12} />}
               label="Frequência"
-              value={
-                freqKnown && gen.status !== "offline"
-                  ? `${fmt(gen.frequency!, 2)} Hz`
-                  : "N/D"
-              }
+              value={freqKnown && gen.status !== "offline" ? `${fmt(gen.frequency!, 2)} Hz` : "N/D"}
               tone={freqKnown && connected ? "text-online" : "text-muted-foreground"}
             />
             <Metric
@@ -111,11 +103,7 @@ export function CompactCard({ gen }: { gen: Generator }) {
               label="Manutenção"
               value={maintKnown ? `${fmt(gen.maintenance, 0)} h` : "N/D"}
             />
-            <Metric
-              icon={<Signal className="size-3" />}
-              label="Latência"
-              value={lat}
-            />
+            <Metric icon={<Signal className="size-3" />} label="Latência" value={lat} />
           </div>
         ) : (
           <p className="min-w-0 flex-1 text-[11px] leading-snug text-muted-foreground">

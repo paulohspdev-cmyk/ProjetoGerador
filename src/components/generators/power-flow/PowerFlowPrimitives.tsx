@@ -28,7 +28,13 @@ export function EngineRow({
       {icon}
       <span className="engine-label">{label}</span>
       {bar ? (
-        <span className={cn("comap-meter", !known && "is-unknown", known && pct == null && "is-unscaled")}>
+        <span
+          className={cn(
+            "comap-meter",
+            !known && "is-unknown",
+            known && pct == null && "is-unscaled",
+          )}
+        >
           <i
             style={{
               width: `${fill}%`,
@@ -82,7 +88,10 @@ export function ControllerModeBar({ gen, known }: { gen: Generator; known: boole
         ];
 
   return (
-    <div className="controller-mode-wrap" aria-label={`Modos ${vendor === "comap" ? "ComAp" : "DSE"}`}>
+    <div
+      className="controller-mode-wrap"
+      aria-label={`Modos ${vendor === "comap" ? "ComAp" : "DSE"}`}
+    >
       <div className="controller-mode-bar">
         {buttons.map((item) => (
           <button
@@ -101,17 +110,9 @@ export function ControllerModeBar({ gen, known }: { gen: Generator; known: boole
   );
 }
 
-export function PowerGaugeKw({
-  value,
-  nominal,
-}: {
-  value: number | null;
-  nominal: number | null;
-}) {
+export function PowerGaugeKw({ value, nominal }: { value: number | null; nominal: number | null }) {
   const hasScale = value != null && nominal != null && nominal > 0;
-  const pct = hasScale
-    ? Math.min(1, Math.max(0, value / nominal))
-    : 0;
+  const pct = hasScale ? Math.min(1, Math.max(0, value / nominal)) : 0;
   const angle = -130 + pct * 260;
   const rad = (angle * Math.PI) / 180;
   const cx = 120;

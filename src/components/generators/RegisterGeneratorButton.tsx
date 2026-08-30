@@ -92,7 +92,10 @@ export function RegisterGeneratorButton({
         setSite((current) => current || siteRows[0]?.name || "");
       })
       .catch((err) => {
-        if (active) setCatalogError(err instanceof Error ? err.message : "Falha ao carregar biblioteca de controladoras.");
+        if (active)
+          setCatalogError(
+            err instanceof Error ? err.message : "Falha ao carregar biblioteca de controladoras.",
+          );
       })
       .finally(() => {
         if (active) setCatalogLoading(false);
@@ -151,7 +154,10 @@ export function RegisterGeneratorButton({
     const unit = Number(modbusUnit || 1);
     const rapidDevice = rapidDeviceNum ? Number(rapidDeviceNum) : undefined;
 
-    if (transport !== "modbus_rtu_serial" && (!Number.isInteger(port) || port < 1 || port > 65535)) {
+    if (
+      transport !== "modbus_rtu_serial" &&
+      (!Number.isInteger(port) || port < 1 || port > 65535)
+    ) {
       setError("Informe uma porta TCP válida.");
       setSaving(false);
       return;
@@ -162,7 +168,11 @@ export function RegisterGeneratorButton({
       return;
     }
     if (transport !== "reverse_tcp" && !ip.trim()) {
-      setError(transport === "modbus_rtu_serial" ? "Informe o dispositivo serial, por exemplo /dev/ttyUSB0." : "Informe o IP ou hostname da controladora/gateway.");
+      setError(
+        transport === "modbus_rtu_serial"
+          ? "Informe o dispositivo serial, por exemplo /dev/ttyUSB0."
+          : "Informe o IP ou hostname da controladora/gateway.",
+      );
       setSaving(false);
       return;
     }
@@ -216,40 +226,76 @@ export function RegisterGeneratorButton({
           <DialogHeader>
             <DialogTitle>Cadastrar gerador</DialogTitle>
             <DialogDescription>
-              A controladora vem da Biblioteca RC. Cadastro e provisionamento industrial são etapas separadas; somente Controller Packs de produção podem ser provisionados no Rapid SCADA.
+              A controladora vem da Biblioteca RC. Cadastro e provisionamento industrial são etapas
+              separadas; somente Controller Packs de produção podem ser provisionados no Rapid
+              SCADA.
             </DialogDescription>
           </DialogHeader>
 
-          {catalogError && <p className="rounded-md border border-offline/40 bg-offline/10 px-3 py-2 text-[12px] text-offline">{catalogError}</p>}
+          {catalogError && (
+            <p className="rounded-md border border-offline/40 bg-offline/10 px-3 py-2 text-[12px] text-offline">
+              {catalogError}
+            </p>
+          )}
 
           <form onSubmit={onSubmit} className="grid gap-3">
             <div className="grid grid-cols-2 gap-3">
               <label className="text-[12px] font-semibold text-muted-foreground">
                 Tag
-                <input value={tag} onChange={(e) => setTag(e.target.value.toUpperCase())} placeholder={preview} className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm" />
+                <input
+                  value={tag}
+                  onChange={(e) => setTag(e.target.value.toUpperCase())}
+                  placeholder={preview}
+                  className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                />
               </label>
               <label className="text-[12px] font-semibold text-muted-foreground">
                 Site / unidade
-                <input list="rc-generator-sites" value={site} onChange={(e) => setSite(e.target.value)} placeholder="Informe a unidade" className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm" required />
-                <datalist id="rc-generator-sites">{sites.map((name) => <option key={name} value={name} />)}</datalist>
+                <input
+                  list="rc-generator-sites"
+                  value={site}
+                  onChange={(e) => setSite(e.target.value)}
+                  placeholder="Informe a unidade"
+                  className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                  required
+                />
+                <datalist id="rc-generator-sites">
+                  {sites.map((name) => (
+                    <option key={name} value={name} />
+                  ))}
+                </datalist>
               </label>
             </div>
 
             <label className="text-[12px] font-semibold text-muted-foreground">
               Controladora
-              <select value={controller} onChange={(e) => setController(e.target.value)} disabled={catalogLoading || !gensetCatalog.length} className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm">
+              <select
+                value={controller}
+                onChange={(e) => setController(e.target.value)}
+                disabled={catalogLoading || !gensetCatalog.length}
+                className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+              >
                 <option value="">{catalogLoading ? "Carregando catálogo…" : "Selecione"}</option>
                 {groupedCatalog.map(([label, items]) => (
                   <optgroup key={label} label={label}>
-                    {items.map((item) => <option key={item.catalogId || item.model} value={item.model}>{item.model}{item.provisionable ? " · PRODUÇÃO" : " · CATÁLOGO"}</option>)}
+                    {items.map((item) => (
+                      <option key={item.catalogId || item.model} value={item.model}>
+                        {item.model}
+                        {item.provisionable ? " · PRODUÇÃO" : " · CATÁLOGO"}
+                      </option>
+                    ))}
                   </optgroup>
                 ))}
               </select>
             </label>
 
             {selected && (
-              <div className={`rounded-md border px-3 py-2 text-[11px] ${selected.provisionable ? "border-online/30 bg-online/10" : "border-alert/30 bg-alert/5"}`}>
-                <p className="font-semibold">{selected.manufacturer} · {selected.family || "Família não informada"}</p>
+              <div
+                className={`rounded-md border px-3 py-2 text-[11px] ${selected.provisionable ? "border-online/30 bg-online/10" : "border-alert/30 bg-alert/5"}`}
+              >
+                <p className="font-semibold">
+                  {selected.manufacturer} · {selected.family || "Família não informada"}
+                </p>
                 <p className="mt-0.5 text-muted-foreground">
                   {selected.provisionable
                     ? `Controller Pack de produção${selected.packStatus ? ` · ${selected.packStatus}` : ""}.`
@@ -260,35 +306,80 @@ export function RegisterGeneratorButton({
 
             <label className="text-[12px] font-semibold text-muted-foreground">
               Tipo de conexão
-              <select value={transport} onChange={(e) => changeTransport(e.target.value as GeneratorTransport)} className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm">
-                {(Object.keys(transportLabels) as GeneratorTransport[]).map((value) => <option key={value} value={value}>{transportLabels[value]}</option>)}
+              <select
+                value={transport}
+                onChange={(e) => changeTransport(e.target.value as GeneratorTransport)}
+                className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+              >
+                {(Object.keys(transportLabels) as GeneratorTransport[]).map((value) => (
+                  <option key={value} value={value}>
+                    {transportLabels[value]}
+                  </option>
+                ))}
               </select>
             </label>
 
             <div className="grid grid-cols-3 gap-3">
               <label className="col-span-2 text-[12px] font-semibold text-muted-foreground">
-                {transport === "reverse_tcp" ? "IP remoto (opcional)" : transport === "modbus_rtu_serial" ? "Dispositivo serial" : "IP / hostname"}
-                <input value={ip} onChange={(e) => setIp(e.target.value)} placeholder={transport === "reverse_tcp" ? "modem conecta ao servidor" : transport === "modbus_rtu_serial" ? "/dev/ttyUSB0" : "10.50.1.130"} className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm" />
+                {transport === "reverse_tcp"
+                  ? "IP remoto (opcional)"
+                  : transport === "modbus_rtu_serial"
+                    ? "Dispositivo serial"
+                    : "IP / hostname"}
+                <input
+                  value={ip}
+                  onChange={(e) => setIp(e.target.value)}
+                  placeholder={
+                    transport === "reverse_tcp"
+                      ? "modem conecta ao servidor"
+                      : transport === "modbus_rtu_serial"
+                        ? "/dev/ttyUSB0"
+                        : "10.50.1.130"
+                  }
+                  className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                />
               </label>
               <label className="text-[12px] font-semibold text-muted-foreground">
                 Porta TCP
-                <input inputMode="numeric" value={listenPort} disabled={transport === "modbus_rtu_serial"} onChange={(e) => setListenPort(e.target.value.replace(/\D/g, ""))} placeholder={transport === "modbus_tcp_direct" ? "502" : "15001"} className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm disabled:opacity-50" />
+                <input
+                  inputMode="numeric"
+                  value={listenPort}
+                  disabled={transport === "modbus_rtu_serial"}
+                  onChange={(e) => setListenPort(e.target.value.replace(/\D/g, ""))}
+                  placeholder={transport === "modbus_tcp_direct" ? "502" : "15001"}
+                  className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm disabled:opacity-50"
+                />
               </label>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <label className="text-[12px] font-semibold text-muted-foreground">
                 Modbus Unit ID
-                <input inputMode="numeric" value={modbusUnit} onChange={(e) => setModbusUnit(e.target.value.replace(/\D/g, ""))} className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm" />
+                <input
+                  inputMode="numeric"
+                  value={modbusUnit}
+                  onChange={(e) => setModbusUnit(e.target.value.replace(/\D/g, ""))}
+                  className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                />
               </label>
               <label className="text-[12px] font-semibold text-muted-foreground">
                 Rapid Device Nº (opcional)
-                <input inputMode="numeric" value={rapidDeviceNum} onChange={(e) => setRapidDeviceNum(e.target.value.replace(/\D/g, ""))} placeholder="automático" className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm" />
+                <input
+                  inputMode="numeric"
+                  value={rapidDeviceNum}
+                  onChange={(e) => setRapidDeviceNum(e.target.value.replace(/\D/g, ""))}
+                  placeholder="automático"
+                  className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                />
               </label>
             </div>
 
             {error && <p className="text-[12px] text-offline">{error}</p>}
-            <button type="submit" disabled={saving || catalogLoading || !controller} className="mt-1 h-9 rounded-md bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-60">
+            <button
+              type="submit"
+              disabled={saving || catalogLoading || !controller}
+              className="mt-1 h-9 rounded-md bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+            >
               {saving ? "Cadastrando..." : "Cadastrar"}
             </button>
           </form>

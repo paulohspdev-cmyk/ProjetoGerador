@@ -25,17 +25,31 @@
 }
 
 @keyframes comap-energy {
-  to { stroke-dashoffset: -38; }
+  to {
+    stroke-dashoffset: -38;
+  }
 }
 
 @keyframes comap-logo {
   0%,
-  100% { box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--info) 30%, transparent), var(--glow-online); }
-  50% { box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--info) 40%, transparent), 0 0 12px color-mix(in oklab, var(--online) 70%, transparent); }
+  100% {
+    box-shadow:
+      inset 0 0 0 2px color-mix(in oklab, var(--info) 30%, transparent),
+      var(--glow-online);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 0 2px color-mix(in oklab, var(--info) 40%, transparent),
+      0 0 12px color-mix(in oklab, var(--online) 70%, transparent);
+  }
 }
 
-.comap-panel * { box-sizing: border-box; }
-.comap-panel svg { shape-rendering: geometricPrecision; }
+.comap-panel * {
+  box-sizing: border-box;
+}
+.comap-panel svg {
+  shape-rendering: geometricPrecision;
+}
 
 .comap-header {
   display: flex;
@@ -193,7 +207,9 @@
   fill: var(--comap-panel-strong);
   stroke: var(--info);
   stroke-width: 2;
-  transition: stroke 0.3s ease, filter 0.3s ease;
+  transition:
+    stroke 0.3s ease,
+    filter 0.3s ease;
 }
 
 .flow-device-circle.source-active {
@@ -201,7 +217,9 @@
   filter: drop-shadow(0 0 5px color-mix(in oklab, var(--comap-online) 60%, transparent));
 }
 
-.flow-generator-circle { stroke-width: 2.6; }
+.flow-generator-circle {
+  stroke-width: 2.6;
+}
 
 .flow-device-icon {
   fill: none;
@@ -211,7 +229,9 @@
   stroke-linejoin: round;
 }
 
-.flow-device-icon.tower-icon { stroke-width: 1.8; }
+.flow-device-icon.tower-icon {
+  stroke-width: 1.8;
+}
 
 .flow-generator-letter {
   fill: var(--comap-text);
@@ -243,7 +263,9 @@
   animation: comap-energy 0.7s linear infinite;
 }
 
-.flow-bus-dash.is-reverse { animation-direction: reverse; }
+.flow-bus-dash.is-reverse {
+  animation-direction: reverse;
+}
 
 .flow-switch-node {
   fill: color-mix(in oklab, var(--comap-border) 70%, var(--comap-panel));
@@ -322,7 +344,10 @@
 }
 
 .comap-start:disabled,
-.comap-stop:disabled { cursor: not-allowed; opacity: 0.55; }
+.comap-stop:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
 
 .comap-engine {
   display: grid;
@@ -388,7 +413,9 @@
   text-transform: uppercase;
 }
 
-.comap-table-head span:first-child { text-align: left; }
+.comap-table-head span:first-child {
+  text-align: left;
+}
 
 .comap-table-row {
   min-height: 18px;
@@ -397,7 +424,9 @@
   font-weight: 700;
 }
 
-.comap-table-row:last-child { border-bottom: 0; }
+.comap-table-row:last-child {
+  border-bottom: 0;
+}
 
 .comap-table-row .label {
   overflow: hidden;
@@ -452,7 +481,9 @@
   min-height: 520px;
 }
 
-.comap-detail .comap-title { font-size: 13px; }
+.comap-detail .comap-title {
+  font-size: 13px;
+}
 
 .mode-switch {
   display: flex;
@@ -518,7 +549,9 @@
   letter-spacing: -0.03em;
 }
 
-.comap-kpi strong.dim { color: var(--comap-muted); }
+.comap-kpi strong.dim {
+  color: var(--comap-muted);
+}
 
 .fuel-tank {
   display: grid;
@@ -552,9 +585,17 @@
   font-size: 13px;
 }
 
-.detail-row:last-child { border-bottom: 0; }
-.detail-row dt { color: var(--comap-muted); }
-.detail-row dd { margin: 0; color: var(--comap-text); font-weight: 700; }
+.detail-row:last-child {
+  border-bottom: 0;
+}
+.detail-row dt {
+  color: var(--comap-muted);
+}
+.detail-row dd {
+  margin: 0;
+  color: var(--comap-text);
+  font-weight: 700;
+}
 
 .alarm-item {
   min-height: 36px;
@@ -568,7 +609,9 @@
   font-size: 12px;
 }
 
-.alarm-item + .alarm-item { border-top: 0; }
+.alarm-item + .alarm-item {
+  border-top: 0;
+}
 
 .alarm-item.warning {
   border-color: color-mix(in oklab, var(--comap-alert) 60%, var(--comap-border));
@@ -582,10 +625,14 @@
   background: var(--comap-offline);
 }
 
-.alarm-item.warning .alarm-dot { background: var(--comap-alert); }
+.alarm-item.warning .alarm-dot {
+  background: var(--comap-alert);
+}
 
 @media (max-width: 640px) {
-  .comap-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .comap-kpi-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

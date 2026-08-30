@@ -125,10 +125,7 @@ export function GeneratorDetailOverview({
             <MetricCell label="L2-N" value={formatMetric(mainsL2, "V", 0)} />
             <MetricCell label="L3-N" value={formatMetric(mainsL3, "V", 0)} />
             <MetricCell label="L1-L2" value={formatMetric(mainsL12, "V", 0)} />
-            <MetricCell
-              label="MCB"
-              value={mcbKnown ? (gen.mcb ? "FECHADO" : "ABERTO") : "N/D"}
-            />
+            <MetricCell label="MCB" value={mcbKnown ? (gen.mcb ? "FECHADO" : "ABERTO") : "N/D"} />
             <MetricCell label="Fonte" value={mainsKnown ? "Rapid SCADA" : "N/D"} />
           </div>
           <div className="gen-phase">

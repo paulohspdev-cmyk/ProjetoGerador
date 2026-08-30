@@ -40,9 +40,7 @@ export function GeneratorDetailPowerFlow({
   return (
     <section className="comap-panel gen-flow">
       <header className="comap-header">
-        <span className={cn("comap-logo", running === true ? "online" : "offline")}>
-          G
-        </span>
+        <span className={cn("comap-logo", running === true ? "online" : "offline")}>G</span>
         <h3 className="comap-name">Power Flow</h3>
         <span className="comap-mode">MODE: {modeLabel}</span>
       </header>

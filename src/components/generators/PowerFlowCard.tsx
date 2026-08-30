@@ -16,10 +16,7 @@ import {
   hasMetric,
   metricNumber,
 } from "./generator-metrics";
-import {
-  hasPositiveMeasurement,
-  isPositiveMeasurement,
-} from "./generator-presence";
+import { hasPositiveMeasurement, isPositiveMeasurement } from "./generator-presence";
 import { PowerFlowSld } from "./power-flow/PowerFlowDiagram";
 import {
   BreakerControl,
@@ -92,8 +89,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
 
   const ig200Homologated =
     gen.controller.trim().toLowerCase() === "inteligen 200" && Number(gen.rapidDeviceNum) > 0;
-  const canOperate =
-    can("operate") && ig200Homologated && gen.status !== "nao_configurado";
+  const canOperate = can("operate") && ig200Homologated && gen.status !== "nao_configurado";
 
   const runCommand = async (action: "start" | "stop") => {
     const label = action.toUpperCase();
@@ -105,9 +101,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       setCommandMessage(result.reason || `${label} aceito pelo caminho homologado.`);
       await refresh();
     } catch (error) {
-      setCommandMessage(
-        error instanceof Error ? error.message : `Falha no comando ${label}.`,
-      );
+      setCommandMessage(error instanceof Error ? error.message : `Falha no comando ${label}.`);
     } finally {
       setCommandBusy(null);
     }
@@ -117,13 +111,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     ["L1-N Voltage", "mains_voltage_l1", gen.mains.l1, "voltage_l1", gen.gen.l1],
     ["L2-N Voltage", "mains_voltage_l2", gen.mains.l2, "voltage_l2", gen.gen.l2],
     ["L3-N Voltage", "mains_voltage_l3", gen.mains.l3, "voltage_l3", gen.gen.l3],
-    [
-      "L1-L2 Voltage",
-      "mains_voltage_l1_l2",
-      gen.mains.l12,
-      "voltage_l1_l2",
-      gen.gen.l12,
-    ],
+    ["L1-L2 Voltage", "mains_voltage_l1_l2", gen.mains.l12, "voltage_l1_l2", gen.gen.l12],
   ] as const;
 
   return (
@@ -303,9 +291,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
             <span className="mains">
               {formatGeneratorMetric(gen, mainsKey, mainsValue, "V", 0)}
             </span>
-            <span className="gen">
-              {formatGeneratorMetric(gen, genKey, genValue, "V", 0)}
-            </span>
+            <span className="gen">{formatGeneratorMetric(gen, genKey, genValue, "V", 0)}</span>
           </div>
         ))}
         {!mainsKnown && !genVoltageKnown && (

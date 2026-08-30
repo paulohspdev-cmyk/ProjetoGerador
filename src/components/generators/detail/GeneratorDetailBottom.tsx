@@ -23,17 +23,7 @@ export function GeneratorDetailBottom({
   trendLoading: boolean;
   trendError: string;
 }) {
-  const {
-    available,
-    comm,
-    rpm,
-    frequency,
-    genL1,
-    genL12,
-    mainsKnown,
-    mcbKnown,
-    gcbKnown,
-  } = model;
+  const { available, comm, rpm, frequency, genL1, genL12, mainsKnown, mcbKnown, gcbKnown } = model;
 
   return (
     <div className="gen-bottom">
@@ -59,9 +49,7 @@ export function GeneratorDetailBottom({
           )}
           {events.slice(0, 8).map((event) => (
             <div key={event.id} className="gen-log">
-              <span>
-                {new Date(event.created_at * 1000).toLocaleTimeString("pt-BR")}
-              </span>
+              <span>{new Date(event.created_at * 1000).toLocaleTimeString("pt-BR")}</span>
               <b>{event.message}</b>
             </div>
           ))}
@@ -126,7 +114,8 @@ export function GeneratorDetailBottom({
           <div>
             <span>MCB / GCB</span>
             <b>
-              {mcbKnown ? (gen.mcb ? "I" : "O") : "N/D"} / {gcbKnown ? (gen.gcb ? "I" : "O") : "N/D"}
+              {mcbKnown ? (gen.mcb ? "I" : "O") : "N/D"} /{" "}
+              {gcbKnown ? (gen.gcb ? "I" : "O") : "N/D"}
             </b>
           </div>
           <div>

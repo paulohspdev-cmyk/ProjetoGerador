@@ -13,8 +13,21 @@ function Svg({
   children,
 }: IconProps & { children: ReactNode }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" className={className} aria-hidden style={color ? { color } : undefined}>
-      <g fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinejoin="round" strokeLinecap="round">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      className={className}
+      aria-hidden
+      style={color ? { color } : undefined}
+    >
+      <g
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.65"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      >
         {children}
       </g>
     </svg>

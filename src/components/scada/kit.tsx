@@ -1,6 +1,14 @@
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 import { cn } from "@/lib/utils";
 import { useScadaOps } from "./ScadaOpsProvider";
@@ -33,7 +41,10 @@ export function Stats({ items }: { items: StatItem[] }) {
       )}
     >
       {items.map((c) => (
-        <div key={c.label} className="flex min-w-0 items-center gap-2 rounded-lg border border-border bg-card p-2.5">
+        <div
+          key={c.label}
+          className="flex min-w-0 items-center gap-2 rounded-lg border border-border bg-card p-2.5"
+        >
           {c.icon && (
             <span className="grid size-8 shrink-0 place-items-center rounded-md bg-secondary">
               <c.icon className={cn("size-4", c.tone ?? "text-primary")} />
@@ -41,7 +52,9 @@ export function Stats({ items }: { items: StatItem[] }) {
           )}
           <div className="min-w-0">
             <p className="truncate text-[11px] text-muted-foreground">{c.label}</p>
-            <p className={cn("num break-words text-lg font-bold leading-tight", c.tone)}>{c.value}</p>
+            <p className={cn("num break-words text-lg font-bold leading-tight", c.tone)}>
+              {c.value}
+            </p>
             {c.sub && <p className="truncate text-[10px] text-muted-foreground">{c.sub}</p>}
           </div>
         </div>
@@ -62,9 +75,13 @@ export function Panel({
   className?: string | undefined;
 }) {
   return (
-    <section className={cn("min-w-0 overflow-hidden rounded-lg border border-border bg-card", className)}>
+    <section
+      className={cn("min-w-0 overflow-hidden rounded-lg border border-border bg-card", className)}
+    >
       <header className="flex min-w-0 flex-wrap items-center justify-between gap-2 border-b border-border px-2.5 py-2 sm:px-3">
-        <h2 className="min-w-0 break-words text-[12px] font-bold uppercase tracking-wider text-muted-foreground">{title}</h2>
+        <h2 className="min-w-0 break-words text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
+          {title}
+        </h2>
         {actions && <div className="scroll-slim max-w-full overflow-x-auto">{actions}</div>}
       </header>
       <div className="min-w-0 p-2.5 sm:p-3">{children}</div>
@@ -104,7 +121,12 @@ export function Pill({
     muted: "border-border bg-secondary text-muted-foreground",
   };
   return (
-    <span className={cn("num inline-flex max-w-full rounded-sm border px-1.5 py-0.5 text-[10px] font-bold", map[tone])}>
+    <span
+      className={cn(
+        "num inline-flex max-w-full rounded-sm border px-1.5 py-0.5 text-[10px] font-bold",
+        map[tone],
+      )}
+    >
       {children}
     </span>
   );
@@ -169,10 +191,21 @@ export function Trend({
           <XAxis dataKey="t" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} />
           <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} width={36} />
           <Tooltip
-            contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", fontSize: 12 }}
+            contentStyle={{
+              background: "var(--card)",
+              border: "1px solid var(--border)",
+              fontSize: 12,
+            }}
             formatter={(v: number) => [`${v}${unit ? ` ${unit}` : ""}`, "Valor"]}
           />
-          <Area type="monotone" dataKey="v" stroke={color} fill={color} fillOpacity={0.18} strokeWidth={2} />
+          <Area
+            type="monotone"
+            dataKey="v"
+            stroke={color}
+            fill={color}
+            fillOpacity={0.18}
+            strokeWidth={2}
+          />
         </AreaChart>
       </ResponsiveContainer>
     </div>

@@ -1,14 +1,7 @@
 import type { Generator } from "@/data/generators";
 
-import {
-  displayGeneratorName,
-  hasMetric,
-  metricNumber,
-} from "../generator-metrics";
-import {
-  hasPositiveMeasurement,
-  isPositiveMeasurement,
-} from "../generator-presence";
+import { displayGeneratorName, hasMetric, metricNumber } from "../generator-metrics";
+import { hasPositiveMeasurement, isPositiveMeasurement } from "../generator-presence";
 
 export type GeneratorDetailModel = ReturnType<typeof buildGeneratorDetailModel>;
 
@@ -49,11 +42,8 @@ export function buildGeneratorDetailModel(gen: Generator) {
   const modeKnown = hasMetric(gen, "controller_mode_raw");
   const mcb = mcbKnown && gen.mcb;
   const gcb = gcbKnown && gen.gcb;
-  const mainsKnown = [mainsL1, mainsL2, mainsL3, mainsL12].some(
-    (value) => value != null,
-  );
-  const mainsOk =
-    mainsKnown && hasPositiveMeasurement([mainsL1, mainsL2, mainsL3, mainsL12]);
+  const mainsKnown = [mainsL1, mainsL2, mainsL3, mainsL12].some((value) => value != null);
+  const mainsOk = mainsKnown && hasPositiveMeasurement([mainsL1, mainsL2, mainsL3, mainsL12]);
   const modeLabel = modeKnown ? gen.mode : "N/D";
 
   return {

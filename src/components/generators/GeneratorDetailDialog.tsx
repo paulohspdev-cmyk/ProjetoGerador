@@ -8,11 +8,7 @@ import {
 } from "@/components/ui/dialog";
 
 import { StatusPill } from "./StatusPill";
-import {
-  displayGeneratorName,
-  formatGeneratorMetric,
-  hasMetric,
-} from "./generator-metrics";
+import { displayGeneratorName, formatGeneratorMetric, hasMetric } from "./generator-metrics";
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -46,27 +42,12 @@ export function GeneratorDetailDialog({
         <div className="space-y-1">
           <Row label="Controladora" value={gen.controller || "N/D"} />
           <Row label="Site" value={gen.site || "N/D"} />
-          <Row
-            label="Modo"
-            value={hasMetric(gen, "controller_mode_raw") ? gen.mode : "N/D"}
-          />
+          <Row label="Modo" value={hasMetric(gen, "controller_mode_raw") ? gen.mode : "N/D"} />
           <Row label="Endpoint" value={gen.ip || "N/D"} />
-          <Row
-            label="Latência"
-            value={gen.latency != null ? `${gen.latency} ms` : "N/D"}
-          />
-          <Row
-            label="Alarmes"
-            value={hasMetric(gen, "alarm_count") ? String(gen.alarms) : "N/D"}
-          />
-          <Row
-            label="Carga"
-            value={formatGeneratorMetric(gen, "power_kw", gen.load, "kW", 1)}
-          />
-          <Row
-            label="RPM"
-            value={formatGeneratorMetric(gen, "rpm", gen.rpm, "rpm", 0)}
-          />
+          <Row label="Latência" value={gen.latency != null ? `${gen.latency} ms` : "N/D"} />
+          <Row label="Alarmes" value={hasMetric(gen, "alarm_count") ? String(gen.alarms) : "N/D"} />
+          <Row label="Carga" value={formatGeneratorMetric(gen, "power_kw", gen.load, "kW", 1)} />
+          <Row label="RPM" value={formatGeneratorMetric(gen, "rpm", gen.rpm, "rpm", 0)} />
           <Row
             label="Frequência"
             value={formatGeneratorMetric(gen, "frequency", gen.frequency, "Hz", 2)}
@@ -101,23 +82,11 @@ export function GeneratorDetailDialog({
           />
           <Row
             label="MCB"
-            value={
-              hasMetric(gen, "mcb_closed")
-                ? gen.mcb
-                  ? "Fechado"
-                  : "Aberto"
-                : "N/D"
-            }
+            value={hasMetric(gen, "mcb_closed") ? (gen.mcb ? "Fechado" : "Aberto") : "N/D"}
           />
           <Row
             label="GCB"
-            value={
-              hasMetric(gen, "gcb_closed")
-                ? gen.gcb
-                  ? "Fechado"
-                  : "Aberto"
-                : "N/D"
-            }
+            value={hasMetric(gen, "gcb_closed") ? (gen.gcb ? "Fechado" : "Aberto") : "N/D"}
           />
         </div>
       </DialogContent>

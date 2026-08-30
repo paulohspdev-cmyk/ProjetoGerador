@@ -8,7 +8,12 @@ export function RpmGauge({ value, max = 4000 }: Props) {
 
   return (
     <svg viewBox="0 2 220 172" className="rpm-svg" aria-label="RPM" overflow="visible">
-      <path className="gauge-bg" pathLength="100" strokeWidth="16" d={`M25 ${cy} A85 85 0 0 1 195 ${cy}`} />
+      <path
+        className="gauge-bg"
+        pathLength="100"
+        strokeWidth="16"
+        d={`M25 ${cy} A85 85 0 0 1 195 ${cy}`}
+      />
       <path
         className="gauge-zone gauge-green"
         pathLength="100"
@@ -60,7 +65,13 @@ export function RpmGauge({ value, max = 4000 }: Props) {
           />
         ))}
       </g>
-      <path d={`M84 ${cy} A26 26 0 0 1 136 ${cy}`} fill="none" stroke="#ffffff" strokeWidth="2" opacity="0.5" />
+      <path
+        d={`M84 ${cy} A26 26 0 0 1 136 ${cy}`}
+        fill="none"
+        stroke="#ffffff"
+        strokeWidth="2"
+        opacity="0.5"
+      />
       <g
         className="needle"
         style={{
@@ -68,7 +79,10 @@ export function RpmGauge({ value, max = 4000 }: Props) {
           transform: `rotate(${angle}deg)`,
         }}
       >
-        <path className="rpm-needle-floating" d={`M ${cx} ${cy - 74} L ${cx + 5} ${cy - 31} A 5 5 0 1 1 ${cx - 5} ${cy - 31} Z`} />
+        <path
+          className="rpm-needle-floating"
+          d={`M ${cx} ${cy - 74} L ${cx + 5} ${cy - 31} A 5 5 0 1 1 ${cx - 5} ${cy - 31} Z`}
+        />
       </g>
       <g className="rpm-readout">
         <text x={cx} y={cy + 22} textAnchor="middle" className="rpm-unit">

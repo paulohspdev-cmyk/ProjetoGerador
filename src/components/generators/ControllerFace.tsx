@@ -34,8 +34,26 @@ export function ControllerFace({ model, live = false, className }: Props) {
         </filter>
       </defs>
 
-      <rect x="2" y="2" width="84" height="104" rx="7" fill={`url(#${body})`} stroke="#5b6572" strokeWidth="1.2" />
-      <rect x="6" y="6" width="76" height="96" rx="5" fill="#0e1218" stroke={`url(#${bezel})`} strokeWidth="0.8" />
+      <rect
+        x="2"
+        y="2"
+        width="84"
+        height="104"
+        rx="7"
+        fill={`url(#${body})`}
+        stroke="#5b6572"
+        strokeWidth="1.2"
+      />
+      <rect
+        x="6"
+        y="6"
+        width="76"
+        height="96"
+        rx="5"
+        fill="#0e1218"
+        stroke={`url(#${bezel})`}
+        strokeWidth="0.8"
+      />
 
       <rect x="12" y="12" width="64" height="34" rx="3" fill="#07140b" stroke="#2c3832" />
       {live && (
@@ -51,13 +69,32 @@ export function ControllerFace({ model, live = false, className }: Props) {
         />
       )}
       <rect x="14" y="14" width="60" height="30" rx="2" fill="#08150c" />
-      <text x="18" y="26" fill={live ? lcd : "#3d5a44"} fontSize="6.5" fontFamily="ui-monospace, monospace" fontWeight="700">
+      <text
+        x="18"
+        y="26"
+        fill={live ? lcd : "#3d5a44"}
+        fontSize="6.5"
+        fontFamily="ui-monospace, monospace"
+        fontWeight="700"
+      >
         {label.slice(0, 10)}
       </text>
-      <text x="18" y="36" fill={live ? lcd : "#2f4a38"} fontSize="5.5" fontFamily="ui-monospace, monospace">
+      <text
+        x="18"
+        y="36"
+        fill={live ? lcd : "#2f4a38"}
+        fontSize="5.5"
+        fontFamily="ui-monospace, monospace"
+      >
         {live ? "AUTO  RUN" : "STOPPED"}
       </text>
-      <text x="54" y="36" fill={live ? lcd : "#2f4a38"} fontSize="5.5" fontFamily="ui-monospace, monospace">
+      <text
+        x="54"
+        y="36"
+        fill={live ? lcd : "#2f4a38"}
+        fontSize="5.5"
+        fontFamily="ui-monospace, monospace"
+      >
         {live ? "60Hz" : "0Hz"}
       </text>
 
@@ -78,7 +115,14 @@ export function ControllerFace({ model, live = false, className }: Props) {
         <rect x="63" y="75" width="13" height="10" rx="2" />
       </g>
 
-      <circle cx="29" cy="96" r="6.2" fill={live ? "#16a34a" : "#14532d"} stroke="#4ade80" strokeWidth="0.7" />
+      <circle
+        cx="29"
+        cy="96"
+        r="6.2"
+        fill={live ? "#16a34a" : "#14532d"}
+        stroke="#4ade80"
+        strokeWidth="0.7"
+      />
       <circle cx="59" cy="96" r="6.2" fill="#7f1d1d" stroke="#f87171" strokeWidth="0.7" />
       <text x="29" y="98" textAnchor="middle" fill="#ecfdf5" fontSize="5" fontWeight="700">
         I

@@ -6,7 +6,11 @@ import { ApiV3Screen } from "./ApiV3Screen";
 import { SchedulesV3Screen } from "./SchedulesV3Screen";
 import { EmailV3Screen, WhatsAppV3Screen } from "./IntegrationsV3Screens";
 import { ErpBmsLifecycleScreen } from "./ErpBmsLifecycleScreen";
-import { IndustrialAlarmsScreen, ProcessHistoryScreen, EscalationV3Screen } from "./IndustrialOpsScreens";
+import {
+  IndustrialAlarmsScreen,
+  ProcessHistoryScreen,
+  EscalationV3Screen,
+} from "./IndustrialOpsScreens";
 import { MaintenanceHubScreen } from "./MaintenanceHubScreen";
 import { AgendaV3Screen } from "./AgendaV3Screen";
 import { SystemSettingsV3Screen } from "./SystemSettingsV3Screen";

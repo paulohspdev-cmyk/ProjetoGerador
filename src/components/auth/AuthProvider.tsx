@@ -21,7 +21,12 @@ type AuthContextValue = {
   logout: () => Promise<void>;
   can: (perm: Permission) => boolean;
   refreshUsers: () => Promise<void>;
-  createUser: (input: { name: string; email: string; password: string; role: UserRole }) => Promise<string | null>;
+  createUser: (input: {
+    name: string;
+    email: string;
+    password: string;
+    role: UserRole;
+  }) => Promise<string | null>;
   updateUser: (id: string, patch: UserPatch) => Promise<string | null>;
   removeUser: (id: string) => Promise<string | null>;
 };
@@ -104,7 +109,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const createUser = useCallback(
     async (input: { name: string; email: string; password: string; role: UserRole }) => {
-      if (!user || !canRole(user.role, "manageUsers")) return "Sem permissão para cadastrar usuários.";
+      if (!user || !canRole(user.role, "manageUsers"))
+        return "Sem permissão para cadastrar usuários.";
       try {
         await rcApi.users.create(input);
         await refreshUsers();
@@ -133,7 +139,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const removeUser = useCallback(
     async (id: string) => {
-      if (!user || !canRole(user.role, "manageUsers")) return "Sem permissão para excluir usuários.";
+      if (!user || !canRole(user.role, "manageUsers"))
+        return "Sem permissão para excluir usuários.";
       try {
         await rcApi.users.remove(id);
         await refreshUsers();
@@ -146,7 +153,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ ready, user, users, login, logout, can, refreshUsers, createUser, updateUser, removeUser }),
+    () => ({
+      ready,
+      user,
+      users,
+      login,
+      logout,
+      can,
+      refreshUsers,
+      createUser,
+      updateUser,
+      removeUser,
+    }),
     [ready, user, users, login, logout, can, refreshUsers, createUser, updateUser, removeUser],
   );
 

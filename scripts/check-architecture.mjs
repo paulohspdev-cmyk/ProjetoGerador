@@ -45,7 +45,9 @@ for (const file of walk(join(root, "src/components"))) {
 
 const legacyAssetShim = join(root, "src/data/controller-images.ts");
 if (existsSync(legacyAssetShim)) {
-  failures.push("shim legado src/data/controller-images.ts ainda existe; assets devem vir de @/assets");
+  failures.push(
+    "shim legado src/data/controller-images.ts ainda existe; assets devem vir de @/assets",
+  );
 }
 
 for (const file of walk(join(root, "src"))) {

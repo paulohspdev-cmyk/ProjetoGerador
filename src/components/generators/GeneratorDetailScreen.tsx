@@ -27,8 +27,7 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
   const [message, setMessage] = useState<string | null>(null);
 
   const model = useMemo(() => buildGeneratorDetailModel(gen), [gen]);
-  const { events, eventError, trend, trendError, trendLoading } =
-    useGeneratorDetailData(gen);
+  const { events, eventError, trend, trendError, trendLoading } = useGeneratorDetailData(gen);
 
   const command = async (action: "start" | "stop") => {
     if (!can("operate")) {
@@ -41,16 +40,10 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
     setMessage(null);
     try {
       const result = await rcApi.generators.command(gen.id, action);
-      setMessage(
-        result.reason || `${action.toUpperCase()} aceito pelo caminho homologado.`,
-      );
+      setMessage(result.reason || `${action.toUpperCase()} aceito pelo caminho homologado.`);
       await refresh();
     } catch (error) {
-      setMessage(
-        error instanceof Error
-          ? error.message
-          : "Falha ao executar comando homologado.",
-      );
+      setMessage(error instanceof Error ? error.message : "Falha ao executar comando homologado.");
     } finally {
       setCommandBusy(null);
     }

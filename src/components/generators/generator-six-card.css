@@ -173,7 +173,9 @@
   font-size: 0;
 }
 
-.generator-six-card-grid .kw-gauge-svg[aria-label="Potência indisponível"] + .kw-gauge-value::after {
+.generator-six-card-grid
+  .kw-gauge-svg[aria-label="Potência indisponível"]
+  + .kw-gauge-value::after {
   content: "0";
   font-size: 31px;
   font-weight: 900;

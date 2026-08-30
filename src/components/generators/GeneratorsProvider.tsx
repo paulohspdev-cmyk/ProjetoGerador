@@ -88,7 +88,8 @@ export function GeneratorsProvider({ children }: { children: ReactNode }) {
       if (!site) return "Informe o site.";
       const tag = (input.tag?.trim() || "").toUpperCase();
       if (!tag) return "Informe a tag.";
-      if (generators.some((g) => g.tag.toUpperCase() === tag)) return "Já existe um gerador com esta tag.";
+      if (generators.some((g) => g.tag.toUpperCase() === tag))
+        return "Já existe um gerador com esta tag.";
 
       try {
         const ip = input.ip?.trim();

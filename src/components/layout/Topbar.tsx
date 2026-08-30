@@ -55,12 +55,19 @@ export function Topbar({ breadcrumb = [], title, tools, search, back }: Props) {
         ) : (
           <div className="flex min-w-0 shrink items-center gap-1">
             {breadcrumb.slice(0, -1).map((b) => (
-              <span key={b} className="hidden min-w-0 items-center gap-1 text-[10px] text-muted-foreground sm:flex">
+              <span
+                key={b}
+                className="hidden min-w-0 items-center gap-1 text-[10px] text-muted-foreground sm:flex"
+              >
                 <span className="truncate">{b}</span>
                 <ChevronRight className="size-3 shrink-0" />
               </span>
             ))}
-            {title && <h1 className="max-w-[38vw] truncate text-sm font-bold tracking-tight sm:max-w-none">{title}</h1>}
+            {title && (
+              <h1 className="max-w-[38vw] truncate text-sm font-bold tracking-tight sm:max-w-none">
+                {title}
+              </h1>
+            )}
           </div>
         )}
 
@@ -127,7 +134,9 @@ export function Topbar({ breadcrumb = [], title, tools, search, back }: Props) {
             </div>
             <div className="hidden leading-tight md:block">
               <p className="max-w-32 truncate text-[11px] font-semibold">{user?.name ?? "—"}</p>
-              <p className="text-[9px] text-muted-foreground">{user ? ROLE_LABEL[user.role] : ""}</p>
+              <p className="text-[9px] text-muted-foreground">
+                {user ? ROLE_LABEL[user.role] : ""}
+              </p>
             </div>
             <button
               type="button"

@@ -69,7 +69,9 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
             }}
             className={cn(
               "flex h-7 items-center gap-1 rounded-[4px] px-2 text-[11px] font-semibold transition-colors",
-              view === v.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+              view === v.id
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             <v.icon className="size-3.5" />
@@ -135,7 +137,12 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
         }}
       />
 
-      <div className={cn("flex min-h-0 min-w-0 flex-1 flex-col gap-1 overflow-hidden p-1", showKpis && "p-2 sm:p-3")}>
+      <div
+        className={cn(
+          "flex min-h-0 min-w-0 flex-1 flex-col gap-1 overflow-hidden p-1",
+          showKpis && "p-2 sm:p-3",
+        )}
+      >
         {showKpis && <KpiStrip />}
 
         <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
@@ -145,7 +152,9 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
                 <PowerFlowCard key={g.id} gen={g} />
               ))}
               {visible.length === 0 && (
-                <p className="col-span-full p-6 text-sm text-muted-foreground">Nenhum gerador encontrado.</p>
+                <p className="col-span-full p-6 text-sm text-muted-foreground">
+                  Nenhum gerador encontrado.
+                </p>
               )}
             </div>
           )}

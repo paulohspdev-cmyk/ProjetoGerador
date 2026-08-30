@@ -97,9 +97,14 @@ export function OperationalMap() {
   const sites = useMemo<SiteMapRow[]>(
     () =>
       siteRows
-        .filter((site): site is OpsSite & { lat: number; lng: number } => site.lat != null && site.lng != null)
+        .filter(
+          (site): site is OpsSite & { lat: number; lng: number } =>
+            site.lat != null && site.lng != null,
+        )
         .map((site) => {
-          const gens = generators.filter((g) => g.site.trim().toLowerCase() === site.name.trim().toLowerCase());
+          const gens = generators.filter(
+            (g) => g.site.trim().toLowerCase() === site.name.trim().toLowerCase(),
+          );
           return {
             ...site,
             gens,
@@ -146,7 +151,8 @@ export function OperationalMap() {
     if (!ready || !ctx) return;
     ctx.tiles?.remove();
     ctx.tiles = ctx.L.tileLayer(tileUrl(theme), {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
       subdomains: "abcd",
     }).addTo(ctx.map);
   }, [ready, theme]);
@@ -180,7 +186,11 @@ export function OperationalMap() {
 
   return (
     <div className="relative h-full min-h-0 w-full">
-      {!ready && <div className="absolute inset-0 z-[500] grid place-items-center bg-panel text-sm text-muted-foreground">Carregando mapa…</div>}
+      {!ready && (
+        <div className="absolute inset-0 z-[500] grid place-items-center bg-panel text-sm text-muted-foreground">
+          Carregando mapa…
+        </div>
+      )}
       {ready && sites.length === 0 && (
         <div className="pointer-events-none absolute left-1/2 top-4 z-[600] -translate-x-1/2 rounded-md border border-border bg-card/95 px-3 py-2 text-xs text-muted-foreground shadow">
           {error || "Nenhum site possui latitude/longitude cadastradas."}

@@ -30,9 +30,7 @@ export function GeneratorDetailElectrical({
       <section className="gen-card gen-elec">
         <header className="gen-card-head">
           <h2>Elétrica do gerador</h2>
-          <span className="num text-[11px] font-bold">
-            {formatMetric(frequency, "Hz", 2)}
-          </span>
+          <span className="num text-[11px] font-bold">{formatMetric(frequency, "Hz", 2)}</span>
         </header>
         <div className="gen-metrics gen-metrics-3">
           <MetricCell label="L1-N" value={formatMetric(genL1, "V", 0)} />
@@ -41,10 +39,7 @@ export function GeneratorDetailElectrical({
           <MetricCell label="L1-L2" value={formatMetric(genL12, "V", 0)} />
           <MetricCell label="Frequência" value={formatMetric(frequency, "Hz", 2)} />
           <MetricCell label="Potência" value={formatMetric(load, "kW", 0)} />
-          <MetricCell
-            label="GCB"
-            value={gcbKnown ? (gen.gcb ? "FECHADO" : "ABERTO") : "N/D"}
-          />
+          <MetricCell label="GCB" value={gcbKnown ? (gen.gcb ? "FECHADO" : "ABERTO") : "N/D"} />
           <MetricCell label="RPM" value={formatMetric(rpm, "rpm", 0)} />
           <MetricCell
             label="Fonte"
@@ -70,10 +65,7 @@ export function GeneratorDetailElectrical({
           <h3>Horas para manutenção</h3>
           <strong className="num">{formatMetric(maintenance, "h", 0)}</strong>
         </header>
-        <div
-          className="maint-track is-unscaled"
-          aria-label="Sem escala percentual homologada"
-        />
+        <div className="maint-track is-unscaled" aria-label="Sem escala percentual homologada" />
         <p>
           {maintenance == null
             ? "Canal não homologado neste Controller Pack"

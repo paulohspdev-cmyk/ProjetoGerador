@@ -108,8 +108,15 @@ export type GeneratorLifecycle = {
 
 export const industrialApi = {
   alarms: {
-    list: (activeOnly = true) => request<IndustrialAlarm[]>(`/api/industrial/alarms?activeOnly=${activeOnly ? "true" : "false"}`),
-    ack: (alarmKey: string) => request<IndustrialAlarm>("/api/industrial/alarms/ack", { method: "POST", body: JSON.stringify({ alarmKey }) }),
+    list: (activeOnly = true) =>
+      request<IndustrialAlarm[]>(
+        `/api/industrial/alarms?activeOnly=${activeOnly ? "true" : "false"}`,
+      ),
+    ack: (alarmKey: string) =>
+      request<IndustrialAlarm>("/api/industrial/alarms/ack", {
+        method: "POST",
+        body: JSON.stringify({ alarmKey }),
+      }),
   },
   processEvents: {
     list: (limit = 500, generatorId = "", severity = "") => {
@@ -121,20 +128,102 @@ export const industrialApi = {
   },
   maintenance: {
     list: () => request<MaintenancePlan[]>("/api/industrial/maintenance"),
-    history: (planId = "") => request<MaintenanceHistory[]>(`/api/industrial/maintenance-history${planId ? `?planId=${encodeURIComponent(planId)}` : ""}`),
-    create: (payload: { generatorId?: string; assetId?: string; name: string; kind?: string; intervalHours?: number; intervalDays?: number; warningHours?: number; warningDays?: number; lastServiceHours?: number; notes?: string }) => request<MaintenancePlan>("/api/industrial/maintenance", { method: "POST", body: JSON.stringify(payload) }),
-    update: (id: string, payload: Partial<{ name: string; kind: string; intervalHours: number; intervalDays: number; warningHours: number; warningDays: number; notes: string; enabled: boolean }>) => request<MaintenancePlan>(`/api/industrial/maintenance/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(payload) }),
-    complete: (id: string, servicedHours?: number, notes = "") => request<MaintenancePlan>(`/api/industrial/maintenance/${encodeURIComponent(id)}/complete`, { method: "POST", body: JSON.stringify({ ...(servicedHours != null ? { servicedHours } : {}), notes }) }),
+    history: (planId = "") =>
+      request<MaintenanceHistory[]>(
+        `/api/industrial/maintenance-history${planId ? `?planId=${encodeURIComponent(planId)}` : ""}`,
+      ),
+    create: (payload: {
+      generatorId?: string;
+      assetId?: string;
+      name: string;
+      kind?: string;
+      intervalHours?: number;
+      intervalDays?: number;
+      warningHours?: number;
+      warningDays?: number;
+      lastServiceHours?: number;
+      notes?: string;
+    }) =>
+      request<MaintenancePlan>("/api/industrial/maintenance", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    update: (
+      id: string,
+      payload: Partial<{
+        name: string;
+        kind: string;
+        intervalHours: number;
+        intervalDays: number;
+        warningHours: number;
+        warningDays: number;
+        notes: string;
+        enabled: boolean;
+      }>,
+    ) =>
+      request<MaintenancePlan>(`/api/industrial/maintenance/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      }),
+    complete: (id: string, servicedHours?: number, notes = "") =>
+      request<MaintenancePlan>(`/api/industrial/maintenance/${encodeURIComponent(id)}/complete`, {
+        method: "POST",
+        body: JSON.stringify({ ...(servicedHours != null ? { servicedHours } : {}), notes }),
+      }),
   },
   escalations: {
     list: () => request<EscalationPolicy[]>("/api/industrial/escalations"),
-    create: (payload: { name: string; severity: string; afterSeconds: number; channel: string; destination?: string; repeatSeconds?: number; maxRepeats?: number }) => request<EscalationPolicy>("/api/industrial/escalations", { method: "POST", body: JSON.stringify(payload) }),
-    update: (id: string, payload: Partial<{ name: string; severity: string; afterSeconds: number; channel: string; destination: string; repeatSeconds: number; maxRepeats: number; enabled: boolean }>) => request<EscalationPolicy>(`/api/industrial/escalations/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(payload) }),
-    remove: (id: string) => request<void>(`/api/industrial/escalations/${encodeURIComponent(id)}`, { method: "DELETE" }),
+    create: (payload: {
+      name: string;
+      severity: string;
+      afterSeconds: number;
+      channel: string;
+      destination?: string;
+      repeatSeconds?: number;
+      maxRepeats?: number;
+    }) =>
+      request<EscalationPolicy>("/api/industrial/escalations", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    update: (
+      id: string,
+      payload: Partial<{
+        name: string;
+        severity: string;
+        afterSeconds: number;
+        channel: string;
+        destination: string;
+        repeatSeconds: number;
+        maxRepeats: number;
+        enabled: boolean;
+      }>,
+    ) =>
+      request<EscalationPolicy>(`/api/industrial/escalations/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      }),
+    remove: (id: string) =>
+      request<void>(`/api/industrial/escalations/${encodeURIComponent(id)}`, { method: "DELETE" }),
   },
   lifecycle: {
-    get: (id: string) => request<GeneratorLifecycle>(`/api/generators/${encodeURIComponent(id)}/lifecycle`),
-    deprovision: (id: string) => request<Record<string, unknown>>(`/api/generators/${encodeURIComponent(id)}/deprovision`, { method: "POST", body: JSON.stringify({ confirmation: "DEPROVISION" }) }),
-    retire: (id: string, tag: string) => request<{ ok: boolean; generatorId: string; tag: string; deprovisioned: boolean; historyPreserved: boolean }>(`/api/generators/${encodeURIComponent(id)}/retire`, { method: "POST", body: JSON.stringify({ confirmation: `RETIRAR ${tag}` }) }),
+    get: (id: string) =>
+      request<GeneratorLifecycle>(`/api/generators/${encodeURIComponent(id)}/lifecycle`),
+    deprovision: (id: string) =>
+      request<Record<string, unknown>>(`/api/generators/${encodeURIComponent(id)}/deprovision`, {
+        method: "POST",
+        body: JSON.stringify({ confirmation: "DEPROVISION" }),
+      }),
+    retire: (id: string, tag: string) =>
+      request<{
+        ok: boolean;
+        generatorId: string;
+        tag: string;
+        deprovisioned: boolean;
+        historyPreserved: boolean;
+      }>(`/api/generators/${encodeURIComponent(id)}/retire`, {
+        method: "POST",
+        body: JSON.stringify({ confirmation: `RETIRAR ${tag}` }),
+      }),
   },
 };

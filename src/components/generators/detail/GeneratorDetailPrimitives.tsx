@@ -1,12 +1,5 @@
 import type { ReactNode } from "react";
-import {
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import type { RapidTrend } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -66,9 +59,7 @@ export function BoolFlag({
   return (
     <div className="gen-flag">
       <span>{label}</span>
-      <b className={cn("num", ok ? "text-online" : "text-offline")}>
-        {value ? "true" : "false"}
-      </b>
+      <b className={cn("num", ok ? "text-online" : "text-offline")}>{value ? "true" : "false"}</b>
     </div>
   );
 }
@@ -137,9 +128,7 @@ export function TrendCard({
     <section className="gen-card gen-chart-card">
       <header className="gen-card-head">
         <h2>Histórico Rapid 24h</h2>
-        <span className="num text-[10px] text-muted-foreground">
-          {trend?.metric ?? "N/D"}
-        </span>
+        <span className="num text-[10px] text-muted-foreground">{trend?.metric ?? "N/D"}</span>
       </header>
       <div className="gen-chart-body">
         {loading && (

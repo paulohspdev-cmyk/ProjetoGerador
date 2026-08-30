@@ -13,21 +13,13 @@ export function hasMetric(gen: Generator, key: string) {
   return (gen.availableMetrics ?? []).includes(key);
 }
 
-export function metricNumber(
-  gen: Generator,
-  key: string,
-  value: number | null | undefined,
-) {
+export function metricNumber(gen: Generator, key: string, value: number | null | undefined) {
   return hasMetric(gen, key) && value != null && Number.isFinite(Number(value))
     ? Number(value)
     : null;
 }
 
-export function formatMetric(
-  value: number | null,
-  unit = "",
-  digits = 1,
-) {
+export function formatMetric(value: number | null, unit = "", digits = 1) {
   if (value == null) return "N/D";
   const text = fmt(value, digits);
   return unit ? `${text} ${unit}` : text;

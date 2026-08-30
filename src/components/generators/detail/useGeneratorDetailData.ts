@@ -20,15 +20,9 @@ export function useGeneratorDetailData(gen: Generator) {
   const [trendError, setTrendError] = useState("");
   const [trendLoading, setTrendLoading] = useState(false);
 
-  const available = useMemo(
-    () => new Set(gen.availableMetrics ?? []),
-    [gen.availableMetrics],
-  );
+  const available = useMemo(() => new Set(gen.availableMetrics ?? []), [gen.availableMetrics]);
   const preferredTrend = useMemo(
-    () =>
-      TREND_PRIORITY.find((key) => available.has(key)) ??
-      [...available][0] ??
-      "",
+    () => TREND_PRIORITY.find((key) => available.has(key)) ?? [...available][0] ?? "",
     [available],
   );
 
@@ -41,8 +35,7 @@ export function useGeneratorDetailData(gen: Generator) {
         setEvents(
           rows.filter(
             (item) =>
-              item.generator_id === gen.id ||
-              item.tag?.toLowerCase() === gen.tag.toLowerCase(),
+              item.generator_id === gen.id || item.tag?.toLowerCase() === gen.tag.toLowerCase(),
           ),
         );
         setEventError("");
@@ -50,9 +43,7 @@ export function useGeneratorDetailData(gen: Generator) {
       .catch((error) => {
         if (active) {
           setEventError(
-            error instanceof Error
-              ? error.message
-              : "Falha ao carregar eventos reais.",
+            error instanceof Error ? error.message : "Falha ao carregar eventos reais.",
           );
         }
       });
@@ -81,9 +72,7 @@ export function useGeneratorDetailData(gen: Generator) {
       .catch((error) => {
         if (!active) return;
         setTrend(null);
-        setTrendError(
-          error instanceof Error ? error.message : "Histórico indisponível.",
-        );
+        setTrendError(error instanceof Error ? error.message : "Histórico indisponível.");
       })
       .finally(() => {
         if (active) setTrendLoading(false);

@@ -27,7 +27,13 @@ function hasMetric(g: Generator, key: string) {
   return (g.availableMetrics ?? []).includes(key);
 }
 
-function valueOrDash(g: Generator, key: string, value: number | null | undefined, unit = "", digits = 1) {
+function valueOrDash(
+  g: Generator,
+  key: string,
+  value: number | null | undefined,
+  unit = "",
+  digits = 1,
+) {
   if (!hasMetric(g, key) || value == null) return "—";
   return `${fmt(value, digits)}${unit ? ` ${unit}` : ""}`;
 }
@@ -73,13 +79,22 @@ export function EnergyRede() {
     <ScreenBody>
       <Stats
         items={[
-          { icon: UtilityPole, label: "Tensão de rede disponível", value: `${mainsVoltage.length}/${generators.length}` },
-          { icon: Waves, label: "Frequência de rede disponível", value: `${mainsFreq.length}/${generators.length}` },
+          {
+            icon: UtilityPole,
+            label: "Tensão de rede disponível",
+            value: `${mainsVoltage.length}/${generators.length}`,
+          },
+          {
+            icon: Waves,
+            label: "Frequência de rede disponível",
+            value: `${mainsFreq.length}/${generators.length}`,
+          },
           { icon: Power, label: "MCB monitorados", value: `${mcb.length}/${generators.length}` },
         ]}
       />
       <InfoNotice>
-        Esta tela só mostra grandezas de REDE quando o Controller Pack possui canais específicos de rede. Tensão do gerador não é reutilizada como tensão da rede.
+        Esta tela só mostra grandezas de REDE quando o Controller Pack possui canais específicos de
+        rede. Tensão do gerador não é reutilizada como tensão da rede.
       </InfoNotice>
       <EnergyTable
         rows={generators.map((g) => ({
@@ -107,13 +122,23 @@ export function EnergyGens() {
     <ScreenBody>
       <Stats
         items={[
-          { icon: Gauge, label: "Potência ativa", value: powerSupported ? `${fmt(totalKw)} kW` : "N/D", tone: powerSupported ? "text-online" : undefined },
+          {
+            icon: Gauge,
+            label: "Potência ativa",
+            value: powerSupported ? `${fmt(totalKw)} kW` : "N/D",
+            tone: powerSupported ? "text-online" : undefined,
+          },
           { icon: Fan, label: "Geradores em rotação", value: running },
-          { icon: Waves, label: "Frequência monitorada", value: `${freqSupported}/${generators.length}` },
+          {
+            icon: Waves,
+            label: "Frequência monitorada",
+            value: `${freqSupported}/${generators.length}`,
+          },
         ]}
       />
       <InfoNotice>
-        kW, GCB, fator de potência e outras grandezas só aparecem quando existem canais homologados no pack da controladora. O IG200 atual não recebe valores inventados para completar a tela.
+        kW, GCB, fator de potência e outras grandezas só aparecem quando existem canais homologados
+        no pack da controladora. O IG200 atual não recebe valores inventados para completar a tela.
       </InfoNotice>
       <EnergyTable
         rows={generators.map((g) => ({
@@ -121,7 +146,11 @@ export function EnergyGens() {
           gen: g.tag,
           a: valueOrDash(g, "power_kw", g.load, "kW", 1),
           b: valueOrDash(g, "frequency", g.frequency, "Hz", 2),
-          c: hasMetric(g, "gcb_closed") ? (g.gcb ? "GCB fechado" : "GCB aberto") : valueOrDash(g, "rpm", g.rpm, "rpm", 0),
+          c: hasMetric(g, "gcb_closed")
+            ? g.gcb
+              ? "GCB fechado"
+              : "GCB aberto"
+            : valueOrDash(g, "rpm", g.rpm, "rpm", 0),
         }))}
       />
     </ScreenBody>
@@ -143,11 +172,22 @@ export function EnergyLoad() {
     <ScreenBody>
       <Stats
         items={[
-          { icon: Factory, label: "Carga medida", value: measured.length ? `${fmt(total)} kW` : "N/D" },
-          { icon: Gauge, label: "Geradores com kW", value: `${measured.length}/${generators.length}` },
+          {
+            icon: Factory,
+            label: "Carga medida",
+            value: measured.length ? `${fmt(total)} kW` : "N/D",
+          },
+          {
+            icon: Gauge,
+            label: "Geradores com kW",
+            value: `${measured.length}/${generators.length}`,
+          },
         ]}
       />
-      <InfoNotice>Fator de potência, pico e histórico não são calculados por estimativa. Quando os canais existirem, o histórico será lido do archive do Rapid SCADA.</InfoNotice>
+      <InfoNotice>
+        Fator de potência, pico e histórico não são calculados por estimativa. Quando os canais
+        existirem, o histórico será lido do archive do Rapid SCADA.
+      </InfoNotice>
       <EnergyTable rows={rows} />
     </ScreenBody>
   );
@@ -155,22 +195,51 @@ export function EnergyLoad() {
 
 export function EnergyTransfer() {
   const { generators } = useGenerators();
-  const monitored = generators.filter((g) => hasMetric(g, "mcb_closed") || hasMetric(g, "gcb_closed"));
+  const monitored = generators.filter(
+    (g) => hasMetric(g, "mcb_closed") || hasMetric(g, "gcb_closed"),
+  );
   return (
     <ScreenBody>
       <Stats
         items={[
-          { icon: ArrowLeftRight, label: "Transferência monitorada", value: `${monitored.length}/${generators.length}` },
-          { icon: UtilityPole, label: "MCB monitorados", value: supportedCount(generators, "mcb_closed") },
+          {
+            icon: ArrowLeftRight,
+            label: "Transferência monitorada",
+            value: `${monitored.length}/${generators.length}`,
+          },
+          {
+            icon: UtilityPole,
+            label: "MCB monitorados",
+            value: supportedCount(generators, "mcb_closed"),
+          },
           { icon: Fan, label: "GCB monitorados", value: supportedCount(generators, "gcb_closed") },
         ]}
       />
-      <InfoNotice>Estados ATS/MCB/GCB não são inferidos por RPM. Sem canal homologado, o estado permanece N/D.</InfoNotice>
+      <InfoNotice>
+        Estados ATS/MCB/GCB não são inferidos por RPM. Sem canal homologado, o estado permanece N/D.
+      </InfoNotice>
       <EnergyTable
         rows={generators.map((g) => {
-          const mcb = hasMetric(g, "mcb_closed") ? (g.mcb ? "MCB fechado" : "MCB aberto") : "MCB N/D";
-          const gcb = hasMetric(g, "gcb_closed") ? (g.gcb ? "GCB fechado" : "GCB aberto") : "GCB N/D";
-          return { id: g.id, gen: g.tag, a: mcb, b: gcb, c: hasMetric(g, "mcb_closed") && hasMetric(g, "gcb_closed") ? "Monitorado" : "Parcial/N/D" };
+          const mcb = hasMetric(g, "mcb_closed")
+            ? g.mcb
+              ? "MCB fechado"
+              : "MCB aberto"
+            : "MCB N/D";
+          const gcb = hasMetric(g, "gcb_closed")
+            ? g.gcb
+              ? "GCB fechado"
+              : "GCB aberto"
+            : "GCB N/D";
+          return {
+            id: g.id,
+            gen: g.tag,
+            a: mcb,
+            b: gcb,
+            c:
+              hasMetric(g, "mcb_closed") && hasMetric(g, "gcb_closed")
+                ? "Monitorado"
+                : "Parcial/N/D",
+          };
         })}
       />
     </ScreenBody>
@@ -184,11 +253,22 @@ export function EnergyParallel() {
     <ScreenBody>
       <Stats
         items={[
-          { icon: GitMerge, label: "Paralelismo monitorado", value: `${capable.length}/${generators.length}` },
-          { icon: Waves, label: "Sincronismo", value: supportedCount(generators, "sync_ok") ? "Disponível" : "N/D" },
+          {
+            icon: GitMerge,
+            label: "Paralelismo monitorado",
+            value: `${capable.length}/${generators.length}`,
+          },
+          {
+            icon: Waves,
+            label: "Sincronismo",
+            value: supportedCount(generators, "sync_ok") ? "Disponível" : "N/D",
+          },
         ]}
       />
-      <InfoNotice>Paralelismo, sincronismo e comandos de disjuntores permanecem bloqueados até homologação específica da controladora.</InfoNotice>
+      <InfoNotice>
+        Paralelismo, sincronismo e comandos de disjuntores permanecem bloqueados até homologação
+        específica da controladora.
+      </InfoNotice>
       <EnergyTable
         rows={generators.map((g) => ({
           id: g.id,
@@ -219,27 +299,64 @@ export function MaintenanceScreen() {
     <ScreenBody>
       <Stats
         items={[
-          { icon: ClipboardList, label: "OS abertas", value: workOrders.filter((w) => w.status !== "Concluída").length },
-          { icon: AlertTriangle, label: "Urgentes", value: workOrders.filter((w) => w.status === "Urgente").length, tone: "text-alert" },
-          { icon: HardHat, label: "Em campo", value: workOrders.filter((w) => w.status === "Em andamento").length },
+          {
+            icon: ClipboardList,
+            label: "OS abertas",
+            value: workOrders.filter((w) => w.status !== "Concluída").length,
+          },
+          {
+            icon: AlertTriangle,
+            label: "Urgentes",
+            value: workOrders.filter((w) => w.status === "Urgente").length,
+            tone: "text-alert",
+          },
+          {
+            icon: HardHat,
+            label: "Em campo",
+            value: workOrders.filter((w) => w.status === "Em andamento").length,
+          },
         ]}
       />
       <Panel title="Nova ordem de serviço">
         <form onSubmit={onCreate} className="grid gap-2 sm:grid-cols-3">
           <label className="text-[11px] font-semibold text-muted-foreground">
             Gerador
-            <select value={gen} onChange={(e) => setGen(e.target.value)} className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm" required>
-              <option value="" disabled>Selecione</option>
-              {generators.map((g) => <option key={g.id} value={g.tag}>{g.tag}</option>)}
+            <select
+              value={gen}
+              onChange={(e) => setGen(e.target.value)}
+              className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+              required
+            >
+              <option value="" disabled>
+                Selecione
+              </option>
+              {generators.map((g) => (
+                <option key={g.id} value={g.tag}>
+                  {g.tag}
+                </option>
+              ))}
             </select>
           </label>
           <label className="text-[11px] font-semibold text-muted-foreground">
             Tipo
-            <select value={type} onChange={(e) => setType(e.target.value)} className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm">
-              <option>Preventiva</option><option>Corretiva</option><option>Inspeção</option>
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+              className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+            >
+              <option>Preventiva</option>
+              <option>Corretiva</option>
+              <option>Inspeção</option>
             </select>
           </label>
-          <div className="flex items-end"><button type="submit" className="h-9 w-full rounded-md bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90">Abrir OS</button></div>
+          <div className="flex items-end">
+            <button
+              type="submit"
+              className="h-9 w-full rounded-md bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90"
+            >
+              Abrir OS
+            </button>
+          </div>
         </form>
       </Panel>
       <Panel title="Ordens de serviço">
@@ -249,10 +366,47 @@ export function MaintenanceScreen() {
             { label: "OS", render: (r) => <span className="num">{r.id}</span> },
             { label: "Gerador", render: (r) => <b>{r.gen}</b> },
             { label: "Tipo", render: (r) => r.type },
-            { label: "Referência", render: (r) => r.due > 0 ? <span className="num">{r.due} h</span> : "—" },
+            {
+              label: "Referência",
+              render: (r) => (r.due > 0 ? <span className="num">{r.due} h</span> : "—"),
+            },
             { label: "Técnico", render: (r) => r.tech || "—", hide: "hidden md:table-cell" },
-            { label: "Status", render: (r) => <Pill tone={r.status === "Urgente" ? "err" : r.status === "Em andamento" ? "warn" : r.status === "Concluída" ? "ok" : "info"}>{r.status}</Pill> },
-            { label: "Ações", render: (r) => r.status === "Concluída" ? "—" : <span className="flex flex-wrap gap-1">{r.status !== "Em andamento" && <ActionBtn onClick={() => void setWorkOrderStatus(r.id, "Em andamento")}>Iniciar</ActionBtn>}<ActionBtn tone="ok" onClick={() => void setWorkOrderStatus(r.id, "Concluída")}>Concluir</ActionBtn></span> },
+            {
+              label: "Status",
+              render: (r) => (
+                <Pill
+                  tone={
+                    r.status === "Urgente"
+                      ? "err"
+                      : r.status === "Em andamento"
+                        ? "warn"
+                        : r.status === "Concluída"
+                          ? "ok"
+                          : "info"
+                  }
+                >
+                  {r.status}
+                </Pill>
+              ),
+            },
+            {
+              label: "Ações",
+              render: (r) =>
+                r.status === "Concluída" ? (
+                  "—"
+                ) : (
+                  <span className="flex flex-wrap gap-1">
+                    {r.status !== "Em andamento" && (
+                      <ActionBtn onClick={() => void setWorkOrderStatus(r.id, "Em andamento")}>
+                        Iniciar
+                      </ActionBtn>
+                    )}
+                    <ActionBtn tone="ok" onClick={() => void setWorkOrderStatus(r.id, "Concluída")}>
+                      Concluir
+                    </ActionBtn>
+                  </span>
+                ),
+            },
           ]}
         />
       </Panel>
@@ -263,21 +417,47 @@ export function MaintenanceScreen() {
 export function FuelScreen() {
   const { generators } = useGenerators();
   const measured = generators.filter((g) => hasMetric(g, "fuel_level"));
-  const mean = measured.length ? measured.reduce((s, g) => s + g.fuelLevel, 0) / measured.length : null;
+  const mean = measured.length
+    ? measured.reduce((s, g) => s + g.fuelLevel, 0) / measured.length
+    : null;
   return (
     <ScreenBody>
-      <Stats items={[
-        { icon: Fuel, label: "Nível médio medido", value: mean == null ? "N/D" : `${fmt(mean, 0)} %` },
-        { icon: Fuel, label: "Tanques monitorados", value: `${measured.length}/${generators.length}` },
-      ]} />
-      <InfoNotice>O painel mostra o nível medido, mas não classifica combustível como baixo sem um limite homologado no Controller Pack/configuração do equipamento.</InfoNotice>
+      <Stats
+        items={[
+          {
+            icon: Fuel,
+            label: "Nível médio medido",
+            value: mean == null ? "N/D" : `${fmt(mean, 0)} %`,
+          },
+          {
+            icon: Fuel,
+            label: "Tanques monitorados",
+            value: `${measured.length}/${generators.length}`,
+          },
+        ]}
+      />
+      <InfoNotice>
+        O painel mostra o nível medido, mas não classifica combustível como baixo sem um limite
+        homologado no Controller Pack/configuração do equipamento.
+      </InfoNotice>
       <Panel title="Tanques / geradores">
-        <ScadaTable rows={generators} columns={[
-          { label: "Gerador", render: (r) => <b>{r.tag}</b> },
-          { label: "Site", render: (r) => r.site },
-          { label: "Nível", render: (r) => valueOrDash(r, "fuel_level", r.fuelLevel, "%", 0) },
-          { label: "Estado", render: (r) => hasMetric(r, "fuel_level") ? <Tone tone="muted">Medido · sem limite homologado</Tone> : <Tone tone="muted">N/D</Tone> },
-        ]} />
+        <ScadaTable
+          rows={generators}
+          columns={[
+            { label: "Gerador", render: (r) => <b>{r.tag}</b> },
+            { label: "Site", render: (r) => r.site },
+            { label: "Nível", render: (r) => valueOrDash(r, "fuel_level", r.fuelLevel, "%", 0) },
+            {
+              label: "Estado",
+              render: (r) =>
+                hasMetric(r, "fuel_level") ? (
+                  <Tone tone="muted">Medido · sem limite homologado</Tone>
+                ) : (
+                  <Tone tone="muted">N/D</Tone>
+                ),
+            },
+          ]}
+        />
       </Panel>
     </ScreenBody>
   );
@@ -286,20 +466,50 @@ export function FuelScreen() {
 export function BatteriesScreen() {
   const { generators } = useGenerators();
   const measured = generators.filter((g) => hasMetric(g, "battery_voltage") && g.battery != null);
-  const mean = measured.length ? measured.reduce((s, g) => s + Number(g.battery), 0) / measured.length : null;
+  const mean = measured.length
+    ? measured.reduce((s, g) => s + Number(g.battery), 0) / measured.length
+    : null;
   return (
     <ScreenBody>
-      <Stats items={[
-        { icon: BatteryCharging, label: "Média medida", value: mean == null ? "N/D" : `${fmt(mean)} V` },
-        { icon: BatteryCharging, label: "Baterias monitoradas", value: `${measured.length}/${generators.length}` },
-      ]} />
-      <InfoNotice>A tensão é exibida somente quando medida. Saúde/baixa tensão não é inferida por um corte genérico: nominal e limites devem vir do Controller Pack ou da configuração homologada do equipamento.</InfoNotice>
+      <Stats
+        items={[
+          {
+            icon: BatteryCharging,
+            label: "Média medida",
+            value: mean == null ? "N/D" : `${fmt(mean)} V`,
+          },
+          {
+            icon: BatteryCharging,
+            label: "Baterias monitoradas",
+            value: `${measured.length}/${generators.length}`,
+          },
+        ]}
+      />
+      <InfoNotice>
+        A tensão é exibida somente quando medida. Saúde/baixa tensão não é inferida por um corte
+        genérico: nominal e limites devem vir do Controller Pack ou da configuração homologada do
+        equipamento.
+      </InfoNotice>
       <Panel title="Bancos de baterias">
-        <ScadaTable rows={generators} columns={[
-          { label: "Gerador", render: (r) => <b>{r.tag}</b> },
-          { label: "Tensão", render: (r) => valueOrDash(r, "battery_voltage", r.battery, "V", 1) },
-          { label: "Saúde", render: (r) => !hasMetric(r, "battery_voltage") || r.battery == null ? <Tone tone="muted">N/D</Tone> : <Tone tone="muted">Sem referência nominal</Tone> },
-        ]} />
+        <ScadaTable
+          rows={generators}
+          columns={[
+            { label: "Gerador", render: (r) => <b>{r.tag}</b> },
+            {
+              label: "Tensão",
+              render: (r) => valueOrDash(r, "battery_voltage", r.battery, "V", 1),
+            },
+            {
+              label: "Saúde",
+              render: (r) =>
+                !hasMetric(r, "battery_voltage") || r.battery == null ? (
+                  <Tone tone="muted">N/D</Tone>
+                ) : (
+                  <Tone tone="muted">Sem referência nominal</Tone>
+                ),
+            },
+          ]}
+        />
       </Panel>
     </ScreenBody>
   );
@@ -311,17 +521,40 @@ export function HourmetersScreen() {
   const total = measured.reduce((s, g) => s + g.runHours, 0);
   return (
     <ScreenBody>
-      <Stats items={[
-        { icon: Timer, label: "Horas medidas", value: measured.length ? `${fmt(total, 0)} h` : "N/D" },
-        { icon: Timer, label: "Horímetros monitorados", value: `${measured.length}/${generators.length}` },
-      ]} />
+      <Stats
+        items={[
+          {
+            icon: Timer,
+            label: "Horas medidas",
+            value: measured.length ? `${fmt(total, 0)} h` : "N/D",
+          },
+          {
+            icon: Timer,
+            label: "Horímetros monitorados",
+            value: `${measured.length}/${generators.length}`,
+          },
+        ]}
+      />
       <Panel title="Horímetros">
-        <ScadaTable rows={generators} columns={[
-          { label: "Gerador", render: (r) => <b>{r.tag}</b> },
-          { label: "Horas trabalhadas", render: (r) => valueOrDash(r, "run_hours", r.runHours, "h", 1) },
-          { label: "Próxima manutenção", render: (r) => valueOrDash(r, "maintenance_hours", r.maintenance, "h", 1) },
-          { label: "Fonte", render: (r) => hasMetric(r, "run_hours") ? <Pill tone="ok">Rapid SCADA</Pill> : <Pill>N/D</Pill> },
-        ]} />
+        <ScadaTable
+          rows={generators}
+          columns={[
+            { label: "Gerador", render: (r) => <b>{r.tag}</b> },
+            {
+              label: "Horas trabalhadas",
+              render: (r) => valueOrDash(r, "run_hours", r.runHours, "h", 1),
+            },
+            {
+              label: "Próxima manutenção",
+              render: (r) => valueOrDash(r, "maintenance_hours", r.maintenance, "h", 1),
+            },
+            {
+              label: "Fonte",
+              render: (r) =>
+                hasMetric(r, "run_hours") ? <Pill tone="ok">Rapid SCADA</Pill> : <Pill>N/D</Pill>,
+            },
+          ]}
+        />
       </Panel>
     </ScreenBody>
   );
@@ -330,7 +563,10 @@ export function HourmetersScreen() {
 export function AgendaScreen() {
   const { agenda, addAgenda } = useScadaOps();
   const { generators } = useGenerators();
-  const sites = useMemo(() => [...new Set(generators.map((g) => g.site).filter(Boolean))], [generators]);
+  const sites = useMemo(
+    () => [...new Set(generators.map((g) => g.site).filter(Boolean))],
+    [generators],
+  );
   const [title, setTitle] = useState("");
   const [when, setWhen] = useState("");
   const [site, setSite] = useState("");
@@ -338,7 +574,8 @@ export function AgendaScreen() {
   const onCreate = (e: FormEvent) => {
     e.preventDefault();
     void addAgenda({ title, when, site });
-    setTitle(""); setWhen("");
+    setTitle("");
+    setWhen("");
   };
 
   return (
@@ -346,18 +583,58 @@ export function AgendaScreen() {
       <Stats items={[{ icon: CalendarDays, label: "Compromissos", value: agenda.length }]} />
       <Panel title="Novo compromisso">
         <form onSubmit={onCreate} className="grid gap-2 sm:grid-cols-4">
-          <label className="text-[11px] font-semibold text-muted-foreground sm:col-span-2">Atividade<input value={title} onChange={(e) => setTitle(e.target.value)} required className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm" /></label>
-          <label className="text-[11px] font-semibold text-muted-foreground">Quando<input value={when} onChange={(e) => setWhen(e.target.value)} placeholder="28/08 09:00" required className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm" /></label>
-          <label className="text-[11px] font-semibold text-muted-foreground">Local<input list="agenda-sites" value={site} onChange={(e) => setSite(e.target.value)} className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm" /><datalist id="agenda-sites">{sites.map((s) => <option key={s} value={s} />)}</datalist></label>
-          <div className="sm:col-span-4"><button type="submit" className="h-9 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground hover:bg-primary/90">Agendar</button></div>
+          <label className="text-[11px] font-semibold text-muted-foreground sm:col-span-2">
+            Atividade
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+              className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+            />
+          </label>
+          <label className="text-[11px] font-semibold text-muted-foreground">
+            Quando
+            <input
+              value={when}
+              onChange={(e) => setWhen(e.target.value)}
+              placeholder="28/08 09:00"
+              required
+              className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+            />
+          </label>
+          <label className="text-[11px] font-semibold text-muted-foreground">
+            Local
+            <input
+              list="agenda-sites"
+              value={site}
+              onChange={(e) => setSite(e.target.value)}
+              className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+            />
+            <datalist id="agenda-sites">
+              {sites.map((s) => (
+                <option key={s} value={s} />
+              ))}
+            </datalist>
+          </label>
+          <div className="sm:col-span-4">
+            <button
+              type="submit"
+              className="h-9 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground hover:bg-primary/90"
+            >
+              Agendar
+            </button>
+          </div>
         </form>
       </Panel>
       <Panel title="Agenda operacional">
-        <ScadaTable rows={agenda} columns={[
-          { label: "Quando", render: (r) => <span className="num">{r.when}</span> },
-          { label: "Atividade", render: (r) => <b>{r.title}</b> },
-          { label: "Local", render: (r) => r.site || "—" },
-        ]} />
+        <ScadaTable
+          rows={agenda}
+          columns={[
+            { label: "Quando", render: (r) => <span className="num">{r.when}</span> },
+            { label: "Atividade", render: (r) => <b>{r.title}</b> },
+            { label: "Local", render: (r) => r.site || "—" },
+          ]}
+        />
       </Panel>
     </ScreenBody>
   );

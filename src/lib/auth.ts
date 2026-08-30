@@ -26,7 +26,8 @@ export const ROLE_META: Array<{ id: UserRole; name: string; perms: string }> = [
   {
     id: "cadastro",
     name: "Cadastro",
-    perms: "Visualizar e cadastrar/editar equipamentos. Sem comandos industriais e sem gestão de usuários",
+    perms:
+      "Visualizar e cadastrar/editar equipamentos. Sem comandos industriais e sem gestão de usuários",
   },
   {
     id: "visualizacao",
