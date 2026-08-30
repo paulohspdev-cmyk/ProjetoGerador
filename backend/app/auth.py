@@ -163,11 +163,26 @@ def require(permission: str) -> Callable:
     return dependency
 
 
+def require_remove_permission(request: Request, user: dict = Depends(current_user)) -> dict:
+    if not can(user, "remove"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permissão insuficiente")
+
+    # O endpoint legado DELETE /api/generators/{id} não executa o ciclo de vida
+    # industrial. A retirada válida é POST /api/generators/{id}/retire, que
+    # deprovisiona o Rapid SCADA, preserva histórico e só então remove o cadastro.
+    if request.method.upper() == "DELETE" and request.url.path.rstrip("/").startswith("/api/generators/"):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Exclusão direta de gerador bloqueada. Use o fluxo de retirada segura.",
+        )
+    return user
+
+
 require_view = require("view")
 require_operate = require("operate")
 require_create = require("create")
 require_edit = require("edit")
-require_remove = require("remove")
+require_remove = require_remove_permission
 require_manage_users = require("manage_users")
 require_audit = require("audit")
 require_admin = require("admin")
