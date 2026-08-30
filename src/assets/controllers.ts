@@ -31,13 +31,13 @@ export function controllerImageSrc(model: string | null | undefined) {
   const packed = key.replace(/[\s-]/g, "");
   if (BY_MODEL[packed]) return BY_MODEL[packed];
 
-  if (key.includes("8610")) return BY_MODEL.DSE8610;
-  if (key.includes("7320")) return BY_MODEL.DSE7320;
-  if (key.includes("4520")) return BY_MODEL.DSE4520;
-  if (key.includes("6120")) return BY_MODEL.DSE6120;
-  if (key.includes("INTELILITE")) return BY_MODEL["INTELILITE 9"];
-  if (key.includes("INTELIMAINS")) return BY_MODEL["INTELIMAINS 150"];
-  if (key.includes("COMAP")) return BY_MODEL["INTELILITE 9"];
+  if (key.includes("8610")) return BY_MODEL["DSE8610"] ?? GENERIC;
+  if (key.includes("7320")) return BY_MODEL["DSE7320"] ?? GENERIC;
+  if (key.includes("4520")) return BY_MODEL["DSE4520"] ?? GENERIC;
+  if (key.includes("6120")) return BY_MODEL["DSE6120"] ?? GENERIC;
+  if (key.includes("INTELILITE")) return BY_MODEL["INTELILITE 9"] ?? GENERIC;
+  if (key.includes("INTELIMAINS")) return BY_MODEL["INTELIMAINS 150"] ?? GENERIC;
+  if (key.includes("COMAP")) return BY_MODEL["INTELILITE 9"] ?? GENERIC;
 
   return GENERIC;
 }
