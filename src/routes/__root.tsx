@@ -174,14 +174,8 @@ function AppShell() {
 }
 
 function AuthenticatedShell() {
-  const {
-    error: generatorsError,
-    refresh: refreshGenerators,
-  } = useGenerators();
-  const {
-    error: opsError,
-    refresh: refreshOps,
-  } = useScadaOps();
+  const { error: generatorsError, refresh: refreshGenerators } = useGenerators();
+  const { error: opsError, refresh: refreshOps } = useScadaOps();
   const hasError = Boolean(generatorsError || opsError);
 
   return (
