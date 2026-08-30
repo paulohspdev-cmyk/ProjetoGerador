@@ -4,10 +4,7 @@ import { Cable, Cpu, Layers, Network } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { rcApi } from "@/lib/api";
 import { domainApi, type TopologyV3 } from "@/lib/domain-api";
-import {
-  ControllersV3CreatePanel,
-  type CatalogController,
-} from "./ControllersV3CreatePanel";
+import { ControllersV3CreatePanel, type CatalogController } from "./ControllersV3CreatePanel";
 import { Panel, Pill, ScadaTable, ScreenBody, Stats, Tone } from "./kit";
 
 type LibraryWithCatalog = {
