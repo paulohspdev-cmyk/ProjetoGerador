@@ -7,6 +7,7 @@ import {
   Gauge,
   HeartPulse,
   Radio,
+  RefreshCw,
   Router,
   Wrench,
   Zap,
@@ -35,7 +36,12 @@ function metricAvailable(g: { availableMetrics?: string[] }, key: string) {
 }
 
 export function OverviewDashboard() {
-  const { generators } = useGenerators();
+  const {
+    generators,
+    ready: generatorsReady,
+    error: generatorsError,
+    refresh: refreshGenerators,
+  } = useGenerators();
   const { workOrders, agenda } = useScadaOps();
   const [devices, setDevices] = useState<FieldDevice[]>([]);
   const [diag, setDiag] = useState<SystemDiagnostics | null>(null);
@@ -99,16 +105,40 @@ export function OverviewDashboard() {
             Painel operacional
           </p>
           <p className="text-sm text-muted-foreground">
-            {siteRows.length} unidades · {generators.length} geradores · dados industriais via Rapid
-            SCADA
+            {generatorsError
+              ? "Cadastro de geradores indisponível"
+              : `${siteRows.length} unidades · ${generators.length} geradores · dados industriais via Rapid SCADA`}
           </p>
         </div>
         <p className="num text-[11px] text-muted-foreground">Atualização automática</p>
       </div>
 
+      {!generatorsReady && (
+        <div className="rounded-md border border-border bg-card px-3 py-2 text-[12px] text-muted-foreground">
+          Carregando cadastro e estado dos geradores…
+        </div>
+      )}
+
+      {generatorsError && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-offline/50 bg-offline/10 px-3 py-2 text-[12px] text-offline">
+          <div>
+            <b>Falha ao carregar o parque.</b>
+            <span className="ml-1">{generatorsError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => void refreshGenerators()}
+            className="inline-flex h-8 items-center gap-1 rounded-md border border-offline/40 px-2 font-semibold"
+          >
+            <RefreshCw className="size-3.5" />
+            Tentar novamente
+          </button>
+        </div>
+      )}
+
       {remoteError && (
         <div className="rounded-md border border-alert/40 bg-alert/10 px-3 py-2 text-[12px] text-alert">
-          {remoteError}
+          Falha ao carregar dados auxiliares do painel: {remoteError}
         </div>
       )}
 
@@ -117,33 +147,37 @@ export function OverviewDashboard() {
           {
             icon: Gauge,
             label: "Geradores",
-            value: generators.length,
-            sub: `${configured.length} configurados`,
+            value: generatorsError ? "ERRO" : generators.length,
+            sub: generatorsError ? "API de cadastro indisponível" : `${configured.length} configurados`,
           },
-          { icon: Activity, label: "Online", value: online, tone: "text-online" },
+          { icon: Activity, label: "Online", value: generatorsError ? "—" : online, tone: "text-online" },
           {
             icon: BellRing,
             label: "Em alerta",
-            value: alerts,
+            value: generatorsError ? "—" : alerts,
             tone: alerts ? "text-alert" : "text-online",
           },
           {
             icon: AlertTriangle,
             label: "Offline",
-            value: offline,
+            value: generatorsError ? "—" : offline,
             tone: offline ? "text-offline" : "text-online",
           },
           {
             icon: Zap,
             label: "Em funcionamento",
-            value: running,
+            value: generatorsError ? "—" : running,
             sub: "RPM > 300 quando disponível",
           },
           {
             icon: Gauge,
             label: "Carga medida",
-            value: loadRows.length ? `${loadKw.toFixed(1)} kW` : "N/D",
-            sub: loadRows.length ? `${loadRows.length} fonte(s)` : "pack atual sem kW",
+            value: generatorsError ? "—" : loadRows.length ? `${loadKw.toFixed(1)} kW` : "N/D",
+            sub: generatorsError
+              ? "parque indisponível"
+              : loadRows.length
+                ? `${loadRows.length} fonte(s)`
+                : "pack atual sem kW",
           },
           { icon: Router, label: "Modems cadastrados", value: modems.length },
           {
@@ -161,8 +195,13 @@ export function OverviewDashboard() {
           className="lg:col-span-2"
           actions={<ModuleLink slug="central-de-operacao">Operação →</ModuleLink>}
         >
-          {!generators.length && (
+          {generatorsReady && !generatorsError && !generators.length && (
             <p className="text-[12px] text-muted-foreground">Nenhum gerador cadastrado.</p>
+          )}
+          {generatorsError && (
+            <p className="text-[12px] text-offline">
+              Estado do parque indisponível enquanto a API de geradores estiver em falha.
+            </p>
           )}
           <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
             {generators.map((g) => (
@@ -221,10 +260,13 @@ export function OverviewDashboard() {
           title="Condições que exigem atenção"
           actions={<ModuleLink slug="alarmes">Alarmes →</ModuleLink>}
         >
-          {!activeErrors.length && (
+          {generatorsReady && !generatorsError && !activeErrors.length && (
             <p className="text-[12px] text-muted-foreground">
               Nenhuma condição derivada do estado atual.
             </p>
+          )}
+          {generatorsError && (
+            <p className="text-[12px] text-offline">Condições do parque indisponíveis.</p>
           )}
           <ul className="space-y-2">
             {activeErrors.slice(0, 8).map((g) => (
@@ -244,8 +286,11 @@ export function OverviewDashboard() {
 
       <div className="grid gap-3 lg:grid-cols-3">
         <Panel title="Unidades" actions={<ModuleLink slug="sites">Sites →</ModuleLink>}>
-          {!siteRows.length && (
-            <p className="text-[12px] text-muted-foreground">Nenhuma unidade cadastrada.</p>
+          {generatorsReady && !generatorsError && !siteRows.length && (
+            <p className="text-[12px] text-muted-foreground">Nenhuma unidade derivada do parque.</p>
+          )}
+          {generatorsError && (
+            <p className="text-[12px] text-offline">Resumo de unidades indisponível.</p>
           )}
           <ul className="space-y-2">
             {siteRows.map((s) => (
@@ -275,7 +320,7 @@ export function OverviewDashboard() {
               <p className="text-[10px] text-muted-foreground">Gateways reais</p>
             </div>
           </div>
-          {!devices.length && (
+          {!devices.length && !remoteError && (
             <p className="mt-2 text-[11px] text-muted-foreground">
               Nenhum modem/gateway cadastrado; nenhum equipamento será inventado.
             </p>
@@ -286,7 +331,7 @@ export function OverviewDashboard() {
           title="Saúde do sistema"
           actions={<ModuleLink slug="saude">Diagnóstico →</ModuleLink>}
         >
-          {!diag && (
+          {!diag && !remoteError && (
             <p className="text-[12px] text-muted-foreground">Diagnóstico ainda não disponível.</p>
           )}
           {diag && (
@@ -311,7 +356,7 @@ export function OverviewDashboard() {
 
       <div className="grid gap-3 lg:grid-cols-2">
         <Panel title="Eventos reais" actions={<ModuleLink slug="eventos">Log →</ModuleLink>}>
-          {!events.length && (
+          {!events.length && !remoteError && (
             <p className="text-[12px] text-muted-foreground">Nenhum evento registrado.</p>
           )}
           <ul className="space-y-1.5">
