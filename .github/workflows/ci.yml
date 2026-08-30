@@ -195,8 +195,9 @@ jobs:
           grep -q 'historyPreserved' rapid/provisioning/deprovision_generator.py
           grep -q 'DEPROVISION_CONFIRMED' backend/app/provision_service.py
           grep -q 'RETIRAR' backend/app/domain_routes.py
-          grep -q 'Git HEAD: OK' ops/deploy_release.sh
-          grep -q 'deployed-commit' ops/deploy_release.sh
+          grep -q 'deploy_release_v2.sh' ops/deploy_release.sh
+          grep -q 'Git HEAD: OK' ops/deploy_release_v2.sh
+          grep -q 'deployed-commit' ops/deploy_release_v2.sh
 
       - name: Política industrial segura
         run: |
