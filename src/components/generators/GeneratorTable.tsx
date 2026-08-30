@@ -12,7 +12,6 @@ function modeClass(mode: Generator["mode"], known: boolean) {
   if (!known) return "text-muted-foreground";
   return mode === "AUTO" ? "text-online" : mode === "MANUAL" ? "text-chart-2" : "text-muted-foreground";
 }
-function maintClass(hours: number, known: boolean) { return known && hours > 0 && hours < 80 ? "text-alert" : undefined; }
 function battery(g: Generator) { return hasMetric(g, "battery_voltage") && g.battery != null ? `${fmt(g.battery)} V` : "N/D"; }
 function frequency(g: Generator) { return hasMetric(g, "frequency") && g.frequency != null ? `${fmt(g.frequency, 2)} Hz` : "N/D"; }
 function power(g: Generator) { return hasMetric(g, "power_kw") ? `${fmt(g.load)} kW` : "N/D"; }
@@ -33,7 +32,6 @@ function MobileRow({ items }: { items: Generator[] }) {
     <div className="space-y-2 md:hidden">
       {items.map((g) => {
         const modeKnown = hasMetric(g, "controller_mode_raw");
-        const maintKnown = hasMetric(g, "maintenance_hours");
         return (
           <article key={g.id} className="rounded-lg border border-border bg-card p-3">
             <div className="flex items-start justify-between gap-2">
@@ -46,8 +44,9 @@ function MobileRow({ items }: { items: Generator[] }) {
               <div><dt className="text-muted-foreground">Freq.</dt><dd className="num">{frequency(g)}</dd></div>
               <div><dt className="text-muted-foreground">Carga</dt><dd className="num">{power(g)}</dd></div>
               <div><dt className="text-muted-foreground">Horas trab.</dt><dd className="num">{runHours(g)}</dd></div>
-              <div><dt className="text-muted-foreground">Manutenção</dt><dd className={cn("num", maintClass(g.maintenance, maintKnown))}>{maintenance(g)}</dd></div>
+              <div><dt className="text-muted-foreground">Manutenção</dt><dd className="num">{maintenance(g)}</dd></div>
             </dl>
+            <p className="mt-2 text-[10px] text-muted-foreground">Sem classificação de manutenção por limiar local; alertas dependem do plano/Controller Pack homologado.</p>
             <OpenLink id={g.id} className="mt-3 h-10 w-full text-[12px] font-semibold" />
             <div className="mt-1 flex justify-end"><DeleteGeneratorButton id={g.id} tag={g.tag} /></div>
           </article>
@@ -70,7 +69,6 @@ export function GeneratorTable({ items }: { items: Generator[] }) {
           <tbody>
             {items.map((g) => {
               const modeKnown = hasMetric(g, "controller_mode_raw");
-              const maintKnown = hasMetric(g, "maintenance_hours");
               return (
                 <tr key={g.id} className="border-b border-border/60 transition-colors hover:bg-secondary/30">
                   <td className="px-3 py-3 font-bold">{g.tag}</td>
@@ -82,7 +80,7 @@ export function GeneratorTable({ items }: { items: Generator[] }) {
                   <td className="num px-3 py-3">{frequency(g)}</td>
                   <td className="num px-3 py-3">{power(g)}</td>
                   <td className="num px-3 py-3">{runHours(g)}</td>
-                  <td className={cn("num px-3 py-3", maintClass(g.maintenance, maintKnown))}>{maintenance(g)}</td>
+                  <td className="num px-3 py-3">{maintenance(g)}</td>
                   <td className="px-3 py-3 text-right"><span className="inline-flex items-center justify-end gap-1"><OpenLink id={g.id} className="px-2 py-1 text-[11px] font-semibold" /><DeleteGeneratorButton id={g.id} tag={g.tag} /></span></td>
                 </tr>
               );
