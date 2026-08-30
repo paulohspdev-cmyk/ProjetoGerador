@@ -38,8 +38,14 @@ if (!existsSync(join(root, "src/routes/p.geradores.$id.tsx")))
   failures.push("rota de detalhe de gerador ausente");
 
 const api = read("src/lib/api.ts");
-if (api.includes("generators: {") && /generators:\s*\{[\s\S]*?remove:\s*\(/.test(api)) {
-  failures.push("cliente frontend voltou a expor DELETE direto de gerador");
+const generatorsStart = api.indexOf("\n  generators: {");
+const generatorsEnd = generatorsStart >= 0 ? api.indexOf("\n  audit:", generatorsStart) : -1;
+if (generatorsStart < 0 || generatorsEnd < 0) {
+  failures.push("cliente frontend perdeu bloco rcApi.generators esperado");
+} else {
+  const generatorsApi = api.slice(generatorsStart, generatorsEnd);
+  if (/\bremove\s*:/.test(generatorsApi) || /method:\s*["']DELETE["']/.test(generatorsApi))
+    failures.push("cliente frontend voltou a expor DELETE direto de gerador");
 }
 const deleteButton = read("src/components/generators/DeleteGeneratorButton.tsx");
 if (!deleteButton.includes("industrialApi.lifecycle.retire"))
