@@ -15,6 +15,7 @@ import asyncio
 import json
 import os
 import struct
+import time
 from pathlib import Path
 
 from . import db
@@ -158,11 +159,47 @@ class BridgePort:
         self.remote_peer = None
         self.remote_lock = asyncio.Lock()
         self.next_tid = 1
+        self.connected_at = None
+        self.last_rx_at = None
+        self.last_tx_at = None
+        self.bytes_rx = 0
+        self.bytes_tx = 0
+        self.connection_count = 0
+        self.timeouts = 0
+        self.errors = 0
 
     def alloc_tid(self):
         tid = self.next_tid
         self.next_tid = 1 if tid >= 65535 else tid + 1
         return tid
+
+    def snapshot(self):
+        peer_ip = None
+        peer_port = None
+        if isinstance(self.remote_peer, (tuple, list)) and self.remote_peer:
+            peer_ip = str(self.remote_peer[0])
+            if len(self.remote_peer) > 1:
+                try:
+                    peer_port = int(self.remote_peer[1])
+                except (TypeError, ValueError):
+                    peer_port = None
+        connected = bool(self.remote_writer is not None and not self.remote_writer.is_closing())
+        return {
+            "remotePort": self.remote_port,
+            "localPort": self.local_port,
+            "connected": connected,
+            "remoteIp": peer_ip,
+            "remotePeerPort": peer_port,
+            "connectedAt": self.connected_at if connected else None,
+            "lastRxAt": self.last_rx_at,
+            "lastTxAt": self.last_tx_at,
+            "bytesRx": self.bytes_rx,
+            "bytesTx": self.bytes_tx,
+            "connections": self.connection_count,
+            "reconnections": max(0, self.connection_count - 1),
+            "timeouts": self.timeouts,
+            "errors": self.errors,
+        }
 
     async def start(self):
         self.remote_server = await asyncio.start_server(
@@ -205,6 +242,7 @@ class BridgePort:
         self.remote_reader = None
         self.remote_writer = None
         self.remote_peer = None
+        self.connected_at = None
         if writer:
             try:
                 writer.close()
@@ -218,6 +256,8 @@ class BridgePort:
         self.remote_reader = reader
         self.remote_writer = writer
         self.remote_peer = peer
+        self.connected_at = int(time.time())
+        self.connection_count += 1
 
         if old and old is not writer:
             try:
@@ -237,6 +277,7 @@ class BridgePort:
                 self.remote_reader = None
                 self.remote_writer = None
                 self.remote_peer = None
+                self.connected_at = None
                 log(f"porta {self.remote_port}: modem desconectado")
 
     async def read_remote_response(self, expected_tid, expected_unit, expected_function):
@@ -253,6 +294,8 @@ class BridgePort:
                 raise ConnectionError("modem desconectado")
 
             header = await asyncio.wait_for(reader.readexactly(7), remaining)
+            self.bytes_rx += len(header)
+            self.last_rx_at = int(time.time())
             tid, proto, length, unit = struct.unpack(">HHHB", header)
             if proto != 0 or length < 2 or length > 260:
                 raise ValueError(
@@ -263,6 +306,8 @@ class BridgePort:
             if remaining <= 0:
                 raise asyncio.TimeoutError()
             pdu = await asyncio.wait_for(reader.readexactly(length - 1), remaining)
+            self.bytes_rx += len(pdu)
+            self.last_rx_at = int(time.time())
 
             if tid != expected_tid or unit != expected_unit:
                 log(
@@ -290,8 +335,11 @@ class BridgePort:
             raise ConnectionError("modem desconectado")
 
         remote_tid = self.alloc_tid()
-        writer.write(mbap(remote_tid, unit, pdu))
+        frame = mbap(remote_tid, unit, pdu)
+        writer.write(frame)
         await writer.drain()
+        self.bytes_tx += len(frame)
+        self.last_tx_at = int(time.time())
         return await self.read_remote_response(remote_tid, unit, function)
 
     async def transact(self, local_tid, unit, pdu):
@@ -307,18 +355,21 @@ class BridgePort:
             try:
                 return await self.request_locked(unit, pdu)
             except asyncio.TimeoutError:
+                self.timeouts += 1
                 log(
                     f"porta {self.remote_port}: timeout Unit {unit} FC{function:02d}; "
                     "mantendo conexão compartilhada"
                 )
                 return exception_pdu(function, 11)
             except (ConnectionError, asyncio.IncompleteReadError) as exc:
+                self.errors += 1
                 log(
                     f"porta {self.remote_port}: conexão perdida Unit {unit} FC{function:02d}: {type(exc).__name__}"
                 )
                 await self.clear_remote(only_writer=writer)
                 return exception_pdu(function, 11)
             except Exception as exc:
+                self.errors += 1
                 log(
                     f"porta {self.remote_port}: erro remoto Unit {unit} FC{function:02d}: {exc}"
                 )
