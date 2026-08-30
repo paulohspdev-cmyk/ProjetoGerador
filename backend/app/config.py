@@ -9,6 +9,7 @@ RAPID_READER_DLL = Path(os.environ.get("RC_RAPID_READER", "/opt/rc-geradores/.ra
 RAPID_COMM_CONFIG = Path(os.environ.get("RC_RAPID_COMM_CONFIG", "/opt/scada/ScadaComm/Config/ScadaCommConfig.xml"))
 RAPID_CACHE_TTL = float(os.environ.get("RC_RAPID_CACHE_TTL", "1.5"))
 CONTROL_SOCKET = os.environ.get("RC_RAPID_CONTROL_SOCKET", "/run/rc-geradores/control.sock")
+BRIDGE_STATUS_FILE = Path(os.environ.get("RC_BRIDGE_STATUS_FILE", "/run/rc-geradores/bridge-status.json"))
 APP_VERSION = os.environ.get("RC_APP_VERSION", "3.0.0").strip() or "3.0.0"
 
 AUTH_COOKIE_NAME = os.environ.get("RC_AUTH_COOKIE", "rc_session")
