@@ -32,13 +32,14 @@ jobs:
       - name: Normalize repository with locked Prettier
         run: npx prettier --write .
 
-      - name: Remove diagnostic artifacts and commit formatting
+      - name: Preserve workflows and commit formatting
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git rm -f .eslint-current.log .github/workflows/one-shot-eslint-diagnostic.yml
+          git restore --source=HEAD -- .github/workflows
+          git rm -f .eslint-current.log
           git add -A
           git commit -m "fix: normalize repository prettier formatting"
           git push origin HEAD:fix/fechamento-funcional-pre-vm
