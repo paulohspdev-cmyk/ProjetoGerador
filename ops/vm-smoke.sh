@@ -2,7 +2,9 @@
 set -euo pipefail
 
 BASE="${RC_PROJECT_ROOT:-/opt/rc-geradores}"
-ENV_FILE="/etc/rc-geradores.env"
+ENV_FILE="${RC_ENV_FILE:-/etc/rc-geradores.env}"
+CONTROL_SOCKET="/run/rc-geradores/control.sock"
+PROVISION_SOCKET="/run/rc-geradores/provision.sock"
 REQUIRE_GENERATOR=0
 FAILURES=0
 
@@ -24,6 +26,8 @@ if [[ -f "$ENV_FILE" ]]; then
   source "$ENV_FILE"
   set +a
   BASE="${RC_PROJECT_ROOT:-$BASE}"
+  CONTROL_SOCKET="${RC_RAPID_CONTROL_SOCKET:-$CONTROL_SOCKET}"
+  PROVISION_SOCKET="${RC_PROVISION_SOCKET:-$PROVISION_SOCKET}"
 fi
 
 ok() { printf 'OK   %s\n' "$*"; }
@@ -58,7 +62,7 @@ echo "============================================================"
 echo " RC GERADORES - SMOKE TEST DA VM"
 echo "============================================================"
 
-for command in python3 node npm dotnet curl jq ss systemctl openssl; do
+for command in python3 node npm dotnet curl jq ss systemctl openssl nginx; do
   if command -v "$command" >/dev/null 2>&1; then ok "comando $command disponível"; else fail "comando $command ausente"; fi
 done
 
@@ -67,6 +71,7 @@ if [[ "$NODE_MAJOR" =~ ^[0-9]+$ ]] && (( NODE_MAJOR >= 22 )); then ok "Node >= 2
 
 if dotnet --list-sdks 2>/dev/null | grep -q '^8\.'; then ok ".NET SDK 8 instalado"; else fail ".NET SDK 8 ausente"; fi
 if dotnet --list-runtimes 2>/dev/null | grep -q '^Microsoft.NETCore.App 8\.'; then ok ".NET Runtime 8 instalado"; else fail ".NET Runtime 8 ausente"; fi
+if nginx -t >/dev/null 2>&1; then ok "configuração Nginx válida"; else fail "configuração Nginx inválida"; fi
 
 for file in \
   "$BASE/package.json" \
@@ -100,8 +105,8 @@ for svc in \
   check_service "$svc"
 done
 
-[[ -S /run/rc-geradores/control.sock ]] && ok "socket control.sock presente" || fail "socket control.sock ausente"
-[[ -S /run/rc-geradores/provision.sock ]] && ok "socket provision.sock presente" || fail "socket provision.sock ausente"
+[[ -S "$CONTROL_SOCKET" ]] && ok "socket de controle presente: $CONTROL_SOCKET" || fail "socket de controle ausente: $CONTROL_SOCKET"
+[[ -S "$PROVISION_SOCKET" ]] && ok "socket de provisionamento presente: $PROVISION_SOCKET" || fail "socket de provisionamento ausente: $PROVISION_SOCKET"
 
 check_url "API direta" "http://127.0.0.1:8090/api/health"
 check_url "frontend direto" "http://127.0.0.1:3000/"
@@ -127,6 +132,11 @@ else
 fi
 
 BINDINGS="${RC_RAPID_BINDINGS:-/var/lib/rc-geradores/rapid-bindings.json}"
+RAPID_LOCAL_OFFSET="${RC_RAPID_LOCAL_OFFSET:-10000}"
+if [[ ! "$RAPID_LOCAL_OFFSET" =~ ^[0-9]+$ ]]; then
+  fail "RC_RAPID_LOCAL_OFFSET inválido: $RAPID_LOCAL_OFFSET"
+  RAPID_LOCAL_OFFSET=10000
+fi
 BINDING_COUNT=0
 if [[ -s "$BINDINGS" ]]; then
   BINDING_COUNT="$(jq 'length' "$BINDINGS" 2>/dev/null || echo 0)"
@@ -189,7 +199,7 @@ PY
     [[ "$transport" == "reverse_tcp" ]] || continue
     check_port "$remote_port" "bridge reverse $tag"
     check_port "$local_port" "bridge local Rapid $tag"
-  done < <(jq -r --argjson offset "${RC_RAPID_LOCAL_OFFSET:-10000}" '.[] | [.transport, (.listen_port|tostring), ((.listen_port + $offset)|tostring), (.tag // .generator_id // "gerador")] | @tsv' "$BINDINGS")
+  done < <(jq -r --argjson offset "$RAPID_LOCAL_OFFSET" '.[] | [.transport, (.listen_port|tostring), ((.listen_port + $offset)|tostring), (.tag // .generator_id // "gerador")] | @tsv' "$BINDINGS")
 fi
 
 if (( FAILURES > 0 )); then
