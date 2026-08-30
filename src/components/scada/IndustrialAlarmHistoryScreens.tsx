@@ -1,20 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
-import {
-  AlertTriangle,
-  BellRing,
-  CheckCircle2,
-  History,
-  ShieldAlert,
-  Wrench,
-} from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AlertTriangle, BellRing, CheckCircle2, History, ShieldAlert, Wrench } from "lucide-react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useGenerators } from "@/components/generators/GeneratorsProvider";
-import {
-  industrialApi,
-  type IndustrialAlarm,
-  type ProcessEvent,
-} from "@/lib/industrial-api";
+import { industrialApi, type IndustrialAlarm, type ProcessEvent } from "@/lib/industrial-api";
 import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats, Tone } from "./kit";
 
 function dt(epoch?: number | null) {
@@ -34,19 +23,19 @@ export function IndustrialAlarmsScreen() {
   const [rows, setRows] = useState<IndustrialAlarm[]>([]);
   const [error, setError] = useState("");
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       setRows(await industrialApi.alarms.list(true));
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha ao consultar alarmes industriais.");
     }
-  };
+  }, []);
   useEffect(() => {
     void load();
     const timer = window.setInterval(() => void load(), 5000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [load]);
 
   const tagById = useMemo(() => new Map(generators.map((g) => [g.id, g.tag])), [generators]);
   const pending = rows.filter((r) => !r.acked_at);
@@ -153,17 +142,17 @@ export function ProcessHistoryScreen() {
   const [severity, setSeverity] = useState("");
   const [error, setError] = useState("");
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       setRows(await industrialApi.processEvents.list(1000, generatorId, severity));
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha ao consultar histórico de processo.");
     }
-  };
+  }, [generatorId, severity]);
   useEffect(() => {
     void load();
-  }, [generatorId, severity]);
+  }, [load]);
   const tagById = useMemo(() => new Map(generators.map((g) => [g.id, g.tag])), [generators]);
 
   return (
