@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { LayoutGrid, List, Rows3 } from "lucide-react";
+import { LayoutGrid, List, RefreshCw, Rows3 } from "lucide-react";
 
 import { statusLabel, type GenStatus } from "@/data/generators";
 import { Topbar } from "@/components/layout/Topbar";
@@ -28,7 +28,7 @@ const filters: Array<{ id: GenStatus | "todos"; label: string }> = [
 ];
 
 export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
-  const { generators } = useGenerators();
+  const { generators, ready, error, refresh } = useGenerators();
   const [view, setView] = useState<View>("principal");
   const [status, setStatus] = useState<GenStatus | "todos">("todos");
   const [query, setQuery] = useState("");
@@ -50,6 +50,8 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
   const pages = Math.max(1, Math.ceil(items.length / pageSize));
   const page = Math.min(group, pages - 1);
   const visible = items.slice(page * pageSize, page * pageSize + pageSize);
+  const trulyEmpty = ready && !error && generators.length === 0;
+  const filterEmpty = ready && !error && generators.length > 0 && visible.length === 0;
 
   const setFilter = (id: GenStatus | "todos") => {
     setStatus(id);
@@ -145,15 +147,43 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
       >
         {showKpis && <KpiStrip />}
 
+        {!ready && (
+          <div className="rounded-md border border-border bg-card px-3 py-2 text-sm text-muted-foreground">
+            Carregando cadastro de geradores…
+          </div>
+        )}
+
+        {error && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-offline/50 bg-offline/10 px-3 py-2 text-sm text-offline">
+            <div>
+              <b>Falha ao carregar geradores.</b>
+              <span className="ml-1">{error}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => void refresh()}
+              className="inline-flex h-8 items-center gap-1 rounded-md border border-offline/40 px-2 text-xs font-semibold"
+            >
+              <RefreshCw className="size-3.5" />
+              Tentar novamente
+            </button>
+          </div>
+        )}
+
         <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
           {view === "principal" && (
             <div className="generator-vertical-grid generator-six-card-grid scroll-slim grid h-full min-h-0 min-w-0 content-start gap-3 overflow-auto rounded-md bg-panel p-2">
               {visible.map((g) => (
                 <PowerFlowCard key={g.id} gen={g} />
               ))}
-              {visible.length === 0 && (
+              {trulyEmpty && (
                 <p className="col-span-full p-6 text-sm text-muted-foreground">
-                  Nenhum gerador encontrado.
+                  Nenhum gerador cadastrado.
+                </p>
+              )}
+              {filterEmpty && (
+                <p className="col-span-full p-6 text-sm text-muted-foreground">
+                  Nenhum gerador corresponde ao filtro atual.
                 </p>
               )}
             </div>
@@ -164,8 +194,13 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
               {visible.map((g) => (
                 <CompactCard key={g.id} gen={g} />
               ))}
-              {visible.length === 0 && (
-                <p className="p-6 text-sm text-muted-foreground">Nenhum gerador encontrado.</p>
+              {trulyEmpty && (
+                <p className="p-6 text-sm text-muted-foreground">Nenhum gerador cadastrado.</p>
+              )}
+              {filterEmpty && (
+                <p className="p-6 text-sm text-muted-foreground">
+                  Nenhum gerador corresponde ao filtro atual.
+                </p>
               )}
             </div>
           )}
@@ -173,6 +208,14 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
           {view === "lista" && (
             <div className="scroll-slim h-full min-h-0 min-w-0 overflow-auto">
               <GeneratorTable items={visible} />
+              {trulyEmpty && (
+                <p className="p-6 text-sm text-muted-foreground">Nenhum gerador cadastrado.</p>
+              )}
+              {filterEmpty && (
+                <p className="p-6 text-sm text-muted-foreground">
+                  Nenhum gerador corresponde ao filtro atual.
+                </p>
+              )}
             </div>
           )}
         </div>
