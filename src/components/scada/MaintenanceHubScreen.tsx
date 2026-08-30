@@ -1,9 +1,9 @@
 import { ClipboardList } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { rcApi, type WorkOrderApi } from "@/lib/api";
-import { IndustrialOpsMaintenanceContent } from "./MaintenancePlanContent";
+import { MaintenanceV3Screen } from "./IndustrialOpsScreens";
 import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats } from "./kit";
 
 function isFinal(status: string) {
@@ -16,13 +16,17 @@ export function MaintenanceHubScreen() {
   const admin = can("manageUsers");
   const [orders, setOrders] = useState<WorkOrderApi[]>([]);
   const [error, setError] = useState("");
-  const [loaded, setLoaded] = useState(false);
 
-  const loadOrders = async () => {
-    try { setOrders(await rcApi.workOrders.list()); setError(""); setLoaded(true); }
+  const loadOrders = useCallback(async () => {
+    try { setOrders(await rcApi.workOrders.list()); setError(""); }
     catch (err) { setError(err instanceof Error ? err.message : "Falha ao carregar ordens de serviço."); }
-  };
-  if (!loaded) void loadOrders();
+  }, []);
+
+  useEffect(() => {
+    void loadOrders();
+    const timer = window.setInterval(() => void loadOrders(), 5000);
+    return () => window.clearInterval(timer);
+  }, [loadOrders]);
 
   const setStatus = async (row: WorkOrderApi, status: string) => {
     try { await rcApi.workOrders.update(row.id, { status }); await loadOrders(); }
@@ -35,7 +39,7 @@ export function MaintenanceHubScreen() {
   };
 
   return <>
-    <IndustrialOpsMaintenanceContent onOrdersChanged={() => void loadOrders()} />
+    <MaintenanceV3Screen />
     <ScreenBody>
       <Stats items={[
         { icon: ClipboardList, label: "Ordens de serviço", value: orders.length },
