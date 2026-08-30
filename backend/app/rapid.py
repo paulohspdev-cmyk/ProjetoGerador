@@ -1,4 +1,5 @@
 import json
+import math
 import subprocess
 import time
 from datetime import datetime, timedelta, timezone
@@ -137,10 +138,16 @@ def trend_for_generator(generator, metric, hours=24, archive_bit=1):
     for item in payload.get("points", []):
         if not item.get("defined"):
             continue
+        try:
+            value = float(item.get("val", 0)) * scale
+        except (TypeError, ValueError, OverflowError):
+            continue
+        if not math.isfinite(value):
+            continue
         points.append(
             {
                 "timestamp": item.get("timestamp"),
-                "value": round(float(item.get("val", 0)) * scale, 4),
+                "value": round(value, 4),
                 "stat": int(item.get("stat", 0)),
             }
         )
@@ -239,7 +246,7 @@ def _frontend_generator(generator, values, status, error="", available=None):
     }
 
 
-def overlay_generators(generators):
+def _overlay_generators(generators):
     bindings = load_bindings()
     matched = []
     all_channels = []
@@ -266,19 +273,40 @@ def overlay_generators(generators):
 
         values = {}
         defined_count = 0
+        invalid_values = []
         for key, cfg in (binding.get("channels") or {}).items():
             item = channel_data.get(int(cfg["cnl"]))
             if not item or not item.get("defined"):
                 continue
+            try:
+                scale = float(cfg.get("scale", 1.0))
+                value = float(item.get("val")) * scale
+            except (TypeError, ValueError, OverflowError):
+                invalid_values.append(key)
+                continue
+            if not math.isfinite(value):
+                invalid_values.append(key)
+                continue
             defined_count += 1
-            scale = float(cfg.get("scale", 1.0))
-            value = float(item.get("val", 0)) * scale
             values[key] = int(round(value)) if abs(value - round(value)) < 1e-9 and key != "frequency" else round(value, 3)
 
         if read_error:
             result.append(_frontend_generator(generator, {}, "fault", read_error, available=available))
         elif defined_count:
-            result.append(_frontend_generator(generator, values, "online", available=available))
+            detail = ""
+            if invalid_values:
+                detail = "Canais Rapid com valor inválido: " + ", ".join(sorted(invalid_values))
+            result.append(_frontend_generator(generator, values, "online", detail, available=available))
+        elif invalid_values:
+            result.append(
+                _frontend_generator(
+                    generator,
+                    {},
+                    "fault",
+                    "Rapid SCADA retornou apenas valores inválidos: " + ", ".join(sorted(invalid_values)),
+                    available=available,
+                )
+            )
         else:
             result.append(
                 _frontend_generator(
@@ -291,6 +319,25 @@ def overlay_generators(generators):
             )
 
     return result
+
+
+def overlay_generators(generators):
+    """Combina inventário persistido com telemetria sem permitir que a telemetria apague o parque.
+
+    A lista de ativos é dado de cadastro. Uma falha inesperada no binding/leitor Rapid deve degradar
+    o estado industrial para offline, nunca transformar `/api/generators` em HTTP 500 e fazer o
+    frontend concluir incorretamente que não existem geradores.
+    """
+    generators = list(generators)
+    try:
+        return _overlay_generators(generators)
+    except Exception as exc:
+        print(f"[rapid] falha ao compor overlay: {type(exc).__name__}: {exc}", flush=True)
+        detail = f"Telemetria Rapid indisponível ({type(exc).__name__})"
+        return [
+            _frontend_generator(generator, {}, "offline", detail, available=[])
+            for generator in generators
+        ]
 
 
 def dashboard(generators):
