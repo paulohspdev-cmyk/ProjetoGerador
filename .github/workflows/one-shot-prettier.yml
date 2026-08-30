@@ -1,0 +1,48 @@
+name: One-shot Prettier repair
+
+on:
+  push:
+    branches:
+      - fix/fechamento-funcional-pre-vm
+    paths:
+      - .github/workflows/one-shot-prettier.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/fechamento-funcional-pre-vm
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Format equip-auto with locked Prettier
+        run: npx prettier --write src/components/scada/equip-auto.tsx
+
+      - name: Commit formatting and remove one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/one-shot-prettier.yml
+          git add src/components/scada/equip-auto.tsx
+          if git diff --cached --quiet; then
+            echo "No formatting changes required."
+            exit 0
+          fi
+          git commit -m "fix: normalize equip-auto prettier formatting"
+          git push origin HEAD:fix/fechamento-funcional-pre-vm
