@@ -81,13 +81,16 @@ grep -q 'availableMetrics' src/components/generators/PowerFlowCard.tsx \
   || fail "PowerFlowCard sem telemetria real"
 grep -q '"device": rapid_device' backend/app/control.py \
   || fail "controle IG200 ainda está fixando Rapid Device"
+grep -q 'require_remove = require_remove_permission' backend/app/auth.py \
+  || fail "release sem bloqueio da exclusão direta de gerador"
 
 log "BUILD FORA DA PRODUÇÃO"
 npm ci --include=dev
+npm run lint
 NITRO_PRESET=node-server npm run build
 npm prune --omit=dev
 [[ -f .output/server/index.mjs ]] || fail "build não gerou .output/server/index.mjs"
-echo "Build: OK"
+echo "Build/lint: OK"
 
 log "SMOKE ISOLADO NA PORTA ${TEST_PORT}"
 if ss -ltn 2>/dev/null | grep -q ":${TEST_PORT} "; then
@@ -122,7 +125,7 @@ TEST_PID=""
 echo "Smoke ${TEST_PORT}: OK"
 
 log "BACKUP DA PRODUÇÃO"
-mkdir -p "${BACKUP}"
+install -d -m 0750 -o root -g rcgeradores "${BACKUP}"
 tar \
   --exclude='.git' \
   --exclude='node_modules' \
@@ -204,6 +207,21 @@ rollback() {
   echo "Rollback concluído para ${PREV_HEAD}."
 }
 
+log "APLICANDO HARDENING WEB/HTTPS"
+chmod +x "${BASE}/ops/configure_https.sh"
+if ! bash "${BASE}/ops/configure_https.sh"; then
+  rollback
+  fail "não foi possível aplicar HTTPS com segurança"
+fi
+
+# O helper pode ter endurecido o arquivo de ambiente; recarrega os valores para
+# que as validações abaixo reflitam exatamente o runtime que será reiniciado.
+if [[ -f "${ENV_FILE}" ]]; then
+  # shellcheck disable=SC1090
+  source "${ENV_FILE}"
+  CONTROL_SOCKET="${RC_RAPID_CONTROL_SOCKET:-${CONTROL_SOCKET}}"
+fi
+
 log "REINICIANDO SERVIÇOS"
 systemctl restart rc-geradores-provision 2>/dev/null || true
 systemctl restart rc-geradores-worker 2>/dev/null || true
@@ -224,16 +242,23 @@ for svc in rc-geradores-bridge rc-geradores-api rc-geradores-frontend rc-gerador
 done
 
 if curl -fsS http://127.0.0.1:3000/ >/dev/null 2>&1; then
-  echo "Frontend HTTP: OK"
+  echo "Frontend interno: OK"
 else
-  echo "Frontend HTTP: FALHOU"
+  echo "Frontend interno: FALHOU"
   FAIL=1
 fi
 
-if curl -fsS http://127.0.0.1/api/health >/dev/null 2>&1; then
-  echo "API HTTP: OK"
+if curl -kfsS https://127.0.0.1/api/health >/dev/null 2>&1; then
+  echo "API HTTPS: OK"
 else
-  echo "API HTTP: FALHOU"
+  echo "API HTTPS: FALHOU"
+  FAIL=1
+fi
+
+if curl -sSI http://127.0.0.1/api/health 2>/dev/null | grep -qi '^Location: https://'; then
+  echo "Redirect HTTP->HTTPS: OK"
+else
+  echo "Redirect HTTP->HTTPS: FALHOU"
   FAIL=1
 fi
 
@@ -260,6 +285,13 @@ else
   echo "Git tracked status: OK"
 fi
 
+if ! bash "${BASE}/ops/vm-smoke.sh"; then
+  echo "VM smoke: FALHOU"
+  FAIL=1
+else
+  echo "VM smoke: OK"
+fi
+
 if [[ ${FAIL} -ne 0 ]]; then
   rollback
   exit 1
@@ -282,4 +314,5 @@ log "RELEASE INSTALADA COM SUCESSO"
 echo "Commit: ${COMMIT}"
 echo "HEAD: ${CURRENT_HEAD}"
 echo "Controle: ${RC_ENABLE_IG200_CONTROL:-0}"
+echo "HTTPS: obrigatório"
 echo "Backup: ${BACKUP}"
