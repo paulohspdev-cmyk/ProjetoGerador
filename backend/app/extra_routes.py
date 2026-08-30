@@ -12,6 +12,7 @@ from . import db, ops_store, platform_store, transport_store
 from .auth import current_user, hash_password, require_admin, require_operate, require_view
 from .automation_engine import approve_rule, set_rule_enabled
 from .backup_manager import safe_archive_path
+from .completion_routes import router as completion_router
 from .config import LOGIN_LOCK_SECONDS, LOGIN_MAX_FAILURES
 from .controller_library import channel_catalog, library_summary
 from .control import send_homologated_command
@@ -442,3 +443,6 @@ def report_artifact(report_id: str, user: dict = Depends(require_view)):
         path = Path(artifact["path"])
         media_type = artifact["media_type"]
     return FileResponse(path, media_type=media_type, filename=path.name)
+
+
+router.include_router(completion_router)
