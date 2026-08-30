@@ -174,9 +174,10 @@ function AppShell() {
 }
 
 function AuthenticatedShell() {
+  const { usersError, refreshUsers } = useAuth();
   const { error: generatorsError, refresh: refreshGenerators } = useGenerators();
   const { error: opsError, refresh: refreshOps } = useScadaOps();
-  const hasError = Boolean(generatorsError || opsError);
+  const hasError = Boolean(generatorsError || opsError || usersError);
 
   return (
     <div className="flex min-h-dvh w-full overflow-x-clip bg-background">
@@ -188,12 +189,14 @@ function AuthenticatedShell() {
               <b>Falha ao carregar dados do sistema.</b>
               {generatorsError && <span className="ml-1">Geradores: {generatorsError}.</span>}
               {opsError && <span className="ml-1">Operação: {opsError}.</span>}
+              {usersError && <span className="ml-1">Usuários: {usersError}.</span>}
             </div>
             <button
               type="button"
               onClick={() => {
                 void refreshGenerators();
                 void refreshOps();
+                void refreshUsers().catch(() => undefined);
               }}
               className="h-7 shrink-0 rounded-md border border-offline/40 px-2 font-semibold"
             >
