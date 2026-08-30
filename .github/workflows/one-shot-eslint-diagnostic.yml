@@ -1,0 +1,50 @@
+name: One-shot ESLint diagnostic
+
+on:
+  push:
+    branches:
+      - fix/fechamento-funcional-pre-vm
+    paths:
+      - .github/workflows/one-shot-eslint-diagnostic.yml
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/fechamento-funcional-pre-vm
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Capture ESLint output
+        shell: bash
+        run: |
+          set +e
+          npm run lint > .eslint-current.log 2>&1
+          status=$?
+          set -e
+          printf '\nLINT_EXIT_CODE=%s\n' "$status" >> .eslint-current.log
+
+      - name: Commit diagnostic and remove workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/one-shot-eslint-diagnostic.yml
+          git add .eslint-current.log
+          git commit -m "chore: capture current eslint diagnostics"
+          git push origin HEAD:fix/fechamento-funcional-pre-vm
