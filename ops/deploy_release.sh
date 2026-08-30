@@ -75,10 +75,12 @@ git -c safe.directory="${BASE}" -C "${BASE}" archive "${COMMIT}" | tar -x -C "${
 
 cd "${STAGE}"
 
-grep -q 'className="gen-top"' src/components/generators/GeneratorDetailScreen.tsx \
-  || fail "layout industrial não encontrado na release"
-grep -q 'availableMetrics' src/components/generators/PowerFlowCard.tsx \
-  || fail "PowerFlowCard sem telemetria real"
+test -f scripts/check-architecture.mjs \
+  || fail "release sem guardrail de arquitetura frontend"
+test -f src/components/generators/detail/generator-detail-model.ts \
+  || fail "release sem modelo componentizado do detalhe"
+test -f src/components/generators/power-flow/PowerFlowDiagram.tsx \
+  || fail "release sem componente canônico de power-flow"
 grep -q '"device": rapid_device' backend/app/control.py \
   || fail "controle IG200 ainda está fixando Rapid Device"
 grep -q 'require_remove = require_remove_permission' backend/app/auth.py \
@@ -86,11 +88,13 @@ grep -q 'require_remove = require_remove_permission' backend/app/auth.py \
 
 log "BUILD FORA DA PRODUÇÃO"
 npm ci --include=dev
+npm run check:architecture
 npm run lint
+npm run typecheck
 NITRO_PRESET=node-server npm run build
 npm prune --omit=dev
 [[ -f .output/server/index.mjs ]] || fail "build não gerou .output/server/index.mjs"
-echo "Build/lint: OK"
+echo "Arquitetura/lint/typecheck/build: OK"
 
 log "SMOKE ISOLADO NA PORTA ${TEST_PORT}"
 if ss -ltn 2>/dev/null | grep -q ":${TEST_PORT} "; then
