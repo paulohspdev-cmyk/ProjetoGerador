@@ -7,13 +7,12 @@ import time
 from urllib.parse import quote
 
 from . import db, platform_store
-from .auth import hash_password, verify_password
+from .auth import hash_password, request_remote_ip, verify_password
 from .config import PASSWORD_RESET_TTL, PUBLIC_BASE_URL, SMTP_FROM, SMTP_HOST
 
 
 def remote_ip(request) -> str:
-    forwarded = request.headers.get("x-forwarded-for", "").split(",", 1)[0].strip()
-    return forwarded or (request.client.host if request.client else "")
+    return request_remote_ip(request)
 
 
 def begin_login(email: str, request, max_failures: int, lock_seconds: int):
