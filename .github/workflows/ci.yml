@@ -131,6 +131,18 @@ jobs:
           PYTHONPATH: .
         run: python tests/smoke.py
 
+      - name: Backend sessão e inventário pós-login
+        working-directory: backend
+        env:
+          PYTHONPATH: .
+        run: python tests/session_inventory.py
+
+      - name: Backend overlay Rapid resiliente
+        working-directory: backend
+        env:
+          PYTHONPATH: .
+        run: python tests/rapid_overlay_resilience.py
+
       - name: Backend domínio v3 e catálogo
         working-directory: backend
         env:
