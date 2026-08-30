@@ -9,9 +9,12 @@ RAPID_READER_DLL = Path(os.environ.get("RC_RAPID_READER", "/opt/rc-geradores/.ra
 RAPID_COMM_CONFIG = Path(os.environ.get("RC_RAPID_COMM_CONFIG", "/opt/scada/ScadaComm/Config/ScadaCommConfig.xml"))
 RAPID_CACHE_TTL = float(os.environ.get("RC_RAPID_CACHE_TTL", "1.5"))
 CONTROL_SOCKET = os.environ.get("RC_RAPID_CONTROL_SOCKET", "/run/rc-geradores/control.sock")
+APP_VERSION = os.environ.get("RC_APP_VERSION", "3.0.0").strip() or "3.0.0"
 
 AUTH_COOKIE_NAME = os.environ.get("RC_AUTH_COOKIE", "rc_session")
 AUTH_SESSION_TTL = int(os.environ.get("RC_AUTH_SESSION_TTL", "43200"))
+# Desenvolvimento/testes locais podem manter HTTP quando não usam o instalador.
+# A instalação de produção grava explicitamente RC_AUTH_COOKIE_SECURE=1.
 AUTH_COOKIE_SECURE = os.environ.get("RC_AUTH_COOKIE_SECURE", "0").strip() == "1"
 LOGIN_MAX_FAILURES = int(os.environ.get("RC_LOGIN_MAX_FAILURES", "5"))
 LOGIN_LOCK_SECONDS = int(os.environ.get("RC_LOGIN_LOCK_SECONDS", "900"))
