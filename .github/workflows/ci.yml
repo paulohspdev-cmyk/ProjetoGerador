@@ -36,6 +36,9 @@ jobs:
       - name: Arquitetura frontend
         run: npm run check:architecture
 
+      - name: Superfícies funcionais frontend
+        run: npm run check:functional
+
       - name: Frontend ESLint
         run: npm run lint
 
