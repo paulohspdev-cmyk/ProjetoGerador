@@ -37,13 +37,7 @@ type Props = {
   onMessage: (message: string) => void;
 };
 
-export function ControllersV3CreatePanel({
-  catalog,
-  sites,
-  onCreated,
-  onError,
-  onMessage,
-}: Props) {
+export function ControllersV3CreatePanel({ catalog, sites, onCreated, onError, onMessage }: Props) {
   const { can } = useAuth();
   const [tag, setTag] = useState("");
   const [name, setName] = useState("");
