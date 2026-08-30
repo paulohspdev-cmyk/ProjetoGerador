@@ -27,13 +27,8 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
   const [message, setMessage] = useState<string | null>(null);
 
   const model = useMemo(() => buildGeneratorDetailModel(gen), [gen]);
-  const {
-    events,
-    eventError,
-    trend,
-    trendError,
-    trendLoading,
-  } = useGeneratorDetailData(gen);
+  const { events, eventError, trend, trendError, trendLoading } =
+    useGeneratorDetailData(gen);
 
   const command = async (action: "start" | "stop") => {
     if (!can("operate")) {
@@ -69,11 +64,7 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
       {message && (
         <div className="gen-toast" role="alert">
           {message}
-          <button
-            type="button"
-            onClick={() => setMessage(null)}
-            aria-label="Fechar"
-          >
+          <button type="button" onClick={() => setMessage(null)} aria-label="Fechar">
             ×
           </button>
         </div>
@@ -112,37 +103,37 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
             label="Status"
             value={model.ready}
             sub={model.comm ? "Rapid SCADA conectado" : "Sem telemetria atual"}
-            tone={model.comm ? "green" : "red"}
+            tone={model.comm ? "success" : "danger"}
           />
           <KpiTile
             label="RPM"
             value={formatMetric(model.rpm, "rpm", 0)}
             sub="Canal Rapid homologado"
-            tone="cyan"
+            tone="info"
           />
           <KpiTile
             label="Gerador kW"
             value={formatMetric(model.load, "kW", 0)}
             sub={model.load == null ? "Canal não homologado" : "Rapid SCADA"}
-            tone="gold"
+            tone="accent"
           />
           <KpiTile
             label="Gerador Hz"
             value={formatMetric(model.frequency, "Hz", 2)}
             sub={model.frequency == null ? "Canal não homologado" : "Rapid SCADA"}
-            tone="cyan"
+            tone="info"
           />
           <KpiTile
             label="Tensão L1-L2"
             value={formatMetric(model.genL12, "V", 0)}
             sub={model.genL12 == null ? "Canal não homologado" : "Rapid SCADA"}
-            tone="blue"
+            tone="info"
           />
           <KpiTile
             label="Rapid Device"
             value={gen.rapidDeviceNum == null ? "N/D" : String(gen.rapidDeviceNum)}
             sub={`Fonte ${gen.telemetrySource || "none"}`}
-            tone="gold"
+            tone="warning"
           />
         </div>
 
