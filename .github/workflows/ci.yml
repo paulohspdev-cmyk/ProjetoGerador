@@ -33,10 +33,16 @@ jobs:
           NODE_ENV: production
         run: npm ci --include=dev
 
+      - name: Arquitetura frontend
+        run: npm run check:architecture
+
+      - name: Frontend ESLint
+        run: npm run lint
+
       - name: Frontend TypeScript
         env:
           NODE_ENV: production
-        run: npx tsc --noEmit
+        run: npm run typecheck
 
       - name: Frontend build para VM
         env:
@@ -71,24 +77,26 @@ jobs:
             exit 1
           fi
           test ! -f src/components/generators/detail-widgets.tsx
-          grep -q 'availableMetrics' src/components/generators/PowerFlowCard.tsx
-          grep -q 'availableMetrics' src/components/generators/GeneratorDetailScreen.tsx
-          grep -q -E 'BLOQUEADO|não homologado' src/components/generators/GeneratorDetailScreen.tsx
-          grep -q 'className="gen-top"' src/components/generators/GeneratorDetailScreen.tsx
-          grep -q 'className="comap-panel gen-flow"' src/components/generators/GeneratorDetailScreen.tsx
-          grep -q 'const genPre = runningKnown && running && genHzKnown && genHz > 1' src/components/generators/PowerFlowCard.tsx
-          grep -q 'const genPost = genPre && gcbKnown && gcb' src/components/generators/PowerFlowCard.tsx
-          grep -q 'Math.abs(loadKw) > 0.1' src/components/generators/PowerFlowCard.tsx
+          test -f src/components/generators/detail/generator-detail-model.ts
+          test -f src/components/generators/detail/useGeneratorDetailData.ts
+          test -f src/components/generators/power-flow/PowerFlowDiagram.tsx
+          grep -q 'metricNumber' src/components/generators/detail/generator-detail-model.ts
+          grep -q 'const genPre' src/components/generators/power-flow/PowerFlowDiagram.tsx
+          grep -q 'const genPost' src/components/generators/power-flow/PowerFlowDiagram.tsx
           grep -q 'industrialApi.lifecycle.retire' src/components/generators/DeleteGeneratorButton.tsx
           grep -q 'IndustrialAlarmsScreen' src/components/scada/registry.ts
           grep -q 'ProcessHistoryScreen' src/components/scada/registry.ts
           grep -q 'MaintenanceV3Screen' src/components/scada/registry.ts
           grep -q 'EscalationV3Screen' src/components/scada/registry.ts
-          if grep -q 'rapidDeviceNum === 200' src/components/generators/PowerFlowCard.tsx; then
+          if grep -R -n -E 'Generator Freq\.|autoKwScale|meterColor|batt < 12|n < 12\.2|n < 11\.5' src/components/generators --include='*.ts' --include='*.tsx'; then
+            echo 'ERRO: voltou lógica visual/telemetria não homologada no frontend.' >&2
+            exit 1
+          fi
+          if grep -R -n 'rapidDeviceNum === 200' src/components/generators --include='*.ts' --include='*.tsx'; then
             echo 'ERRO: frontend voltou a restringir o IG200 ao Rapid Device 200.' >&2
             exit 1
           fi
-          if grep -n -E 'gridHz[[:space:]]*=.*60|Math\.max\(gen\.mains.*> 50' src/components/generators/PowerFlowCard.tsx; then
+          if grep -R -n -E 'gridHz[[:space:]]*=.*60|Math\.max\(gen\.mains.*> 50' src/components/generators --include='*.ts' --include='*.tsx'; then
             echo 'ERRO: power-flow voltou a inferir rede/Hz sem canal homologado.' >&2
             exit 1
           fi
