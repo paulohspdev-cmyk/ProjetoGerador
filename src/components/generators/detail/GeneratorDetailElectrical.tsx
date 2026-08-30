@@ -70,9 +70,10 @@ export function GeneratorDetailElectrical({
           <h3>Horas para manutenção</h3>
           <strong className="num">{formatMetric(maintenance, "h", 0)}</strong>
         </header>
-        <div className="maint-track">
-          <i className={maintenance == null ? "is-unknown" : "has-value"} />
-        </div>
+        <div
+          className="maint-track is-unscaled"
+          aria-label="Sem escala percentual homologada"
+        />
         <p>
           {maintenance == null
             ? "Canal não homologado neste Controller Pack"
