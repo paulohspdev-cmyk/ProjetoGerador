@@ -4,14 +4,16 @@ import { EventsScreen, OperationCenter, SitesScreen, TrendsScreen } from "./oper
 import { ReportsV3Screen } from "./ReportsV3Screen";
 import { ApiV3Screen } from "./ApiV3Screen";
 import { SchedulesV3Screen } from "./SchedulesV3Screen";
-import { EmailV3Screen, ErpBmsV3Screen, WhatsAppV3Screen } from "./IntegrationsV3Screens";
+import { EmailV3Screen, WhatsAppV3Screen } from "./IntegrationsV3Screens";
+import { ErpBmsLifecycleScreen } from "./ErpBmsLifecycleScreen";
 import { IndustrialAlarmsScreen, ProcessHistoryScreen, EscalationV3Screen } from "./IndustrialOpsScreens";
 import { MaintenanceHubScreen } from "./MaintenanceHubScreen";
 import { AgendaV3Screen } from "./AgendaV3Screen";
 import { SystemSettingsV3Screen } from "./SystemSettingsV3Screen";
 import { BackupsV3Screen } from "./BackupsV3Screen";
 import { MapScreen } from "./MapScreen";
-import { ControllersV3Screen } from "./ControllersV3Screen";
+import { ControllersLifecycleScreen } from "./ControllersLifecycleScreen";
+import { UsersV3Screen } from "./UsersV3Screen";
 import {
   BatteriesScreen,
   EnergyGens,
@@ -46,7 +48,7 @@ import {
   HealthScreen,
 } from "./scada-lib";
 import { ClientsScreen, UnitsScreen, WebhooksScreen } from "./mgmt";
-import { AuditScreen, RolesScreen, UsersScreen } from "./security";
+import { AuditScreen, RolesScreen } from "./security";
 
 export const screens: Record<string, ComponentType> = {
   "central-de-operacao": OperationCenter,
@@ -67,7 +69,7 @@ export const screens: Record<string, ComponentType> = {
   baterias: BatteriesScreen,
   horimetros: HourmetersScreen,
   agenda: AgendaV3Screen,
-  controladoras: ControllersV3Screen,
+  controladoras: ControllersLifecycleScreen,
   modems: ModemsScreen,
   gateways: GatewaysScreen,
   conectividade: ConnectivityScreen,
@@ -89,14 +91,14 @@ export const screens: Record<string, ComponentType> = {
   laboratorio: LabScreen,
   clientes: ClientsScreen,
   unidades: UnitsScreen,
-  usuarios: UsersScreen,
+  usuarios: UsersV3Screen,
   perfis: RolesScreen,
   auditoria: AuditScreen,
   api: ApiV3Screen,
   webhooks: WebhooksScreen,
   email: EmailV3Screen,
   whatsapp: WhatsAppV3Screen,
-  "erp-bms": ErpBmsV3Screen,
+  "erp-bms": ErpBmsLifecycleScreen,
   configuracoes: SystemSettingsV3Screen,
   backups: BackupsV3Screen,
   saude: HealthScreen,
