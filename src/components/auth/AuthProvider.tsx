@@ -17,7 +17,7 @@ type AuthContextValue = {
   ready: boolean;
   user: AppUser | null;
   users: AppUser[];
-  login: (email: string, password: string) => Promise<string | null>;
+  login: (email: string, password: string, otp?: string) => Promise<string | null>;
   logout: () => Promise<void>;
   can: (perm: Permission) => boolean;
   refreshUsers: () => Promise<void>;
@@ -74,10 +74,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string, otp?: string) => {
     if (!email.trim() || !password) return "Informe e-mail e senha.";
     try {
-      const current = await rcApi.auth.login(email.trim(), password);
+      const current = await rcApi.auth.login(email.trim(), password, otp?.trim() || undefined);
       setUser(current);
       if (canRole(current.role, "manageUsers")) {
         setUsers(await rcApi.users.list());
