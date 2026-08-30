@@ -25,16 +25,16 @@ function NotFoundComponent() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
+        <h2 className="mt-4 text-xl font-semibold text-foreground">Página não encontrada</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
+          A página solicitada não existe ou foi movida.
         </p>
         <div className="mt-6">
           <Link
             to="/"
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Go home
+            Voltar ao início
           </Link>
         </div>
       </div>
@@ -53,10 +53,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
+          Esta página não carregou
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+          O sistema encontrou uma falha ao carregar esta tela. Tente novamente ou volte ao início.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
@@ -66,13 +66,13 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Try again
+            Tentar novamente
           </button>
           <a
             href="/"
             className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
-            Go home
+            Voltar ao início
           </a>
         </div>
       </div>
@@ -134,11 +134,7 @@ function RootComponent() {
       <ThemeProvider>
         <LayoutProvider>
           <AuthProvider>
-            <GeneratorsProvider>
-              <ScadaOpsProvider>
-                <AppShell />
-              </ScadaOpsProvider>
-            </GeneratorsProvider>
+            <AppShell />
           </AuthProvider>
         </LayoutProvider>
       </ThemeProvider>
@@ -165,12 +161,19 @@ function AppShell() {
 
   if (!user) return <Navigate to="/login" />;
 
+  // Providers que dependem de endpoints autenticados só existem depois que a
+  // sessão foi confirmada. Assim eles nunca congelam estado vazio por um 401
+  // ocorrido durante a tela de login e são recriados em cada nova sessão.
   return (
-    <div className="flex min-h-dvh w-full overflow-x-clip bg-background">
-      <AppSidebar />
-      <main className="flex h-dvh min-w-0 flex-1 flex-col overflow-x-clip overflow-y-auto">
-        <Outlet />
-      </main>
-    </div>
+    <GeneratorsProvider>
+      <ScadaOpsProvider>
+        <div className="flex min-h-dvh w-full overflow-x-clip bg-background">
+          <AppSidebar />
+          <main className="flex h-dvh min-w-0 flex-1 flex-col overflow-x-clip overflow-y-auto">
+            <Outlet />
+          </main>
+        </div>
+      </ScadaOpsProvider>
+    </GeneratorsProvider>
   );
 }
