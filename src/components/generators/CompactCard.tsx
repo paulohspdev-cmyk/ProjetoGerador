@@ -2,8 +2,8 @@ import { type ReactNode } from "react";
 import { Clock, ExternalLink, Network, Signal } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
+import { CONTROLLER_IMAGE_FALLBACK, controllerImageSrc } from "@/assets/controllers";
 import type { Generator } from "@/data/generators";
-import { CONTROLLER_IMAGE_FALLBACK, controllerImageSrc } from "@/data/controller-images";
 import { StatusPill } from "./StatusPill";
 import { DeleteGeneratorButton } from "./DeleteGeneratorButton";
 import { IconBattery, IconBolt, IconRunHours } from "./scada-icons";
@@ -45,7 +45,7 @@ export function CompactCard({ gen }: { gen: Generator }) {
     <article
       className={cn(
         "flex min-w-0 flex-col rounded-lg border bg-card p-2.5",
-        connected && "border-online/55 shadow-[0_0_12px_rgba(0,230,118,0.12)]",
+        connected && "border-online/55 shadow-[var(--glow-online)]",
         gen.status === "alerta" && "border-alert/50",
         gen.status === "offline" && "border-offline/40",
         !configured && "border-border",
@@ -70,7 +70,7 @@ export function CompactCard({ gen }: { gen: Generator }) {
         {configured ? (
           <div className="min-w-0 flex-1 space-y-1">
             <Metric icon={<Network className="size-3" />} label="Endpoint" value={gen.ip || "N/D"} />
-            <Metric icon={<IconBattery size={12} />} label="Bateria" value={battKnown ? `${fmt(batt)} V` : "N/D"} tone={battKnown ? (batt < 12 ? "text-alert" : "text-online") : undefined} />
+            <Metric icon={<IconBattery size={12} />} label="Bateria" value={battKnown ? `${fmt(batt)} V` : "N/D"} />
             <Metric icon={<IconBolt size={12} />} label="Frequência" value={freqKnown && gen.status !== "offline" ? `${fmt(gen.frequency!, 2)} Hz` : "N/D"} tone={freqKnown && connected ? "text-online" : "text-muted-foreground"} />
             <Metric icon={<IconRunHours size={12} />} label="Tempo operação" value={hoursKnown ? `${fmt(gen.runHours)} h` : "N/D"} />
             <Metric icon={<Clock className="size-3" />} label="Manutenção" value={maintKnown ? `${fmt(gen.maintenance, 0)} h` : "N/D"} />
