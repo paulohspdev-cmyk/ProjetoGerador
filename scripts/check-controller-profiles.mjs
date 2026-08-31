@@ -13,7 +13,9 @@ const paths = {
   ignt: "controllers/lab/comap/ig-nt/manifest.json",
   mains: "controllers/lab/comap/inteli-mains-comap/manifest.json",
 };
-const profiles = Object.fromEntries(Object.entries(paths).map(([key, path]) => [key, load(path)]));
+const profiles = Object.fromEntries(
+  Object.entries(paths).map(([key, path]) => [key, load(path)]),
+);
 
 const forbiddenCommands = [
   "start",
@@ -30,12 +32,15 @@ const forbiddenCommands = [
 
 for (const [key, profile] of Object.entries(profiles)) {
   if (profile.schema !== 3) failures.push(`${key}: schema deve ser 3`);
-  if (profile.status !== "documented") failures.push(`${key}: perfil novo deve permanecer documented`);
-  if (!profile.mapping?.readOnly) failures.push(`${key}: mapa documental deve ser somente leitura`);
+  if (profile.status !== "documented")
+    failures.push(`${key}: perfil novo deve permanecer documented`);
+  if (!profile.mapping?.readOnly)
+    failures.push(`${key}: mapa documental deve ser somente leitura`);
   if ((profile.validatedTelemetry ?? []).length !== 0) {
     failures.push(`${key}: documento não pode ser promovido a telemetria validada`);
   }
-  if (!(profile.documentedTelemetry ?? []).length) failures.push(`${key}: sem telemetria documentada`);
+  if (!(profile.documentedTelemetry ?? []).length)
+    failures.push(`${key}: sem telemetria documentada`);
   for (const command of forbiddenCommands) {
     if (profile.capabilities?.[command] !== false) {
       failures.push(`${key}: comando ${command} não pode ser habilitado por documento`);
@@ -73,26 +78,45 @@ if (
   failures.push("IG4 200: feedbacks GCB/MCB documentados foram alterados");
 }
 
-if (profiles.ignt.metricUnits.fuel_level !== "%" || profiles.ignt.mapping.objects.fuel_level.object !== 9157) {
+if (
+  profiles.ignt.metricUnits.fuel_level !== "%" ||
+  profiles.ignt.mapping.objects.fuel_level.object !== 9157
+) {
   failures.push("IG-NT: combustível deve permanecer percentual no objeto 9157");
 }
 if (profiles.ignt.mapping.registers || profiles.ignt.rapid) {
-  failures.push("IG-NT: object table não pode virar template/register Modbus sem tradução documental");
+  failures.push(
+    "IG-NT: object table não pode virar template/register Modbus sem tradução documental",
+  );
 }
 
-const forbiddenMainsMetrics = ["rpm", "oil_pressure", "coolant_temperature", "fuel_level"];
-if (profiles.mains.application !== "mains") failures.push("InteliMains: application deve ser mains");
+const forbiddenMainsMetrics = [
+  "rpm",
+  "oil_pressure",
+  "coolant_temperature",
+  "fuel_level",
+];
+if (profiles.mains.application !== "mains")
+  failures.push("InteliMains: application deve ser mains");
 for (const metric of forbiddenMainsMetrics) {
   if (profiles.mains.documentedTelemetry.includes(metric)) {
     failures.push(`InteliMains: métrica de motor indevida ${metric}`);
   }
 }
 if (profiles.mains.mapping.registers || profiles.mains.rapid) {
-  failures.push("InteliMains: object table não pode virar template/register Modbus sem tradução documental");
+  failures.push(
+    "InteliMains: object table não pode virar template/register Modbus sem tradução documental",
+  );
 }
 
 const card = read("src/components/generators/PowerFlowCard.tsx");
-for (const marker of ["metricUnits", "oilUnit", "fuelUnit", "fuelIsPercent", "bar={fuelIsPercent}"]) {
+for (const marker of [
+  "metricUnits",
+  "oilUnit",
+  "fuelUnit",
+  "fuelIsPercent",
+  "bar={fuelIsPercent}",
+]) {
   if (!card.includes(marker)) failures.push(`card perdeu tratamento de unidade real: ${marker}`);
 }
 
@@ -103,7 +127,8 @@ if (!dashboard.includes('metricUnit(generator, "fuel_level", "%") === "%"')) {
 
 const rapid = read("backend/app/rapid.py");
 for (const marker of ["pack_for_model", "_metric_units", '"metricUnits": _metric_units']) {
-  if (!rapid.includes(marker)) failures.push(`overlay Rapid perdeu unidade do Controller Pack: ${marker}`);
+  if (!rapid.includes(marker))
+    failures.push(`overlay Rapid perdeu unidade do Controller Pack: ${marker}`);
 }
 
 const library = read("backend/app/controller_library.py");
@@ -112,7 +137,11 @@ for (const marker of ["documentedTelemetry", "metricUnits", "_pack_telemetry_sta
 }
 
 const controllerAssets = read("src/assets/controllers.ts");
-for (const forbidden of ['key.includes("INTELILITE")', 'key.includes("INTELIMAINS")', 'key.includes("COMAP")']) {
+for (const forbidden of [
+  'key.includes("INTELILITE")',
+  'key.includes("INTELIMAINS")',
+  'key.includes("COMAP")',
+]) {
   if (controllerAssets.includes(forbidden)) {
     failures.push(`imagem de controladora voltou a usar fallback de outro modelo: ${forbidden}`);
   }
@@ -122,4 +151,6 @@ if (failures.length) {
   console.error("Controller profile check falhou:\n- " + failures.join("\n- "));
   process.exit(1);
 }
-console.log("Controller profile check OK: 5 perfis documentados, unidades e segurança preservadas.");
+console.log(
+  "Controller profile check OK: 5 perfis documentados, unidades e segurança preservadas.",
+);
