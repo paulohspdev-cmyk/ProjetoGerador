@@ -1,25 +1,52 @@
-name: Temp Source Audit PR35
+name: Temp Finalize PR35
 
 on:
   pull_request:
     branches:
       - fix/restaura-paleta-cards-industriais
 
+permissions:
+  contents: write
+
 jobs:
-  snapshot:
+  finalize:
     if: github.head_ref == 'fix/reconstrucao-produto-ux-profissional'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout branch do PR
+        uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
-      - name: Empacotar fontes para auditoria
+          ref: fix/reconstrucao-produto-ux-profissional
+          fetch-depth: 0
+
+      - name: Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Dependências frontend
+        run: npm ci --include=dev
+
+      - name: Aplicar fechamento final
+        run: python scripts/finalize_pr35_temp.py
+
+      - name: Formatar fontes alteradas
+        run: npx prettier --write src scripts/check-functional-surfaces.mjs
+
+      - name: Validar frontend completo
+        run: npm run check
+
+      - name: Validar Python
+        run: python -m compileall -q backend/app
+
+      - name: Remover helpers temporários
+        run: git rm scripts/finalize_pr35_temp.py .github/workflows/temp-source-audit-pr35.yml
+
+      - name: Commitar fechamento
         run: |
-          mkdir -p /tmp/pr35-source
-          cp -R src backend scripts rapid ops controllers package.json package-lock.json tsconfig.json /tmp/pr35-source/
-      - name: Salvar snapshot
-        uses: actions/upload-artifact@v4
-        with:
-          name: pr35-source-audit
-          path: /tmp/pr35-source
-          retention-days: 1
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src backend scripts .github/workflows
+          git commit -m 'fix: concluir auditoria operacional pré-VM'
+          git push origin HEAD:fix/reconstrucao-produto-ux-profissional
