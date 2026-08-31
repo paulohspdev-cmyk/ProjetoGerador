@@ -5,7 +5,11 @@ const root = process.cwd();
 const read = (path) => readFileSync(join(root, path), "utf8");
 const failures = [];
 
-const dashboard = read("src/components/scada/OverviewDashboard.tsx");
+const dashboard = [
+  read("src/components/scada/OverviewDashboard.tsx"),
+  read("src/components/scada/overview-dashboard-summary.tsx"),
+  read("src/components/scada/overview-dashboard-actions.tsx"),
+].join("\n");
 for (const marker of [
   "Painel de decisão",
   "Modems online",
@@ -21,11 +25,22 @@ for (const marker of [
 ]) {
   if (!dashboard.includes(marker)) failures.push(`dashboard perdeu indicador de decisão: ${marker}`);
 }
-for (const forbidden of ["Rapid SCADA", "Controller Pack", "StatusPill", "toFixed(0)} rpm", "toFixed(1)} Hz"]) {
+for (const forbidden of [
+  "Rapid SCADA",
+  "Controller Pack",
+  "StatusPill",
+  "toFixed(0)} rpm",
+  "toFixed(1)} Hz",
+]) {
   if (dashboard.includes(forbidden)) failures.push(`dashboard voltou a expor detalhe técnico: ${forbidden}`);
 }
 if (dashboard.includes("generator.tag") && dashboard.includes("/p/geradores/$id")) {
   failures.push("dashboard voltou a listar geradores individualmente");
+}
+
+const dashboardModel = read("src/components/scada/overview-dashboard-model.ts");
+for (const marker of ["fuel_level", "todayBytes", "monthBytes", "friendlyAlarmMessage"]) {
+  if (!dashboardModel.includes(marker)) failures.push(`modelo de decisão perdeu fonte real: ${marker}`);
 }
 
 const board = read("src/components/generators/GeneratorsBoard.tsx");
