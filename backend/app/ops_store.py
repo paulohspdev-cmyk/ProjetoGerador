@@ -237,7 +237,7 @@ def create_work_order(data: dict, actor: str):
         "site": site,
         "type": str(data.get("type") or "Preventiva").strip(),
         "due": float(data.get("due") or 0),
-        "tech": str(data.get("tech") or "Equipe campo").strip(),
+        "tech": str(data.get("tech") or "").strip(),
         "status": str(data.get("status") or "Planejada").strip(),
         "description": str(data.get("description") or "").strip(),
         "created_at": now,

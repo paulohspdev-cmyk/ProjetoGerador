@@ -201,6 +201,24 @@ for (const marker of ["PRAGMA quick_check", "_pre_restore_snapshot", "_rollback_
   if (!backup.includes(marker)) failures.push(`restore sem proteção obrigatória: ${marker}`);
 }
 
+const opsStore = read("backend/app/ops_store.py");
+if (opsStore.includes('data.get("tech") or "Equipe campo"')) {
+  failures.push("ordem de serviço voltou a inventar responsável padrão");
+}
+
+const operationalMap = read("src/components/scada/OperationalMap.tsx");
+if (operationalMap.includes("Number(g.load || 0)")) {
+  failures.push("mapa voltou a converter potência ausente em zero");
+}
+if (!operationalMap.includes("load: measuredLoad.length")) {
+  failures.push("mapa perdeu distinção entre potência medida e N/D");
+}
+
+const generatorCardCss = read("src/components/generators/generator-six-card.css");
+if (generatorCardCss.includes(".engine-status-block .comap-engine:last-child")) {
+  failures.push("card compacto voltou a ocultar o horímetro");
+}
+
 const forbidden = [
   ["fuelLevel < 40", "limiar genérico inventado de combustível"],
   ["battery < 12", "limiar genérico inventado de bateria"],

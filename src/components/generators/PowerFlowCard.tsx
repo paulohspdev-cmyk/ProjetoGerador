@@ -98,7 +98,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     setCommandMessage(null);
     try {
       const result = await rcApi.generators.command(gen.id, action);
-      setCommandMessage(result.reason || `${label} aceito pelo caminho homologado.`);
+      setCommandMessage(result.reason || `${label} aceito pelo sistema.`);
       await refresh();
     } catch (error) {
       setCommandMessage(error instanceof Error ? error.message : `Falha no comando ${label}.`);
@@ -131,7 +131,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         </div>
         <span
           className="comap-alarm"
-          title={alarmCountKnown ? "Contagem de alarmes" : "Canal de alarmes não homologado"}
+          title={alarmCountKnown ? "Contagem de alarmes" : "Alarmes N/D"}
         >
           <svg viewBox="0 0 24 24">
             <path d="M12 3 2.8 20h18.4L12 3Z" />
@@ -296,7 +296,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         ))}
         {!mainsKnown && !genVoltageKnown && (
           <p className="py-1 text-[9px] text-muted-foreground">
-            Canais de tensão não homologados neste pack.
+            Tensões N/D para esta controladora.
           </p>
         )}
       </section>

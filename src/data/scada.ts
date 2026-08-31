@@ -104,7 +104,7 @@ export function buildAlarms(list: Generator[]): ScadaAlarm[] {
           severity: "alarme",
           message:
             g.lastError ||
-            "Controlador reporta condição de alerta; detalhes dependem dos canais homologados",
+            "Controlador reporta condição de alerta; detalhes dependem das informações disponíveis",
           since: "—",
           ack: false,
         },

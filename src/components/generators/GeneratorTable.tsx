@@ -97,8 +97,8 @@ function MobileRow({ items }: { items: Generator[] }) {
               </div>
             </dl>
             <p className="mt-2 text-[10px] text-muted-foreground">
-              Sem classificação de manutenção por limiar local; alertas dependem do plano/Controller
-              Pack homologado.
+              Sem classificação local por limite fixo; alertas seguem a configuração real do
+              equipamento.
             </p>
             <OpenLink id={g.id} className="mt-3 h-10 w-full text-[12px] font-semibold" />
             <div className="mt-1 flex justify-end">

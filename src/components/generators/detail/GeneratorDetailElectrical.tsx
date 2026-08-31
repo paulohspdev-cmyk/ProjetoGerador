@@ -42,8 +42,8 @@ export function GeneratorDetailElectrical({
           <MetricCell label="GCB" value={gcbKnown ? (gen.gcb ? "FECHADO" : "ABERTO") : "N/D"} />
           <MetricCell label="RPM" value={formatMetric(rpm, "rpm", 0)} />
           <MetricCell
-            label="Fonte"
-            value={gen.telemetrySource === "rapid_scada" ? "Rapid SCADA" : "N/D"}
+            label="Origem"
+            value={gen.telemetrySource === "rapid_scada" ? "Telemetria" : "N/D"}
           />
         </div>
       </section>
@@ -65,11 +65,11 @@ export function GeneratorDetailElectrical({
           <h3>Horas para manutenção</h3>
           <strong className="num">{formatMetric(maintenance, "h", 0)}</strong>
         </header>
-        <div className="maint-track is-unscaled" aria-label="Sem escala percentual homologada" />
+        <div className="maint-track is-unscaled" aria-label="Sem escala percentual configurada" />
         <p>
           {maintenance == null
-            ? "Canal não homologado neste Controller Pack"
-            : "Valor real recebido do Rapid SCADA; sem escala percentual presumida"}
+            ? "Informação de manutenção N/D"
+            : "Valor real disponível; sem percentual presumido"}
         </p>
       </section>
     </div>

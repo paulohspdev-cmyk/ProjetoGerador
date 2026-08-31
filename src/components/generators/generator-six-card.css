@@ -81,10 +81,6 @@
   height: 7px;
 }
 
-.generator-six-card-grid .engine-status-block .comap-engine:last-child {
-  display: none;
-}
-
 .generator-six-card-grid .controller-mode-btn {
   min-height: 26px;
   font-size: 10px;

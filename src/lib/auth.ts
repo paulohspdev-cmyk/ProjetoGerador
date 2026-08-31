@@ -21,7 +21,7 @@ export const ROLE_META: Array<{ id: UserRole; name: string; perms: string }> = [
   {
     id: "administrador",
     name: "Administrador",
-    perms: "Acesso total: visualização, cadastro, usuários, auditoria e START/STOP homologados",
+    perms: "Acesso total: visualização, cadastro, usuários, auditoria e START/STOP autorizados",
   },
   {
     id: "cadastro",

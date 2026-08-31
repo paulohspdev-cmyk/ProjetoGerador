@@ -20,8 +20,8 @@ export function CommunicationScreen() {
       <Panel title="Comunicação industrial">
         <div className="space-y-3 text-[13px]">
           <p className="rounded-md border border-border p-3">
-            Rapid SCADA é o mestre industrial. Reverse TCP usa bridge; Modbus
-            TCP/RTU-over-TCP/serial são provisionados diretamente no Communicator.
+            Acompanhe aqui o estado de comunicação de cada gerador. Detalhes de integração ficam
+            restritos às telas administrativas.
           </p>
           <div className="grid gap-2 sm:grid-cols-2">
             {generators.map((g) => (
@@ -29,7 +29,7 @@ export function CommunicationScreen() {
                 <div className="flex items-center justify-between gap-2">
                   <b>{g.tag}</b>
                   <Pill tone={g.telemetrySource === "rapid_scada" ? "ok" : "muted"}>
-                    {g.telemetrySource || "none"}
+                    {g.telemetrySource === "rapid_scada" ? "DISPONÍVEL" : "N/D"}
                   </Pill>
                 </div>
                 <p className="mt-1 text-[11px] text-muted-foreground">{g.controller}</p>

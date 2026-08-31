@@ -93,8 +93,8 @@ export function EnergyRede() {
         ]}
       />
       <InfoNotice>
-        Esta tela só mostra grandezas de REDE quando o Controller Pack possui canais específicos de
-        rede. Tensão do gerador não é reutilizada como tensão da rede.
+        A tela mostra somente medições de rede realmente disponíveis. Dados do gerador não são
+        reutilizados como se fossem dados da concessionária.
       </InfoNotice>
       <EnergyTable
         rows={generators.map((g) => ({
@@ -137,8 +137,8 @@ export function EnergyGens() {
         ]}
       />
       <InfoNotice>
-        kW, GCB, fator de potência e outras grandezas só aparecem quando existem canais homologados
-        no pack da controladora. O IG200 atual não recebe valores inventados para completar a tela.
+        Potência, GCB, fator de potência e outras grandezas só aparecem quando a controladora
+        realmente fornece essas medições. Valores ausentes permanecem N/D.
       </InfoNotice>
       <EnergyTable
         rows={generators.map((g) => ({
@@ -185,8 +185,8 @@ export function EnergyLoad() {
         ]}
       />
       <InfoNotice>
-        Fator de potência, pico e histórico não são calculados por estimativa. Quando os canais
-        existirem, o histórico será lido do archive do Rapid SCADA.
+        Fator de potência, pico e histórico não são calculados por estimativa. O histórico só é
+        apresentado quando houver dados reais disponíveis.
       </InfoNotice>
       <EnergyTable rows={rows} />
     </ScreenBody>
@@ -216,7 +216,8 @@ export function EnergyTransfer() {
         ]}
       />
       <InfoNotice>
-        Estados ATS/MCB/GCB não são inferidos por RPM. Sem canal homologado, o estado permanece N/D.
+        Estados ATS/MCB/GCB não são inferidos por RPM. Sem informação real disponível, o estado
+        permanece N/D.
       </InfoNotice>
       <EnergyTable
         rows={generators.map((g) => {
@@ -266,8 +267,8 @@ export function EnergyParallel() {
         ]}
       />
       <InfoNotice>
-        Paralelismo, sincronismo e comandos de disjuntores permanecem bloqueados até homologação
-        específica da controladora.
+        Paralelismo, sincronismo e comandos de disjuntores permanecem indisponíveis nesta versão
+        operacional.
       </InfoNotice>
       <EnergyTable
         rows={generators.map((g) => ({
@@ -437,8 +438,8 @@ export function FuelScreen() {
         ]}
       />
       <InfoNotice>
-        O painel mostra o nível medido, mas não classifica combustível como baixo sem um limite
-        homologado no Controller Pack/configuração do equipamento.
+        O painel mostra o nível medido, mas só classifica combustível como baixo quando existir um
+        limite configurado para o equipamento.
       </InfoNotice>
       <Panel title="Tanques / geradores">
         <ScadaTable
@@ -451,7 +452,7 @@ export function FuelScreen() {
               label: "Estado",
               render: (r) =>
                 hasMetric(r, "fuel_level") ? (
-                  <Tone tone="muted">Medido · sem limite homologado</Tone>
+                  <Tone tone="muted">Medido · sem limite configurado</Tone>
                 ) : (
                   <Tone tone="muted">N/D</Tone>
                 ),
@@ -486,9 +487,8 @@ export function BatteriesScreen() {
         ]}
       />
       <InfoNotice>
-        A tensão é exibida somente quando medida. Saúde/baixa tensão não é inferida por um corte
-        genérico: nominal e limites devem vir do Controller Pack ou da configuração homologada do
-        equipamento.
+        A tensão é exibida somente quando medida. Saúde e baixa tensão só são classificadas quando
+        existirem referência nominal e limites configurados para o equipamento.
       </InfoNotice>
       <Panel title="Bancos de baterias">
         <ScadaTable
@@ -551,7 +551,7 @@ export function HourmetersScreen() {
             {
               label: "Fonte",
               render: (r) =>
-                hasMetric(r, "run_hours") ? <Pill tone="ok">Rapid SCADA</Pill> : <Pill>N/D</Pill>,
+                hasMetric(r, "run_hours") ? <Pill tone="ok">Telemetria</Pill> : <Pill>N/D</Pill>,
             },
           ]}
         />

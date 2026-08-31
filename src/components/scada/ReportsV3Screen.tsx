@@ -132,8 +132,8 @@ export function ReportsV3Screen() {
             </div>
           </form>
           <p className="mt-2 text-[11px] text-muted-foreground">
-            O backend exporta somente métricas disponíveis na API/Rapid SCADA. Dado não homologado
-            permanece ausente/N/D; o relatório não estima valores.
+            O relatório usa somente dados realmente disponíveis. Informações ausentes permanecem N/D
+            e nenhum valor é estimado para completar o documento.
           </p>
         </Panel>
       )}

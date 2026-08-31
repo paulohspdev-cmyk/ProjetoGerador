@@ -31,7 +31,7 @@ export function GeneratorDetailBottom({
 
       <section className="gen-card min-h-0 overflow-hidden">
         <header className="gen-card-head">
-          <h2>Eventos reais</h2>
+          <h2>Eventos</h2>
           <span className="num text-[10px] text-muted-foreground">{events.length}</span>
         </header>
         <div className="gen-resumo">
@@ -58,7 +58,7 @@ export function GeneratorDetailBottom({
 
       <section className="gen-card min-h-0 overflow-hidden">
         <header className="gen-card-head">
-          <h2>Sinais Rapid</h2>
+          <h2>Disponibilidade dos sinais</h2>
           <span className="num text-[10px] text-muted-foreground">{available.size}</span>
         </header>
         <div className="gen-resumo">
@@ -104,12 +104,12 @@ export function GeneratorDetailBottom({
             <b>{gen.controller}</b>
           </div>
           <div>
-            <span>Rapid Device</span>
+            <span>Dispositivo</span>
             <b className="num">{gen.rapidDeviceNum ?? "N/D"}</b>
           </div>
           <div>
             <span>Telemetria</span>
-            <b>{gen.telemetrySource || "none"}</b>
+            <b>{gen.telemetrySource === "rapid_scada" ? "DISPONÍVEL" : "N/D"}</b>
           </div>
           <div>
             <span>MCB / GCB</span>
@@ -132,13 +132,13 @@ export function GeneratorDetailBottom({
             <span>
               <Activity className="inline size-3" />
             </span>
-            <b>START/STOP via backend homologado</b>
+            <b>START/STOP disponíveis conforme permissão</b>
           </div>
           <div className="gen-log">
             <span>
               <History className="inline size-3" />
             </span>
-            <b>Histórico do Rapid SCADA</b>
+            <b>Histórico baseado em dados reais</b>
           </div>
         </div>
       </section>

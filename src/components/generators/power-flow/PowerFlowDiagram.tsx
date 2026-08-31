@@ -22,7 +22,7 @@ export function IoBtn({
     <button
       type="button"
       disabled={disabled}
-      title={disabled ? "Comando não homologado" : undefined}
+      title={disabled ? "Função indisponível" : undefined}
       aria-label={ariaLabel}
       aria-pressed={active}
       className={cn(

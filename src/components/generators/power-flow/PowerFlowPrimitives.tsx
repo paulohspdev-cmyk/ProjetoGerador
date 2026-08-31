@@ -98,7 +98,7 @@ export function ControllerModeBar({ gen, known }: { gen: Generator; known: boole
             key={item.label}
             type="button"
             disabled
-            title={`${item.title ?? item.label} — comando de modo ainda não homologado`}
+            title={`${item.title ?? item.label} — função indisponível`}
             aria-pressed={known && item.active}
             className={cn("controller-mode-btn", known && item.active && "is-active")}
           >
@@ -165,7 +165,7 @@ export function PowerGaugeKw({ value, nominal }: { value: number | null; nominal
       <div className="kw-gauge-caption">
         {nominal != null && nominal > 0
           ? `Nominal ${fmt(nominal, 0)} kW`
-          : "Escala nominal não homologada"}
+          : "Escala nominal não configurada"}
       </div>
     </div>
   );
@@ -192,7 +192,7 @@ export function BreakerControl({
       <button
         type="button"
         disabled
-        title={`${label}: ${stateLabel}. Comando de contato ainda não homologado.`}
+        title={`${label}: ${stateLabel}. Comando de contato indisponível.`}
         aria-label={`${label} ${stateLabel}`}
         className="breaker-single-button"
       >

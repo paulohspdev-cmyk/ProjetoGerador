@@ -99,14 +99,14 @@ export function GeneratorDetailOverview({
               )}
             >
               {alarms == null
-                ? "Canal de alarmes não homologado"
+                ? "Alarmes N/D"
                 : alarms > 0
                   ? `${fmt(alarms, 0)} alarme(s) reportado(s)`
                   : "Sem alarmes reportados"}
             </p>
           </div>
           <div className="gen-flags">
-            <BoolFlag label="Comunicação Rapid" value={comm} goodWhenTrue />
+            <BoolFlag label="Comunicação" value={comm} goodWhenTrue />
             <BoolFlag label="Rotação detectada" value={running} goodWhenTrue />
             <BoolFlag label="MCB fechado" value={mcbKnown ? gen.mcb : null} goodWhenTrue />
             <BoolFlag label="GCB fechado" value={gcbKnown ? gen.gcb : null} goodWhenTrue />
@@ -126,7 +126,7 @@ export function GeneratorDetailOverview({
             <MetricCell label="L3-N" value={formatMetric(mainsL3, "V", 0)} />
             <MetricCell label="L1-L2" value={formatMetric(mainsL12, "V", 0)} />
             <MetricCell label="MCB" value={mcbKnown ? (gen.mcb ? "FECHADO" : "ABERTO") : "N/D"} />
-            <MetricCell label="Fonte" value={mainsKnown ? "Rapid SCADA" : "N/D"} />
+            <MetricCell label="Origem" value={mainsKnown ? "Telemetria" : "N/D"} />
           </div>
           <div className="gen-phase">
             <span>
@@ -160,11 +160,11 @@ export function GeneratorDetailOverview({
             <MetricCell label="Manutenção" value={formatMetric(maintenance, "h", 0)} />
             <MetricCell label="Modo" value={modeLabel} />
             <MetricCell
-              label="Fonte"
-              value={gen.telemetrySource === "rapid_scada" ? "Rapid SCADA" : "N/D"}
+              label="Origem"
+              value={gen.telemetrySource === "rapid_scada" ? "Telemetria" : "N/D"}
             />
             <MetricCell
-              label="Device"
+              label="Dispositivo"
               value={gen.rapidDeviceNum == null ? "N/D" : String(gen.rapidDeviceNum)}
             />
             <MetricCell label="Estado" value={ready} />

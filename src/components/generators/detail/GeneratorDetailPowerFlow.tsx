@@ -50,7 +50,7 @@ export function GeneratorDetailPowerFlow({
           <button
             type="button"
             disabled
-            title="Paralelismo não homologado"
+            title="Paralelismo indisponível"
             className="comap-prll absolute left-0 top-[1%] z-20 cursor-not-allowed opacity-60"
           >
             PRLL
