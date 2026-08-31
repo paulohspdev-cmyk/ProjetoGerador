@@ -250,9 +250,7 @@ export function PowerGaugeKw({
       </div>
 
       <div className="kw-gauge-caption">
-        {nominal != null && nominal > 0
-          ? `ESCALA ${fmt(nominal, 0)} kW`
-          : "ESCALA NOMINAL N/D"}
+        {nominal != null && nominal > 0 ? `ESCALA ${fmt(nominal, 0)} kW` : "ESCALA NOMINAL N/D"}
       </div>
     </div>
   );
