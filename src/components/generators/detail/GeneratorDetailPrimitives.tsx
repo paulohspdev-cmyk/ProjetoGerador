@@ -16,14 +16,14 @@ export function KpiTile({
 }: {
   label: string;
   value: string;
-  sub: string;
+  sub?: string;
   tone?: KpiTone;
 }) {
   return (
     <div className={cn("gen-kpi", `is-${tone}`)}>
       <p>{label}</p>
       <strong>{value}</strong>
-      <span>{sub}</span>
+      {sub && <span>{sub}</span>}
     </div>
   );
 }
