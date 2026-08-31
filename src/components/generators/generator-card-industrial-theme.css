@@ -1,0 +1,287 @@
+/*
+ * Paleta visual dos cards verticais de geradores.
+ *
+ * Estes valores recuperam a identidade industrial usada antes da tokenização
+ * global do painel ComAp. O escopo é deliberadamente restrito ao board de
+ * geradores para não alterar o restante do SCADA nem a lógica funcional.
+ */
+.generator-six-card-grid .comap-panel.comap-panel-v2 {
+  --primary: #43ef00;
+  --primary-foreground: #ffffff;
+  --info: #3c6884;
+  --online: #43ef00;
+  --online-foreground: #ffffff;
+  --alert: #ffc400;
+  --alert-foreground: #101820;
+  --offline: #ff2f25;
+  --offline-foreground: #ffffff;
+  --idle: #193246;
+
+  --industrial-bg: #020810;
+  --industrial-panel: #031725;
+  --industrial-panel-strong: #02111c;
+  --industrial-border: #1f4f6a;
+  --industrial-foreground: #f4f7fb;
+  --industrial-muted: #a8bac8;
+
+  --comap-bg: #020810;
+  --comap-panel: #031725;
+  --comap-panel-strong: #02111c;
+  --comap-border: #1f4f6a;
+  --comap-text: #f4f7fb;
+  --comap-muted: #a8bac8;
+  --comap-online: #43ef00;
+  --comap-alert: #ffc400;
+  --comap-offline: #ff2f25;
+
+  --glow-online: 0 0 9px rgba(67, 239, 0, 0.38);
+  --glow-alert: 0 0 8px rgba(255, 196, 0, 0.3);
+  --glow-offline: 0 0 9px rgba(255, 47, 37, 0.35);
+
+  border-color: rgba(255, 122, 0, 0.28);
+  background: linear-gradient(180deg, #031522, #020d16);
+  color: #f4f7fb;
+}
+
+.generator-six-card-grid .comap-panel-v2 .comap-block {
+  border-color: #031522;
+  background: linear-gradient(180deg, rgba(4, 25, 40, 0.98), rgba(2, 17, 28, 0.98));
+}
+
+.generator-six-card-grid .comap-panel-v2 .comap-logo {
+  border-color: #3c6884;
+  background: radial-gradient(circle at 35% 30%, #16384f, #071724 65%);
+  box-shadow: inset 0 0 0 2px rgba(14, 45, 66, 0.65);
+}
+
+.generator-six-card-grid .comap-panel-v2 .comap-logo.online {
+  border-color: #43ef00;
+}
+
+.generator-six-card-grid .comap-panel-v2 .comap-logo.offline {
+  border-color: #ff2f25;
+  box-shadow:
+    inset 0 0 0 2px rgba(14, 45, 66, 0.65),
+    0 0 10px rgba(255, 51, 51, 0.7);
+}
+
+.generator-six-card-grid .comap-panel-v2 .controller-model-line {
+  color: #7890a2;
+}
+
+.generator-six-card-grid .comap-panel-v2 .comap-alarm {
+  background: rgba(255, 51, 51, 0.1);
+}
+
+.generator-six-card-grid .comap-panel-v2 .comap-alarm svg {
+  stroke: #ff2f25;
+}
+
+.generator-six-card-grid .comap-panel-v2 .comap-alarm-count {
+  background: #ff2f25;
+  color: #ffffff;
+}
+
+.generator-six-card-grid .comap-panel-v2 .comap-title,
+.generator-six-card-grid .comap-panel-v2 .flow-load-card-title,
+.generator-six-card-grid .comap-panel-v2 .flow-generator-letter,
+.generator-six-card-grid .comap-panel-v2 .comap-table-head,
+.generator-six-card-grid .comap-panel-v2 .comap-table-row .label {
+  color: #f8fbff;
+  fill: #f8fbff;
+}
+
+.generator-six-card-grid .comap-panel-v2 .comap-mode,
+.generator-six-card-grid .comap-panel-v2 .flow-load-card-value,
+.generator-six-card-grid .comap-panel-v2 .comap-table-row .gen {
+  color: #43ef00;
+  fill: #43ef00;
+}
+
+.generator-six-card-grid .comap-panel-v2 .flow-load-card {
+  fill: #051a29;
+  stroke: #1f4f6a;
+}
+
+.generator-six-card-grid .comap-panel-v2 .flow-device-circle {
+  fill: #031420;
+  stroke: #436a80;
+}
+
+.generator-six-card-grid .comap-panel-v2 .flow-device-icon {
+  stroke: #eef5f8;
+}
+
+.generator-six-card-grid .comap-panel-v2 .flow-bus-base {
+  stroke: #24485d;
+}
+
+.generator-six-card-grid .comap-panel-v2 .flow-bus-glow,
+.generator-six-card-grid .comap-panel-v2 .flow-switch-blade {
+  stroke: #43ef00;
+}
+
+.generator-six-card-grid .comap-panel-v2 .flow-bus-dash {
+  stroke: #f4fff8;
+}
+
+.generator-six-card-grid .comap-panel-v2 .flow-switch-node {
+  fill: #18394a;
+  stroke: #43ef00;
+}
+
+.generator-six-card-grid .comap-panel-v2 .flow-junction {
+  fill: #43ef00;
+}
+
+.generator-six-card-grid .comap-panel-v2 .flow-breaker-name,
+.generator-six-card-grid .comap-panel-v2 .breaker-single-label {
+  color: #b6c5cf;
+}
+
+.generator-six-card-grid .comap-panel-v2 .breaker-state-track {
+  border-color: #234e68;
+  background: #071725;
+}
+
+.generator-six-card-grid .comap-panel-v2 .breaker-single-control.is-closed .breaker-state-track i {
+  background: #43ef00;
+  box-shadow: 0 0 5px rgba(67, 239, 0, 0.7);
+}
+
+.generator-six-card-grid .comap-panel-v2 .breaker-single-control.is-open .breaker-state-track i {
+  background: #8395a1;
+}
+
+.generator-six-card-grid .comap-panel-v2 .breaker-single-control.is-unknown .breaker-state-track i {
+  background: #38586b;
+}
+
+.generator-six-card-grid .comap-panel-v2 .breaker-single-button {
+  border-color: #315a70;
+  background: linear-gradient(180deg, #f6f8fa, #cbd5dc);
+  color: #0d2432;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55);
+}
+
+.generator-six-card-grid .comap-panel-v2 .breaker-single-control.is-closed .breaker-single-button {
+  border-color: #43ef00;
+  background: linear-gradient(180deg, #3fe100, #208c00);
+  color: #ffffff;
+}
+
+.generator-six-card-grid .comap-panel-v2 .breaker-single-control small {
+  color: #688092;
+}
+
+.generator-six-card-grid .comap-panel-v2 .flow-switch-node.is-unknown {
+  fill: #173447;
+  stroke: #527085;
+}
+
+.generator-six-card-grid .comap-panel-v2 .flow-switch-blade.is-unknown {
+  stroke: #527085;
+}
+
+.generator-six-card-grid .comap-panel-v2 .flow-generator-circle.generator-running {
+  stroke: #43ef00;
+}
+
+.generator-six-card-grid .comap-panel-v2 .flow-generator-circle.generator-stopped {
+  stroke: #ff2f25;
+}
+
+.generator-six-card-grid .comap-panel-v2 .comap-start {
+  background: linear-gradient(180deg, #2fc900, #1a8c00);
+  color: #ffffff;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.generator-six-card-grid .comap-panel-v2 .comap-stop {
+  background: linear-gradient(180deg, #e12c27, #a00f15);
+  color: #ffffff;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.generator-six-card-grid .comap-panel-v2 .comap-engine .icon {
+  color: #eef4f8;
+  stroke: #eef4f8;
+}
+
+.generator-six-card-grid .comap-panel-v2 .comap-engine .engine-label,
+.generator-six-card-grid .comap-panel-v2 .comap-engine .engine-value {
+  color: #eef4f8;
+}
+
+.generator-six-card-grid .comap-panel-v2 .comap-meter {
+  border-color: #244b63;
+  background: #071725;
+}
+
+.generator-six-card-grid .comap-panel-v2 .comap-meter.is-unscaled,
+.generator-six-card-grid .comap-panel-v2 .comap-meter.is-unknown {
+  border-color: #1c4055;
+  background: #061521;
+}
+
+.generator-six-card-grid .comap-panel-v2 .controller-mode-btn {
+  border-color: #173b52;
+  background: linear-gradient(180deg, #102636, #081923);
+  color: #8195a4;
+}
+
+.generator-six-card-grid .comap-panel-v2 .controller-mode-btn.is-active {
+  border-color: #43ef00;
+  background: linear-gradient(180deg, #2fc900, #1a8c00);
+  color: #ffffff;
+  box-shadow: 0 0 7px rgba(67, 239, 0, 0.28);
+}
+
+.generator-six-card-grid .comap-panel-v2 .controller-mode-generic {
+  color: #8296a5;
+}
+
+.generator-six-card-grid .comap-panel-v2 .controller-mode-generic b {
+  color: #43ef00;
+}
+
+.generator-six-card-grid .comap-panel-v2 .kw-gauge-base {
+  stroke: #173447;
+}
+
+.generator-six-card-grid .comap-panel-v2 .kw-gauge-green {
+  stroke: #2cc91d;
+  filter: drop-shadow(0 0 3px rgba(67, 239, 0, 0.32));
+}
+
+.generator-six-card-grid .comap-panel-v2 .kw-gauge-amber {
+  stroke: #ffc21a;
+  filter: drop-shadow(0 0 3px rgba(255, 194, 26, 0.26));
+}
+
+.generator-six-card-grid .comap-panel-v2 .kw-gauge-needle {
+  stroke: #f6fbff;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.9));
+}
+
+.generator-six-card-grid .comap-panel-v2 .kw-gauge-hub {
+  fill: #e8f1f7;
+  stroke: #173447;
+}
+
+.generator-six-card-grid .comap-panel-v2 .kw-gauge-scale,
+.generator-six-card-grid .comap-panel-v2 .kw-gauge-unit {
+  fill: #dce8ef;
+}
+
+.generator-six-card-grid .comap-panel-v2 .kw-gauge-value {
+  color: #f5fbff;
+}
+
+.generator-six-card-grid .comap-panel-v2 .comap-table-row {
+  border-bottom-color: #031522;
+}
+
+.generator-six-card-grid .comap-panel-v2 .comap-table-row .mains {
+  color: #dce7ee;
+}
