@@ -22,6 +22,9 @@
     <ElemGroup active="true" dataBlock="HoldingRegisters" address="1045" name="Frequencia">
       <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="frequency_raw" name="Frequencia x100" />
     </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1083" name="Bateria">
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="battery_voltage_raw" name="Tensao da bateria x10" />
+    </ElemGroup>
   </ElemGroups>
   <Cmds />
 </DeviceTemplate>
