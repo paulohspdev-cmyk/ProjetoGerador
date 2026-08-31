@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Gauge } from "lucide-react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCommandGuard } from "@/components/scada/ScadaOpsProvider";
@@ -25,7 +24,6 @@ import {
   PowerGaugeKw,
 } from "./power-flow/PowerFlowPrimitives";
 import {
-  IconBattery,
   IconBolt,
   IconClock,
   IconFuelPump,
@@ -94,13 +92,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const ig200Homologated =
     gen.controller.trim().toLowerCase() === "inteligen 200" && Number(gen.rapidDeviceNum) > 0;
   const canOperate = can("operate") && ig200Homologated && gen.status !== "nao_configurado";
-
-  // Faixas documentadas da IG200 usadas somente como escala visual.
-  // Não representam limiares de alarme ou proteção.
-  const rpmDisplayPct =
-    ig200Homologated && rpm != null ? Math.min(100, Math.max(0, (rpm / 5000) * 100)) : null;
-  const batteryDisplayPct =
-    ig200Homologated && batt != null ? Math.min(100, Math.max(0, (batt / 36) * 100)) : null;
 
   const runCommand = async (action: "start" | "stop") => {
     const label = action.toUpperCase();
@@ -230,14 +221,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       <section className="comap-block engine-status-block shrink-0 px-2 py-1.5">
         <h2 className="comap-title mb-1">Engine Status</h2>
         <EngineRow
-          icon={<Gauge className="icon" />}
-          label="RPM"
-          value={rpm == null ? "N/D" : `${fmt(rpm, 0)} rpm`}
-          pct={rpmDisplayPct}
-          bar={rpmDisplayPct != null}
-          known={rpm != null}
-        />
-        <EngineRow
           icon={<IconOilCan />}
           label="Oil Pressure"
           value={oil == null ? "N/D" : `${fmt(oil)} ${oilUnit}`}
@@ -256,14 +239,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
           pct={fuelIsPercent ? fuel : null}
           bar={fuelIsPercent}
           known={fuel != null}
-        />
-        <EngineRow
-          icon={<IconBattery />}
-          label="Battery Voltage"
-          value={batt == null ? "N/D" : `${fmt(batt)} V`}
-          pct={batteryDisplayPct}
-          bar={batteryDisplayPct != null}
-          known={batt != null}
         />
         <EngineRow
           icon={<IconBolt />}
@@ -290,7 +265,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
           <h2 className="comap-title">Generator P</h2>
           <span>{load == null ? "POTÊNCIA N/D" : "POTÊNCIA ATIVA"}</span>
         </div>
-        <PowerGaugeKw value={load} nominal={nominalPower} />
+        <PowerGaugeKw value={load} nominal={nominalPower} rpm={rpm} battery={batt} />
       </section>
 
       <section className="comap-block mains-generator-block mb-1.5 shrink-0 px-2 py-1.5">
