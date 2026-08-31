@@ -1,7 +1,7 @@
 .kw-instrument {
   position: relative;
   display: grid;
-  min-height: 188px;
+  min-height: 226px;
   place-items: center;
   overflow: visible;
   border: 0;
@@ -14,9 +14,10 @@
 }
 
 .kw-instrument .kw-gauge-svg {
-  width: min(100%, 294px);
-  height: 178px;
-  margin-top: 2px;
+  display: block;
+  width: min(100%, 336px);
+  height: auto;
+  margin-top: 12px;
   overflow: visible;
 }
 
@@ -24,7 +25,7 @@
 .kw-instrument .kw-gauge-zone {
   fill: none;
   stroke-linecap: butt;
-  stroke-width: 17;
+  stroke-width: 18;
 }
 
 .kw-instrument .kw-gauge-base {
@@ -47,62 +48,68 @@
 }
 
 .kw-gauge-tick {
-  stroke: color-mix(in oklab, var(--industrial-foreground) 78%, transparent);
-  stroke-width: 1.25;
+  stroke: color-mix(in oklab, var(--industrial-foreground) 76%, transparent);
+  stroke-width: 1.3;
 }
 
 .kw-gauge-tick.is-major {
   stroke: var(--industrial-foreground);
-  stroke-width: 2;
+  stroke-width: 2.2;
 }
 
 .kw-instrument .kw-gauge-scale {
   fill: var(--industrial-foreground);
   font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 800;
+  font-size: 10px;
+  font-weight: 900;
 }
 
 .kw-instrument .kw-gauge-needle {
-  stroke: color-mix(in oklab, var(--industrial-foreground) 94%, white 6%);
-  stroke-width: 4.5;
-  stroke-linecap: round;
-  filter: drop-shadow(0 1px 2px color-mix(in oklab, var(--background) 92%, transparent));
+  fill: color-mix(in oklab, var(--industrial-foreground) 96%, white 4%);
+  stroke: color-mix(in oklab, white 55%, var(--industrial-muted));
+  stroke-width: 1.2;
+  filter: drop-shadow(0 2px 2px color-mix(in oklab, var(--background) 90%, transparent));
   opacity: 1;
-  transition: all 0.35s ease;
 }
 
 .kw-instrument .kw-gauge-needle.is-unknown {
-  stroke: color-mix(in oklab, var(--industrial-foreground) 78%, var(--industrial-muted));
-  opacity: 0.86;
+  fill: color-mix(in oklab, var(--industrial-foreground) 78%, var(--industrial-muted));
+  stroke: color-mix(in oklab, var(--industrial-muted) 76%, white 24%);
+  opacity: 0.9;
 }
 
 .kw-instrument .kw-gauge-hub {
   fill: color-mix(in oklab, var(--industrial-foreground) 82%, var(--industrial-panel));
-  stroke: color-mix(in oklab, var(--industrial-muted) 82%, white 18%);
+  stroke: color-mix(in oklab, var(--industrial-muted) 80%, white 20%);
   stroke-width: 3;
-  filter: drop-shadow(0 1px 2px color-mix(in oklab, var(--background) 90%, transparent));
+  filter: drop-shadow(0 2px 2px color-mix(in oklab, var(--background) 90%, transparent));
+}
+
+.kw-instrument .kw-gauge-hub-center {
+  fill: var(--industrial-panel-strong);
+  stroke: var(--industrial-foreground);
+  stroke-width: 1;
 }
 
 .kw-instrument-meta {
   position: absolute;
-  z-index: 5;
-  top: 5px;
+  z-index: 6;
+  top: 3px;
   right: 0;
   display: grid;
-  width: 91px;
+  width: 96px;
   gap: 3px;
 }
 
 .kw-instrument-meta > span {
   display: grid;
-  grid-template-columns: 34px 1fr;
-  min-height: 22px;
+  grid-template-columns: 36px 1fr;
+  min-height: 23px;
   align-items: center;
   padding: 2px 6px;
   border: 1px solid color-mix(in oklab, var(--industrial-border) 88%, white 12%);
   border-radius: 1px;
-  background: color-mix(in oklab, var(--industrial-bg) 94%, transparent);
+  background: color-mix(in oklab, var(--industrial-bg) 96%, transparent);
   color: var(--industrial-foreground);
   font-family: var(--font-mono);
   font-size: 10px;
@@ -112,55 +119,55 @@
 }
 
 .kw-instrument-meta b {
-  color: color-mix(in oklab, var(--industrial-foreground) 82%, var(--industrial-muted));
-  font-weight: 800;
+  color: var(--industrial-foreground);
+  font-weight: 900;
   text-align: left;
 }
 
 .kw-gauge-readout {
   position: absolute;
-  z-index: 4;
-  bottom: 22px;
+  z-index: 5;
+  bottom: 7px;
   left: 50%;
   display: flex;
-  min-width: 92px;
+  min-width: 108px;
   transform: translateX(-50%);
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  line-height: 0.92;
+  line-height: 0.9;
   pointer-events: none;
 }
 
 .kw-gauge-readout strong {
   color: var(--industrial-foreground);
   font-family: var(--font-mono);
-  font-size: 35px;
+  font-size: 40px;
   font-weight: 900;
-  letter-spacing: -0.06em;
-  text-shadow: 0 1px 2px color-mix(in oklab, var(--background) 92%, transparent);
+  letter-spacing: -0.065em;
+  text-shadow: 0 2px 2px color-mix(in oklab, var(--background) 92%, transparent);
 }
 
 .kw-gauge-readout span {
-  margin-top: 5px;
+  margin-top: 6px;
   color: var(--industrial-muted);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 900;
 }
 
 .kw-battery-badge {
   position: absolute;
-  z-index: 5;
+  z-index: 6;
   right: 0;
   bottom: 5px;
-  display: flex;
-  min-width: 78px;
-  min-height: 22px;
+  display: grid;
+  min-width: 98px;
+  min-height: 24px;
+  grid-template-columns: 22px 22px 1fr;
   align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  padding: 2px 6px;
+  gap: 4px;
+  padding: 2px 6px 2px 4px;
   border: 1px solid color-mix(in oklab, var(--alert) 70%, var(--industrial-border));
   border-radius: 1px;
   background: var(--alert);
@@ -171,9 +178,24 @@
   box-shadow: 0 0 5px color-mix(in oklab, var(--alert) 24%, transparent);
 }
 
+.kw-battery-icon {
+  width: 20px;
+  height: 15px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
 .kw-battery-badge span {
   font-size: 8px;
-  opacity: 0.72;
+  opacity: 0.78;
+}
+
+.kw-battery-badge b {
+  text-align: right;
+  white-space: nowrap;
 }
 
 .kw-battery-badge.is-unknown {
@@ -183,12 +205,8 @@
   box-shadow: none;
 }
 
-.kw-instrument .kw-gauge-caption {
-  display: none;
-}
-
 .comap-panel-v2 .comap-power-gauge-block {
-  padding: 5px 8px 5px;
+  padding: 5px 8px 6px;
 }
 
 .comap-panel-v2 .power-gauge-heading {
@@ -211,42 +229,36 @@
 
 @media (max-width: 360px) {
   .kw-instrument {
-    min-height: 178px;
+    min-height: 214px;
   }
 
   .kw-instrument .kw-gauge-svg {
-    width: min(100%, 270px);
-    height: 168px;
+    width: min(100%, 315px);
+    margin-top: 13px;
   }
 
   .kw-instrument-meta {
-    right: 0;
-    width: 86px;
+    width: 91px;
   }
 
   .kw-instrument-meta > span {
-    grid-template-columns: 32px 1fr;
-    min-height: 21px;
+    grid-template-columns: 34px 1fr;
+    min-height: 22px;
     padding-inline: 5px;
     font-size: 9px;
   }
 
-  .kw-gauge-readout {
-    bottom: 21px;
-  }
-
   .kw-gauge-readout strong {
-    font-size: 32px;
+    font-size: 36px;
   }
 
   .kw-battery-badge {
-    right: 0;
-    min-width: 72px;
+    min-width: 91px;
+    grid-template-columns: 20px 20px 1fr;
+    padding-inline: 4px;
   }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .kw-instrument .kw-gauge-needle {
-    transition: none;
+  .kw-battery-icon {
+    width: 18px;
   }
 }
