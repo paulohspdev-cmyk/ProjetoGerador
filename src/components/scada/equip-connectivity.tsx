@@ -1,10 +1,9 @@
 import { Network, Router, Signal } from "lucide-react";
-import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useGenerators } from "@/components/generators/GeneratorsProvider";
 import { rcApi, type BridgeSession, type FieldDevice, type SystemDiagnostics } from "@/lib/api";
-import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats, Tone } from "./kit";
+import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats } from "./kit";
 
 function errText(error: unknown) {
   return error instanceof Error ? error.message : "Falha na operação";
@@ -14,12 +13,29 @@ function dt(epoch?: number | null) {
   return epoch ? new Date(epoch * 1000).toLocaleString("pt-BR") : "—";
 }
 
-function bytes(value: number) {
-  if (!Number.isFinite(value) || value <= 0) return "0 B";
-  if (value < 1024) return `${value} B`;
-  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KiB`;
-  return `${(value / (1024 * 1024)).toFixed(1)} MiB`;
+function formatBytes(value: number | null | undefined) {
+  const bytes = Math.max(0, Number(value || 0));
+  if (bytes < 1024) return `${bytes.toFixed(0)} B`;
+  if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 ** 3) return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
+  return `${(bytes / 1024 ** 3).toFixed(2)} GB`;
 }
+
+type TrafficPort = {
+  remotePort: number;
+  todayBytes: number;
+  monthBytes: number;
+};
+
+type ProductDiagnostics = SystemDiagnostics & {
+  bridge: SystemDiagnostics["bridge"] & {
+    traffic?: {
+      todayBytes: number;
+      monthBytes: number;
+      ports: TrafficPort[];
+    };
+  };
+};
 
 function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
   const { can } = useAuth();
@@ -33,6 +49,7 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
   const [imei, setImei] = useState("");
   const [sim, setSim] = useState("");
   const [carrier, setCarrier] = useState("");
+  const [advanced, setAdvanced] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -58,6 +75,7 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
     setImei("");
     setSim("");
     setCarrier("");
+    setAdvanced(false);
   };
 
   const beginEdit = (row: FieldDevice) => {
@@ -69,6 +87,7 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
     setImei(row.imei || "");
     setSim(row.sim_iccid || "");
     setCarrier(row.carrier || "");
+    setAdvanced(true);
     setError("");
   };
 
@@ -77,30 +96,23 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
     setBusy(true);
     setError("");
     try {
-      if (editing) {
-        await rcApi.fieldDevices.update(editing, {
-          name: name.trim(),
-          model: model.trim(),
-          host: host.trim(),
-          serial: serial.trim(),
-          imei: imei.trim(),
-          sim_iccid: sim.trim(),
-          carrier: carrier.trim(),
-        });
-      } else {
+      const payload = {
+        name: name.trim(),
+        model: model.trim(),
+        host: host.trim(),
+        serial: serial.trim(),
+        imei: imei.trim(),
+        sim_iccid: sim.trim(),
+        carrier: carrier.trim(),
+      };
+      if (editing) await rcApi.fieldDevices.update(editing, payload);
+      else
         await rcApi.fieldDevices.create({
           kind,
-          name: name.trim(),
-          model: model.trim(),
-          host: host.trim(),
-          serial: serial.trim(),
-          imei: imei.trim(),
-          sim_iccid: sim.trim(),
-          carrier: carrier.trim(),
+          ...payload,
           status: "unknown",
           metadata: {},
         });
-      }
       reset();
       await load();
     } catch (saveError) {
@@ -120,8 +132,7 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
   };
 
   const remove = async (row: FieldDevice) => {
-    if (!window.confirm(`Excluir ${kind === "modem" ? "o modem" : "o gateway"} ${row.name}?`))
-      return;
+    if (!window.confirm(`Excluir ${row.name}?`)) return;
     try {
       await rcApi.fieldDevices.remove(row.id);
       if (editing === row.id) reset();
@@ -136,85 +147,103 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
 
   return (
     <ScreenBody>
+      <div>
+        <h2 className="text-lg font-extrabold">{label}</h2>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          Cadastro dos equipamentos de comunicação instalados em campo.
+        </p>
+      </div>
+
       <Stats
         items={[
-          { icon, label: `${label} inventariados`, value: rows.length },
+          { icon, label: "Cadastrados", value: rows.length },
           {
             icon: Signal,
-            label: "Cadastros ativos",
+            label: "Ativos",
             value: rows.filter((row) => row.active).length,
             tone: "text-online",
           },
         ]}
       />
-      <p className="rounded-md border border-border bg-card px-3 py-2 text-[11px] text-muted-foreground">
-        Este inventário contém somente dados administrativos informados. Estado físico da sessão TCP
-        aparece em Equipamentos → Conectividade; IMEI, SIM, RSSI e conexão nunca são inferidos.
-      </p>
-      {error && <p className="text-[11px] text-offline">{error}</p>}
+
+      {error && <p className="rounded-xl border border-offline/40 bg-offline/10 p-3 text-sm text-offline">{error}</p>}
+
       {admin && (
-        <Panel title={editing ? `Editar ${kind}` : `Cadastrar ${kind}`}>
-          <form onSubmit={save} className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
-            <input
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Nome"
-              className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-            />
-            <input
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              placeholder="Modelo real"
-              className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-            />
-            <input
-              value={host}
-              onChange={(e) => setHost(e.target.value)}
-              placeholder="IP/host cadastrado"
-              className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-            />
-            <input
-              value={serial}
-              onChange={(e) => setSerial(e.target.value)}
-              placeholder="Serial"
-              className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-            />
+        <Panel title={editing ? `Editar ${kind === "modem" ? "modem" : "gateway"}` : `Adicionar ${kind === "modem" ? "modem" : "gateway"}`}>
+          <form onSubmit={save} className="space-y-3">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <label className="text-sm font-semibold">
+                Nome
+                <input
+                  required
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  className="mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
+                />
+              </label>
+              <label className="text-sm font-semibold">
+                Modelo
+                <input
+                  value={model}
+                  onChange={(event) => setModel(event.target.value)}
+                  className="mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
+                />
+              </label>
+              <label className="text-sm font-semibold">
+                Endereço / IP
+                <input
+                  value={host}
+                  onChange={(event) => setHost(event.target.value)}
+                  className="mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
+                />
+              </label>
+            </div>
+
             {kind === "modem" && (
               <>
-                <input
-                  value={imei}
-                  onChange={(e) => setImei(e.target.value)}
-                  placeholder="IMEI"
-                  className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-                />
-                <input
-                  value={sim}
-                  onChange={(e) => setSim(e.target.value)}
-                  placeholder="SIM / ICCID"
-                  className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-                />
-                <input
-                  value={carrier}
-                  onChange={(e) => setCarrier(e.target.value)}
-                  placeholder="Operadora"
-                  className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-                />
-              </>
-            )}
-            <div className="flex gap-1">
-              <button
-                disabled={busy}
-                className="h-9 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"
-              >
-                {busy ? "Salvando…" : editing ? "Salvar" : "Cadastrar"}
-              </button>
-              {editing && (
                 <button
                   type="button"
-                  onClick={reset}
-                  className="h-9 rounded-md border border-border px-3 text-xs"
+                  onClick={() => setAdvanced((value) => !value)}
+                  className="text-xs font-semibold text-muted-foreground hover:text-foreground"
                 >
+                  {advanced ? "Ocultar identificação do modem" : "Identificação do modem"}
+                </button>
+                {advanced && (
+                  <div className="grid gap-3 rounded-xl border border-border bg-background/35 p-3 md:grid-cols-2 xl:grid-cols-4">
+                    <label className="text-xs font-semibold">
+                      IMEI
+                      <input value={imei} onChange={(event) => setImei(event.target.value)} className="mt-1.5 h-10 w-full rounded-md border border-input bg-background px-3 text-sm" />
+                    </label>
+                    <label className="text-xs font-semibold">
+                      SIM / ICCID
+                      <input value={sim} onChange={(event) => setSim(event.target.value)} className="mt-1.5 h-10 w-full rounded-md border border-input bg-background px-3 text-sm" />
+                    </label>
+                    <label className="text-xs font-semibold">
+                      Operadora
+                      <input value={carrier} onChange={(event) => setCarrier(event.target.value)} className="mt-1.5 h-10 w-full rounded-md border border-input bg-background px-3 text-sm" />
+                    </label>
+                    <label className="text-xs font-semibold">
+                      Número de série
+                      <input value={serial} onChange={(event) => setSerial(event.target.value)} className="mt-1.5 h-10 w-full rounded-md border border-input bg-background px-3 text-sm" />
+                    </label>
+                  </div>
+                )}
+              </>
+            )}
+
+            {kind === "gateway" && (
+              <label className="block max-w-sm text-xs font-semibold">
+                Número de série
+                <input value={serial} onChange={(event) => setSerial(event.target.value)} className="mt-1.5 h-10 w-full rounded-md border border-input bg-background px-3 text-sm" />
+              </label>
+            )}
+
+            <div className="flex gap-2">
+              <button disabled={busy} className="h-10 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50">
+                {busy ? "Salvando…" : editing ? "Salvar alterações" : "Adicionar"}
+              </button>
+              {editing && (
+                <button type="button" onClick={reset} className="h-10 rounded-lg border border-border px-4 text-sm font-semibold">
                   Cancelar
                 </button>
               )}
@@ -222,53 +251,29 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
           </form>
         </Panel>
       )}
-      <Panel title={`${label} persistidos`}>
+
+      <Panel title={`${label} cadastrados`}>
         {!rows.length ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            Nenhum equipamento cadastrado.
-          </p>
+          <p className="py-8 text-center text-sm text-muted-foreground">Nenhum equipamento cadastrado.</p>
         ) : (
           <ScadaTable
             rows={rows}
             columns={[
-              { label: "Nome", render: (r) => <b>{r.name}</b> },
-              { label: "Modelo", render: (r) => r.model || "—" },
-              {
-                label: "Host cadastrado",
-                render: (r) => <span className="num">{r.host || "—"}</span>,
-              },
-              { label: "IMEI/Serial", render: (r) => r.imei || r.serial || "—" },
-              {
-                label: "SIM/Operadora",
-                render: (r) => [r.sim_iccid, r.carrier].filter(Boolean).join(" · ") || "—",
-              },
-              {
-                label: "Último dado cadastrado",
-                render: (r) =>
-                  r.last_seen ? <span className="num">{dt(r.last_seen)}</span> : "N/D",
-              },
-              {
-                label: "Cadastro",
-                render: (r) => (
-                  <Pill tone={r.active ? "ok" : "muted"}>{r.active ? "Ativo" : "Inativo"}</Pill>
-                ),
-              },
+              { label: "Nome", render: (row) => <b>{row.name}</b> },
+              { label: "Modelo", render: (row) => row.model || "—" },
+              { label: "IMEI / Série", render: (row) => row.imei || row.serial || "—" },
+              { label: "SIM / Operadora", render: (row) => [row.sim_iccid, row.carrier].filter(Boolean).join(" · ") || "—" },
+              { label: "Cadastro", render: (row) => <Pill tone={row.active ? "ok" : "muted"}>{row.active ? "Ativo" : "Inativo"}</Pill> },
               {
                 label: "Ações",
-                render: (r) =>
+                render: (row) =>
                   admin ? (
                     <span className="flex flex-wrap gap-1">
-                      <ActionBtn onClick={() => beginEdit(r)}>Editar</ActionBtn>
-                      <ActionBtn onClick={() => void toggle(r)}>
-                        {r.active ? "Desativar" : "Ativar"}
-                      </ActionBtn>
-                      <ActionBtn tone="danger" onClick={() => void remove(r)}>
-                        Excluir
-                      </ActionBtn>
+                      <ActionBtn onClick={() => beginEdit(row)}>Editar</ActionBtn>
+                      <ActionBtn onClick={() => void toggle(row)}>{row.active ? "Desativar" : "Ativar"}</ActionBtn>
+                      <ActionBtn tone="danger" onClick={() => void remove(row)}>Excluir</ActionBtn>
                     </span>
-                  ) : (
-                    "—"
-                  ),
+                  ) : "—",
               },
             ]}
           />
@@ -287,22 +292,26 @@ export function GatewaysScreen() {
 }
 
 function sessionState(session: BridgeSession, fresh: boolean) {
-  if (!fresh) return { label: "N/D (status desatualizado)", tone: "muted" as const };
+  if (!fresh) return { label: "N/D", tone: "muted" as const };
   return session.connected
-    ? { label: "TCP conectado", tone: "ok" as const }
-    : { label: "Sem sessão TCP", tone: "err" as const };
+    ? { label: "ONLINE", tone: "ok" as const }
+    : { label: "OFFLINE", tone: "err" as const };
+}
+
+function sessionName(session: BridgeSession) {
+  if (session.generators.length) return session.generators.map((generator) => generator.tag).join(", ");
+  return `Conexão ${session.remotePort}`;
 }
 
 export function ConnectivityScreen() {
-  const { generators } = useGenerators();
-  const [health, setHealth] = useState<SystemDiagnostics | null>(null);
+  const [health, setHealth] = useState<ProductDiagnostics | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
     let active = true;
     const load = async () => {
       try {
-        const data = await rcApi.system.health();
+        const data = (await rcApi.system.health()) as ProductDiagnostics;
         if (active) {
           setHealth(data);
           setError("");
@@ -320,170 +329,111 @@ export function ConnectivityScreen() {
   }, []);
 
   const fresh = health?.bridge.statusFresh === true;
-  const available = health?.bridge.statusAvailable === true;
   const sessions = health?.bridge.sessions ?? [];
   const connected = fresh ? sessions.filter((session) => session.connected).length : 0;
-  const reverseConfigured = generators.filter((g) => g.transport === "reverse_tcp").length;
+  const traffic = health?.bridge.traffic;
+  const trafficByPort = useMemo(
+    () => new Map((traffic?.ports ?? []).map((item) => [item.remotePort, item])),
+    [traffic],
+  );
 
   return (
     <ScreenBody>
+      <div>
+        <h2 className="text-lg font-extrabold">Conectividade</h2>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          Estado atual das conexões de campo e consumo de dados.
+        </p>
+      </div>
+
       <Stats
         items={[
-          { icon: Signal, label: "Reverse TCP configurados", value: reverseConfigured },
           {
             icon: Signal,
-            label: "Sessões físicas conectadas",
-            value: fresh ? connected : "N/D",
+            label: "Modems online",
+            value: fresh ? `${connected}/${sessions.length}` : "N/D",
             tone: fresh && connected ? "text-online" : undefined,
           },
           {
-            icon: Network,
-            label: "Status bridge",
-            value: fresh ? "ATUAL" : available ? "DESATUALIZADO" : "N/D",
-            tone: fresh ? "text-online" : undefined,
+            icon: Signal,
+            label: "Offline",
+            value: fresh ? Math.max(0, sessions.length - connected) : "N/D",
+            tone: fresh && sessions.length > connected ? "text-offline" : undefined,
           },
           {
-            icon: Signal,
-            label: "Idade do status",
-            value: health?.bridge.ageSeconds == null ? "N/D" : `${health.bridge.ageSeconds}s`,
+            icon: Router,
+            label: "Dados hoje",
+            value: traffic ? formatBytes(traffic.todayBytes) : "N/D",
+          },
+          {
+            icon: Network,
+            label: "Dados no mês",
+            value: traffic ? formatBytes(traffic.monthBytes) : "N/D",
           },
         ]}
       />
-      {error && (
-        <p className="rounded-md border border-offline/40 bg-offline/10 p-3 text-sm text-offline">
-          {error}
-        </p>
-      )}
-      <p className="rounded-md border border-border bg-card px-3 py-2 text-[11px] text-muted-foreground">
-        A tabela física abaixo vem do processo da bridge. Se o arquivo de status estiver ausente ou
-        vencido, o painel mostra N/D — nunca converte ausência de evidência em “offline”. Contadores
-        são desde o início do processo atual da bridge.
-      </p>
-      <Panel title="Sessões físicas modem / DTU → gateway → bridge">
+
+      {error && <p className="rounded-xl border border-offline/40 bg-offline/10 p-3 text-sm text-offline">{error}</p>}
+
+      <Panel title="Conexões de campo">
         {!sessions.length ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            {available
-              ? "Nenhuma porta reverse TCP publicada pela bridge."
-              : "Status físico da bridge ainda não disponível nesta máquina."}
-          </p>
+          <p className="py-8 text-center text-sm text-muted-foreground">Nenhuma conexão de campo configurada.</p>
         ) : (
-          <ScadaTable
-            rows={sessions.map((session) => ({ ...session, id: String(session.remotePort) }))}
-            columns={[
-              {
-                label: "Estado",
-                render: (r) => {
-                  const state = sessionState(r, fresh);
-                  return <Pill tone={state.tone}>{state.label}</Pill>;
-                },
-              },
-              {
-                label: "Modem remoto",
-                render: (r) =>
-                  fresh && r.connected && r.remoteIp ? (
-                    <span className="num">
-                      {r.remoteIp}
-                      {r.remotePeerPort ? `:${r.remotePeerPort}` : ""}
-                    </span>
-                  ) : (
-                    "N/D"
-                  ),
-              },
-              {
-                label: "Porta pública",
-                render: (r) => <span className="num">{r.remotePort}</span>,
-              },
-              {
-                label: "Porta Rapid local",
-                render: (r) => <span className="num">{r.localPort}</span>,
-              },
-              {
-                label: "Gerador / Unit / Device",
-                render: (r) =>
-                  r.generators.length ? (
-                    <span>
-                      {r.generators.map((g) => (
-                        <span key={`${g.generatorId}-${g.unit}`} className="block">
-                          <b>{g.tag}</b> · Unit {g.unit} · Device {g.rapidDeviceNum ?? "N/D"}
-                        </span>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {sessions.map((session) => {
+              const state = sessionState(session, fresh);
+              const portTraffic = trafficByPort.get(session.remotePort);
+              const lastActivity = Math.max(Number(session.lastRxAt || 0), Number(session.lastTxAt || 0));
+              return (
+                <article key={session.remotePort} className="rounded-xl border border-border bg-background/35 p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h3 className="truncate text-sm font-extrabold">{sessionName(session)}</h3>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {session.generators.length > 1 ? `${session.generators.length} geradores nesta conexão` : "Conexão de campo"}
+                      </p>
+                    </div>
+                    <Pill tone={state.tone}>{state.label}</Pill>
+                  </div>
+
+                  <dl className="mt-4 grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <dt className="text-muted-foreground">Última comunicação</dt>
+                      <dd className="mt-0.5 font-semibold">{lastActivity ? dt(lastActivity) : "—"}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-muted-foreground">Endereço remoto</dt>
+                      <dd className="num mt-0.5 font-semibold">{fresh && session.connected ? session.remoteIp || "—" : "—"}</dd>
+                    </div>
+                    <div className="rounded-lg bg-secondary/35 p-2.5">
+                      <dt className="text-muted-foreground">Hoje</dt>
+                      <dd className="num mt-0.5 text-sm font-extrabold">{formatBytes(portTraffic?.todayBytes)}</dd>
+                    </div>
+                    <div className="rounded-lg bg-secondary/35 p-2.5">
+                      <dt className="text-muted-foreground">Mês</dt>
+                      <dd className="num mt-0.5 text-sm font-extrabold">{formatBytes(portTraffic?.monthBytes)}</dd>
+                    </div>
+                  </dl>
+
+                  <details className="mt-3 border-t border-border/60 pt-3 text-xs text-muted-foreground">
+                    <summary className="cursor-pointer font-semibold text-foreground">Detalhes técnicos</summary>
+                    <div className="mt-2 space-y-1">
+                      <p>Porta externa: {session.remotePort}</p>
+                      <p>Porta interna: {session.localPort}</p>
+                      <p>Reconexões: {session.reconnections}</p>
+                      <p>Timeouts: {session.timeouts} · Erros: {session.errors}</p>
+                      {session.generators.map((generator) => (
+                        <p key={`${generator.generatorId}-${generator.unit}`}>
+                          {generator.tag}: endereço {generator.unit} · dispositivo {generator.rapidDeviceNum ?? "N/D"}
+                        </p>
                       ))}
-                    </span>
-                  ) : (
-                    "Sem vínculo"
-                  ),
-              },
-              {
-                label: "Conectado desde",
-                render: (r) =>
-                  fresh && r.connected ? <span className="num">{dt(r.connectedAt)}</span> : "—",
-              },
-              {
-                label: "Último RX/TX",
-                render: (r) => (
-                  <span className="num text-[10px]">
-                    RX {dt(r.lastRxAt)}
-                    <br />
-                    TX {dt(r.lastTxAt)}
-                  </span>
-                ),
-              },
-              {
-                label: "Bytes RX/TX",
-                render: (r) => (
-                  <span className="num">
-                    {bytes(r.bytesRx)} / {bytes(r.bytesTx)}
-                  </span>
-                ),
-              },
-              {
-                label: "Reconexões",
-                render: (r) => <span className="num">{r.reconnections}</span>,
-              },
-              {
-                label: "Timeouts/erros",
-                render: (r) => (
-                  <Tone tone={r.timeouts || r.errors ? "warn" : "muted"}>
-                    {r.timeouts}/{r.errors}
-                  </Tone>
-                ),
-              },
-            ]}
-          />
+                    </div>
+                  </details>
+                </article>
+              );
+            })}
+          </div>
         )}
-      </Panel>
-      <Panel title="Estado de telemetria da aplicação">
-        <ScadaTable
-          rows={generators}
-          columns={[
-            { label: "Gerador", render: (r) => <b>{r.tag}</b> },
-            { label: "Site", render: (r) => r.site || "—" },
-            { label: "Transporte", render: (r) => r.transport || "—" },
-            {
-              label: "Endpoint cadastrado",
-              render: (r) => <span className="num">{r.ip || "—"}</span>,
-            },
-            { label: "Fonte", render: (r) => r.telemetrySource || "none" },
-            {
-              label: "Estado",
-              render: (r) => (
-                <Pill
-                  tone={
-                    r.status === "online"
-                      ? "ok"
-                      : r.status === "alerta"
-                        ? "warn"
-                        : r.status === "nao_configurado"
-                          ? "muted"
-                          : "err"
-                  }
-                >
-                  {r.status}
-                </Pill>
-              ),
-            },
-            { label: "Erro", render: (r) => r.lastError || "—" },
-          ]}
-        />
       </Panel>
     </ScreenBody>
   );
