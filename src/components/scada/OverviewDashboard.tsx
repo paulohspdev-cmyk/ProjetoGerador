@@ -17,10 +17,11 @@ import { useOverviewDecisionModel } from "./overview-dashboard-model";
 
 export function OverviewDashboard() {
   const model = useOverviewDecisionModel();
+  const refreshGenerators = model.retryAll;
 
   return (
     <ScreenBody>
-      <DecisionHeader updatedAt={model.updatedAt} onRefresh={model.retryAll} />
+      <DecisionHeader updatedAt={model.updatedAt} onRefresh={refreshGenerators} />
 
       {model.hasAnyError && <DecisionErrorBanner onRetry={model.retryAll} />}
 
