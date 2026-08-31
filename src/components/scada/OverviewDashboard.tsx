@@ -37,7 +37,7 @@ export function OverviewDashboard() {
         alarmsOpen={model.activeAlarms.length}
         sitesWithAttention={model.sitesWithAttention}
         work={model.work}
-        traffic={model.traffic}
+        {...(model.traffic ? { traffic: model.traffic } : {})}
         fuel={model.fuel}
       />
 
@@ -45,7 +45,7 @@ export function OverviewDashboard() {
         <TrafficPanel
           loading={model.communicationLoading}
           rows={model.modemRows}
-          traffic={model.traffic}
+          {...(model.traffic ? { traffic: model.traffic } : {})}
           maxMonthTraffic={model.maxMonthTraffic}
           bridgeFresh={model.bridgeFresh}
         />
