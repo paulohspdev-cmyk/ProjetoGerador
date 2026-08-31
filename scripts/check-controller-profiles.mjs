@@ -119,7 +119,9 @@ if (!(ig200.validatedTelemetry ?? []).includes("battery_voltage")) {
 }
 for (const metric of ["fuel_level", "oil_pressure", "coolant_temperature", "run_hours"]) {
   if ((ig200.validatedTelemetry ?? []).includes(metric)) {
-    failures.push(`InteliGen 200 production: métrica ainda não homologada foi promovida: ${metric}`);
+    failures.push(
+      `InteliGen 200 production: métrica ainda não homologada foi promovida: ${metric}`,
+    );
   }
 }
 if (
@@ -143,7 +145,9 @@ for (const marker of [
   'readOnly="true"',
 ]) {
   if (!ig200Template.includes(marker)) {
-    failures.push(`InteliGen 200 production: template perdeu leitura de bateria homologada: ${marker}`);
+    failures.push(
+      `InteliGen 200 production: template perdeu leitura de bateria homologada: ${marker}`,
+    );
   }
 }
 
