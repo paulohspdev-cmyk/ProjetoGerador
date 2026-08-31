@@ -13,3 +13,4 @@
 @import "./styles/base.css";
 @import "./styles/utilities.css";
 @import "./components/generators/generator-card-industrial-theme.css";
+@import "./styles/readability.css";
