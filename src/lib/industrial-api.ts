@@ -209,6 +209,11 @@ export const industrialApi = {
   lifecycle: {
     get: (id: string) =>
       request<GeneratorLifecycle>(`/api/generators/${encodeURIComponent(id)}/lifecycle`),
+    provision: (id: string) =>
+      request<Record<string, unknown>>(`/api/generators/${encodeURIComponent(id)}/provision`, {
+        method: "POST",
+        body: JSON.stringify({ confirmation: "PROVISION" }),
+      }),
     deprovision: (id: string) =>
       request<Record<string, unknown>>(`/api/generators/${encodeURIComponent(id)}/deprovision`, {
         method: "POST",
