@@ -1,0 +1,25 @@
+name: Temp Source Audit PR35
+
+on:
+  pull_request:
+    branches:
+      - fix/restaura-paleta-cards-industriais
+
+jobs:
+  snapshot:
+    if: github.head_ref == 'fix/reconstrucao-produto-ux-profissional'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Empacotar fontes para auditoria
+        run: |
+          mkdir -p /tmp/pr35-source
+          cp -R src backend scripts rapid ops controllers package.json package-lock.json tsconfig.json /tmp/pr35-source/
+      - name: Salvar snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr35-source-audit
+          path: /tmp/pr35-source
+          retention-days: 1
