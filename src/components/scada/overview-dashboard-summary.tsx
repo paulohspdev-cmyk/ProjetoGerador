@@ -130,7 +130,10 @@ export function DecisionStats({
           icon: Router,
           label: "Modems online",
           value: bridgeFresh ? `${connectedModems}/${modemCount}` : "N/D",
-          tone: bridgeFresh && modemCount > 0 && connectedModems === modemCount ? "text-online" : undefined,
+          tone:
+            bridgeFresh && modemCount > 0 && connectedModems === modemCount
+              ? "text-online"
+              : undefined,
           sub: bridgeFresh ? `${Math.max(0, modemCount - connectedModems)} offline` : undefined,
         },
         {
@@ -209,13 +212,17 @@ export function TrafficPanel({
     >
       <div className="mb-4 grid gap-3 sm:grid-cols-2">
         <div className="rounded-xl bg-secondary/35 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Hoje</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Hoje
+          </p>
           <p className="num mt-1 text-2xl font-extrabold">
             {traffic ? formatBytes(traffic.todayBytes) : "N/D"}
           </p>
         </div>
         <div className="rounded-xl bg-secondary/35 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Mês atual</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Mês atual
+          </p>
           <p className="num mt-1 text-2xl font-extrabold">
             {traffic ? formatBytes(traffic.monthBytes) : "N/D"}
           </p>
@@ -280,7 +287,9 @@ export function AvailabilityPanel({
               <p className="text-xs text-muted-foreground">Situação atual do parque</p>
             </div>
             <p className="num text-xl font-extrabold">
-              {totalGenerators ? `${pct(generatorStatus.online, totalGenerators).toFixed(0)}%` : "N/D"}
+              {totalGenerators
+                ? `${pct(generatorStatus.online, totalGenerators).toFixed(0)}%`
+                : "N/D"}
             </p>
           </div>
           <SegmentBar
