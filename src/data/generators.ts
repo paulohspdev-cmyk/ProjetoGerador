@@ -1,9 +1,6 @@
 export type GenStatus = "online" | "alerta" | "offline" | "nao_configurado";
 export type GeneratorTransport =
-  | "reverse_tcp"
-  | "modbus_tcp_direct"
-  | "rtu_over_tcp"
-  | "modbus_rtu_serial";
+  "reverse_tcp" | "modbus_tcp_direct" | "rtu_over_tcp" | "modbus_rtu_serial";
 
 export type Generator = {
   id: string;
@@ -68,9 +65,7 @@ export function nextGeneratorTag(list: Generator[]) {
 }
 
 export function getGenerator(id: string) {
-  return liveGenerators.find(
-    (g) => g.id === id || g.tag.toLowerCase() === id.toLowerCase(),
-  );
+  return liveGenerators.find((g) => g.id === id || g.tag.toLowerCase() === id.toLowerCase());
 }
 
 export function displayGenName(tag: string) {

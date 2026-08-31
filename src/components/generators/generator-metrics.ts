@@ -16,11 +16,7 @@ export function hasMetric(gen: Generator, key: string) {
   );
 }
 
-export function metricNumber(
-  gen: Generator,
-  key: string,
-  value: number | null | undefined,
-) {
+export function metricNumber(gen: Generator, key: string, value: number | null | undefined) {
   if (gen.metrics) {
     const metric = gen.metrics[key];
     return metric != null && Number.isFinite(Number(metric)) ? Number(metric) : null;

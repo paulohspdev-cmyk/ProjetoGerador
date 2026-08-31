@@ -13,9 +13,7 @@ const paths = {
   ignt: "controllers/lab/comap/ig-nt/manifest.json",
   mains: "controllers/lab/comap/inteli-mains-comap/manifest.json",
 };
-const profiles = Object.fromEntries(
-  Object.entries(paths).map(([key, path]) => [key, load(path)]),
-);
+const profiles = Object.fromEntries(Object.entries(paths).map(([key, path]) => [key, load(path)]));
 
 const forbiddenCommands = [
   "start",
@@ -34,8 +32,7 @@ for (const [key, profile] of Object.entries(profiles)) {
   if (profile.schema !== 3) failures.push(`${key}: schema deve ser 3`);
   if (profile.status !== "documented")
     failures.push(`${key}: perfil novo deve permanecer documented`);
-  if (!profile.mapping?.readOnly)
-    failures.push(`${key}: mapa documental deve ser somente leitura`);
+  if (!profile.mapping?.readOnly) failures.push(`${key}: mapa documental deve ser somente leitura`);
   if ((profile.validatedTelemetry ?? []).length !== 0) {
     failures.push(`${key}: documento não pode ser promovido a telemetria validada`);
   }
@@ -268,14 +265,12 @@ for (const marker of [
   "_derive_breaker_feedback",
   '"nominalPower": values.get("nominal_power_kw")',
 ]) {
-  if (!rapid.includes(marker))
-    failures.push(`overlay Rapid perdeu telemetria validada: ${marker}`);
+  if (!rapid.includes(marker)) failures.push(`overlay Rapid perdeu telemetria validada: ${marker}`);
 }
 
 const library = read("backend/app/controller_library.py");
 for (const marker of ["documentedTelemetry", "metricUnits", "_pack_telemetry_state"]) {
-  if (!library.includes(marker))
-    failures.push(`biblioteca perdeu metadado documental: ${marker}`);
+  if (!library.includes(marker) failures.push(`biblioteca perdeu metadado documental: ${marker}`);
 }
 
 const controllerAssets = read("src/assets/controllers.ts");
