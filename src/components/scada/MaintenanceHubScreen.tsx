@@ -129,9 +129,11 @@ export function MaintenanceHubScreen() {
                   className="mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
                 />
                 <datalist id="rc-responsible-users">
-                  {users.filter((item) => item.active).map((item) => (
-                    <option key={item.id} value={item.name} />
-                  ))}
+                  {users
+                    .filter((item) => item.active)
+                    .map((item) => (
+                      <option key={item.id} value={item.name} />
+                    ))}
                 </datalist>
               </label>
               <div className="flex gap-2">
@@ -194,19 +196,29 @@ export function MaintenanceHubScreen() {
                     <span className="flex flex-wrap gap-1">
                       <ActionBtn onClick={() => beginResponsibleEdit(row)}>Responsável</ActionBtn>
                       {!isFinal(row.status) && row.status !== "Em andamento" && (
-                        <ActionBtn onClick={() => void setStatus(row, "Em andamento")}>Iniciar</ActionBtn>
+                        <ActionBtn onClick={() => void setStatus(row, "Em andamento")}>
+                          Iniciar
+                        </ActionBtn>
                       )}
                       {!isFinal(row.status) && (
-                        <ActionBtn tone="ok" onClick={() => void setStatus(row, "Concluída")}>Concluir</ActionBtn>
+                        <ActionBtn tone="ok" onClick={() => void setStatus(row, "Concluída")}>
+                          Concluir
+                        </ActionBtn>
                       )}
                       {!isFinal(row.status) && (
-                        <ActionBtn onClick={() => void setStatus(row, "Cancelada")}>Cancelar</ActionBtn>
+                        <ActionBtn onClick={() => void setStatus(row, "Cancelada")}>
+                          Cancelar
+                        </ActionBtn>
                       )}
                       {admin && isFinal(row.status) && (
-                        <ActionBtn tone="danger" onClick={() => void remove(row)}>Excluir</ActionBtn>
+                        <ActionBtn tone="danger" onClick={() => void remove(row)}>
+                          Excluir
+                        </ActionBtn>
                       )}
                     </span>
-                  ) : "—",
+                  ) : (
+                    "—"
+                  ),
               },
             ]}
           />

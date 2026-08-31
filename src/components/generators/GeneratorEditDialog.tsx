@@ -76,7 +76,8 @@ export function GeneratorEditDialog({
         <DialogHeader>
           <DialogTitle>Editar gerador</DialogTitle>
           <DialogDescription>
-            Altere identificação e unidade. A configuração de comunicação fica protegida para evitar mudança acidental no equipamento em campo.
+            Altere identificação e unidade. A configuração de comunicação fica protegida para evitar
+            mudança acidental no equipamento em campo.
           </DialogDescription>
         </DialogHeader>
 
@@ -117,7 +118,9 @@ export function GeneratorEditDialog({
           </label>
 
           <details className="rounded-xl border border-border bg-background/35 p-3 text-xs text-muted-foreground">
-            <summary className="cursor-pointer font-semibold text-foreground">Detalhes técnicos</summary>
+            <summary className="cursor-pointer font-semibold text-foreground">
+              Detalhes técnicos
+            </summary>
             <div className="mt-2 space-y-1">
               <p>Controladora: {generator.controller}</p>
               <p>Comunicação: {generator.transport || "não informada"}</p>

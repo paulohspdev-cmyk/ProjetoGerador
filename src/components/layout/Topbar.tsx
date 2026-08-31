@@ -36,7 +36,9 @@ export function Topbar({ breadcrumb = [], title, tools, search, back }: Props) {
   const { user, logout } = useAuth();
   const { generators } = useGenerators();
   const { isAcked } = useScadaOps();
-  const alarmCount = buildAlarms(generators).filter((alarm) => !isAcked(alarm.id, alarm.ack)).length;
+  const alarmCount = buildAlarms(generators).filter(
+    (alarm) => !isAcked(alarm.id, alarm.ack),
+  ).length;
 
   return (
     <header className="sticky top-0 z-20 shrink-0 border-b border-border bg-card/95 pt-[env(safe-area-inset-top)] backdrop-blur">
@@ -134,7 +136,9 @@ export function Topbar({ breadcrumb = [], title, tools, search, back }: Props) {
             </div>
             <div className="hidden leading-tight md:block">
               <p className="max-w-36 truncate text-xs font-bold">{user?.name ?? "—"}</p>
-              <p className="text-[11px] text-muted-foreground">{user ? ROLE_LABEL[user.role] : ""}</p>
+              <p className="text-[11px] text-muted-foreground">
+                {user ? ROLE_LABEL[user.role] : ""}
+              </p>
             </div>
             <button
               type="button"

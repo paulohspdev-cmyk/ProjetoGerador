@@ -79,7 +79,10 @@ export function GeneratorsProvider({ children }: { children: ReactNode }) {
   }, [authReady, refresh, user]);
 
   const getById = useCallback(
-    (id: string) => generators.find((generator) => generator.id === id || generator.tag.toLowerCase() === id.toLowerCase()),
+    (id: string) =>
+      generators.find(
+        (generator) => generator.id === id || generator.tag.toLowerCase() === id.toLowerCase(),
+      ),
     [generators],
   );
 
@@ -164,16 +167,7 @@ export function GeneratorsProvider({ children }: { children: ReactNode }) {
       updateGenerator,
       removeGenerator,
     }),
-    [
-      generators,
-      ready,
-      error,
-      refresh,
-      getById,
-      addGenerator,
-      updateGenerator,
-      removeGenerator,
-    ],
+    [generators, ready, error, refresh, getById, addGenerator, updateGenerator, removeGenerator],
   );
 
   return <GeneratorsContext.Provider value={value}>{children}</GeneratorsContext.Provider>;

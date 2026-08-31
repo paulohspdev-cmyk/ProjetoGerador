@@ -303,9 +303,7 @@ export function ScadaOpsProvider({ children }: { children: ReactNode }) {
           .then((updated) => {
             setState((prev) => ({
               ...prev,
-              webhooks: prev.webhooks.map((webhook) =>
-                webhook.id === id ? updated : webhook,
-              ),
+              webhooks: prev.webhooks.map((webhook) => (webhook.id === id ? updated : webhook)),
             }));
           })
           .catch((err) => notify(message(err, "Falha ao alterar webhook.")));

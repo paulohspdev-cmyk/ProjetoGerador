@@ -149,7 +149,8 @@ export function RegisterGeneratorButton({
 
   const effectiveTag = (tag.trim() || preview.tag).toUpperCase();
   const effectivePort = Number(
-    listenPort || (transport === "reverse_tcp" ? suggestedPort : transport === "modbus_tcp_direct" ? 502 : 0),
+    listenPort ||
+      (transport === "reverse_tcp" ? suggestedPort : transport === "modbus_tcp_direct" ? 502 : 0),
   );
   const effectiveUnit = Number(modbusUnit || 1);
 
@@ -236,7 +237,9 @@ export function RegisterGeneratorButton({
       reset();
       setOpen(false);
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Não foi possível cadastrar o gerador.");
+      setError(
+        saveError instanceof Error ? saveError.message : "Não foi possível cadastrar o gerador.",
+      );
     } finally {
       setSaving(false);
     }
@@ -272,7 +275,8 @@ export function RegisterGeneratorButton({
           <DialogHeader>
             <DialogTitle>Adicionar gerador</DialogTitle>
             <DialogDescription>
-              Informe o essencial. As configurações técnicas são preenchidas automaticamente quando possível.
+              Informe o essencial. As configurações técnicas são preenchidas automaticamente quando
+              possível.
             </DialogDescription>
           </DialogHeader>
 
@@ -282,12 +286,19 @@ export function RegisterGeneratorButton({
                 <span
                   className={cn(
                     "grid size-7 shrink-0 place-items-center rounded-full border font-bold",
-                    step >= value ? "border-primary bg-primary text-primary-foreground" : "border-border text-muted-foreground",
+                    step >= value
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border text-muted-foreground",
                   )}
                 >
                   {step > value ? <Check className="size-4" /> : value}
                 </span>
-                <span className={cn("hidden sm:inline", step === value ? "font-bold" : "text-muted-foreground")}>
+                <span
+                  className={cn(
+                    "hidden sm:inline",
+                    step === value ? "font-bold" : "text-muted-foreground",
+                  )}
+                >
                   {value === 1 ? "Equipamento" : value === 2 ? "Comunicação" : "Confirmar"}
                 </span>
               </div>
@@ -313,7 +324,9 @@ export function RegisterGeneratorButton({
                     required
                   />
                   <datalist id="rc-generator-sites">
-                    {sites.map((name) => <option key={name} value={name} />)}
+                    {sites.map((name) => (
+                      <option key={name} value={name} />
+                    ))}
                   </datalist>
                 </label>
 
@@ -347,7 +360,8 @@ export function RegisterGeneratorButton({
                         type="button"
                         onClick={() => {
                           setTransport(option.id);
-                          if (option.id === "modbus_tcp_direct" && !listenPort) setListenPort("502");
+                          if (option.id === "modbus_tcp_direct" && !listenPort)
+                            setListenPort("502");
                           setError(null);
                         }}
                         className={cn(
@@ -380,7 +394,9 @@ export function RegisterGeneratorButton({
                 <div className="rounded-xl border border-online/30 bg-online/8 p-3 text-sm">
                   <b>Configuração automática</b>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    O sistema escolhe a identificação, a porta de comunicação e o dispositivo do SCADA automaticamente. Use opções avançadas somente quando a instalação exigir valores específicos.
+                    O sistema escolhe a identificação, a porta de comunicação e o dispositivo do
+                    SCADA automaticamente. Use opções avançadas somente quando a instalação exigir
+                    valores específicos.
                   </p>
                 </div>
 
@@ -442,10 +458,24 @@ export function RegisterGeneratorButton({
               <div className="rounded-xl border border-border bg-background/35 p-4">
                 <h3 className="text-sm font-extrabold">Confirmar cadastro</h3>
                 <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
-                  <div><dt className="text-xs text-muted-foreground">Gerador</dt><dd className="font-bold">{effectiveTag}</dd></div>
-                  <div><dt className="text-xs text-muted-foreground">Unidade</dt><dd className="font-bold">{site}</dd></div>
-                  <div><dt className="text-xs text-muted-foreground">Controladora</dt><dd className="font-bold">{controller}</dd></div>
-                  <div><dt className="text-xs text-muted-foreground">Comunicação</dt><dd className="font-bold">{connectionOptions.find((option) => option.id === transport)?.title}</dd></div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Gerador</dt>
+                    <dd className="font-bold">{effectiveTag}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Unidade</dt>
+                    <dd className="font-bold">{site}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Controladora</dt>
+                    <dd className="font-bold">{controller}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Comunicação</dt>
+                    <dd className="font-bold">
+                      {connectionOptions.find((option) => option.id === transport)?.title}
+                    </dd>
+                  </div>
                 </dl>
                 {createdId && (
                   <p className="mt-4 rounded-lg border border-alert/40 bg-alert/10 p-3 text-sm text-alert">
@@ -480,7 +510,11 @@ export function RegisterGeneratorButton({
                   disabled={saving}
                   className="h-10 rounded-lg bg-primary px-5 text-sm font-extrabold text-primary-foreground disabled:opacity-50"
                 >
-                  {saving ? "Configurando…" : createdId ? "Tentar configuração novamente" : "Criar e configurar"}
+                  {saving
+                    ? "Configurando…"
+                    : createdId
+                      ? "Tentar configuração novamente"
+                      : "Criar e configurar"}
                 </button>
               )}
             </div>

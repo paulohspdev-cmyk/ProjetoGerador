@@ -42,7 +42,11 @@ export function RolesScreen() {
       <Stats
         items={[
           { icon: ShieldCheck, label: "Perfis", value: roles.length },
-          { icon: Users, label: "Usuários ativos", value: users.filter((item) => item.active).length },
+          {
+            icon: Users,
+            label: "Usuários ativos",
+            value: users.filter((item) => item.active).length,
+          },
         ]}
       />
 
@@ -65,7 +69,9 @@ export function RolesScreen() {
                 <th className="px-3 py-3 text-left">Perfil</th>
                 <th className="px-3 py-3 text-center">Pessoas</th>
                 {permissionLabels.map((permission) => (
-                  <th key={permission.id} className="px-3 py-3 text-center">{permission.label}</th>
+                  <th key={permission.id} className="px-3 py-3 text-center">
+                    {permission.label}
+                  </th>
                 ))}
               </tr>
             </thead>
@@ -83,7 +89,10 @@ export function RolesScreen() {
                         {allowed ? (
                           <Check className="mx-auto size-4 text-online" aria-label="Permitido" />
                         ) : (
-                          <Minus className="mx-auto size-4 text-muted-foreground" aria-label="Não permitido" />
+                          <Minus
+                            className="mx-auto size-4 text-muted-foreground"
+                            aria-label="Não permitido"
+                          />
                         )}
                       </td>
                     );
@@ -94,7 +103,8 @@ export function RolesScreen() {
           </table>
         </div>
         <p className="mt-3 text-xs text-muted-foreground">
-          O perfil é atribuído individualmente na tela Usuários. Funções industriais não liberadas pelo produto continuam indisponíveis mesmo para administrador.
+          O perfil é atribuído individualmente na tela Usuários. Funções industriais não liberadas
+          pelo produto continuam indisponíveis mesmo para administrador.
         </p>
       </Panel>
     </ScreenBody>

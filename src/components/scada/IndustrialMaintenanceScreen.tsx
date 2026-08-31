@@ -40,7 +40,10 @@ export function MaintenanceV3Screen() {
     if (!generatorId && generators.length) setGeneratorId(generators[0]!.id);
   }, [generatorId, generators]);
 
-  const byId = useMemo(() => new Map(generators.map((generator) => [generator.id, generator])), [generators]);
+  const byId = useMemo(
+    () => new Map(generators.map((generator) => [generator.id, generator])),
+    [generators],
+  );
 
   const onCreate = async (event: FormEvent) => {
     event.preventDefault();
@@ -81,7 +84,11 @@ export function MaintenanceV3Screen() {
 
       <Stats
         items={[
-          { icon: Wrench, label: "Planos ativos", value: plans.filter((plan) => plan.enabled).length },
+          {
+            icon: Wrench,
+            label: "Planos ativos",
+            value: plans.filter((plan) => plan.enabled).length,
+          },
           {
             icon: AlertTriangle,
             label: "Vencidos",
@@ -102,8 +109,16 @@ export function MaintenanceV3Screen() {
         ]}
       />
 
-      {error && <p className="rounded-xl border border-offline/40 bg-offline/10 p-3 text-sm text-offline">{error}</p>}
-      {message && <p className="rounded-xl border border-online/30 bg-online/10 p-3 text-sm text-online">{message}</p>}
+      {error && (
+        <p className="rounded-xl border border-offline/40 bg-offline/10 p-3 text-sm text-offline">
+          {error}
+        </p>
+      )}
+      {message && (
+        <p className="rounded-xl border border-online/30 bg-online/10 p-3 text-sm text-online">
+          {message}
+        </p>
+      )}
 
       {can("create") && (
         <Panel title="Novo plano preventivo">
@@ -116,7 +131,9 @@ export function MaintenanceV3Screen() {
                 className="mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
               >
                 {generators.map((generator) => (
-                  <option key={generator.id} value={generator.id}>{generator.tag}</option>
+                  <option key={generator.id} value={generator.id}>
+                    {generator.tag}
+                  </option>
                 ))}
               </select>
             </label>
@@ -150,7 +167,10 @@ export function MaintenanceV3Screen() {
               />
             </label>
             <div className="sm:col-span-2 xl:col-span-4">
-              <button type="submit" className="h-10 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground">
+              <button
+                type="submit"
+                className="h-10 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground"
+              >
                 Criar plano
               </button>
             </div>
@@ -164,7 +184,9 @@ export function MaintenanceV3Screen() {
           columns={[
             {
               label: "Gerador",
-              render: (row) => <b>{row.generator_tag || row.generator_id || row.asset_id || "—"}</b>,
+              render: (row) => (
+                <b>{row.generator_tag || row.generator_id || row.asset_id || "—"}</b>
+              ),
             },
             { label: "Plano", render: (row) => <b>{row.name}</b> },
             {
@@ -174,13 +196,20 @@ export function MaintenanceV3Screen() {
                   {[
                     row.interval_hours ? `${row.interval_hours} h` : "",
                     row.interval_days ? `${row.interval_days} d` : "",
-                  ].filter(Boolean).join(" / ")}
+                  ]
+                    .filter(Boolean)
+                    .join(" / ")}
                 </span>
               ),
             },
             {
               label: "Horímetro",
-              render: (row) => row.current_hours == null ? "N/D" : <span className="num">{row.current_hours.toFixed(1)} h</span>,
+              render: (row) =>
+                row.current_hours == null ? (
+                  "N/D"
+                ) : (
+                  <span className="num">{row.current_hours.toFixed(1)} h</span>
+                ),
             },
             {
               label: "Restante",
@@ -189,7 +218,9 @@ export function MaintenanceV3Screen() {
                   {[
                     row.hour_remaining != null ? `${row.hour_remaining.toFixed(1)} h` : "",
                     row.day_remaining != null ? `${row.day_remaining.toFixed(1)} d` : "",
-                  ].filter(Boolean).join(" / ") || "N/D"}
+                  ]
+                    .filter(Boolean)
+                    .join(" / ") || "N/D"}
                 </span>
               ),
             },
@@ -217,7 +248,10 @@ export function MaintenanceV3Screen() {
                 </Pill>
               ),
             },
-            { label: "Último serviço", render: (row) => <span className="num">{dt(row.last_service_at)}</span> },
+            {
+              label: "Último serviço",
+              render: (row) => <span className="num">{dt(row.last_service_at)}</span>,
+            },
             {
               label: "Ações",
               render: (row) => (
@@ -233,7 +267,9 @@ export function MaintenanceV3Screen() {
                             "Conclusão registrada pelo painel",
                           )
                           .then(load)
-                          .catch((err) => setError(err instanceof Error ? err.message : "Falha ao concluir"))
+                          .catch((err) =>
+                            setError(err instanceof Error ? err.message : "Falha ao concluir"),
+                          )
                       }
                     >
                       Registrar serviço

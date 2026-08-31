@@ -57,7 +57,8 @@ function formatBytes(value: number | null | undefined) {
 }
 
 function sessionLabel(session: BridgeSession) {
-  if (session.generators.length === 1) return session.generators[0]?.tag || `Porta ${session.remotePort}`;
+  if (session.generators.length === 1)
+    return session.generators[0]?.tag || `Porta ${session.remotePort}`;
   if (session.generators.length > 1) return session.generators.map((item) => item.tag).join(", ");
   return `Conexão ${session.remotePort}`;
 }
@@ -155,7 +156,9 @@ export function OverviewDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span>{updatedAt ? `Atualizado ${updatedAt.toLocaleTimeString("pt-BR")}` : "Atualizando…"}</span>
+          <span>
+            {updatedAt ? `Atualizado ${updatedAt.toLocaleTimeString("pt-BR")}` : "Atualizando…"}
+          </span>
           <button
             type="button"
             onClick={retryAll}
@@ -175,7 +178,11 @@ export function OverviewDashboard() {
             {diagError && <span className="ml-1">Comunicação: {diagError}.</span>}
             {alarmError && <span className="ml-1">Alarmes: {alarmError}.</span>}
           </div>
-          <button type="button" onClick={retryAll} className="rounded-md border border-offline/40 px-3 py-1.5 font-semibold">
+          <button
+            type="button"
+            onClick={retryAll}
+            className="rounded-md border border-offline/40 px-3 py-1.5 font-semibold"
+          >
             Tentar novamente
           </button>
         </div>
@@ -233,17 +240,25 @@ export function OverviewDashboard() {
           title="Geradores"
           className="xl:col-span-2"
           actions={
-            <Link to="/p/$slug" params={{ slug: "geradores" }} className="text-xs font-semibold text-primary hover:underline">
+            <Link
+              to="/p/$slug"
+              params={{ slug: "geradores" }}
+              className="text-xs font-semibold text-primary hover:underline"
+            >
               Ver todos
             </Link>
           }
         >
           {!generatorsError && generatorsReady && generators.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">Nenhum gerador cadastrado.</p>
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Nenhum gerador cadastrado.
+            </p>
           ) : (
             <div className="grid gap-2 sm:grid-cols-2 2xl:grid-cols-3">
               {generators.map((generator) => {
-                const rpm = metricAvailable(generator, "rpm") ? `${generator.rpm.toFixed(0)} rpm` : "—";
+                const rpm = metricAvailable(generator, "rpm")
+                  ? `${generator.rpm.toFixed(0)} rpm`
+                  : "—";
                 const hz =
                   metricAvailable(generator, "frequency") && generator.frequency != null
                     ? `${generator.frequency.toFixed(1)} Hz`
@@ -258,13 +273,19 @@ export function OverviewDashboard() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-extrabold">{generator.tag}</p>
-                        <p className="truncate text-xs text-muted-foreground">{generator.site || "Sem unidade"}</p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {generator.site || "Sem unidade"}
+                        </p>
                       </div>
                       <StatusPill status={generator.status} />
                     </div>
                     <div className="mt-3 flex items-center gap-4 text-xs">
-                      <span><b className="num">{rpm}</b></span>
-                      <span><b className="num">{hz}</b></span>
+                      <span>
+                        <b className="num">{rpm}</b>
+                      </span>
+                      <span>
+                        <b className="num">{hz}</b>
+                      </span>
                     </div>
                   </Link>
                 );
@@ -276,7 +297,11 @@ export function OverviewDashboard() {
         <Panel
           title="Requer atenção"
           actions={
-            <Link to="/p/$slug" params={{ slug: "alarmes" }} className="text-xs font-semibold text-primary hover:underline">
+            <Link
+              to="/p/$slug"
+              params={{ slug: "alarmes" }}
+              className="text-xs font-semibold text-primary hover:underline"
+            >
               Abrir alarmes
             </Link>
           }
@@ -286,7 +311,9 @@ export function OverviewDashboard() {
           ) : attention.length === 0 ? (
             <div className="py-8 text-center">
               <p className="font-semibold text-online">Nenhum alarme ativo</p>
-              <p className="mt-1 text-xs text-muted-foreground">O parque não possui ocorrência ativa registrada.</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                O parque não possui ocorrência ativa registrada.
+              </p>
             </div>
           ) : (
             <ul className="space-y-2">
@@ -307,7 +334,11 @@ export function OverviewDashboard() {
       <Panel
         title="Comunicação dos modems"
         actions={
-          <Link to="/p/$slug" params={{ slug: "conectividade" }} className="text-xs font-semibold text-primary hover:underline">
+          <Link
+            to="/p/$slug"
+            params={{ slug: "conectividade" }}
+            className="text-xs font-semibold text-primary hover:underline"
+          >
             Ver conectividade
           </Link>
         }
@@ -315,19 +346,26 @@ export function OverviewDashboard() {
         {!diag && !diagError ? (
           <p className="py-6 text-sm text-muted-foreground">Carregando comunicação…</p>
         ) : sessions.length === 0 ? (
-          <p className="py-6 text-sm text-muted-foreground">Nenhuma conexão de modem configurada.</p>
+          <p className="py-6 text-sm text-muted-foreground">
+            Nenhuma conexão de modem configurada.
+          </p>
         ) : (
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
             {sessions.map((session) => {
               const portTraffic = trafficByPort.get(session.remotePort);
               const onlineNow = bridgeFresh && session.connected;
               return (
-                <article key={session.remotePort} className="rounded-xl border border-border bg-background/35 p-3">
+                <article
+                  key={session.remotePort}
+                  className="rounded-xl border border-border bg-background/35 p-3"
+                >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-extrabold">{sessionLabel(session)}</p>
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        {session.generators.length > 1 ? `${session.generators.length} geradores vinculados` : "Conexão de campo"}
+                        {session.generators.length > 1
+                          ? `${session.generators.length} geradores vinculados`
+                          : "Conexão de campo"}
                       </p>
                     </div>
                     <Pill tone={onlineNow ? "ok" : bridgeFresh ? "err" : "muted"}>
@@ -337,11 +375,15 @@ export function OverviewDashboard() {
                   <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
                     <div className="rounded-lg bg-secondary/35 p-2">
                       <p className="text-muted-foreground">Hoje</p>
-                      <b className="num text-sm">{portTraffic ? formatBytes(portTraffic.todayBytes) : "0 B"}</b>
+                      <b className="num text-sm">
+                        {portTraffic ? formatBytes(portTraffic.todayBytes) : "0 B"}
+                      </b>
                     </div>
                     <div className="rounded-lg bg-secondary/35 p-2">
                       <p className="text-muted-foreground">Mês</p>
-                      <b className="num text-sm">{portTraffic ? formatBytes(portTraffic.monthBytes) : "0 B"}</b>
+                      <b className="num text-sm">
+                        {portTraffic ? formatBytes(portTraffic.monthBytes) : "0 B"}
+                      </b>
                     </div>
                   </div>
                 </article>

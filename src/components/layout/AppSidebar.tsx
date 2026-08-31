@@ -39,7 +39,9 @@ function SidebarNav({ collapsed, onNavigate, onToggle, onClose, touchFriendly }:
   );
 
   const groupHasActive = (title: string) =>
-    visibleGroups.find((group) => group.title === title)?.items.some((item) => isActive(item.slug)) ?? false;
+    visibleGroups
+      .find((group) => group.title === title)
+      ?.items.some((item) => isActive(item.slug)) ?? false;
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const next: Record<string, boolean> = {};
@@ -88,7 +90,11 @@ function SidebarNav({ collapsed, onNavigate, onToggle, onClose, touchFriendly }:
             aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
             className="grid size-9 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           >
-            {collapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
+            {collapsed ? (
+              <PanelLeftOpen className="size-4" />
+            ) : (
+              <PanelLeftClose className="size-4" />
+            )}
           </button>
         )}
         {onClose && (

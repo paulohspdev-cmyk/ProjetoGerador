@@ -119,8 +119,16 @@ export function UsersV3Screen() {
         ]}
       />
 
-      {error && <p className="rounded-xl border border-offline/40 bg-offline/10 p-3 text-sm text-offline">{error}</p>}
-      {message && <p className="rounded-xl border border-online/30 bg-online/10 p-3 text-sm text-online">{message}</p>}
+      {error && (
+        <p className="rounded-xl border border-offline/40 bg-offline/10 p-3 text-sm text-offline">
+          {error}
+        </p>
+      )}
+      {message && (
+        <p className="rounded-xl border border-online/30 bg-online/10 p-3 text-sm text-online">
+          {message}
+        </p>
+      )}
 
       <Panel title={editing ? `Editar ${editing.name}` : "Novo usuário"}>
         <form onSubmit={save} className="space-y-4">
@@ -167,7 +175,9 @@ export function UsersV3Screen() {
                 className="mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
               >
                 {roles.map((item) => (
-                  <option key={item} value={item}>{ROLE_LABEL[item]}</option>
+                  <option key={item} value={item}>
+                    {ROLE_LABEL[item]}
+                  </option>
                 ))}
               </select>
             </label>
@@ -184,7 +194,11 @@ export function UsersV3Screen() {
               {editing ? "Salvar alterações" : "Criar usuário"}
             </button>
             {editing && (
-              <button type="button" onClick={reset} className="h-10 rounded-lg border border-border px-4 text-sm font-semibold">
+              <button
+                type="button"
+                onClick={reset}
+                className="h-10 rounded-lg border border-border px-4 text-sm font-semibold"
+              >
                 Cancelar
               </button>
             )}
@@ -209,12 +223,16 @@ export function UsersV3Screen() {
             {
               label: "Perfil",
               render: (row) => (
-                <Pill tone={row.role === "administrador" ? "info" : "muted"}>{ROLE_LABEL[row.role]}</Pill>
+                <Pill tone={row.role === "administrador" ? "info" : "muted"}>
+                  {ROLE_LABEL[row.role]}
+                </Pill>
               ),
             },
             {
               label: "Estado",
-              render: (row) => <Pill tone={row.active ? "ok" : "muted"}>{row.active ? "Ativo" : "Inativo"}</Pill>,
+              render: (row) => (
+                <Pill tone={row.active ? "ok" : "muted"}>{row.active ? "Ativo" : "Inativo"}</Pill>
+              ),
             },
             { label: "Último acesso", render: (row) => row.lastAccess || "—" },
             {
@@ -229,7 +247,11 @@ export function UsersV3Screen() {
                     <ActionBtn disabled={protectedAccount} onClick={() => void toggle(row)}>
                       {row.active ? "Desativar" : "Ativar"}
                     </ActionBtn>
-                    <ActionBtn tone="danger" disabled={protectedAccount} onClick={() => void remove(row)}>
+                    <ActionBtn
+                      tone="danger"
+                      disabled={protectedAccount}
+                      onClick={() => void remove(row)}
+                    >
                       Excluir
                     </ActionBtn>
                   </span>

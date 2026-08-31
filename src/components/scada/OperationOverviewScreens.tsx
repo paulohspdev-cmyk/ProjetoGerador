@@ -93,7 +93,9 @@ export function OperationCenter() {
       <div className="grid gap-4 xl:grid-cols-3">
         <Panel title="Geradores" className="xl:col-span-2">
           {generatorsReady && !generatorsError && !generators.length ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">Nenhum gerador cadastrado.</p>
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Nenhum gerador cadastrado.
+            </p>
           ) : generatorsError ? (
             <p className="py-8 text-center text-sm text-offline">Parque indisponível.</p>
           ) : (
@@ -105,11 +107,16 @@ export function OperationCenter() {
                     ? `${fmt(generator.frequency, 1)} Hz`
                     : "—";
                 return (
-                  <article key={generator.id} className="rounded-xl border border-border bg-background/35 p-3">
+                  <article
+                    key={generator.id}
+                    className="rounded-xl border border-border bg-background/35 p-3"
+                  >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-extrabold">{generator.tag}</p>
-                        <p className="truncate text-xs text-muted-foreground">{generator.site || "Sem unidade"}</p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {generator.site || "Sem unidade"}
+                        </p>
                       </div>
                       <StatusPill status={generator.status} />
                     </div>
@@ -138,7 +145,9 @@ export function OperationCenter() {
           {generatorsError ? (
             <p className="py-8 text-center text-sm text-offline">Condições indisponíveis.</p>
           ) : !alarmRows.length ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">Nenhuma condição ativa.</p>
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Nenhuma condição ativa.
+            </p>
           ) : (
             <ul className="space-y-2">
               {alarmRows.slice(0, 8).map((alarm) => (
@@ -240,26 +249,49 @@ export function SitesScreen() {
         </div>
       )}
       {loading ? (
-        <Panel title="Unidades"><p className="py-8 text-center text-sm text-muted-foreground">Carregando unidades…</p></Panel>
+        <Panel title="Unidades">
+          <p className="py-8 text-center text-sm text-muted-foreground">Carregando unidades…</p>
+        </Panel>
       ) : hasFailure ? (
-        <Panel title="Unidades"><p className="py-8 text-center text-sm text-offline">Não foi possível atualizar as unidades.</p></Panel>
+        <Panel title="Unidades">
+          <p className="py-8 text-center text-sm text-offline">
+            Não foi possível atualizar as unidades.
+          </p>
+        </Panel>
       ) : !rows.length ? (
-        <Panel title="Unidades"><p className="py-8 text-center text-sm text-muted-foreground">Nenhuma unidade cadastrada.</p></Panel>
+        <Panel title="Unidades">
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            Nenhuma unidade cadastrada.
+          </p>
+        </Panel>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {rows.map((site) => (
-            <article key={site.id} className="rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-panel)]">
+            <article
+              key={site.id}
+              className="rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-panel)]"
+            >
               <h3 className="font-extrabold">{site.name}</h3>
               <p className="text-xs text-muted-foreground">
                 {[site.city, site.state].filter(Boolean).join(" / ") || "Localização não informada"}
               </p>
               <div className="mt-4 grid grid-cols-3 gap-1 text-center text-xs">
-                <div><p className="num text-xl font-bold text-online">{site.online}</p><p className="text-muted-foreground">Online</p></div>
-                <div><p className="num text-xl font-bold text-alert">{site.alerta}</p><p className="text-muted-foreground">Alerta</p></div>
-                <div><p className="num text-xl font-bold text-offline">{site.offline}</p><p className="text-muted-foreground">Offline</p></div>
+                <div>
+                  <p className="num text-xl font-bold text-online">{site.online}</p>
+                  <p className="text-muted-foreground">Online</p>
+                </div>
+                <div>
+                  <p className="num text-xl font-bold text-alert">{site.alerta}</p>
+                  <p className="text-muted-foreground">Alerta</p>
+                </div>
+                <div>
+                  <p className="num text-xl font-bold text-offline">{site.offline}</p>
+                  <p className="text-muted-foreground">Offline</p>
+                </div>
               </div>
               <p className="mt-3 text-xs text-muted-foreground">
-                {site.total} geradores · {site.measuredLoad == null ? "carga N/D" : `${fmt(site.measuredLoad, 1)} kW`}
+                {site.total} geradores ·{" "}
+                {site.measuredLoad == null ? "carga N/D" : `${fmt(site.measuredLoad, 1)} kW`}
               </p>
             </article>
           ))}

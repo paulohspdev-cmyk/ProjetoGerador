@@ -55,7 +55,10 @@ const rootRoute = read("src/routes/__root.tsx");
 const rootComponent =
   rootRoute.split("function RootComponent()", 2)[1]?.split("function AppShell()", 1)[0] ?? "";
 const appShell = rootRoute.split("function AppShell()", 2)[1] ?? "";
-if (rootComponent.includes("<GeneratorsProvider>") || rootComponent.includes("<ScadaOpsProvider>")) {
+if (
+  rootComponent.includes("<GeneratorsProvider>") ||
+  rootComponent.includes("<ScadaOpsProvider>")
+) {
   failures.push("providers autenticados voltaram a montar antes da confirmação de sessão");
 }
 if (!appShell.includes("<GeneratorsProvider>") || !appShell.includes("<ScadaOpsProvider>")) {
@@ -161,7 +164,11 @@ for (const testFile of [
 }
 
 const rapid = read("backend/app/rapid.py");
-for (const marker of ["def _overlay_generators", "math.isfinite", "Telemetria Rapid indisponível"]) {
+for (const marker of [
+  "def _overlay_generators",
+  "math.isfinite",
+  "Telemetria Rapid indisponível",
+]) {
   if (!rapid.includes(marker)) {
     failures.push(`overlay Rapid perdeu proteção de inventário: ${marker}`);
   }
