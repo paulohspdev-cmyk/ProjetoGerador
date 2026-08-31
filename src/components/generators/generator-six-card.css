@@ -1,42 +1,42 @@
 .generator-six-card-grid {
-  grid-template-columns: minmax(0, 1fr);
-  grid-auto-rows: max-content;
-  align-items: start;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 238px), 1fr));
+  grid-auto-rows: minmax(min-content, 1fr);
+  align-items: stretch;
+  align-content: stretch;
 }
 
 .generator-six-card-grid > .comap-panel-v2 {
   width: 100%;
   min-width: 0;
-  height: max-content;
+  min-height: 100%;
+  height: 100%;
 }
 
-/* O destaque maior pertence ao identificador do card no cabeçalho. */
 .generator-six-card-grid .comap-header {
-  min-height: 31px;
-  gap: 6px;
-  padding: 3px 6px 2px;
+  min-height: 36px;
+  gap: 7px;
+  padding: 4px 7px 3px;
 }
 
 .generator-six-card-grid .comap-logo {
-  width: 25px;
-  height: 25px;
-  font-size: 13px;
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
   border-width: 2px;
 }
 
 .generator-six-card-grid .comap-name {
-  font-size: 14px;
-  line-height: 1.05;
+  font-size: 15px;
+  line-height: 1.1;
 }
 
 .generator-six-card-grid .controller-model-line {
   margin-top: 1px;
-  font-size: 9.5px;
+  font-size: 11px;
 }
 
-/* O símbolo do gerador deve ter a mesma presença visual do círculo da rede. */
 .generator-six-card-grid .flow-generator-circle {
-  transform: scale(0.82);
+  transform: scale(0.86);
   transform-box: fill-box;
   transform-origin: center;
 }
@@ -46,24 +46,24 @@
 }
 
 .generator-six-card-grid .comap-title {
-  font-size: 10.5px;
+  font-size: 12px;
 }
 
 .generator-six-card-grid .engine-status-block {
-  padding-top: 4px !important;
-  padding-bottom: 4px !important;
+  padding-top: 5px !important;
+  padding-bottom: 5px !important;
 }
 
 .generator-six-card-grid .comap-engine {
-  grid-template-columns: 14px minmax(56px, 0.82fr) minmax(70px, 1.5fr) minmax(48px, auto);
-  min-height: 16.5px;
-  column-gap: 4px;
-  font-size: 9.5px;
+  grid-template-columns: 15px minmax(68px, 0.9fr) minmax(76px, 1.5fr) minmax(52px, auto);
+  min-height: 19px;
+  column-gap: 5px;
+  font-size: 11px;
 }
 
 .generator-six-card-grid .comap-engine .icon {
-  width: 13px;
-  height: 13px;
+  width: 14px;
+  height: 14px;
 }
 
 .generator-six-card-grid .comap-engine .engine-label {
@@ -71,22 +71,20 @@
 }
 
 .generator-six-card-grid .comap-engine .engine-value {
-  min-width: 48px;
-  font-size: 10px;
+  min-width: 50px;
+  font-size: 11px;
   font-weight: 800;
   text-align: right;
 }
 
 .generator-six-card-grid .comap-meter {
-  height: 6.5px;
+  height: 7px;
 }
 
-/* A frequência já aparece ao lado do G no Power Flow; não repetimos no Engine Status. */
 .generator-six-card-grid .engine-status-block .comap-engine:last-child {
   display: none;
 }
 
-/* O backend preserva known=false; aqui só mudamos a apresentação numérica para 0. */
 .generator-six-card-grid .comap-engine.opacity-65 {
   opacity: 1;
 }
@@ -98,30 +96,26 @@
 
 .generator-six-card-grid .comap-engine.opacity-65 .engine-value::after {
   content: "0";
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
 }
 
 .generator-six-card-grid .controller-mode-btn {
-  min-height: 22px;
-  font-size: 8px;
+  min-height: 26px;
+  font-size: 10px;
 }
 
-/*
- * Feedback de START/STOP em linha fixa abaixo do diagrama.
- * Somente texto branco forte, sem caixa, e sem alterar a altura quando aparece.
- */
 .generator-six-card-grid .comap-flow-v2 {
-  padding-bottom: 14px;
+  padding-bottom: 16px;
 }
 
 .generator-six-card-grid .comap-flow-v2 > p {
   position: absolute;
   z-index: 24;
-  right: 6px;
+  right: 7px;
   bottom: 0;
-  left: 6px;
-  height: 13px;
+  left: 7px;
+  height: 15px;
   margin: 0;
   overflow: hidden;
   padding: 0 !important;
@@ -129,33 +123,32 @@
   border-radius: 0;
   background: transparent;
   color: #ffffff;
-  font-size: 9px !important;
+  font-size: 10.5px !important;
   font-weight: 900;
-  line-height: 13px;
+  line-height: 15px;
   text-shadow: 0 0 4px rgba(255, 255, 255, 0.24);
   text-overflow: ellipsis;
   white-space: nowrap;
   pointer-events: none;
 }
 
-/* Potência: sem texto redundante no canto e sem legenda/caption abaixo do gauge. */
 .generator-six-card-grid .power-gauge-heading > span,
 .generator-six-card-grid .kw-gauge-caption {
   display: none;
 }
 
 .generator-six-card-grid .comap-power-gauge-block {
-  padding-top: 4px;
-  padding-bottom: 2px;
+  padding-top: 5px;
+  padding-bottom: 3px;
 }
 
 .generator-six-card-grid .kw-gauge-wrap {
-  min-height: 104px;
+  min-height: 110px;
 }
 
 .generator-six-card-grid .kw-gauge-svg {
-  width: min(100%, 212px);
-  height: 104px;
+  width: min(100%, 220px);
+  height: 110px;
 }
 
 .generator-six-card-grid .kw-gauge-unit {
@@ -182,49 +175,36 @@
 }
 
 .generator-six-card-grid .mains-generator-block .comap-table-row {
-  min-height: 16px;
-  font-size: 9.5px;
+  min-height: 18px;
+  font-size: 11px;
 }
 
-@media (min-width: 640px) {
+@media (max-width: 639px) {
   .generator-six-card-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: max-content;
+    align-content: start;
   }
-}
 
-@media (min-width: 900px) {
-  .generator-six-card-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1180px) {
-  .generator-six-card-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1380px) {
-  .generator-six-card-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+  .generator-six-card-grid > .comap-panel-v2 {
+    height: max-content;
+    min-height: 0;
   }
 }
 
 @media (min-width: 1540px) {
-  /* Tela grande: seis posições fixas por página, mesmo quando ainda existem só cinco geradores. */
   .generator-six-card-grid {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 4px;
+    gap: 6px;
     padding: 0;
   }
 
   .generator-six-card-grid .comap-panel-v2 .comap-sld-stage {
-    width: min(100%, 220px);
+    width: min(100%, 230px);
   }
 
   .generator-six-card-grid .comap-panel-v2 .comap-start,
   .generator-six-card-grid .comap-panel-v2 .comap-stop {
-    width: 40px;
-    height: 40px;
+    width: 42px;
+    height: 42px;
   }
 }
