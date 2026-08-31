@@ -113,6 +113,14 @@ function metricAvailable(generator: { availableMetrics?: string[] }, key: string
   return (generator.availableMetrics ?? []).includes(key);
 }
 
+function metricUnit(
+  generator: { metricUnits?: Record<string, string> },
+  key: string,
+  fallback = "",
+) {
+  return generator.metricUnits?.[key] || fallback;
+}
+
 function isOpenWorkOrder(status: string) {
   return !/conclu|cancel|fechad/i.test(status);
 }
@@ -204,6 +212,7 @@ export function useOverviewDecisionModel() {
       .filter(
         (generator) =>
           metricAvailable(generator, "fuel_level") &&
+          metricUnit(generator, "fuel_level", "%") === "%" &&
           Number.isFinite(Number(generator.fuelLevel)) &&
           Number(generator.fuelLevel) >= 0 &&
           Number(generator.fuelLevel) <= 100,
