@@ -156,7 +156,9 @@ for (const [metric, object] of Object.entries(ig200ObjectExpectations)) {
   }
 }
 if (ig200.metricUnits?.fuel_level !== "L" || ig200.metricUnits?.oil_pressure !== "bar") {
-  failures.push("InteliGen 200 production: unidades documentais de combustível/óleo foram alteradas");
+  failures.push(
+    "InteliGen 200 production: unidades documentais de combustível/óleo foram alteradas",
+  );
 }
 if (
   ig200.modbusMapping?.kind !== "configuration_dependent_export" ||
