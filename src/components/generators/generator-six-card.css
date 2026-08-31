@@ -85,21 +85,6 @@
   display: none;
 }
 
-.generator-six-card-grid .comap-engine.opacity-65 {
-  opacity: 1;
-}
-
-.generator-six-card-grid .comap-engine.opacity-65 .engine-value {
-  font-size: 0;
-  color: #dce8ef;
-}
-
-.generator-six-card-grid .comap-engine.opacity-65 .engine-value::after {
-  content: "0";
-  font-size: 11px;
-  font-weight: 800;
-}
-
 .generator-six-card-grid .controller-mode-btn {
   min-height: 26px;
   font-size: 10px;
@@ -160,18 +145,6 @@
   bottom: 3px;
   font-size: 31px;
   line-height: 1;
-}
-
-.generator-six-card-grid .kw-gauge-svg[aria-label="Potência indisponível"] + .kw-gauge-value {
-  font-size: 0;
-}
-
-.generator-six-card-grid
-  .kw-gauge-svg[aria-label="Potência indisponível"]
-  + .kw-gauge-value::after {
-  content: "0";
-  font-size: 31px;
-  font-weight: 900;
 }
 
 .generator-six-card-grid .mains-generator-block .comap-table-row {
