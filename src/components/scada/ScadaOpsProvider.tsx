@@ -84,7 +84,7 @@ type Ctx = {
   downloadReport: (id: string, gens: Generator[]) => void;
   workOrders: WorkOrder[];
   setWorkOrderStatus: (id: string, status: string) => void;
-  addWorkOrder: (input: { gen: string; type: string; site: string }) => void;
+  addWorkOrder: (input: { gen: string; type: string; site: string; tech?: string }) => void;
   agenda: AgendaItem[];
   addAgenda: (input: { title: string; when: string; site: string }) => void;
   rules: RuleRow[];
@@ -209,7 +209,7 @@ export function ScadaOpsProvider({ children }: { children: ReactNode }) {
           .then(async (report) => {
             setState((prev) => ({ ...prev, reports: [report, ...prev.reports] }));
             await rcApi.reports.download(report.id);
-            notify("Relatório real gerado");
+            notify("Relatório gerado");
           })
           .catch((err) => notify(message(err, "Falha ao gerar relatório.")));
       },
@@ -226,7 +226,9 @@ export function ScadaOpsProvider({ children }: { children: ReactNode }) {
           .then((updated) => {
             setState((prev) => ({
               ...prev,
-              workOrders: prev.workOrders.map((w) => (w.id === id ? updated : w)),
+              workOrders: prev.workOrders.map((workOrder) =>
+                workOrder.id === id ? updated : workOrder,
+              ),
             }));
             notify(`OS ${id}: ${status}`);
           })
@@ -234,7 +236,12 @@ export function ScadaOpsProvider({ children }: { children: ReactNode }) {
       },
       addWorkOrder: (input) => {
         void rcApi.workOrders
-          .create({ ...input, due: 0, tech: "Equipe campo", status: "Planejada" })
+          .create({
+            ...input,
+            due: 0,
+            tech: input.tech?.trim() || "",
+            status: "Planejada",
+          })
           .then((created) => {
             setState((prev) => ({ ...prev, workOrders: [created, ...prev.workOrders] }));
             notify("Ordem de serviço criada");
@@ -253,14 +260,14 @@ export function ScadaOpsProvider({ children }: { children: ReactNode }) {
       },
       rules: state.rules,
       toggleRule: (id) => {
-        const current = state.rules.find((r) => r.id === id);
+        const current = state.rules.find((rule) => rule.id === id);
         if (!current) return;
         void rcApi.rules
           .update(id, { enabled: !current.enabled })
           .then((updated) => {
             setState((prev) => ({
               ...prev,
-              rules: prev.rules.map((r) => (r.id === id ? updated : r)),
+              rules: prev.rules.map((rule) => (rule.id === id ? updated : rule)),
             }));
             notify(updated.enabled ? "Regra habilitada" : "Regra desabilitada");
           })
@@ -288,7 +295,7 @@ export function ScadaOpsProvider({ children }: { children: ReactNode }) {
       },
       webhooks: state.webhooks,
       toggleWebhook: (id) => {
-        const current = state.webhooks.find((w) => w.id === id);
+        const current = state.webhooks.find((webhook) => webhook.id === id);
         if (!current) return;
         const status = current.status === "Ativo" ? "Pausado" : "Ativo";
         void rcApi.webhooks
@@ -296,7 +303,9 @@ export function ScadaOpsProvider({ children }: { children: ReactNode }) {
           .then((updated) => {
             setState((prev) => ({
               ...prev,
-              webhooks: prev.webhooks.map((w) => (w.id === id ? updated : w)),
+              webhooks: prev.webhooks.map((webhook) =>
+                webhook.id === id ? updated : webhook,
+              ),
             }));
           })
           .catch((err) => notify(message(err, "Falha ao alterar webhook.")));
