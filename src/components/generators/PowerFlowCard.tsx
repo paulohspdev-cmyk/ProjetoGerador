@@ -55,6 +55,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const runHours = metricNumber(gen, "run_hours", gen.runHours);
   const frequency = metricNumber(gen, "frequency", gen.frequency);
   const load = metricNumber(gen, "power_kw", gen.load);
+  const powerFactor = metricNumber(gen, "power_factor", undefined);
   const mainsFrequency = metricNumber(gen, "mains_frequency", gen.mainsFrequency);
   const nominalPower =
     metricNumber(gen, "nominal_power_kw", gen.nominalPower) ??
@@ -223,7 +224,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         <EngineRow
           icon={<IconOilCan />}
           label="Oil Pressure"
-          value={oil == null ? "N/D" : `${fmt(oil)} ${oilUnit}`}
+          value={oil == null ? "N/D" : `${fmt(oil, 2)} ${oilUnit}`}
           known={oil != null}
         />
         <EngineRow
@@ -235,7 +236,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         <EngineRow
           icon={<IconFuelPump />}
           label="Fuel Level"
-          value={fuel == null ? "N/D" : `${fmt(fuel, fuelIsPercent ? 0 : 1)} ${fuelUnit}`}
+          value={fuel == null ? "N/D" : `${fmt(fuel, 0)} ${fuelUnit}`}
           pct={fuelIsPercent ? fuel : null}
           bar={fuelIsPercent}
           known={fuel != null}
@@ -265,7 +266,13 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
           <h2 className="comap-title">Generator P</h2>
           <span>{load == null ? "POTÊNCIA N/D" : "POTÊNCIA ATIVA"}</span>
         </div>
-        <PowerGaugeKw value={load} nominal={nominalPower} rpm={rpm} battery={batt} />
+        <PowerGaugeKw
+          value={load}
+          nominal={nominalPower}
+          rpm={rpm}
+          battery={batt}
+          powerFactor={powerFactor}
+        />
       </section>
 
       <section className="comap-block mains-generator-block mb-1.5 shrink-0 px-2 py-1.5">

@@ -9,6 +9,8 @@ from .controller_library import pack_for_model
 
 _cache = {"at": 0.0, "channels": {}, "error": ""}
 
+_IG200_UNDEFINED = {-32768.0, 32768.0, -2147483648.0, 2147483648.0}
+
 
 def load_bindings():
     try:
@@ -45,6 +47,16 @@ def _reader_ready():
     return ""
 
 
+def _is_undefined_raw(generator, raw_value):
+    model = str(generator.get("controller_model") or "").strip().lower()
+    if model not in {"inteligen 200", "comap inteligen 200", "ig200", "ig 200"}:
+        return False
+    try:
+        return float(raw_value) in _IG200_UNDEFINED
+    except (TypeError, ValueError, OverflowError):
+        return False
+
+
 def read_channels(channel_nums):
     nums = sorted({int(n) for n in channel_nums})
     if not nums:
@@ -58,7 +70,13 @@ def read_channels(channel_nums):
     if ready_error:
         return {}, ready_error
 
-    cmd = ["dotnet", str(RAPID_READER_DLL), str(RAPID_COMM_CONFIG), "current", *[str(n) for n in nums]]
+    cmd = [
+        "dotnet",
+        str(RAPID_READER_DLL),
+        str(RAPID_COMM_CONFIG),
+        "current",
+        *[str(n) for n in nums],
+    ]
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=4, check=False)
     except Exception as exc:
@@ -139,8 +157,11 @@ def trend_for_generator(generator, metric, hours=24, archive_bit=1):
     for item in payload.get("points", []):
         if not item.get("defined"):
             continue
+        raw_value = item.get("val", 0)
+        if _is_undefined_raw(generator, raw_value):
+            continue
         try:
-            value = float(item.get("val", 0)) * scale
+            value = float(raw_value) * scale
         except (TypeError, ValueError, OverflowError):
             continue
         if not math.isfinite(value):
@@ -211,6 +232,25 @@ def _metric_units(generator, available: list[str]) -> dict[str, str]:
     return {str(key): str(unit) for key, unit in units.items() if key in allowed and str(unit)}
 
 
+def _derive_breaker_feedback(values):
+    """Deriva feedbacks apenas para estados agregados semanticamente inequívocos."""
+    raw = values.get("breaker_state_raw")
+    mapping = {
+        1: (False, False),
+        2: (False, True),
+        3: (True, False),
+        4: (True, True),
+        10: (False, True),
+        11: (True, True),
+    }
+    if raw not in mapping:
+        return []
+    mcb, gcb = mapping[raw]
+    values["mcb_closed"] = 1 if mcb else 0
+    values["gcb_closed"] = 1 if gcb else 0
+    return ["mcb_closed", "gcb_closed"]
+
+
 def _frontend_generator(generator, values, status, error="", available=None):
     configured = bool(generator.get("enabled"))
     rpm = int(values.get("rpm") or 0)
@@ -227,14 +267,23 @@ def _frontend_generator(generator, values, status, error="", available=None):
         "controllerType": generator.get("controller_type") or "",
         "site": generator.get("site") or "",
         "enabled": configured,
-        "status": "alerta" if fault else "online" if online else "offline" if configured else "nao_configurado",
+        "status": "alerta"
+        if fault
+        else "online"
+        if online
+        else "offline"
+        if configured
+        else "nao_configurado",
         "mode": _mode(values),
-        "ip": generator.get("host") or (f"TCP {generator.get('listen_port')}" if generator.get("listen_port") else "—"),
+        "ip": generator.get("host")
+        or (f"TCP {generator.get('listen_port')}" if generator.get("listen_port") else "—"),
         "transport": generator.get("transport") or "reverse_tcp",
         "listenPort": generator.get("listen_port"),
         "modbusUnit": generator.get("modbus_unit"),
         "battery": values.get("battery_voltage"),
         "frequency": values.get("frequency"),
+        "mainsFrequency": values.get("mains_frequency"),
+        "nominalPower": values.get("nominal_power_kw"),
         "rpm": rpm,
         "load": float(values.get("power_kw") or 0),
         "oilPressure": float(values.get("oil_pressure") or 0),
@@ -259,9 +308,12 @@ def _frontend_generator(generator, values, status, error="", available=None):
             "l3": float(values.get("voltage_l3") or 0),
             "l12": float(values.get("voltage_l1_l2") or 0),
         },
+        "metrics": dict(values),
         "availableMetrics": available_metrics_list,
         "metricUnits": _metric_units(generator, available_metrics_list),
-        "telemetrySource": "rapid_scada" if status in {"online", "fault", "connected"} else "none",
+        "telemetrySource": "rapid_scada"
+        if status in {"online", "fault", "connected"}
+        else "none",
         "rapidDeviceNum": generator.get("rapid_device_num"),
         "lastError": error,
     }
@@ -289,7 +341,15 @@ def _overlay_generators(generators):
             result.append(_frontend_generator(generator, {}, "disabled", available=available))
             continue
         if not binding:
-            result.append(_frontend_generator(generator, {}, "offline", "Sem binding Rapid SCADA", available=[]))
+            result.append(
+                _frontend_generator(
+                    generator,
+                    {},
+                    "offline",
+                    "Sem binding Rapid SCADA",
+                    available=[],
+                )
+            )
             continue
 
         values = {}
@@ -299,9 +359,12 @@ def _overlay_generators(generators):
             item = channel_data.get(int(cfg["cnl"]))
             if not item or not item.get("defined"):
                 continue
+            raw_value = item.get("val")
+            if _is_undefined_raw(generator, raw_value):
+                continue
             try:
                 scale = float(cfg.get("scale", 1.0))
-                value = float(item.get("val")) * scale
+                value = float(raw_value) * scale
             except (TypeError, ValueError, OverflowError):
                 invalid_values.append(key)
                 continue
@@ -309,7 +372,16 @@ def _overlay_generators(generators):
                 invalid_values.append(key)
                 continue
             defined_count += 1
-            values[key] = int(round(value)) if abs(value - round(value)) < 1e-9 and key != "frequency" else round(value, 3)
+            values[key] = (
+                int(round(value))
+                if abs(value - round(value)) < 1e-9
+                and key not in {"frequency", "mains_frequency"}
+                else round(value, 3)
+            )
+
+        derived = _derive_breaker_feedback(values)
+        if derived:
+            available = sorted(set([*available, *derived]))
 
         if read_error:
             result.append(_frontend_generator(generator, {}, "fault", read_error, available=available))
@@ -324,7 +396,8 @@ def _overlay_generators(generators):
                     generator,
                     {},
                     "fault",
-                    "Rapid SCADA retornou apenas valores inválidos: " + ", ".join(sorted(invalid_values)),
+                    "Rapid SCADA retornou apenas valores inválidos: "
+                    + ", ".join(sorted(invalid_values)),
                     available=available,
                 )
             )
@@ -343,12 +416,7 @@ def _overlay_generators(generators):
 
 
 def overlay_generators(generators):
-    """Combina inventário persistido com telemetria sem permitir que a telemetria apague o parque.
-
-    A lista de ativos é dado de cadastro. Uma falha inesperada no binding/leitor Rapid deve degradar
-    o estado industrial para offline, nunca transformar `/api/generators` em HTTP 500 e fazer o
-    frontend concluir incorretamente que não existem geradores.
-    """
+    """Combina inventário persistido com telemetria sem permitir que a telemetria apague o parque."""
     generators = list(generators)
     try:
         return _overlay_generators(generators)
@@ -368,6 +436,16 @@ def dashboard(generators):
         "alerts": sum(g["status"] == "alerta" for g in generators),
         "offline": sum(g["status"] == "offline" for g in generators),
         "notConfigured": sum(g["status"] == "nao_configurado" for g in generators),
-        "running": sum("rpm" in (g.get("availableMetrics") or []) and (g.get("rpm") or 0) > 300 for g in generators),
-        "loadKw": round(sum(float(g.get("load") or 0) for g in generators if "power_kw" in (g.get("availableMetrics") or [])), 3),
+        "running": sum(
+            "rpm" in (g.get("availableMetrics") or []) and (g.get("rpm") or 0) > 300
+            for g in generators
+        ),
+        "loadKw": round(
+            sum(
+                float(g.get("load") or 0)
+                for g in generators
+                if "power_kw" in (g.get("availableMetrics") or [])
+            ),
+            3,
+        ),
     }

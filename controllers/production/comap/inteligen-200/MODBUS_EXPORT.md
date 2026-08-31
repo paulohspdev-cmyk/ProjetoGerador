@@ -1,80 +1,72 @@
-# InteliGen 200 — export do mapa Modbus específico do archive
+# InteliGen 200 — mapa Modbus do archive `in200.txt`
 
-## Por que este arquivo existe
+## Status
 
-A InteliGen 200 possui objetos de comunicação (`Com.Obj`) estáveis, mas a tradução desses objetos para endereços Modbus da faixa configurável depende da configuração/archive carregado no controlador.
+O arquivo `in200.txt` é o export Modbus correto do archive usado no GEN005. O próprio export declara a tabela **Values** com funções Modbus **03/04** e relaciona cada endereço Modbus ao respectivo `Com.Obj`, nome, unidade, tipo, tamanho e casas decimais.
 
-O arquivo de archive `tabela IG200(1).txt` documenta os objetos, tipos, unidades, casas decimais e offsets internos. Ele **não** contém a definição `Modbus register <-> controller object` necessária para provisionar novos canais no Rapid SCADA.
+Em 2026-08-31 o mapa foi validado no GEN005, Unit 16, por leituras FC03 somente. Nenhum setpoint foi escrito.
 
-Não copiar o mapa padrão de outro archive e não calcular endereços a partir dos offsets de `Values I/II/III` ou `History Record`.
+## Regras de segurança
 
-## Fonte oficial
+- Valores `1000..2999`: somente leitura FC03/FC04.
+- Setpoints `3000..3999`: o export documenta FC03/04/06/16, porém este projeto **não escreve** nessa faixa.
+- START/STOP continuam sendo os únicos comandos industriais homologados pelo fluxo de comando existente.
+- AUTO/MANUAL/TEST, MCB/GCB e paralelismo permanecem bloqueados.
+- `0x8000` em 16 bits e `0x80000000` em 32 bits são tratados como **N/D**, nunca como zero físico.
 
-O Global Guide da ComAp para InteliGen 200 descreve:
+## Mapa validado para telemetria
 
-- valores Modbus configuráveis na faixa 1000..2999;
-- setpoints na faixa 3000..3999;
-- o mapa real depende da configuração;
-- a definição Modbus pode ser exportada pelo InteliConfig em formato legível;
-- funções 03/04 são usadas para leitura dos valores.
+| Register | Métrica | Escala | Unidade | Evidência GEN005 |
+| ---: | --- | ---: | --- | --- |
+| 1000 | RPM | 1 | rpm | 1798..1801 em operação |
+| 1003 | EngineSpeed ECU | 1 | rpm | acompanha a rotação; N/D parado |
+| 1004 | FuelRate | 0,1 | L/h | 5,4..8,0 |
+| 1005 | T-Coolant | 1 | °C | 65..66 |
+| 1006 | T-IntManifold | 1 | °C | 40..42 |
+| 1007 | P-Oil | 0,01 | bar | 6,36..6,44 |
+| 1008 | P-Intake | 0,01 | bar | 0,12..0,14 |
+| 1009 | Load | 1 | % | 8..11 |
+| 1019 | Generator kW | 1 | kW | 0 com `BrksOff` |
+| 1023 | Generator kVAr | 1 | kVAr | 0 com `BrksOff` |
+| 1027 | Generator kVA | 1 | kVA | 0 com `BrksOff` |
+| 1031 | Generator Power Factor | 0,01 | — | 0 com `BrksOff` |
+| 1035 | Generator Frequency | 0,1 | Hz | 60,0 |
+| 1036..1038 | Generator Voltage L1/L2/L3-N | 1 | V | ~227 |
+| 1039..1041 | Generator Voltage L-L | 1 | V | validado em testes de partida |
+| 1042..1044 | Generator Current L1/L2/L3 | 1 | A | 0 com `BrksOff` |
+| 1083 | Battery Volts | 0,1 | V | 25,6 parado / 28,4 rodando |
+| 1084 | D+ | 0,1 | V | endereço validado; leitura 0 no GEN005 |
+| 1087 | Fuel Level | 1 | L | ~482..487 L |
+| 1227 | Nominal Power | 1 | kW | 440 |
+| 1228 | Nominal Voltage | 1 | V | 227 |
+| 1229 | Nominal Current | 1 | A | 830 |
+| 1230-1231 | Genset kWh | 1 | kWh | 326572 |
+| 1232-1233 | Genset kVArh | 1 | kVArh | 220149 |
+| 1238-1239 | Running Hours | 0,1 | h | 2821,8 |
+| 1240 | Num Starts | 1 | — | 683 |
+| 1241 | Maintenance 1 | 1 | h | 126 |
+| 1242 | Maintenance 2 | 1 | h | 426 |
+| 1243 | Maintenance 3 | 1 | h | 726 |
+| 1258 | Engine state | enum | — | 1=Ready parado; 7=Running operando |
+| 1259 | Breaker state | enum | — | 1=BrksOff no teste sem carga |
+| 1342 | Controller Mode | enum | — | 1=MAN no teste |
 
-O próprio InteliConfig possui a tela de definição Modbus que conecta `MODBUS register <-> controller object` e oferece a ação **Export MODBUS definition to file**.
+## Enumerações usadas
 
-## Como gerar o arquivo que falta
+`Engine state`: 0 Init, 1 Ready, 2 NotReady, 3 Prestart, 4 Cranking, 5 Pause, 6 Starting, 7 Running, 8 Loaded, 9 Soft unld, 10 Cooling, 11 Stop, 12 Shutdown, 13 Ventil, 14 EmergMan, 15 Soft load, 16 WaitStop, 17 SDVentil.
 
-1. Abra o InteliConfig.
-2. Conecte à InteliGen 200 ou abra offline o **mesmo archive** usado nela.
-3. Abra **Controller configuration**.
-4. Abra a definição/configuração **MODBUS**.
-5. Não altere nem importe nenhum mapa.
-6. Use **Export MODBUS definition to file**.
-7. Salve o arquivo exportado e adicione-o ao trabalho de homologação.
+`Breaker state`: 0 Init, 1 BrksOff, 2 IslOper, 3 MainsOper, 4 ParalOper, 5 RevSync, 6 Synchro, 7 MainsFlt, 8 ValidFlt, 9 MainsRet, 10 MultIslOp, 11 MultParOp, 12 EmergMan.
 
-O arquivo necessário deve mostrar, para os valores configurados, os endereços Modbus e seus objetos ComAp. Exemplos de informações esperadas:
+`Controller Mode`: 0 OFF, 1 MAN, 2 AUTO, 3 TEST.
 
-- endereço/register;
-- `Com.Obj`;
-- nome do valor;
-- tipo/tamanho;
-- `Dec`/escala;
-- unidade.
+## Observações
 
-## Objetos prioritários do archive atual
+O endereço antigo `1045` não é a frequência principal do gerador neste export; ele é **Slip Frequency**. A frequência correta para o card é `1035 × 0,1 Hz`.
 
-| Métrica | Com.Obj | Unidade |
-| --- | ---: | --- |
-| RPM | 10123 | rpm |
-| Generator kW | 8202 | kW |
-| Generator Frequency | 8210 | Hz |
-| Generator Current L1/L2/L3 | 8198 / 8199 / 8200 | A |
-| Battery Volts | 8213 | V |
-| Fuel Level | 9153 | L |
-| FuelRate | 10154 | L/h |
-| T-Coolant | 10155 | °C |
-| P-Oil | 10157 | bar |
-| Load | 10159 | % |
-| Running Hours | 8206 | h |
-| EngineRunHours | 10173 | h |
-| D+ | 10603 | V |
+O endereço `1046` não é `Generator kW`; ele é **Slip Angle**. A potência ativa correta é `1019`.
 
-## Mapa de campo já homologado
+O endereço `1082` não é combustível; ele é **Voltage Request**. O nível de combustível correto é `1087`, em litros.
 
-Estes canais permanecem provisionáveis independentemente do export pendente porque já foram comprovados na instalação real:
+A escala do medidor de potência deve vir de `1227 Nominal Power`. No GEN005 o valor atual é **440 kW**.
 
-- RPM: register 1000;
-- generator voltages: 1036..1041;
-- frequency: register 1045, escala de campo 0,01;
-- battery voltage: register 1083, escala de campo 0,1 V.
-
-A diferença entre o mapa de campo e exemplos genéricos da documentação é esperada porque a parte configurável do mapa depende do archive.
-
-## Regra de promoção
-
-Somente adicionar um novo canal ao template Rapid quando houver:
-
-1. objeto documentado no archive;
-2. endereço presente no export Modbus do mesmo archive;
-3. leitura read-only coerente no GEN005;
-4. CI e Quality/Security verdes.
-
-Comandos industriais não fazem parte desta etapa. START/STOP continuam sendo os únicos comandos homologados; AUTO/MANUAL/TEST/MCB/GCB/paralelismo permanecem bloqueados.
+Potência, corrente e PF foram validados em condição sem carga, com `Breaker State = BrksOff`, portanto zero é leitura física válida. A confirmação dinâmica desses sinais sob carga deve acontecer apenas quando o grupo entrar em carga por operação normal; não fechar disjuntores apenas para teste.

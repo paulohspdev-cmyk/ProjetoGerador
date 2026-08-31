@@ -10,10 +10,22 @@ export function displayGeneratorName(tag: string) {
 }
 
 export function hasMetric(gen: Generator, key: string) {
-  return (gen.availableMetrics ?? []).includes(key);
+  return (
+    Object.prototype.hasOwnProperty.call(gen.metrics ?? {}, key) ||
+    (gen.availableMetrics ?? []).includes(key)
+  );
 }
 
-export function metricNumber(gen: Generator, key: string, value: number | null | undefined) {
+export function metricNumber(
+  gen: Generator,
+  key: string,
+  value: number | null | undefined,
+) {
+  if (gen.metrics) {
+    const metric = gen.metrics[key];
+    return metric != null && Number.isFinite(Number(metric)) ? Number(metric) : null;
+  }
+
   return hasMetric(gen, key) && value != null && Number.isFinite(Number(value))
     ? Number(value)
     : null;
