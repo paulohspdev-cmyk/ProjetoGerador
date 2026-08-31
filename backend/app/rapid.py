@@ -5,6 +5,7 @@ import time
 from datetime import datetime, timedelta, timezone
 
 from .config import RAPID_BINDINGS_FILE, RAPID_CACHE_TTL, RAPID_COMM_CONFIG, RAPID_READER_DLL
+from .controller_library import pack_for_model
 
 _cache = {"at": 0.0, "channels": {}, "error": ""}
 
@@ -123,7 +124,7 @@ def trend_for_generator(generator, metric, hours=24, archive_bit=1):
     except subprocess.TimeoutExpired as exc:
         raise TimeoutError("Timeout ao consultar histórico do Rapid SCADA") from exc
     except Exception as exc:
-        raise ConnectionError(f"Falha ao consultar histórico do Rapid SCADA: {exc}") from exc
+        raise ConnectionError(f"Falha ao consultar histórico Rapid SCADA: {exc}") from exc
 
     if proc.returncode != 0:
         detail = (proc.stderr or proc.stdout or "erro desconhecido").strip()
@@ -195,6 +196,21 @@ def _mode(values):
     return {0: "OFF", 1: "MANUAL", 2: "AUTO", 3: "TESTE"}.get(raw, "OFF")
 
 
+def _metric_units(generator, available: list[str]) -> dict[str, str]:
+    model = str(generator.get("controller_model") or "").strip()
+    pack = pack_for_model(model) if model else None
+    if not pack:
+        return {}
+    allowed = set(available)
+    units = dict(pack.get("metricUnits") or {})
+    for spec in (pack.get("rapid") or {}).get("channels") or []:
+        key = str(spec.get("key") or "")
+        unit = str(spec.get("unit") or "")
+        if key and unit:
+            units.setdefault(key, unit)
+    return {str(key): str(unit) for key, unit in units.items() if key in allowed and str(unit)}
+
+
 def _frontend_generator(generator, values, status, error="", available=None):
     configured = bool(generator.get("enabled"))
     rpm = int(values.get("rpm") or 0)
@@ -244,6 +260,7 @@ def _frontend_generator(generator, values, status, error="", available=None):
             "l12": float(values.get("voltage_l1_l2") or 0),
         },
         "availableMetrics": available_metrics_list,
+        "metricUnits": _metric_units(generator, available_metrics_list),
         "telemetrySource": "rapid_scada" if status in {"online", "fault", "connected"} else "none",
         "rapidDeviceNum": generator.get("rapid_device_num"),
         "lastError": error,
