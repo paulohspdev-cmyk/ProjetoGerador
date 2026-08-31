@@ -36,6 +36,7 @@ export type Generator = {
   mains: { l1: number; l2: number; l3: number; l12: number };
   gen: { l1: number; l2: number; l3: number; l12: number };
   availableMetrics?: string[];
+  metricUnits?: Record<string, string>;
   telemetrySource?: "rapid_scada" | "none" | string;
   rapidDeviceNum?: number | null;
   lastError?: string;
