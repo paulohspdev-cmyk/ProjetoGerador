@@ -11,7 +11,7 @@
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "check:architecture": "node scripts/check-architecture.mjs",
-    "check:functional": "node scripts/check-functional-surfaces.mjs && node scripts/check-decision-ui.mjs",
+    "check:functional": "node scripts/check-functional-surfaces.mjs && node scripts/check-decision-ui.mjs && node scripts/check-controller-profiles.mjs",
     "check": "npm run check:architecture && npm run check:functional && npm run lint && npm run typecheck && npm run build",
     "format": "prettier --write ."
   },
