@@ -110,39 +110,124 @@ export function ControllerModeBar({ gen, known }: { gen: Generator; known: boole
   );
 }
 
-export function PowerGaugeKw({ value, nominal }: { value: number | null; nominal: number | null }) {
+export function PowerGaugeKw({
+  value,
+  nominal,
+  rpm,
+  battery,
+  powerFactor = null,
+}: {
+  value: number | null;
+  nominal: number | null;
+  rpm: number | null;
+  battery: number | null;
+  powerFactor?: number | null;
+}) {
   const hasScale = value != null && nominal != null && nominal > 0;
   const pct = hasScale ? Math.min(1, Math.max(0, value / nominal)) : 0;
-  const angle = -130 + pct * 260;
-  const rad = (angle * Math.PI) / 180;
   const cx = 120;
-  const cy = 126;
-  const needle = 73;
-  const nx = cx + Math.cos(rad) * needle;
-  const ny = cy + Math.sin(rad) * needle;
+  const cy = 123;
+  const needleLength = 68;
+  const needleAngle = 180 + pct * 180;
+  const needleRad = (needleAngle * Math.PI) / 180;
+  const nx = cx + Math.cos(needleRad) * needleLength;
+  const ny = cy + Math.sin(needleRad) * needleLength;
+  const ticks = Array.from({ length: 11 }, (_, index) => {
+    const angle = 180 + index * 18;
+    const rad = (angle * Math.PI) / 180;
+    const outer = 101;
+    const inner = index % 5 === 0 ? 91 : 95;
+    return {
+      index,
+      x1: cx + Math.cos(rad) * inner,
+      y1: cy + Math.sin(rad) * inner,
+      x2: cx + Math.cos(rad) * outer,
+      y2: cy + Math.sin(rad) * outer,
+    };
+  });
+  const labels = [0, 0.25, 0.5, 0.75, 1].map((fraction) => {
+    const angle = 180 + fraction * 180;
+    const rad = (angle * Math.PI) / 180;
+    const radius = 111;
+    return {
+      fraction,
+      x: cx + Math.cos(rad) * radius,
+      y: cy + Math.sin(rad) * radius + 3,
+      text:
+        nominal != null && nominal > 0
+          ? fmt(nominal * fraction, 0)
+          : fraction === 0
+            ? "0"
+            : fraction === 1
+              ? "N/D"
+              : "",
+    };
+  });
 
   return (
-    <div className="kw-gauge-wrap">
+    <div className="kw-instrument">
+      <div className="kw-instrument-meta" aria-label="Dados auxiliares do instrumento">
+        <span>
+          <b>RPM:</b> {rpm == null ? "N/D" : fmt(rpm, 0)}
+        </span>
+        <span>
+          <b>PF:</b> {powerFactor == null ? "N/D" : fmt(powerFactor, 2)}
+        </span>
+      </div>
+
       <svg
         viewBox="0 0 240 165"
         className="kw-gauge-svg"
         role="img"
         aria-label={value == null ? "Potência indisponível" : `Potência ${fmt(value, 0)} kW`}
       >
-        <path d="M35 126 A85 85 0 0 1 205 126" pathLength="100" className="kw-gauge-base" />
+        <path d="M34 123 A86 86 0 0 1 206 123" pathLength="100" className="kw-gauge-base" />
         <path
-          d="M35 126 A85 85 0 0 1 205 126"
+          d="M34 123 A86 86 0 0 1 206 123"
           pathLength="100"
           className="kw-gauge-zone kw-gauge-green"
-          strokeDasharray="76 24"
+          strokeDasharray="72 28"
         />
         <path
-          d="M35 126 A85 85 0 0 1 205 126"
+          d="M34 123 A86 86 0 0 1 206 123"
           pathLength="100"
           className="kw-gauge-zone kw-gauge-amber"
-          strokeDasharray="24 76"
-          strokeDashoffset="-76"
+          strokeDasharray="14 86"
+          strokeDashoffset="-72"
         />
+        <path
+          d="M34 123 A86 86 0 0 1 206 123"
+          pathLength="100"
+          className="kw-gauge-zone kw-gauge-red"
+          strokeDasharray="14 86"
+          strokeDashoffset="-86"
+        />
+
+        {ticks.map((tick) => (
+          <line
+            key={tick.index}
+            x1={tick.x1}
+            y1={tick.y1}
+            x2={tick.x2}
+            y2={tick.y2}
+            className={cn("kw-gauge-tick", tick.index % 5 === 0 && "is-major")}
+          />
+        ))}
+
+        {labels.map((label) =>
+          label.text ? (
+            <text
+              key={label.fraction}
+              x={label.x}
+              y={label.y}
+              textAnchor="middle"
+              className="kw-gauge-scale"
+            >
+              {label.text}
+            </text>
+          ) : null,
+        )}
+
         <line
           x1={cx}
           y1={cy}
@@ -150,22 +235,23 @@ export function PowerGaugeKw({ value, nominal }: { value: number | null; nominal
           y2={ny}
           className={cn("kw-gauge-needle", !hasScale && "is-unknown")}
         />
-        <circle cx={cx} cy={cy} r="7" className="kw-gauge-hub" />
-        <text x="30" y="151" className="kw-gauge-scale">
-          0
-        </text>
-        <text x="210" y="151" textAnchor="end" className="kw-gauge-scale">
-          {nominal != null && nominal > 0 ? fmt(nominal, 0) : "N/D"}
-        </text>
-        <text x="120" y="111" textAnchor="middle" className="kw-gauge-unit">
-          kW
-        </text>
+        <circle cx={cx} cy={cy} r="8" className="kw-gauge-hub" />
       </svg>
-      <div className="kw-gauge-value">{value == null ? "N/D" : fmt(value, 0)}</div>
+
+      <div className="kw-gauge-readout">
+        <strong>{value == null ? "N/D" : fmt(value, 0)}</strong>
+        <span>kW</span>
+      </div>
+
+      <div className={cn("kw-battery-badge", battery == null && "is-unknown")}>
+        <span>BAT</span>
+        <b>{battery == null ? "N/D" : `${fmt(battery)} V`}</b>
+      </div>
+
       <div className="kw-gauge-caption">
         {nominal != null && nominal > 0
-          ? `Nominal ${fmt(nominal, 0)} kW`
-          : "Escala nominal não configurada"}
+          ? `ESCALA ${fmt(nominal, 0)} kW`
+          : "ESCALA NOMINAL N/D"}
       </div>
     </div>
   );
