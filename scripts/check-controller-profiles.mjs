@@ -13,9 +13,7 @@ const paths = {
   ignt: "controllers/lab/comap/ig-nt/manifest.json",
   mains: "controllers/lab/comap/inteli-mains-comap/manifest.json",
 };
-const profiles = Object.fromEntries(
-  Object.entries(paths).map(([key, path]) => [key, load(path)]),
-);
+const profiles = Object.fromEntries(Object.entries(paths).map(([key, path]) => [key, load(path)]));
 
 const forbiddenCommands = [
   "start",
@@ -34,8 +32,7 @@ for (const [key, profile] of Object.entries(profiles)) {
   if (profile.schema !== 3) failures.push(`${key}: schema deve ser 3`);
   if (profile.status !== "documented")
     failures.push(`${key}: perfil novo deve permanecer documented`);
-  if (!profile.mapping?.readOnly)
-    failures.push(`${key}: mapa documental deve ser somente leitura`);
+  if (!profile.mapping?.readOnly) failures.push(`${key}: mapa documental deve ser somente leitura`);
   if ((profile.validatedTelemetry ?? []).length !== 0) {
     failures.push(`${key}: documento não pode ser promovido a telemetria validada`);
   }
@@ -90,12 +87,7 @@ if (profiles.ignt.mapping.registers || profiles.ignt.rapid) {
   );
 }
 
-const forbiddenMainsMetrics = [
-  "rpm",
-  "oil_pressure",
-  "coolant_temperature",
-  "fuel_level",
-];
+const forbiddenMainsMetrics = ["rpm", "oil_pressure", "coolant_temperature", "fuel_level"];
 if (profiles.mains.application !== "mains")
   failures.push("InteliMains: application deve ser mains");
 for (const metric of forbiddenMainsMetrics) {
