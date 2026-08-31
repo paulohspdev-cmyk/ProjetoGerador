@@ -127,13 +127,13 @@ export function TrendCard({
   return (
     <section className="gen-card gen-chart-card">
       <header className="gen-card-head">
-        <h2>Histórico Rapid 24h</h2>
+        <h2>Histórico 24h</h2>
         <span className="num text-[10px] text-muted-foreground">{trend?.metric ?? "N/D"}</span>
       </header>
       <div className="gen-chart-body">
         {loading && (
           <div className="grid h-full place-items-center text-[10px] text-muted-foreground">
-            Consultando Rapid SCADA…
+            Carregando histórico…
           </div>
         )}
         {!loading && error && (
