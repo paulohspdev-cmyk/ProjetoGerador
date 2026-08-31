@@ -1,14 +1,14 @@
 import { type FormEvent, useMemo, useState } from "react";
-import { UserCog, Users } from "lucide-react";
+import { ShieldCheck, UserCog, Users } from "lucide-react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
-import { ROLE_LABEL, type AppUser, type UserRole } from "@/lib/auth";
+import { ROLE_LABEL, ROLE_META, type AppUser, type UserRole } from "@/lib/auth";
 import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats } from "./kit";
 
 const roles: UserRole[] = ["administrador", "cadastro", "visualizacao"];
 
 export function UsersV3Screen() {
-  const { user, users, createUser, updateUser, removeUser } = useAuth();
+  const { can, user, users, createUser, updateUser, removeUser } = useAuth();
   const [editing, setEditing] = useState<AppUser | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -21,6 +21,7 @@ export function UsersV3Screen() {
     () => users.filter((item) => item.active && item.role === "administrador").length,
     [users],
   );
+  const selectedRole = ROLE_META.find((item) => item.id === role);
 
   const reset = () => {
     setEditing(null);
@@ -86,8 +87,25 @@ export function UsersV3Screen() {
     else setMessage("Usuário excluído.");
   };
 
+  if (!can("manageUsers")) {
+    return (
+      <ScreenBody>
+        <div className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
+          Seu perfil não possui permissão para gerenciar usuários.
+        </div>
+      </ScreenBody>
+    );
+  }
+
   return (
     <ScreenBody>
+      <div>
+        <h2 className="text-lg font-extrabold">Usuários</h2>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          Cadastre pessoas, defina o perfil de acesso e mantenha contas ativas ou inativas.
+        </p>
+      </div>
+
       <Stats
         items={[
           { icon: Users, label: "Usuários", value: users.length },
@@ -97,74 +115,76 @@ export function UsersV3Screen() {
             value: users.filter((item) => item.active).length,
             tone: "text-online",
           },
-          { icon: UserCog, label: "Administradores ativos", value: activeAdmins },
+          { icon: ShieldCheck, label: "Administradores", value: activeAdmins },
         ]}
       />
-      <p className="rounded-md border border-border bg-card px-3 py-2 text-[11px] text-muted-foreground">
-        E-mail é identidade de login e não é alterado nesta tela. Nome, perfil, senha e estado podem
-        ser atualizados. O backend impede excluir a própria conta e impede remover/rebaixar o último
-        administrador ativo.
-      </p>
-      {error && (
-        <p className="rounded-md border border-offline/40 bg-offline/10 p-3 text-sm text-offline">
-          {error}
-        </p>
-      )}
-      {message && (
-        <p className="rounded-md border border-online/30 bg-online/10 p-3 text-sm text-online">
-          {message}
-        </p>
-      )}
 
-      <Panel title={editing ? `Editar usuário · ${editing.email}` : "Novo usuário"}>
-        <form onSubmit={save} className="grid gap-2 md:grid-cols-4">
-          <input
-            required
-            minLength={2}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Nome"
-            className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-          />
-          <input
-            required={!editing}
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={Boolean(editing)}
-            placeholder="E-mail"
-            className="h-9 rounded-md border border-input bg-background px-2 text-sm disabled:bg-secondary"
-          />
-          <input
-            required={!editing}
-            minLength={editing && !password ? undefined : 8}
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder={editing ? "Nova senha (vazio = manter)" : "Senha (mín. 8)"}
-            className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-          />
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value as UserRole)}
-            className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-          >
-            {roles.map((item) => (
-              <option key={item} value={item}>
-                {ROLE_LABEL[item]}
-              </option>
-            ))}
-          </select>
-          <div className="flex gap-1 md:col-span-4">
-            <button className="h-9 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground">
+      {error && <p className="rounded-xl border border-offline/40 bg-offline/10 p-3 text-sm text-offline">{error}</p>}
+      {message && <p className="rounded-xl border border-online/30 bg-online/10 p-3 text-sm text-online">{message}</p>}
+
+      <Panel title={editing ? `Editar ${editing.name}` : "Novo usuário"}>
+        <form onSubmit={save} className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <label className="text-sm font-semibold">
+              Nome
+              <input
+                required
+                minLength={2}
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                className="mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
+              />
+            </label>
+            <label className="text-sm font-semibold">
+              Identificador de acesso
+              <input
+                required={!editing}
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                disabled={Boolean(editing)}
+                placeholder="usuario@empresa.com"
+                className="mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm disabled:bg-secondary"
+              />
+            </label>
+            <label className="text-sm font-semibold">
+              {editing ? "Nova senha" : "Senha"}
+              <input
+                required={!editing}
+                minLength={editing && !password ? undefined : 8}
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder={editing ? "Deixe vazio para manter" : "Mínimo de 8 caracteres"}
+                className="mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
+              />
+            </label>
+            <label className="text-sm font-semibold">
+              Perfil
+              <select
+                value={role}
+                onChange={(event) => setRole(event.target.value as UserRole)}
+                className="mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
+              >
+                {roles.map((item) => (
+                  <option key={item} value={item}>{ROLE_LABEL[item]}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          {selectedRole && (
+            <p className="rounded-lg border border-border bg-background/35 px-3 py-2 text-xs text-muted-foreground">
+              <b className="text-foreground">{selectedRole.name}:</b> {selectedRole.perms}
+            </p>
+          )}
+
+          <div className="flex gap-2">
+            <button className="h-10 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground">
               {editing ? "Salvar alterações" : "Criar usuário"}
             </button>
             {editing && (
-              <button
-                type="button"
-                onClick={reset}
-                className="h-9 rounded-md border border-border px-3 text-xs"
-              >
+              <button type="button" onClick={reset} className="h-10 rounded-lg border border-border px-4 text-sm font-semibold">
                 Cancelar
               </button>
             )}
@@ -179,54 +199,42 @@ export function UsersV3Screen() {
           columns={[
             {
               label: "Usuário",
-              render: (r) => (
+              render: (row) => (
                 <span>
-                  <b>{r.name}</b>
-                  <span className="block text-[10px] text-muted-foreground">{r.email}</span>
+                  <b>{row.name}</b>
+                  <span className="block text-xs text-muted-foreground">{row.email}</span>
                 </span>
               ),
             },
             {
               label: "Perfil",
-              render: (r) => (
-                <Pill tone={r.role === "administrador" ? "info" : "muted"}>
-                  {ROLE_LABEL[r.role]}
-                </Pill>
+              render: (row) => (
+                <Pill tone={row.role === "administrador" ? "info" : "muted"}>{ROLE_LABEL[row.role]}</Pill>
               ),
             },
             {
               label: "Estado",
-              render: (r) => (
-                <Pill tone={r.active ? "ok" : "muted"}>{r.active ? "Ativo" : "Inativo"}</Pill>
-              ),
+              render: (row) => <Pill tone={row.active ? "ok" : "muted"}>{row.active ? "Ativo" : "Inativo"}</Pill>,
             },
-            { label: "Último acesso", render: (r) => r.lastAccess || "—" },
+            { label: "Último acesso", render: (row) => row.lastAccess || "—" },
             {
               label: "Ações",
-              render: (r) => (
-                <span className="flex flex-wrap gap-1">
-                  <ActionBtn onClick={() => beginEdit(r)}>Editar</ActionBtn>
-                  <ActionBtn
-                    disabled={
-                      r.id === user?.id ||
-                      (r.role === "administrador" && r.active && activeAdmins <= 1)
-                    }
-                    onClick={() => void toggle(r)}
-                  >
-                    {r.active ? "Desativar" : "Ativar"}
-                  </ActionBtn>
-                  <ActionBtn
-                    tone="danger"
-                    disabled={
-                      r.id === user?.id ||
-                      (r.role === "administrador" && r.active && activeAdmins <= 1)
-                    }
-                    onClick={() => void remove(r)}
-                  >
-                    Excluir
-                  </ActionBtn>
-                </span>
-              ),
+              render: (row) => {
+                const protectedAccount =
+                  row.id === user?.id ||
+                  (row.role === "administrador" && row.active && activeAdmins <= 1);
+                return (
+                  <span className="flex flex-wrap gap-1">
+                    <ActionBtn onClick={() => beginEdit(row)}>Editar</ActionBtn>
+                    <ActionBtn disabled={protectedAccount} onClick={() => void toggle(row)}>
+                      {row.active ? "Desativar" : "Ativar"}
+                    </ActionBtn>
+                    <ActionBtn tone="danger" disabled={protectedAccount} onClick={() => void remove(row)}>
+                      Excluir
+                    </ActionBtn>
+                  </span>
+                );
+              },
             },
           ]}
         />
