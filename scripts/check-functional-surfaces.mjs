@@ -131,6 +131,16 @@ if (!equipmentBarrel.includes('from "./equip-connectivity"')) {
   failures.push("equip-auto deixou de exportar as telas de conectividade física");
 }
 
+const sixCardCss = read("src/components/generators/generator-six-card.css");
+for (const selector of [
+  ".comap-engine.opacity-65 .engine-value::after",
+  '.kw-gauge-svg[aria-label="Potência indisponível"] + .kw-gauge-value::after',
+]) {
+  if (sixCardCss.includes(selector)) {
+    failures.push(`card voltou a substituir telemetria indisponível por valor visual: ${selector}`);
+  }
+}
+
 const scadaLib = read("src/components/scada/scada-lib.tsx");
 const scadaLibEffects = [...scadaLib.matchAll(/\buseEffect\s*\(/g)].length;
 if (scadaLibEffects !== 1) {
