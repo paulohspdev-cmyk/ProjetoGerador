@@ -10,6 +10,7 @@ export type Generator = {
   controller: string;
   controllerType?: string;
   site: string;
+  enabled?: boolean;
   status: GenStatus;
   mode: "AUTO" | "MANUAL" | "STOP" | "TESTE" | "OFF";
   ip: string;
