@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Pencil } from "lucide-react";
 
 import { CONTROLLER_IMAGE_FALLBACK, controllerImageSrc } from "@/assets";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -7,6 +8,7 @@ import type { Generator } from "@/data/generators";
 import { rcApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
+import { GeneratorEditDialog } from "./GeneratorEditDialog";
 import { useGenerators } from "./GeneratorsProvider";
 import { GeneratorDetailBottom } from "./detail/GeneratorDetailBottom";
 import { GeneratorDetailElectrical } from "./detail/GeneratorDetailElectrical";
@@ -40,16 +42,16 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
     setMessage(null);
     try {
       const result = await rcApi.generators.command(gen.id, action);
-      setMessage(result.reason || `${action.toUpperCase()} aceito pelo caminho homologado.`);
+      setMessage(result.reason || `Comando ${action.toUpperCase()} aceito pelo controlador.`);
       await refresh();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Falha ao executar comando homologado.");
+      setMessage(error instanceof Error ? error.message : "Falha ao executar o comando.");
     } finally {
       setCommandBusy(null);
     }
   };
 
-  const configured = gen.status !== "nao_configurado";
+  const configured = gen.enabled !== false && gen.status !== "nao_configurado";
   const operate = can("operate") && configured;
 
   return (
@@ -76,18 +78,29 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
-              <h1>{model.name}</h1>
-              <span className={cn("gen-true", !model.comm && "opacity-60")}>
-                <i />
-                {model.comm ? "true" : "false"}
-              </span>
+              <div className="min-w-0">
+                <h1>{model.name}</h1>
+                <p>{gen.controller} · {gen.site || "Sem unidade"}</p>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <span className={cn("gen-true", !model.comm && "opacity-60")}>
+                  <i />
+                  {model.comm ? "ONLINE" : "SEM DADOS"}
+                </span>
+                <GeneratorEditDialog
+                  generator={gen}
+                  trigger={
+                    <button
+                      type="button"
+                      className="inline-flex h-8 items-center gap-1 rounded-md border border-border px-2 text-xs font-semibold hover:bg-secondary"
+                    >
+                      <Pencil className="size-3.5" /> Editar
+                    </button>
+                  }
+                />
+              </div>
             </div>
-            <p>
-              {gen.controller} · {model.ready} · {model.modeLabel} · {gen.site || "Sem site"}
-            </p>
-            <p className="gen-ident-meta">
-              {gen.ip || "Endpoint N/D"} · {gen.tag} · Rapid Device {gen.rapidDeviceNum ?? "N/D"}
-            </p>
+            <p className="gen-ident-meta">{gen.tag} · {model.ready} · {model.modeLabel}</p>
           </div>
         </section>
 
@@ -95,39 +108,13 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
           <KpiTile
             label="Status"
             value={model.ready}
-            sub={model.comm ? "Rapid SCADA conectado" : "Sem telemetria atual"}
+            sub={model.comm ? "Comunicação ativa" : "Sem comunicação atual"}
             tone={model.comm ? "success" : "danger"}
           />
-          <KpiTile
-            label="RPM"
-            value={formatMetric(model.rpm, "rpm", 0)}
-            sub="Canal Rapid homologado"
-            tone="info"
-          />
-          <KpiTile
-            label="Gerador kW"
-            value={formatMetric(model.load, "kW", 0)}
-            sub={model.load == null ? "Canal não homologado" : "Rapid SCADA"}
-            tone="accent"
-          />
-          <KpiTile
-            label="Gerador Hz"
-            value={formatMetric(model.frequency, "Hz", 2)}
-            sub={model.frequency == null ? "Canal não homologado" : "Rapid SCADA"}
-            tone="info"
-          />
-          <KpiTile
-            label="Tensão L1-L2"
-            value={formatMetric(model.genL12, "V", 0)}
-            sub={model.genL12 == null ? "Canal não homologado" : "Rapid SCADA"}
-            tone="info"
-          />
-          <KpiTile
-            label="Rapid Device"
-            value={gen.rapidDeviceNum == null ? "N/D" : String(gen.rapidDeviceNum)}
-            sub={`Fonte ${gen.telemetrySource || "none"}`}
-            tone="warning"
-          />
+          <KpiTile label="RPM" value={formatMetric(model.rpm, "rpm", 0)} tone="info" />
+          <KpiTile label="Potência" value={formatMetric(model.load, "kW", 0)} tone="accent" />
+          <KpiTile label="Frequência" value={formatMetric(model.frequency, "Hz", 2)} tone="info" />
+          <KpiTile label="Tensão L1-L2" value={formatMetric(model.genL12, "V", 0)} tone="info" />
         </div>
 
         <div className="gen-cmds">
@@ -147,13 +134,25 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
           >
             {commandBusy === "start" ? "..." : "ON"}
           </button>
-          <button type="button" disabled title="AUTO ainda não homologado">
+          <button type="button" disabled title="Função indisponível">
             AUTO
           </button>
-          <button type="button" disabled title="TEST ainda não homologado">
+          <button type="button" disabled title="Função indisponível">
             TEST
           </button>
         </div>
+
+        <details className="rounded-lg border border-border/70 bg-background/30 px-3 py-2 text-xs text-muted-foreground">
+          <summary className="cursor-pointer font-semibold text-foreground">Detalhes técnicos</summary>
+          <div className="mt-2 grid gap-1 sm:grid-cols-2">
+            <p>Endpoint: {gen.ip || "N/D"}</p>
+            <p>Comunicação: {gen.transport || "N/D"}</p>
+            <p>Porta: {gen.listenPort ?? "N/D"}</p>
+            <p>Endereço Modbus: {gen.modbusUnit ?? "N/D"}</p>
+            <p>Dispositivo SCADA: {gen.rapidDeviceNum ?? "N/D"}</p>
+            <p>Fonte: {gen.telemetrySource === "rapid_scada" ? "SCADA" : "N/D"}</p>
+          </div>
+        </details>
       </div>
 
       <GeneratorDetailPowerFlow
