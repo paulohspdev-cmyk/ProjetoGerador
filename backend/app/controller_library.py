@@ -91,6 +91,20 @@ def _pack_name_index(packs: list[dict]) -> dict[str, dict]:
     return index
 
 
+def _pack_telemetry_state(pack: dict | None) -> dict:
+    if not pack:
+        return {
+            "validatedTelemetry": [],
+            "documentedTelemetry": [],
+            "metricUnits": {},
+        }
+    return {
+        "validatedTelemetry": list(pack.get("validatedTelemetry") or []),
+        "documentedTelemetry": list(pack.get("documentedTelemetry") or []),
+        "metricUnits": dict(pack.get("metricUnits") or {}),
+    }
+
+
 def controller_catalog_with_state(packs: list[dict] | None = None) -> list[dict]:
     packs = packs if packs is not None else list_controller_packs()
     by_name = _pack_name_index(packs)
@@ -112,7 +126,7 @@ def controller_catalog_with_state(packs: list[dict] | None = None) -> list[dict]
                 "protocols": list(pack.get("protocols") or []) if pack else [],
                 "transports": list(pack.get("transports") or []) if pack else [],
                 "capabilities": dict(pack.get("capabilities") or {}) if pack else {},
-                "validatedTelemetry": list(pack.get("validatedTelemetry") or []) if pack else [],
+                **_pack_telemetry_state(pack),
                 "provisionable": bool(pack and pack.get("lifecycle") == "production"),
             }
         )
@@ -139,7 +153,7 @@ def controller_catalog_with_state(packs: list[dict] | None = None) -> list[dict]
                 "protocols": list(pack.get("protocols") or []),
                 "transports": list(pack.get("transports") or []),
                 "capabilities": dict(pack.get("capabilities") or {}),
-                "validatedTelemetry": list(pack.get("validatedTelemetry") or []),
+                **_pack_telemetry_state(pack),
                 "provisionable": pack.get("lifecycle") == "production",
                 "notes": pack.get("notes") or "",
             }
