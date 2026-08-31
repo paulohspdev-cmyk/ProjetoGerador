@@ -1,11 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useGenerators } from "@/components/generators/GeneratorsProvider";
-import {
-  industrialApi,
-  type IndustrialAlarm,
-  type MaintenancePlan,
-} from "@/lib/industrial-api";
+import { industrialApi, type IndustrialAlarm, type MaintenancePlan } from "@/lib/industrial-api";
 import { rcApi, type SystemDiagnostics } from "@/lib/api";
 import { useScadaOps } from "./ScadaOpsProvider";
 
@@ -287,9 +283,8 @@ export function useOverviewDecisionModel() {
     },
     {
       label: "Informativo",
-      value: activeAlarms.filter(
-        (item) => !["fault", "alarm", "warning"].includes(item.severity),
-      ).length,
+      value: activeAlarms.filter((item) => !["fault", "alarm", "warning"].includes(item.severity))
+        .length,
       tone: "info",
     },
   ];
