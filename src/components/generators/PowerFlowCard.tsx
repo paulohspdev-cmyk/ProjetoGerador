@@ -95,6 +95,13 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     gen.controller.trim().toLowerCase() === "inteligen 200" && Number(gen.rapidDeviceNum) > 0;
   const canOperate = can("operate") && ig200Homologated && gen.status !== "nao_configurado";
 
+  // Faixas documentadas da IG200 usadas somente como escala visual.
+  // Não representam limiares de alarme ou proteção.
+  const rpmDisplayPct =
+    ig200Homologated && rpm != null ? Math.min(100, Math.max(0, (rpm / 5000) * 100)) : null;
+  const batteryDisplayPct =
+    ig200Homologated && batt != null ? Math.min(100, Math.max(0, (batt / 36) * 100)) : null;
+
   const runCommand = async (action: "start" | "stop") => {
     const label = action.toUpperCase();
     if (!canOperate || commandBusy || !confirmCmd(label)) return;
@@ -226,6 +233,8 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
           icon={<Gauge className="icon" />}
           label="RPM"
           value={rpm == null ? "N/D" : `${fmt(rpm, 0)} rpm`}
+          pct={rpmDisplayPct}
+          bar={rpmDisplayPct != null}
           known={rpm != null}
         />
         <EngineRow
@@ -252,6 +261,8 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
           icon={<IconBattery />}
           label="Battery Voltage"
           value={batt == null ? "N/D" : `${fmt(batt)} V`}
+          pct={batteryDisplayPct}
+          bar={batteryDisplayPct != null}
           known={batt != null}
         />
         <EngineRow
