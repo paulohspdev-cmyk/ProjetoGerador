@@ -1,6 +1,6 @@
 import { type FormEvent, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Eye, EyeOff, Lock, Mail, Moon, ShieldCheck, Sun, Zap } from "lucide-react";
+import { Eye, EyeOff, KeyRound, Lock, Moon, ShieldCheck, Sun, UserRound, Zap } from "lucide-react";
 
 import { useAuth } from "./AuthProvider";
 import { useTheme } from "@/components/layout/ThemeProvider";
@@ -9,7 +9,7 @@ export function LoginScreen() {
   const { login, sessionError } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [needsOtp, setNeedsOtp] = useState(false);
@@ -22,16 +22,16 @@ export function LoginScreen() {
     setOtp("");
   };
 
-  const onSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (event: FormEvent) => {
+    event.preventDefault();
     if (needsOtp && !/^\d{6}$/.test(otp.trim())) {
-      setError("Informe o código de 6 dígitos do autenticador.");
+      setError("Informe o código de 6 dígitos.");
       return;
     }
 
     setBusy(true);
     setError(null);
-    const err = await login(email, password, needsOtp ? otp : undefined);
+    const err = await login(username, password, needsOtp ? otp : undefined);
     setBusy(false);
     if (err) {
       if (!needsOtp && /2fa|totp|código.*obrigatório/i.test(err)) {
@@ -46,64 +46,69 @@ export function LoginScreen() {
   };
 
   return (
-    <div className="relative flex min-h-dvh items-center justify-center bg-background px-4 py-10">
+    <div className="relative grid min-h-dvh place-items-center bg-background px-5 py-10">
       <button
         type="button"
         onClick={toggleTheme}
         aria-label={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
-        className="absolute right-4 top-4 grid size-9 place-items-center rounded-md text-primary transition-colors hover:bg-secondary"
+        className="absolute right-5 top-5 grid size-10 place-items-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:text-foreground"
       >
         {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
       </button>
 
-      <div className="w-full max-w-[400px]">
-        <div className="mb-6 flex flex-col items-center text-center">
-          <span className="grid size-14 place-items-center text-primary">
-            <Zap className="size-9" />
+      <div className="w-full max-w-[420px]">
+        <div className="mb-8 flex items-center justify-center gap-3">
+          <span className="grid size-12 place-items-center rounded-xl bg-primary/12 text-primary">
+            <Zap className="size-7" />
           </span>
-          <h1 className="mt-3 text-2xl font-extrabold tracking-tight">RC GERADORES</h1>
-          <p className="mt-1 text-[12px] text-muted-foreground">SCADA · Acesso seguro ao sistema</p>
+          <div>
+            <h1 className="text-xl font-extrabold tracking-[0.08em]">RC GERADORES</h1>
+            <p className="mt-0.5 text-sm text-muted-foreground">Central de monitoramento</p>
+          </div>
         </div>
-
-        {sessionError && (
-          <p className="mb-3 rounded-md border border-alert/40 bg-alert/10 px-3 py-2 text-[12px] text-alert">
-            Não foi possível verificar uma sessão existente: {sessionError}. Você ainda pode tentar
-            entrar novamente.
-          </p>
-        )}
 
         <form
           onSubmit={onSubmit}
-          className="rounded-xl border border-border bg-card p-5 shadow-[var(--shadow-panel)]"
+          className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-panel)] sm:p-7"
         >
-          <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-muted-foreground">
-            {needsOtp ? "Verificação em duas etapas" : "Login"}
-          </h2>
+          <div className="mb-6 flex items-center gap-2">
+            <KeyRound className="size-5 text-primary" />
+            <h2 className="text-base font-bold">
+              {needsOtp ? "Confirmar acesso" : "Entrar no sistema"}
+            </h2>
+          </div>
 
-          <label className="mt-4 block text-[12px] font-semibold text-muted-foreground">
-            E-mail
-            <span className="mt-1.5 flex h-10 items-center gap-2 rounded-md border border-input bg-background px-3">
-              <Mail className="size-4 shrink-0 text-primary" />
+          {sessionError && (
+            <p className="mb-4 rounded-lg border border-alert/40 bg-alert/10 px-3 py-2 text-sm text-alert">
+              Não foi possível recuperar a sessão anterior. Entre novamente.
+            </p>
+          )}
+
+          <label className="block text-sm font-semibold">
+            Usuário
+            <span className="mt-2 flex h-11 items-center gap-2 rounded-lg border border-input bg-background px-3 focus-within:border-primary">
+              <UserRound className="size-4 shrink-0 text-muted-foreground" />
               <input
-                type="email"
+                type="text"
                 autoComplete="username"
-                value={email}
+                value={username}
                 onChange={(e) => {
-                  setEmail(e.target.value);
+                  setUsername(e.target.value);
                   setError(null);
                   resetSecondFactor();
                 }}
                 className="min-w-0 flex-1 bg-transparent text-sm outline-none"
-                placeholder="admin@rcgeradores.local"
+                aria-label="Usuário"
                 required
+                autoFocus
               />
             </span>
           </label>
 
-          <label className="mt-3 block text-[12px] font-semibold text-muted-foreground">
+          <label className="mt-4 block text-sm font-semibold">
             Senha
-            <span className="mt-1.5 flex h-10 items-center gap-2 rounded-md border border-input bg-background px-3">
-              <Lock className="size-4 shrink-0 text-primary" />
+            <span className="mt-2 flex h-11 items-center gap-2 rounded-lg border border-input bg-background px-3 focus-within:border-primary">
+              <Lock className="size-4 shrink-0 text-muted-foreground" />
               <input
                 type={show ? "text" : "password"}
                 autoComplete="current-password"
@@ -114,14 +119,14 @@ export function LoginScreen() {
                   resetSecondFactor();
                 }}
                 className="min-w-0 flex-1 bg-transparent text-sm outline-none"
-                placeholder="••••••••"
+                aria-label="Senha"
                 required
               />
               <button
                 type="button"
-                onClick={() => setShow((v) => !v)}
+                onClick={() => setShow((value) => !value)}
                 aria-label={show ? "Ocultar senha" : "Mostrar senha"}
-                className="text-muted-foreground hover:text-foreground"
+                className="grid size-8 place-items-center text-muted-foreground hover:text-foreground"
               >
                 {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
               </button>
@@ -129,10 +134,10 @@ export function LoginScreen() {
           </label>
 
           {needsOtp && (
-            <label className="mt-3 block text-[12px] font-semibold text-muted-foreground">
+            <label className="mt-4 block text-sm font-semibold">
               Código do autenticador
-              <span className="mt-1.5 flex h-10 items-center gap-2 rounded-md border border-input bg-background px-3">
-                <ShieldCheck className="size-4 shrink-0 text-primary" />
+              <span className="mt-2 flex h-11 items-center gap-2 rounded-lg border border-input bg-background px-3 focus-within:border-primary">
+                <ShieldCheck className="size-4 shrink-0 text-muted-foreground" />
                 <input
                   type="text"
                   inputMode="numeric"
@@ -143,8 +148,7 @@ export function LoginScreen() {
                     setOtp(e.target.value.replace(/\D/g, "").slice(0, 6));
                     setError(null);
                   }}
-                  className="min-w-0 flex-1 bg-transparent text-sm tracking-[0.3em] outline-none"
-                  placeholder="000000"
+                  className="min-w-0 flex-1 bg-transparent text-base tracking-[0.35em] outline-none"
                   aria-label="Código 2FA de 6 dígitos"
                   autoFocus
                   required
@@ -154,7 +158,7 @@ export function LoginScreen() {
           )}
 
           {error && (
-            <p className="mt-3 rounded-md border border-offline/40 bg-offline/10 px-3 py-2 text-[12px] text-offline">
+            <p className="mt-4 rounded-lg border border-offline/40 bg-offline/10 px-3 py-2 text-sm text-offline">
               {error}
             </p>
           )}
@@ -162,9 +166,9 @@ export function LoginScreen() {
           <button
             type="submit"
             disabled={busy}
-            className="mt-5 flex h-10 w-full items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
+            className="mt-6 flex h-11 w-full items-center justify-center rounded-lg bg-primary text-sm font-extrabold tracking-wide text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
           >
-            {busy ? "Validando…" : needsOtp ? "Validar código" : "Entrar"}
+            {busy ? "Entrando…" : needsOtp ? "Confirmar" : "Entrar"}
           </button>
         </form>
       </div>
