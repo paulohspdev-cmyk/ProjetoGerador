@@ -101,6 +101,52 @@ if (profiles.mains.mapping.registers || profiles.mains.rapid) {
   );
 }
 
+const ig200 = load("controllers/production/comap/inteligen-200/manifest.json");
+const ig200Battery = (ig200.rapid?.channels ?? []).find(
+  (channel) => channel.key === "battery_voltage",
+);
+if (
+  !ig200Battery ||
+  ig200Battery.tagCode !== "battery_voltage_raw" ||
+  ig200Battery.scale !== 0.1 ||
+  ig200Battery.unit !== "V" ||
+  ig200Battery.source !== "field_validated_map"
+) {
+  failures.push("InteliGen 200 production: bateria deve permanecer homologada como 1083 / x0,1 V");
+}
+if (!(ig200.validatedTelemetry ?? []).includes("battery_voltage")) {
+  failures.push("InteliGen 200 production: battery_voltage perdeu homologação de campo");
+}
+for (const metric of ["fuel_level", "oil_pressure", "coolant_temperature", "run_hours"]) {
+  if ((ig200.validatedTelemetry ?? []).includes(metric)) {
+    failures.push(`InteliGen 200 production: métrica ainda não homologada foi promovida: ${metric}`);
+  }
+}
+if (
+  ig200.capabilities?.start !== true ||
+  ig200.capabilities?.stop !== true ||
+  ig200.capabilities?.auto !== false ||
+  ig200.capabilities?.manual !== false ||
+  ig200.capabilities?.test !== false ||
+  ig200.capabilities?.mcb_open !== false ||
+  ig200.capabilities?.mcb_close !== false ||
+  ig200.capabilities?.gcb_open !== false ||
+  ig200.capabilities?.gcb_close !== false ||
+  ig200.capabilities?.paralleling !== false
+) {
+  failures.push("InteliGen 200 production: política de comandos homologados foi alterada");
+}
+const ig200Template = read("rapid/templates/DrvModbus_RC_IG200.xml");
+for (const marker of [
+  'address="1083" name="Bateria"',
+  'tagCode="battery_voltage_raw"',
+  'readOnly="true"',
+]) {
+  if (!ig200Template.includes(marker)) {
+    failures.push(`InteliGen 200 production: template perdeu leitura de bateria homologada: ${marker}`);
+  }
+}
+
 const card = read("src/components/generators/PowerFlowCard.tsx");
 for (const marker of [
   "metricUnits",
@@ -144,5 +190,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  "Controller profile check OK: 5 perfis documentados, unidades e segurança preservadas.",
+  "Controller profile check OK: perfis documentais preservados e bateria IG200 homologada em campo.",
 );
