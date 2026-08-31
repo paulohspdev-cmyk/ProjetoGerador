@@ -117,10 +117,73 @@ if (
 if (!(ig200.validatedTelemetry ?? []).includes("battery_voltage")) {
   failures.push("InteliGen 200 production: battery_voltage perdeu homologação de campo");
 }
-for (const metric of ["fuel_level", "oil_pressure", "coolant_temperature", "run_hours"]) {
+
+const ig200RequiredDocumented = [
+  "power_kw",
+  "current_l1",
+  "current_l2",
+  "current_l3",
+  "fuel_level",
+  "fuel_rate",
+  "coolant_temperature",
+  "oil_pressure",
+  "engine_load",
+  "run_hours",
+  "alternator_voltage",
+];
+for (const metric of ig200RequiredDocumented) {
+  if (!(ig200.documentedTelemetry ?? []).includes(metric)) {
+    failures.push(`InteliGen 200 production: catálogo oficial perdeu ${metric}`);
+  }
+}
+
+const ig200Objects = ig200.documentedObjects ?? {};
+const ig200ObjectExpectations = {
+  power_kw: 8202,
+  battery_voltage: 8213,
+  fuel_level: 9153,
+  coolant_temperature: 10155,
+  oil_pressure: 10157,
+  engine_load: 10159,
+  run_hours: 8206,
+  alternator_voltage: 10603,
+};
+for (const [metric, object] of Object.entries(ig200ObjectExpectations)) {
+  if (ig200Objects[metric]?.object !== object) {
+    failures.push(
+      `InteliGen 200 production: Com.Obj documental de ${metric} deve permanecer ${object}`,
+    );
+  }
+}
+if (ig200.metricUnits?.fuel_level !== "L" || ig200.metricUnits?.oil_pressure !== "bar") {
+  failures.push("InteliGen 200 production: unidades documentais de combustível/óleo foram alteradas");
+}
+if (
+  ig200.modbusMapping?.kind !== "configuration_dependent_export" ||
+  ig200.modbusMapping?.exportRequired !== true ||
+  ig200.modbusMapping?.exportStatus !== "missing" ||
+  ig200.modbusMapping?.exportTool !== "ComAp InteliConfig"
+) {
+  failures.push(
+    "InteliGen 200 production: dependência do export Modbus específico do archive foi removida",
+  );
+}
+
+for (const metric of [
+  "power_kw",
+  "fuel_level",
+  "oil_pressure",
+  "coolant_temperature",
+  "run_hours",
+]) {
   if ((ig200.validatedTelemetry ?? []).includes(metric)) {
     failures.push(
       `InteliGen 200 production: métrica ainda não homologada foi promovida: ${metric}`,
+    );
+  }
+  if ((ig200.rapid?.channels ?? []).some((channel) => channel.key === metric)) {
+    failures.push(
+      `InteliGen 200 production: canal Rapid sem export Modbus/homologação foi criado: ${metric}`,
     );
   }
 }
@@ -194,5 +257,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  "Controller profile check OK: perfis documentais preservados e bateria IG200 homologada em campo.",
+  "Controller profile check OK: perfis documentais preservados e IG200 separa objetos oficiais de mapa Modbus homologado.",
 );
