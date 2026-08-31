@@ -4,6 +4,7 @@ import type { Generator } from "@/data/generators";
 import { cn } from "@/lib/utils";
 
 import { fmt } from "../generator-metrics";
+import "../kw-gauge-reference.css";
 
 export function EngineRow({
   icon,
