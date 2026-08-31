@@ -5,7 +5,7 @@ import subprocess
 import time
 from pathlib import Path
 
-from . import db
+from . import db, traffic_store
 from .config import APP_VERSION, BRIDGE_STATUS_FILE, CONTROL_SOCKET, PROJECT_ROOT, RAPID_BINDINGS_FILE, RAPID_COMM_CONFIG, RAPID_READER_DLL
 from .rapid import overlay_generators
 
@@ -146,6 +146,10 @@ def system_diagnostics():
         )
 
     runtime_bridge = _bridge_runtime_status()
+    traffic = traffic_store.record_bridge_traffic(
+        runtime_bridge.get("sessions") or [],
+        runtime_bridge.get("updatedAt") or int(time.time()),
+    )
     return {
         "ok": all(item["status"] == "OK" for item in services),
         "services": services,
@@ -159,6 +163,7 @@ def system_diagnostics():
             "controlSocketExists": Path(CONTROL_SOCKET).exists(),
             "listeners": reverse_listeners,
             **runtime_bridge,
+            "traffic": traffic,
         },
         "host": {
             "loadAverage": load_avg,
