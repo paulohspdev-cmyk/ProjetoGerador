@@ -245,7 +245,10 @@ export function PowerGaugeKw({
           </text>
         ))}
 
-        <polygon points={needlePoints} className={cn("kw-gauge-needle", !hasValue && "is-unknown")} />
+        <polygon
+          points={needlePoints}
+          className={cn("kw-gauge-needle", !hasValue && "is-unknown")}
+        />
         <circle cx={cx} cy={cy} r="9" className="kw-gauge-hub" />
         <circle cx={cx} cy={cy} r="3" className="kw-gauge-hub-center" />
       </svg>
