@@ -47,7 +47,7 @@ function SidebarNav({ collapsed, onNavigate, onToggle, onClose, touchFriendly }:
     const next: Record<string, boolean> = {};
     for (const group of navGroups)
       next[group.title] = group.items.some((item) => pathname === hrefFor(item.slug));
-    next.Operação = true;
+    next["Operação"] = true;
     return next;
   });
 
