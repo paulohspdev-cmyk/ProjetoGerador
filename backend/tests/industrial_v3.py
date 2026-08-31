@@ -8,12 +8,13 @@ os.environ["RC_DATA_DIR"] = tmp.name
 os.environ["RC_DB_FILE"] = str(Path(tmp.name) / "industrial-v3.db")
 os.environ["RC_ENABLE_IG200_CONTROL"] = "0"
 
-from app import db, industrial_store, platform_store  # noqa: E402
+from app import db, industrial_store, platform_store, traffic_store  # noqa: E402
 
 
 db.init_db()
 platform_store.init_platform_db()
 industrial_store.init_industrial_db()
+traffic_store.init_traffic_db()
 
 generator = db.create_generator(
     {
@@ -103,6 +104,40 @@ live[0]["status"] = "online"
 industrial_store.refresh_observed_alarms(live)
 assert industrial_store.list_alarms(True) == []
 assert any(event["event_type"] == "alarm_cleared" for event in industrial_store.list_process_events(50, generator["id"]))
+
+# Consumo de dados: soma deltas reais e continua correto após reinício/reset do contador da bridge.
+base_time = 1_700_000_000
+summary = traffic_store.record_bridge_traffic(
+    [{"remotePort": 15001, "bytesRx": 1000, "bytesTx": 500}],
+    base_time,
+)
+assert summary["todayBytes"] == 1500
+assert summary["monthBytes"] == 1500
+
+summary = traffic_store.record_bridge_traffic(
+    [{"remotePort": 15001, "bytesRx": 1600, "bytesTx": 700}],
+    base_time + 30,
+)
+assert summary["todayBytes"] == 2300
+
+# Se o processo reiniciar, contadores menores representam bytes novos, não consumo negativo.
+summary = traffic_store.record_bridge_traffic(
+    [{"remotePort": 15001, "bytesRx": 100, "bytesTx": 50}],
+    base_time + 60,
+)
+assert summary["todayBytes"] == 2450
+
+summary = traffic_store.record_bridge_traffic(
+    [
+        {"remotePort": 15001, "bytesRx": 100, "bytesTx": 50},
+        {"remotePort": 15002, "bytesRx": 200, "bytesTx": 100},
+    ],
+    base_time + 90,
+)
+assert summary["todayBytes"] == 2750
+by_port = {item["remotePort"]: item for item in summary["ports"]}
+assert by_port[15001]["todayBytes"] == 2450
+assert by_port[15002]["todayBytes"] == 300
 
 print("RC Geradores industrial v3 smoke: OK")
 tmp.cleanup()
