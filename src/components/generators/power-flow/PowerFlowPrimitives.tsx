@@ -124,46 +124,64 @@ export function PowerGaugeKw({
   battery: number | null;
   powerFactor?: number | null;
 }) {
-  const hasScale = value != null && nominal != null && nominal > 0;
-  const pct = hasScale ? Math.min(1, Math.max(0, value / nominal)) : 0;
-  const cx = 120;
-  const cy = 123;
-  const needleLength = 68;
+  const hasValue = value != null && Number.isFinite(value);
+  const displayMax = nominal != null && nominal > 0 ? nominal : 500;
+  const gaugeValue = hasValue ? Math.max(0, value) : 0;
+  const pct = Math.min(1, gaugeValue / displayMax);
+
+  const cx = 160;
+  const cy = 158;
+  const arcRadius = 128;
+  const needleLength = 111;
   const needleAngle = 180 + pct * 180;
   const needleRad = (needleAngle * Math.PI) / 180;
-  const nx = cx + Math.cos(needleRad) * needleLength;
-  const ny = cy + Math.sin(needleRad) * needleLength;
-  const ticks = Array.from({ length: 11 }, (_, index) => {
-    const angle = 180 + index * 18;
+  const needleTipX = cx + Math.cos(needleRad) * needleLength;
+  const needleTipY = cy + Math.sin(needleRad) * needleLength;
+  const needleBackX = cx - Math.cos(needleRad) * 14;
+  const needleBackY = cy - Math.sin(needleRad) * 14;
+  const needleHalfWidth = 4.5;
+  const needlePerpX = -Math.sin(needleRad) * needleHalfWidth;
+  const needlePerpY = Math.cos(needleRad) * needleHalfWidth;
+  const needlePoints = [
+    `${needleTipX},${needleTipY}`,
+    `${needleBackX + needlePerpX},${needleBackY + needlePerpY}`,
+    `${needleBackX - needlePerpX},${needleBackY - needlePerpY}`,
+  ].join(" ");
+
+  const ticks = Array.from({ length: 26 }, (_, index) => {
+    const angle = 180 + index * (180 / 25);
     const rad = (angle * Math.PI) / 180;
-    const outer = 101;
-    const inner = index % 5 === 0 ? 91 : 95;
+    const major = index % 5 === 0;
+    const outer = 145;
+    const inner = major ? 134 : 139;
+
     return {
       index,
+      major,
       x1: cx + Math.cos(rad) * inner,
       y1: cy + Math.sin(rad) * inner,
       x2: cx + Math.cos(rad) * outer,
       y2: cy + Math.sin(rad) * outer,
     };
   });
-  const labels = [0, 0.25, 0.5, 0.75, 1].map((fraction) => {
+
+  const labels = Array.from({ length: 6 }, (_, index) => {
+    const fraction = index / 5;
     const angle = 180 + fraction * 180;
     const rad = (angle * Math.PI) / 180;
-    const radius = 111;
+    const radius = 154;
+
     return {
-      fraction,
+      index,
       x: cx + Math.cos(rad) * radius,
-      y: cy + Math.sin(rad) * radius + 3,
-      text:
-        nominal != null && nominal > 0
-          ? fmt(nominal * fraction, 0)
-          : fraction === 0
-            ? "0"
-            : fraction === 1
-              ? "N/D"
-              : "",
+      y: cy + Math.sin(rad) * radius + 4,
+      text: fmt(displayMax * fraction, 0),
     };
   });
+
+  const arcPath = `M${cx - arcRadius} ${cy} A${arcRadius} ${arcRadius} 0 0 1 ${
+    cx + arcRadius
+  } ${cy}`;
 
   return (
     <div className="kw-instrument">
@@ -177,27 +195,27 @@ export function PowerGaugeKw({
       </div>
 
       <svg
-        viewBox="0 0 240 165"
+        viewBox="0 0 320 220"
         className="kw-gauge-svg"
         role="img"
         aria-label={value == null ? "Potência indisponível" : `Potência ${fmt(value, 0)} kW`}
       >
-        <path d="M34 123 A86 86 0 0 1 206 123" pathLength="100" className="kw-gauge-base" />
+        <path d={arcPath} pathLength="100" className="kw-gauge-base" />
         <path
-          d="M34 123 A86 86 0 0 1 206 123"
+          d={arcPath}
           pathLength="100"
           className="kw-gauge-zone kw-gauge-green"
           strokeDasharray="72 28"
         />
         <path
-          d="M34 123 A86 86 0 0 1 206 123"
+          d={arcPath}
           pathLength="100"
           className="kw-gauge-zone kw-gauge-amber"
           strokeDasharray="14 86"
           strokeDashoffset="-72"
         />
         <path
-          d="M34 123 A86 86 0 0 1 206 123"
+          d={arcPath}
           pathLength="100"
           className="kw-gauge-zone kw-gauge-red"
           strokeDasharray="14 86"
@@ -211,32 +229,25 @@ export function PowerGaugeKw({
             y1={tick.y1}
             x2={tick.x2}
             y2={tick.y2}
-            className={cn("kw-gauge-tick", tick.index % 5 === 0 && "is-major")}
+            className={cn("kw-gauge-tick", tick.major && "is-major")}
           />
         ))}
 
-        {labels.map((label) =>
-          label.text ? (
-            <text
-              key={label.fraction}
-              x={label.x}
-              y={label.y}
-              textAnchor="middle"
-              className="kw-gauge-scale"
-            >
-              {label.text}
-            </text>
-          ) : null,
-        )}
+        {labels.map((label) => (
+          <text
+            key={label.index}
+            x={label.x}
+            y={label.y}
+            textAnchor="middle"
+            className="kw-gauge-scale"
+          >
+            {label.text}
+          </text>
+        ))}
 
-        <line
-          x1={cx}
-          y1={cy}
-          x2={nx}
-          y2={ny}
-          className={cn("kw-gauge-needle", !hasScale && "is-unknown")}
-        />
-        <circle cx={cx} cy={cy} r="8" className="kw-gauge-hub" />
+        <polygon points={needlePoints} className={cn("kw-gauge-needle", !hasValue && "is-unknown")} />
+        <circle cx={cx} cy={cy} r="9" className="kw-gauge-hub" />
+        <circle cx={cx} cy={cy} r="3" className="kw-gauge-hub-center" />
       </svg>
 
       <div className="kw-gauge-readout">
@@ -245,12 +256,12 @@ export function PowerGaugeKw({
       </div>
 
       <div className={cn("kw-battery-badge", battery == null && "is-unknown")}>
+        <svg className="kw-battery-icon" viewBox="0 0 24 16" aria-hidden="true">
+          <rect x="1" y="3" width="20" height="12" rx="1.5" />
+          <path d="M21 7h2v4h-2M5 7v4M3 9h4M15 7v4" />
+        </svg>
         <span>BAT</span>
         <b>{battery == null ? "N/D" : `${fmt(battery)} V`}</b>
-      </div>
-
-      <div className="kw-gauge-caption">
-        {nominal != null && nominal > 0 ? `ESCALA ${fmt(nominal, 0)} kW` : "ESCALA NOMINAL N/D"}
       </div>
     </div>
   );
