@@ -24,6 +24,25 @@ jobs:
       - name: Auditoria de dependências Node
         run: npm audit --audit-level=high
 
+      - name: Formatação temporária da reconstrução
+        run: |
+          npx prettier --write src scripts
+          git diff --name-only -- src scripts > /tmp/prettier-changed.txt
+          mkdir -p /tmp/prettier-formatted
+          while IFS= read -r file; do
+            [ -n "$file" ] || continue
+            mkdir -p "/tmp/prettier-formatted/$(dirname "$file")"
+            cp "$file" "/tmp/prettier-formatted/$file"
+          done < /tmp/prettier-changed.txt
+          cp /tmp/prettier-changed.txt /tmp/prettier-formatted/changed.txt
+
+      - name: Salvar arquivos formatados
+        uses: actions/upload-artifact@v4
+        with:
+          name: prettier-formatted
+          path: /tmp/prettier-formatted
+          retention-days: 1
+
       - name: Arquitetura frontend
         run: npm run check:architecture
 
