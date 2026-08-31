@@ -130,6 +130,22 @@
       "additionalProperties": true
     },
     "validatedTelemetry": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "documentedTelemetry": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "metricUnits": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    },
+    "mapping": {
+      "type": "object",
+      "properties": {
+        "kind": { "type": "string", "enum": ["modbus_register_export", "comap_object_export"] },
+        "readOnly": { "type": "boolean" },
+        "sourceFile": { "type": "string", "minLength": 1 },
+        "registers": { "type": "object" },
+        "objects": { "type": "object" }
+      },
+      "additionalProperties": true
+    },
     "validation": {
       "type": "object",
       "properties": {
