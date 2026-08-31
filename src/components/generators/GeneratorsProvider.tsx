@@ -24,6 +24,8 @@ type CreateInput = {
   rapidDeviceNum?: number | undefined;
 };
 
+type UpdateInput = Partial<CreateInput> & { enabled?: boolean | undefined };
+
 type GeneratorsContextValue = {
   generators: Generator[];
   ready: boolean;
@@ -31,6 +33,7 @@ type GeneratorsContextValue = {
   refresh: () => Promise<void>;
   getById: (id: string) => Generator | undefined;
   addGenerator: (input: CreateInput) => Promise<string | null>;
+  updateGenerator: (id: string, input: UpdateInput) => Promise<string | null>;
   removeGenerator: (id: string) => Promise<string | null>;
 };
 
@@ -76,7 +79,7 @@ export function GeneratorsProvider({ children }: { children: ReactNode }) {
   }, [authReady, refresh, user]);
 
   const getById = useCallback(
-    (id: string) => generators.find((g) => g.id === id || g.tag.toLowerCase() === id.toLowerCase()),
+    (id: string) => generators.find((generator) => generator.id === id || generator.tag.toLowerCase() === id.toLowerCase()),
     [generators],
   );
 
@@ -88,7 +91,7 @@ export function GeneratorsProvider({ children }: { children: ReactNode }) {
       if (!site) return "Informe o site.";
       const tag = (input.tag?.trim() || "").toUpperCase();
       if (!tag) return "Informe a tag.";
-      if (generators.some((g) => g.tag.toUpperCase() === tag))
+      if (generators.some((generator) => generator.tag.toUpperCase() === tag))
         return "Já existe um gerador com esta tag.";
 
       try {
@@ -112,9 +115,32 @@ export function GeneratorsProvider({ children }: { children: ReactNode }) {
     [generators, refresh],
   );
 
+  const updateGenerator = useCallback(
+    async (id: string, input: UpdateInput) => {
+      try {
+        const payload = {
+          ...(input.tag != null ? { tag: input.tag.trim().toUpperCase() } : {}),
+          ...(input.site != null ? { site: input.site.trim() } : {}),
+          ...(input.ip != null ? { ip: input.ip.trim() } : {}),
+          ...(input.transport != null ? { transport: input.transport } : {}),
+          ...(input.listenPort != null ? { listenPort: input.listenPort } : {}),
+          ...(input.modbusUnit != null ? { modbusUnit: input.modbusUnit } : {}),
+          ...(input.rapidDeviceNum != null ? { rapidDeviceNum: input.rapidDeviceNum } : {}),
+          ...(input.enabled != null ? { enabled: input.enabled } : {}),
+        };
+        await rcApi.generators.update(id, payload);
+        await refresh();
+        return null;
+      } catch (err) {
+        return err instanceof Error ? err.message : "Falha ao editar gerador.";
+      }
+    },
+    [refresh],
+  );
+
   const removeGenerator = useCallback(
     async (id: string) => {
-      const generator = generators.find((g) => g.id === id);
+      const generator = generators.find((item) => item.id === id);
       if (!generator) return "Gerador não encontrado.";
       try {
         await industrialApi.lifecycle.retire(generator.id, generator.tag);
@@ -128,8 +154,26 @@ export function GeneratorsProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ generators, ready, error, refresh, getById, addGenerator, removeGenerator }),
-    [generators, ready, error, refresh, getById, addGenerator, removeGenerator],
+    () => ({
+      generators,
+      ready,
+      error,
+      refresh,
+      getById,
+      addGenerator,
+      updateGenerator,
+      removeGenerator,
+    }),
+    [
+      generators,
+      ready,
+      error,
+      refresh,
+      getById,
+      addGenerator,
+      updateGenerator,
+      removeGenerator,
+    ],
   );
 
   return <GeneratorsContext.Provider value={value}>{children}</GeneratorsContext.Provider>;
