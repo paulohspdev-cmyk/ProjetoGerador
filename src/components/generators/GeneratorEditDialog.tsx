@@ -25,7 +25,7 @@ export function GeneratorEditDialog({
   const [open, setOpen] = useState(false);
   const [tag, setTag] = useState(generator.tag);
   const [site, setSite] = useState(generator.site);
-  const [enabled, setEnabled] = useState(generator.status !== "nao_configurado");
+  const [enabled, setEnabled] = useState(generator.enabled !== false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,7 +33,7 @@ export function GeneratorEditDialog({
     if (!open) return;
     setTag(generator.tag);
     setSite(generator.site);
-    setEnabled(generator.status !== "nao_configurado");
+    setEnabled(generator.enabled !== false);
     setError(null);
   }, [generator, open]);
 
@@ -76,7 +76,7 @@ export function GeneratorEditDialog({
         <DialogHeader>
           <DialogTitle>Editar gerador</DialogTitle>
           <DialogDescription>
-            Altere os dados de identificação do equipamento. Comunicação e SCADA permanecem protegidos para evitar mudança acidental da configuração industrial.
+            Altere identificação e unidade. A configuração de comunicação fica protegida para evitar mudança acidental no equipamento em campo.
           </DialogDescription>
         </DialogHeader>
 
@@ -104,7 +104,9 @@ export function GeneratorEditDialog({
           <label className="flex items-center justify-between gap-3 rounded-xl border border-border p-3">
             <span>
               <b className="block text-sm">Cadastro ativo</b>
-              <span className="text-xs text-muted-foreground">Desative somente quando o equipamento não deve participar da operação.</span>
+              <span className="text-xs text-muted-foreground">
+                Equipamentos desativados permanecem cadastrados, mas saem da operação.
+              </span>
             </span>
             <input
               type="checkbox"
@@ -114,9 +116,15 @@ export function GeneratorEditDialog({
             />
           </label>
 
-          <div className="rounded-xl border border-border bg-background/35 p-3 text-xs text-muted-foreground">
-            {generator.controller} · {generator.transport || "comunicação não informada"}
-          </div>
+          <details className="rounded-xl border border-border bg-background/35 p-3 text-xs text-muted-foreground">
+            <summary className="cursor-pointer font-semibold text-foreground">Detalhes técnicos</summary>
+            <div className="mt-2 space-y-1">
+              <p>Controladora: {generator.controller}</p>
+              <p>Comunicação: {generator.transport || "não informada"}</p>
+              <p>Porta: {generator.listenPort ?? "automática"}</p>
+              <p>Endereço Modbus: {generator.modbusUnit ?? "automático"}</p>
+            </div>
+          </details>
 
           {error && <p className="text-sm text-offline">{error}</p>}
 
