@@ -1,9 +1,10 @@
 import signal
 import time
 
-from . import db, industrial_store, ops_store, platform_store
+from . import db, industrial_store, ops_store, platform_store, traffic_store
 from .automation_engine import process_rules
 from .backup_manager import create_full_backup
+from .config import BRIDGE_STATUS_FILE
 from .notifications import process_due_notifications
 from .rapid import overlay_generators
 from .reporting import generate_report
@@ -65,14 +66,19 @@ def main():
     ops_store.init_ops_db()
     platform_store.init_platform_db()
     industrial_store.init_industrial_db()
+    traffic_store.init_traffic_db()
     print("[worker] RC Geradores iniciado", flush=True)
     last_automation = 0.0
     last_industrial = 0.0
+    last_traffic = 0.0
     while running:
         try:
             process_due_notifications()
             process_scheduler()
             now = time.monotonic()
+            if now - last_traffic >= 30:
+                traffic_store.sample_status_file(BRIDGE_STATUS_FILE)
+                last_traffic = now
             if now - last_industrial >= 10:
                 generators = overlay_generators(db.list_generators())
                 industrial_store.process_escalations(generators)
