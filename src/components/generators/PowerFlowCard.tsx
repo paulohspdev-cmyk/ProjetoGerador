@@ -62,6 +62,10 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     metricNumber(gen, "nominal_power_kw", gen.nominalPower) ??
     metricNumber(gen, "nominal_power", gen.nominalPower);
 
+  const oilUnit = gen.metricUnits?.["oil_pressure"] || "bar";
+  const fuelUnit = gen.metricUnits?.["fuel_level"] || "%";
+  const fuelIsPercent = fuelUnit === "%";
+
   const mcbKnown = hasMetric(gen, "mcb_closed");
   const gcbKnown = hasMetric(gen, "gcb_closed");
   const modeKnown = hasMetric(gen, "controller_mode_raw");
@@ -227,7 +231,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         <EngineRow
           icon={<IconOilCan />}
           label="Oil Pressure"
-          value={oil == null ? "N/D" : `${fmt(oil)} bar`}
+          value={oil == null ? "N/D" : `${fmt(oil)} ${oilUnit}`}
           known={oil != null}
         />
         <EngineRow
@@ -239,9 +243,9 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         <EngineRow
           icon={<IconFuelPump />}
           label="Fuel Level"
-          value={fuel == null ? "N/D" : `${fmt(fuel, 0)} %`}
-          pct={fuel}
-          bar
+          value={fuel == null ? "N/D" : `${fmt(fuel, fuelIsPercent ? 0 : 1)} ${fuelUnit}`}
+          pct={fuelIsPercent ? fuel : null}
+          bar={fuelIsPercent}
           known={fuel != null}
         />
         <EngineRow
