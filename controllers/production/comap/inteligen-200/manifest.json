@@ -33,6 +33,14 @@
         "source": "field_validated_map"
       },
       {
+        "key": "battery_voltage",
+        "tagCode": "battery_voltage_raw",
+        "name": "Tensão da bateria",
+        "scale": 0.1,
+        "unit": "V",
+        "source": "field_validated_map"
+      },
+      {
         "key": "voltage_l1",
         "tagCode": "voltage_l1",
         "name": "Tensão L1-N",
@@ -105,6 +113,7 @@
   },
   "validatedTelemetry": [
     "rpm",
+    "battery_voltage",
     "frequency",
     "voltage_l1",
     "voltage_l2",
@@ -114,10 +123,13 @@
     "voltage_l3_l1"
   ],
   "validation": {
-    "documentation": ["ComAp InteliGen 200 Global Guide"],
+    "documentation": [
+      "ComAp InteliGen 200 Global Guide",
+      "tabela IG200.txt — referência de semântica/unidade dos objetos ComAp"
+    ],
     "lab": true,
     "field": true,
     "commandSafety": "START/STOP validados em campo. AUTO/TEST/MCB/GCB/paralelismo permanecem bloqueados até homologação específica."
   },
-  "notes": "Mapa de campo validado para RPM, tensões do gerador e frequência. O endereço 1053 do mapa genérico não representa bateria na configuração de campo observada; não promover métricas adicionais sem evidência documental e validação."
+  "notes": "Mapa de campo validado para RPM, tensões do gerador, frequência e tensão da bateria. Em 2026-08-31, leituras read-only FC03 confirmaram o registro 1083 como Battery Volts com escala 0,1 V: GEN002=25,3 V e GEN005=25,0 V. O registro 1053 do mapa genérico não representa bateria na configuração de campo observada. Combustível, temperatura, óleo, horímetro e demais candidatos continuam não homologados até correlação específica."
 }
