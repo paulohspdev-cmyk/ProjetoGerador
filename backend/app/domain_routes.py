@@ -116,6 +116,10 @@ class AssetLinkCreate(BaseModel):
     metadata: dict = Field(default_factory=dict)
 
 
+class ProvisionRequest(BaseModel):
+    confirmation: str = Field(min_length=1, max_length=64)
+
+
 class DeprovisionRequest(BaseModel):
     confirmation: str = Field(min_length=1, max_length=64)
 
@@ -124,16 +128,27 @@ class RetireRequest(BaseModel):
     confirmation: str = Field(min_length=1, max_length=160)
 
 
-async def _privileged_deprovision(generator_id: str) -> dict:
+async def _privileged_operation(generator_id: str, operation: str) -> dict:
+    if operation not in {"provision", "deprovision"}:
+        raise HTTPException(status_code=500, detail="Operação privilegiada inválida")
     try:
         reader, writer = await asyncio.open_unix_connection(PROVISION_SOCKET)
     except OSError as exc:
         raise HTTPException(status_code=503, detail="Serviço privilegiado de provisionamento não está disponível") from exc
-    writer.write((json.dumps({
-        "operation": "deprovision",
-        "generator_id": generator_id,
-        "confirm": "DEPROVISION_CONFIRMED",
-    }) + "\n").encode())
+
+    confirmation = "PROVISION_CONFIRMED" if operation == "provision" else "DEPROVISION_CONFIRMED"
+    writer.write(
+        (
+            json.dumps(
+                {
+                    "operation": operation,
+                    "generator_id": generator_id,
+                    "confirm": confirmation,
+                }
+            )
+            + "\n"
+        ).encode()
+    )
     await writer.drain()
     try:
         raw = await asyncio.wait_for(reader.readline(), timeout=100)
@@ -143,10 +158,15 @@ async def _privileged_deprovision(generator_id: str) -> dict:
     try:
         result = json.loads(raw.decode())
     except Exception as exc:
-        raise HTTPException(status_code=502, detail="Resposta inválida do serviço de deprovisionamento") from exc
+        raise HTTPException(status_code=502, detail="Resposta inválida do serviço de provisionamento") from exc
     if not result.get("ok"):
-        raise HTTPException(status_code=409, detail=result.get("error") or "Deprovisionamento recusado")
+        label = "Provisionamento" if operation == "provision" else "Deprovisionamento"
+        raise HTTPException(status_code=409, detail=result.get("error") or f"{label} recusado")
     return result
+
+
+async def _privileged_deprovision(generator_id: str) -> dict:
+    return await _privileged_operation(generator_id, "deprovision")
 
 
 def _active_binding(generator_id: str) -> dict | None:
@@ -178,6 +198,7 @@ def equipment_bundle_create(payload: EquipmentBundleCreate, user: dict = Depends
 @router.get("/api/generators/{generator_id}/lifecycle")
 def generator_lifecycle(generator_id: str, user: dict = Depends(require_view)):
     from . import db
+
     generator = db.get_generator(generator_id)
     if not generator:
         raise HTTPException(status_code=404, detail="Gerador não encontrado")
@@ -191,22 +212,69 @@ def generator_lifecycle(generator_id: str, user: dict = Depends(require_view)):
     }
 
 
+@router.post("/api/generators/{generator_id}/provision")
+async def generator_provision(
+    generator_id: str,
+    payload: ProvisionRequest,
+    user: dict = Depends(require_create),
+):
+    if payload.confirmation.strip().upper() != "PROVISION":
+        raise HTTPException(status_code=422, detail="Confirmação deve ser PROVISION")
+    from . import db
+
+    generator = db.get_generator(generator_id)
+    if not generator:
+        raise HTTPException(status_code=404, detail="Gerador não encontrado")
+    if _active_binding(generator["id"]):
+        return {
+            "ok": True,
+            "existing": True,
+            "generatorId": generator["id"],
+            "binding": _active_binding(generator["id"]),
+        }
+    result = await _privileged_operation(generator["id"], "provision")
+    db.add_audit(
+        actor(user),
+        "provision_requested",
+        "generator",
+        generator["id"],
+        "configuração industrial aplicada pelo fluxo guiado",
+    )
+    return result
+
+
 @router.post("/api/generators/{generator_id}/deprovision")
-async def generator_deprovision(generator_id: str, payload: DeprovisionRequest, user: dict = Depends(require_admin)):
+async def generator_deprovision(
+    generator_id: str,
+    payload: DeprovisionRequest,
+    user: dict = Depends(require_admin),
+):
     if payload.confirmation.strip().upper() != "DEPROVISION":
         raise HTTPException(status_code=422, detail="Confirmação deve ser DEPROVISION")
     from . import db
+
     generator = db.get_generator(generator_id)
     if not generator:
         raise HTTPException(status_code=404, detail="Gerador não encontrado")
     result = await _privileged_deprovision(generator["id"])
-    db.add_audit(actor(user), "deprovision_requested", "generator", generator["id"], "Rapid SCADA; histórico preservado")
+    db.add_audit(
+        actor(user),
+        "deprovision_requested",
+        "generator",
+        generator["id"],
+        "Rapid SCADA; histórico preservado",
+    )
     return result
 
 
 @router.post("/api/generators/{generator_id}/retire")
-async def generator_retire(generator_id: str, payload: RetireRequest, user: dict = Depends(require_remove)):
+async def generator_retire(
+    generator_id: str,
+    payload: RetireRequest,
+    user: dict = Depends(require_remove),
+):
     from . import db
+
     generator = db.get_generator(generator_id)
     if not generator:
         raise HTTPException(status_code=404, detail="Gerador não encontrado")
@@ -225,7 +293,13 @@ async def generator_retire(generator_id: str, payload: RetireRequest, user: dict
     if not db.delete_generator(generator["id"], actor=actor(user)):
         raise HTTPException(status_code=404, detail="Gerador não encontrado")
     domain_store.remove_legacy_generator(generator["id"])
-    db.add_audit(actor(user), "retire", "generator", generator["id"], "cadastro removido após ciclo de vida seguro")
+    db.add_audit(
+        actor(user),
+        "retire",
+        "generator",
+        generator["id"],
+        "cadastro removido após ciclo de vida seguro",
+    )
     return {
         "ok": True,
         "generatorId": generator["id"],
@@ -264,7 +338,11 @@ def asset_get(asset_id: str, user: dict = Depends(require_view)):
 @router.patch("/api/assets/{asset_id}")
 def asset_update(asset_id: str, payload: AssetUpdate, user: dict = Depends(require_edit)):
     try:
-        item = domain_store.update_asset(asset_id, payload.model_dump(exclude_unset=True), actor(user))
+        item = domain_store.update_asset(
+            asset_id,
+            payload.model_dump(exclude_unset=True),
+            actor(user),
+        )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     if not item:
@@ -298,9 +376,17 @@ def controllers_create(payload: ControllerCreate, user: dict = Depends(require_c
 
 
 @router.patch("/api/controllers/{controller_id}")
-def controller_update(controller_id: str, payload: ControllerUpdate, user: dict = Depends(require_edit)):
+def controller_update(
+    controller_id: str,
+    payload: ControllerUpdate,
+    user: dict = Depends(require_edit),
+):
     try:
-        item = domain_store.update_controller(controller_id, payload.model_dump(exclude_unset=True), actor(user))
+        item = domain_store.update_controller(
+            controller_id,
+            payload.model_dump(exclude_unset=True),
+            actor(user),
+        )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     if not item:
@@ -323,9 +409,17 @@ def connections_create(payload: ConnectionCreate, user: dict = Depends(require_c
 
 
 @router.patch("/api/connections/{connection_id}")
-def connection_update(connection_id: str, payload: ConnectionUpdate, user: dict = Depends(require_edit)):
+def connection_update(
+    connection_id: str,
+    payload: ConnectionUpdate,
+    user: dict = Depends(require_edit),
+):
     try:
-        item = domain_store.update_connection(connection_id, payload.model_dump(exclude_unset=True), actor(user))
+        item = domain_store.update_connection(
+            connection_id,
+            payload.model_dump(exclude_unset=True),
+            actor(user),
+        )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     if not item:
