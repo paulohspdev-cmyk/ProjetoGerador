@@ -1,38 +1,69 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   Activity,
   AlertTriangle,
   BellRing,
+  CircleOff,
   Gauge,
-  HeartPulse,
   Radio,
   RefreshCw,
   Router,
-  Wrench,
-  Zap,
 } from "lucide-react";
 
 import { useGenerators } from "@/components/generators/GeneratorsProvider";
-import { rcApi, type EventItemApi, type FieldDevice, type SystemDiagnostics } from "@/lib/api";
-import { useScadaOps } from "./ScadaOpsProvider";
-import { cn } from "@/lib/utils";
-import { Panel, Pill, ScreenBody, Stats, Tone } from "./kit";
+import { StatusPill } from "@/components/generators/StatusPill";
+import { industrialApi, type IndustrialAlarm } from "@/lib/industrial-api";
+import { rcApi, type BridgeSession, type SystemDiagnostics } from "@/lib/api";
+import { Panel, Pill, ScreenBody, Stats } from "./kit";
 
-function ModuleLink({ slug, children }: { slug: string; children: React.ReactNode }) {
-  return (
-    <Link
-      to="/p/$slug"
-      params={{ slug }}
-      className="text-[11px] text-muted-foreground hover:text-foreground"
-    >
-      {children}
-    </Link>
-  );
+type TrafficPort = {
+  remotePort: number;
+  todayRx: number;
+  todayTx: number;
+  todayBytes: number;
+  monthRx: number;
+  monthTx: number;
+  monthBytes: number;
+};
+
+type TrafficSummary = {
+  day: string;
+  month: string;
+  todayRx: number;
+  todayTx: number;
+  todayBytes: number;
+  monthRx: number;
+  monthTx: number;
+  monthBytes: number;
+  ports: TrafficPort[];
+  updatedAt: number;
+};
+
+type ProductDiagnostics = SystemDiagnostics & {
+  bridge: SystemDiagnostics["bridge"] & { traffic?: TrafficSummary };
+};
+
+function metricAvailable(generator: { availableMetrics?: string[] }, key: string) {
+  return (generator.availableMetrics ?? []).includes(key);
 }
 
-function metricAvailable(g: { availableMetrics?: string[] }, key: string) {
-  return (g.availableMetrics ?? []).includes(key);
+function formatBytes(value: number | null | undefined) {
+  const bytes = Math.max(0, Number(value || 0));
+  if (bytes < 1024) return `${bytes.toFixed(0)} B`;
+  if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 ** 3) return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
+  return `${(bytes / 1024 ** 3).toFixed(2)} GB`;
+}
+
+function sessionLabel(session: BridgeSession) {
+  if (session.generators.length === 1) return session.generators[0]?.tag || `Porta ${session.remotePort}`;
+  if (session.generators.length > 1) return session.generators.map((item) => item.tag).join(", ");
+  return `Conexão ${session.remotePort}`;
+}
+
+function alarmTone(severity: string) {
+  return severity === "fault" || severity === "alarm" ? "err" : "warn";
 }
 
 export function OverviewDashboard() {
@@ -42,370 +73,283 @@ export function OverviewDashboard() {
     error: generatorsError,
     refresh: refreshGenerators,
   } = useGenerators();
-  const { workOrders, agenda } = useScadaOps();
-  const [devices, setDevices] = useState<FieldDevice[]>([]);
-  const [diag, setDiag] = useState<SystemDiagnostics | null>(null);
-  const [events, setEvents] = useState<EventItemApi[]>([]);
-  const [remoteError, setRemoteError] = useState("");
+  const [diag, setDiag] = useState<ProductDiagnostics | null>(null);
+  const [alarms, setAlarms] = useState<IndustrialAlarm[]>([]);
+  const [diagError, setDiagError] = useState<string | null>(null);
+  const [alarmError, setAlarmError] = useState<string | null>(null);
+  const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
 
-  useEffect(() => {
-    let active = true;
-    Promise.all([rcApi.fieldDevices.list(), rcApi.system.diagnostics(), rcApi.events.list(20)])
-      .then(([field, health, evt]) => {
-        if (!active) return;
-        setDevices(field);
-        setDiag(health);
-        setEvents(evt);
-        setRemoteError("");
-      })
-      .catch((err) => {
-        if (active)
-          setRemoteError(err instanceof Error ? err.message : "Falha ao atualizar painel");
-      });
-    return () => {
-      active = false;
-    };
+  const refreshOperational = useCallback(async () => {
+    const [healthResult, alarmResult] = await Promise.allSettled([
+      rcApi.system.health(),
+      industrialApi.alarms.list(true),
+    ]);
+
+    if (healthResult.status === "fulfilled") {
+      setDiag(healthResult.value as ProductDiagnostics);
+      setDiagError(null);
+    } else {
+      setDiagError(
+        healthResult.reason instanceof Error
+          ? healthResult.reason.message
+          : "Falha ao consultar comunicação.",
+      );
+    }
+
+    if (alarmResult.status === "fulfilled") {
+      setAlarms(alarmResult.value);
+      setAlarmError(null);
+    } else {
+      setAlarmError(
+        alarmResult.reason instanceof Error
+          ? alarmResult.reason.message
+          : "Falha ao consultar alarmes.",
+      );
+    }
+    setUpdatedAt(new Date());
   }, []);
 
-  const configured = generators.filter((g) => g.status !== "nao_configurado");
-  const online = generators.filter((g) => g.status === "online").length;
-  const alerts = generators.filter((g) => g.status === "alerta").length;
-  const offline = generators.filter((g) => g.status === "offline").length;
-  const running = generators.filter((g) => metricAvailable(g, "rpm") && g.rpm > 300).length;
-  const loadRows = generators.filter((g) => metricAvailable(g, "power_kw"));
-  const loadKw = loadRows.reduce((sum, g) => sum + g.load, 0);
-  const modems = devices.filter((d) => d.kind === "modem" && d.active);
-  const gateways = devices.filter((d) => d.kind === "gateway" && d.active);
-  const servicesOk =
-    diag?.services.filter((s) => s.status === "active" || s.status === "OK").length ?? 0;
-  const activeErrors = generators.filter((g) => g.status === "offline" || g.status === "alerta");
-  const urgentWo = workOrders.filter((w) => w.status === "Urgente");
+  useEffect(() => {
+    void refreshOperational();
+    const timer = window.setInterval(() => void refreshOperational(), 5000);
+    return () => window.clearInterval(timer);
+  }, [refreshOperational]);
 
-  const siteRows = useMemo(() => {
-    const map = new Map<string, typeof generators>();
-    for (const g of generators) {
-      const bucket = map.get(g.site || "Sem unidade") ?? [];
-      bucket.push(g);
-      map.set(g.site || "Sem unidade", bucket);
-    }
-    return [...map.entries()].map(([name, rows]) => ({
-      name,
-      total: rows.length,
-      online: rows.filter((g) => g.status === "online").length,
-      alerts: rows.filter((g) => g.status === "alerta").length,
-      offline: rows.filter((g) => g.status === "offline").length,
-    }));
-  }, [generators]);
+  const online = generators.filter((generator) => generator.status === "online").length;
+  const offline = generators.filter((generator) => generator.status === "offline").length;
+  const alert = generators.filter((generator) => generator.status === "alerta").length;
+  const running = generators.filter(
+    (generator) => metricAvailable(generator, "rpm") && generator.rpm > 300,
+  ).length;
+
+  const bridgeFresh = diag?.bridge.statusFresh === true;
+  const sessions = diag?.bridge.sessions ?? [];
+  const connectedSessions = bridgeFresh ? sessions.filter((session) => session.connected) : [];
+  const traffic = diag?.bridge.traffic;
+
+  const trafficByPort = useMemo(
+    () => new Map((traffic?.ports ?? []).map((item) => [item.remotePort, item])),
+    [traffic],
+  );
+
+  const attention = useMemo(
+    () =>
+      [...alarms]
+        .filter((item) => item.active)
+        .sort((a, b) => Number(b.last_seen || 0) - Number(a.last_seen || 0)),
+    [alarms],
+  );
+
+  const retryAll = () => {
+    void refreshGenerators();
+    void refreshOperational();
+  };
 
   return (
     <ScreenBody>
-      <div className="flex flex-wrap items-end justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
-            Painel operacional
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {generatorsError
-              ? "Cadastro de geradores indisponível"
-              : `${siteRows.length} unidades · ${generators.length} geradores · dados industriais via Rapid SCADA`}
+          <h2 className="text-lg font-extrabold">Situação do parque</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Acompanhe geradores, comunicação e ocorrências em um só lugar.
           </p>
         </div>
-        <p className="num text-[11px] text-muted-foreground">Atualização automática</p>
-      </div>
-
-      {!generatorsReady && (
-        <div className="rounded-md border border-border bg-card px-3 py-2 text-[12px] text-muted-foreground">
-          Carregando cadastro e estado dos geradores…
-        </div>
-      )}
-
-      {generatorsError && (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-offline/50 bg-offline/10 px-3 py-2 text-[12px] text-offline">
-          <div>
-            <b>Falha ao carregar o parque.</b>
-            <span className="ml-1">{generatorsError}</span>
-          </div>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span>{updatedAt ? `Atualizado ${updatedAt.toLocaleTimeString("pt-BR")}` : "Atualizando…"}</span>
           <button
             type="button"
-            onClick={() => void refreshGenerators()}
-            className="inline-flex h-8 items-center gap-1 rounded-md border border-offline/40 px-2 font-semibold"
+            onClick={retryAll}
+            className="grid size-9 place-items-center rounded-lg border border-border bg-card hover:bg-secondary"
+            aria-label="Atualizar painel"
           >
-            <RefreshCw className="size-3.5" />
-            Tentar novamente
+            <RefreshCw className="size-4" />
           </button>
         </div>
-      )}
+      </div>
 
-      {remoteError && (
-        <div className="rounded-md border border-alert/40 bg-alert/10 px-3 py-2 text-[12px] text-alert">
-          Falha ao carregar dados auxiliares do painel: {remoteError}
+      {(generatorsError || diagError || alarmError) && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-offline/40 bg-offline/10 px-4 py-3 text-sm text-offline">
+          <div>
+            <b>Algumas informações não puderam ser atualizadas.</b>
+            {generatorsError && <span className="ml-1">Geradores: {generatorsError}.</span>}
+            {diagError && <span className="ml-1">Comunicação: {diagError}.</span>}
+            {alarmError && <span className="ml-1">Alarmes: {alarmError}.</span>}
+          </div>
+          <button type="button" onClick={retryAll} className="rounded-md border border-offline/40 px-3 py-1.5 font-semibold">
+            Tentar novamente
+          </button>
         </div>
       )}
 
       <Stats
         items={[
           {
-            icon: Gauge,
-            label: "Geradores",
-            value: generatorsError ? "ERRO" : generators.length,
-            sub: generatorsError
-              ? "API de cadastro indisponível"
-              : `${configured.length} configurados`,
-          },
-          {
             icon: Activity,
-            label: "Online",
-            value: generatorsError ? "—" : online,
-            tone: "text-online",
+            label: "Geradores online",
+            value: generatorsError ? "—" : `${online}/${generators.length}`,
+            tone: online ? "text-online" : undefined,
           },
           {
-            icon: BellRing,
-            label: "Em alerta",
-            value: generatorsError ? "—" : alerts,
-            tone: alerts ? "text-alert" : "text-online",
-          },
-          {
-            icon: AlertTriangle,
-            label: "Offline",
+            icon: CircleOff,
+            label: "Geradores offline",
             value: generatorsError ? "—" : offline,
             tone: offline ? "text-offline" : "text-online",
           },
           {
-            icon: Zap,
-            label: "Em funcionamento",
-            value: generatorsError ? "—" : running,
-            sub: "RPM > 300 quando disponível",
-          },
-          {
             icon: Gauge,
-            label: "Carga medida",
-            value: generatorsError ? "—" : loadRows.length ? `${loadKw.toFixed(1)} kW` : "N/D",
-            sub: generatorsError
-              ? "parque indisponível"
-              : loadRows.length
-                ? `${loadRows.length} fonte(s)`
-                : "pack atual sem kW",
+            label: "Em operação",
+            value: generatorsError ? "—" : running,
+            sub: "motor em funcionamento",
           },
-          { icon: Router, label: "Modems cadastrados", value: modems.length },
           {
-            icon: Wrench,
-            label: "OS urgentes",
-            value: urgentWo.length,
-            tone: urgentWo.length ? "text-alert" : "text-online",
+            icon: BellRing,
+            label: "Alarmes ativos",
+            value: alarmError ? "—" : attention.length || alert,
+            tone: attention.length || alert ? "text-alert" : "text-online",
+          },
+          {
+            icon: Router,
+            label: "Modems online",
+            value: bridgeFresh ? `${connectedSessions.length}/${sessions.length}` : "N/D",
+            tone: bridgeFresh && connectedSessions.length ? "text-online" : undefined,
+          },
+          {
+            icon: Radio,
+            label: "Dados hoje",
+            value: traffic ? formatBytes(traffic.todayBytes) : "N/D",
+            sub: traffic ? `${formatBytes(traffic.monthBytes)} no mês` : undefined,
           },
         ]}
       />
 
-      <div className="grid gap-3 lg:grid-cols-3">
+      {!generatorsReady && (
+        <div className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
+          Carregando geradores…
+        </div>
+      )}
+
+      <div className="grid gap-4 xl:grid-cols-3">
         <Panel
-          title="Estado do parque"
-          className="lg:col-span-2"
-          actions={<ModuleLink slug="central-de-operacao">Operação →</ModuleLink>}
+          title="Geradores"
+          className="xl:col-span-2"
+          actions={
+            <Link to="/p/$slug" params={{ slug: "geradores" }} className="text-xs font-semibold text-primary hover:underline">
+              Ver todos
+            </Link>
+          }
         >
-          {generatorsReady && !generatorsError && !generators.length && (
-            <p className="text-[12px] text-muted-foreground">Nenhum gerador cadastrado.</p>
-          )}
-          {generatorsError && (
-            <p className="text-[12px] text-offline">
-              Estado do parque indisponível enquanto a API de geradores estiver em falha.
-            </p>
-          )}
-          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-            {generators.map((g) => (
-              <div key={g.id} className="rounded-md border border-border p-2.5">
-                <div className="flex items-center justify-between gap-2">
-                  <b className="text-[12px]">{g.tag}</b>
-                  <Pill
-                    tone={
-                      g.status === "online"
-                        ? "ok"
-                        : g.status === "alerta"
-                          ? "warn"
-                          : g.status === "offline"
-                            ? "err"
-                            : "muted"
-                    }
+          {!generatorsError && generatorsReady && generators.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">Nenhum gerador cadastrado.</p>
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2 2xl:grid-cols-3">
+              {generators.map((generator) => {
+                const rpm = metricAvailable(generator, "rpm") ? `${generator.rpm.toFixed(0)} rpm` : "—";
+                const hz =
+                  metricAvailable(generator, "frequency") && generator.frequency != null
+                    ? `${generator.frequency.toFixed(1)} Hz`
+                    : "—";
+                return (
+                  <Link
+                    key={generator.id}
+                    to="/p/geradores/$id"
+                    params={{ id: generator.id }}
+                    className="group rounded-xl border border-border bg-background/35 p-3 transition-colors hover:border-primary/45 hover:bg-secondary/25"
                   >
-                    {g.status}
-                  </Pill>
-                </div>
-                <p className="truncate text-[11px] text-muted-foreground">
-                  {g.site} · {g.controller}
-                </p>
-                <div className="mt-2 grid grid-cols-3 gap-1 text-center text-[10px]">
-                  <div className="rounded bg-secondary/40 p-1">
-                    RPM
-                    <br />
-                    <b className="num">{metricAvailable(g, "rpm") ? g.rpm : "N/D"}</b>
-                  </div>
-                  <div className="rounded bg-secondary/40 p-1">
-                    Hz
-                    <br />
-                    <b className="num">
-                      {metricAvailable(g, "frequency") && g.frequency != null
-                        ? g.frequency.toFixed(2)
-                        : "N/D"}
-                    </b>
-                  </div>
-                  <div className="rounded bg-secondary/40 p-1">
-                    Rapid
-                    <br />
-                    <b className="num">{g.rapidDeviceNum ?? "N/D"}</b>
-                  </div>
-                </div>
-                {g.lastError && (
-                  <p className="mt-1 truncate text-[10px] text-offline" title={g.lastError}>
-                    {g.lastError}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        </Panel>
-
-        <Panel
-          title="Condições que exigem atenção"
-          actions={<ModuleLink slug="alarmes">Alarmes →</ModuleLink>}
-        >
-          {generatorsReady && !generatorsError && !activeErrors.length && (
-            <p className="text-[12px] text-muted-foreground">
-              Nenhuma condição derivada do estado atual.
-            </p>
-          )}
-          {generatorsError && (
-            <p className="text-[12px] text-offline">Condições do parque indisponíveis.</p>
-          )}
-          <ul className="space-y-2">
-            {activeErrors.slice(0, 8).map((g) => (
-              <li key={g.id} className="rounded-md border border-border p-2">
-                <div className="flex items-center justify-between">
-                  <b className="text-[12px]">{g.tag}</b>
-                  <Tone tone={g.status === "offline" ? "err" : "warn"}>{g.status}</Tone>
-                </div>
-                <p className="text-[11px] text-muted-foreground">
-                  {g.lastError || "Estado reportado pela API; detalhe específico N/D"}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </Panel>
-      </div>
-
-      <div className="grid gap-3 lg:grid-cols-3">
-        <Panel title="Unidades" actions={<ModuleLink slug="sites">Sites →</ModuleLink>}>
-          {generatorsReady && !generatorsError && !siteRows.length && (
-            <p className="text-[12px] text-muted-foreground">Nenhuma unidade derivada do parque.</p>
-          )}
-          {generatorsError && (
-            <p className="text-[12px] text-offline">Resumo de unidades indisponível.</p>
-          )}
-          <ul className="space-y-2">
-            {siteRows.map((s) => (
-              <li key={s.name} className="rounded-md border border-border p-2 text-[11px]">
-                <b>{s.name}</b>
-                <p className="text-muted-foreground">
-                  {s.total} geradores · {s.online} online · {s.alerts} alerta · {s.offline} offline
-                </p>
-              </li>
-            ))}
-          </ul>
-        </Panel>
-
-        <Panel
-          title="Inventário de comunicação"
-          actions={<ModuleLink slug="modems">Equipamentos →</ModuleLink>}
-        >
-          <div className="grid grid-cols-2 gap-2 text-center">
-            <div className="rounded-md border border-border p-3">
-              <Router className="mx-auto size-4" />
-              <p className="num mt-1 text-xl font-bold">{modems.length}</p>
-              <p className="text-[10px] text-muted-foreground">Modems reais</p>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-extrabold">{generator.tag}</p>
+                        <p className="truncate text-xs text-muted-foreground">{generator.site || "Sem unidade"}</p>
+                      </div>
+                      <StatusPill status={generator.status} />
+                    </div>
+                    <div className="mt-3 flex items-center gap-4 text-xs">
+                      <span><b className="num">{rpm}</b></span>
+                      <span><b className="num">{hz}</b></span>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
-            <div className="rounded-md border border-border p-3">
-              <Radio className="mx-auto size-4" />
-              <p className="num mt-1 text-xl font-bold">{gateways.length}</p>
-              <p className="text-[10px] text-muted-foreground">Gateways reais</p>
+          )}
+        </Panel>
+
+        <Panel
+          title="Requer atenção"
+          actions={
+            <Link to="/p/$slug" params={{ slug: "alarmes" }} className="text-xs font-semibold text-primary hover:underline">
+              Abrir alarmes
+            </Link>
+          }
+        >
+          {alarmError ? (
+            <p className="py-6 text-sm text-offline">Alarmes indisponíveis.</p>
+          ) : attention.length === 0 ? (
+            <div className="py-8 text-center">
+              <p className="font-semibold text-online">Nenhum alarme ativo</p>
+              <p className="mt-1 text-xs text-muted-foreground">O parque não possui ocorrência ativa registrada.</p>
             </div>
+          ) : (
+            <ul className="space-y-2">
+              {attention.slice(0, 8).map((item) => (
+                <li key={item.alarm_key} className="rounded-lg border border-border p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <b className="text-sm">{item.code || "Alarme"}</b>
+                    <Pill tone={alarmTone(item.severity)}>{item.severity}</Pill>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">{item.message}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+      </div>
+
+      <Panel
+        title="Comunicação dos modems"
+        actions={
+          <Link to="/p/$slug" params={{ slug: "conectividade" }} className="text-xs font-semibold text-primary hover:underline">
+            Ver conectividade
+          </Link>
+        }
+      >
+        {!diag && !diagError ? (
+          <p className="py-6 text-sm text-muted-foreground">Carregando comunicação…</p>
+        ) : sessions.length === 0 ? (
+          <p className="py-6 text-sm text-muted-foreground">Nenhuma conexão de modem configurada.</p>
+        ) : (
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+            {sessions.map((session) => {
+              const portTraffic = trafficByPort.get(session.remotePort);
+              const onlineNow = bridgeFresh && session.connected;
+              return (
+                <article key={session.remotePort} className="rounded-xl border border-border bg-background/35 p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-extrabold">{sessionLabel(session)}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {session.generators.length > 1 ? `${session.generators.length} geradores vinculados` : "Conexão de campo"}
+                      </p>
+                    </div>
+                    <Pill tone={onlineNow ? "ok" : bridgeFresh ? "err" : "muted"}>
+                      {onlineNow ? "ONLINE" : bridgeFresh ? "OFFLINE" : "N/D"}
+                    </Pill>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                    <div className="rounded-lg bg-secondary/35 p-2">
+                      <p className="text-muted-foreground">Hoje</p>
+                      <b className="num text-sm">{portTraffic ? formatBytes(portTraffic.todayBytes) : "0 B"}</b>
+                    </div>
+                    <div className="rounded-lg bg-secondary/35 p-2">
+                      <p className="text-muted-foreground">Mês</p>
+                      <b className="num text-sm">{portTraffic ? formatBytes(portTraffic.monthBytes) : "0 B"}</b>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
           </div>
-          {!devices.length && !remoteError && (
-            <p className="mt-2 text-[11px] text-muted-foreground">
-              Nenhum modem/gateway cadastrado; nenhum equipamento será inventado.
-            </p>
-          )}
-        </Panel>
-
-        <Panel
-          title="Saúde do sistema"
-          actions={<ModuleLink slug="saude">Diagnóstico →</ModuleLink>}
-        >
-          {!diag && !remoteError && (
-            <p className="text-[12px] text-muted-foreground">Diagnóstico ainda não disponível.</p>
-          )}
-          {diag && (
-            <>
-              <div className="flex items-center gap-2 rounded-md border border-border p-2">
-                <HeartPulse className={cn("size-4", diag.ok ? "text-online" : "text-alert")} />
-                <span className="text-[12px]">
-                  <b>
-                    {servicesOk}/{diag.services.length}
-                  </b>{" "}
-                  serviços OK
-                </span>
-              </div>
-              <p className="mt-2 text-[11px] text-muted-foreground">
-                Disco: {diag.host.disk ? `${diag.host.disk.usedPercent}% usado` : "N/D"} · Memória:{" "}
-                {diag.host.memory ? `${diag.host.memory.usedPercent}% usada` : "N/D"}
-              </p>
-            </>
-          )}
-        </Panel>
-      </div>
-
-      <div className="grid gap-3 lg:grid-cols-2">
-        <Panel title="Eventos reais" actions={<ModuleLink slug="eventos">Log →</ModuleLink>}>
-          {!events.length && !remoteError && (
-            <p className="text-[12px] text-muted-foreground">Nenhum evento registrado.</p>
-          )}
-          <ul className="space-y-1.5">
-            {events.slice(0, 10).map((e) => (
-              <li
-                key={e.id}
-                className="flex items-start justify-between gap-2 border-b border-border/50 pb-1.5 last:border-0"
-              >
-                <p className="min-w-0 truncate text-[12px]">
-                  <b>{e.tag || "Sistema"}</b>{" "}
-                  <span className="text-muted-foreground">{e.message}</span>
-                </p>
-                <span className="num shrink-0 text-[10px] text-muted-foreground">
-                  {new Date(e.created_at * 1000).toLocaleTimeString("pt-BR")}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </Panel>
-
-        <Panel
-          title="Agenda e manutenção"
-          actions={<ModuleLink slug="agenda">Agenda →</ModuleLink>}
-        >
-          <p className="mb-2 text-[11px] text-muted-foreground">
-            {workOrders.length} OS · {agenda.length} itens de agenda
-          </p>
-          {!agenda.length && (
-            <p className="text-[12px] text-muted-foreground">Nenhum agendamento cadastrado.</p>
-          )}
-          <ul className="space-y-1.5">
-            {agenda.slice(0, 8).map((a) => (
-              <li key={a.id} className="flex justify-between gap-2 text-[12px]">
-                <span className="truncate">
-                  <b>{a.title}</b> · {a.site}
-                </span>
-                <span className="num shrink-0 text-[10px] text-muted-foreground">{a.when}</span>
-              </li>
-            ))}
-          </ul>
-        </Panel>
-      </div>
+        )}
+      </Panel>
     </ScreenBody>
   );
 }
