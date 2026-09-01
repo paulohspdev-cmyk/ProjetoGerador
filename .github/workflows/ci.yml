@@ -208,6 +208,8 @@ jobs:
           grep -q 'app.bridge_runtime' ops/systemd/rc-geradores-bridge.service
           grep -q 'app.worker' ops/systemd/rc-geradores-worker.service
           grep -q 'app.provision_service' ops/systemd/rc-geradores-provision.service
+          grep -q '^RuntimeDirectoryPreserve=yes$' ops/systemd/rc-geradores-bridge.service
+          grep -q '^RuntimeDirectoryPreserve=yes$' ops/systemd/rc-geradores-provision.service
           grep -q 'rc-geradores-worker.service' ops/install.sh
           grep -q 'rc-geradores-provision.service' ops/install.sh
           grep -q '^RC_PROVISION_SOCKET=' ops/rc-geradores.env.example
