@@ -39,6 +39,7 @@ from app import (  # noqa: E402
     industrial_store,
     ops_store,
     platform_store,
+    scheduler_jobs,
     transport_store,
 )
 from app.backup_manager import create_full_backup, materialize_offsite_backup  # noqa: E402
@@ -152,6 +153,61 @@ failed = subprocess.run(
 )
 assert failed.returncode != 0
 assert "RC_RAPID_REQUIRE_ALLOWLIST=1 exige" in failed.stdout
+
+# Scheduler precisa particionar jobs: o worker operacional não executa backup/
+# relatório e o heavy worker não consome notificações.
+assert scheduler_jobs.OPERATIONAL_JOB_KINDS.isdisjoint(scheduler_jobs.HEAVY_JOB_KINDS)
+assert scheduler_jobs.OPERATIONAL_JOB_KINDS | scheduler_jobs.HEAVY_JOB_KINDS == scheduler_jobs.ALLOWED_JOB_KINDS
+job_now = int(time.time()) - 1
+platform_store.upsert_scheduler_job(
+    {
+        "id": "job-hardening-notification",
+        "name": "notificação",
+        "kind": "notification",
+        "interval_seconds": 60,
+        "next_run": job_now,
+        "enabled": True,
+        "payload": {},
+    },
+    "hardening-test",
+)
+platform_store.upsert_scheduler_job(
+    {
+        "id": "job-hardening-backup",
+        "name": "backup",
+        "kind": "backup",
+        "interval_seconds": 60,
+        "next_run": job_now,
+        "enabled": True,
+        "payload": {},
+    },
+    "hardening-test",
+)
+executed: list[str] = []
+original_run = scheduler_jobs.run_scheduler_job
+
+
+def fake_run(job: dict) -> str:
+    kind = str(job.get("kind") or "")
+    executed.append(kind)
+    return f"OK {kind}"
+
+
+scheduler_jobs.run_scheduler_job = fake_run
+try:
+    assert scheduler_jobs.process_scheduler_jobs(scheduler_jobs.OPERATIONAL_JOB_KINDS) == 1
+    assert executed == ["notification"]
+    rows = {item["id"]: item for item in platform_store.list_scheduler_jobs()}
+    assert rows["job-hardening-notification"]["last_result"] == "OK notification"
+    assert rows["job-hardening-backup"]["last_run"] is None
+
+    executed.clear()
+    assert scheduler_jobs.process_scheduler_jobs(scheduler_jobs.HEAVY_JOB_KINDS) == 1
+    assert executed == ["backup"]
+    rows = {item["id"]: item for item in platform_store.list_scheduler_jobs()}
+    assert rows["job-hardening-backup"]["last_result"] == "OK backup"
+finally:
+    scheduler_jobs.run_scheduler_job = original_run
 
 print("RC Geradores production hardening smoke: OK")
 tmp.cleanup()
