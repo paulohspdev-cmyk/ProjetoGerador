@@ -80,7 +80,8 @@ export function readGeneratorTelemetry(gen: Generator) {
 
   const fuelUnit = gen.metricUnits?.["fuel_level"] || "%";
   const fuelCapacity =
-    metricNumber(gen, "fuel_capacity_l", undefined) ?? metricNumber(gen, "fuel_capacity", undefined);
+    metricNumber(gen, "fuel_capacity_l", undefined) ??
+    metricNumber(gen, "fuel_capacity", undefined);
   const fuelMaximum =
     fuelUnit === "%" ? 100 : fuelCapacity != null && fuelCapacity > 0 ? fuelCapacity : 1000;
   const fuelPercent = progressPercent(fuel, fuelMaximum);
