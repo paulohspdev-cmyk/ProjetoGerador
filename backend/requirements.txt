@@ -3,5 +3,5 @@ uvicorn[standard]>=0.30,<1
 pydantic>=2.8,<3
 openpyxl>=3.1,<4
 reportlab>=4.2,<5
-cryptography>=43,<48
+cryptography>=50,<51
 jsonschema>=4.23,<5
