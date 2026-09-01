@@ -124,7 +124,9 @@ for (const marker of [
   "gen.metricLimits",
   "visibleMeterPercent",
 ]) {
-  if (!health.includes(marker)) failures.push(`semáforo compartilhado perdeu regra segura: ${marker}`);
+  if (!health.includes(marker)) {
+    failures.push(`semáforo compartilhado perdeu regra segura: ${marker}`);
+  }
 }
 for (const forbidden of [
   "oilTone(",
