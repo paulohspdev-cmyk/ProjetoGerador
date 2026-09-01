@@ -86,12 +86,12 @@ export function readGeneratorTelemetry(gen: Generator) {
 
   const limits = gen.metricLimits ?? {};
   const tones = {
-    oil: toneFromLimit(oil, limits.oil_pressure),
-    coolant: toneFromLimit(coolant, limits.coolant_temperature),
-    fuel: toneFromLimit(fuel, limits.fuel_level),
-    alternator: toneFromLimit(alternator, limits.alternator_voltage),
-    maintenance: toneFromLimit(maintenance, limits.maintenance_hours),
-    runHours: toneFromLimit(runHours, limits.run_hours),
+    oil: toneFromLimit(oil, limits["oil_pressure"]),
+    coolant: toneFromLimit(coolant, limits["coolant_temperature"]),
+    fuel: toneFromLimit(fuel, limits["fuel_level"]),
+    alternator: toneFromLimit(alternator, limits["alternator_voltage"]),
+    maintenance: toneFromLimit(maintenance, limits["maintenance_hours"]),
+    runHours: toneFromLimit(runHours, limits["run_hours"]),
   };
 
   return {
@@ -118,24 +118,24 @@ export function readGeneratorTelemetry(gen: Generator) {
     running,
     tones,
     percents: {
-      oil: visibleMeterPercent(percentFromLimit(oil, limits.oil_pressure), tones.oil),
+      oil: visibleMeterPercent(percentFromLimit(oil, limits["oil_pressure"]), tones.oil),
       coolant: visibleMeterPercent(
-        percentFromLimit(coolant, limits.coolant_temperature),
+        percentFromLimit(coolant, limits["coolant_temperature"]),
         tones.coolant,
       ),
       fuel: visibleMeterPercent(
-        percentFromLimit(fuel, limits.fuel_level) ?? fuelPercent,
+        percentFromLimit(fuel, limits["fuel_level"]) ?? fuelPercent,
         tones.fuel,
       ),
       alternator: visibleMeterPercent(
-        percentFromLimit(alternator, limits.alternator_voltage),
+        percentFromLimit(alternator, limits["alternator_voltage"]),
         tones.alternator,
       ),
       maintenance: visibleMeterPercent(
-        percentFromLimit(maintenance, limits.maintenance_hours),
+        percentFromLimit(maintenance, limits["maintenance_hours"]),
         tones.maintenance,
       ),
-      runHours: percentFromLimit(runHours, limits.run_hours),
+      runHours: percentFromLimit(runHours, limits["run_hours"]),
     },
   };
 }
