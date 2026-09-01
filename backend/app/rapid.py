@@ -14,6 +14,7 @@ from .config import (
     RAPID_READER_DLL,
 )
 from .controller_library import pack_for_model
+from .ig4_lab import is_target as is_ig4_lab_target
 
 _cache = {"at": 0.0, "channels": {}, "error": "", "requested": set()}
 _cache_lock = threading.Lock()
@@ -387,9 +388,10 @@ def _effective_capabilities(generator, status: str, binding_present: bool) -> di
         and pack.get("status") == "field_validated"
     )
     online = status == "online"
+    ig4_lab_start = bool(production and online and binding_present and is_ig4_lab_target(generator))
     return {
         "telemetry": bool(production and binding_present and declared.get("telemetry")),
-        "start": bool(production and online and declared.get("start")),
+        "start": bool(production and online and declared.get("start")) or ig4_lab_start,
         "stop": bool(production and online and declared.get("stop")),
         "auto": False,
         "manual": False,
