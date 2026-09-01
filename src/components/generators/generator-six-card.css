@@ -1,11 +1,10 @@
 .generator-vertical-grid.generator-six-card-grid {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
-  grid-template-rows: minmax(0, 1fr);
-  grid-auto-rows: minmax(0, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  grid-auto-rows: auto;
   min-height: 0;
   height: 100%;
   align-items: stretch;
-  align-content: stretch;
+  align-content: start;
 }
 
 .generator-six-card-grid > .comap-panel-v2 {
@@ -13,7 +12,7 @@
   width: 100%;
   min-width: 0;
   min-height: 0;
-  height: 100%;
+  height: auto;
   flex-direction: column;
   align-self: stretch;
 }
@@ -106,8 +105,8 @@
 }
 
 .generator-six-card-grid .comap-panel-v2 .comap-flow-v2 {
-  min-height: 0;
-  flex: 1 1 220px;
+  min-height: clamp(220px, 28vh, 315px);
+  flex: 0 0 auto;
   padding-top: 3px;
   padding-bottom: 10px;
 }
@@ -115,13 +114,13 @@
 .generator-six-card-grid .comap-panel-v2 .comap-sld {
   height: auto;
   min-height: 0;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
 }
 
 .generator-six-card-grid .comap-panel-v2 .comap-sld-stage {
   width: min(100%, 230px);
-  height: 100%;
-  min-height: 180px;
+  height: clamp(200px, 25vh, 285px);
+  min-height: 0;
   max-height: none;
   aspect-ratio: auto;
 }
@@ -149,8 +148,7 @@
   pointer-events: none;
 }
 
-.generator-six-card-grid .power-gauge-heading > span,
-.generator-six-card-grid .kw-gauge-caption {
+.generator-six-card-grid .power-gauge-heading > span {
   display: none;
 }
 
@@ -160,24 +158,25 @@
   padding-bottom: 2px;
 }
 
-.generator-six-card-grid .kw-gauge-wrap {
-  min-height: 96px;
+.generator-six-card-grid .comap-panel-v2 .generator-power-instrument {
+  min-height: clamp(150px, 17vh, 188px);
 }
 
-.generator-six-card-grid .kw-gauge-svg {
-  width: min(100%, 210px);
-  height: 96px;
+.generator-six-card-grid .comap-panel-v2 .generator-power-gauge {
+  width: min(100%, 238px);
+  margin-top: 14px;
 }
 
-.generator-six-card-grid .kw-gauge-unit {
-  font-size: 15px;
-  font-weight: 900;
+.generator-six-card-grid .comap-panel-v2 .generator-power-meta {
+  width: 80px;
 }
 
-.generator-six-card-grid .kw-gauge-value {
-  bottom: 3px;
-  font-size: 28px;
-  line-height: 1;
+.generator-six-card-grid .comap-panel-v2 .generator-power-readout strong {
+  font-size: 30px;
+}
+
+.generator-six-card-grid .comap-panel-v2 .generator-battery-badge {
+  min-width: 82px;
 }
 
 .generator-six-card-grid .mains-generator-block {
@@ -190,7 +189,7 @@
   font-size: 11px;
 }
 
-@media (max-height: 860px) and (min-width: 1024px) {
+@media (max-height: 860px) and (min-width: 640px) {
   .generator-six-card-grid .comap-header {
     min-height: 31px;
     padding-top: 2px;
@@ -212,12 +211,12 @@
   }
 
   .generator-six-card-grid .comap-panel-v2 .comap-flow-v2 {
-    flex-basis: 170px;
+    min-height: 185px;
     padding-bottom: 8px;
   }
 
   .generator-six-card-grid .comap-panel-v2 .comap-sld-stage {
-    min-height: 145px;
+    height: 165px;
   }
 
   .generator-six-card-grid .comap-engine {
@@ -234,16 +233,21 @@
     height: 6px;
   }
 
-  .generator-six-card-grid .kw-gauge-wrap {
-    min-height: 78px;
+  .generator-six-card-grid .comap-panel-v2 .generator-power-instrument {
+    min-height: 142px;
   }
 
-  .generator-six-card-grid .kw-gauge-svg {
-    height: 78px;
+  .generator-six-card-grid .comap-panel-v2 .generator-power-gauge {
+    width: min(100%, 214px);
+    margin-top: 10px;
   }
 
-  .generator-six-card-grid .kw-gauge-value {
-    font-size: 24px;
+  .generator-six-card-grid .comap-panel-v2 .generator-power-meta {
+    width: 76px;
+  }
+
+  .generator-six-card-grid .comap-panel-v2 .generator-power-readout strong {
+    font-size: 25px;
   }
 
   .generator-six-card-grid .mains-generator-block .comap-table-row {
@@ -252,17 +256,44 @@
   }
 }
 
+@media (max-height: 720px) and (min-width: 640px) {
+  .generator-six-card-grid .comap-panel-v2 .comap-flow-v2 {
+    min-height: 165px;
+  }
+
+  .generator-six-card-grid .comap-panel-v2 .comap-sld-stage {
+    height: 145px;
+  }
+
+  .generator-six-card-grid .engine-status-block {
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
+  }
+
+  .generator-six-card-grid .comap-panel-v2 .generator-power-instrument {
+    min-height: 124px;
+  }
+
+  .generator-six-card-grid .comap-panel-v2 .generator-power-gauge {
+    width: min(100%, 192px);
+    margin-top: 7px;
+  }
+
+  .generator-six-card-grid .comap-panel-v2 .generator-power-readout strong {
+    font-size: 22px;
+  }
+}
+
 @media (max-width: 639px) {
   .generator-vertical-grid.generator-six-card-grid {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: none;
-    grid-auto-rows: max-content;
+    grid-auto-rows: auto;
     height: auto;
     align-content: start;
   }
 
   .generator-six-card-grid > .comap-panel-v2 {
-    height: max-content;
+    height: auto;
     min-height: 0;
   }
 
@@ -275,16 +306,21 @@
   .generator-six-card-grid .comap-panel-v2 .comap-sld-stage {
     height: 296px;
   }
+
+  .generator-six-card-grid .comap-panel-v2 .generator-power-instrument {
+    min-height: 186px;
+  }
+
+  .generator-six-card-grid .comap-panel-v2 .generator-power-gauge {
+    width: min(100%, 258px);
+    margin-top: 19px;
+  }
 }
 
 @media (min-width: 1540px) {
   .generator-vertical-grid.generator-six-card-grid {
     gap: 6px;
     padding: 0;
-  }
-
-  .generator-six-card-grid .comap-panel-v2 .comap-sld-stage {
-    width: min(100%, 230px);
   }
 
   .generator-six-card-grid .comap-panel-v2 .comap-start,

@@ -58,9 +58,12 @@ for (const marker of [
   'label: "Lista"',
   "<CompactCard",
   "<GeneratorTable",
+  "sm:grid-cols-2",
+  "lg:grid-cols-3",
+  "2xl:grid-cols-4",
 ]) {
   if (!board.includes(marker))
-    failures.push(`toolbar/modos de geradores perdeu seletor: ${marker}`);
+    failures.push(`toolbar/modos de geradores perdeu seletor ou grade responsiva: ${marker}`);
 }
 for (const forbidden of ["Cards verticais", "Cards compactos"]) {
   if (board.includes(forbidden))
@@ -72,24 +75,28 @@ if (!board.includes('view === "principal" ? 5')) {
 
 const compact = read("src/components/generators/CompactCard.tsx");
 for (const marker of [
-  "CompactPowerGauge",
-  "compact-flow-line",
-  'className="compact-command start"',
-  'className="compact-command stop"',
-  "readGeneratorTelemetry",
+  "controllerImageSrc",
+  "controller-image-area",
+  'label="Endpoint"',
+  'label="Bateria"',
+  'label="Frequência"',
+  'label="Tempo operação"',
+  'label="Manutenção"',
+  'label="Latência"',
+  "Abrir gerador",
 ]) {
   if (!compact.includes(marker))
-    failures.push(`card compacto perdeu função operacional: ${marker}`);
+    failures.push(`card compacto clássico perdeu conteúdo: ${marker}`);
 }
 for (const forbidden of [
-  'command(gen.id, "auto")',
-  'command(gen.id, "manual")',
-  'command(gen.id, "test")',
-  'command(gen.id, "mcb_close")',
-  'command(gen.id, "gcb_close")',
+  "CompactPowerGauge",
+  "compact-flow-line",
+  "compact-command",
+  "rcApi.generators.command",
+  "useIndustrialCommandGuard",
 ]) {
   if (compact.includes(forbidden))
-    failures.push(`card compacto habilitou comando não homologado: ${forbidden}`);
+    failures.push(`card compacto voltou ao redesenho operacional rejeitado: ${forbidden}`);
 }
 
 const table = read("src/components/generators/GeneratorTable.tsx");
@@ -124,16 +131,22 @@ for (const marker of [
 const cardCss = read("src/components/generators/generator-six-card.css");
 for (const marker of [
   ".generator-vertical-grid.generator-six-card-grid",
-  "grid-template-rows: minmax(0, 1fr)",
+  "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
+  "grid-auto-rows: auto",
   ".comap-engine > span:nth-child(3):empty",
   ".comap-panel-v2 .comap-flow-v2",
-  "height: 100%",
+  ".generator-power-instrument",
+  ".generator-power-gauge",
+  "@media (max-height: 860px)",
+  "@media (max-height: 720px)",
+  "@media (max-width: 639px)",
 ]) {
   if (!cardCss.includes(marker))
-    failures.push(`layout vertical perdeu regra de encaixe: ${marker}`);
+    failures.push(`layout vertical perdeu regra responsiva: ${marker}`);
 }
-if (!cardCss.includes("@media (max-height: 860px)")) {
-  failures.push("modo vertical perdeu densidade automática para viewport baixa");
+for (const forbidden of ["grid-template-rows: minmax(0, 1fr)", ".kw-gauge-"]) {
+  if (cardCss.includes(forbidden))
+    failures.push(`layout vertical manteve regra obsoleta/conflitante: ${forbidden}`);
 }
 
 if (failures.length) {
@@ -141,5 +154,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  "Decision UI check OK: dashboard, card vertical, compacto horizontal, lista completa e guardrails industriais validados.",
+  "Decision UI check OK: dashboard, vertical responsivo, compacto clássico, lista completa e guardrails industriais validados.",
 );
