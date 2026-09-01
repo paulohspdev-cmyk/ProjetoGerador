@@ -44,7 +44,7 @@
     "firmware": {
       "type": "object",
       "properties": {
-        "tested": { "type": "array", "items": { "type": "string" } },
+        "tested": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
         "minimum": { "type": ["string", "null"] },
         "maximum": { "type": ["string", "null"] },
         "notes": { "type": "string" }
@@ -84,7 +84,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["key", "tagCode", "name", "scale"],
+            "required": ["key", "tagCode", "scale"],
             "properties": {
               "key": { "type": "string", "minLength": 1 },
               "tagCode": { "type": "string", "minLength": 1 },
@@ -102,17 +102,8 @@
     "capabilities": {
       "type": "object",
       "required": [
-        "telemetry",
-        "start",
-        "stop",
-        "auto",
-        "manual",
-        "test",
-        "mcb_open",
-        "mcb_close",
-        "gcb_open",
-        "gcb_close",
-        "paralleling"
+        "telemetry", "start", "stop", "auto", "manual", "test",
+        "mcb_open", "mcb_close", "gcb_open", "gcb_close", "paralleling"
       ],
       "properties": {
         "telemetry": { "type": "boolean" },
@@ -131,9 +122,21 @@
     },
     "validatedTelemetry": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
     "documentedTelemetry": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
-    "metricUnits": {
+    "metricUnits": { "type": "object", "additionalProperties": { "type": "string", "minLength": 1 } },
+    "metricLimits": {
       "type": "object",
-      "additionalProperties": { "type": "string", "minLength": 1 }
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "displayMin": { "type": "number" },
+          "displayMax": { "type": "number" },
+          "warningLow": { "type": "number" },
+          "warningHigh": { "type": "number" },
+          "criticalLow": { "type": "number" },
+          "criticalHigh": { "type": "number" }
+        },
+        "additionalProperties": false
+      }
     },
     "mapping": {
       "type": "object",
@@ -152,6 +155,7 @@
         "documentation": { "type": "array", "items": { "type": "string" } },
         "lab": { "type": "boolean" },
         "field": { "type": "boolean" },
+        "fieldReference": { "type": "string" },
         "commandSafety": { "type": "string" }
       },
       "additionalProperties": true
