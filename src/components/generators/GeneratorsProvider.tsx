@@ -13,6 +13,8 @@ import { CONTROLLER_MODELS, GEN_SITES, type Generator } from "@/data/generators"
 import { ApiError, rcApi, type GeneratorTransport } from "@/lib/api";
 import { industrialApi } from "@/lib/industrial-api";
 
+const GENERATOR_REFRESH_MS = 1000;
+
 type CreateInput = {
   tag?: string | undefined;
   controller: string;
@@ -74,7 +76,7 @@ export function GeneratorsProvider({ children }: { children: ReactNode }) {
       return;
     }
     void refresh();
-    const timer = window.setInterval(() => void refresh(), 3000);
+    const timer = window.setInterval(() => void refresh(), GENERATOR_REFRESH_MS);
     return () => window.clearInterval(timer);
   }, [authReady, refresh, user]);
 
