@@ -34,6 +34,7 @@ os.environ["RC_RETENTION_PROCESS_DAYS"] = "1"
 os.environ["RC_RETENTION_NOTIFICATION_DAYS"] = "1"
 
 from app import (  # noqa: E402
+    bridge,
     db,
     domain_store,
     industrial_store,
@@ -43,7 +44,16 @@ from app import (  # noqa: E402
     transport_store,
 )
 from app.backup_manager import create_full_backup, materialize_offsite_backup  # noqa: E402
-from app.bridge_runtime import HardenedBridgePort, REMOTE_ALLOWED_NETWORKS  # noqa: E402
+from app.bridge_runtime import (  # noqa: E402
+    FRAMING_MODBUS_RTU,
+    FRAMING_MODBUS_TCP,
+    HardenedBridgePort,
+    REMOTE_ALLOWED_NETWORKS,
+    _modbus_crc16,
+    _remote_framing_for_generator,
+    _rtu_frame,
+    _validate_rtu_crc,
+)
 from app.data_maintenance import apply_data_retention  # noqa: E402
 from app.migrations import LATEST_SCHEMA_VERSION, run_migrations  # noqa: E402
 from app.secret_box import PREFIX, protect_secret, reveal_secret  # noqa: E402
@@ -137,6 +147,22 @@ port = HardenedBridgePort(15050)
 assert port._allowed(ipaddress.ip_address("10.20.30.40")) is True
 assert port._allowed(ipaddress.ip_address("192.168.1.50")) is False
 assert port._allowed(ipaddress.ip_address("2001:db8::10")) is True
+
+# O framing reverse TCP é definido pelo Controller Pack: IG200 mantém MBAP e
+# IG4 200, quando usado atrás do modem RS485, usa RTU transparente com CRC16.
+assert _remote_framing_for_generator({"controller_model": "InteliGen 200"}) == FRAMING_MODBUS_TCP
+assert _remote_framing_for_generator({"controller_model": "IG4 200"}) == FRAMING_MODBUS_RTU
+rtu_request = _rtu_frame(3, bridge.read_holding_pdu(1000, 1))
+assert rtu_request.hex() == "030303e800010598"
+assert _modbus_crc16(rtu_request[:-2]) == 0x9805
+_validate_rtu_crc(rtu_request)
+bad_crc = rtu_request[:-1] + bytes([rtu_request[-1] ^ 0x01])
+try:
+    _validate_rtu_crc(bad_crc)
+except ValueError as exc:
+    assert "CRC RTU inválido" in str(exc)
+else:
+    raise AssertionError("bridge aceitou frame RTU com CRC inválido")
 
 # Quando a política exigir allowlist, configuração vazia precisa falhar no import.
 child_env = os.environ.copy()
