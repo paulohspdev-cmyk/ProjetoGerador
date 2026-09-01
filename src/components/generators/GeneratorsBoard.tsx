@@ -18,6 +18,7 @@ import { KpiStrip } from "./KpiStrip";
 import { PowerFlowCard } from "./PowerFlowCard";
 import { useGenerators } from "./GeneratorsProvider";
 import "./generator-six-card.css";
+import "./operator-card-refinement.css";
 
 type View = "principal" | "compacto" | "lista";
 
@@ -54,7 +55,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
     [generators, status, query],
   );
 
-  const pageSize = view === "principal" ? 5 : view === "lista" ? 12 : 8;
+  const pageSize = view === "principal" ? 5 : view === "lista" ? 12 : 6;
   const pages = Math.max(1, Math.ceil(items.length / pageSize));
   const page = Math.min(group, pages - 1);
   const visible = items.slice(page * pageSize, page * pageSize + pageSize);
@@ -194,7 +195,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
           )}
 
           {view === "compacto" && (
-            <div className="scroll-slim grid h-full min-h-0 min-w-0 grid-cols-1 content-start gap-2 overflow-auto p-0.5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+            <div className="scroll-slim grid h-full min-h-0 min-w-0 grid-cols-1 content-start gap-2 overflow-auto p-0.5">
               {visible.map((generator) => (
                 <CompactCard key={generator.id} gen={generator} />
               ))}
