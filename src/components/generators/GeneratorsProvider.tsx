@@ -12,6 +12,7 @@ import {
 import { useAuth } from "@/components/auth/AuthProvider";
 import { CONTROLLER_MODELS, GEN_SITES, type Generator } from "@/data/generators";
 import { ApiError, rcApi, type GeneratorTransport } from "@/lib/api";
+import { httpRequest } from "@/lib/http-client";
 import { industrialApi } from "@/lib/industrial-api";
 
 // Atualização operacional do inventário/overlay; não altera a cadência de comunicação do controlador.
@@ -19,6 +20,8 @@ const GENERATOR_REFRESH_MS = 1000;
 
 type CreateInput = {
   tag?: string | undefined;
+  name?: string | undefined;
+  customer?: string | undefined;
   controller: string;
   site: string;
   ip?: string | undefined;
@@ -145,15 +148,22 @@ export function GeneratorsProvider({ children }: { children: ReactNode }) {
 
       try {
         const ip = input.ip?.trim();
-        await rcApi.generators.create({
-          tag,
-          controller,
-          site,
-          ...(ip ? { ip } : {}),
-          ...(input.transport ? { transport: input.transport } : {}),
-          ...(input.listenPort != null ? { listenPort: input.listenPort } : {}),
-          ...(input.modbusUnit != null ? { modbusUnit: input.modbusUnit } : {}),
-          ...(input.rapidDeviceNum != null ? { rapidDeviceNum: input.rapidDeviceNum } : {}),
+        const name = input.name?.trim();
+        const customer = input.customer?.trim();
+        await httpRequest<Generator>("/api/generators", {
+          method: "POST",
+          body: JSON.stringify({
+            tag,
+            controller,
+            site,
+            ...(name ? { name } : {}),
+            ...(customer ? { customer } : {}),
+            ...(ip ? { ip } : {}),
+            ...(input.transport ? { transport: input.transport } : {}),
+            ...(input.listenPort != null ? { listenPort: input.listenPort } : {}),
+            ...(input.modbusUnit != null ? { modbusUnit: input.modbusUnit } : {}),
+            ...(input.rapidDeviceNum != null ? { rapidDeviceNum: input.rapidDeviceNum } : {}),
+          }),
         });
         await refresh();
         return null;
@@ -169,6 +179,8 @@ export function GeneratorsProvider({ children }: { children: ReactNode }) {
       try {
         const payload = {
           ...(input.tag != null ? { tag: input.tag.trim().toUpperCase() } : {}),
+          ...(input.name != null ? { name: input.name.trim() } : {}),
+          ...(input.customer != null ? { customer: input.customer.trim() } : {}),
           ...(input.site != null ? { site: input.site.trim() } : {}),
           ...(input.ip != null ? { ip: input.ip.trim() } : {}),
           ...(input.transport != null ? { transport: input.transport } : {}),
@@ -177,7 +189,10 @@ export function GeneratorsProvider({ children }: { children: ReactNode }) {
           ...(input.rapidDeviceNum != null ? { rapidDeviceNum: input.rapidDeviceNum } : {}),
           ...(input.enabled != null ? { enabled: input.enabled } : {}),
         };
-        await rcApi.generators.update(id, payload);
+        await httpRequest<Generator>(`/api/generators/${encodeURIComponent(id)}`, {
+          method: "PATCH",
+          body: JSON.stringify(payload),
+        });
         await refresh();
         return null;
       } catch (err) {
