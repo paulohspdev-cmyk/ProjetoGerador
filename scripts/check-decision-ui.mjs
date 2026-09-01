@@ -119,14 +119,26 @@ for (const marker of [
 
 const health = read("src/components/generators/generator-health.ts");
 for (const marker of [
-  "oilTone",
-  "coolantTone",
-  "fuelTone",
-  "alternatorTone",
-  "maintenanceTone",
+  "toneFromLimit",
+  "percentFromLimit",
+  "gen.metricLimits",
   "visibleMeterPercent",
 ]) {
-  if (!health.includes(marker)) failures.push(`semáforo compartilhado perdeu regra: ${marker}`);
+  if (!health.includes(marker)) failures.push(`semáforo compartilhado perdeu regra segura: ${marker}`);
+}
+for (const forbidden of [
+  "oilTone(",
+  "coolantTone(",
+  "fuelTone(",
+  "alternatorTone(",
+  "maintenanceTone(",
+  "value < 2",
+  "value > 105",
+  ": 1000",
+]) {
+  if (health.includes(forbidden)) {
+    failures.push(`semáforo compartilhado voltou a inferir limite industrial: ${forbidden}`);
+  }
 }
 
 const cardCss = read("src/components/generators/generator-six-card.css");
@@ -149,5 +161,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  "Decision UI check OK: dashboard, card vertical original, compacto clássico, lista completa e guardrails industriais validados.",
+  "Decision UI check OK: dashboard, card vertical original, compacto clássico, lista completa e limites industriais homologáveis validados.",
 );
