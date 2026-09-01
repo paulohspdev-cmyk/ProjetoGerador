@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -121,21 +122,40 @@ export function ScadaOpsProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<OpsState>(empty);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
+  const refreshInFlight = useRef<Promise<void> | null>(null);
 
-  const refresh = useCallback(async () => {
-    try {
-      const payload = await rcApi.ops.bootstrap();
-      setState(stateFromPayload(payload));
-      setError("");
-    } catch (err) {
-      setError(message(err, "Falha ao carregar dados operacionais."));
-    } finally {
-      setReady(true);
-    }
+  const refresh = useCallback(() => {
+    if (refreshInFlight.current) return refreshInFlight.current;
+    const task = (async () => {
+      try {
+        const payload = await rcApi.ops.bootstrap();
+        setState(stateFromPayload(payload));
+        setError("");
+      } catch (err) {
+        setError(message(err, "Falha ao carregar dados operacionais."));
+      } finally {
+        setReady(true);
+      }
+    })();
+    refreshInFlight.current = task.finally(() => {
+      refreshInFlight.current = null;
+    });
+    return refreshInFlight.current;
   }, []);
 
   useEffect(() => {
     void refresh();
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void refresh();
+    }, 15_000);
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") void refresh();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [refresh]);
 
   const switches = useMemo(() => {
