@@ -92,6 +92,8 @@ jobs:
           grep -q 'MaintenanceHubScreen' src/components/scada/registry.ts
           grep -q 'MaintenanceV3Screen' src/components/scada/MaintenanceHubScreen.tsx
           grep -q 'EscalationV3Screen' src/components/scada/registry.ts
+          grep -q 'refreshInFlight' src/components/generators/GeneratorsProvider.tsx
+          grep -q 'document.hidden' src/components/generators/GeneratorsProvider.tsx
           if grep -R -n -E 'Generator Freq\.|autoKwScale|meterColor|batt < 12|n < 12\.2|n < 11\.5' src/components/generators --include='*.ts' --include='*.tsx'; then
             echo 'ERRO: voltou lógica visual/telemetria não homologada no frontend.' >&2
             exit 1
@@ -167,6 +169,12 @@ jobs:
           PYTHONPATH: .
         run: python tests/production_hardening.py
 
+      - name: Backend timeout de provisionamento privilegiado
+        working-directory: backend
+        env:
+          PYTHONPATH: .
+        run: python tests/provision_timeout.py
+
       - name: Instaladores Bash
         run: |
           set -euo pipefail
@@ -203,6 +211,9 @@ jobs:
           grep -q 'rc-geradores-worker.service' ops/install.sh
           grep -q 'rc-geradores-provision.service' ops/install.sh
           grep -q '^RC_PROVISION_SOCKET=' ops/rc-geradores.env.example
+          grep -q '^RC_PROVISION_OPERATION_TIMEOUT=' ops/rc-geradores.env.example
+          grep -q '^RC_MODBUS_DEVICE_TIMEOUT_MS=' ops/rc-geradores.env.example
+          grep -q '^RC_RAPID_READER_TIMEOUT=' ops/rc-geradores.env.example
           grep -q '^RC_LOGIN_MAX_FAILURES=' ops/rc-geradores.env.example
           grep -q '^RC_BACKUP_RETENTION=' ops/rc-geradores.env.example
           grep -q '^RC_RAPID_REQUIRE_ALLOWLIST=' ops/rc-geradores.env.example
@@ -222,6 +233,8 @@ jobs:
           grep -q 'preservando identidade atual' ops/bootstrap_ig200.py
           grep -q 'historyPreserved' rapid/provisioning/deprovision_generator.py
           grep -q 'DEPROVISION_CONFIRMED' backend/app/provision_service.py
+          grep -q 'start_new_session=True' backend/app/provision_service.py
+          grep -q '_terminate_process' backend/app/provision_service.py
           grep -q 'RETIRAR' backend/app/domain_routes.py
           grep -q 'deploy_release_v2.sh' ops/deploy_release.sh
           grep -q 'Git HEAD: OK' ops/deploy_release_v2.sh
@@ -236,6 +249,8 @@ jobs:
           grep -q 'bridge.resolve_ig200 = resolve_ig200_bound_device' backend/app/bridge_runtime.py
           grep -q 'int(item.get("rapid_device_num") or 0) == device_num' backend/app/bridge_runtime.py
           grep -q '"device": rapid_device' backend/app/control.py
+          grep -q '_validated_binding' backend/app/control.py
+          grep -q 'pack_is_production_ready' backend/app/control.py
           if grep -q 'rapid_device != 200' backend/app/control.py; then
             echo 'ERRO: control.py voltou a restringir o controle ao Device 200.' >&2
             exit 1

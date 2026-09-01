@@ -11,7 +11,7 @@ os.environ["RC_DATA_DIR"] = tmp.name
 os.environ["RC_DB_FILE"] = str(Path(tmp.name) / "test.db")
 os.environ["RC_RAPID_BINDINGS"] = str(Path(tmp.name) / "bindings.json")
 
-from app import bridge_runtime, control, db  # noqa: E402
+from app import bridge, bridge_runtime, control, db  # noqa: E402
 
 
 db.init_db()
@@ -103,6 +103,42 @@ async def validate_payload():
     assert payload["confirm"] == "REMOTE_CONTROL_CONFIRMED"
 
 
+async def validate_unit_backoff():
+    """Um Unit em timeout deve falhar rápido sem impedir outro Unit de responder."""
+    port = bridge_runtime.HardenedBridgePort(15999)
+    calls: list[int] = []
+
+    async def fake_request(unit, _pdu):
+        calls.append(int(unit))
+        if int(unit) == 15:
+            raise asyncio.TimeoutError()
+        return bytes([3, 2, 0, 1])
+
+    port.request_locked = fake_request
+    pdu = bridge.read_holding_pdu(1000, 1)
+
+    first = await port.transact(1, 15, pdu)
+    assert first == bridge.exception_pdu(3, 11)
+    assert calls == [15]
+
+    # A segunda tentativa do mesmo Unit não deve consumir outro timeout físico.
+    second = await port.transact(2, 15, pdu)
+    assert second == bridge.exception_pdu(3, 11)
+    assert calls == [15]
+
+    # Outro Unit na mesma porta continua tendo acesso à sessão compartilhada.
+    healthy = await port.transact(3, 16, pdu)
+    assert healthy == bytes([3, 2, 0, 1])
+    assert calls == [15, 16]
+
+    snapshot = port.snapshot()
+    assert snapshot["unitBackoffSkips"] == 1
+    assert snapshot["unitHealth"]["15"]["consecutiveTimeouts"] == 1
+    assert snapshot["unitHealth"]["15"]["backoffRemainingSeconds"] > 0
+    assert snapshot["unitHealth"]["16"]["lastResponseAt"] is not None
+
+
 asyncio.run(validate_payload())
+asyncio.run(validate_unit_backoff())
 print("RC Geradores multi-device control smoke: OK")
 tmp.cleanup()

@@ -28,6 +28,11 @@ STATUS_FILE = Path(os.environ.get("RC_BRIDGE_STATUS_FILE", "/run/rc-geradores/br
 CONNECT_RATE_LIMIT = max(1, int(os.environ.get("RC_RAPID_CONNECT_RATE_LIMIT", "30")))
 REPLACE_ACTIVE_AFTER = max(5, int(os.environ.get("RC_RAPID_REPLACE_ACTIVE_AFTER", "30")))
 REQUIRE_ALLOWLIST = os.environ.get("RC_RAPID_REQUIRE_ALLOWLIST", "0").strip() == "1"
+UNIT_BACKOFF_BASE = max(0.5, float(os.environ.get("RC_RAPID_UNIT_BACKOFF_BASE", "5")))
+UNIT_BACKOFF_MAX = max(
+    UNIT_BACKOFF_BASE,
+    float(os.environ.get("RC_RAPID_UNIT_BACKOFF_MAX", "30")),
+)
 
 FRAMING_MODBUS_TCP = "modbus_tcp"
 FRAMING_MODBUS_RTU = "modbus_rtu"
@@ -156,7 +161,7 @@ def _validate_rtu_crc(frame: bytes) -> None:
 
 
 class HardenedBridgePort(bridge.BridgePort):
-    """Adiciona proteção de peer sem alterar o protocolo Modbus TCP histórico."""
+    """Protege peer e impede um Unit em timeout de monopolizar a linha compartilhada."""
 
     remote_framing = FRAMING_MODBUS_TCP
 
@@ -164,6 +169,11 @@ class HardenedBridgePort(bridge.BridgePort):
         super().__init__(remote_port)
         self._attempts = defaultdict(deque)
         self.rejected_connections = 0
+        self._unit_consecutive_timeouts: dict[int, int] = {}
+        self._unit_backoff_until: dict[int, float] = {}
+        self._unit_last_timeout_at: dict[int, int] = {}
+        self._unit_last_response_at: dict[int, int] = {}
+        self.unit_backoff_skips = 0
 
     @staticmethod
     def _peer_ip(peer):
@@ -223,6 +233,31 @@ class HardenedBridgePort(bridge.BridgePort):
         except Exception:
             pass
 
+    def _clear_unit_backoff(self) -> None:
+        self._unit_consecutive_timeouts.clear()
+        self._unit_backoff_until.clear()
+        self._unit_last_timeout_at.clear()
+        self._unit_last_response_at.clear()
+
+    def _unit_health_snapshot(self) -> dict[str, dict]:
+        now = time.monotonic()
+        units = set(self._unit_consecutive_timeouts)
+        units.update(self._unit_backoff_until)
+        units.update(self._unit_last_timeout_at)
+        units.update(self._unit_last_response_at)
+        return {
+            str(unit): {
+                "consecutiveTimeouts": int(self._unit_consecutive_timeouts.get(unit, 0)),
+                "backoffRemainingSeconds": round(
+                    max(0.0, self._unit_backoff_until.get(unit, 0.0) - now),
+                    3,
+                ),
+                "lastTimeoutAt": self._unit_last_timeout_at.get(unit),
+                "lastResponseAt": self._unit_last_response_at.get(unit),
+            }
+            for unit in sorted(units)
+        }
+
     async def accept_remote(self, reader, writer):
         peer = writer.get_extra_info("peername")
         address = self._peer_ip(peer)
@@ -237,7 +272,60 @@ class HardenedBridgePort(bridge.BridgePort):
         if self._active_peer_is_protected(address, now_epoch):
             await self._reject(writer, "sessão legítima de outro peer ainda está ativa")
             return
+        # Uma nova sessão física dá a todos os Units uma oportunidade imediata de recuperação.
+        self._clear_unit_backoff()
         await super().accept_remote(reader, writer)
+
+    async def transact(self, local_tid, unit, pdu):
+        if not pdu:
+            return bridge.exception_pdu(0, 3)
+        function = pdu[0]
+        if function not in bridge.READ_FUNCTIONS:
+            return bridge.exception_pdu(function, 1)
+
+        unit = int(unit)
+        async with self.remote_lock:
+            loop = asyncio.get_running_loop()
+            now_mono = loop.time()
+            until = self._unit_backoff_until.get(unit, 0.0)
+            if until > now_mono:
+                self.unit_backoff_skips += 1
+                return bridge.exception_pdu(function, 11)
+
+            writer = self.remote_writer
+            try:
+                response = await self.request_locked(unit, pdu)
+                self._unit_consecutive_timeouts[unit] = 0
+                self._unit_backoff_until.pop(unit, None)
+                self._unit_last_response_at[unit] = int(time.time())
+                return response
+            except asyncio.TimeoutError:
+                self.timeouts += 1
+                failures = int(self._unit_consecutive_timeouts.get(unit, 0)) + 1
+                self._unit_consecutive_timeouts[unit] = failures
+                delay = min(UNIT_BACKOFF_MAX, UNIT_BACKOFF_BASE * (2 ** min(failures - 1, 8)))
+                self._unit_backoff_until[unit] = loop.time() + delay
+                self._unit_last_timeout_at[unit] = int(time.time())
+                bridge.log(
+                    f"porta {self.remote_port}: timeout Unit {unit} FC{function:02d}; "
+                    f"backoff {delay:.1f}s sem derrubar os demais Units"
+                )
+                return bridge.exception_pdu(function, 11)
+            except (ConnectionError, asyncio.IncompleteReadError) as exc:
+                self.errors += 1
+                bridge.log(
+                    f"porta {self.remote_port}: conexão perdida Unit {unit} FC{function:02d}: "
+                    f"{type(exc).__name__}"
+                )
+                await self.clear_remote(only_writer=writer)
+                return bridge.exception_pdu(function, 11)
+            except Exception as exc:
+                self.errors += 1
+                bridge.log(
+                    f"porta {self.remote_port}: erro remoto Unit {unit} FC{function:02d}: {exc}"
+                )
+                await self.clear_remote(only_writer=writer)
+                return bridge.exception_pdu(function, 11)
 
     def snapshot(self):
         return {
@@ -248,6 +336,10 @@ class HardenedBridgePort(bridge.BridgePort):
             "peerAllowlistRequired": REQUIRE_ALLOWLIST,
             "connectRateLimitPerMinute": CONNECT_RATE_LIMIT,
             "activePeerProtectionSeconds": REPLACE_ACTIVE_AFTER,
+            "unitBackoffBaseSeconds": UNIT_BACKOFF_BASE,
+            "unitBackoffMaxSeconds": UNIT_BACKOFF_MAX,
+            "unitBackoffSkips": self.unit_backoff_skips,
+            "unitHealth": self._unit_health_snapshot(),
         }
 
 

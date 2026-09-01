@@ -1,17 +1,35 @@
 import json
 import math
+import os
 import subprocess
 import threading
 import time
 from datetime import datetime, timedelta, timezone
 
-from .config import RAPID_BINDINGS_FILE, RAPID_CACHE_TTL, RAPID_COMM_CONFIG, RAPID_READER_DLL
+from .config import (
+    BRIDGE_STATUS_FILE,
+    RAPID_BINDINGS_FILE,
+    RAPID_CACHE_TTL,
+    RAPID_COMM_CONFIG,
+    RAPID_READER_DLL,
+)
 from .controller_library import pack_for_model
 
-_cache = {"at": 0.0, "channels": {}, "error": ""}
+_cache = {"at": 0.0, "channels": {}, "error": "", "requested": set()}
 _cache_lock = threading.Lock()
 
 _IG200_UNDEFINED = {-32768.0, 32768.0, -2147483648.0, 2147483648.0}
+RAPID_READER_TIMEOUT = max(1.0, float(os.environ.get("RC_RAPID_READER_TIMEOUT", "4")))
+BRIDGE_STATUS_STALE_SECONDS = max(
+    5.0,
+    float(os.environ.get("RC_BRIDGE_STATUS_STALE_SECONDS", "15")),
+)
+_CONTROLLER_HEALTH_KEYS = (
+    "rpm",
+    "battery_voltage",
+    "controller_mode_raw",
+    "engine_state_raw",
+)
 
 
 def load_bindings():
@@ -22,21 +40,46 @@ def load_bindings():
         return []
 
 
+def _binding_identity_matches(generator, item):
+    return (
+        str(item.get("controller_type", "")).upper()
+        == str(generator.get("controller_type", "")).upper()
+        and str(item.get("controller_model", "")).strip().lower()
+        == str(generator.get("controller_model", "")).strip().lower()
+        and str(item.get("transport") or "") == str(generator.get("transport") or "")
+        and int(item.get("listen_port") or 0) == int(generator.get("listen_port") or 0)
+        and int(item.get("modbus_unit") or 0) == int(generator.get("modbus_unit") or 0)
+        and (
+            not generator.get("rapid_device_num")
+            or int(item.get("rapid_device_num") or 0)
+            == int(generator.get("rapid_device_num") or 0)
+        )
+    )
+
+
 def binding_for(generator, bindings):
-    ctype = str(generator.get("controller_type", "")).upper()
-    model = str(generator.get("controller_model", "")).strip().lower()
-    port = int(generator.get("listen_port") or 0)
-    unit = int(generator.get("modbus_unit") or 0)
-    rapid_device = generator.get("rapid_device_num")
+    """Resolve binding por generator_id e só usa fallback para legado sem dono.
+
+    Um binding já associado a outro generator_id nunca pode ser adotado apenas
+    porque porta/Unit/Device coincidem.
+    """
+    generator_id = str(generator.get("id") or "")
+    if generator_id:
+        exact = next(
+            (
+                item
+                for item in bindings
+                if str(item.get("generator_id") or "") == generator_id
+            ),
+            None,
+        )
+        if exact is not None:
+            return exact if _binding_identity_matches(generator, exact) else None
 
     for item in bindings:
-        if str(item.get("controller_type", "")).upper() != ctype:
+        if item.get("generator_id"):
             continue
-        if str(item.get("controller_model", "")).strip().lower() != model:
-            continue
-        if rapid_device and int(item.get("rapid_device_num") or 0) == int(rapid_device):
-            return item
-        if int(item.get("listen_port") or 0) == port and int(item.get("modbus_unit") or 0) == unit:
+        if _binding_identity_matches(generator, item):
             return item
     return None
 
@@ -60,26 +103,39 @@ def _is_undefined_raw(generator, raw_value):
 
 
 def _cache_hit(nums, now):
-    return now - _cache["at"] < RAPID_CACHE_TTL and all(n in _cache["channels"] for n in nums)
+    if now - _cache["at"] >= RAPID_CACHE_TTL:
+        return False
+    requested = set(_cache.get("requested") or set())
+    if _cache.get("error"):
+        return set(nums).issubset(requested)
+    return all(n in _cache["channels"] for n in nums)
+
+
+def _cache_result(nums, channels, error=""):
+    _cache["at"] = time.monotonic()
+    _cache["channels"] = dict(channels)
+    _cache["error"] = str(error or "")
+    _cache["requested"] = set(nums)
 
 
 def read_channels(channel_nums):
-    """Lê todos os canais em lote e evita stampede do processo .NET quando o cache expira."""
+    """Lê canais em lote, com cache positivo e negativo contra stampede .NET."""
     nums = sorted({int(n) for n in channel_nums})
     if not nums:
         return {}, ""
 
     now = time.monotonic()
     if _cache_hit(nums, now):
-        return {n: _cache["channels"][n] for n in nums}, _cache["error"]
+        return {n: _cache["channels"][n] for n in nums if n in _cache["channels"]}, _cache["error"]
 
     with _cache_lock:
         now = time.monotonic()
         if _cache_hit(nums, now):
-            return {n: _cache["channels"][n] for n in nums}, _cache["error"]
+            return {n: _cache["channels"][n] for n in nums if n in _cache["channels"]}, _cache["error"]
 
         ready_error = _reader_ready()
         if ready_error:
+            _cache_result(nums, {}, ready_error)
             return {}, ready_error
 
         cmd = [
@@ -90,13 +146,23 @@ def read_channels(channel_nums):
             *[str(n) for n in nums],
         ]
         try:
-            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=4, check=False)
+            proc = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=RAPID_READER_TIMEOUT,
+                check=False,
+            )
         except Exception as exc:
-            return {}, f"Falha ao consultar Rapid SCADA: {exc}"
+            error = f"Falha ao consultar Rapid SCADA: {exc}"
+            _cache_result(nums, {}, error)
+            return {}, error
 
         if proc.returncode != 0:
             detail = (proc.stderr or proc.stdout or "erro desconhecido").strip()
-            return {}, f"Rapid SCADA: {detail[:300]}"
+            error = f"Rapid SCADA: {detail[:300]}"
+            _cache_result(nums, {}, error)
+            return {}, error
 
         try:
             payload = json.loads(proc.stdout)
@@ -109,12 +175,70 @@ def read_channels(channel_nums):
                 for item in payload.get("channels", [])
             }
         except Exception as exc:
-            return {}, f"Resposta inválida do Rapid SCADA: {exc}"
+            error = f"Resposta inválida do Rapid SCADA: {exc}"
+            _cache_result(nums, {}, error)
+            return {}, error
 
-        _cache["at"] = time.monotonic()
-        _cache["channels"] = channels
-        _cache["error"] = ""
+        _cache_result(nums, channels, "")
         return channels, ""
+
+
+def _load_bridge_status():
+    try:
+        payload = json.loads(BRIDGE_STATUS_FILE.read_text(encoding="utf-8"))
+        if not isinstance(payload, dict):
+            return {}
+        return payload
+    except Exception:
+        return {}
+
+
+def _transport_health(generator, bridge_status):
+    transport = str(generator.get("transport") or "reverse_tcp")
+    base = {
+        "transport": "unknown",
+        "controller": "unknown",
+        "telemetry": "unknown",
+        "bridgeStatusFresh": None,
+        "bridgeUpdatedAt": None,
+        "portLastRxAt": None,
+        "portLastTxAt": None,
+        "portTimeouts": None,
+        "portErrors": None,
+    }
+    if transport != "reverse_tcp":
+        return base
+
+    updated_at = int(bridge_status.get("updatedAt") or 0)
+    fresh = bool(updated_at and time.time() - updated_at <= BRIDGE_STATUS_STALE_SECONDS)
+    base["bridgeStatusFresh"] = fresh
+    base["bridgeUpdatedAt"] = updated_at or None
+    if not fresh:
+        return base
+
+    port = int(generator.get("listen_port") or 0)
+    item = next(
+        (
+            row
+            for row in bridge_status.get("ports", [])
+            if int(row.get("remotePort") or 0) == port
+        ),
+        None,
+    )
+    if not item:
+        base["transport"] = "disconnected"
+        return base
+
+    base.update(
+        {
+            "transport": "connected" if bool(item.get("connected")) else "disconnected",
+            "portLastRxAt": item.get("lastRxAt"),
+            "portLastTxAt": item.get("lastTxAt"),
+            "portTimeouts": int(item.get("timeouts") or 0),
+            "portErrors": int(item.get("errors") or 0),
+        }
+    )
+    return base
 
 
 def trend_for_generator(generator, metric, hours=24, archive_bit=1):
@@ -257,7 +381,11 @@ def _metric_limits(generator) -> dict:
 def _effective_capabilities(generator, status: str, binding_present: bool) -> dict[str, bool]:
     pack = _pack(generator)
     declared = (pack or {}).get("capabilities") or {}
-    production = bool(pack and pack.get("lifecycle") == "production" and pack.get("status") == "field_validated")
+    production = bool(
+        pack
+        and pack.get("lifecycle") == "production"
+        and pack.get("status") == "field_validated"
+    )
     online = status == "online"
     return {
         "telemetry": bool(production and binding_present and declared.get("telemetry")),
@@ -293,6 +421,13 @@ def _derive_breaker_feedback(values):
     return ["mcb_closed", "gcb_closed"]
 
 
+def _has_controller_health(values, configured):
+    preferred = [key for key in _CONTROLLER_HEALTH_KEYS if key in set(configured)]
+    if preferred:
+        return any(key in values for key in preferred)
+    return bool(values)
+
+
 def _frontend_generator(
     generator,
     values,
@@ -301,11 +436,12 @@ def _frontend_generator(
     defined=None,
     configured_metrics=None,
     binding_present=False,
+    health=None,
 ):
     enabled = bool(generator.get("enabled"))
     rpm = int(values.get("rpm") or 0)
     online = status == "online"
-    fault = status == "fault"
+    warning = status in {"fault", "connected", "partial"}
     defined_metrics = sorted(set(defined or []))
     configured_metrics = sorted(set(configured_metrics or []))
     units = _metric_units(generator, configured_metrics)
@@ -318,6 +454,15 @@ def _frontend_generator(
         }
         for key in configured_metrics
     }
+    ui_status = (
+        "nao_configurado"
+        if not enabled
+        else "online"
+        if online
+        else "alerta"
+        if warning
+        else "offline"
+    )
 
     return {
         "id": generator["id"],
@@ -328,13 +473,7 @@ def _frontend_generator(
         "controllerType": generator.get("controller_type") or "",
         "site": generator.get("site") or "",
         "enabled": enabled,
-        "status": "alerta"
-        if fault
-        else "online"
-        if online
-        else "offline"
-        if enabled
-        else "nao_configurado",
+        "status": ui_status,
         "mode": _mode(values),
         "ip": generator.get("host")
         or (f"TCP {generator.get('listen_port')}" if generator.get("listen_port") else "—"),
@@ -354,7 +493,7 @@ def _frontend_generator(
         "maintenance": float(values.get("maintenance_hours") or 0),
         "runHours": float(values.get("run_hours") or 0),
         "latency": None,
-        "alarms": 1 if fault else int(values.get("alarm_count") or 0),
+        "alarms": 1 if status == "fault" else int(values.get("alarm_count") or 0),
         "mcb": bool(values.get("mcb_closed", False)),
         "gcb": bool(values.get("gcb_closed", False)),
         "mains": {
@@ -370,7 +509,6 @@ def _frontend_generator(
             "l12": float(values.get("voltage_l1_l2") or 0),
         },
         "metrics": dict(values),
-        # Compatibilidade: availableMetrics passa a significar valor definido agora.
         "availableMetrics": defined_metrics,
         "definedMetrics": defined_metrics,
         "configuredMetrics": configured_metrics,
@@ -379,15 +517,17 @@ def _frontend_generator(
         "metricLimits": _metric_limits(generator),
         "capabilities": _effective_capabilities(generator, status, binding_present),
         "telemetrySource": "rapid_scada"
-        if status in {"online", "fault", "connected"}
+        if binding_present and status in {"online", "fault", "connected", "partial"}
         else "none",
         "rapidDeviceNum": generator.get("rapid_device_num"),
         "lastError": error,
+        "health": health or {},
     }
 
 
 def _overlay_generators(generators):
     bindings = load_bindings()
+    bridge_status = _load_bridge_status()
     matched = []
     all_channels = []
 
@@ -404,7 +544,10 @@ def _overlay_generators(generators):
 
     for generator, binding in zip(generators, matched):
         configured = sorted((binding.get("channels") or {}).keys()) if binding else []
+        health = _transport_health(generator, bridge_status)
+
         if not generator.get("enabled"):
+            health.update({"controller": "unknown", "telemetry": "not_configured"})
             result.append(
                 _frontend_generator(
                     generator,
@@ -413,19 +556,24 @@ def _overlay_generators(generators):
                     defined=[],
                     configured_metrics=configured,
                     binding_present=bool(binding),
+                    health=health,
                 )
             )
             continue
+
         if not binding:
+            health.update({"controller": "unknown", "telemetry": "not_configured"})
+            state = "connected" if health.get("transport") == "connected" else "offline"
             result.append(
                 _frontend_generator(
                     generator,
                     {},
-                    "offline",
+                    state,
                     "Sem binding Rapid SCADA",
                     defined=[],
                     configured_metrics=[],
                     binding_present=False,
+                    health=health,
                 )
             )
             continue
@@ -461,33 +609,49 @@ def _overlay_generators(generators):
         defined = sorted(values.keys())
 
         if read_error:
+            health.update({"controller": "unknown", "telemetry": "error"})
+            state = "offline" if health.get("transport") == "disconnected" else "fault"
             result.append(
                 _frontend_generator(
                     generator,
                     {},
-                    "fault",
+                    state,
                     read_error,
                     defined=[],
                     configured_metrics=configured,
                     binding_present=True,
+                    health=health,
                 )
             )
         elif values:
-            detail = ""
+            controller_ok = _has_controller_health(values, configured)
+            health.update(
+                {
+                    "controller": "responding" if controller_ok else "partial",
+                    "telemetry": "fresh" if controller_ok and not invalid_values else "partial",
+                }
+            )
+            detail_parts = []
+            if not controller_ok:
+                detail_parts.append("Telemetria parcial sem métrica de saúde da controladora")
             if invalid_values:
-                detail = "Canais Rapid com valor inválido: " + ", ".join(sorted(invalid_values))
+                detail_parts.append(
+                    "Canais Rapid com valor inválido: " + ", ".join(sorted(invalid_values))
+                )
             result.append(
                 _frontend_generator(
                     generator,
                     values,
-                    "online",
-                    detail,
+                    "online" if controller_ok else "partial",
+                    "; ".join(detail_parts),
                     defined=defined,
                     configured_metrics=configured,
                     binding_present=True,
+                    health=health,
                 )
             )
         elif invalid_values:
+            health.update({"controller": "unknown", "telemetry": "invalid"})
             result.append(
                 _frontend_generator(
                     generator,
@@ -498,18 +662,22 @@ def _overlay_generators(generators):
                     defined=[],
                     configured_metrics=configured,
                     binding_present=True,
+                    health=health,
                 )
             )
         else:
+            health.update({"controller": "unknown", "telemetry": "no_data"})
+            state = "offline" if health.get("transport") == "disconnected" else "connected"
             result.append(
                 _frontend_generator(
                     generator,
                     {},
-                    "connected",
-                    "Rapid SCADA conectado, canais ainda sem dados definidos",
+                    state,
+                    "Rapid SCADA sem dados definidos para esta controladora",
                     defined=[],
                     configured_metrics=configured,
                     binding_present=True,
+                    health=health,
                 )
             )
 
@@ -533,6 +701,11 @@ def overlay_generators(generators):
                 defined=[],
                 configured_metrics=[],
                 binding_present=False,
+                health={
+                    "transport": "unknown",
+                    "controller": "unknown",
+                    "telemetry": "error",
+                },
             )
             for generator in generators
         ]

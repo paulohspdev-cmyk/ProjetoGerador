@@ -17,6 +17,10 @@ function modeClass(mode: Generator["mode"], known: boolean) {
       : "text-muted-foreground";
 }
 
+function displayName(gen: Generator) {
+  return gen.name?.trim() || gen.tag;
+}
+
 function OpenLink({ id, className }: { id: string; className?: string }) {
   return (
     <Link
@@ -97,9 +101,9 @@ function MobileRow({ items }: { items: Generator[] }) {
           <article key={gen.id} className="rounded-lg border border-border bg-card p-3">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <h3 className="truncate text-sm font-bold">{gen.tag}</h3>
+                <h3 className="truncate text-sm font-bold">{displayName(gen)}</h3>
                 <p className="truncate text-[11px] text-muted-foreground">
-                  {gen.controller} · {gen.site}
+                  {gen.tag} · {gen.controller} · {gen.site}
                 </p>
               </div>
               <StatusPill status={gen.status} />
@@ -216,9 +220,9 @@ export function GeneratorTable({ items }: { items: Generator[] }) {
                   className="border-b border-border/60 transition-colors hover:bg-secondary/30"
                 >
                   <td className="px-2 py-2">
-                    <div className="font-bold">{gen.tag}</div>
-                    <div className="max-w-36 truncate text-[9px] text-muted-foreground">
-                      {gen.controller} · {gen.site}
+                    <div className="max-w-44 truncate font-bold">{displayName(gen)}</div>
+                    <div className="max-w-44 truncate text-[9px] text-muted-foreground">
+                      {gen.tag} · {gen.controller} · {gen.site}
                     </div>
                   </td>
                   <td className="px-2 py-2">

@@ -104,12 +104,46 @@ path = sys.argv[1]
 conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
 try:
     rows = [r[0] for r in conn.execute("PRAGMA quick_check")]
+    if rows != ["ok"]:
+        raise SystemExit("SQLite quick_check falhou: " + "; ".join(rows))
+
+    reverse_conflicts = conn.execute(
+        """
+        SELECT listen_port, modbus_unit, COUNT(*) AS qty,
+               GROUP_CONCAT(tag, ', ') AS tags
+        FROM generators
+        WHERE transport='reverse_tcp' AND listen_port > 0
+        GROUP BY listen_port, modbus_unit
+        HAVING COUNT(*) > 1
+        """
+    ).fetchall()
+    if reverse_conflicts:
+        detail = "; ".join(
+            f"porta {port}/Unit {unit}: {qty} ({tags})"
+            for port, unit, qty, tags in reverse_conflicts
+        )
+        raise SystemExit("Conflito de identidade reverse TCP antes da migração: " + detail)
+
+    device_conflicts = conn.execute(
+        """
+        SELECT rapid_device_num, COUNT(*) AS qty,
+               GROUP_CONCAT(tag, ', ') AS tags
+        FROM generators
+        WHERE rapid_device_num IS NOT NULL
+        GROUP BY rapid_device_num
+        HAVING COUNT(*) > 1
+        """
+    ).fetchall()
+    if device_conflicts:
+        detail = "; ".join(
+            f"Rapid Device {device}: {qty} ({tags})"
+            for device, qty, tags in device_conflicts
+        )
+        raise SystemExit("Conflito de Rapid Device antes da migração: " + detail)
 finally:
     conn.close()
-if rows != ["ok"]:
-    raise SystemExit("SQLite quick_check falhou: " + "; ".join(rows))
 PY
-  ok "SQLite atual íntegro: ${DB_FILE}"
+  ok "SQLite atual íntegro e sem identidades industriais duplicadas: ${DB_FILE}"
 else
   ok "banco ainda não existe; deploy fará inicialização"
 fi
