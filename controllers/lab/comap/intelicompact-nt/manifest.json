@@ -18,12 +18,6 @@
   "documentedTelemetry": [],
   "validatedTelemetry": [],
   "metricUnits": {},
-  "mapping": {
-    "kind": "modbus_register_export",
-    "readOnly": true,
-    "sourceFile": "",
-    "registers": {}
-  },
   "capabilities": {
     "telemetry": false,
     "start": false,
