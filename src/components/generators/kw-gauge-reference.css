@@ -1,7 +1,7 @@
 .generator-power-instrument {
   position: relative;
   display: grid;
-  min-height: 300px;
+  min-height: 194px;
   place-items: center;
   overflow: visible;
   border: 0;
@@ -11,9 +11,9 @@
 
 .comap-panel-v2 .generator-power-gauge {
   display: block;
-  width: min(100%, 356px);
+  width: min(100%, 272px);
   height: auto;
-  margin: 24px auto 0;
+  margin: 18px auto 0;
   overflow: visible;
 }
 
@@ -21,7 +21,7 @@
 .generator-gauge-zone {
   fill: none;
   stroke-linecap: butt;
-  stroke-width: 17;
+  stroke-width: 13px;
 }
 
 .generator-gauge-base {
@@ -30,46 +30,46 @@
 
 .generator-gauge-green {
   stroke: var(--online);
-  filter: drop-shadow(0 0 4px color-mix(in oklab, var(--online) 38%, transparent));
+  filter: drop-shadow(0 0 3px color-mix(in oklab, var(--online) 34%, transparent));
 }
 
 .generator-gauge-amber {
   stroke: var(--alert);
-  filter: drop-shadow(0 0 4px color-mix(in oklab, var(--alert) 34%, transparent));
+  filter: drop-shadow(0 0 3px color-mix(in oklab, var(--alert) 30%, transparent));
 }
 
 .generator-gauge-red {
   stroke: var(--offline);
-  filter: drop-shadow(0 0 4px color-mix(in oklab, var(--offline) 34%, transparent));
+  filter: drop-shadow(0 0 3px color-mix(in oklab, var(--offline) 30%, transparent));
 }
 
 .generator-gauge-tick {
-  stroke: color-mix(in oklab, var(--industrial-foreground) 74%, transparent);
-  stroke-width: 1.5;
+  stroke: color-mix(in oklab, var(--industrial-foreground) 72%, transparent);
+  stroke-width: 1.1;
 }
 
 .generator-gauge-tick.is-medium {
-  stroke: color-mix(in oklab, var(--industrial-foreground) 90%, transparent);
-  stroke-width: 2;
+  stroke: color-mix(in oklab, var(--industrial-foreground) 88%, transparent);
+  stroke-width: 1.5;
 }
 
 .generator-gauge-tick.is-major {
   stroke: var(--industrial-foreground);
-  stroke-width: 3.2;
+  stroke-width: 2.4;
 }
 
 .generator-gauge-scale {
   fill: var(--industrial-foreground);
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 9px;
   font-weight: 900;
 }
 
 .generator-gauge-needle {
   fill: color-mix(in oklab, var(--industrial-foreground) 96%, white 4%);
   stroke: color-mix(in oklab, white 62%, var(--industrial-muted));
-  stroke-width: 1.35;
-  filter: drop-shadow(0 2px 3px color-mix(in oklab, var(--background) 92%, transparent));
+  stroke-width: 1.1;
+  filter: drop-shadow(0 1px 2px color-mix(in oklab, var(--background) 92%, transparent));
   opacity: 1;
   transition: all 0.35s ease;
 }
@@ -83,38 +83,38 @@
 .generator-gauge-hub {
   fill: color-mix(in oklab, var(--industrial-foreground) 86%, var(--industrial-panel));
   stroke: color-mix(in oklab, var(--industrial-muted) 65%, white 35%);
-  stroke-width: 3;
-  filter: drop-shadow(0 2px 3px color-mix(in oklab, var(--background) 92%, transparent));
+  stroke-width: 2.4;
+  filter: drop-shadow(0 1px 2px color-mix(in oklab, var(--background) 92%, transparent));
 }
 
 .generator-gauge-hub-center {
   fill: var(--industrial-panel-strong);
   stroke: var(--industrial-foreground);
-  stroke-width: 1.25;
+  stroke-width: 1;
 }
 
 .generator-power-meta {
   position: absolute;
   z-index: 6;
-  top: 5px;
+  top: 2px;
   right: 0;
   display: grid;
-  width: 101px;
-  gap: 4px;
+  width: 84px;
+  gap: 3px;
 }
 
 .generator-power-meta > span {
   display: grid;
-  min-height: 27px;
-  grid-template-columns: 38px 1fr;
+  min-height: 21px;
+  grid-template-columns: 31px 1fr;
   align-items: center;
-  padding: 3px 6px;
+  padding: 2px 4px;
   border: 1px solid color-mix(in oklab, var(--industrial-border) 88%, white 12%);
   border-radius: 1px;
   background: color-mix(in oklab, var(--industrial-bg) 96%, transparent);
   color: var(--industrial-foreground);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 8px;
   line-height: 1;
 }
 
@@ -134,10 +134,10 @@
 .generator-power-readout {
   position: absolute;
   z-index: 5;
-  bottom: 17px;
+  bottom: 4px;
   left: 50%;
   display: flex;
-  min-width: 118px;
+  min-width: 78px;
   transform: translateX(-50%);
   flex-direction: column;
   align-items: center;
@@ -149,17 +149,17 @@
 .generator-power-readout strong {
   color: var(--industrial-foreground);
   font-family: var(--font-mono);
-  font-size: 52px;
+  font-size: 34px;
   font-weight: 900;
-  letter-spacing: -0.07em;
-  text-shadow: 0 2px 3px color-mix(in oklab, var(--background) 94%, transparent);
+  letter-spacing: -0.055em;
+  text-shadow: 0 1px 2px color-mix(in oklab, var(--background) 94%, transparent);
 }
 
 .generator-power-readout span {
-  margin-top: 7px;
+  margin-top: 4px;
   color: var(--industrial-foreground);
   font-family: var(--font-mono);
-  font-size: 15px;
+  font-size: 10px;
   font-weight: 900;
 }
 
@@ -167,27 +167,27 @@
   position: absolute;
   z-index: 6;
   right: 0;
-  bottom: 11px;
+  bottom: 3px;
   display: grid;
-  min-width: 102px;
-  min-height: 27px;
-  grid-template-columns: 22px 24px 1fr;
+  min-width: 88px;
+  min-height: 22px;
+  grid-template-columns: 18px 20px 1fr;
   align-items: center;
-  gap: 4px;
-  padding: 3px 7px 3px 5px;
+  gap: 3px;
+  padding: 2px 5px 2px 4px;
   border: 1px solid color-mix(in oklab, var(--alert) 74%, var(--industrial-border));
   border-radius: 1px;
   background: var(--alert);
   color: var(--industrial-bg);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 900;
-  box-shadow: 0 0 6px color-mix(in oklab, var(--alert) 26%, transparent);
+  box-shadow: 0 0 4px color-mix(in oklab, var(--alert) 24%, transparent);
 }
 
 .generator-battery-icon {
-  width: 21px;
-  height: 15px;
+  width: 17px;
+  height: 13px;
   fill: none;
   stroke: currentcolor;
   stroke-linecap: round;
@@ -196,7 +196,7 @@
 }
 
 .generator-battery-badge span {
-  font-size: 8px;
+  font-size: 7px;
   opacity: 0.8;
 }
 
@@ -213,11 +213,11 @@
 }
 
 .comap-panel-v2 .comap-power-gauge-block {
-  padding: 6px 8px 8px;
+  padding: 5px 7px 5px;
 }
 
 .comap-panel-v2 .power-gauge-heading {
-  min-height: 20px;
+  min-height: 18px;
   align-items: center;
 }
 
@@ -226,71 +226,92 @@
 }
 
 .comap-panel-v2 .engine-status-block {
-  padding-top: 6px !important;
-  padding-bottom: 6px !important;
+  padding-top: 5px !important;
+  padding-bottom: 5px !important;
 }
 
 .comap-panel-v2 .engine-status-block .comap-engine {
-  min-height: 20px;
+  min-height: 18px;
 }
 
 .comap-panel-v2 .comap-meter {
-  height: 7px;
+  width: 100%;
+  height: 6px;
   overflow: hidden;
-  border-color: color-mix(in oklab, var(--info) 58%, var(--industrial-border));
+  border-color: color-mix(in oklab, var(--info) 52%, var(--industrial-border));
   background: color-mix(in oklab, var(--industrial-bg) 92%, var(--industrial-panel));
 }
 
 .comap-panel-v2 .comap-meter > i {
   min-width: 0;
-  background: linear-gradient(
-    90deg,
-    color-mix(in oklab, var(--info) 76%, var(--online)),
-    var(--online)
-  ) !important;
-  box-shadow: 0 0 5px color-mix(in oklab, var(--online) 34%, transparent);
-  transition: width 0.4s ease;
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transition:
+    width 0.4s ease,
+    background 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.comap-panel-v2 .comap-meter.is-good > i {
+  background: var(--online);
+  box-shadow: 0 0 5px color-mix(in oklab, var(--online) 38%, transparent);
+}
+
+.comap-panel-v2 .comap-meter.is-warning > i {
+  background: var(--alert);
+  box-shadow: 0 0 5px color-mix(in oklab, var(--alert) 35%, transparent);
+}
+
+.comap-panel-v2 .comap-meter.is-critical > i {
+  background: var(--offline);
+  box-shadow: 0 0 5px color-mix(in oklab, var(--offline) 38%, transparent);
+}
+
+.comap-panel-v2 .comap-meter.is-neutral > i {
+  background: var(--info);
+  box-shadow: 0 0 4px color-mix(in oklab, var(--info) 30%, transparent);
 }
 
 .comap-panel-v2 .comap-meter.is-unknown > i,
 .comap-panel-v2 .comap-meter.is-unscaled > i {
-  background: transparent !important;
+  background: transparent;
   box-shadow: none;
 }
 
 @media (max-width: 360px) {
   .generator-power-instrument {
-    min-height: 286px;
+    min-height: 186px;
   }
 
   .comap-panel-v2 .generator-power-gauge {
-    width: min(100%, 336px);
-    margin-top: 27px;
+    width: min(100%, 258px);
+    margin-top: 19px;
   }
 
   .generator-power-meta {
-    width: 96px;
+    width: 80px;
   }
 
   .generator-power-meta > span {
-    min-height: 25px;
-    grid-template-columns: 36px 1fr;
-    padding-inline: 5px;
-    font-size: 9px;
+    min-height: 20px;
+    grid-template-columns: 29px 1fr;
+    padding-inline: 4px;
+    font-size: 7.5px;
   }
 
   .generator-power-readout strong {
-    font-size: 47px;
+    font-size: 31px;
   }
 
   .generator-battery-badge {
-    min-width: 96px;
-    grid-template-columns: 20px 22px 1fr;
-    padding-inline: 4px;
+    min-width: 83px;
+    grid-template-columns: 17px 18px 1fr;
+    padding-inline: 3px;
   }
 
   .generator-battery-icon {
-    width: 19px;
+    width: 16px;
   }
 }
 
