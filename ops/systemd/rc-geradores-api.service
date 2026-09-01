@@ -9,6 +9,7 @@ User=rcgeradores
 Group=rcgeradores
 WorkingDirectory=/opt/rc-geradores/backend
 EnvironmentFile=-/etc/rc-geradores.env
+ExecStartPre=/opt/rc-geradores/backend/.venv/bin/python /opt/rc-geradores/ops/migrate_db.py
 ExecStart=/opt/rc-geradores/backend/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8090
 Restart=on-failure
 RestartSec=3
