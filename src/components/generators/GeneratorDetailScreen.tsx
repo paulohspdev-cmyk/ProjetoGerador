@@ -33,6 +33,7 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
   const configured = gen.enabled !== false && gen.status !== "nao_configurado";
   const canStart = can("operate") && configured && gen.capabilities?.start === true;
   const canStop = can("operate") && configured && gen.capabilities?.stop === true;
+  const labIg4Start = canStart && gen.controller.trim().toLowerCase() === "ig4 200";
 
   const command = async (action: "start" | "stop") => {
     const allowed = action === "start" ? canStart : canStop;
@@ -139,11 +140,17 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
           <button
             type="button"
             disabled={!canStart || commandBusy !== null}
-            title={canStart ? "Partida homologada" : "START indisponível para esta controladora"}
+            title={
+              labIg4Start
+                ? "Partida LAB protegida por intertravamentos"
+                : canStart
+                  ? "Partida homologada"
+                  : "START indisponível para esta controladora"
+            }
             className={cn(model.running === true && "active")}
             onClick={() => void command("start")}
           >
-            {commandBusy === "start" ? "..." : "ON"}
+            {commandBusy === "start" ? "..." : labIg4Start ? "ON LAB" : "ON"}
           </button>
           <button type="button" disabled title="Função indisponível">
             AUTO
