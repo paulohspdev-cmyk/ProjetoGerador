@@ -21,14 +21,15 @@ export function EngineRow({
   bar?: boolean;
   known?: boolean;
 }) {
-  const hasScale = known && bar && pct != null;
+  const showBar = bar || pct != null;
+  const hasScale = known && pct != null;
   const fill = hasScale ? Math.min(100, Math.max(0, pct)) : 0;
 
   return (
     <div className={cn("comap-engine", !known && "opacity-65")}>
       {icon}
       <span className="engine-label">{label}</span>
-      {bar ? (
+      {showBar ? (
         <span
           className={cn(
             "comap-meter",
@@ -111,6 +112,13 @@ export function ControllerModeBar({ gen, known }: { gen: Generator; known: boole
   );
 }
 
+function niceGaugeMaximum(nominal: number | null) {
+  if (nominal == null || !Number.isFinite(nominal) || nominal <= 0) return 500;
+  const magnitude = 10 ** Math.floor(Math.log10(nominal));
+  const step = magnitude >= 100 ? magnitude / 10 : magnitude / 5;
+  return Math.max(step * 5, Math.ceil(nominal / step) * step);
+}
+
 export function PowerGaugeKw({
   value,
   nominal,
@@ -125,21 +133,27 @@ export function PowerGaugeKw({
   powerFactor?: number | null;
 }) {
   const hasValue = value != null && Number.isFinite(value);
-  const displayMax = nominal != null && nominal > 0 ? nominal : 500;
+  const displayMax = niceGaugeMaximum(nominal);
   const gaugeValue = hasValue ? Math.max(0, value) : 0;
   const pct = Math.min(1, gaugeValue / displayMax);
+  const nominalPct =
+    nominal != null && Number.isFinite(nominal) && nominal > 0
+      ? Math.min(1, nominal / displayMax)
+      : 0.88;
+  const greenEnd = Math.min(0.76, Math.max(0.62, nominalPct - 0.13));
+  const amberEnd = Math.min(0.92, Math.max(greenEnd + 0.08, nominalPct));
 
-  const cx = 160;
-  const cy = 158;
-  const arcRadius = 128;
-  const needleLength = 111;
+  const cx = 180;
+  const cy = 186;
+  const arcRadius = 139;
+  const needleLength = 122;
   const needleAngle = 180 + pct * 180;
   const needleRad = (needleAngle * Math.PI) / 180;
   const needleTipX = cx + Math.cos(needleRad) * needleLength;
   const needleTipY = cy + Math.sin(needleRad) * needleLength;
-  const needleBackX = cx - Math.cos(needleRad) * 14;
-  const needleBackY = cy - Math.sin(needleRad) * 14;
-  const needleHalfWidth = 4.5;
+  const needleBackX = cx - Math.cos(needleRad) * 15;
+  const needleBackY = cy - Math.sin(needleRad) * 15;
+  const needleHalfWidth = 5.2;
   const needlePerpX = -Math.sin(needleRad) * needleHalfWidth;
   const needlePerpY = Math.cos(needleRad) * needleHalfWidth;
   const needlePoints = [
@@ -148,16 +162,18 @@ export function PowerGaugeKw({
     `${needleBackX - needlePerpX},${needleBackY - needlePerpY}`,
   ].join(" ");
 
-  const ticks = Array.from({ length: 26 }, (_, index) => {
-    const angle = 180 + index * (180 / 25);
+  const ticks = Array.from({ length: 51 }, (_, index) => {
+    const angle = 180 + index * (180 / 50);
     const rad = (angle * Math.PI) / 180;
-    const major = index % 5 === 0;
-    const outer = 145;
-    const inner = major ? 134 : 139;
+    const major = index % 10 === 0;
+    const medium = !major && index % 5 === 0;
+    const outer = 158;
+    const inner = major ? 143 : medium ? 148 : 152;
 
     return {
       index,
       major,
+      medium,
       x1: cx + Math.cos(rad) * inner,
       y1: cy + Math.sin(rad) * inner,
       x2: cx + Math.cos(rad) * outer,
@@ -169,7 +185,7 @@ export function PowerGaugeKw({
     const fraction = index / 5;
     const angle = 180 + fraction * 180;
     const rad = (angle * Math.PI) / 180;
-    const radius = 154;
+    const radius = 171;
 
     return {
       index,
@@ -182,44 +198,49 @@ export function PowerGaugeKw({
   const arcPath = `M${cx - arcRadius} ${cy} A${arcRadius} ${arcRadius} 0 0 1 ${
     cx + arcRadius
   } ${cy}`;
+  const greenPct = greenEnd * 100;
+  const amberPct = (amberEnd - greenEnd) * 100;
+  const redPct = Math.max(0, 100 - amberEnd * 100);
 
   return (
-    <div className="kw-instrument">
-      <div className="kw-instrument-meta" aria-label="Dados auxiliares do instrumento">
+    <div className="generator-power-instrument">
+      <div className="generator-power-meta" aria-label="Dados auxiliares do instrumento">
         <span>
-          <b>RPM:</b> {rpm == null ? "N/D" : fmt(rpm, 0)}
+          <b>RPM:</b>
+          <strong>{rpm == null ? "N/D" : fmt(rpm, 0)}</strong>
         </span>
         <span>
-          <b>PF:</b> {powerFactor == null ? "N/D" : fmt(powerFactor, 2)}
+          <b>PF:</b>
+          <strong>{powerFactor == null ? "N/D" : fmt(powerFactor, 2)}</strong>
         </span>
       </div>
 
       <svg
-        viewBox="0 0 320 220"
-        className="kw-gauge-svg"
+        viewBox="0 0 360 260"
+        className="generator-power-gauge"
         role="img"
         aria-label={value == null ? "Potência indisponível" : `Potência ${fmt(value, 0)} kW`}
       >
-        <path d={arcPath} pathLength="100" className="kw-gauge-base" />
+        <path d={arcPath} pathLength="100" className="generator-gauge-base" />
         <path
           d={arcPath}
           pathLength="100"
-          className="kw-gauge-zone kw-gauge-green"
-          strokeDasharray="72 28"
+          className="generator-gauge-zone generator-gauge-green"
+          strokeDasharray={`${greenPct} ${100 - greenPct}`}
         />
         <path
           d={arcPath}
           pathLength="100"
-          className="kw-gauge-zone kw-gauge-amber"
-          strokeDasharray="14 86"
-          strokeDashoffset="-72"
+          className="generator-gauge-zone generator-gauge-amber"
+          strokeDasharray={`${amberPct} ${100 - amberPct}`}
+          strokeDashoffset={-greenPct}
         />
         <path
           d={arcPath}
           pathLength="100"
-          className="kw-gauge-zone kw-gauge-red"
-          strokeDasharray="14 86"
-          strokeDashoffset="-86"
+          className="generator-gauge-zone generator-gauge-red"
+          strokeDasharray={`${redPct} ${100 - redPct}`}
+          strokeDashoffset={-(greenPct + amberPct)}
         />
 
         {ticks.map((tick) => (
@@ -229,7 +250,11 @@ export function PowerGaugeKw({
             y1={tick.y1}
             x2={tick.x2}
             y2={tick.y2}
-            className={cn("kw-gauge-tick", tick.major && "is-major")}
+            className={cn(
+              "generator-gauge-tick",
+              tick.major && "is-major",
+              tick.medium && "is-medium",
+            )}
           />
         ))}
 
@@ -239,7 +264,7 @@ export function PowerGaugeKw({
             x={label.x}
             y={label.y}
             textAnchor="middle"
-            className="kw-gauge-scale"
+            className="generator-gauge-scale"
           >
             {label.text}
           </text>
@@ -247,19 +272,19 @@ export function PowerGaugeKw({
 
         <polygon
           points={needlePoints}
-          className={cn("kw-gauge-needle", !hasValue && "is-unknown")}
+          className={cn("generator-gauge-needle", !hasValue && "is-unknown")}
         />
-        <circle cx={cx} cy={cy} r="9" className="kw-gauge-hub" />
-        <circle cx={cx} cy={cy} r="3" className="kw-gauge-hub-center" />
+        <circle cx={cx} cy={cy} r="10" className="generator-gauge-hub" />
+        <circle cx={cx} cy={cy} r="3.2" className="generator-gauge-hub-center" />
       </svg>
 
-      <div className="kw-gauge-readout">
+      <div className="generator-power-readout">
         <strong>{value == null ? "N/D" : fmt(value, 0)}</strong>
         <span>kW</span>
       </div>
 
-      <div className={cn("kw-battery-badge", battery == null && "is-unknown")}>
-        <svg className="kw-battery-icon" viewBox="0 0 24 16" aria-hidden="true">
+      <div className={cn("generator-battery-badge", battery == null && "is-unknown")}>
+        <svg className="generator-battery-icon" viewBox="0 0 24 16" aria-hidden="true">
           <rect x="1" y="3" width="20" height="12" rx="1.5" />
           <path d="M21 7h2v4h-2M5 7v4M3 9h4M15 7v4" />
         </svg>
