@@ -1,7 +1,17 @@
 import json
+import os
 import time
 
 from . import db
+
+DEFAULT_DEVICE_TIMEOUT_MS = max(
+    1000,
+    int(os.environ.get("RC_MODBUS_DEVICE_TIMEOUT_MS", "5500")),
+)
+DEFAULT_POLL_DELAY_MS = max(
+    100,
+    int(os.environ.get("RC_MODBUS_POLL_DELAY_MS", "1000")),
+)
 
 
 def init_transport_db():
@@ -17,16 +27,29 @@ def init_transport_db():
         )
 
 
+def _defaults():
+    return {
+        "timeoutMs": DEFAULT_DEVICE_TIMEOUT_MS,
+        "pollDelayMs": DEFAULT_POLL_DELAY_MS,
+    }
+
+
 def get_transport_config(generator_id: str):
     init_transport_db()
     with db.connect() as conn:
-        row = conn.execute("SELECT * FROM generator_transport_config WHERE generator_id=?", (generator_id,)).fetchone()
+        row = conn.execute(
+            "SELECT * FROM generator_transport_config WHERE generator_id=?",
+            (generator_id,),
+        ).fetchone()
     if not row:
-        return {}
+        return _defaults()
     try:
-        return json.loads(row["config_json"] or "{}")
+        stored = json.loads(row["config_json"] or "{}")
+        if not isinstance(stored, dict):
+            stored = {}
     except Exception:
-        return {}
+        stored = {}
+    return {**_defaults(), **stored}
 
 
 def set_transport_config(generator_id: str, config: dict, actor: str):
@@ -36,6 +59,18 @@ def set_transport_config(generator_id: str, config: dict, actor: str):
         "tcpPort", "host", "transMode", "timeoutMs", "pollDelayMs"
     }
     clean = {key: value for key, value in (config or {}).items() if key in allowed and value is not None}
+
+    if "timeoutMs" in clean:
+        timeout_ms = int(clean["timeoutMs"])
+        if not 1000 <= timeout_ms <= 30000:
+            raise ValueError("timeoutMs deve ficar entre 1000 e 30000 ms")
+        clean["timeoutMs"] = timeout_ms
+    if "pollDelayMs" in clean:
+        poll_delay_ms = int(clean["pollDelayMs"])
+        if not 100 <= poll_delay_ms <= 60000:
+            raise ValueError("pollDelayMs deve ficar entre 100 e 60000 ms")
+        clean["pollDelayMs"] = poll_delay_ms
+
     now = int(time.time())
     with db.connect() as conn:
         exists = conn.execute("SELECT 1 FROM generators WHERE id=?", (generator_id,)).fetchone()
@@ -47,7 +82,7 @@ def set_transport_config(generator_id: str, config: dict, actor: str):
             (generator_id, json.dumps(clean, ensure_ascii=False), actor, now),
         )
     db.add_audit(actor, "update", "transport_config", generator_id, ",".join(sorted(clean.keys())))
-    return clean
+    return {**_defaults(), **clean}
 
 
 def validate_for_transport(generator: dict, config: dict):
@@ -76,4 +111,10 @@ def validate_for_transport(generator: dict, config: dict):
             raise ValueError("Serial exige stopBits explícito")
     else:
         raise ValueError(f"Transporte não suportado: {transport}")
+
+    timeout_ms = int(config.get("timeoutMs") or DEFAULT_DEVICE_TIMEOUT_MS)
+    if timeout_ms <= 4000:
+        raise ValueError(
+            "timeoutMs do Rapid deve ser maior que o timeout padrão de 4 s da bridge"
+        )
     return True
