@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -47,6 +48,8 @@ export function GeneratorsProvider({ children }: { children: ReactNode }) {
   const [generators, setGenerators] = useState<Generator[]>([]);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const refreshInFlight = useRef<Promise<void> | null>(null);
+  const refreshGeneration = useRef(0);
 
   const refresh = useCallback(async () => {
     if (!user) {
@@ -55,30 +58,70 @@ export function GeneratorsProvider({ children }: { children: ReactNode }) {
       setReady(authReady);
       return;
     }
-    try {
-      const list = await rcApi.generators.list();
-      setGenerators(list);
-      setError(null);
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 401) {
-        setGenerators([]);
+
+    if (refreshInFlight.current) {
+      return refreshInFlight.current;
+    }
+
+    const generation = ++refreshGeneration.current;
+    const operation = (async () => {
+      try {
+        const list = await rcApi.generators.list();
+        if (generation !== refreshGeneration.current) return;
+        setGenerators(list);
+        setError(null);
+      } catch (err) {
+        if (generation !== refreshGeneration.current) return;
+        if (err instanceof ApiError && err.status === 401) {
+          setGenerators([]);
+        }
+        setError(err instanceof Error ? err.message : "Falha ao consultar o backend.");
+      } finally {
+        if (generation === refreshGeneration.current) {
+          setReady(true);
+        }
       }
-      setError(err instanceof Error ? err.message : "Falha ao consultar o backend.");
+    })();
+
+    refreshInFlight.current = operation;
+    try {
+      await operation;
     } finally {
-      setReady(true);
+      if (refreshInFlight.current === operation) {
+        refreshInFlight.current = null;
+      }
     }
   }, [authReady, user]);
 
   useEffect(() => {
     if (!authReady) return;
     if (!user) {
+      refreshGeneration.current += 1;
+      refreshInFlight.current = null;
       setGenerators([]);
       setReady(true);
       return;
     }
-    void refresh();
-    const timer = window.setInterval(() => void refresh(), GENERATOR_REFRESH_MS);
-    return () => window.clearInterval(timer);
+
+    let stopped = false;
+    let timer: number | null = null;
+
+    const schedule = () => {
+      if (stopped) return;
+      timer = window.setTimeout(async () => {
+        if (!document.hidden) {
+          await refresh();
+        }
+        schedule();
+      }, GENERATOR_REFRESH_MS);
+    };
+
+    void refresh().finally(schedule);
+    return () => {
+      stopped = true;
+      refreshGeneration.current += 1;
+      if (timer != null) window.clearTimeout(timer);
+    };
   }, [authReady, refresh, user]);
 
   const getById = useCallback(
