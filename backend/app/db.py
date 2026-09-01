@@ -217,7 +217,8 @@ def create_user(data, actor="system"):
         conn.execute(
             """
             INSERT INTO users(id,name,email,password_hash,role,active,last_access,created_at,updated_at)
-            VALUES (:id,:name,:email,:password_hash,:role,:active,NULL,:created_at,:updated_at)
+            VALUES (:id,:name,:email,:password_hash,:role,:active,NULL,:created_at,:updated_at
+            )
             """,
             record,
         )
@@ -435,7 +436,7 @@ def update_generator(generator_id, patch, actor="system"):
             current_value = current_value.strip()
 
         if provisioned and key in industrial_identity and value != current_value:
-            raise ValueError(
+            raise sqlite3.IntegrityError(
                 "Identidade industrial de gerador provisionado não pode ser alterada diretamente. "
                 "Deprovisione com preservação de histórico antes de mudar tag/controladora/transporte/porta/Unit/Device."
             )
