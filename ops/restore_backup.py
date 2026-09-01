@@ -8,7 +8,11 @@ from pathlib import Path
 BASE = Path("/opt/rc-geradores")
 sys.path.insert(0, str(BASE / "backend"))
 
-from app.backup_manager import restore_archive, safe_archive_path  # noqa: E402
+from app.backup_manager import (  # noqa: E402
+    materialize_offsite_backup,
+    restore_archive,
+    safe_archive_path,
+)
 
 # Ordem de parada: primeiro processos RC que podem escrever/atuar sobre o banco,
 # bindings ou Rapid; depois o próprio Rapid. A retomada ocorre na ordem inversa.
@@ -38,8 +42,13 @@ def was_active(service: str) -> bool:
 
 def main():
     parser = argparse.ArgumentParser(description="Restaura backup completo do RC Geradores")
-    parser.add_argument("archive")
+    parser.add_argument("archive", help=".tar.gz local ou .tar.gz.fernet off-site")
     parser.add_argument("--no-rapid", action="store_true", help="não restaura configuração do Rapid SCADA")
+    parser.add_argument(
+        "--offsite-key-file",
+        default=None,
+        help="chave Fernet externa para envelope off-site; padrão: RC_BACKUP_OFFSITE_KEY_FILE",
+    )
     parser.add_argument("--confirm", required=True, help="deve ser exatamente RESTORE")
     args = parser.parse_args()
 
@@ -48,8 +57,14 @@ def main():
     if args.confirm != "RESTORE":
         raise SystemExit("Confirmação inválida. Use --confirm RESTORE")
 
-    # Falha antes de tocar nos serviços se o caminho não for um backup local válido.
-    archive = safe_archive_path(args.archive)
+    # Todo decrypt/quick_check ocorre antes de tocar nos serviços.
+    requested = Path(args.archive)
+    if requested.name.endswith(".tar.gz.fernet"):
+        archive = materialize_offsite_backup(requested, key_file=args.offsite_key_file)
+        print(f"Envelope off-site autenticado e materializado em: {archive}")
+    else:
+        archive = safe_archive_path(requested)
+
     active_before = {svc: was_active(svc) for svc in SERVICES}
 
     for svc in SERVICES:
