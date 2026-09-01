@@ -1,0 +1,112 @@
+.comap-panel-v2 .controller-model-line {
+  font-size: 9.5px;
+  line-height: 1.08;
+}
+
+.comap-panel-v2 .comap-title {
+  font-size: 12.5px;
+  letter-spacing: 0.08px;
+}
+
+.comap-panel-v2 .controller-mode-btn {
+  min-height: 26px;
+  font-size: 9.5px;
+}
+
+.comap-panel-v2 .breaker-single-label {
+  font-size: 9.5px;
+}
+
+.comap-panel-v2 .breaker-single-control small {
+  font-size: 6.5px;
+}
+
+.comap-panel-v2 .comap-engine {
+  min-height: 18px;
+  font-size: 11px;
+  line-height: 1.05;
+}
+
+.comap-panel-v2 .comap-engine .engine-label,
+.comap-panel-v2 .comap-engine .engine-value {
+  font-weight: 750;
+}
+
+.comap-panel-v2 .comap-engine .engine-value {
+  font-size: 11px;
+}
+
+.comap-panel-v2 .comap-meter {
+  height: 7px;
+}
+
+.comap-panel-v2 .comap-meter.is-critical > i {
+  min-width: 5px;
+}
+
+.comap-panel-v2 .mains-generator-block .comap-table-head {
+  font-size: 9.5px;
+}
+
+.comap-panel-v2 .mains-generator-block .comap-table-row {
+  min-height: 17px;
+  font-size: 10.5px;
+}
+
+.comap-panel-v2 .generator-power-instrument {
+  min-height: 188px;
+}
+
+.comap-panel-v2 .generator-power-gauge {
+  width: min(100%, 258px);
+}
+
+.comap-panel-v2 .generator-gauge-scale {
+  font-size: 10.5px;
+}
+
+.comap-panel-v2 .generator-power-meta {
+  width: 88px;
+}
+
+.comap-panel-v2 .generator-power-meta > span {
+  min-height: 22px;
+  grid-template-columns: 33px 1fr;
+  font-size: 9px;
+}
+
+.comap-panel-v2 .generator-power-readout strong {
+  font-size: 29px;
+  letter-spacing: -0.04em;
+}
+
+.comap-panel-v2 .generator-power-readout span {
+  font-size: 9.5px;
+}
+
+.comap-panel-v2 .generator-battery-badge {
+  min-width: 89px;
+  font-size: 8.5px;
+}
+
+.compact-flow-line {
+  grid-template-columns: auto 1fr auto 1fr auto 1fr auto 1fr auto;
+}
+
+@media (max-width: 360px) {
+  .comap-panel-v2 .comap-engine {
+    font-size: 10.5px;
+  }
+
+  .comap-panel-v2 .generator-power-gauge {
+    width: min(100%, 246px);
+  }
+
+  .comap-panel-v2 .generator-gauge-scale {
+    font-size: 10px;
+  }
+
+  .comap-panel-v2 .generator-power-readout strong {
+    font-size: 27px;
+  }
+}
