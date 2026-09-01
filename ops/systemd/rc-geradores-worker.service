@@ -1,5 +1,5 @@
 [Unit]
-Description=RC Geradores Worker
+Description=RC Geradores Worker Supervisor
 After=network-online.target rc-geradores-api.service scadaserver6.service
 Wants=network-online.target
 
@@ -9,7 +9,7 @@ User=rcgeradores
 Group=rcgeradores
 WorkingDirectory=/opt/rc-geradores/backend
 EnvironmentFile=-/etc/rc-geradores.env
-ExecStart=/opt/rc-geradores/backend/.venv/bin/python -m app.worker
+ExecStart=/opt/rc-geradores/backend/.venv/bin/python -m app.worker_supervisor
 Restart=on-failure
 RestartSec=3
 NoNewPrivileges=true
