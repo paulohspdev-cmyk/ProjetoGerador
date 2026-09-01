@@ -38,9 +38,46 @@ import "./powerflow-card-v2.css";
 export { fmt } from "./generator-metrics";
 export { IoBtn, PowerFlowSld } from "./power-flow/PowerFlowDiagram";
 
+type MeterTone = "good" | "warning" | "critical" | "neutral";
+
 function progressPercent(value: number | null, maximum: number) {
   if (value == null || !Number.isFinite(value) || maximum <= 0) return null;
   return Math.min(100, Math.max(0, (value / maximum) * 100));
+}
+
+function oilTone(value: number | null): MeterTone {
+  if (value == null) return "neutral";
+  if (value < 2 || value > 9) return "critical";
+  if (value < 3.5 || value > 8) return "warning";
+  return "good";
+}
+
+function coolantTone(value: number | null): MeterTone {
+  if (value == null) return "neutral";
+  if (value > 105) return "critical";
+  if (value > 95 || value < 30) return "warning";
+  return "good";
+}
+
+function fuelTone(percent: number | null): MeterTone {
+  if (percent == null) return "neutral";
+  if (percent <= 20) return "critical";
+  if (percent <= 50) return "warning";
+  return "good";
+}
+
+function alternatorTone(value: number | null, running: boolean): MeterTone {
+  if (value == null || !running) return "neutral";
+  if (value < 24 || value > 32) return "critical";
+  if (value < 26 || value > 30) return "warning";
+  return "good";
+}
+
+function maintenanceTone(value: number | null): MeterTone {
+  if (value == null) return "neutral";
+  if (value <= 50) return "critical";
+  if (value <= 150) return "warning";
+  return "good";
 }
 
 export function PowerFlowCard({ gen }: { gen: Generator }) {
@@ -66,16 +103,19 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     metricNumber(gen, "nominal_power_kw", gen.nominalPower) ??
     metricNumber(gen, "nominal_power", gen.nominalPower);
 
+  const runningKnown = rpm != null;
+  const running = runningKnown && isPositiveMeasurement(rpm);
   const oilUnit = gen.metricUnits?.["oil_pressure"] || "bar";
   const fuelUnit = gen.metricUnits?.["fuel_level"] || "%";
   const fuelIsPercent = fuelUnit === "%";
-  const fuelCapacity = metricNumber(gen, "fuel_capacity", undefined);
-  const fuelDisplayMaximum =
-    fuelIsPercent || fuel == null
-      ? 100
-      : fuelCapacity != null && fuelCapacity > 0
-        ? fuelCapacity
-        : 1000;
+  const fuelCapacity =
+    metricNumber(gen, "fuel_capacity_l", undefined) ??
+    metricNumber(gen, "fuel_capacity", undefined);
+  const fuelDisplayMaximum = fuelIsPercent
+    ? 100
+    : fuelCapacity != null && fuelCapacity > 0
+      ? fuelCapacity
+      : 1000;
   const alternatorDisplayMaximum = batt != null && batt > 20 ? 32 : 16;
 
   const oilBarPct = progressPercent(oil, 10);
@@ -89,8 +129,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const gcbKnown = hasMetric(gen, "gcb_closed");
   const modeKnown = hasMetric(gen, "controller_mode_raw");
   const alarmCountKnown = hasMetric(gen, "alarm_count");
-  const runningKnown = rpm != null;
-  const running = runningKnown && isPositiveMeasurement(rpm);
 
   const mainsKeys = [
     "mains_voltage_l1",
@@ -245,49 +283,55 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
           icon={<IconOilCan />}
           label="Oil Pressure"
           value={oil == null ? "N/D" : `${fmt(oil, 2)} ${oilUnit}`}
-          pct={oilBarPct ?? 0}
+          pct={oilBarPct}
           bar
           known={oil != null}
+          tone={oilTone(oil)}
         />
         <EngineRow
           icon={<IconThermometer />}
           label="Coolant Temp."
           value={temp == null ? "N/D" : `${fmt(temp, 0)} °C`}
-          pct={coolantBarPct ?? 0}
+          pct={coolantBarPct}
           bar
           known={temp != null}
+          tone={coolantTone(temp)}
         />
         <EngineRow
           icon={<IconFuelPump />}
           label="Fuel Level"
           value={fuel == null ? "N/D" : `${fmt(fuel, 0)} ${fuelUnit}`}
-          pct={fuelBarPct ?? 0}
-          bar={fuelIsPercent}
+          pct={fuelBarPct}
+          bar
           known={fuel != null}
+          tone={fuelTone(fuelBarPct)}
         />
         <EngineRow
           icon={<IconBolt />}
           label="Alternator Volt."
           value={alt == null ? "N/D" : `${fmt(alt)} V`}
-          pct={alternatorBarPct ?? 0}
+          pct={alternatorBarPct}
           bar
           known={alt != null}
+          tone={alternatorTone(alt, running)}
         />
         <EngineRow
           icon={<IconClock />}
           label="Maintenance"
           value={maintenance == null ? "N/D" : `${fmt(maintenance, 0)} h`}
-          pct={maintenanceBarPct ?? 0}
+          pct={maintenanceBarPct}
           bar
           known={maintenance != null}
+          tone={maintenanceTone(maintenance)}
         />
         <EngineRow
           icon={<IconRunHours />}
           label="Run Hours"
           value={runHours == null ? "N/D" : `${fmt(runHours)} h`}
-          pct={runHoursBarPct ?? 0}
+          pct={runHoursBarPct}
           bar
           known={runHours != null}
+          tone="neutral"
         />
       </section>
 
