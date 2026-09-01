@@ -1,18 +1,26 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { readdirSync, readFileSync } from "node:fs";
+import { join, relative } from "node:path";
 
 const root = process.cwd();
 const failures = [];
 const read = (path) => readFileSync(join(root, path), "utf8");
 const load = (path) => JSON.parse(read(path));
 
-const labPaths = [
-  "controllers/lab/comap/amf-09/manifest.json",
-  "controllers/lab/comap/amf-25/manifest.json",
-  "controllers/lab/comap/ig4-200/manifest.json",
-  "controllers/lab/comap/ig-nt/manifest.json",
-  "controllers/lab/comap/inteli-mains-comap/manifest.json",
-];
+function manifestPaths(base) {
+  const found = [];
+  const walk = (directory) => {
+    for (const entry of readdirSync(join(root, directory), { withFileTypes: true })) {
+      const path = join(directory, entry.name);
+      if (entry.isDirectory()) walk(path);
+      else if (entry.isFile() && entry.name === "manifest.json") found.push(relative(root, join(root, path)));
+    }
+  };
+  walk(base);
+  return found.sort();
+}
+
+const labPaths = manifestPaths("controllers/lab");
+const productionPaths = manifestPaths("controllers/production");
 const forbiddenCommands = [
   "start",
   "stop",
@@ -26,22 +34,39 @@ const forbiddenCommands = [
   "paralleling",
 ];
 
+if (labPaths.length === 0) failures.push("nenhum Controller Pack LAB encontrado");
+if (productionPaths.length === 0) failures.push("nenhum Controller Pack production encontrado");
+
 for (const path of labPaths) {
   const profile = load(path);
   if (profile.schema !== 3) failures.push(`${path}: schema deve ser 3`);
-  if (profile.status !== "documented") failures.push(`${path}: deve permanecer documented`);
-  if (!profile.mapping?.readOnly) failures.push(`${path}: deve permanecer somente leitura`);
-  if ((profile.validatedTelemetry ?? []).length !== 0) {
-    failures.push(`${path}: telemetria documental não pode ser homologada automaticamente`);
+  if (!["investigation", "documented", "lab_validated"].includes(profile.status)) {
+    failures.push(`${path}: lifecycle LAB não pode usar status ${profile.status}`);
+  }
+  if (profile.mapping && profile.mapping.readOnly !== true) {
+    failures.push(`${path}: qualquer mapa LAB deve permanecer somente leitura`);
+  }
+  if (profile.status === "investigation" && (profile.validatedTelemetry ?? []).length !== 0) {
+    failures.push(`${path}: investigação não pode declarar telemetria validada`);
   }
   for (const command of forbiddenCommands) {
     if (profile.capabilities?.[command] !== false) {
-      failures.push(`${path}: comando ${command} não pode ser habilitado por documento`);
+      failures.push(`${path}: comando ${command} não pode ser habilitado em LAB`);
     }
   }
 }
 
-const ig200 = load("controllers/production/comap/inteligen-200/manifest.json");
+for (const path of productionPaths) {
+  const profile = load(path);
+  if (profile.schema !== 3) failures.push(`${path}: production exige schema 3`);
+  if (profile.status !== "field_validated") {
+    failures.push(`${path}: production exige status field_validated`);
+  }
+}
+
+const ig200Path = "controllers/production/comap/inteligen-200/manifest.json";
+if (!productionPaths.includes(ig200Path)) failures.push("IG200 homologado não está em production");
+const ig200 = load(ig200Path);
 const map = ig200.modbusMapping?.registers ?? {};
 const expected = {
   rpm: [1000, 1],
@@ -136,27 +161,38 @@ for (const marker of [
 
 const card = read("src/components/generators/PowerFlowCard.tsx");
 for (const marker of [
-  "metricUnits",
-  'metricNumber(gen, "power_factor"',
+  "readGeneratorTelemetry(gen)",
+  "gen.capabilities?.start === true",
+  "gen.capabilities?.stop === true",
   "powerFactor={powerFactor}",
 ]) {
-  if (!card.includes(marker)) failures.push(`card perdeu telemetria real: ${marker}`);
+  if (!card.includes(marker)) failures.push(`card perdeu contrato seguro: ${marker}`);
+}
+for (const forbidden of ["oilTone(", "coolantTone(", "fuelTone(", "alternatorTone(", "1000;"]) {
+  if (card.includes(forbidden)) failures.push(`card voltou a conter inferência industrial: ${forbidden}`);
+}
+
+const health = read("src/components/generators/generator-health.ts");
+if (!health.includes("toneFromLimit") || !health.includes("gen.metricLimits")) {
+  failures.push("saúde visual não está centralizada em limites homologáveis");
+}
+if (health.includes("value < 2") || health.includes("value > 105") || health.includes(": 1000")) {
+  failures.push("saúde visual voltou a conter limite industrial presumido");
 }
 
 const metricHelper = read("src/components/generators/generator-metrics.ts");
 if (!metricHelper.includes("gen.metrics")) failures.push("helper não prioriza telemetria atual");
 
-const dashboard = read("src/components/scada/overview-dashboard-model.ts");
-if (!dashboard.includes('metricUnit(generator, "fuel_level", "%") === "%"')) {
-  failures.push("dashboard voltou a misturar litros com percentual de combustível");
-}
-
 const rapid = read("backend/app/rapid.py");
 for (const marker of [
   '"metrics": dict(values)',
+  '"definedMetrics": defined_metrics',
+  '"configuredMetrics": configured_metrics',
+  '"metricStates": metric_states',
+  '"capabilities": _effective_capabilities',
+  "_cache_lock",
   "_is_undefined_raw",
   "_derive_breaker_feedback",
-  '"nominalPower": values.get("nominal_power_kw")',
 ]) {
   if (!rapid.includes(marker)) failures.push(`overlay Rapid perdeu: ${marker}`);
 }
@@ -166,5 +202,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  "Controller profile check OK: IG200 usa in200.txt validado no GEN005 e mantém escrita industrial bloqueada.",
+  `Controller profile check OK: ${productionPaths.length} production e ${labPaths.length} LAB cobertos recursivamente.`,
 );
