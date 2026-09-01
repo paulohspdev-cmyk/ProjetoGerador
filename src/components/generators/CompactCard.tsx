@@ -184,7 +184,7 @@ export function CompactCard({ gen }: { gen: Generator }) {
           label="L1-N"
           value={
             hasMetric(gen, "voltage_l1")
-              ? `${fmt(gen.metrics?.voltage_l1 ?? gen.gen.l1, 0)} V`
+              ? `${fmt(gen.metrics?.["voltage_l1"] ?? gen.gen.l1, 0)} V`
               : "N/D"
           }
         />
