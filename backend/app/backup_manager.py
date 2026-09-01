@@ -6,7 +6,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 
 from . import db
 from .config import (
@@ -53,6 +53,48 @@ def _add_if_exists(tar: tarfile.TarFile, path: Path, arcname: str):
         tar.add(path, arcname=arcname, recursive=True)
 
 
+def _validate_members(tar: tarfile.TarFile, root: Path) -> None:
+    root_resolved = root.resolve()
+    for member in tar.getmembers():
+        if member.islnk() or member.issym() or member.isdev() or member.isfifo():
+            raise ValueError("Backup contém link ou dispositivo não permitido")
+        resolved = (root / member.name).resolve()
+        if root_resolved not in resolved.parents and resolved != root_resolved:
+            raise ValueError("Backup contém caminho inseguro")
+
+
+def _offsite_cipher(key_file: str | Path | None = None) -> Fernet:
+    configured = str(key_file or BACKUP_OFFSITE_KEY_FILE or "").strip()
+    if not configured:
+        raise ValueError("Backup off-site exige RC_BACKUP_OFFSITE_KEY_FILE para criptografia")
+    key_path = Path(configured)
+    if not key_path.is_file():
+        raise ValueError(f"Chave de backup off-site não encontrada: {key_path}")
+    try:
+        return Fernet(key_path.read_bytes().strip())
+    except Exception as exc:
+        raise ValueError(f"Chave de backup off-site inválida: {key_path}") from exc
+
+
+def _build_offsite_payload(archive: Path, target: Path) -> bool:
+    """Cria pacote temporário para DR sem expor a chave TOTP no backup local."""
+    totp_key = Path(TOTP_KEY_FILE)
+    with tempfile.TemporaryDirectory(prefix="rc-offsite-validate-") as tmp:
+        with tarfile.open(archive, "r:gz") as source:
+            _validate_members(source, Path(tmp))
+            members = source.getmembers()
+            with tarfile.open(target, "w:gz") as destination:
+                for member in members:
+                    fileobj = source.extractfile(member) if member.isfile() else None
+                    destination.addfile(member, fileobj)
+                if totp_key.is_file() and not any(
+                    member.name == "product/totp-fernet.key" for member in members
+                ):
+                    destination.add(totp_key, arcname="product/totp-fernet.key", recursive=False)
+                    return True
+    return any(member.name == "product/totp-fernet.key" for member in members)
+
+
 def _offsite_target(archive: Path) -> Path | None:
     if not BACKUP_OFFSITE_DIR:
         if BACKUP_OFFSITE_REQUIRED:
@@ -62,17 +104,14 @@ def _offsite_target(archive: Path) -> Path | None:
     data_root = DATA_DIR.resolve()
     if target_dir == data_root or data_root in target_dir.parents:
         raise ValueError("Destino off-site deve ficar fora de RC_DATA_DIR")
-    if not BACKUP_OFFSITE_KEY_FILE:
-        raise ValueError("Backup off-site exige RC_BACKUP_OFFSITE_KEY_FILE para criptografia")
-    key_path = Path(BACKUP_OFFSITE_KEY_FILE)
-    if not key_path.is_file():
-        raise ValueError(f"Chave de backup off-site não encontrada: {key_path}")
-    key = key_path.read_bytes().strip()
-    cipher = Fernet(key)
+    cipher = _offsite_cipher()
     target_dir.mkdir(parents=True, exist_ok=True)
-    encrypted = cipher.encrypt(archive.read_bytes())
     target = target_dir / f"{archive.name}.fernet"
     staged = target_dir / f".{target.name}.{os.getpid()}.tmp"
+    with tempfile.TemporaryDirectory(prefix="rc-offsite-payload-") as tmp:
+        payload = Path(tmp) / archive.name
+        _build_offsite_payload(archive, payload)
+        encrypted = cipher.encrypt(payload.read_bytes())
     staged.write_bytes(encrypted)
     try:
         os.chmod(staged, 0o600)
@@ -145,6 +184,7 @@ def create_full_backup(actor: str = "system", retention: int | None = None) -> d
         "created_at": int(time.time()),
         "secretsIncluded": INCLUDE_SECRETS,
         "totpSecretEncryptedInDatabase": True,
+        "offsiteCarriesTotpRecoveryKey": bool(offsite_path and Path(TOTP_KEY_FILE).is_file()),
     }
 
 
@@ -176,14 +216,56 @@ def safe_archive_path(path: str | Path) -> Path:
     return candidate
 
 
-def _validate_members(tar: tarfile.TarFile, root: Path) -> None:
-    root_resolved = root.resolve()
-    for member in tar.getmembers():
-        if member.islnk() or member.issym() or member.isdev() or member.isfifo():
-            raise ValueError("Backup contém link ou dispositivo não permitido")
-        resolved = (root / member.name).resolve()
-        if root_resolved not in resolved.parents and resolved != root_resolved:
-            raise ValueError("Backup contém caminho inseguro")
+def _validate_archive_database(archive: Path) -> None:
+    with tempfile.TemporaryDirectory(prefix="rc-backup-validate-") as tmp:
+        root = Path(tmp)
+        with tarfile.open(archive, "r:gz") as tar:
+            _validate_members(tar, root)
+            member = tar.getmember("product/product-db.sqlite3")
+            if not member.isfile():
+                raise ValueError("Backup sem banco do produto")
+            source = tar.extractfile(member)
+            if source is None:
+                raise ValueError("Banco do produto não pôde ser lido do backup")
+            db_copy = root / "product-db.sqlite3"
+            with db_copy.open("wb") as target:
+                shutil.copyfileobj(source, target)
+        _quick_check(db_copy)
+
+
+def materialize_offsite_backup(
+    encrypted_path: str | Path,
+    key_file: str | Path | None = None,
+) -> Path:
+    """Autentica/decripta um envelope off-site e o materializa no diretório local de backup."""
+    source = Path(encrypted_path).resolve()
+    if not source.is_file() or not source.name.endswith(".tar.gz.fernet"):
+        raise ValueError("Envelope off-site inválido; esperado rc-geradores-full-*.tar.gz.fernet")
+    if not source.name.startswith("rc-geradores-full-"):
+        raise ValueError("Envelope off-site não pertence ao formato RC Geradores")
+    cipher = _offsite_cipher(key_file)
+    try:
+        clear = cipher.decrypt(source.read_bytes())
+    except InvalidToken as exc:
+        raise ValueError("Envelope off-site não autentica com a chave informada") from exc
+
+    BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+    plain_name = source.name.removesuffix(".fernet")
+    target = BACKUP_DIR / plain_name
+    if target.exists():
+        stem = plain_name.removesuffix(".tar.gz")
+        target = BACKUP_DIR / f"{stem}-recovered-{int(time.time())}.tar.gz"
+    staged = BACKUP_DIR / f".{target.name}.{os.getpid()}.tmp"
+    staged.write_bytes(clear)
+    try:
+        os.chmod(staged, 0o600)
+        _validate_archive_database(staged)
+        os.replace(staged, target)
+        os.chmod(target, 0o640)
+    except Exception:
+        staged.unlink(missing_ok=True)
+        raise
+    return safe_archive_path(target)
 
 
 def _restore_product_ownership(path: Path = DB_FILE) -> None:
