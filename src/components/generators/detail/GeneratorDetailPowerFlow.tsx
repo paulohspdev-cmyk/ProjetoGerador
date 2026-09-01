@@ -6,12 +6,14 @@ import type { GeneratorDetailModel } from "./generator-detail-model";
 
 export function GeneratorDetailPowerFlow({
   model,
-  operate,
+  canStart,
+  canStop,
   commandBusy,
   onCommand,
 }: {
   model: GeneratorDetailModel;
-  operate: boolean;
+  canStart: boolean;
+  canStop: boolean;
   commandBusy: "start" | "stop" | null;
   onCommand: (action: "start" | "stop") => void | Promise<void>;
 }) {
@@ -115,7 +117,8 @@ export function GeneratorDetailPowerFlow({
             <button
               type="button"
               className="comap-start"
-              disabled={!operate || commandBusy !== null}
+              disabled={!canStart || commandBusy !== null}
+              title={canStart ? "Partida homologada" : "START indisponível para esta controladora"}
               onClick={() => void onCommand("start")}
             >
               {commandBusy === "start" ? "..." : "START"}
@@ -123,7 +126,8 @@ export function GeneratorDetailPowerFlow({
             <button
               type="button"
               className="comap-stop"
-              disabled={!operate || commandBusy !== null}
+              disabled={!canStop || commandBusy !== null}
+              title={canStop ? "Parada homologada" : "STOP indisponível para esta controladora"}
               onClick={() => void onCommand("stop")}
             >
               {commandBusy === "stop" ? "..." : "STOP"}
