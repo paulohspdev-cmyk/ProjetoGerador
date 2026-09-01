@@ -38,6 +38,11 @@ import "./powerflow-card-v2.css";
 export { fmt } from "./generator-metrics";
 export { IoBtn, PowerFlowSld } from "./power-flow/PowerFlowDiagram";
 
+function progressPercent(value: number | null, maximum: number) {
+  if (value == null || !Number.isFinite(value) || maximum <= 0) return null;
+  return Math.min(100, Math.max(0, (value / maximum) * 100));
+}
+
 export function PowerFlowCard({ gen }: { gen: Generator }) {
   const { can } = useAuth();
   const { refresh } = useGenerators();
@@ -64,6 +69,17 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const oilUnit = gen.metricUnits?.["oil_pressure"] || "bar";
   const fuelUnit = gen.metricUnits?.["fuel_level"] || "%";
   const fuelIsPercent = fuelUnit === "%";
+  const fuelCapacity = metricNumber(gen, "fuel_capacity", undefined);
+  const fuelDisplayMaximum =
+    fuelIsPercent || fuel == null ? 100 : fuelCapacity != null && fuelCapacity > 0 ? fuelCapacity : 1000;
+  const alternatorDisplayMaximum = batt != null && batt > 20 ? 32 : 16;
+
+  const oilBarPct = progressPercent(oil, 10);
+  const coolantBarPct = progressPercent(temp, 120);
+  const fuelBarPct = progressPercent(fuel, fuelDisplayMaximum);
+  const alternatorBarPct = progressPercent(alt, alternatorDisplayMaximum);
+  const maintenanceBarPct = progressPercent(maintenance, 1000);
+  const runHoursBarPct = progressPercent(runHours, 10000);
 
   const mcbKnown = hasMetric(gen, "mcb_closed");
   const gcbKnown = hasMetric(gen, "gcb_closed");
@@ -225,19 +241,23 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
           icon={<IconOilCan />}
           label="Oil Pressure"
           value={oil == null ? "N/D" : `${fmt(oil, 2)} ${oilUnit}`}
+          pct={oilBarPct ?? 0}
+          bar
           known={oil != null}
         />
         <EngineRow
           icon={<IconThermometer />}
           label="Coolant Temp."
           value={temp == null ? "N/D" : `${fmt(temp, 0)} °C`}
+          pct={coolantBarPct ?? 0}
+          bar
           known={temp != null}
         />
         <EngineRow
           icon={<IconFuelPump />}
           label="Fuel Level"
           value={fuel == null ? "N/D" : `${fmt(fuel, 0)} ${fuelUnit}`}
-          pct={fuelIsPercent ? fuel : null}
+          pct={fuelBarPct ?? 0}
           bar={fuelIsPercent}
           known={fuel != null}
         />
@@ -245,18 +265,24 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
           icon={<IconBolt />}
           label="Alternator Volt."
           value={alt == null ? "N/D" : `${fmt(alt)} V`}
+          pct={alternatorBarPct ?? 0}
+          bar
           known={alt != null}
         />
         <EngineRow
           icon={<IconClock />}
           label="Maintenance"
           value={maintenance == null ? "N/D" : `${fmt(maintenance, 0)} h`}
+          pct={maintenanceBarPct ?? 0}
+          bar
           known={maintenance != null}
         />
         <EngineRow
           icon={<IconRunHours />}
           label="Run Hours"
           value={runHours == null ? "N/D" : `${fmt(runHours)} h`}
+          pct={runHoursBarPct ?? 0}
+          bar
           known={runHours != null}
         />
       </section>
