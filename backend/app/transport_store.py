@@ -4,8 +4,12 @@ import time
 
 from . import db
 
+BRIDGE_TIMEOUT_MS = max(
+    500,
+    int(float(os.environ.get("RC_RAPID_BRIDGE_TIMEOUT", "4")) * 1000),
+)
 DEFAULT_DEVICE_TIMEOUT_MS = max(
-    1000,
+    BRIDGE_TIMEOUT_MS + 1000,
     int(os.environ.get("RC_MODBUS_DEVICE_TIMEOUT_MS", "5500")),
 )
 DEFAULT_POLL_DELAY_MS = max(
@@ -64,6 +68,10 @@ def set_transport_config(generator_id: str, config: dict, actor: str):
         timeout_ms = int(clean["timeoutMs"])
         if not 1000 <= timeout_ms <= 30000:
             raise ValueError("timeoutMs deve ficar entre 1000 e 30000 ms")
+        if timeout_ms <= BRIDGE_TIMEOUT_MS:
+            raise ValueError(
+                f"timeoutMs deve ser maior que o timeout da bridge ({BRIDGE_TIMEOUT_MS} ms)"
+            )
         clean["timeoutMs"] = timeout_ms
     if "pollDelayMs" in clean:
         poll_delay_ms = int(clean["pollDelayMs"])
@@ -113,8 +121,8 @@ def validate_for_transport(generator: dict, config: dict):
         raise ValueError(f"Transporte não suportado: {transport}")
 
     timeout_ms = int(config.get("timeoutMs") or DEFAULT_DEVICE_TIMEOUT_MS)
-    if timeout_ms <= 4000:
+    if timeout_ms <= BRIDGE_TIMEOUT_MS:
         raise ValueError(
-            "timeoutMs do Rapid deve ser maior que o timeout padrão de 4 s da bridge"
+            f"timeoutMs do Rapid deve ser maior que o timeout da bridge ({BRIDGE_TIMEOUT_MS} ms)"
         )
     return True
