@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 import { fmt } from "../generator-metrics";
 import "../kw-gauge-reference.css";
 
+type MeterTone = "good" | "warning" | "critical" | "neutral";
+
 export function EngineRow({
   icon,
   label,
@@ -13,6 +15,7 @@ export function EngineRow({
   pct = null,
   bar = false,
   known = true,
+  tone = "neutral",
 }: {
   icon: ReactNode;
   label: string;
@@ -20,6 +23,7 @@ export function EngineRow({
   pct?: number | null;
   bar?: boolean;
   known?: boolean;
+  tone?: MeterTone;
 }) {
   const showBar = bar || pct != null;
   const hasScale = known && pct != null;
@@ -33,16 +37,12 @@ export function EngineRow({
         <span
           className={cn(
             "comap-meter",
+            `is-${tone}`,
             !known && "is-unknown",
             known && pct == null && "is-unscaled",
           )}
         >
-          <i
-            style={{
-              width: `${fill}%`,
-              background: hasScale ? "var(--primary)" : "transparent",
-            }}
-          />
+          <i style={{ width: `${fill}%` }} />
         </span>
       ) : (
         <span />
@@ -114,9 +114,13 @@ export function ControllerModeBar({ gen, known }: { gen: Generator; known: boole
 
 function niceGaugeMaximum(nominal: number | null) {
   if (nominal == null || !Number.isFinite(nominal) || nominal <= 0) return 500;
-  const magnitude = 10 ** Math.floor(Math.log10(nominal));
-  const step = magnitude >= 100 ? magnitude / 10 : magnitude / 5;
-  return Math.max(step * 5, Math.ceil(nominal / step) * step);
+
+  const roughStep = nominal / 5;
+  const magnitude = 10 ** Math.floor(Math.log10(roughStep));
+  const normalized = roughStep / magnitude;
+  const niceStep = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+
+  return niceStep * magnitude * 5;
 }
 
 export function PowerGaugeKw({
@@ -143,17 +147,17 @@ export function PowerGaugeKw({
   const greenEnd = Math.min(0.76, Math.max(0.62, nominalPct - 0.13));
   const amberEnd = Math.min(0.92, Math.max(greenEnd + 0.08, nominalPct));
 
-  const cx = 180;
-  const cy = 186;
-  const arcRadius = 139;
-  const needleLength = 122;
+  const cx = 150;
+  const cy = 143;
+  const arcRadius = 105;
+  const needleLength = 94;
   const needleAngle = 180 + pct * 180;
   const needleRad = (needleAngle * Math.PI) / 180;
   const needleTipX = cx + Math.cos(needleRad) * needleLength;
   const needleTipY = cy + Math.sin(needleRad) * needleLength;
-  const needleBackX = cx - Math.cos(needleRad) * 15;
-  const needleBackY = cy - Math.sin(needleRad) * 15;
-  const needleHalfWidth = 5.2;
+  const needleBackX = cx - Math.cos(needleRad) * 11;
+  const needleBackY = cy - Math.sin(needleRad) * 11;
+  const needleHalfWidth = 3.8;
   const needlePerpX = -Math.sin(needleRad) * needleHalfWidth;
   const needlePerpY = Math.cos(needleRad) * needleHalfWidth;
   const needlePoints = [
@@ -167,8 +171,8 @@ export function PowerGaugeKw({
     const rad = (angle * Math.PI) / 180;
     const major = index % 10 === 0;
     const medium = !major && index % 5 === 0;
-    const outer = 158;
-    const inner = major ? 143 : medium ? 148 : 152;
+    const outer = 121;
+    const inner = major ? 111 : medium ? 115 : 118;
 
     return {
       index,
@@ -185,12 +189,12 @@ export function PowerGaugeKw({
     const fraction = index / 5;
     const angle = 180 + fraction * 180;
     const rad = (angle * Math.PI) / 180;
-    const radius = 171;
+    const radius = 132;
 
     return {
       index,
       x: cx + Math.cos(rad) * radius,
-      y: cy + Math.sin(rad) * radius + 4,
+      y: cy + Math.sin(rad) * radius + 3,
       text: fmt(displayMax * fraction, 0),
     };
   });
@@ -216,7 +220,7 @@ export function PowerGaugeKw({
       </div>
 
       <svg
-        viewBox="0 0 360 260"
+        viewBox="0 0 300 205"
         className="generator-power-gauge"
         role="img"
         aria-label={value == null ? "Potência indisponível" : `Potência ${fmt(value, 0)} kW`}
@@ -274,8 +278,8 @@ export function PowerGaugeKw({
           points={needlePoints}
           className={cn("generator-gauge-needle", !hasValue && "is-unknown")}
         />
-        <circle cx={cx} cy={cy} r="10" className="generator-gauge-hub" />
-        <circle cx={cx} cy={cy} r="3.2" className="generator-gauge-hub-center" />
+        <circle cx={cx} cy={cy} r="7.5" className="generator-gauge-hub" />
+        <circle cx={cx} cy={cy} r="2.6" className="generator-gauge-hub-center" />
       </svg>
 
       <div className="generator-power-readout">
