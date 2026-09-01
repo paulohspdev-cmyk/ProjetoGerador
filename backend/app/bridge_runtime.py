@@ -1,12 +1,16 @@
 """Runtime da bridge RC.
 
-A bridge existe exclusivamente para equipamentos que iniciam a conexão TCP
-(`reverse_tcp`). Modbus TCP direto e RTU-over-TCP são conexões de saída do
-Rapid SCADA e nunca devem abrir listener reverso aqui.
+A bridge atende equipamentos que iniciam a conexão TCP com a VM.
 
-O controle privilegiado continua globalmente desabilitado por padrão. Quando
-ativado, qualquer InteliGen 200 só é elegível se existir binding Rapid e
-cadastro habilitado com o mesmo Rapid Device, porta e Unit ID.
+Dois enquadramentos de fio são suportados no lado remoto:
+- Modbus TCP/MBAP (padrão histórico de ``reverse_tcp``);
+- Modbus RTU transparente sobre TCP quando o Controller Pack declara
+  ``reverseTcpFraming=modbus_rtu``. Nesse modo o modem/DTU transporta o
+  barramento RS485 e a bridge converte MBAP local <-> RTU+CRC remoto.
+
+O caminho local usado pelo Rapid SCADA permanece Modbus TCP e somente leitura
+FC03/FC04. O controle privilegiado continua globalmente desabilitado por padrão
+e jamais é liberado para framing RTU reverso.
 """
 
 import asyncio
@@ -18,11 +22,16 @@ from collections import defaultdict, deque
 from pathlib import Path
 
 from . import bridge, db
+from .controller_library import pack_for_model
 
 STATUS_FILE = Path(os.environ.get("RC_BRIDGE_STATUS_FILE", "/run/rc-geradores/bridge-status.json"))
 CONNECT_RATE_LIMIT = max(1, int(os.environ.get("RC_RAPID_CONNECT_RATE_LIMIT", "30")))
 REPLACE_ACTIVE_AFTER = max(5, int(os.environ.get("RC_RAPID_REPLACE_ACTIVE_AFTER", "30")))
 REQUIRE_ALLOWLIST = os.environ.get("RC_RAPID_REQUIRE_ALLOWLIST", "0").strip() == "1"
+
+FRAMING_MODBUS_TCP = "modbus_tcp"
+FRAMING_MODBUS_RTU = "modbus_rtu"
+SUPPORTED_REMOTE_FRAMINGS = {FRAMING_MODBUS_TCP, FRAMING_MODBUS_RTU}
 
 
 def _allowed_networks():
@@ -50,8 +59,26 @@ def _allowed_networks():
 REMOTE_ALLOWED_NETWORKS = _allowed_networks()
 
 
+def _remote_framing_for_generator(generator: dict) -> str:
+    """Resolve framing remoto por Controller Pack sem alterar o cadastro legado.
+
+    ``reverse_tcp`` continua Modbus TCP por padrão. Um pack pode declarar
+    explicitamente ``reverseTcpFraming=modbus_rtu`` para modem/DTU transparente
+    conectado a RS485. Valores ausentes mantêm o comportamento histórico.
+    """
+
+    pack = pack_for_model(generator.get("controller_model") or "")
+    framing = str((pack or {}).get("reverseTcpFraming") or FRAMING_MODBUS_TCP).strip().lower()
+    if framing not in SUPPORTED_REMOTE_FRAMINGS:
+        raise ValueError(
+            f"Controller Pack {generator.get('controller_model') or generator.get('id')} "
+            f"declara reverseTcpFraming inválido: {framing}"
+        )
+    return framing
+
+
 def resolve_ig200_bound_device(device_num):
-    """Resolve um IG200 pelo Rapid Device sem hardcode do Device 200."""
+    """Resolve um IG200 Modbus TCP pelo Rapid Device sem hardcode do Device 200."""
     device_num = int(device_num or 0)
     if device_num <= 0:
         raise ValueError("Rapid Device inválido para controle IG200")
@@ -63,11 +90,12 @@ def resolve_ig200_bound_device(device_num):
             if int(item.get("rapid_device_num") or 0) == device_num
             and str(item.get("controller_type", "")).upper() == "COMAP"
             and str(item.get("controller_model", "")).strip().lower() == "inteligen 200"
+            and str(item.get("transport") or "") == "reverse_tcp"
         ),
         None,
     )
     if not binding:
-        raise ValueError(f"binding InteliGen 200 não encontrado para Rapid Device {device_num}")
+        raise ValueError(f"binding InteliGen 200 reverse TCP não encontrado para Rapid Device {device_num}")
 
     port = int(binding.get("listen_port") or 0)
     unit = int(binding.get("modbus_unit") or 0)
@@ -80,6 +108,7 @@ def resolve_ig200_bound_device(device_num):
             and int(item.get("modbus_unit") or 0) == unit
             and str(item.get("controller_type", "")).upper() == "COMAP"
             and str(item.get("controller_model", "")).strip().lower() == "inteligen 200"
+            and str(item.get("transport") or "") == "reverse_tcp"
         ),
         None,
     )
@@ -87,14 +116,49 @@ def resolve_ig200_bound_device(device_num):
         raise ValueError("gerador InteliGen 200 correspondente não encontrado no cadastro")
     if not generator.get("enabled"):
         raise ValueError("gerador está desabilitado no cadastro")
+    if _remote_framing_for_generator(generator) != FRAMING_MODBUS_TCP:
+        raise PermissionError("controle IG200 bloqueado: framing remoto não é Modbus TCP homologado")
     return generator, port, unit
 
 
 bridge.resolve_ig200 = resolve_ig200_bound_device
 
 
+def _modbus_crc16(data: bytes) -> int:
+    crc = 0xFFFF
+    for byte in data:
+        crc ^= byte
+        for _ in range(8):
+            if crc & 0x0001:
+                crc = (crc >> 1) ^ 0xA001
+            else:
+                crc >>= 1
+    return crc & 0xFFFF
+
+
+def _rtu_frame(unit: int, pdu: bytes) -> bytes:
+    if not 1 <= int(unit) <= 247:
+        raise ValueError(f"Unit ID RTU inválido: {unit}")
+    body = bytes([int(unit)]) + bytes(pdu)
+    crc = _modbus_crc16(body)
+    return body + bytes([crc & 0xFF, (crc >> 8) & 0xFF])
+
+
+def _validate_rtu_crc(frame: bytes) -> None:
+    if len(frame) < 4:
+        raise ValueError("frame RTU curto")
+    received = frame[-2] | (frame[-1] << 8)
+    calculated = _modbus_crc16(frame[:-2])
+    if received != calculated:
+        raise ValueError(
+            f"CRC RTU inválido: recebido=0x{received:04X} calculado=0x{calculated:04X}"
+        )
+
+
 class HardenedBridgePort(bridge.BridgePort):
-    """Adiciona proteção de peer sem alterar o protocolo Modbus da bridge base."""
+    """Adiciona proteção de peer sem alterar o protocolo Modbus TCP histórico."""
+
+    remote_framing = FRAMING_MODBUS_TCP
 
     def __init__(self, remote_port):
         super().__init__(remote_port)
@@ -178,12 +242,86 @@ class HardenedBridgePort(bridge.BridgePort):
     def snapshot(self):
         return {
             **super().snapshot(),
+            "remoteFraming": self.remote_framing,
             "rejectedConnections": self.rejected_connections,
             "peerAllowlistEnabled": bool(REMOTE_ALLOWED_NETWORKS),
             "peerAllowlistRequired": REQUIRE_ALLOWLIST,
             "connectRateLimitPerMinute": CONNECT_RATE_LIMIT,
             "activePeerProtectionSeconds": REPLACE_ACTIVE_AFTER,
         }
+
+
+class HardenedRtuBridgePort(HardenedBridgePort):
+    """Converte MBAP local do Rapid para Modbus RTU transparente no modem."""
+
+    remote_framing = FRAMING_MODBUS_RTU
+
+    async def _read_rtu_response(self, expected_unit: int, expected_function: int) -> bytes:
+        reader = self.remote_reader
+        if reader is None:
+            raise ConnectionError("modem desconectado")
+
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + bridge.TIMEOUT
+
+        async def read_exactly(count: int) -> bytes:
+            remaining = deadline - loop.time()
+            if remaining <= 0:
+                raise asyncio.TimeoutError()
+            data = await asyncio.wait_for(reader.readexactly(count), remaining)
+            self.bytes_rx += len(data)
+            self.last_rx_at = int(time.time())
+            return data
+
+        head = await read_exactly(2)
+        unit, function = head[0], head[1]
+
+        if unit != int(expected_unit):
+            raise ValueError(f"Unit ID RTU inesperado {unit}; esperado {int(expected_unit)}")
+        if function not in (expected_function, expected_function | 0x80):
+            raise ValueError(f"função RTU inesperada {function}; esperada {expected_function}")
+
+        if function & 0x80:
+            tail = await read_exactly(3)
+            frame = head + tail
+            _validate_rtu_crc(frame)
+            return frame[1:-2]
+
+        if function not in bridge.READ_FUNCTIONS:
+            raise PermissionError(f"FC{function:02d} bloqueada no caminho RTU somente leitura")
+
+        byte_count_raw = await read_exactly(1)
+        byte_count = byte_count_raw[0]
+        if byte_count <= 0 or byte_count > 250:
+            raise ValueError(f"byte count RTU inválido: {byte_count}")
+
+        tail = await read_exactly(byte_count + 2)
+        frame = head + byte_count_raw + tail
+        _validate_rtu_crc(frame)
+        return frame[1:-2]
+
+    async def request_locked(self, unit, pdu):
+        if not pdu:
+            raise ValueError("PDU vazio")
+        function = pdu[0]
+        if function not in bridge.READ_FUNCTIONS:
+            raise PermissionError(f"FC{function:02d} bloqueada no reverse TCP RTU somente leitura")
+        reader = self.remote_reader
+        writer = self.remote_writer
+        if reader is None or writer is None or writer.is_closing():
+            raise ConnectionError("modem desconectado")
+
+        frame = _rtu_frame(unit, pdu)
+        writer.write(frame)
+        await writer.drain()
+        self.bytes_tx += len(frame)
+        self.last_tx_at = int(time.time())
+        return await self._read_rtu_response(int(unit), int(function))
+
+    async def ig200_command(self, unit, action, password=None):
+        raise PermissionError(
+            "controle industrial bloqueado no reverse TCP RTU; caminho disponível somente para FC03/FC04"
+        )
 
 
 def write_status(enabled: list[dict]) -> None:
@@ -196,6 +334,8 @@ def write_status(enabled: list[dict]) -> None:
                 "tag": generator.get("tag") or generator["id"],
                 "unit": int(generator.get("modbus_unit") or 1),
                 "rapidDeviceNum": generator.get("rapid_device_num"),
+                "transport": generator.get("transport"),
+                "remoteFraming": _remote_framing_for_generator(generator),
             }
         )
 
@@ -232,17 +372,46 @@ async def reconcile_reverse_tcp():
             and g.get("transport") == "reverse_tcp"
             and 1 <= int(g.get("listen_port") or 0) <= 65535
         ]
-        wanted_ports = sorted({int(g["listen_port"]) for g in enabled})
 
-        for port in wanted_ports:
-            if port in bridge.bridges:
+        by_port: dict[int, list[dict]] = {}
+        for generator in enabled:
+            by_port.setdefault(int(generator["listen_port"]), []).append(generator)
+
+        wanted: dict[int, str] = {}
+        for port, generators in sorted(by_port.items()):
+            try:
+                framings = {_remote_framing_for_generator(g) for g in generators}
+            except Exception as exc:
+                bridge.log(f"porta {port}: framing inválido; listener bloqueado: {exc}")
                 continue
-            item = HardenedBridgePort(port)
+            if len(framings) != 1:
+                labels = ", ".join(
+                    f"{g.get('tag') or g['id']}={_remote_framing_for_generator(g)}"
+                    for g in generators
+                )
+                bridge.log(f"porta {port}: framing misto no mesmo listener ({labels}); porta bloqueada")
+                continue
+            wanted[port] = next(iter(framings))
+
+        for port, framing in wanted.items():
+            current = bridge.bridges.get(port)
+            if current is not None and getattr(current, "remote_framing", None) == framing:
+                continue
+            if current is not None:
+                await current.stop()
+                bridge.bridges.pop(port, None)
+                bridge.log(f"porta {port}: framing alterado; ponte anterior removida")
+
+            if framing == FRAMING_MODBUS_RTU:
+                item = HardenedRtuBridgePort(port)
+            else:
+                item = HardenedBridgePort(port)
             await item.start()
             bridge.bridges[port] = item
+            bridge.log(f"porta {port}: framing remoto {framing}")
 
         for port in list(bridge.bridges):
-            if port in wanted_ports:
+            if port in wanted:
                 continue
             item = bridge.bridges.pop(port)
             await item.stop()
@@ -264,6 +433,7 @@ async def main():
         pass
     bridge.log(
         "iniciando ponte reverse TCP; caminho Rapid somente leitura FC03/FC04; "
+        "framing remoto definido por Controller Pack; "
         f"allowlist={'ativa' if REMOTE_ALLOWED_NETWORKS else 'não configurada'}"
     )
     await bridge.start_control_server()
