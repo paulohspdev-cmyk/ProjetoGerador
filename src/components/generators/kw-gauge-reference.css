@@ -1,7 +1,7 @@
-.kw-instrument {
+.generator-power-instrument {
   position: relative;
   display: grid;
-  min-height: 226px;
+  min-height: 300px;
   place-items: center;
   overflow: visible;
   border: 0;
@@ -9,128 +9,135 @@
   background: transparent;
 }
 
-.kw-instrument::before {
-  display: none;
-}
-
-.kw-instrument .kw-gauge-svg {
+.comap-panel-v2 .generator-power-gauge {
   display: block;
-  width: min(100%, 336px);
+  width: min(100%, 356px);
   height: auto;
-  margin-top: 12px;
+  margin: 24px auto 0;
   overflow: visible;
 }
 
-.kw-instrument .kw-gauge-base,
-.kw-instrument .kw-gauge-zone {
+.generator-gauge-base,
+.generator-gauge-zone {
   fill: none;
   stroke-linecap: butt;
-  stroke-width: 18;
+  stroke-width: 17;
 }
 
-.kw-instrument .kw-gauge-base {
-  stroke: color-mix(in oklab, var(--industrial-border) 58%, var(--industrial-bg));
+.generator-gauge-base {
+  stroke: color-mix(in oklab, var(--industrial-border) 70%, var(--industrial-bg));
 }
 
-.kw-instrument .kw-gauge-green {
+.generator-gauge-green {
   stroke: var(--online);
-  filter: drop-shadow(0 0 4px color-mix(in oklab, var(--online) 34%, transparent));
+  filter: drop-shadow(0 0 4px color-mix(in oklab, var(--online) 38%, transparent));
 }
 
-.kw-instrument .kw-gauge-amber {
+.generator-gauge-amber {
   stroke: var(--alert);
-  filter: drop-shadow(0 0 4px color-mix(in oklab, var(--alert) 30%, transparent));
+  filter: drop-shadow(0 0 4px color-mix(in oklab, var(--alert) 34%, transparent));
 }
 
-.kw-instrument .kw-gauge-red {
+.generator-gauge-red {
   stroke: var(--offline);
-  filter: drop-shadow(0 0 4px color-mix(in oklab, var(--offline) 30%, transparent));
+  filter: drop-shadow(0 0 4px color-mix(in oklab, var(--offline) 34%, transparent));
 }
 
-.kw-gauge-tick {
-  stroke: color-mix(in oklab, var(--industrial-foreground) 76%, transparent);
-  stroke-width: 1.3;
+.generator-gauge-tick {
+  stroke: color-mix(in oklab, var(--industrial-foreground) 74%, transparent);
+  stroke-width: 1.5;
 }
 
-.kw-gauge-tick.is-major {
+.generator-gauge-tick.is-medium {
+  stroke: color-mix(in oklab, var(--industrial-foreground) 90%, transparent);
+  stroke-width: 2;
+}
+
+.generator-gauge-tick.is-major {
   stroke: var(--industrial-foreground);
-  stroke-width: 2.2;
+  stroke-width: 3.2;
 }
 
-.kw-instrument .kw-gauge-scale {
+.generator-gauge-scale {
   fill: var(--industrial-foreground);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 900;
 }
 
-.kw-instrument .kw-gauge-needle {
+.generator-gauge-needle {
   fill: color-mix(in oklab, var(--industrial-foreground) 96%, white 4%);
-  stroke: color-mix(in oklab, white 55%, var(--industrial-muted));
-  stroke-width: 1.2;
-  filter: drop-shadow(0 2px 2px color-mix(in oklab, var(--background) 90%, transparent));
+  stroke: color-mix(in oklab, white 62%, var(--industrial-muted));
+  stroke-width: 1.35;
+  filter: drop-shadow(0 2px 3px color-mix(in oklab, var(--background) 92%, transparent));
   opacity: 1;
+  transition: all 0.35s ease;
 }
 
-.kw-instrument .kw-gauge-needle.is-unknown {
-  fill: color-mix(in oklab, var(--industrial-foreground) 78%, var(--industrial-muted));
-  stroke: color-mix(in oklab, var(--industrial-muted) 76%, white 24%);
-  opacity: 0.9;
+.generator-gauge-needle.is-unknown {
+  fill: color-mix(in oklab, var(--industrial-foreground) 65%, var(--industrial-muted));
+  stroke: var(--industrial-muted);
+  opacity: 0.55;
 }
 
-.kw-instrument .kw-gauge-hub {
-  fill: color-mix(in oklab, var(--industrial-foreground) 82%, var(--industrial-panel));
-  stroke: color-mix(in oklab, var(--industrial-muted) 80%, white 20%);
+.generator-gauge-hub {
+  fill: color-mix(in oklab, var(--industrial-foreground) 86%, var(--industrial-panel));
+  stroke: color-mix(in oklab, var(--industrial-muted) 65%, white 35%);
   stroke-width: 3;
-  filter: drop-shadow(0 2px 2px color-mix(in oklab, var(--background) 90%, transparent));
+  filter: drop-shadow(0 2px 3px color-mix(in oklab, var(--background) 92%, transparent));
 }
 
-.kw-instrument .kw-gauge-hub-center {
+.generator-gauge-hub-center {
   fill: var(--industrial-panel-strong);
   stroke: var(--industrial-foreground);
-  stroke-width: 1;
+  stroke-width: 1.25;
 }
 
-.kw-instrument-meta {
+.generator-power-meta {
   position: absolute;
   z-index: 6;
-  top: 3px;
+  top: 5px;
   right: 0;
   display: grid;
-  width: 96px;
-  gap: 3px;
+  width: 101px;
+  gap: 4px;
 }
 
-.kw-instrument-meta > span {
+.generator-power-meta > span {
   display: grid;
-  grid-template-columns: 36px 1fr;
-  min-height: 23px;
+  min-height: 27px;
+  grid-template-columns: 38px 1fr;
   align-items: center;
-  padding: 2px 6px;
+  padding: 3px 6px;
   border: 1px solid color-mix(in oklab, var(--industrial-border) 88%, white 12%);
   border-radius: 1px;
   background: color-mix(in oklab, var(--industrial-bg) 96%, transparent);
   color: var(--industrial-foreground);
   font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 900;
   line-height: 1;
-  text-align: right;
 }
 
-.kw-instrument-meta b {
-  color: var(--industrial-foreground);
+.generator-power-meta b,
+.generator-power-meta strong {
   font-weight: 900;
+}
+
+.generator-power-meta b {
   text-align: left;
 }
 
-.kw-gauge-readout {
+.generator-power-meta strong {
+  text-align: right;
+}
+
+.generator-power-readout {
   position: absolute;
   z-index: 5;
-  bottom: 7px;
+  bottom: 17px;
   left: 50%;
   display: flex;
-  min-width: 108px;
+  min-width: 118px;
   transform: translateX(-50%);
   flex-direction: column;
   align-items: center;
@@ -139,47 +146,47 @@
   pointer-events: none;
 }
 
-.kw-gauge-readout strong {
+.generator-power-readout strong {
   color: var(--industrial-foreground);
   font-family: var(--font-mono);
-  font-size: 40px;
+  font-size: 52px;
   font-weight: 900;
-  letter-spacing: -0.065em;
-  text-shadow: 0 2px 2px color-mix(in oklab, var(--background) 92%, transparent);
+  letter-spacing: -0.07em;
+  text-shadow: 0 2px 3px color-mix(in oklab, var(--background) 94%, transparent);
 }
 
-.kw-gauge-readout span {
-  margin-top: 6px;
-  color: var(--industrial-muted);
+.generator-power-readout span {
+  margin-top: 7px;
+  color: var(--industrial-foreground);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 15px;
   font-weight: 900;
 }
 
-.kw-battery-badge {
+.generator-battery-badge {
   position: absolute;
   z-index: 6;
   right: 0;
-  bottom: 5px;
+  bottom: 11px;
   display: grid;
-  min-width: 98px;
-  min-height: 24px;
-  grid-template-columns: 22px 22px 1fr;
+  min-width: 102px;
+  min-height: 27px;
+  grid-template-columns: 22px 24px 1fr;
   align-items: center;
   gap: 4px;
-  padding: 2px 6px 2px 4px;
-  border: 1px solid color-mix(in oklab, var(--alert) 70%, var(--industrial-border));
+  padding: 3px 7px 3px 5px;
+  border: 1px solid color-mix(in oklab, var(--alert) 74%, var(--industrial-border));
   border-radius: 1px;
   background: var(--alert);
   color: var(--industrial-bg);
   font-family: var(--font-mono);
   font-size: 9px;
   font-weight: 900;
-  box-shadow: 0 0 5px color-mix(in oklab, var(--alert) 24%, transparent);
+  box-shadow: 0 0 6px color-mix(in oklab, var(--alert) 26%, transparent);
 }
 
-.kw-battery-icon {
-  width: 20px;
+.generator-battery-icon {
+  width: 21px;
   height: 15px;
   fill: none;
   stroke: currentcolor;
@@ -188,17 +195,17 @@
   stroke-width: 1.5;
 }
 
-.kw-battery-badge span {
+.generator-battery-badge span {
   font-size: 8px;
-  opacity: 0.78;
+  opacity: 0.8;
 }
 
-.kw-battery-badge b {
+.generator-battery-badge b {
   text-align: right;
   white-space: nowrap;
 }
 
-.kw-battery-badge.is-unknown {
+.generator-battery-badge.is-unknown {
   border-color: var(--industrial-border);
   background: transparent;
   color: var(--industrial-muted);
@@ -206,11 +213,11 @@
 }
 
 .comap-panel-v2 .comap-power-gauge-block {
-  padding: 5px 8px 6px;
+  padding: 6px 8px 8px;
 }
 
 .comap-panel-v2 .power-gauge-heading {
-  min-height: 19px;
+  min-height: 20px;
   align-items: center;
 }
 
@@ -219,46 +226,77 @@
 }
 
 .comap-panel-v2 .engine-status-block {
-  padding-top: 5px !important;
-  padding-bottom: 5px !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
 }
 
 .comap-panel-v2 .engine-status-block .comap-engine {
-  min-height: 17px;
+  min-height: 20px;
+}
+
+.comap-panel-v2 .comap-meter {
+  height: 7px;
+  overflow: hidden;
+  border-color: color-mix(in oklab, var(--info) 58%, var(--industrial-border));
+  background: color-mix(in oklab, var(--industrial-bg) 92%, var(--industrial-panel));
+}
+
+.comap-panel-v2 .comap-meter > i {
+  min-width: 0;
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--info) 76%, var(--online)),
+    var(--online)
+  ) !important;
+  box-shadow: 0 0 5px color-mix(in oklab, var(--online) 34%, transparent);
+  transition: width 0.4s ease;
+}
+
+.comap-panel-v2 .comap-meter.is-unknown > i,
+.comap-panel-v2 .comap-meter.is-unscaled > i {
+  background: transparent !important;
+  box-shadow: none;
 }
 
 @media (max-width: 360px) {
-  .kw-instrument {
-    min-height: 214px;
+  .generator-power-instrument {
+    min-height: 286px;
   }
 
-  .kw-instrument .kw-gauge-svg {
-    width: min(100%, 315px);
-    margin-top: 13px;
+  .comap-panel-v2 .generator-power-gauge {
+    width: min(100%, 336px);
+    margin-top: 27px;
   }
 
-  .kw-instrument-meta {
-    width: 91px;
+  .generator-power-meta {
+    width: 96px;
   }
 
-  .kw-instrument-meta > span {
-    grid-template-columns: 34px 1fr;
-    min-height: 22px;
+  .generator-power-meta > span {
+    min-height: 25px;
+    grid-template-columns: 36px 1fr;
     padding-inline: 5px;
     font-size: 9px;
   }
 
-  .kw-gauge-readout strong {
-    font-size: 36px;
+  .generator-power-readout strong {
+    font-size: 47px;
   }
 
-  .kw-battery-badge {
-    min-width: 91px;
-    grid-template-columns: 20px 20px 1fr;
+  .generator-battery-badge {
+    min-width: 96px;
+    grid-template-columns: 20px 22px 1fr;
     padding-inline: 4px;
   }
 
-  .kw-battery-icon {
-    width: 18px;
+  .generator-battery-icon {
+    width: 19px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .generator-gauge-needle,
+  .comap-panel-v2 .comap-meter > i {
+    transition: none;
   }
 }
