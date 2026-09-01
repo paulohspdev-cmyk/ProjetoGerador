@@ -132,22 +132,16 @@ for (const marker of [
 const cardCss = read("src/components/generators/generator-six-card.css");
 for (const marker of [
   ".generator-vertical-grid.generator-six-card-grid",
-  "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
-  "grid-auto-rows: auto",
+  "grid-template-rows: minmax(0, 1fr)",
   ".comap-engine > span:nth-child(3):empty",
   ".comap-panel-v2 .comap-flow-v2",
-  ".generator-power-instrument",
-  ".generator-power-gauge",
-  "@media (max-height: 860px)",
-  "@media (max-height: 720px)",
-  "@media (max-width: 639px)",
+  "height: 100%",
 ]) {
   if (!cardCss.includes(marker))
-    failures.push(`layout vertical perdeu regra responsiva: ${marker}`);
+    failures.push(`layout vertical original perdeu regra de encaixe: ${marker}`);
 }
-for (const forbidden of ["grid-template-rows: minmax(0, 1fr)", ".kw-gauge-"]) {
-  if (cardCss.includes(forbidden))
-    failures.push(`layout vertical manteve regra obsoleta/conflitante: ${forbidden}`);
+if (!cardCss.includes("@media (max-height: 860px)")) {
+  failures.push("modo vertical original perdeu densidade automática para viewport baixa");
 }
 
 if (failures.length) {
@@ -155,5 +149,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  "Decision UI check OK: dashboard, vertical responsivo, compacto clássico, lista completa e guardrails industriais validados.",
+  "Decision UI check OK: dashboard, card vertical original, compacto clássico, lista completa e guardrails industriais validados.",
 );
