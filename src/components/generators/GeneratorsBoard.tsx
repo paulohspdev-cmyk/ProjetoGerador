@@ -18,6 +18,7 @@ import { KpiStrip } from "./KpiStrip";
 import { PowerFlowCard } from "./PowerFlowCard";
 import { useGenerators } from "./GeneratorsProvider";
 import "./generator-six-card.css";
+import "./operator-card-refinement.css";
 
 type View = "principal" | "compacto" | "lista";
 

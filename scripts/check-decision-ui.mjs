@@ -61,9 +61,11 @@ for (const marker of [
   "sm:grid-cols-2",
   "lg:grid-cols-3",
   "2xl:grid-cols-4",
+  'import "./operator-card-refinement.css"',
+  'view === "lista" ? 12 : 8',
 ]) {
   if (!board.includes(marker))
-    failures.push(`toolbar/modos de geradores perdeu seletor ou grade responsiva: ${marker}`);
+    failures.push(`toolbar/modos de geradores perdeu seletor ou contrato responsivo: ${marker}`);
 }
 for (const forbidden of ["Cards verticais", "Cards compactos"]) {
   if (board.includes(forbidden))
