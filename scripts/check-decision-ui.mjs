@@ -59,7 +59,8 @@ for (const marker of [
   "<CompactCard",
   "<GeneratorTable",
 ]) {
-  if (!board.includes(marker)) failures.push(`toolbar/modos de geradores perdeu seletor: ${marker}`);
+  if (!board.includes(marker))
+    failures.push(`toolbar/modos de geradores perdeu seletor: ${marker}`);
 }
 for (const forbidden of ["Cards verticais", "Cards compactos"]) {
   if (board.includes(forbidden))
@@ -77,7 +78,8 @@ for (const marker of [
   'className="compact-command stop"',
   "readGeneratorTelemetry",
 ]) {
-  if (!compact.includes(marker)) failures.push(`card compacto perdeu função operacional: ${marker}`);
+  if (!compact.includes(marker))
+    failures.push(`card compacto perdeu função operacional: ${marker}`);
 }
 for (const forbidden of [
   'command(gen.id, "auto")',
@@ -86,7 +88,8 @@ for (const forbidden of [
   'command(gen.id, "mcb_close")',
   'command(gen.id, "gcb_close")',
 ]) {
-  if (compact.includes(forbidden)) failures.push(`card compacto habilitou comando não homologado: ${forbidden}`);
+  if (compact.includes(forbidden))
+    failures.push(`card compacto habilitou comando não homologado: ${forbidden}`);
 }
 
 const table = read("src/components/generators/GeneratorTable.tsx");
@@ -103,7 +106,8 @@ for (const marker of [
   '"GCB"',
   '"G L1-N"',
 ]) {
-  if (!table.includes(marker)) failures.push(`lista perdeu telemetria operacional: ${marker}`);
+  if (!table.includes(marker))
+    failures.push(`lista perdeu telemetria operacional: ${marker}`);
 }
 
 const health = read("src/components/generators/generator-health.ts");
@@ -115,7 +119,8 @@ for (const marker of [
   "maintenanceTone",
   "visibleMeterPercent",
 ]) {
-  if (!health.includes(marker)) failures.push(`semáforo compartilhado perdeu regra: ${marker}`);
+  if (!health.includes(marker))
+    failures.push(`semáforo compartilhado perdeu regra: ${marker}`);
 }
 
 const cardCss = read("src/components/generators/generator-six-card.css");
