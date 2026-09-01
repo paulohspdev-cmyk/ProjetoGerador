@@ -164,12 +164,19 @@ if [[ ! "$RAPID_LOCAL_OFFSET" =~ ^[0-9]+$ ]]; then
   RAPID_LOCAL_OFFSET=10000
 fi
 BINDING_COUNT=0
-if [[ -s "$BINDINGS" ]]; then
-  BINDING_COUNT="$(jq 'length' "$BINDINGS" 2>/dev/null || echo 0)"
-  if [[ "$BINDING_COUNT" =~ ^[0-9]+$ ]] && (( BINDING_COUNT > 0 )); then
-    ok "$BINDING_COUNT binding(s) Rapid em runtime"
+if [[ -e "$BINDINGS" ]]; then
+  if jq -e 'type == "array"' "$BINDINGS" >/dev/null 2>&1; then
+    BINDING_COUNT="$(jq 'length' "$BINDINGS")"
+    if [[ "$BINDING_COUNT" =~ ^[0-9]+$ ]] && (( BINDING_COUNT > 0 )); then
+      ok "$BINDING_COUNT binding(s) Rapid em runtime"
+    elif [[ "$BINDING_COUNT" == "0" ]]; then
+      info "arquivo de bindings válido e vazio: plataforma sem gerador provisionado"
+    else
+      fail "quantidade de bindings inválida em $BINDINGS"
+      BINDING_COUNT=0
+    fi
   else
-    fail "arquivo de bindings inválido ou vazio: $BINDINGS"
+    fail "arquivo de bindings não é uma lista JSON válida: $BINDINGS"
     BINDING_COUNT=0
   fi
 else
