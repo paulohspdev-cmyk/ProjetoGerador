@@ -23,7 +23,7 @@ export function GeneratorEditDialog({
   const { can } = useAuth();
   const { updateGenerator } = useGenerators();
   const [open, setOpen] = useState(false);
-  const [tag, setTag] = useState(generator.tag);
+  const [name, setName] = useState(generator.name?.trim() || generator.tag);
   const [site, setSite] = useState(generator.site);
   const [enabled, setEnabled] = useState(generator.enabled !== false);
   const [saving, setSaving] = useState(false);
@@ -31,7 +31,7 @@ export function GeneratorEditDialog({
 
   useEffect(() => {
     if (!open) return;
-    setTag(generator.tag);
+    setName(generator.name?.trim() || generator.tag);
     setSite(generator.site);
     setEnabled(generator.enabled !== false);
     setError(null);
@@ -41,14 +41,14 @@ export function GeneratorEditDialog({
 
   const save = async (event: FormEvent) => {
     event.preventDefault();
-    if (!tag.trim() || !site.trim()) {
-      setError("Informe a identificação e a unidade.");
+    if (!name.trim() || !site.trim()) {
+      setError("Informe o nome e a unidade.");
       return;
     }
     setSaving(true);
     setError(null);
     const result = await updateGenerator(generator.id, {
-      tag: tag.trim(),
+      name: name.trim(),
       site: site.trim(),
       enabled,
     });
@@ -76,18 +76,19 @@ export function GeneratorEditDialog({
         <DialogHeader>
           <DialogTitle>Editar gerador</DialogTitle>
           <DialogDescription>
-            Altere identificação e unidade. A configuração de comunicação fica protegida para evitar
-            mudança acidental no equipamento em campo.
+            Altere nome, unidade e estado do cadastro. Tag, porta, Unit ID e identidade Rapid ficam
+            protegidos para não alterar a comunicação industrial por engano.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={save} className="space-y-4">
           <label className="block text-sm font-semibold">
-            Identificação
+            Nome do gerador
             <input
-              value={tag}
-              onChange={(event) => setTag(event.target.value.toUpperCase())}
+              value={name}
+              onChange={(event) => setName(event.target.value)}
               className="mt-2 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
+              maxLength={160}
               required
             />
           </label>
@@ -119,13 +120,15 @@ export function GeneratorEditDialog({
 
           <details className="rounded-xl border border-border bg-background/35 p-3 text-xs text-muted-foreground">
             <summary className="cursor-pointer font-semibold text-foreground">
-              Detalhes técnicos
+              Identidade técnica protegida
             </summary>
             <div className="mt-2 space-y-1">
+              <p>Tag: {generator.tag}</p>
               <p>Controladora: {generator.controller}</p>
               <p>Comunicação: {generator.transport || "não informada"}</p>
               <p>Porta: {generator.listenPort ?? "automática"}</p>
               <p>Endereço Modbus: {generator.modbusUnit ?? "automático"}</p>
+              <p>Rapid Device: {generator.rapidDeviceNum ?? "não provisionado"}</p>
             </div>
           </details>
 
