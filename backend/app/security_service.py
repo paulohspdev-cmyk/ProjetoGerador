@@ -9,6 +9,7 @@ from urllib.parse import quote
 from . import db, platform_store
 from .auth import hash_password, request_remote_ip, verify_password
 from .config import PASSWORD_RESET_TTL, PUBLIC_BASE_URL, SMTP_FROM, SMTP_HOST
+from .secret_box import protect_secret, reveal_secret
 
 
 def remote_ip(request) -> str:
@@ -43,9 +44,17 @@ def new_totp_secret() -> str:
     return base64.b32encode(secrets.token_bytes(20)).decode("ascii").rstrip("=")
 
 
+def _totp_secret(user_id: str, item: dict) -> str:
+    secret, legacy_plaintext = reveal_secret(item["secret_base32"])
+    if legacy_plaintext:
+        platform_store.set_totp(user_id, protect_secret(secret), bool(item.get("enabled")))
+        db.add_audit("security-migration", "encrypt_2fa_secret", "user", user_id, "TOTP secret migrated")
+    return secret
+
+
 def setup_totp(user: dict):
     secret = new_totp_secret()
-    platform_store.set_totp(user["id"], secret, False)
+    platform_store.set_totp(user["id"], protect_secret(secret), False)
     issuer = quote("RC Geradores")
     account = quote(user.get("email") or user["id"])
     uri = f"otpauth://totp/{issuer}:{account}?secret={secret}&issuer={issuer}&digits=6&period=30"
@@ -54,18 +63,24 @@ def setup_totp(user: dict):
 
 def enable_totp(user: dict, code: str):
     item = platform_store.get_totp(user["id"])
-    if not item or not verify_totp(item["secret_base32"], code):
+    if not item:
+        raise ValueError("2FA ainda não configurado")
+    secret = _totp_secret(user["id"], item)
+    if not verify_totp(secret, code):
         raise ValueError("Código TOTP inválido")
-    platform_store.set_totp(user["id"], item["secret_base32"], True)
+    platform_store.set_totp(user["id"], protect_secret(secret), True)
     db.add_audit(user.get("email") or user["id"], "enable_2fa", "user", user["id"], "TOTP")
     return True
 
 
 def disable_totp(user: dict, code: str):
     item = platform_store.get_totp(user["id"])
-    if not item or not item.get("enabled") or not verify_totp(item["secret_base32"], code):
+    if not item or not item.get("enabled"):
+        raise ValueError("2FA não está habilitado")
+    secret = _totp_secret(user["id"], item)
+    if not verify_totp(secret, code):
         raise ValueError("Código TOTP inválido")
-    platform_store.set_totp(user["id"], item["secret_base32"], False)
+    platform_store.set_totp(user["id"], protect_secret(secret), False)
     db.add_audit(user.get("email") or user["id"], "disable_2fa", "user", user["id"], "TOTP")
     return True
 
@@ -79,7 +94,7 @@ def verify_user_totp(user: dict, code: str | None) -> bool:
     item = platform_store.get_totp(user["id"])
     if not item or not item.get("enabled"):
         return True
-    return verify_totp(item["secret_base32"], code or "")
+    return verify_totp(_totp_secret(user["id"], item), code or "")
 
 
 def change_password(user: dict, current_password: str, new_password: str):
@@ -125,7 +140,10 @@ def confirm_password_reset(token: str, new_password: str):
 
 def list_sessions(user_id: str):
     with db.connect() as conn:
-        rows = conn.execute("SELECT token_hash,user_id,expires_at,created_at,last_seen,remote_ip,user_agent FROM sessions WHERE user_id=? ORDER BY last_seen DESC", (user_id,)).fetchall()
+        rows = conn.execute(
+            "SELECT token_hash,user_id,expires_at,created_at,last_seen,remote_ip,user_agent FROM sessions WHERE user_id=? ORDER BY last_seen DESC",
+            (user_id,),
+        ).fetchall()
     return [
         {
             "id": r["token_hash"][:16],

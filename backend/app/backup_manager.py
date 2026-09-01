@@ -6,8 +6,18 @@ import tempfile
 import time
 from pathlib import Path
 
+from cryptography.fernet import Fernet
+
 from . import db
-from .config import DATA_DIR, DB_FILE, PROJECT_ROOT
+from .config import (
+    BACKUP_OFFSITE_DIR,
+    BACKUP_OFFSITE_KEY_FILE,
+    BACKUP_OFFSITE_REQUIRED,
+    DATA_DIR,
+    DB_FILE,
+    PROJECT_ROOT,
+    TOTP_KEY_FILE,
+)
 
 BACKUP_DIR = DATA_DIR / "backups"
 DEFAULT_RETENTION = int(os.environ.get("RC_BACKUP_RETENTION", "14"))
@@ -43,6 +53,35 @@ def _add_if_exists(tar: tarfile.TarFile, path: Path, arcname: str):
         tar.add(path, arcname=arcname, recursive=True)
 
 
+def _offsite_target(archive: Path) -> Path | None:
+    if not BACKUP_OFFSITE_DIR:
+        if BACKUP_OFFSITE_REQUIRED:
+            raise ValueError("RC_BACKUP_OFFSITE_REQUIRED=1, mas RC_BACKUP_OFFSITE_DIR não foi configurado")
+        return None
+    target_dir = Path(BACKUP_OFFSITE_DIR).resolve()
+    data_root = DATA_DIR.resolve()
+    if target_dir == data_root or data_root in target_dir.parents:
+        raise ValueError("Destino off-site deve ficar fora de RC_DATA_DIR")
+    if not BACKUP_OFFSITE_KEY_FILE:
+        raise ValueError("Backup off-site exige RC_BACKUP_OFFSITE_KEY_FILE para criptografia")
+    key_path = Path(BACKUP_OFFSITE_KEY_FILE)
+    if not key_path.is_file():
+        raise ValueError(f"Chave de backup off-site não encontrada: {key_path}")
+    key = key_path.read_bytes().strip()
+    cipher = Fernet(key)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    encrypted = cipher.encrypt(archive.read_bytes())
+    target = target_dir / f"{archive.name}.fernet"
+    staged = target_dir / f".{target.name}.{os.getpid()}.tmp"
+    staged.write_bytes(encrypted)
+    try:
+        os.chmod(staged, 0o600)
+    except PermissionError:
+        pass
+    os.replace(staged, target)
+    return target
+
+
 def create_full_backup(actor: str = "system", retention: int | None = None) -> dict:
     BACKUP_DIR.mkdir(parents=True, exist_ok=True)
     try:
@@ -53,6 +92,7 @@ def create_full_backup(actor: str = "system", retention: int | None = None) -> d
     archive = BACKUP_DIR / f"rc-geradores-full-{stamp}.tar.gz"
     result = "OK"
     detail = ""
+    offsite_path = None
 
     try:
         with tempfile.TemporaryDirectory(prefix="rc-backup-") as tmp:
@@ -62,6 +102,7 @@ def create_full_backup(actor: str = "system", retention: int | None = None) -> d
                 tar.add(db_copy, arcname="product/product-db.sqlite3")
                 if INCLUDE_SECRETS:
                     _add_if_exists(tar, Path("/etc/rc-geradores.env"), "product/rc-geradores.env")
+                    _add_if_exists(tar, Path(TOTP_KEY_FILE), "product/totp-fernet.key")
                 _add_if_exists(tar, PROJECT_ROOT / "rapid", "product/rapid")
                 _add_if_exists(tar, PROJECT_ROOT / "controllers", "product/controllers")
                 _add_if_exists(tar, Path("/opt/scada/BaseDAT"), "rapid-scada/BaseDAT")
@@ -71,6 +112,8 @@ def create_full_backup(actor: str = "system", retention: int | None = None) -> d
             os.chmod(archive, 0o640)
         except PermissionError:
             pass
+        offsite = _offsite_target(archive)
+        offsite_path = str(offsite) if offsite else None
     except Exception as exc:
         result = "Falha"
         detail = str(exc)[:1000]
@@ -82,24 +125,36 @@ def create_full_backup(actor: str = "system", retention: int | None = None) -> d
             "INSERT INTO backup_records(id,created_at,path,size_bytes,type,result,detail) VALUES (?,?,?,?,?,?,?)",
             (backup_id, int(time.time()), str(archive), size, "Completo", result, detail),
         )
-    db.add_audit(actor, "backup", "system", backup_id, f"{result} {size} bytes; secrets={'included' if INCLUDE_SECRETS else 'excluded'}")
+    db.add_audit(
+        actor,
+        "backup",
+        "system",
+        backup_id,
+        f"{result} {size} bytes; secrets={'included' if INCLUDE_SECRETS else 'excluded'}; offsite={bool(offsite_path)}",
+    )
     if result == "OK":
         apply_retention(retention if retention is not None else DEFAULT_RETENTION)
     return {
         "id": backup_id,
         "path": str(archive),
+        "offsitePath": offsite_path,
         "size_bytes": size,
         "type": "Completo",
         "result": result,
         "detail": detail,
         "created_at": int(time.time()),
         "secretsIncluded": INCLUDE_SECRETS,
+        "totpSecretEncryptedInDatabase": True,
     }
 
 
 def apply_retention(keep: int = DEFAULT_RETENTION):
     keep = max(1, min(int(keep), 365))
-    archives = sorted(BACKUP_DIR.glob("rc-geradores-full-*.tar.gz"), key=lambda p: p.stat().st_mtime, reverse=True)
+    archives = sorted(
+        BACKUP_DIR.glob("rc-geradores-full-*.tar.gz"),
+        key=lambda p: p.stat().st_mtime,
+        reverse=True,
+    )
     for path in archives[keep:]:
         try:
             path.unlink()
@@ -110,7 +165,11 @@ def apply_retention(keep: int = DEFAULT_RETENTION):
 def safe_archive_path(path: str | Path) -> Path:
     candidate = Path(path).resolve()
     root = BACKUP_DIR.resolve()
-    if root not in candidate.parents or not candidate.name.startswith("rc-geradores-full-") or candidate.suffixes[-2:] != [".tar", ".gz"]:
+    if (
+        root not in candidate.parents
+        or not candidate.name.startswith("rc-geradores-full-")
+        or candidate.suffixes[-2:] != [".tar", ".gz"]
+    ):
         raise ValueError("Arquivo de backup inválido")
     if not candidate.exists():
         raise FileNotFoundError(candidate)
@@ -173,6 +232,17 @@ def _rollback_database(snapshot: Path | None) -> None:
     _quick_check(DB_FILE)
 
 
+def _restore_totp_key(source: Path) -> None:
+    target = Path(TOTP_KEY_FILE)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source, target)
+    os.chmod(target, 0o600)
+    try:
+        shutil.chown(target, user="rcgeradores", group="rcgeradores")
+    except (LookupError, PermissionError):
+        pass
+
+
 def restore_archive(archive_path: str | Path, restore_rapid: bool = True) -> dict:
     """Restaura backup local por CLI administrativo, nunca por uma sessão HTTP."""
     archive = safe_archive_path(archive_path)
@@ -202,6 +272,11 @@ def restore_archive(archive_path: str | Path, restore_rapid: bool = True) -> dic
                     shutil.chown("/etc/rc-geradores.env", user="root", group="rcgeradores")
                 except (LookupError, PermissionError):
                     pass
+                secrets_restored = True
+
+            totp_key_src = root / "product/totp-fernet.key"
+            if totp_key_src.exists():
+                _restore_totp_key(totp_key_src)
                 secrets_restored = True
 
             if restore_rapid:

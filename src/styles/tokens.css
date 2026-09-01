@@ -11,8 +11,8 @@
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
-  --font-sans: "Barlow", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -36,7 +36,6 @@
   --color-ring-offset-background: var(--background);
   --color-panel: var(--panel);
   --color-panel-foreground: var(--panel-foreground);
-
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
   --color-online: var(--online);
@@ -47,13 +46,11 @@
   --color-offline-foreground: var(--offline-foreground);
   --color-idle: var(--idle);
   --color-wire: var(--wire);
-
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -67,7 +64,6 @@
 :root {
   --radius: 0.5rem;
   color-scheme: light;
-
   --background: oklch(0.985 0.004 240);
   --foreground: oklch(0.16 0.018 240);
   --card: oklch(1 0 0);
@@ -76,7 +72,6 @@
   --panel-foreground: oklch(0.18 0.018 240);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.16 0.018 240);
-
   --primary: oklch(0.7 0.19 52);
   --primary-foreground: oklch(0.99 0.01 80);
   --secondary: oklch(0.94 0.01 240);
@@ -87,7 +82,6 @@
   --accent-foreground: oklch(0.28 0.08 50);
   --destructive: oklch(0.55 0.21 25);
   --destructive-foreground: oklch(0.99 0.01 20);
-
   --info: oklch(0.62 0.14 235);
   --info-foreground: oklch(0.99 0.006 240);
   --online: oklch(0.52 0.15 150);
@@ -98,24 +92,20 @@
   --offline-foreground: oklch(0.99 0.01 20);
   --idle: oklch(0.55 0.02 240);
   --wire: oklch(0.7 0.19 52);
-
   --industrial-bg: oklch(0.13 0.025 235);
   --industrial-panel: oklch(0.17 0.03 235);
   --industrial-panel-strong: oklch(0.11 0.025 235);
   --industrial-border: oklch(0.34 0.065 230);
   --industrial-foreground: oklch(0.96 0.008 230);
   --industrial-muted: oklch(0.74 0.045 225);
-
   --border: oklch(0.88 0.012 240);
   --input: oklch(0.88 0.012 240);
   --ring: oklch(0.7 0.19 52);
-
   --chart-1: oklch(0.7 0.19 52);
   --chart-2: oklch(0.62 0.14 235);
   --chart-3: oklch(0.75 0.14 75);
   --chart-4: oklch(0.55 0.2 25);
   --chart-5: oklch(0.55 0.08 285);
-
   --sidebar: oklch(0.99 0.003 240);
   --sidebar-foreground: oklch(0.18 0.018 240);
   --sidebar-primary: oklch(0.7 0.19 52);
@@ -124,7 +114,6 @@
   --sidebar-accent-foreground: oklch(0.16 0.03 50);
   --sidebar-border: oklch(0.88 0.012 240);
   --sidebar-ring: oklch(0.7 0.19 52);
-
   --shadow-panel: 0 1px 0 0 oklch(0 0 0 / 4%) inset, 0 8px 24px -16px oklch(0 0 0 / 18%);
   --glow-online: 0 0 12px color-mix(in oklab, var(--online) 35%, transparent);
   --glow-info: 0 0 12px color-mix(in oklab, var(--info) 35%, transparent);
@@ -134,7 +123,6 @@
 
 .dark {
   color-scheme: dark;
-
   --background: oklch(0.19 0.018 240);
   --foreground: oklch(0.95 0.006 240);
   --card: oklch(0.235 0.02 240);
@@ -143,7 +131,6 @@
   --panel-foreground: oklch(0.93 0.01 240);
   --popover: oklch(0.235 0.02 240);
   --popover-foreground: oklch(0.95 0.006 240);
-
   --primary: oklch(0.74 0.18 52);
   --primary-foreground: oklch(0.16 0.03 50);
   --secondary: oklch(0.29 0.022 240);
@@ -154,7 +141,6 @@
   --accent-foreground: oklch(0.96 0.006 240);
   --destructive: oklch(0.6 0.21 25);
   --destructive-foreground: oklch(0.97 0.01 20);
-
   --info: oklch(0.72 0.13 230);
   --info-foreground: oklch(0.16 0.02 230);
   --online: oklch(0.75 0.17 158);
@@ -165,24 +151,20 @@
   --offline-foreground: oklch(0.98 0.01 20);
   --idle: oklch(0.6 0.02 245);
   --wire: oklch(0.74 0.18 52);
-
   --industrial-bg: oklch(0.12 0.025 235);
   --industrial-panel: oklch(0.16 0.03 235);
   --industrial-panel-strong: oklch(0.1 0.025 235);
   --industrial-border: oklch(0.38 0.07 230);
   --industrial-foreground: oklch(0.96 0.008 230);
   --industrial-muted: oklch(0.74 0.045 225);
-
   --border: oklch(0.32 0.02 240);
   --input: oklch(0.3 0.02 240);
   --ring: oklch(0.74 0.18 52);
-
   --chart-1: oklch(0.74 0.18 52);
   --chart-2: oklch(0.72 0.13 230);
   --chart-3: oklch(0.81 0.16 82);
   --chart-4: oklch(0.62 0.21 25);
   --chart-5: oklch(0.7 0.1 300);
-
   --sidebar: oklch(0.165 0.018 240);
   --sidebar-foreground: oklch(0.86 0.01 240);
   --sidebar-primary: oklch(0.74 0.18 52);
@@ -191,7 +173,6 @@
   --sidebar-accent-foreground: oklch(0.96 0.006 240);
   --sidebar-border: oklch(0.27 0.02 240);
   --sidebar-ring: oklch(0.74 0.18 52);
-
   --shadow-panel: 0 1px 0 0 oklch(1 0 0 / 4%) inset, 0 8px 24px -12px oklch(0 0 0 / 60%);
   --glow-online: 0 0 12px color-mix(in oklab, var(--online) 45%, transparent);
   --glow-info: 0 0 12px color-mix(in oklab, var(--info) 45%, transparent);

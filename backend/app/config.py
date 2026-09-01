@@ -14,13 +14,12 @@ APP_VERSION = os.environ.get("RC_APP_VERSION", "3.0.0").strip() or "3.0.0"
 
 AUTH_COOKIE_NAME = os.environ.get("RC_AUTH_COOKIE", "rc_session")
 AUTH_SESSION_TTL = int(os.environ.get("RC_AUTH_SESSION_TTL", "43200"))
-# Desenvolvimento/testes locais podem manter HTTP quando não usam o instalador.
-# A instalação de produção grava explicitamente RC_AUTH_COOKIE_SECURE=1.
 AUTH_COOKIE_SECURE = os.environ.get("RC_AUTH_COOKIE_SECURE", "0").strip() == "1"
 LOGIN_MAX_FAILURES = int(os.environ.get("RC_LOGIN_MAX_FAILURES", "5"))
 LOGIN_LOCK_SECONDS = int(os.environ.get("RC_LOGIN_LOCK_SECONDS", "900"))
 PASSWORD_RESET_TTL = int(os.environ.get("RC_PASSWORD_RESET_TTL", "1800"))
 PUBLIC_BASE_URL = os.environ.get("RC_PUBLIC_BASE_URL", "").rstrip("/")
+TOTP_KEY_FILE = Path(os.environ.get("RC_TOTP_KEY_FILE", DATA_DIR / ".secrets" / "totp-fernet.key"))
 
 ADMIN_NAME = os.environ.get("RC_ADMIN_NAME", "Administrador")
 ADMIN_EMAIL = os.environ.get("RC_ADMIN_EMAIL", "admin@rcgeradores.local").strip().lower()
@@ -37,6 +36,13 @@ WHATSAPP_API_URL = os.environ.get("RC_WHATSAPP_API_URL", "").strip()
 WHATSAPP_API_TOKEN = os.environ.get("RC_WHATSAPP_API_TOKEN", "")
 ALLOW_PRIVATE_WEBHOOKS = os.environ.get("RC_ALLOW_PRIVATE_WEBHOOKS", "0").strip() == "1"
 BACKUP_RETENTION = int(os.environ.get("RC_BACKUP_RETENTION", "14"))
+BACKUP_OFFSITE_DIR = os.environ.get("RC_BACKUP_OFFSITE_DIR", "").strip()
+BACKUP_OFFSITE_KEY_FILE = os.environ.get("RC_BACKUP_OFFSITE_KEY_FILE", "").strip()
+BACKUP_OFFSITE_REQUIRED = os.environ.get("RC_BACKUP_OFFSITE_REQUIRED", "0").strip() == "1"
+RETENTION_AUDIT_DAYS = int(os.environ.get("RC_RETENTION_AUDIT_DAYS", "730"))
+RETENTION_PROCESS_DAYS = int(os.environ.get("RC_RETENTION_PROCESS_DAYS", "365"))
+RETENTION_EVENT_DAYS = int(os.environ.get("RC_RETENTION_EVENT_DAYS", "365"))
+RETENTION_NOTIFICATION_DAYS = int(os.environ.get("RC_RETENTION_NOTIFICATION_DAYS", "180"))
 
 CORS_ORIGINS = [
     item.strip()

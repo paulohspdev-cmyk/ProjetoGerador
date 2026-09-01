@@ -92,16 +92,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Roboto+Condensed:wght@400;500;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap",
-      },
+      { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
   }),
@@ -161,9 +152,6 @@ function AppShell() {
 
   if (!user) return <Navigate to="/login" />;
 
-  // Providers que dependem de endpoints autenticados só existem depois que a
-  // sessão foi confirmada. Assim eles nunca congelam estado vazio por um 401
-  // ocorrido durante a tela de login e são recriados em cada nova sessão.
   return (
     <GeneratorsProvider>
       <ScadaOpsProvider>
