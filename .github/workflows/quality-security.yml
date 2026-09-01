@@ -83,6 +83,10 @@ jobs:
           grep -q 'filter="data"' backend/app/backup_manager.py
           grep -q 'Fernet' backend/app/backup_manager.py
           grep -q 'BACKUP_OFFSITE_REQUIRED' backend/app/backup_manager.py
+          grep -q 'materialize_offsite_backup' backend/app/backup_manager.py
+          grep -q 'product/totp-fernet.key' backend/app/backup_manager.py
+          grep -q 'materialize_offsite_backup' ops/restore_backup.py
+          grep -q 'offsite-key-file' ops/restore_backup.py
           grep -q 'rc-geradores-bridge.service' ops/restore_backup.py
           grep -q 'rc-geradores-provision.service' ops/restore_backup.py
 
@@ -94,6 +98,14 @@ jobs:
           grep -q 'RC_RAPID_REQUIRE_ALLOWLIST' backend/app/bridge_runtime.py
           grep -q 'HardenedBridgePort' backend/app/bridge_runtime.py
           grep -q 'limite de conexões por minuto excedido' backend/app/bridge_runtime.py
+
+          grep -q 'httpRequest' src/lib/api.ts
+          grep -q 'httpDownload' src/lib/api.ts
+          grep -q 'confirmation: "PROVISION"' src/lib/api.ts
+          if grep -R -n '^async function request' src/lib/api.ts src/lib/domain-api.ts src/lib/industrial-api.ts; then
+            echo 'ERRO: cliente HTTP duplicado voltou ao frontend.' >&2
+            exit 1
+          fi
 
           grep -q '_PinnedHTTPSConnection' backend/app/notifications.py
           grep -q 'response.status < 200 or response.status >= 300' backend/app/notifications.py
