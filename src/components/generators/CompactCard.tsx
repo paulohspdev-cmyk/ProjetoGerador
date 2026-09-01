@@ -62,8 +62,16 @@ export function CompactCard({ gen }: { gen: Generator }) {
 
   const flowNodes = [
     { label: "REDE", live: mainsLive, open: false },
-    { label: `MCB\n${stateText(mcbKnown, gen.mcb)}`, live: mcbKnown && gen.mcb, open: mcbKnown && !gen.mcb },
-    { label: `GCB\n${stateText(gcbKnown, gen.gcb)}`, live: gcbKnown && gen.gcb, open: gcbKnown && !gen.gcb },
+    {
+      label: `MCB\n${stateText(mcbKnown, gen.mcb)}`,
+      live: mcbKnown && gen.mcb,
+      open: mcbKnown && !gen.mcb,
+    },
+    {
+      label: `GCB\n${stateText(gcbKnown, gen.gcb)}`,
+      live: gcbKnown && gen.gcb,
+      open: gcbKnown && !gen.gcb,
+    },
     { label: "G", live: telemetry.running, open: false },
     { label: "LOAD", live: (telemetry.powerKw ?? 0) > 0, open: false },
   ];
@@ -156,9 +164,7 @@ export function CompactCard({ gen }: { gen: Generator }) {
         <Metric
           label="Comb."
           value={
-            telemetry.fuel == null
-              ? "N/D"
-              : `${fmt(telemetry.fuel, 0)} ${telemetry.fuelUnit}`
+            telemetry.fuel == null ? "N/D" : `${fmt(telemetry.fuel, 0)} ${telemetry.fuelUnit}`
           }
           tone={toneTextClass(telemetry.tones.fuel)}
         />
@@ -179,7 +185,9 @@ export function CompactCard({ gen }: { gen: Generator }) {
         <Metric
           label="L1-N"
           value={
-            hasMetric(gen, "voltage_l1") ? `${fmt(gen.metrics?.voltage_l1 ?? gen.gen.l1, 0)} V` : "N/D"
+            hasMetric(gen, "voltage_l1")
+              ? `${fmt(gen.metrics?.voltage_l1 ?? gen.gen.l1, 0)} V`
+              : "N/D"
           }
         />
       </div>
