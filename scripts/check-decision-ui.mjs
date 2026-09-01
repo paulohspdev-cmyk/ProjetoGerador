@@ -106,8 +106,7 @@ for (const marker of [
   '"GCB"',
   '"G L1-N"',
 ]) {
-  if (!table.includes(marker))
-    failures.push(`lista perdeu telemetria operacional: ${marker}`);
+  if (!table.includes(marker)) failures.push(`lista perdeu telemetria operacional: ${marker}`);
 }
 
 const health = read("src/components/generators/generator-health.ts");
@@ -119,8 +118,7 @@ for (const marker of [
   "maintenanceTone",
   "visibleMeterPercent",
 ]) {
-  if (!health.includes(marker))
-    failures.push(`semáforo compartilhado perdeu regra: ${marker}`);
+  if (!health.includes(marker)) failures.push(`semáforo compartilhado perdeu regra: ${marker}`);
 }
 
 const cardCss = read("src/components/generators/generator-six-card.css");
