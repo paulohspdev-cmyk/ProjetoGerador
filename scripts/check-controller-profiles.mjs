@@ -12,7 +12,9 @@ function manifestPaths(base) {
     for (const entry of readdirSync(join(root, directory), { withFileTypes: true })) {
       const path = join(directory, entry.name);
       if (entry.isDirectory()) walk(path);
-      else if (entry.isFile() && entry.name === "manifest.json") found.push(relative(root, join(root, path)));
+      else if (entry.isFile() && entry.name === "manifest.json") {
+        found.push(relative(root, join(root, path)));
+      }
     }
   };
   walk(base);
@@ -168,7 +170,13 @@ for (const marker of [
 ]) {
   if (!card.includes(marker)) failures.push(`card perdeu contrato seguro: ${marker}`);
 }
-for (const forbidden of ["oilTone(", "coolantTone(", "fuelTone(", "alternatorTone(", "1000;"]) {
+for (const forbidden of [
+  "oilTone(",
+  "coolantTone(",
+  "fuelTone(",
+  "alternatorTone(",
+  "1000;",
+]) {
   if (card.includes(forbidden)) failures.push(`card voltou a conter inferência industrial: ${forbidden}`);
 }
 
