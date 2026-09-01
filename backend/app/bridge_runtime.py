@@ -9,19 +9,20 @@ Dois enquadramentos de fio são suportados no lado remoto:
   barramento RS485 e a bridge converte MBAP local <-> RTU+CRC remoto.
 
 O caminho local usado pelo Rapid SCADA permanece Modbus TCP e somente leitura
-FC03/FC04. O controle privilegiado continua globalmente desabilitado por padrão
-e jamais é liberado para framing RTU reverso.
+FC03/FC04. Escritas RTU só existem no socket LAB dedicado, fail-closed, para o
+START do IG4 200 explicitamente habilitado e allowlisted na VM.
 """
 
 import asyncio
 import ipaddress
 import json
 import os
+import struct
 import time
 from collections import defaultdict, deque
 from pathlib import Path
 
-from . import bridge, db
+from . import bridge, db, ig4_lab
 from .controller_library import pack_for_model
 
 STATUS_FILE = Path(os.environ.get("RC_BRIDGE_STATUS_FILE", "/run/rc-geradores/bridge-status.json"))
@@ -37,6 +38,26 @@ UNIT_BACKOFF_MAX = max(
 FRAMING_MODBUS_TCP = "modbus_tcp"
 FRAMING_MODBUS_RTU = "modbus_rtu"
 SUPPORTED_REMOTE_FRAMINGS = {FRAMING_MODBUS_TCP, FRAMING_MODBUS_RTU}
+
+IG4_START_ARGUMENT = 0x01FE0000
+IG4_COMMAND_CODE = 0x0001
+IG4_EXPECTED_START_RETURN = 0x000001FF
+IG4_COMMAND_ARGUMENT_ADDRESS = 4207
+IG4_COMMAND_CODE_ADDRESS = 4209
+IG4_RPM_ADDRESS = 1000
+IG4_BATTERY_ADDRESS = 1051
+IG4_MODE_ADDRESS = 1320
+IG4_ENGINE_ADDRESS = 1322
+IG4_BREAKER_ADDRESS = 1323
+IG4_TIMER_ADDRESS = 1324
+IG4_LOG_BOUT_1_ADDRESS = 1387
+IG4_MODE_MAN = 1
+IG4_ENGINE_READY = 1
+IG4_BREAKERS_OFF = 1
+IG4_ALARM_MASK = 0x0400
+IG4_RUNNING_STATES = {7, 8}
+
+ig4_lab_control_server = None
 
 
 def _allowed_networks():
@@ -127,6 +148,67 @@ def resolve_ig200_bound_device(device_num):
 
 
 bridge.resolve_ig200 = resolve_ig200_bound_device
+
+
+def resolve_ig4_lab_bound_device(generator_id, device_num):
+    """Resolve exatamente um IG4 allowlisted; não promove o pack de produção."""
+    if not ig4_lab.enabled():
+        raise PermissionError("controle IG4 LAB desabilitado")
+
+    generator_id = str(generator_id or "").strip()
+    device_num = int(device_num or 0)
+    if not generator_id or device_num <= 0:
+        raise ValueError("identidade do alvo IG4 LAB inválida")
+
+    generator = next(
+        (
+            item
+            for item in db.list_generators()
+            if str(item.get("id") or "") == generator_id
+            and int(item.get("rapid_device_num") or 0) == device_num
+        ),
+        None,
+    )
+    if not generator or not ig4_lab.is_target(generator):
+        raise PermissionError("gerador não autorizado na allowlist IG4 LAB")
+
+    binding = next(
+        (
+            item
+            for item in bridge.load_bindings()
+            if str(item.get("generator_id") or "") == generator_id
+        ),
+        None,
+    )
+    if not binding:
+        raise ValueError("binding Rapid do IG4 LAB não encontrado")
+
+    expected = (
+        str(generator.get("controller_type") or "").upper(),
+        str(generator.get("controller_model") or "").strip().lower(),
+        str(generator.get("transport") or ""),
+        int(generator.get("listen_port") or 0),
+        int(generator.get("modbus_unit") or 0),
+        device_num,
+    )
+    actual = (
+        str(binding.get("controller_type") or "").upper(),
+        str(binding.get("controller_model") or "").strip().lower(),
+        str(binding.get("transport") or ""),
+        int(binding.get("listen_port") or 0),
+        int(binding.get("modbus_unit") or 0),
+        int(binding.get("rapid_device_num") or 0),
+    )
+    if actual != expected:
+        raise ValueError("cadastro e binding divergem para o IG4 LAB")
+
+    pack = pack_for_model(generator.get("controller_model") or "") or {}
+    if pack.get("lifecycle") != "production" or pack.get("status") != "field_validated":
+        raise PermissionError("IG4 LAB exige pack production field_validated")
+    if _remote_framing_for_generator(generator) != FRAMING_MODBUS_RTU:
+        raise PermissionError("IG4 LAB exige reverseTcpFraming=modbus_rtu")
+
+    return generator, int(generator["listen_port"]), int(generator["modbus_unit"])
 
 
 def _modbus_crc16(data: bytes) -> int:
@@ -272,7 +354,6 @@ class HardenedBridgePort(bridge.BridgePort):
         if self._active_peer_is_protected(address, now_epoch):
             await self._reject(writer, "sessão legítima de outro peer ainda está ativa")
             return
-        # Uma nova sessão física dá a todos os Units uma oportunidade imediata de recuperação.
         self._clear_unit_backoff()
         await super().accept_remote(reader, writer)
 
@@ -412,8 +493,288 @@ class HardenedRtuBridgePort(HardenedBridgePort):
 
     async def ig200_command(self, unit, action, password=None):
         raise PermissionError(
-            "controle industrial bloqueado no reverse TCP RTU; caminho disponível somente para FC03/FC04"
+            "controle IG200 bloqueado no reverse TCP RTU; caminho Rapid disponível somente para FC03/FC04"
         )
+
+    async def _read_rtu_privileged_response(self, expected_unit: int, expected_function: int) -> bytes:
+        reader = self.remote_reader
+        if reader is None:
+            raise ConnectionError("modem desconectado")
+
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + bridge.TIMEOUT
+
+        async def read_exactly(count: int) -> bytes:
+            remaining = deadline - loop.time()
+            if remaining <= 0:
+                raise asyncio.TimeoutError()
+            data = await asyncio.wait_for(reader.readexactly(count), remaining)
+            self.bytes_rx += len(data)
+            self.last_rx_at = int(time.time())
+            return data
+
+        head = await read_exactly(2)
+        unit, function = head[0], head[1]
+        if unit != int(expected_unit):
+            raise ValueError(f"Unit ID RTU inesperado {unit}; esperado {int(expected_unit)}")
+        if function not in (expected_function, expected_function | 0x80):
+            raise ValueError(f"função RTU inesperada {function}; esperada {expected_function}")
+
+        if function & 0x80:
+            tail = await read_exactly(3)
+            frame = head + tail
+            _validate_rtu_crc(frame)
+            return frame[1:-2]
+
+        if function in bridge.READ_FUNCTIONS:
+            byte_count_raw = await read_exactly(1)
+            byte_count = byte_count_raw[0]
+            if byte_count <= 0 or byte_count > 250:
+                raise ValueError(f"byte count RTU inválido: {byte_count}")
+            tail = await read_exactly(byte_count + 2)
+            frame = head + byte_count_raw + tail
+        elif function in {6, 16}:
+            tail = await read_exactly(6)
+            frame = head + tail
+        else:
+            raise PermissionError(f"FC{function:02d} não permitida no socket IG4 LAB")
+
+        _validate_rtu_crc(frame)
+        return frame[1:-2]
+
+    async def _ig4_lab_request_locked(self, unit: int, pdu: bytes) -> bytes:
+        if not pdu or pdu[0] not in {3, 6, 16}:
+            function = pdu[0] if pdu else 0
+            raise PermissionError(f"FC{function:02d} não permitida no socket IG4 LAB")
+        writer = self.remote_writer
+        if self.remote_reader is None or writer is None or writer.is_closing():
+            raise ConnectionError("modem desconectado")
+
+        frame = _rtu_frame(unit, pdu)
+        writer.write(frame)
+        await writer.drain()
+        self.bytes_tx += len(frame)
+        self.last_tx_at = int(time.time())
+        return await self._read_rtu_privileged_response(int(unit), int(pdu[0]))
+
+    async def _ig4_lab_read_locked(self, unit: int, address: int, count: int = 1) -> list[int]:
+        response = await self._ig4_lab_request_locked(unit, bridge.read_holding_pdu(address, count))
+        return bridge.parse_registers(response, count)
+
+    async def _ig4_lab_snapshot_locked(self, unit: int) -> dict[str, int]:
+        return {
+            "mode": (await self._ig4_lab_read_locked(unit, IG4_MODE_ADDRESS))[0],
+            "engine": (await self._ig4_lab_read_locked(unit, IG4_ENGINE_ADDRESS))[0],
+            "breaker": (await self._ig4_lab_read_locked(unit, IG4_BREAKER_ADDRESS))[0],
+            "timer": (await self._ig4_lab_read_locked(unit, IG4_TIMER_ADDRESS))[0],
+            "rpm": (await self._ig4_lab_read_locked(unit, IG4_RPM_ADDRESS))[0],
+            "battery_raw": (await self._ig4_lab_read_locked(unit, IG4_BATTERY_ADDRESS))[0],
+            "log_bout_1": (await self._ig4_lab_read_locked(unit, IG4_LOG_BOUT_1_ADDRESS))[0],
+        }
+
+    @staticmethod
+    def _require_ig4_lab_start_state(state: dict[str, int]) -> None:
+        failures = []
+        if state["mode"] != IG4_MODE_MAN:
+            failures.append(f"mode={state['mode']} (esperado MAN=1)")
+        if state["engine"] != IG4_ENGINE_READY:
+            failures.append(f"engine={state['engine']} (esperado Ready=1)")
+        if state["breaker"] != IG4_BREAKERS_OFF:
+            failures.append(f"breaker={state['breaker']} (esperado BrksOff=1)")
+        if state["rpm"] != 0:
+            failures.append(f"rpm={state['rpm']} (esperado 0)")
+        if state["log_bout_1"] & IG4_ALARM_MASK:
+            failures.append(f"LogBout1=0x{state['log_bout_1']:04X} indica Alarm ativo")
+        if failures:
+            raise PermissionError("START LAB recusado: " + "; ".join(failures))
+
+    async def ig4_lab_start(self, unit: int) -> dict:
+        """START único do IG4 LAB, isolado do caminho Modbus usado pelo Rapid."""
+        async with self.remote_lock:
+            before = await self._ig4_lab_snapshot_locked(unit)
+            self._require_ig4_lab_start_state(before)
+            await asyncio.sleep(0.15)
+            immediate = await self._ig4_lab_snapshot_locked(unit)
+            self._require_ig4_lab_start_state(immediate)
+
+            critical = ("mode", "engine", "breaker", "rpm", "log_bout_1")
+            if any(before[key] != immediate[key] for key in critical):
+                raise PermissionError(
+                    f"START LAB recusado: estado crítico mudou entre validações; before={before}; immediate={immediate}"
+                )
+
+            arg_response = await self._ig4_lab_request_locked(
+                unit,
+                bridge.write_multiple_u32_pdu(IG4_COMMAND_ARGUMENT_ADDRESS, IG4_START_ARGUMENT),
+            )
+            bridge.ensure_write_ok(arg_response, 16)
+            if len(arg_response) != 5:
+                raise ValueError(f"eco FC16 inválido: {arg_response.hex()}")
+            _, arg_address, arg_count = struct.unpack(">BHH", arg_response)
+            if arg_address != IG4_COMMAND_ARGUMENT_ADDRESS or arg_count != 2:
+                raise ValueError(f"eco FC16 inválido: address={arg_address} count={arg_count}")
+
+            await asyncio.sleep(0.10)
+            cmd_response = await self._ig4_lab_request_locked(
+                unit,
+                bridge.write_single_pdu(IG4_COMMAND_CODE_ADDRESS, IG4_COMMAND_CODE),
+            )
+            bridge.ensure_write_ok(cmd_response, 6)
+            if len(cmd_response) != 5:
+                raise ValueError(f"eco FC06 inválido: {cmd_response.hex()}")
+            _, cmd_address, cmd_value = struct.unpack(">BHH", cmd_response)
+            if cmd_address != IG4_COMMAND_CODE_ADDRESS or cmd_value != IG4_COMMAND_CODE:
+                raise ValueError(f"eco FC06 inválido: address={cmd_address} value=0x{cmd_value:04X}")
+
+            await asyncio.sleep(0.35)
+            regs = await self._ig4_lab_read_locked(unit, IG4_COMMAND_ARGUMENT_ADDRESS, 2)
+            return_value = (regs[0] << 16) | regs[1]
+            accepted = return_value == IG4_EXPECTED_START_RETURN
+
+            if not accepted:
+                if return_value == 0x00000001:
+                    reason = "controlador recusou: argumento inválido"
+                elif return_value == 0x00000002:
+                    reason = "controlador recusou o comando (modo, acesso ou intertravamento)"
+                else:
+                    reason = f"retorno inesperado 0x{return_value:08X}"
+                return {
+                    "ok": False,
+                    "accepted": False,
+                    "action": "start",
+                    "reason": reason,
+                    "return_value": f"0x{return_value:08X}",
+                    "state_before": before,
+                }
+
+            samples = []
+            motion_observed = False
+            running_confirmed = False
+            deadline = asyncio.get_running_loop().time() + 6.0
+            while asyncio.get_running_loop().time() < deadline:
+                await asyncio.sleep(0.5)
+                state = await self._ig4_lab_snapshot_locked(unit)
+                samples.append({"engine": state["engine"], "timer": state["timer"], "rpm": state["rpm"]})
+                motion_observed = motion_observed or state["rpm"] > 0 or state["engine"] in {3, 4, 5, 6, 7, 8}
+                running_confirmed = running_confirmed or (
+                    state["rpm"] > 0 and state["engine"] in IG4_RUNNING_STATES
+                )
+                if running_confirmed or state["engine"] in {2, 11, 12}:
+                    break
+
+            reason = (
+                "START LAB aceito; Running/RPM observado"
+                if running_confirmed
+                else "START LAB aceito; partida ainda não confirmada por Running/RPM"
+            )
+            return {
+                "ok": True,
+                "accepted": True,
+                "action": "start",
+                "reason": reason,
+                "return_value": f"0x{return_value:08X}",
+                "state_before": before,
+                "motion_observed": motion_observed,
+                "running_confirmed": running_confirmed,
+                "samples": samples,
+            }
+
+
+async def handle_ig4_lab_control(reader, writer):
+    response = {"ok": False, "accepted": False, "error": "requisição inválida", "action": "start"}
+    generator = None
+    try:
+        raw = await asyncio.wait_for(reader.readline(), 5)
+        if not raw or len(raw) > 4096:
+            raise ValueError("requisição vazia ou grande demais")
+        req = json.loads(raw.decode("utf-8"))
+        if not ig4_lab.enabled():
+            raise PermissionError("controle IG4 LAB desabilitado")
+        if req.get("confirm") != ig4_lab.CONFIRMATION:
+            raise PermissionError("confirmação explícita IG4 LAB ausente")
+        if str(req.get("action") or "").strip().lower() != "start":
+            raise PermissionError("socket IG4 LAB aceita somente START")
+
+        generator, port, unit = resolve_ig4_lab_bound_device(
+            req.get("generator_id"),
+            req.get("device"),
+        )
+        port_bridge = bridge.bridges.get(port)
+        if not isinstance(port_bridge, HardenedRtuBridgePort):
+            raise ConnectionError(f"ponte RTU da porta {port} não está ativa")
+        if port_bridge.remote_writer is None or port_bridge.remote_writer.is_closing():
+            raise ConnectionError(f"modem da porta {port} está desconectado")
+
+        result = await port_bridge.ig4_lab_start(unit)
+        response = {
+            **result,
+            "device": int(req.get("device") or 0),
+            "generator": generator.get("tag"),
+            "port": port,
+            "unit": unit,
+            "lab": True,
+        }
+        level = "WARN" if result.get("accepted") else "ERROR"
+        db.add_event(
+            generator["id"],
+            level,
+            "Controle IG4 LAB START: "
+            f"{result.get('reason', '')}; retorno={result.get('return_value', '-')}; "
+            f"running_confirmed={result.get('running_confirmed', False)}",
+        )
+        bridge.log(
+            f"controle IG4 LAB START: gerador={generator.get('tag')} unit={unit} "
+            f"aceito={result.get('accepted')} running={result.get('running_confirmed')}"
+        )
+    except Exception as exc:
+        response = {"ok": False, "accepted": False, "error": str(exc), "action": "start", "lab": True}
+        if generator:
+            try:
+                db.add_event(generator["id"], "ERROR", f"Controle IG4 LAB START falhou: {exc}")
+            except Exception:
+                pass
+        bridge.log(f"controle IG4 LAB recusado/falhou: {exc}")
+    finally:
+        try:
+            writer.write((json.dumps(response, ensure_ascii=False) + "\n").encode("utf-8"))
+            await writer.drain()
+        except Exception:
+            pass
+        writer.close()
+        try:
+            await writer.wait_closed()
+        except Exception:
+            pass
+
+
+async def start_ig4_lab_control_server():
+    global ig4_lab_control_server
+    socket_path = ig4_lab.control_socket_path()
+    try:
+        socket_path.unlink(missing_ok=True)
+    except Exception:
+        pass
+    if not ig4_lab.enabled():
+        bridge.log("socket IG4 LAB desabilitado")
+        return
+    if not ig4_lab.allowlist():
+        raise RuntimeError("RC_ENABLE_IG4_LAB_CONTROL=1 exige RC_IG4_LAB_ALLOWLIST")
+    socket_path.parent.mkdir(parents=True, exist_ok=True)
+    ig4_lab_control_server = await asyncio.start_unix_server(handle_ig4_lab_control, path=str(socket_path))
+    os.chmod(socket_path, 0o660)
+    bridge.log(f"socket IG4 LAB ATIVO em {socket_path}; somente START e somente allowlist")
+
+
+async def stop_ig4_lab_control_server():
+    global ig4_lab_control_server
+    if ig4_lab_control_server:
+        ig4_lab_control_server.close()
+        await ig4_lab_control_server.wait_closed()
+        ig4_lab_control_server = None
+    try:
+        ig4_lab.control_socket_path().unlink(missing_ok=True)
+    except Exception:
+        pass
 
 
 def write_status(enabled: list[dict]) -> None:
@@ -439,6 +800,8 @@ def write_status(enabled: list[dict]) -> None:
             "peerAllowlistRequired": REQUIRE_ALLOWLIST,
             "connectRateLimitPerMinute": CONNECT_RATE_LIMIT,
             "activePeerProtectionSeconds": REPLACE_ACTIVE_AFTER,
+            "ig4LabControlEnabled": ig4_lab.enabled(),
+            "ig4LabAllowlistConfigured": bool(ig4_lab.allowlist()),
         },
         "ports": [
             {
@@ -526,12 +889,15 @@ async def main():
     bridge.log(
         "iniciando ponte reverse TCP; caminho Rapid somente leitura FC03/FC04; "
         "framing remoto definido por Controller Pack; "
-        f"allowlist={'ativa' if REMOTE_ALLOWED_NETWORKS else 'não configurada'}"
+        f"allowlist={'ativa' if REMOTE_ALLOWED_NETWORKS else 'não configurada'}; "
+        f"IG4_LAB={'ativo' if ig4_lab.enabled() else 'desabilitado'}"
     )
     await bridge.start_control_server()
+    await start_ig4_lab_control_server()
     try:
         await reconcile_reverse_tcp()
     finally:
+        await stop_ig4_lab_control_server()
         await bridge.stop_control_server()
         await asyncio.gather(
             *(item.stop() for item in list(bridge.bridges.values())),
