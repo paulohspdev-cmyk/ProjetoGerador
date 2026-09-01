@@ -36,6 +36,7 @@ Path(os.environ["RC_RAPID_BINDINGS"]).write_text(
                 "generator_id": generator["id"],
                 "controller_type": "COMAP",
                 "controller_model": "InteliGen 200",
+                "transport": "reverse_tcp",
                 "listen_port": 15002,
                 "modbus_unit": 16,
                 "rapid_device_num": 204,
@@ -50,6 +51,7 @@ assert resolved["id"] == generator["id"]
 assert resolved["rapid_device_num"] == 204
 assert port == 15002
 assert unit == 16
+assert bridge_runtime._remote_framing_for_generator(resolved) == bridge_runtime.FRAMING_MODBUS_TCP
 
 try:
     bridge_runtime.resolve_ig200_bound_device(200)
