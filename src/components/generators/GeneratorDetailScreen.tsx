@@ -30,10 +30,18 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
 
   const model = useMemo(() => buildGeneratorDetailModel(gen), [gen]);
   const { events, eventError, trend, trendError, trendLoading } = useGeneratorDetailData(gen);
+  const configured = gen.enabled !== false && gen.status !== "nao_configurado";
+  const canStart = can("operate") && configured && gen.capabilities?.start === true;
+  const canStop = can("operate") && configured && gen.capabilities?.stop === true;
 
   const command = async (action: "start" | "stop") => {
+    const allowed = action === "start" ? canStart : canStop;
     if (!can("operate")) {
       setMessage("Seu perfil não possui permissão para operar o gerador.");
+      return;
+    }
+    if (!allowed) {
+      setMessage(`${action.toUpperCase()} não está homologado para esta controladora.`);
       return;
     }
     if (!confirmCmd(action.toUpperCase())) return;
@@ -50,9 +58,6 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
       setCommandBusy(null);
     }
   };
-
-  const configured = gen.enabled !== false && gen.status !== "nao_configurado";
-  const operate = can("operate") && configured;
 
   return (
     <article className="gen-detail">
@@ -124,7 +129,8 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
         <div className="gen-cmds">
           <button
             type="button"
-            disabled={!operate || commandBusy !== null}
+            disabled={!canStop || commandBusy !== null}
+            title={canStop ? "Parada homologada" : "STOP indisponível para esta controladora"}
             className={cn(model.running === false && "active off")}
             onClick={() => void command("stop")}
           >
@@ -132,7 +138,8 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
           </button>
           <button
             type="button"
-            disabled={!operate || commandBusy !== null}
+            disabled={!canStart || commandBusy !== null}
+            title={canStart ? "Partida homologada" : "START indisponível para esta controladora"}
             className={cn(model.running === true && "active")}
             onClick={() => void command("start")}
           >
@@ -163,7 +170,8 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
 
       <GeneratorDetailPowerFlow
         model={model}
-        operate={operate}
+        canStart={canStart}
+        canStop={canStop}
         commandBusy={commandBusy}
         onCommand={command}
       />
