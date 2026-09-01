@@ -9,6 +9,7 @@
   "category": "paralleling_genset",
   "protocols": ["modbus"],
   "transports": ["reverse_tcp", "modbus_tcp_direct", "rtu_over_tcp", "modbus_rtu_serial"],
+  "reverseTcpFraming": "modbus_rtu",
   "capabilities": {"telemetry":true,"start":false,"stop":false,"auto":false,"manual":false,"test":false,"mcb_open":false,"mcb_close":false,"gcb_open":false,"gcb_close":false,"paralleling":false},
   "validatedTelemetry": [],
   "documentedTelemetry": ["rpm","power_kw","power_factor","frequency","voltage_l1","voltage_l2","voltage_l3","voltage_l1_l2","voltage_l2_l3","voltage_l3_l1","current_l1","current_l2","current_l3","mains_frequency","mains_voltage_l1","mains_voltage_l2","mains_voltage_l3","mains_voltage_l1_l2","mains_voltage_l2_l3","mains_voltage_l3_l1","battery_voltage","alternator_voltage","oil_pressure","coolant_temperature","fuel_level","genset_kwh","run_hours","total_fuel_consumption","controller_mode_raw","engine_state_raw","breaker_state_raw","gcb_closed","mcb_closed"],
@@ -54,5 +55,5 @@
     }
   },
   "validation":{"documentation":["ig4 200 modbus.txt"],"lab":false,"field":false,"commandSafety":"Somente leitura documental. Nenhum comando industrial é habilitado por este perfil."},
-  "notes":"Mapa Modbus fornecido pelo usuário. Mantido separado do Controller Pack production InteliGen 200, que possui mapa de campo diferente."
+  "notes":"Mapa Modbus fornecido pelo usuário. Em reverse_tcp, o IG4 200 usa framing Modbus RTU transparente porque o modem de campo transporta o barramento RS485. Mantido separado do Controller Pack production InteliGen 200, que possui mapa e framing de campo diferentes."
 }
