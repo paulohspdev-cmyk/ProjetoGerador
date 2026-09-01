@@ -77,9 +77,7 @@ function MobileRow({ items }: { items: Generator[] }) {
           ],
           [
             "Combustível",
-            telemetry.fuel == null
-              ? "N/D"
-              : `${fmt(telemetry.fuel, 0)} ${telemetry.fuelUnit}`,
+            telemetry.fuel == null ? "N/D" : `${fmt(telemetry.fuel, 0)} ${telemetry.fuelUnit}`,
             toneTextClass(telemetry.tones.fuel),
           ],
           [
@@ -255,23 +253,11 @@ export function GeneratorTable({ items }: { items: Generator[] }) {
                       ? "N/D"
                       : `${fmt(telemetry.fuel, 0)} ${telemetry.fuelUnit}`}
                   </td>
-                  <td
-                    className={cn(
-                      "num px-2 py-2",
-                      toneTextClass(telemetry.tones.alternator),
-                    )}
-                  >
+                  <td className={cn("num px-2 py-2", toneTextClass(telemetry.tones.alternator))}>
                     {telemetry.alternator == null ? "N/D" : `${fmt(telemetry.alternator)} V`}
                   </td>
-                  <td
-                    className={cn(
-                      "num px-2 py-2",
-                      toneTextClass(telemetry.tones.maintenance),
-                    )}
-                  >
-                    {telemetry.maintenance == null
-                      ? "N/D"
-                      : `${fmt(telemetry.maintenance, 0)} h`}
+                  <td className={cn("num px-2 py-2", toneTextClass(telemetry.tones.maintenance))}>
+                    {telemetry.maintenance == null ? "N/D" : `${fmt(telemetry.maintenance, 0)} h`}
                   </td>
                   <td className="num px-2 py-2">
                     {telemetry.runHours == null ? "N/D" : `${fmt(telemetry.runHours)} h`}
