@@ -13,6 +13,7 @@ import { CONTROLLER_MODELS, GEN_SITES, type Generator } from "@/data/generators"
 import { ApiError, rcApi, type GeneratorTransport } from "@/lib/api";
 import { industrialApi } from "@/lib/industrial-api";
 
+// Atualização operacional do inventário/overlay; não altera a cadência de comunicação do controlador.
 const GENERATOR_REFRESH_MS = 1000;
 
 type CreateInput = {
