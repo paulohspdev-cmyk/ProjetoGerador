@@ -1,24 +1,4 @@
-const API_BASE = (import.meta.env["VITE_RC_API_BASE_URL"] ?? "").replace(/\/$/, "");
-
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, {
-    ...init,
-    credentials: "include",
-    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
-  });
-  if (!response.ok) {
-    let message = `HTTP ${response.status}`;
-    try {
-      const payload = (await response.json()) as { detail?: string };
-      if (payload.detail) message = payload.detail;
-    } catch {
-      // resposta sem JSON
-    }
-    throw new Error(message);
-  }
-  if (response.status === 204) return undefined as T;
-  return (await response.json()) as T;
-}
+import { httpRequest as request } from "@/lib/http-client";
 
 export type AssetKind =
   | "genset"
