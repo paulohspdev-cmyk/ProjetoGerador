@@ -71,7 +71,11 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const fuelIsPercent = fuelUnit === "%";
   const fuelCapacity = metricNumber(gen, "fuel_capacity", undefined);
   const fuelDisplayMaximum =
-    fuelIsPercent || fuel == null ? 100 : fuelCapacity != null && fuelCapacity > 0 ? fuelCapacity : 1000;
+    fuelIsPercent || fuel == null
+      ? 100
+      : fuelCapacity != null && fuelCapacity > 0
+        ? fuelCapacity
+        : 1000;
   const alternatorDisplayMaximum = batt != null && batt > 20 ? 32 : 16;
 
   const oilBarPct = progressPercent(oil, 10);
