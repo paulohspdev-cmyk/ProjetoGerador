@@ -41,7 +41,7 @@ from app import (  # noqa: E402
     platform_store,
     transport_store,
 )
-from app.backup_manager import create_full_backup  # noqa: E402
+from app.backup_manager import create_full_backup, materialize_offsite_backup  # noqa: E402
 from app.bridge_runtime import HardenedBridgePort, REMOTE_ALLOWED_NETWORKS  # noqa: E402
 from app.data_maintenance import apply_data_retention  # noqa: E402
 from app.migrations import LATEST_SCHEMA_VERSION, run_migrations  # noqa: E402
@@ -91,10 +91,12 @@ with db.connect() as conn:
     assert conn.execute("SELECT 1 FROM audit_log WHERE entity_id='old'").fetchone() is None
     assert conn.execute("SELECT 1 FROM audit_log WHERE entity_id='new'").fetchone() is not None
 
-# Backup obrigatório off-site só é aceito se existir cópia criptografada utilizável.
+# O backup local continua sem segredos por padrão. O envelope off-site, por ser
+# autenticado/criptografado, carrega a chave TOTP necessária para DR total.
 backup = create_full_backup("hardening-test", retention=2)
 assert backup["result"] == "OK", backup
 assert backup["offsitePath"], backup
+assert backup["offsiteCarriesTotpRecoveryKey"] is True
 archive = Path(backup["path"])
 encrypted = Path(backup["offsitePath"])
 assert archive.is_file() and encrypted.is_file()
@@ -106,6 +108,27 @@ with tarfile.open(archive, "r:gz") as tar:
 cipher = Fernet(offsite_key.read_bytes().strip())
 decrypted = cipher.decrypt(encrypted.read_bytes())
 assert decrypted[:2] == b"\x1f\x8b"
+
+# A recuperação off-site precisa autenticar, validar o SQLite e produzir um
+# archive local restaurável que contenha a chave TOTP protegida pelo envelope.
+materialized = materialize_offsite_backup(encrypted, key_file=offsite_key)
+assert materialized.is_file()
+assert materialized != archive
+with tarfile.open(materialized, "r:gz") as tar:
+    recovered_names = set(tar.getnames())
+    assert "product/product-db.sqlite3" in recovered_names
+    assert "product/totp-fernet.key" in recovered_names
+    assert "product/rc-geradores.env" not in recovered_names
+
+# Chave off-site errada deve falhar antes de materializar qualquer backup.
+wrong_key = root / "wrong-offsite.key"
+wrong_key.write_bytes(Fernet.generate_key() + b"\n")
+try:
+    materialize_offsite_backup(encrypted, key_file=wrong_key)
+except ValueError as exc:
+    assert "não autentica" in str(exc)
+else:
+    raise AssertionError("envelope off-site aceitou chave incorreta")
 
 # Allowlist reverse TCP deve aceitar apenas redes explicitamente configuradas.
 assert REMOTE_ALLOWED_NETWORKS
