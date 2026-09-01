@@ -29,7 +29,7 @@ export async function httpRequest<T>(
   timeoutMs = 15_000,
 ): Promise<T> {
   const controller = new AbortController();
-  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   const externalSignal = init.signal;
   const abortExternal = () => controller.abort();
   externalSignal?.addEventListener("abort", abortExternal, { once: true });
@@ -48,7 +48,7 @@ export async function httpRequest<T>(
     if (controller.signal.aborted) throw new HttpError(408, "Tempo limite da requisição excedido");
     throw error;
   } finally {
-    window.clearTimeout(timer);
+    clearTimeout(timer);
     externalSignal?.removeEventListener("abort", abortExternal);
   }
 }
