@@ -161,6 +161,12 @@ jobs:
           PYTHONPATH: .
         run: python tests/control_multi_device.py
 
+      - name: Backend hardening de produção
+        working-directory: backend
+        env:
+          PYTHONPATH: .
+        run: python tests/production_hardening.py
+
       - name: Instaladores Bash
         run: |
           set -euo pipefail
@@ -199,6 +205,8 @@ jobs:
           grep -q '^RC_PROVISION_SOCKET=' ops/rc-geradores.env.example
           grep -q '^RC_LOGIN_MAX_FAILURES=' ops/rc-geradores.env.example
           grep -q '^RC_BACKUP_RETENTION=' ops/rc-geradores.env.example
+          grep -q '^RC_RAPID_REQUIRE_ALLOWLIST=' ops/rc-geradores.env.example
+          grep -q '^RC_BACKUP_OFFSITE_REQUIRED=' ops/rc-geradores.env.example
           if grep -q -E 'rapid_device.*!= *200|device.*!= *200' ops/bootstrap_ig200.py; then
             echo 'ERRO: bootstrap voltou a tratar Device 200 como autorização de controle.' >&2
             exit 1
