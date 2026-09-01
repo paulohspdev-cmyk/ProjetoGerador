@@ -163,9 +163,7 @@ export function CompactCard({ gen }: { gen: Generator }) {
         />
         <Metric
           label="Comb."
-          value={
-            telemetry.fuel == null ? "N/D" : `${fmt(telemetry.fuel, 0)} ${telemetry.fuelUnit}`
-          }
+          value={telemetry.fuel == null ? "N/D" : `${fmt(telemetry.fuel, 0)} ${telemetry.fuelUnit}`}
           tone={toneTextClass(telemetry.tones.fuel)}
         />
         <Metric
