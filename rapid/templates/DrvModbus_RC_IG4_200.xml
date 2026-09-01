@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DeviceTemplate>
+  <Options>
+    <ZeroAddr>true</ZeroAddr>
+    <DecAddr>true</DecAddr>
+    <DefByteOrder2 />
+    <DefByteOrder4 />
+    <DefByteOrder8 />
+  </Options>
+  <ElemGroups>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1000" name="Gerador - RPM e potencia">
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="rpm" name="RPM" />
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="power_kw" name="Generator P" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1014" name="Gerador - fator de potencia">
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="power_factor_raw" name="Generator Power Factor" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1019" name="Gerador - frequencia tensoes correntes">
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="frequency_raw" name="Generator Frequency" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="voltage_l1" name="Generator V L1-N" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="voltage_l2" name="Generator V L2-N" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="voltage_l3" name="Generator V L3-N" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="voltage_l1_l2" name="Generator V L1-L2" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="voltage_l2_l3" name="Generator V L2-L3" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="voltage_l3_l1" name="Generator V L3-L1" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="current_l1" name="Generator Current L1" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="current_l2" name="Generator Current L2" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="current_l3" name="Generator Current L3" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1032" name="Rede - frequencia tensoes">
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="mains_frequency_raw" name="Mains Frequency" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="mains_voltage_l1" name="Mains V L1-N" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="mains_voltage_l2" name="Mains V L2-N" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="mains_voltage_l3" name="Mains V L3-N" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="mains_voltage_l1_l2" name="Mains V L1-L2" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="mains_voltage_l2_l3" name="Mains V L2-L3" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="mains_voltage_l3_l1" name="Mains V L3-L1" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1051" name="Controlador - alimentacao">
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="battery_voltage_raw" name="Battery Volts" />
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="alternator_voltage_raw" name="D+" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1283" name="Estatisticas - energia">
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="genset_kwh" name="Genset kWh" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1291" name="Estatisticas - horas">
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="run_hours_raw" name="Running Hours" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1293" name="Estatisticas - partidas">
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="number_starts" name="Number Starts" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1311" name="Estatisticas - combustivel acumulado">
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="total_fuel_consumption" name="Total Fuel Consumption" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1320" name="Controlador - modo">
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="controller_mode_raw" name="Controller Mode" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1322" name="Controlador - estados">
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="engine_state_raw" name="Engine State" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="breaker_state_raw" name="Breaker State" />
+    </ElemGroup>
+  </ElemGroups>
+  <Cmds />
+</DeviceTemplate>
