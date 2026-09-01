@@ -1,15 +1,40 @@
 import json
 from collections import Counter
+from functools import lru_cache
 from pathlib import Path
+
+from jsonschema import Draft202012Validator
 
 from .config import PROJECT_ROOT
 
 CATALOG_FILE = PROJECT_ROOT / "controllers" / "catalog" / "catalog-v1.json"
+PACK_SCHEMA_FILE = PROJECT_ROOT / "controllers" / "schema" / "controller-pack-v3.schema.json"
 SUPPORTED_PACK_SCHEMA = 3
 
 
 def _norm(value: object) -> str:
     return " ".join(str(value or "").strip().lower().split())
+
+
+@lru_cache(maxsize=1)
+def _pack_validator() -> Draft202012Validator:
+    try:
+        schema = json.loads(PACK_SCHEMA_FILE.read_text(encoding="utf-8"))
+    except Exception as exc:
+        raise ValueError(f"Schema de Controller Pack inválido em {PACK_SCHEMA_FILE}: {exc}") from exc
+    Draft202012Validator.check_schema(schema)
+    return Draft202012Validator(schema)
+
+
+def _validate_pack_schema(data: dict, path: Path) -> None:
+    errors = sorted(_pack_validator().iter_errors(data), key=lambda error: list(error.absolute_path))
+    if not errors:
+        return
+    parts = []
+    for error in errors[:20]:
+        location = ".".join(str(item) for item in error.absolute_path) or "<raiz>"
+        parts.append(f"{location}: {error.message}")
+    raise ValueError(f"Controller Pack fora do schema v3 em {path}: " + "; ".join(parts))
 
 
 def pack_is_production_ready(pack: dict | None) -> bool:
@@ -29,6 +54,7 @@ def _read_manifest(path: Path, lifecycle: str) -> dict:
         raise ValueError(f"Controller Pack inválido em {path}: {exc}") from exc
     if not isinstance(data, dict):
         raise ValueError(f"Controller Pack inválido em {path}: raiz JSON deve ser objeto")
+    _validate_pack_schema(data, path)
     rel = path.relative_to(PROJECT_ROOT).as_posix()
     effective_lifecycle = lifecycle
     if lifecycle == "production" and not (
