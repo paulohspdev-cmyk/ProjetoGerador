@@ -85,8 +85,7 @@ for (const marker of [
   'label="Latência"',
   "Abrir gerador",
 ]) {
-  if (!compact.includes(marker))
-    failures.push(`card compacto clássico perdeu conteúdo: ${marker}`);
+  if (!compact.includes(marker)) failures.push(`card compacto clássico perdeu conteúdo: ${marker}`);
 }
 for (const forbidden of [
   "CompactPowerGauge",
