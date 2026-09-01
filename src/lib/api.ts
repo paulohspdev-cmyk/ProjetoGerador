@@ -1,65 +1,11 @@
 import type { Generator } from "@/data/generators";
 import type { AppUser, UserRole } from "@/lib/auth";
+import { HttpError, httpDownload, httpRequest } from "@/lib/http-client";
 
-const API_BASE = (import.meta.env["VITE_RC_API_BASE_URL"] ?? "").replace(/\/$/, "");
-function url(path: string) {
-  return `${API_BASE}${path}`;
-}
+export { HttpError as ApiError };
 
-export class ApiError extends Error {
-  status: number;
-  constructor(status: number, message: string) {
-    super(message);
-    this.name = "ApiError";
-    this.status = status;
-  }
-}
-
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(url(path), {
-    ...init,
-    credentials: "include",
-    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
-  });
-  if (!response.ok) {
-    let message = `HTTP ${response.status}`;
-    try {
-      const payload = (await response.json()) as { detail?: string };
-      if (payload.detail) message = payload.detail;
-    } catch {
-      /* no json */
-    }
-    throw new ApiError(response.status, message);
-  }
-  if (response.status === 204) return undefined as T;
-  return (await response.json()) as T;
-}
-
-async function download(path: string, fallback: string) {
-  const response = await fetch(url(path), { credentials: "include" });
-  if (!response.ok) {
-    let message = `HTTP ${response.status}`;
-    try {
-      const payload = (await response.json()) as { detail?: string };
-      if (payload.detail) message = payload.detail;
-    } catch {
-      /* no json */
-    }
-    throw new ApiError(response.status, message);
-  }
-  const disposition = response.headers.get("content-disposition") ?? "";
-  const matched = /filename="?([^";]+)"?/i.exec(disposition);
-  const filename = matched?.[1] ?? fallback;
-  const blob = await response.blob();
-  const href = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = href;
-  anchor.download = filename;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(href);
-}
+const request = httpRequest;
+const download = httpDownload;
 
 export type GeneratorTransport =
   "reverse_tcp" | "modbus_tcp_direct" | "rtu_over_tcp" | "modbus_rtu_serial";
@@ -461,7 +407,7 @@ export const rcApi = {
     provision: (id: string) =>
       request<{ ok: boolean; existing?: boolean; binding?: unknown }>(
         `/api/generators/${encodeURIComponent(id)}/provision`,
-        { method: "POST" },
+        { method: "POST", body: JSON.stringify({ confirmation: "PROVISION" }) },
       ),
   },
   audit: { list: (limit = 200) => request<AuditItem[]>(`/api/audit?limit=${limit}`) },
