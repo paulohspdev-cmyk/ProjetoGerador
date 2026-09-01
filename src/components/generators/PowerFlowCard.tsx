@@ -307,9 +307,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
             <span className="mains">
               {formatGeneratorMetric(gen, mainsKey, mainsValue, "V", 0)}
             </span>
-            <span className="gen">
-              {formatGeneratorMetric(gen, genKey, genValue, "V", 0)}
-            </span>
+            <span className="gen">{formatGeneratorMetric(gen, genKey, genValue, "V", 0)}</span>
           </div>
         ))}
         {!mainsKnown && !genVoltageKnown && (
