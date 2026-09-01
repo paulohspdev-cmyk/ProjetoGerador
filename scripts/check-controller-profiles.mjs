@@ -170,14 +170,10 @@ for (const marker of [
 ]) {
   if (!card.includes(marker)) failures.push(`card perdeu contrato seguro: ${marker}`);
 }
-for (const forbidden of [
-  "oilTone(",
-  "coolantTone(",
-  "fuelTone(",
-  "alternatorTone(",
-  "1000;",
-]) {
-  if (card.includes(forbidden)) failures.push(`card voltou a conter inferência industrial: ${forbidden}`);
+for (const forbidden of ["oilTone(", "coolantTone(", "fuelTone(", "alternatorTone(", "1000;"]) {
+  if (card.includes(forbidden)) {
+    failures.push(`card voltou a conter inferência industrial: ${forbidden}`);
+  }
 }
 
 const health = read("src/components/generators/generator-health.ts");
