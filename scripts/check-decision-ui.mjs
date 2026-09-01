@@ -55,8 +55,11 @@ for (const marker of [
   "Filtrar por status",
   'label: "Vertical"',
   'label: "Compacto"',
+  'label: "Lista"',
+  "<CompactCard",
+  "<GeneratorTable",
 ]) {
-  if (!board.includes(marker)) failures.push(`toolbar de geradores perdeu seletor: ${marker}`);
+  if (!board.includes(marker)) failures.push(`toolbar/modos de geradores perdeu seletor: ${marker}`);
 }
 for (const forbidden of ["Cards verticais", "Cards compactos"]) {
   if (board.includes(forbidden))
@@ -64,6 +67,55 @@ for (const forbidden of ["Cards verticais", "Cards compactos"]) {
 }
 if (!board.includes('view === "principal" ? 5')) {
   failures.push("modo vertical deixou de limitar a cinco cards por página");
+}
+
+const compact = read("src/components/generators/CompactCard.tsx");
+for (const marker of [
+  "CompactPowerGauge",
+  "compact-flow-line",
+  'className="compact-command start"',
+  'className="compact-command stop"',
+  "readGeneratorTelemetry",
+]) {
+  if (!compact.includes(marker)) failures.push(`card compacto perdeu função operacional: ${marker}`);
+}
+for (const forbidden of [
+  'command(gen.id, "auto")',
+  'command(gen.id, "manual")',
+  'command(gen.id, "test")',
+  'command(gen.id, "mcb_close")',
+  'command(gen.id, "gcb_close")',
+]) {
+  if (compact.includes(forbidden)) failures.push(`card compacto habilitou comando não homologado: ${forbidden}`);
+}
+
+const table = read("src/components/generators/GeneratorTable.tsx");
+for (const marker of [
+  '"RPM"',
+  '"Hz"',
+  '"kW"',
+  '"PF"',
+  '"Óleo"',
+  '"Coolant"',
+  '"Combustível"',
+  '"Alternador"',
+  '"MCB"',
+  '"GCB"',
+  '"G L1-N"',
+]) {
+  if (!table.includes(marker)) failures.push(`lista perdeu telemetria operacional: ${marker}`);
+}
+
+const health = read("src/components/generators/generator-health.ts");
+for (const marker of [
+  "oilTone",
+  "coolantTone",
+  "fuelTone",
+  "alternatorTone",
+  "maintenanceTone",
+  "visibleMeterPercent",
+]) {
+  if (!health.includes(marker)) failures.push(`semáforo compartilhado perdeu regra: ${marker}`);
 }
 
 const cardCss = read("src/components/generators/generator-six-card.css");
@@ -86,5 +138,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  "Decision UI check OK: dashboard de decisão, toolbar enxuta e cards verticais responsivos.",
+  "Decision UI check OK: dashboard, card vertical, compacto horizontal, lista completa e guardrails industriais validados.",
 );
