@@ -89,10 +89,6 @@
   font-size: 8.5px;
 }
 
-.compact-flow-line {
-  grid-template-columns: auto 1fr auto 1fr auto 1fr auto 1fr auto;
-}
-
 @media (max-width: 360px) {
   .comap-panel-v2 .comap-engine {
     font-size: 10.5px;
