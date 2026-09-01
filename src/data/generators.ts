@@ -1,6 +1,39 @@
 export type GenStatus = "online" | "alerta" | "offline" | "nao_configurado";
 export type GeneratorTransport =
-  "reverse_tcp" | "modbus_tcp_direct" | "rtu_over_tcp" | "modbus_rtu_serial";
+  | "reverse_tcp"
+  | "modbus_tcp_direct"
+  | "rtu_over_tcp"
+  | "modbus_rtu_serial";
+
+export type MetricLimit = {
+  displayMin?: number;
+  displayMax?: number;
+  warningLow?: number;
+  warningHigh?: number;
+  criticalLow?: number;
+  criticalHigh?: number;
+};
+
+export type MetricState = {
+  configured: boolean;
+  defined: boolean;
+  value: number | null;
+  unit?: string | null;
+};
+
+export type GeneratorCapabilities = {
+  telemetry?: boolean;
+  start?: boolean;
+  stop?: boolean;
+  auto?: boolean;
+  manual?: boolean;
+  test?: boolean;
+  mcb_open?: boolean;
+  mcb_close?: boolean;
+  gcb_open?: boolean;
+  gcb_close?: boolean;
+  paralleling?: boolean;
+};
 
 export type Generator = {
   id: string;
@@ -36,8 +69,15 @@ export type Generator = {
   mains: { l1: number; l2: number; l3: number; l12: number };
   gen: { l1: number; l2: number; l3: number; l12: number };
   metrics?: Record<string, number>;
+  /** Valores realmente definidos na leitura atual. */
   availableMetrics?: string[];
+  definedMetrics?: string[];
+  /** Canais provisionados/configurados, mesmo quando a amostra atual está N/D. */
+  configuredMetrics?: string[];
+  metricStates?: Record<string, MetricState>;
   metricUnits?: Record<string, string>;
+  metricLimits?: Record<string, MetricLimit>;
+  capabilities?: GeneratorCapabilities;
   telemetrySource?: "rapid_scada" | "none" | string;
   rapidDeviceNum?: number | null;
   lastError?: string;
@@ -65,7 +105,9 @@ export function nextGeneratorTag(list: Generator[]) {
 }
 
 export function getGenerator(id: string) {
-  return liveGenerators.find((g) => g.id === id || g.tag.toLowerCase() === id.toLowerCase());
+  return liveGenerators.find(
+    (g) => g.id === id || g.tag.toLowerCase() === id.toLowerCase(),
+  );
 }
 
 export function displayGenName(tag: string) {

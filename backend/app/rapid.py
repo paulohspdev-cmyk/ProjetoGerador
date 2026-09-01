@@ -1,6 +1,7 @@
 import json
 import math
 import subprocess
+import threading
 import time
 from datetime import datetime, timedelta, timezone
 
@@ -8,6 +9,7 @@ from .config import RAPID_BINDINGS_FILE, RAPID_CACHE_TTL, RAPID_COMM_CONFIG, RAP
 from .controller_library import pack_for_model
 
 _cache = {"at": 0.0, "channels": {}, "error": ""}
+_cache_lock = threading.Lock()
 
 _IG200_UNDEFINED = {-32768.0, 32768.0, -2147483648.0, 2147483648.0}
 
@@ -57,52 +59,62 @@ def _is_undefined_raw(generator, raw_value):
         return False
 
 
+def _cache_hit(nums, now):
+    return now - _cache["at"] < RAPID_CACHE_TTL and all(n in _cache["channels"] for n in nums)
+
+
 def read_channels(channel_nums):
+    """Lê todos os canais em lote e evita stampede do processo .NET quando o cache expira."""
     nums = sorted({int(n) for n in channel_nums})
     if not nums:
         return {}, ""
 
     now = time.monotonic()
-    if now - _cache["at"] < RAPID_CACHE_TTL and all(n in _cache["channels"] for n in nums):
+    if _cache_hit(nums, now):
         return {n: _cache["channels"][n] for n in nums}, _cache["error"]
 
-    ready_error = _reader_ready()
-    if ready_error:
-        return {}, ready_error
+    with _cache_lock:
+        now = time.monotonic()
+        if _cache_hit(nums, now):
+            return {n: _cache["channels"][n] for n in nums}, _cache["error"]
 
-    cmd = [
-        "dotnet",
-        str(RAPID_READER_DLL),
-        str(RAPID_COMM_CONFIG),
-        "current",
-        *[str(n) for n in nums],
-    ]
-    try:
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=4, check=False)
-    except Exception as exc:
-        return {}, f"Falha ao consultar Rapid SCADA: {exc}"
+        ready_error = _reader_ready()
+        if ready_error:
+            return {}, ready_error
 
-    if proc.returncode != 0:
-        detail = (proc.stderr or proc.stdout or "erro desconhecido").strip()
-        return {}, f"Rapid SCADA: {detail[:300]}"
+        cmd = [
+            "dotnet",
+            str(RAPID_READER_DLL),
+            str(RAPID_COMM_CONFIG),
+            "current",
+            *[str(n) for n in nums],
+        ]
+        try:
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=4, check=False)
+        except Exception as exc:
+            return {}, f"Falha ao consultar Rapid SCADA: {exc}"
 
-    try:
-        payload = json.loads(proc.stdout)
-        channels = {
-            int(item["cnl"]): {
-                "val": item.get("val", 0),
-                "stat": int(item.get("stat", 0)),
-                "defined": bool(item.get("defined", False)),
+        if proc.returncode != 0:
+            detail = (proc.stderr or proc.stdout or "erro desconhecido").strip()
+            return {}, f"Rapid SCADA: {detail[:300]}"
+
+        try:
+            payload = json.loads(proc.stdout)
+            channels = {
+                int(item["cnl"]): {
+                    "val": item.get("val", 0),
+                    "stat": int(item.get("stat", 0)),
+                    "defined": bool(item.get("defined", False)),
+                }
+                for item in payload.get("channels", [])
             }
-            for item in payload.get("channels", [])
-        }
-    except Exception as exc:
-        return {}, f"Resposta inválida do Rapid SCADA: {exc}"
+        except Exception as exc:
+            return {}, f"Resposta inválida do Rapid SCADA: {exc}"
 
-    _cache["at"] = now
-    _cache["channels"] = channels
-    _cache["error"] = ""
-    return channels, ""
+        _cache["at"] = time.monotonic()
+        _cache["channels"] = channels
+        _cache["error"] = ""
+        return channels, ""
 
 
 def trend_for_generator(generator, metric, hours=24, archive_bit=1):
@@ -217,12 +229,16 @@ def _mode(values):
     return {0: "OFF", 1: "MANUAL", 2: "AUTO", 3: "TESTE"}.get(raw, "OFF")
 
 
-def _metric_units(generator, available: list[str]) -> dict[str, str]:
+def _pack(generator):
     model = str(generator.get("controller_model") or "").strip()
-    pack = pack_for_model(model) if model else None
+    return pack_for_model(model) if model else None
+
+
+def _metric_units(generator, configured: list[str]) -> dict[str, str]:
+    pack = _pack(generator)
     if not pack:
         return {}
-    allowed = set(available)
+    allowed = set(configured)
     units = dict(pack.get("metricUnits") or {})
     for spec in (pack.get("rapid") or {}).get("channels") or []:
         key = str(spec.get("key") or "")
@@ -230,6 +246,32 @@ def _metric_units(generator, available: list[str]) -> dict[str, str]:
         if key and unit:
             units.setdefault(key, unit)
     return {str(key): str(unit) for key, unit in units.items() if key in allowed and str(unit)}
+
+
+def _metric_limits(generator) -> dict:
+    pack = _pack(generator)
+    limits = (pack or {}).get("metricLimits") or {}
+    return dict(limits) if isinstance(limits, dict) else {}
+
+
+def _effective_capabilities(generator, status: str, binding_present: bool) -> dict[str, bool]:
+    pack = _pack(generator)
+    declared = (pack or {}).get("capabilities") or {}
+    production = bool(pack and pack.get("lifecycle") == "production" and pack.get("status") == "field_validated")
+    online = status == "online"
+    return {
+        "telemetry": bool(production and binding_present and declared.get("telemetry")),
+        "start": bool(production and online and declared.get("start")),
+        "stop": bool(production and online and declared.get("stop")),
+        "auto": False,
+        "manual": False,
+        "test": False,
+        "mcb_open": False,
+        "mcb_close": False,
+        "gcb_open": False,
+        "gcb_close": False,
+        "paralleling": False,
+    }
 
 
 def _derive_breaker_feedback(values):
@@ -251,12 +293,31 @@ def _derive_breaker_feedback(values):
     return ["mcb_closed", "gcb_closed"]
 
 
-def _frontend_generator(generator, values, status, error="", available=None):
-    configured = bool(generator.get("enabled"))
+def _frontend_generator(
+    generator,
+    values,
+    status,
+    error="",
+    defined=None,
+    configured_metrics=None,
+    binding_present=False,
+):
+    enabled = bool(generator.get("enabled"))
     rpm = int(values.get("rpm") or 0)
     online = status == "online"
     fault = status == "fault"
-    available_metrics_list = sorted(set(available or []))
+    defined_metrics = sorted(set(defined or []))
+    configured_metrics = sorted(set(configured_metrics or []))
+    units = _metric_units(generator, configured_metrics)
+    metric_states = {
+        key: {
+            "configured": True,
+            "defined": key in values,
+            "value": values.get(key),
+            "unit": units.get(key),
+        }
+        for key in configured_metrics
+    }
 
     return {
         "id": generator["id"],
@@ -266,13 +327,13 @@ def _frontend_generator(generator, values, status, error="", available=None):
         "controller": generator.get("controller_model") or generator.get("controller_type") or "",
         "controllerType": generator.get("controller_type") or "",
         "site": generator.get("site") or "",
-        "enabled": configured,
+        "enabled": enabled,
         "status": "alerta"
         if fault
         else "online"
         if online
         else "offline"
-        if configured
+        if enabled
         else "nao_configurado",
         "mode": _mode(values),
         "ip": generator.get("host")
@@ -309,8 +370,14 @@ def _frontend_generator(generator, values, status, error="", available=None):
             "l12": float(values.get("voltage_l1_l2") or 0),
         },
         "metrics": dict(values),
-        "availableMetrics": available_metrics_list,
-        "metricUnits": _metric_units(generator, available_metrics_list),
+        # Compatibilidade: availableMetrics passa a significar valor definido agora.
+        "availableMetrics": defined_metrics,
+        "definedMetrics": defined_metrics,
+        "configuredMetrics": configured_metrics,
+        "metricStates": metric_states,
+        "metricUnits": units,
+        "metricLimits": _metric_limits(generator),
+        "capabilities": _effective_capabilities(generator, status, binding_present),
         "telemetrySource": "rapid_scada"
         if status in {"online", "fault", "connected"}
         else "none",
@@ -336,9 +403,18 @@ def _overlay_generators(generators):
     result = []
 
     for generator, binding in zip(generators, matched):
-        available = sorted((binding.get("channels") or {}).keys()) if binding else []
+        configured = sorted((binding.get("channels") or {}).keys()) if binding else []
         if not generator.get("enabled"):
-            result.append(_frontend_generator(generator, {}, "disabled", available=available))
+            result.append(
+                _frontend_generator(
+                    generator,
+                    {},
+                    "disabled",
+                    defined=[],
+                    configured_metrics=configured,
+                    binding_present=bool(binding),
+                )
+            )
             continue
         if not binding:
             result.append(
@@ -347,13 +423,14 @@ def _overlay_generators(generators):
                     {},
                     "offline",
                     "Sem binding Rapid SCADA",
-                    available=[],
+                    defined=[],
+                    configured_metrics=[],
+                    binding_present=False,
                 )
             )
             continue
 
         values = {}
-        defined_count = 0
         invalid_values = []
         for key, cfg in (binding.get("channels") or {}).items():
             item = channel_data.get(int(cfg["cnl"]))
@@ -371,7 +448,6 @@ def _overlay_generators(generators):
             if not math.isfinite(value):
                 invalid_values.append(key)
                 continue
-            defined_count += 1
             values[key] = (
                 int(round(value))
                 if abs(value - round(value)) < 1e-9
@@ -381,15 +457,36 @@ def _overlay_generators(generators):
 
         derived = _derive_breaker_feedback(values)
         if derived:
-            available = sorted(set([*available, *derived]))
+            configured = sorted(set([*configured, *derived]))
+        defined = sorted(values.keys())
 
         if read_error:
-            result.append(_frontend_generator(generator, {}, "fault", read_error, available=available))
-        elif defined_count:
+            result.append(
+                _frontend_generator(
+                    generator,
+                    {},
+                    "fault",
+                    read_error,
+                    defined=[],
+                    configured_metrics=configured,
+                    binding_present=True,
+                )
+            )
+        elif values:
             detail = ""
             if invalid_values:
                 detail = "Canais Rapid com valor inválido: " + ", ".join(sorted(invalid_values))
-            result.append(_frontend_generator(generator, values, "online", detail, available=available))
+            result.append(
+                _frontend_generator(
+                    generator,
+                    values,
+                    "online",
+                    detail,
+                    defined=defined,
+                    configured_metrics=configured,
+                    binding_present=True,
+                )
+            )
         elif invalid_values:
             result.append(
                 _frontend_generator(
@@ -398,7 +495,9 @@ def _overlay_generators(generators):
                     "fault",
                     "Rapid SCADA retornou apenas valores inválidos: "
                     + ", ".join(sorted(invalid_values)),
-                    available=available,
+                    defined=[],
+                    configured_metrics=configured,
+                    binding_present=True,
                 )
             )
         else:
@@ -408,7 +507,9 @@ def _overlay_generators(generators):
                     {},
                     "connected",
                     "Rapid SCADA conectado, canais ainda sem dados definidos",
-                    available=available,
+                    defined=[],
+                    configured_metrics=configured,
+                    binding_present=True,
                 )
             )
 
@@ -424,7 +525,15 @@ def overlay_generators(generators):
         print(f"[rapid] falha ao compor overlay: {type(exc).__name__}: {exc}", flush=True)
         detail = f"Telemetria Rapid indisponível ({type(exc).__name__})"
         return [
-            _frontend_generator(generator, {}, "offline", detail, available=[])
+            _frontend_generator(
+                generator,
+                {},
+                "offline",
+                detail,
+                defined=[],
+                configured_metrics=[],
+                binding_present=False,
+            )
             for generator in generators
         ]
 
@@ -437,14 +546,15 @@ def dashboard(generators):
         "offline": sum(g["status"] == "offline" for g in generators),
         "notConfigured": sum(g["status"] == "nao_configurado" for g in generators),
         "running": sum(
-            "rpm" in (g.get("availableMetrics") or []) and (g.get("rpm") or 0) > 300
+            "rpm" in (g.get("definedMetrics") or g.get("availableMetrics") or [])
+            and (g.get("rpm") or 0) > 300
             for g in generators
         ),
         "loadKw": round(
             sum(
                 float(g.get("load") or 0)
                 for g in generators
-                if "power_kw" in (g.get("availableMetrics") or [])
+                if "power_kw" in (g.get("definedMetrics") or g.get("availableMetrics") or [])
             ),
             3,
         ),

@@ -1,4 +1,4 @@
-import type { Generator } from "@/data/generators";
+import type { Generator, MetricLimit } from "@/data/generators";
 
 import { metricNumber } from "./generator-metrics";
 
@@ -15,39 +15,32 @@ export function visibleMeterPercent(percent: number | null, tone: MeterTone) {
   return percent;
 }
 
-export function oilTone(value: number | null): MeterTone {
-  if (value == null) return "neutral";
-  if (value < 2 || value > 9) return "critical";
-  if (value < 3.5 || value > 8) return "warning";
-  return "good";
+function toneFromLimit(value: number | null, limit?: MetricLimit): MeterTone {
+  if (value == null || !limit) return "neutral";
+  if (
+    (limit.criticalLow != null && value <= limit.criticalLow) ||
+    (limit.criticalHigh != null && value >= limit.criticalHigh)
+  )
+    return "critical";
+  if (
+    (limit.warningLow != null && value <= limit.warningLow) ||
+    (limit.warningHigh != null && value >= limit.warningHigh)
+  )
+    return "warning";
+  const hasAnyThreshold =
+    limit.criticalLow != null ||
+    limit.criticalHigh != null ||
+    limit.warningLow != null ||
+    limit.warningHigh != null;
+  return hasAnyThreshold ? "good" : "neutral";
 }
 
-export function coolantTone(value: number | null): MeterTone {
-  if (value == null) return "neutral";
-  if (value > 105) return "critical";
-  if (value > 95 || value < 30) return "warning";
-  return "good";
-}
-
-export function fuelTone(percent: number | null): MeterTone {
-  if (percent == null) return "neutral";
-  if (percent <= 20) return "critical";
-  if (percent <= 50) return "warning";
-  return "good";
-}
-
-export function alternatorTone(value: number | null, running: boolean): MeterTone {
-  if (value == null || !running) return "neutral";
-  if (value < 24 || value > 32) return "critical";
-  if (value < 26 || value > 30) return "warning";
-  return "good";
-}
-
-export function maintenanceTone(value: number | null): MeterTone {
-  if (value == null) return "neutral";
-  if (value <= 50) return "critical";
-  if (value <= 150) return "warning";
-  return "good";
+function percentFromLimit(value: number | null, limit?: MetricLimit) {
+  if (value == null || !limit || limit.displayMax == null || limit.displayMax <= 0) return null;
+  const minimum = limit.displayMin ?? 0;
+  const span = limit.displayMax - minimum;
+  if (span <= 0) return null;
+  return Math.min(100, Math.max(0, ((value - minimum) / span) * 100));
 }
 
 export function toneTextClass(tone: MeterTone) {
@@ -67,6 +60,7 @@ export function readGeneratorTelemetry(gen: Generator) {
   const maintenance = metricNumber(gen, "maintenance_hours", gen.maintenance);
   const runHours = metricNumber(gen, "run_hours", gen.runHours);
   const frequency = metricNumber(gen, "frequency", gen.frequency);
+  const mainsFrequency = metricNumber(gen, "mains_frequency", gen.mainsFrequency);
   const powerKw = metricNumber(gen, "power_kw", gen.load);
   const powerFactor = metricNumber(gen, "power_factor", undefined);
   const nominalPower =
@@ -78,27 +72,32 @@ export function readGeneratorTelemetry(gen: Generator) {
   const currentL3 = metricNumber(gen, "current_l3", undefined);
   const running = rpm != null && rpm > 0;
 
+  const oilUnit = gen.metricUnits?.["oil_pressure"] || "bar";
   const fuelUnit = gen.metricUnits?.["fuel_level"] || "%";
   const fuelCapacity =
     metricNumber(gen, "fuel_capacity_l", undefined) ??
     metricNumber(gen, "fuel_capacity", undefined);
-  const fuelMaximum =
-    fuelUnit === "%" ? 100 : fuelCapacity != null && fuelCapacity > 0 ? fuelCapacity : 1000;
-  const fuelPercent = progressPercent(fuel, fuelMaximum);
-  const alternatorMaximum = battery != null && battery > 20 ? 32 : 16;
+  const fuelPercent =
+    fuelUnit === "%"
+      ? progressPercent(fuel, 100)
+      : fuelCapacity != null && fuelCapacity > 0
+        ? progressPercent(fuel, fuelCapacity)
+        : null;
 
+  const limits = gen.metricLimits ?? {};
   const tones = {
-    oil: oilTone(oil),
-    coolant: coolantTone(coolant),
-    fuel: fuelTone(fuelPercent),
-    alternator: alternatorTone(alternator, running),
-    maintenance: maintenanceTone(maintenance),
-    runHours: "neutral" as MeterTone,
+    oil: toneFromLimit(oil, limits.oil_pressure),
+    coolant: toneFromLimit(coolant, limits.coolant_temperature),
+    fuel: toneFromLimit(fuel, limits.fuel_level),
+    alternator: toneFromLimit(alternator, limits.alternator_voltage),
+    maintenance: toneFromLimit(maintenance, limits.maintenance_hours),
+    runHours: toneFromLimit(runHours, limits.run_hours),
   };
 
   return {
     rpm,
     oil,
+    oilUnit,
     coolant,
     fuel,
     fuelUnit,
@@ -108,6 +107,7 @@ export function readGeneratorTelemetry(gen: Generator) {
     maintenance,
     runHours,
     frequency,
+    mainsFrequency,
     powerKw,
     powerFactor,
     nominalPower,
@@ -118,15 +118,24 @@ export function readGeneratorTelemetry(gen: Generator) {
     running,
     tones,
     percents: {
-      oil: visibleMeterPercent(progressPercent(oil, 10), tones.oil),
-      coolant: visibleMeterPercent(progressPercent(coolant, 120), tones.coolant),
-      fuel: visibleMeterPercent(fuelPercent, tones.fuel),
+      oil: visibleMeterPercent(percentFromLimit(oil, limits.oil_pressure), tones.oil),
+      coolant: visibleMeterPercent(
+        percentFromLimit(coolant, limits.coolant_temperature),
+        tones.coolant,
+      ),
+      fuel: visibleMeterPercent(
+        percentFromLimit(fuel, limits.fuel_level) ?? fuelPercent,
+        tones.fuel,
+      ),
       alternator: visibleMeterPercent(
-        progressPercent(alternator, alternatorMaximum),
+        percentFromLimit(alternator, limits.alternator_voltage),
         tones.alternator,
       ),
-      maintenance: visibleMeterPercent(progressPercent(maintenance, 1000), tones.maintenance),
-      runHours: progressPercent(runHours, 10000),
+      maintenance: visibleMeterPercent(
+        percentFromLimit(maintenance, limits.maintenance_hours),
+        tones.maintenance,
+      ),
+      runHours: percentFromLimit(runHours, limits.run_hours),
     },
   };
 }

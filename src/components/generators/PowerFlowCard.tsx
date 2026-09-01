@@ -8,6 +8,7 @@ import { rcApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { DeleteGeneratorButton } from "./DeleteGeneratorButton";
 import { useGenerators } from "./GeneratorsProvider";
+import { readGeneratorTelemetry } from "./generator-health";
 import {
   displayGeneratorName,
   fmt,
@@ -38,48 +39,6 @@ import "./powerflow-card-v2.css";
 export { fmt } from "./generator-metrics";
 export { IoBtn, PowerFlowSld } from "./power-flow/PowerFlowDiagram";
 
-type MeterTone = "good" | "warning" | "critical" | "neutral";
-
-function progressPercent(value: number | null, maximum: number) {
-  if (value == null || !Number.isFinite(value) || maximum <= 0) return null;
-  return Math.min(100, Math.max(0, (value / maximum) * 100));
-}
-
-function oilTone(value: number | null): MeterTone {
-  if (value == null) return "neutral";
-  if (value < 2 || value > 9) return "critical";
-  if (value < 3.5 || value > 8) return "warning";
-  return "good";
-}
-
-function coolantTone(value: number | null): MeterTone {
-  if (value == null) return "neutral";
-  if (value > 105) return "critical";
-  if (value > 95 || value < 30) return "warning";
-  return "good";
-}
-
-function fuelTone(percent: number | null): MeterTone {
-  if (percent == null) return "neutral";
-  if (percent <= 20) return "critical";
-  if (percent <= 50) return "warning";
-  return "good";
-}
-
-function alternatorTone(value: number | null, running: boolean): MeterTone {
-  if (value == null || !running) return "neutral";
-  if (value < 24 || value > 32) return "critical";
-  if (value < 26 || value > 30) return "warning";
-  return "good";
-}
-
-function maintenanceTone(value: number | null): MeterTone {
-  if (value == null) return "neutral";
-  if (value <= 50) return "critical";
-  if (value <= 150) return "warning";
-  return "good";
-}
-
 export function PowerFlowCard({ gen }: { gen: Generator }) {
   const { can } = useAuth();
   const { refresh } = useGenerators();
@@ -87,43 +46,29 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const [commandBusy, setCommandBusy] = useState<"start" | "stop" | null>(null);
   const [commandMessage, setCommandMessage] = useState<string | null>(null);
 
-  const rpm = metricNumber(gen, "rpm", gen.rpm);
-  const oil = metricNumber(gen, "oil_pressure", gen.oilPressure);
-  const temp = metricNumber(gen, "coolant_temperature", gen.coolantTemp);
-  const fuel = metricNumber(gen, "fuel_level", gen.fuelLevel);
-  const batt = metricNumber(gen, "battery_voltage", gen.battery);
-  const alt = metricNumber(gen, "alternator_voltage", gen.alternatorVoltage);
-  const maintenance = metricNumber(gen, "maintenance_hours", gen.maintenance);
-  const runHours = metricNumber(gen, "run_hours", gen.runHours);
-  const frequency = metricNumber(gen, "frequency", gen.frequency);
-  const load = metricNumber(gen, "power_kw", gen.load);
-  const powerFactor = metricNumber(gen, "power_factor", undefined);
-  const mainsFrequency = metricNumber(gen, "mains_frequency", gen.mainsFrequency);
-  const nominalPower =
-    metricNumber(gen, "nominal_power_kw", gen.nominalPower) ??
-    metricNumber(gen, "nominal_power", gen.nominalPower);
+  const telemetry = readGeneratorTelemetry(gen);
+  const {
+    rpm,
+    oil,
+    oilUnit,
+    coolant: temp,
+    fuel,
+    fuelUnit,
+    battery: batt,
+    alternator: alt,
+    maintenance,
+    runHours,
+    frequency,
+    mainsFrequency,
+    powerKw: load,
+    powerFactor,
+    nominalPower,
+    percents,
+    tones,
+  } = telemetry;
 
   const runningKnown = rpm != null;
   const running = runningKnown && isPositiveMeasurement(rpm);
-  const oilUnit = gen.metricUnits?.["oil_pressure"] || "bar";
-  const fuelUnit = gen.metricUnits?.["fuel_level"] || "%";
-  const fuelIsPercent = fuelUnit === "%";
-  const fuelCapacity =
-    metricNumber(gen, "fuel_capacity_l", undefined) ??
-    metricNumber(gen, "fuel_capacity", undefined);
-  const fuelDisplayMaximum = fuelIsPercent
-    ? 100
-    : fuelCapacity != null && fuelCapacity > 0
-      ? fuelCapacity
-      : 1000;
-  const alternatorDisplayMaximum = batt != null && batt > 20 ? 32 : 16;
-
-  const oilBarPct = progressPercent(oil, 10);
-  const coolantBarPct = progressPercent(temp, 120);
-  const fuelBarPct = progressPercent(fuel, fuelDisplayMaximum);
-  const alternatorBarPct = progressPercent(alt, alternatorDisplayMaximum);
-  const maintenanceBarPct = progressPercent(maintenance, 1000);
-  const runHoursBarPct = progressPercent(runHours, 10000);
 
   const mcbKnown = hasMetric(gen, "mcb_closed");
   const gcbKnown = hasMetric(gen, "gcb_closed");
@@ -148,13 +93,13 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       metricNumber(gen, "mains_voltage_l1_l2", gen.mains.l12),
     ]);
 
-  const ig200Homologated =
-    gen.controller.trim().toLowerCase() === "inteligen 200" && Number(gen.rapidDeviceNum) > 0;
-  const canOperate = can("operate") && ig200Homologated && gen.status !== "nao_configurado";
+  const canStart = can("operate") && gen.capabilities?.start === true;
+  const canStop = can("operate") && gen.capabilities?.stop === true;
 
   const runCommand = async (action: "start" | "stop") => {
     const label = action.toUpperCase();
-    if (!canOperate || commandBusy || !confirmCmd(label)) return;
+    const allowed = action === "start" ? canStart : canStop;
+    if (!allowed || commandBusy || !confirmCmd(label)) return;
     setCommandBusy(action);
     setCommandMessage(null);
     try {
@@ -254,7 +199,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
               <button
                 type="button"
                 className="comap-start"
-                disabled={!canOperate || commandBusy !== null}
+                disabled={!canStart || commandBusy !== null}
                 onClick={() => void runCommand("start")}
                 aria-label="Partir gerador"
               >
@@ -263,7 +208,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
               <button
                 type="button"
                 className="comap-stop"
-                disabled={!canOperate || commandBusy !== null}
+                disabled={!canStop || commandBusy !== null}
                 onClick={() => void runCommand("stop")}
                 aria-label="Parar gerador"
               >
@@ -283,55 +228,55 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
           icon={<IconOilCan />}
           label="Oil Pressure"
           value={oil == null ? "N/D" : `${fmt(oil, 2)} ${oilUnit}`}
-          pct={oilBarPct}
+          pct={percents.oil}
           bar
           known={oil != null}
-          tone={oilTone(oil)}
+          tone={tones.oil}
         />
         <EngineRow
           icon={<IconThermometer />}
           label="Coolant Temp."
           value={temp == null ? "N/D" : `${fmt(temp, 0)} °C`}
-          pct={coolantBarPct}
+          pct={percents.coolant}
           bar
           known={temp != null}
-          tone={coolantTone(temp)}
+          tone={tones.coolant}
         />
         <EngineRow
           icon={<IconFuelPump />}
           label="Fuel Level"
           value={fuel == null ? "N/D" : `${fmt(fuel, 0)} ${fuelUnit}`}
-          pct={fuelBarPct}
+          pct={percents.fuel}
           bar
           known={fuel != null}
-          tone={fuelTone(fuelBarPct)}
+          tone={tones.fuel}
         />
         <EngineRow
           icon={<IconBolt />}
           label="Alternator Volt."
           value={alt == null ? "N/D" : `${fmt(alt)} V`}
-          pct={alternatorBarPct}
+          pct={percents.alternator}
           bar
           known={alt != null}
-          tone={alternatorTone(alt, running)}
+          tone={tones.alternator}
         />
         <EngineRow
           icon={<IconClock />}
           label="Maintenance"
           value={maintenance == null ? "N/D" : `${fmt(maintenance, 0)} h`}
-          pct={maintenanceBarPct}
+          pct={percents.maintenance}
           bar
           known={maintenance != null}
-          tone={maintenanceTone(maintenance)}
+          tone={tones.maintenance}
         />
         <EngineRow
           icon={<IconRunHours />}
           label="Run Hours"
           value={runHours == null ? "N/D" : `${fmt(runHours)} h`}
-          pct={runHoursBarPct}
+          pct={percents.runHours}
           bar
           known={runHours != null}
-          tone="neutral"
+          tone={tones.runHours}
         />
       </section>
 
@@ -362,7 +307,9 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
             <span className="mains">
               {formatGeneratorMetric(gen, mainsKey, mainsValue, "V", 0)}
             </span>
-            <span className="gen">{formatGeneratorMetric(gen, genKey, genValue, "V", 0)}</span>
+            <span className="gen">
+              {formatGeneratorMetric(gen, genKey, genValue, "V", 0)}
+            </span>
           </div>
         ))}
         {!mainsKnown && !genVoltageKnown && (
