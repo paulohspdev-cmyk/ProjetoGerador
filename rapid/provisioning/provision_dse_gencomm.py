@@ -105,7 +105,7 @@ def main() -> int:
         "registrationOnly": [],
         "errors": [],
     }
-    changed = False
+    provision_attempted = False
 
     try:
         for generator in generators:
@@ -139,8 +139,10 @@ def main() -> int:
                 continue
 
             try:
+                # O provisionador genérico pode parar os serviços antes de falhar.
+                # Marque a tentativa ANTES da chamada para garantir restauração no finally.
+                provision_attempted = True
                 result = provision(str(generator["id"]), restart=False)
-                changed = True
                 report["provisioned"].append(
                     {
                         **identity,
@@ -152,7 +154,7 @@ def main() -> int:
             except Exception as exc:  # relatório de lote; mantém os demais itens
                 report["errors"].append({**identity, "error": f"{type(exc).__name__}: {exc}"})
     finally:
-        if changed:
+        if provision_attempted:
             _restart_rapid()
 
     print(json.dumps(report, ensure_ascii=False, indent=2))
