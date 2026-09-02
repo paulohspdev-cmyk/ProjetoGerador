@@ -111,7 +111,7 @@ def list_controller_packs() -> list[dict]:
 
 
 def list_controller_catalog() -> list[dict]:
-    """Lista catálogo comercial/alvo sem transformar inventário em homologação."""
+    """Lista o catálogo alvo. Cadastro de produto é permitido sem conceder poderes industriais."""
     if not CATALOG_FILE.exists():
         return []
     try:
@@ -140,7 +140,7 @@ def list_controller_catalog() -> list[dict]:
                 "category": str(row.get("category") or "other"),
                 "catalogStatus": str(row.get("status") or "inventory_only"),
                 "provisionable": False,
-                "registerable": False,
+                "registerable": True,
                 "onboardingMode": "inventory",
             }
         )
@@ -207,8 +207,7 @@ def controller_catalog_with_state(packs: list[dict] | None = None) -> list[dict]
                 **_pack_telemetry_state(pack),
                 **_firmware_state(pack),
                 "provisionable": pack_is_production_ready(pack),
-                "registerable": pack_is_production_ready(pack)
-                or pack_is_lab_onboarding_ready(pack),
+                "registerable": True,
                 "onboardingMode": (
                     "production"
                     if pack_is_production_ready(pack)
@@ -319,6 +318,7 @@ def library_summary() -> dict:
             "invalidProduction": sum(p.get("lifecycle") == "invalid_production" for p in packs),
             "catalogTotal": len(catalog),
             "catalogProvisionable": sum(bool(row.get("provisionable")) for row in catalog),
+            "catalogRegisterable": sum(bool(row.get("registerable")) for row in catalog),
             "catalogInventoryOnly": sum(not bool(row.get("packLifecycle")) for row in catalog),
             "productionWithoutFirmwareMatrix": sum(
                 bool(row.get("provisionable")) and not bool(row.get("firmwareMatrixComplete"))
