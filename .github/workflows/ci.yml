@@ -115,7 +115,7 @@ jobs:
       - name: Backend dependencies
         run: |
           pip install -r backend/requirements.txt
-          pip install 'httpx>=0.27,<1'
+          pip install 'httpx2>=0.28,<1'
 
       - name: Backend syntax
         run: |
