@@ -31,6 +31,7 @@ assert {item["manufacturer"] for item in catalog} >= {"ComAp", "DSE"}
 
 ig200 = catalog_for_model("InteliGen 200")
 assert ig200 and ig200["provisionable"] is True
+assert ig200["registerable"] is True
 assert ig200["packLifecycle"] == "production"
 pack = pack_for_model("IG200")
 assert pack and pack["schema"] == 3
@@ -48,12 +49,38 @@ for forbidden in (
 ):
     assert pack["capabilities"][forbidden] is False, forbidden
 
-# O catálogo não transforma modelos ainda não homologados em produção.
+# Equipamentos não-genset continuam fora do cadastro de geradores quando não
+# existe fluxo técnico específico para sua aplicação.
 dse335 = catalog_for_model("DSE335")
-assert dse335 and dse335["provisionable"] is False
+assert dse335 and dse335["application"] == "ats"
+assert dse335["provisionable"] is False
 assert dse335["registerable"] is False
 assert dse335["onboardingMode"] == "inventory"
 assert not dse335.get("packLifecycle")
+
+# Todo modelo classificado como genset pode receber cadastro operacional mesmo
+# antes da homologação do pack. Isso NÃO concede Rapid nem comandos.
+intelicompact_mint = catalog_for_model("InteliCompact NT MINT")
+assert intelicompact_mint and intelicompact_mint["application"] == "genset"
+assert intelicompact_mint["registerable"] is True
+assert intelicompact_mint["provisionable"] is False
+assert intelicompact_mint["onboardingMode"] == "inventory"
+assert not intelicompact_mint.get("packLifecycle")
+assert not any(
+    intelicompact_mint.get("capabilities", {}).get(name)
+    for name in (
+        "start",
+        "stop",
+        "auto",
+        "manual",
+        "test",
+        "mcb_open",
+        "mcb_close",
+        "gcb_open",
+        "gcb_close",
+        "paralleling",
+    )
+)
 
 # Pack LAB estritamente read-only pode ser cadastrado para homologação, mas
 # jamais é promovido a provisionamento/controle industrial.
