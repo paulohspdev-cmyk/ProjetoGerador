@@ -47,9 +47,7 @@ export function ControllersV3Screen() {
       setLinkFrom((value) => value || topologyData.assets[0]?.id || "");
       setLinkTo((value) => value || topologyData.assets[1]?.id || topologyData.assets[0]?.id || "");
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Falha ao carregar inventário de controladoras.",
-      );
+      setError(err instanceof Error ? err.message : "Falha ao carregar controladoras.");
     } finally {
       setLoading(false);
     }
@@ -133,7 +131,7 @@ export function ControllersV3Screen() {
         onMessage={setMessage}
       />
 
-      <Panel title="Inventário de controladoras / assets">
+      <Panel title="Controladoras / assets cadastrados">
         {loading ? (
           <p className="py-8 text-center text-sm text-muted-foreground">Carregando topologia…</p>
         ) : !rows.length ? (
