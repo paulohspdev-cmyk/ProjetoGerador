@@ -98,6 +98,25 @@ for (const forbidden of [
     failures.push(`card compacto voltou ao redesenho operacional rejeitado: ${forbidden}`);
 }
 
+const detail = read("src/components/generators/GeneratorDetailScreen.tsx");
+for (const marker of [
+  "homologatedIg200",
+  'normalizedController === "inteligen 200"',
+  'gen.transport === "reverse_tcp"',
+  "Number(gen.rapidDeviceNum || 0) > 0",
+  "gen.capabilities?.start === true || homologatedIg200",
+  "gen.capabilities?.stop === true || homologatedIg200",
+  '<button type="button" disabled title="Função indisponível">\n            AUTO',
+  '<button type="button" disabled title="Função indisponível">\n            TEST',
+]) {
+  if (!detail.includes(marker)) {
+    failures.push(`controle homologado perdeu guardrail de reconexão: ${marker}`);
+  }
+}
+if (detail.includes('normalizedController === "ig4 200" && homologatedIg200')) {
+  failures.push("exceção de reconexão IG200 não pode ser aplicada ao IG4");
+}
+
 const table = read("src/components/generators/GeneratorTable.tsx");
 for (const marker of [
   '"RPM"',

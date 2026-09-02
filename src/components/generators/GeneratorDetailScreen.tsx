@@ -31,9 +31,20 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
   const model = useMemo(() => buildGeneratorDetailModel(gen), [gen]);
   const { events, eventError, trend, trendError, trendLoading } = useGeneratorDetailData(gen);
   const configured = gen.enabled !== false && gen.status !== "nao_configurado";
-  const canStart = can("operate") && configured && gen.capabilities?.start === true;
-  const canStop = can("operate") && configured && gen.capabilities?.stop === true;
-  const labIg4Start = canStart && gen.controller.trim().toLowerCase() === "ig4 200";
+  const normalizedController = gen.controller.trim().toLowerCase();
+  const homologatedIg200 =
+    normalizedController === "inteligen 200" &&
+    gen.transport === "reverse_tcp" &&
+    Number(gen.rapidDeviceNum || 0) > 0;
+  // O backend continua sendo a autoridade final: ele revalida lifecycle/status do
+  // Controller Pack, identidade exata do binding, transporte e gate da bridge.
+  // Esta exceção de UI evita que uma amostra Rapid momentaneamente N/D esconda os
+  // únicos comandos de produção já homologados enquanto o modem está reconectando.
+  const canStart =
+    can("operate") && configured && (gen.capabilities?.start === true || homologatedIg200);
+  const canStop =
+    can("operate") && configured && (gen.capabilities?.stop === true || homologatedIg200);
+  const labIg4Start = canStart && normalizedController === "ig4 200";
 
   const command = async (action: "start" | "stop") => {
     const allowed = action === "start" ? canStart : canStop;
