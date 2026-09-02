@@ -9,10 +9,9 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { LayoutProvider } from "@/components/layout/LayoutContext";
 import { ThemeProvider, themeInitScript } from "@/components/layout/ThemeProvider";
@@ -45,10 +44,6 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
-  useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
@@ -85,8 +80,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: "RC Geradores | SCADA" },
-      { name: "description", content: "Sistema SCADA de monitoramento e operação de geradores." },
+      { title: "RC Geradores" },
+      {
+        name: "description",
+        content: "Sistema profissional de monitoramento e operação de geradores.",
+      },
       { name: "author", content: "RC Geradores" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

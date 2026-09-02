@@ -104,7 +104,7 @@ export function RolesScreen() {
         </div>
         <p className="mt-3 text-xs text-muted-foreground">
           O perfil é atribuído individualmente na tela Usuários. Funções industriais não liberadas
-          pelo produto continuam indisponíveis mesmo para administrador.
+          pelo produto continuam indisponíveis mesmo para o gestor do sistema.
         </p>
       </Panel>
     </ScreenBody>

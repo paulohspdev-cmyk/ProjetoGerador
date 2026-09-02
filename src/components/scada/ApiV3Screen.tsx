@@ -97,7 +97,7 @@ export function ApiV3Screen() {
           {
             icon: KeyRound,
             label: "Tokens ativos",
-            value: admin ? tokens.filter((t) => t.active).length : "ADMIN",
+            value: admin ? tokens.filter((t) => t.active).length : "RESTRITO",
           },
         ]}
       />
@@ -271,7 +271,7 @@ export function ApiV3Screen() {
       {!admin && (
         <p className="rounded-md border border-border bg-card px-3 py-2 text-[12px] text-muted-foreground">
           <ShieldCheck className="mr-1 inline size-4" />
-          Gerenciamento de tokens é restrito a administradores.
+          Gerenciamento de tokens é restrito ao perfil gestor do sistema.
         </p>
       )}
     </ScreenBody>

@@ -98,7 +98,7 @@ export function ChannelsScreen() {
   return (
     <ScreenBody>
       <Stats items={[{ icon: Layers, label: "Canais homologados", value: rows.length }]} />
-      <Panel title="Canais Rapid SCADA / Controller Packs">
+      <Panel title="Canais dos perfis homologados">
         <RemoteState loading={loading} error={error} empty={!rows.length} />
         {!!rows.length && (
           <ScadaTable
@@ -139,7 +139,7 @@ export function TagsScreen() {
               { label: "ID", render: (r) => <span className="num">{r.id}</span> },
               { label: "Tag", render: (r) => <b>{r.name}</b> },
               { label: "Modelo", render: (r) => r.model },
-              { label: "Canal Rapid", render: (r) => <span className="num">{r.cnl}</span> },
+              { label: "Canal interno", render: (r) => <span className="num">{r.cnl}</span> },
               { label: "Acesso", render: (r) => r.access },
             ]}
           />
@@ -157,7 +157,7 @@ export function TemplatesScreen() {
   const packs = data?.packs.filter((p) => p.lifecycle === "production") ?? [];
   return (
     <ScreenBody>
-      <Panel title="Templates vindos dos Controller Packs de produção">
+      <Panel title="Templates dos perfis de produção">
         <RemoteState loading={loading} error={error} empty={!packs.length} />
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {packs.map((p) => (
@@ -206,16 +206,16 @@ export function RapidScadaScreen() {
     <ScreenBody>
       <Stats
         items={[
-          { icon: Settings, label: "Bindings", value: data?.rapid.bindingsExists ? "OK" : "N/D" },
-          { icon: Settings, label: "Reader", value: data?.rapid.readerExists ? "OK" : "N/D" },
+          { icon: Settings, label: "Vínculos", value: data?.rapid.bindingsExists ? "OK" : "N/D" },
+          { icon: Settings, label: "Leitor", value: data?.rapid.readerExists ? "OK" : "N/D" },
           {
             icon: Settings,
-            label: "Communicator",
+            label: "Comunicação",
             value: data?.rapid.commConfigExists ? "OK" : "N/D",
           },
         ]}
       />
-      <Panel title="Rapid SCADA">
+      <Panel title="Motor de telemetria">
         <RemoteState loading={loading} error={error} empty={!data} />
         {!!services.length && (
           <ScadaTable
@@ -236,7 +236,7 @@ export function RapidScadaScreen() {
         )}
         {data && !services.length && (
           <p className="text-[12px] text-muted-foreground">
-            Serviços Rapid ainda não detectados nesta máquina.
+            Serviços de telemetria ainda não detectados nesta máquina.
           </p>
         )}
       </Panel>
@@ -354,8 +354,8 @@ export function LibControllersScreen() {
       />
       <p className="rounded-md border border-border bg-card px-3 py-2 text-[11px] text-muted-foreground">
         Catálogo identifica os modelos suportados pelo produto. Somente linhas marcadas como
-        PRODUÇÃO possuem Controller Pack autorizado para provisionamento industrial; catálogo/lab
-        não habilita polling nem comandos.
+        PRODUÇÃO possuem perfil autorizado para provisionamento industrial; catálogo/laboratório não
+        habilita polling nem comandos.
       </p>
       <Panel title="Biblioteca de controladoras">
         <RemoteState loading={loading} error={error} empty={!rows.length} />
@@ -368,7 +368,7 @@ export function LibControllersScreen() {
               { label: "Modelo", render: (r) => <b>{r.model}</b> },
               { label: "Aplicação", render: (r) => r.application },
               {
-                label: "Controller Pack",
+                label: "Perfil",
                 render: (r) =>
                   r.provisionable ? (
                     <Pill tone="ok">PRODUÇÃO</Pill>
@@ -396,7 +396,7 @@ export function ProtocolsScreen() {
   return (
     <ScreenBody>
       <Stats items={[{ icon: Cable, label: "Protocolos homologados", value: rows.length }]} />
-      <Panel title="Protocolos declarados nos Controller Packs">
+      <Panel title="Protocolos declarados nos perfis homologados">
         <RemoteState loading={loading} error={error} empty={!rows.length} />
         {!!rows.length && (
           <ScadaTable
@@ -422,7 +422,7 @@ export function PacksScreen() {
     <ScreenBody>
       <Stats
         items={[
-          { icon: Package, label: "Controller Packs", value: data?.counts.total ?? 0 },
+          { icon: Package, label: "Perfis homologados", value: data?.counts.total ?? 0 },
           {
             icon: Package,
             label: "Produção",
@@ -433,7 +433,7 @@ export function PacksScreen() {
           { icon: Library, label: "Catálogo alvo", value: lib?.counts.catalogTotal ?? 0 },
         ]}
       />
-      <Panel title="Controller Packs">
+      <Panel title="Perfis de controladora">
         <RemoteState loading={loading} error={error} empty={!data?.packs.length} />
         <div className="space-y-2 text-[13px]">
           {data?.packs.map((p) => (
@@ -536,7 +536,7 @@ export function VersionScreen() {
               ["API", data.apiVersion],
               ["Git", data.gitSha || "N/D"],
               ["Branch", data.gitBranch || "N/D"],
-              ["Rapid SCADA", data.rapidScada || "N/D"],
+              ["Motor de telemetria", data.rapidScada || "N/D"],
             ].map(([label, value]) => (
               <div key={label} className="rounded-md border border-border p-3">
                 <p className="text-[11px] text-muted-foreground">{label}</p>

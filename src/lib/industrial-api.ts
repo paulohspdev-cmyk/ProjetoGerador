@@ -199,6 +199,23 @@ export const industrialApi = {
         method: "POST",
         body: JSON.stringify({ confirmation: "DEPROVISION" }),
       }),
+    reconfigure: (
+      id: string,
+      tag: string,
+      payload: {
+        transport: "reverse_tcp" | "modbus_tcp_direct" | "rtu_over_tcp";
+        ip: string;
+        listenPort: number;
+        modbusUnit: number;
+      },
+    ) =>
+      request<Record<string, unknown>>(`/api/generators/${encodeURIComponent(id)}/reconfigure`, {
+        method: "POST",
+        body: JSON.stringify({
+          ...payload,
+          confirmation: `RECONFIGURAR ${tag}`,
+        }),
+      }),
     retire: (id: string, tag: string) =>
       request<{
         ok: boolean;
@@ -209,6 +226,25 @@ export const industrialApi = {
       }>(`/api/generators/${encodeURIComponent(id)}/retire`, {
         method: "POST",
         body: JSON.stringify({ confirmation: `RETIRAR ${tag}` }),
+      }),
+  },
+  discovery: {
+    modbusTcp: (cidr: string, port = 502, timeoutMs = 350) =>
+      request<{
+        cidr: string;
+        port: number;
+        scannedHosts: number;
+        found: Array<{ host: string; port: number; latencyMs: number; state: "tcp_open" }>;
+        method: "tcp_connect_only";
+        readOnly: true;
+      }>("/api/network-discovery/modbus-tcp", {
+        method: "POST",
+        body: JSON.stringify({
+          cidr,
+          port,
+          timeoutMs,
+          confirmation: "SCAN SOMENTE LEITURA",
+        }),
       }),
   },
 };

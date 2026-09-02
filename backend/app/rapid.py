@@ -1,6 +1,7 @@
 import json
 import math
 import os
+import sqlite3
 import subprocess
 import threading
 import time
@@ -14,6 +15,7 @@ from .config import (
     RAPID_READER_DLL,
 )
 from .controller_library import pack_for_model
+from . import db
 from .ig4_lab import is_target as is_ig4_lab_target
 
 _cache = {"at": 0.0, "channels": {}, "error": "", "requested": set()}
@@ -439,6 +441,9 @@ def _frontend_generator(
     configured_metrics=None,
     binding_present=False,
     health=None,
+    telemetry_at=None,
+    telemetry_stale=False,
+    stale_metrics=None,
 ):
     enabled = bool(generator.get("enabled"))
     rpm = int(values.get("rpm") or 0)
@@ -446,13 +451,15 @@ def _frontend_generator(
     warning = status in {"fault", "connected", "partial"}
     defined_metrics = sorted(set(defined or []))
     configured_metrics = sorted(set(configured_metrics or []))
+    stale_metrics = sorted(set(stale_metrics or []))
     units = _metric_units(generator, configured_metrics)
     metric_states = {
         key: {
             "configured": True,
-            "defined": key in values,
+            "defined": key in defined_metrics,
             "value": values.get(key),
             "unit": units.get(key),
+            "lastKnown": key in stale_metrics or bool(telemetry_stale and key in values),
         }
         for key in configured_metrics
     }
@@ -511,17 +518,23 @@ def _frontend_generator(
             "l12": float(values.get("voltage_l1_l2") or 0),
         },
         "metrics": dict(values),
-        "availableMetrics": defined_metrics,
+        "availableMetrics": sorted(values.keys()),
         "definedMetrics": defined_metrics,
         "configuredMetrics": configured_metrics,
         "metricStates": metric_states,
         "metricUnits": units,
         "metricLimits": _metric_limits(generator),
         "capabilities": _effective_capabilities(generator, status, binding_present),
-        "telemetrySource": "rapid_scada"
+        "telemetrySource": "last_known"
+        if telemetry_stale
+        else "rapid_scada"
         if binding_present and status in {"online", "fault", "connected", "partial"}
         else "none",
         "rapidDeviceNum": generator.get("rapid_device_num"),
+        "telemetryStale": bool(telemetry_stale),
+        "staleMetrics": stale_metrics,
+        "lastTelemetryAt": telemetry_at,
+        "dataAgeSeconds": max(0, int(time.time()) - int(telemetry_at)) if telemetry_at else None,
         "lastError": error,
         "health": health or {},
     }
@@ -547,6 +560,12 @@ def _overlay_generators(generators):
     for generator, binding in zip(generators, matched):
         configured = sorted((binding.get("channels") or {}).keys()) if binding else []
         health = _transport_health(generator, bridge_status)
+        snapshot = db.get_telemetry_snapshot(generator["id"])
+
+        def last_known():
+            if not snapshot:
+                return {}, [], None
+            return snapshot["values"], snapshot["defined"], snapshot["updated_at"]
 
         if not generator.get("enabled"):
             health.update({"controller": "unknown", "telemetry": "not_configured"})
@@ -613,19 +632,30 @@ def _overlay_generators(generators):
         if read_error:
             health.update({"controller": "unknown", "telemetry": "error"})
             state = "offline" if health.get("transport") == "disconnected" else "fault"
+            stale_values, stale_defined, stale_at = last_known()
             result.append(
                 _frontend_generator(
                     generator,
-                    {},
+                    stale_values,
                     state,
                     read_error,
                     defined=[],
                     configured_metrics=configured,
                     binding_present=True,
                     health=health,
+                    telemetry_at=stale_at,
+                    telemetry_stale=bool(stale_values),
                 )
             )
         elif values:
+            previous_values, _previous_defined, _previous_at = last_known()
+            display_values = {**previous_values, **values}
+            stale_metrics = sorted(set(display_values) - set(defined))
+            try:
+                db.save_telemetry_snapshot(generator["id"], values, defined)
+            except sqlite3.Error as exc:
+                print(f"[rapid] falha ao persistir snapshot de {generator['id']}: {exc}", flush=True)
+            telemetry_at = int(time.time())
             controller_ok = _has_controller_health(values, configured)
             health.update(
                 {
@@ -643,21 +673,24 @@ def _overlay_generators(generators):
             result.append(
                 _frontend_generator(
                     generator,
-                    values,
+                    display_values,
                     "online" if controller_ok else "partial",
                     "; ".join(detail_parts),
                     defined=defined,
                     configured_metrics=configured,
                     binding_present=True,
                     health=health,
+                    telemetry_at=telemetry_at,
+                    stale_metrics=stale_metrics,
                 )
             )
         elif invalid_values:
             health.update({"controller": "unknown", "telemetry": "invalid"})
+            stale_values, _stale_defined, stale_at = last_known()
             result.append(
                 _frontend_generator(
                     generator,
-                    {},
+                    stale_values,
                     "fault",
                     "Rapid SCADA retornou apenas valores inválidos: "
                     + ", ".join(sorted(invalid_values)),
@@ -665,21 +698,26 @@ def _overlay_generators(generators):
                     configured_metrics=configured,
                     binding_present=True,
                     health=health,
+                    telemetry_at=stale_at,
+                    telemetry_stale=bool(stale_values),
                 )
             )
         else:
             health.update({"controller": "unknown", "telemetry": "no_data"})
             state = "offline" if health.get("transport") == "disconnected" else "connected"
+            stale_values, stale_defined, stale_at = last_known()
             result.append(
                 _frontend_generator(
                     generator,
-                    {},
+                    stale_values,
                     state,
                     "Rapid SCADA sem dados definidos para esta controladora",
                     defined=[],
                     configured_metrics=configured,
                     binding_present=True,
                     health=health,
+                    telemetry_at=stale_at,
+                    telemetry_stale=bool(stale_values),
                 )
             )
 

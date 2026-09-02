@@ -13,7 +13,7 @@ import {
   displayGeneratorName,
   fmt,
   formatGeneratorMetric,
-  hasMetric,
+  hasFreshMetric,
   metricNumber,
 } from "./generator-metrics";
 import { hasPositiveMeasurement, isPositiveMeasurement } from "./generator-presence";
@@ -67,13 +67,13 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     tones,
   } = telemetry;
 
-  const runningKnown = rpm != null;
+  const runningKnown = rpm != null && hasFreshMetric(gen, "rpm");
   const running = runningKnown && isPositiveMeasurement(rpm);
 
-  const mcbKnown = hasMetric(gen, "mcb_closed");
-  const gcbKnown = hasMetric(gen, "gcb_closed");
-  const modeKnown = hasMetric(gen, "controller_mode_raw");
-  const alarmCountKnown = hasMetric(gen, "alarm_count");
+  const mcbKnown = hasFreshMetric(gen, "mcb_closed");
+  const gcbKnown = hasFreshMetric(gen, "gcb_closed");
+  const modeKnown = hasFreshMetric(gen, "controller_mode_raw");
+  const alarmCountKnown = hasFreshMetric(gen, "alarm_count");
 
   const mainsKeys = [
     "mains_voltage_l1",
@@ -82,8 +82,8 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     "mains_voltage_l1_l2",
   ];
   const genKeys = ["voltage_l1", "voltage_l2", "voltage_l3", "voltage_l1_l2"];
-  const mainsKnown = mainsKeys.some((key) => hasMetric(gen, key));
-  const genVoltageKnown = genKeys.some((key) => hasMetric(gen, key));
+  const mainsKnown = mainsKeys.some((key) => hasFreshMetric(gen, key));
+  const genVoltageKnown = genKeys.some((key) => hasFreshMetric(gen, key));
   const mainsOk =
     mainsKnown &&
     hasPositiveMeasurement([
@@ -132,7 +132,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
           G
         </span>
         <div className="min-w-0 flex-1">
-          <h3 className="comap-name">{displayGeneratorName(gen.tag)}</h3>
+          <h3 className="comap-name">{displayGeneratorName(gen)}</h3>
           <p className="controller-model-line">{gen.controller}</p>
         </div>
         <span
@@ -157,6 +157,12 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         </Link>
         <DeleteGeneratorButton id={gen.id} tag={gen.tag} className="size-5" />
       </header>
+
+      {gen.telemetryStale && (
+        <p className="border-b border-alert/30 bg-alert/10 px-2 py-1 text-[10px] font-semibold text-alert">
+          Última leitura conhecida · equipamento offline
+        </p>
+      )}
 
       <section className="comap-block controller-mode-section">
         <ControllerModeBar gen={gen} known={modeKnown} />

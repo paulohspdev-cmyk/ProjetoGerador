@@ -16,6 +16,7 @@ export type MetricState = {
   defined: boolean;
   value: number | null;
   unit?: string | null;
+  lastKnown?: boolean;
 };
 
 export type GeneratorCapabilities = {
@@ -76,6 +77,10 @@ export type Generator = {
   metricLimits?: Record<string, MetricLimit>;
   capabilities?: GeneratorCapabilities;
   telemetrySource?: "rapid_scada" | "none" | string;
+  telemetryStale?: boolean;
+  staleMetrics?: string[];
+  lastTelemetryAt?: number | null;
+  dataAgeSeconds?: number | null;
   rapidDeviceNum?: number | null;
   lastError?: string;
 };

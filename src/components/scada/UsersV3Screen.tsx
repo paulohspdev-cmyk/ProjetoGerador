@@ -115,7 +115,7 @@ export function UsersV3Screen() {
             value: users.filter((item) => item.active).length,
             tone: "text-online",
           },
-          { icon: ShieldCheck, label: "Administradores", value: activeAdmins },
+          { icon: ShieldCheck, label: "Gestores do sistema", value: activeAdmins },
         ]}
       />
 

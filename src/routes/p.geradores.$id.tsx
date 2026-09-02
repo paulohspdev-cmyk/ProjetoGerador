@@ -10,7 +10,7 @@ export const Route = createFileRoute("/p/geradores/$id")({
   component: GeneratorPage,
   head: () => ({
     meta: [
-      { title: "Gerador | RC Geradores SCADA" },
+      { title: "Gerador | RC Geradores" },
       { name: "description", content: "Painel completo do grupo gerador" },
     ],
   }),

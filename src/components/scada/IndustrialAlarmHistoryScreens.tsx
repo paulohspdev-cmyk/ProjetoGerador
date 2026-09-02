@@ -72,7 +72,7 @@ export function IndustrialAlarmsScreen() {
       <p className="rounded-md border border-border bg-card px-3 py-2 text-[11px] text-muted-foreground">
         A fila registra somente condições comprováveis. Perda de comunicação, estado de alerta e
         alarm_count entram quando realmente observados; causas nativas individuais só aparecem
-        depois que o Controller Pack homologar seus códigos/bitfields.
+        depois que o perfil da controladora homologar seus códigos e estados.
       </p>
       {error && (
         <p className="rounded-md border border-offline/40 bg-offline/10 p-3 text-sm text-offline">
@@ -207,7 +207,7 @@ export function ProcessHistoryScreen() {
       </Panel>
       <p className="rounded-md border border-border bg-card px-3 py-2 text-[11px] text-muted-foreground">
         Este histórico é de eventos/estados industriais. Tendências analógicas continuam no menu
-        Tendências, lendo o archive do Rapid SCADA. Auditoria de usuários permanece separada em
+        Tendências, lendo o histórico de telemetria. Auditoria de usuários permanece separada em
         Gestão → Auditoria.
       </p>
       {error && (

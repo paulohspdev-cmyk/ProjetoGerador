@@ -46,8 +46,8 @@ export function DeleteGeneratorButton({
           return;
         }
         const detail = lifecycle.provisioned
-          ? "O equipamento está provisionado no Rapid SCADA. A retirada fará backup, desativará canais preservando histórico, removerá Device/Line quando aplicável e só depois excluirá o cadastro."
-          : "O equipamento não possui binding Rapid ativo; somente o cadastro será retirado.";
+          ? "O equipamento está ativo na integração industrial. A retirada fará backup, desativará a comunicação preservando o histórico e só depois excluirá o cadastro."
+          : "O equipamento não possui integração industrial ativa; somente o cadastro será retirado.";
         const typed = window.prompt(
           `${detail}\n\nPara confirmar, digite exatamente: RETIRAR ${tag}`,
         );

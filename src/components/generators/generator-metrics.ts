@@ -4,7 +4,10 @@ export function fmt(n: number, digits = 1) {
   return Number.isFinite(n) ? n.toFixed(digits).replace(".", ",") : "N/D";
 }
 
-export function displayGeneratorName(tag: string) {
+export function displayGeneratorName(generator: Generator | string) {
+  const name = typeof generator === "string" ? "" : generator.name?.trim();
+  if (name) return name;
+  const tag = typeof generator === "string" ? generator : generator.tag;
   const n = tag.replace(/\D/g, "");
   return n ? `Gerador ${String(Number(n)).padStart(2, "0")}` : tag;
 }
@@ -14,6 +17,10 @@ export function hasMetric(gen: Generator, key: string) {
     Object.prototype.hasOwnProperty.call(gen.metrics ?? {}, key) ||
     (gen.availableMetrics ?? []).includes(key)
   );
+}
+
+export function hasFreshMetric(gen: Generator, key: string) {
+  return !gen.telemetryStale && (gen.definedMetrics ?? gen.availableMetrics ?? []).includes(key);
 }
 
 export function metricNumber(gen: Generator, key: string, value: number | null | undefined) {

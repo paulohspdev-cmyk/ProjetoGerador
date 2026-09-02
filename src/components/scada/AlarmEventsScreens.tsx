@@ -34,7 +34,7 @@ export function AlarmsScreen() {
       />
       <p className="rounded-md border border-border bg-card px-3 py-2 text-[11px] text-muted-foreground">
         Esta fila contém somente estados comprovados pela API. Alarmes nativos adicionais aparecem
-        quando o Controller Pack fornecer canais/eventos próprios.
+        quando o perfil homologado fornecer canais e eventos próprios.
       </p>
       <Panel
         title="Fila de alarmes"

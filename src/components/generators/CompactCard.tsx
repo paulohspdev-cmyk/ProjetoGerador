@@ -7,7 +7,7 @@ import type { Generator } from "@/data/generators";
 import { cn } from "@/lib/utils";
 import { DeleteGeneratorButton } from "./DeleteGeneratorButton";
 import { StatusPill } from "./StatusPill";
-import { fmt, hasMetric } from "./generator-metrics";
+import { displayGeneratorName, fmt, hasMetric } from "./generator-metrics";
 import { IconBattery, IconBolt, IconRunHours } from "./scada-icons";
 import "./compact-card.css";
 
@@ -54,8 +54,12 @@ export function CompactCard({ gen }: { gen: Generator }) {
     >
       <header className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h3 className="truncate text-[13px] font-bold leading-tight">{gen.tag}</h3>
-          <p className="truncate text-[10px] text-muted-foreground">{gen.controller}</p>
+          <h3 className="truncate text-[13px] font-bold leading-tight">
+            {displayGeneratorName(gen)}
+          </h3>
+          <p className="truncate text-[10px] text-muted-foreground">
+            {gen.tag} · {gen.controller}
+          </p>
         </div>
         <div className="flex items-center gap-1">
           <StatusPill status={gen.status} />
@@ -90,7 +94,7 @@ export function CompactCard({ gen }: { gen: Generator }) {
             <Metric
               icon={<IconBolt size={12} />}
               label="Frequência"
-              value={freqKnown && gen.status !== "offline" ? `${fmt(gen.frequency!, 2)} Hz` : "N/D"}
+              value={freqKnown ? `${fmt(gen.frequency!, 2)} Hz` : "N/D"}
               tone={freqKnown && connected ? "text-online" : "text-muted-foreground"}
             />
             <Metric
@@ -127,6 +131,12 @@ export function CompactCard({ gen }: { gen: Generator }) {
           >
             {modeKnown ? gen.mode : "N/D"}
           </span>
+        </p>
+      )}
+
+      {gen.telemetryStale && (
+        <p className="mt-1 text-[10px] font-semibold text-alert">
+          Valores da última leitura conhecida
         </p>
       )}
 

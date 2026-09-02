@@ -35,9 +35,24 @@ binding = {
 original_load_bindings = rapid.load_bindings
 original_read_channels = rapid.read_channels
 original_bridge_status = rapid._load_bridge_status
+original_get_snapshot = rapid.db.get_telemetry_snapshot
+original_save_snapshot = rapid.db.save_telemetry_snapshot
+snapshots = {}
 
 try:
     rapid.load_bindings = lambda: [binding]
+    rapid.db.get_telemetry_snapshot = lambda generator_id: snapshots.get(generator_id)
+    rapid.db.save_telemetry_snapshot = lambda generator_id, values, defined: snapshots.update(
+        {
+            generator_id: {
+                "values": {**snapshots.get(generator_id, {}).get("values", {}), **values},
+                "defined": sorted(
+                    set(snapshots.get(generator_id, {}).get("defined", [])) | set(defined)
+                ),
+                "updated_at": 123456789,
+            }
+        }
+    )
     rapid._load_bridge_status = lambda: {
         "updatedAt": 9999999999,
         "ports": [
@@ -82,6 +97,17 @@ try:
     assert rows[0]["status"] == "online"
     assert rows[0]["health"]["controller"] == "responding"
 
+    # Ao perder comunicação, valores históricos permanecem disponíveis sem
+    # declarar motor, disjuntores ou fluxo como telemetria atual.
+    rapid.read_channels = lambda _nums: ({}, "falha de comunicação sintética")
+    rows = rapid.overlay_generators([generator])
+    assert rows[0]["status"] in {"offline", "alerta"}
+    assert rows[0]["rpm"] == 1500
+    assert rows[0]["frequency"] == 60.0
+    assert rows[0]["telemetryStale"] is True
+    assert rows[0]["definedMetrics"] == []
+    assert rows[0]["telemetrySource"] == "last_known"
+
     # Um binding pertencente a outro generator_id jamais pode ser adotado só por
     # coincidir porta, Unit e Rapid Device.
     foreign = {**binding, "generator_id": "gen-other"}
@@ -103,5 +129,7 @@ finally:
     rapid.load_bindings = original_load_bindings
     rapid.read_channels = original_read_channels
     rapid._load_bridge_status = original_bridge_status
+    rapid.db.get_telemetry_snapshot = original_get_snapshot
+    rapid.db.save_telemetry_snapshot = original_save_snapshot
 
 print("RC Geradores overlay Rapid resiliente: OK")
