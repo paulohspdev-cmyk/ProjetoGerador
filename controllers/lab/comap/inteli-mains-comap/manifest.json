@@ -16,7 +16,8 @@
   "mapping": {
     "kind": "comap_object_export",
     "readOnly": true,
-    "sourceFile": "INTELI MAINS COMAP.TXT",
+    "sourceFile": "modbus/source-export.txt",
+    "sourceSha256": "d8672a4be2494ae9a935e5d4591909b07dbf77e80bf89bb60a9e20fc399fa4ed",
     "objects": {
       "mains_power_kw":{"object":8202,"scale":1.0,"sourceName":"MainsImport","unit":"kW"},
       "mains_power_factor":{"object":8204,"scale":0.01,"sourceName":"Mains PF"},

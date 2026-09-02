@@ -1,5 +1,6 @@
-import { readdirSync, readFileSync } from "node:fs";
-import { join, relative } from "node:path";
+import { createHash } from "node:crypto";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { dirname, join, relative, resolve } from "node:path";
 
 const root = process.cwd();
 const failures = [];
@@ -36,11 +37,50 @@ const forbiddenCommands = [
   "paralleling",
 ];
 
+function validateSource(path, profile) {
+  const mapping = profile.mapping ?? profile.modbusMapping;
+  if (!mapping?.sourceFile) return;
+  if (!/^[0-9a-f]{64}$/.test(mapping.sourceSha256 ?? "")) {
+    failures.push(`${path}: SHA-256 da fonte ausente ou inválido`);
+    return;
+  }
+  const manifestDirectory = dirname(join(root, path));
+  const sourcePath = resolve(manifestDirectory, mapping.sourceFile);
+  if (!sourcePath.startsWith(resolve(manifestDirectory) + "/")) {
+    failures.push(`${path}: fonte deve permanecer dentro do próprio Controller Pack`);
+    return;
+  }
+  if (!existsSync(sourcePath)) {
+    failures.push(`${path}: fonte documental ausente: ${mapping.sourceFile}`);
+    return;
+  }
+  const digest = createHash("sha256").update(readFileSync(sourcePath)).digest("hex");
+  if (digest !== mapping.sourceSha256) {
+    failures.push(`${path}: SHA-256 não confere com a fonte documental`);
+  }
+  const lines = readFileSync(sourcePath).toString("latin1").split(/\r?\n/);
+  const entries = mapping.registers ?? mapping.objects ?? {};
+  for (const [metric, entry] of Object.entries(entries)) {
+    const objectNumber = entry.object == null ? "" : String(entry.object);
+    const candidates =
+      entry.address == null
+        ? lines.filter((line) => new RegExp(`^\\s*${objectNumber}\\s+`).test(line))
+        : lines.filter((line) => new RegExp(`^\\s*0*${Number(entry.address)}(?:\\s|-)`).test(line));
+    if (
+      candidates.length === 0 ||
+      (objectNumber && !candidates.some((line) => new RegExp(`\\b${objectNumber}\\b`).test(line)))
+    ) {
+      failures.push(`${path}: ${metric} não confere com a fonte documental`);
+    }
+  }
+}
+
 if (labPaths.length === 0) failures.push("nenhum Controller Pack LAB encontrado");
 if (productionPaths.length === 0) failures.push("nenhum Controller Pack production encontrado");
 
 for (const path of labPaths) {
   const profile = load(path);
+  validateSource(path, profile);
   if (profile.schema !== 3) failures.push(`${path}: schema deve ser 3`);
   if (!["investigation", "documented", "lab_validated"].includes(profile.status)) {
     failures.push(`${path}: lifecycle LAB não pode usar status ${profile.status}`);
@@ -60,6 +100,7 @@ for (const path of labPaths) {
 
 for (const path of productionPaths) {
   const profile = load(path);
+  validateSource(path, profile);
   if (profile.schema !== 3) failures.push(`${path}: production exige schema 3`);
   if (profile.status !== "field_validated") {
     failures.push(`${path}: production exige status field_validated`);

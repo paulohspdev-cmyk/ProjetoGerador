@@ -94,7 +94,8 @@
   "mapping": {
     "kind": "modbus_register_export",
     "readOnly": true,
-    "sourceFile": "Amf 09 modbus.txt",
+    "sourceFile": "modbus/source-export.txt",
+    "sourceSha256": "07bb56594676bc41c072a62f7b453d99a244a82c6a39dfeadfdc72d5a39be4e8",
     "registers": {
       "rpm": { "address": 1000, "count": 1, "readFunctions": [3, 4], "scale": 1.0, "sourceName": "RPM", "unit": "rpm", "object": 10123 },
       "power_kw": { "address": 1001, "count": 1, "readFunctions": [3, 4], "scale": 1.0, "sourceName": "Load P", "unit": "kW", "object": 8202 },
