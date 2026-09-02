@@ -55,7 +55,7 @@ dse335 = catalog_for_model("DSE335")
 assert dse335 and dse335["application"] == "ats"
 assert dse335["provisionable"] is False
 assert dse335["registerable"] is False
-assert dse335["onboardingMode"] == "inventory"
+assert dse335["onboardingMode"] == "catalog_only"
 assert not dse335.get("packLifecycle")
 
 # Todo modelo classificado como genset pode receber cadastro operacional mesmo
@@ -64,7 +64,7 @@ intelicompact_mint = catalog_for_model("InteliCompact NT MINT")
 assert intelicompact_mint and intelicompact_mint["application"] == "genset"
 assert intelicompact_mint["registerable"] is True
 assert intelicompact_mint["provisionable"] is False
-assert intelicompact_mint["onboardingMode"] == "inventory"
+assert intelicompact_mint["onboardingMode"] == "registration_open"
 assert not intelicompact_mint.get("packLifecycle")
 assert not any(
     intelicompact_mint.get("capabilities", {}).get(name)

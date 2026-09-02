@@ -76,14 +76,19 @@ def pack_is_lab_onboarding_ready(pack: dict | None) -> bool:
 
 
 def _catalog_registerable(application: object) -> bool:
-    """Cadastro de gerador não é sinônimo de homologação/provisionamento.
-
-    Todo modelo explicitamente classificado como genset no catálogo pode receber
-    identidade operacional (tag, porta, Unit ID) para diagnóstico e homologação.
-    Telemetria Rapid automática e comandos continuam condicionados ao Controller
-    Pack de produção, portanto esta flag nunca concede capacidade industrial.
-    """
+    """Todo modelo genset do catálogo pode receber identidade operacional."""
     return _norm(application) == "genset"
+
+
+def _registration_state(application: object) -> tuple[str, str]:
+    """Estado comercial do catálogo sem usar a antiga classificação inventory.
+
+    Gensets sem pack homologado continuam cadastráveis para leitura, diagnóstico e
+    homologação. Isso não concede Rapid automático nem comandos industriais.
+    """
+    if _catalog_registerable(application):
+        return "registration_open", "registration_open"
+    return "catalog_only", "catalog_only"
 
 
 def _read_manifest(path: Path, lifecycle: str) -> dict:
@@ -141,6 +146,7 @@ def list_controller_catalog() -> list[dict]:
         family = str(row.get("family") or "Outros").strip()
         model = str(row["model"]).strip()
         application = str(row.get("application") or "other")
+        catalog_status, onboarding_mode = _registration_state(application)
         result.append(
             {
                 **row,
@@ -150,10 +156,10 @@ def list_controller_catalog() -> list[dict]:
                 "model": model,
                 "application": application,
                 "category": str(row.get("category") or "other"),
-                "catalogStatus": str(row.get("status") or "inventory_only"),
+                "catalogStatus": catalog_status,
                 "provisionable": False,
                 "registerable": _catalog_registerable(application),
-                "onboardingMode": "inventory",
+                "onboardingMode": onboarding_mode,
             }
         )
     return result
@@ -195,6 +201,16 @@ def _firmware_state(pack: dict | None) -> dict:
     }
 
 
+def _effective_onboarding_mode(
+    *, production_ready: bool, lab_ready: bool, application: object
+) -> str:
+    if production_ready:
+        return "production"
+    if lab_ready:
+        return "lab_read_only"
+    return _registration_state(application)[1]
+
+
 def controller_catalog_with_state(packs: list[dict] | None = None) -> list[dict]:
     packs = packs if packs is not None else list_controller_packs()
     by_name = _pack_name_index(packs)
@@ -223,12 +239,10 @@ def controller_catalog_with_state(packs: list[dict] | None = None) -> list[dict]
                 **_firmware_state(pack),
                 "provisionable": production_ready,
                 "registerable": production_ready or lab_ready or catalog_registerable,
-                "onboardingMode": (
-                    "production"
-                    if production_ready
-                    else "lab_read_only"
-                    if lab_ready
-                    else "inventory"
+                "onboardingMode": _effective_onboarding_mode(
+                    production_ready=production_ready,
+                    lab_ready=lab_ready,
+                    application=row.get("application"),
                 ),
             }
         )
@@ -261,12 +275,10 @@ def controller_catalog_with_state(packs: list[dict] | None = None) -> list[dict]
                 **_firmware_state(pack),
                 "provisionable": production_ready,
                 "registerable": production_ready or lab_ready or catalog_registerable,
-                "onboardingMode": (
-                    "production"
-                    if production_ready
-                    else "lab_read_only"
-                    if lab_ready
-                    else "inventory"
+                "onboardingMode": _effective_onboarding_mode(
+                    production_ready=production_ready,
+                    lab_ready=lab_ready,
+                    application=application,
                 ),
                 "notes": pack.get("notes") or "",
             }
@@ -299,7 +311,7 @@ def library_summary() -> dict:
                 "models": 0,
                 "production": 0,
                 "lab": 0,
-                "inventoryOnly": 0,
+                "registrationOpen": 0,
             },
         )
         item["models"] += 1
@@ -308,8 +320,8 @@ def library_summary() -> dict:
             item["production"] += 1
         elif lifecycle == "lab":
             item["lab"] += 1
-        else:
-            item["inventoryOnly"] += 1
+        elif row.get("registerable"):
+            item["registrationOpen"] += 1
 
     for pack in packs:
         for proto in pack.get("protocols") or []:
@@ -337,7 +349,9 @@ def library_summary() -> dict:
             "catalogTotal": len(catalog),
             "catalogProvisionable": sum(bool(row.get("provisionable")) for row in catalog),
             "catalogRegisterable": sum(bool(row.get("registerable")) for row in catalog),
-            "catalogInventoryOnly": sum(not bool(row.get("packLifecycle")) for row in catalog),
+            "catalogRegistrationOpen": sum(
+                row.get("onboardingMode") == "registration_open" for row in catalog
+            ),
             "productionWithoutFirmwareMatrix": sum(
                 bool(row.get("provisionable")) and not bool(row.get("firmwareMatrixComplete"))
                 for row in catalog
