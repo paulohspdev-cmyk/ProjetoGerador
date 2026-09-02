@@ -47,6 +47,34 @@ def pack_is_production_ready(pack: dict | None) -> bool:
     )
 
 
+def pack_is_lab_onboarding_ready(pack: dict | None) -> bool:
+    """Permite cadastro LAB somente quando o pack é estritamente de leitura."""
+    if not pack:
+        return False
+    capabilities = dict(pack.get("capabilities") or {})
+    mapping = dict(pack.get("mapping") or {})
+    command_capabilities = (
+        "start",
+        "stop",
+        "auto",
+        "manual",
+        "test",
+        "mcb_open",
+        "mcb_close",
+        "gcb_open",
+        "gcb_close",
+        "paralleling",
+    )
+    return (
+        pack.get("lifecycle") == "lab"
+        and int(pack.get("schema") or 0) == SUPPORTED_PACK_SCHEMA
+        and capabilities.get("telemetry") is True
+        and mapping.get("readOnly") is True
+        and bool(mapping.get("registers"))
+        and not any(bool(capabilities.get(name)) for name in command_capabilities)
+    )
+
+
 def _read_manifest(path: Path, lifecycle: str) -> dict:
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
@@ -112,6 +140,8 @@ def list_controller_catalog() -> list[dict]:
                 "category": str(row.get("category") or "other"),
                 "catalogStatus": str(row.get("status") or "inventory_only"),
                 "provisionable": False,
+                "registerable": False,
+                "onboardingMode": "inventory",
             }
         )
     return result
@@ -177,6 +207,15 @@ def controller_catalog_with_state(packs: list[dict] | None = None) -> list[dict]
                 **_pack_telemetry_state(pack),
                 **_firmware_state(pack),
                 "provisionable": pack_is_production_ready(pack),
+                "registerable": pack_is_production_ready(pack)
+                or pack_is_lab_onboarding_ready(pack),
+                "onboardingMode": (
+                    "production"
+                    if pack_is_production_ready(pack)
+                    else "lab_read_only"
+                    if pack_is_lab_onboarding_ready(pack)
+                    else "inventory"
+                ),
             }
         )
 
@@ -203,6 +242,15 @@ def controller_catalog_with_state(packs: list[dict] | None = None) -> list[dict]
                 **_pack_telemetry_state(pack),
                 **_firmware_state(pack),
                 "provisionable": pack_is_production_ready(pack),
+                "registerable": pack_is_production_ready(pack)
+                or pack_is_lab_onboarding_ready(pack),
+                "onboardingMode": (
+                    "production"
+                    if pack_is_production_ready(pack)
+                    else "lab_read_only"
+                    if pack_is_lab_onboarding_ready(pack)
+                    else "inventory"
+                ),
                 "notes": pack.get("notes") or "",
             }
         )

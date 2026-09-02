@@ -106,6 +106,21 @@ if (!deleteButton.includes("industrialApi.lifecycle.retire")) {
   failures.push("retirada de gerador não usa lifecycle seguro");
 }
 
+const registerGenerator = read("src/components/generators/RegisterGeneratorButton.tsx");
+for (const marker of [
+  'onboardingMode === "lab_read_only"',
+  "selectedController?.registerable",
+  "LAB (somente leitura)",
+  "Cadastrar para homologação",
+]) {
+  if (!registerGenerator.includes(marker)) {
+    failures.push(`cadastro de controladora LAB perdeu contrato seguro: ${marker}`);
+  }
+}
+if (!registerGenerator.includes("if (selectedController?.provisionable)")) {
+  failures.push("cadastro LAB deixou de separar criação e provisionamento industrial");
+}
+
 const connectivity = read("src/components/scada/equip-connectivity.tsx");
 for (const marker of [
   "statusFresh",

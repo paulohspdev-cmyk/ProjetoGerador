@@ -23,6 +23,9 @@ type CatalogController = {
   model: string;
   application?: string;
   provisionable?: boolean;
+  registerable?: boolean;
+  onboardingMode?: "production" | "lab_read_only" | "inventory";
+  packLifecycle?: string | null;
 };
 
 type LibraryWithCatalog = {
@@ -142,7 +145,8 @@ export function RegisterGeneratorButton({
   );
   const effectiveUnit = Number(modbusUnit || 1);
 
-  const canContinueStep1 = Boolean(site.trim() && controller && selectedController?.provisionable);
+  const isLabReadOnly = selectedController?.onboardingMode === "lab_read_only";
+  const canContinueStep1 = Boolean(site.trim() && controller && selectedController?.registerable);
   const canContinueStep2 =
     transport === "reverse_tcp" || (host.trim().length > 0 && effectivePort > 0);
 
@@ -172,8 +176,8 @@ export function RegisterGeneratorButton({
       setError("Escolha a unidade e a controladora.");
       return;
     }
-    if (!selectedController?.provisionable) {
-      setError("Esta controladora ainda não possui pacote validado para configuração automática.");
+    if (!selectedController?.registerable) {
+      setError("Esta controladora ainda não possui pacote técnico para cadastro operacional.");
       return;
     }
     if (transport !== "reverse_tcp" && !host.trim()) {
@@ -219,6 +223,8 @@ export function RegisterGeneratorButton({
         }
       }
 
+      // Packs LAB entram no inventário operacional para o ensaio de leitura,
+      // mas nunca são materializados no Rapid nem recebem comandos nesta etapa.
       reset();
       setOpen(false);
     } catch (saveError) {
@@ -336,7 +342,11 @@ export function RegisterGeneratorButton({
                     {gensetCatalog.map((item) => (
                       <option key={item.catalogId || item.model} value={item.model}>
                         {item.manufacturer} · {item.model}
-                        {item.provisionable ? "" : " · somente inventário"}
+                        {item.onboardingMode === "lab_read_only"
+                          ? " · LAB (somente leitura)"
+                          : item.provisionable
+                            ? ""
+                            : " · somente inventário"}
                       </option>
                     ))}
                   </select>
@@ -392,6 +402,12 @@ export function RegisterGeneratorButton({
                     </dd>
                   </div>
                 </dl>
+                {isLabReadOnly && !createdId && (
+                  <p className="mt-4 rounded-lg border border-alert/40 bg-alert/10 p-3 text-sm text-alert">
+                    Homologação LAB: o gerador será cadastrado para diagnóstico somente leitura.
+                    START, STOP, contatores e configuração automática permanecem bloqueados.
+                  </p>
+                )}
                 {createdId && (
                   <p className="mt-4 rounded-lg border border-alert/40 bg-alert/10 p-3 text-sm text-alert">
                     Cadastro salvo. Tente novamente a configuração.
@@ -429,7 +445,9 @@ export function RegisterGeneratorButton({
                     ? "Configurando…"
                     : createdId
                       ? "Tentar configuração novamente"
-                      : "Criar e configurar"}
+                      : isLabReadOnly
+                        ? "Cadastrar para homologação"
+                        : "Criar e configurar"}
                 </button>
               )}
             </div>
