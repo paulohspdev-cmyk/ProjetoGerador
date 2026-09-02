@@ -137,7 +137,7 @@ export function ControllersV3CreatePanel({ catalog, sites, onCreated, onError, o
       onMessage(
         result.provisionable
           ? "Equipamento cadastrado. O perfil é de produção, mas a telemetria ainda deve ser ativada pelo fluxo industrial controlado."
-          : "Equipamento cadastrado em inventário. Sem perfil homologado de produção, telemetria e comandos permanecem bloqueados.",
+          : "Equipamento cadastrado. Sem perfil de produção, telemetria automática e comandos permanecem bloqueados.",
       );
       setTag("");
       setName("");
@@ -217,7 +217,7 @@ export function ControllersV3CreatePanel({ catalog, sites, onCreated, onError, o
                       ? "PRODUÇÃO"
                       : item.packLifecycle === "lab"
                         ? "LAB"
-                        : "CATÁLOGO"}
+                        : "CADASTRO TÉCNICO"}
                   </option>
                 ))}
               </optgroup>
@@ -233,7 +233,7 @@ export function ControllersV3CreatePanel({ catalog, sites, onCreated, onError, o
                   ? "Perfil homologado de produção"
                   : selected.packLifecycle === "lab"
                     ? "Pack em laboratório"
-                    : "somente catálogo"}
+                    : "cadastro técnico sem telemetria automática"}
                 {!genericAssetAllowed && (
                   <span className="block mt-1 text-alert">
                     Para geradores, use o cadastro do menu Geradores.
