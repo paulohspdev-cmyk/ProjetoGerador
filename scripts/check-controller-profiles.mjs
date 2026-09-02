@@ -267,9 +267,9 @@ for (const model of registrationOnlyDse) {
     failures.push(`DSE: ${model} não pode ser provisionada sem evidência GenComm suficiente`);
   }
 }
-if (dseAliases.size !== 33) {
+if (dseAliases.size !== 34) {
   failures.push(
-    `DSE GenComm: esperado cobertura documental de 33 modelos, encontrado ${dseAliases.size}`,
+    `DSE GenComm: esperado cobertura documental de 34 modelos, encontrado ${dseAliases.size}`,
   );
 }
 
@@ -357,7 +357,6 @@ if (health.includes("value < 2") || health.includes("value > 105") || health.inc
 
 const metricHelper = read("src/components/generators/generator-metrics.ts");
 if (!metricHelper.includes("gen.metrics")) failures.push("helper não prioriza telemetria atual");
-
 const rapid = read("backend/app/rapid.py");
 for (const marker of [
   '"metrics": dict(values)',
