@@ -74,10 +74,11 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
       return view === "principal" ? 5 : view === "lista" ? 12 : 8;
     }
     if (view === "lista") return Math.max(1, Math.floor(viewport.height / 43));
-    const minimumWidth = view === "compacto" ? 250 : 210;
-    const minimumHeight = view === "compacto" ? 190 : 520;
-    const columns = Math.max(1, Math.floor(viewport.width / minimumWidth));
-    const rows = Math.max(1, Math.floor(viewport.height / minimumHeight));
+    const minimumWidth = view === "compacto" ? 250 : 300;
+    const minimumHeight = view === "compacto" ? 190 : 740;
+    const gap = 8;
+    const columns = Math.max(1, Math.floor((viewport.width + gap) / (minimumWidth + gap)));
+    const rows = Math.max(1, Math.floor((viewport.height + gap) / (minimumHeight + gap)));
     return columns * rows;
   }, [view, viewport]);
   const pages = Math.max(1, Math.ceil(items.length / pageSize));
