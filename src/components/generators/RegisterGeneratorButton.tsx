@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
-import { Check, ChevronLeft, ChevronRight, Plus, Settings2 } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 
+import { useAuth } from "@/components/auth/AuthProvider";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +13,7 @@ import { nextGeneratorTag } from "@/data/generators";
 import { industrialApi } from "@/lib/industrial-api";
 import { rcApi, type GeneratorTransport } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { connectionOptions, GeneratorConnectionFields } from "./GeneratorConnectionFields";
 import { useGenerators } from "./GeneratorsProvider";
 
 type CatalogController = {
@@ -32,28 +34,6 @@ function provisionMessage(error: unknown) {
   return `Gerador cadastrado; configuração pendente${detail}`;
 }
 
-const connectionOptions: Array<{
-  id: GeneratorTransport;
-  title: string;
-  description: string;
-}> = [
-  {
-    id: "reverse_tcp",
-    title: "Modem / 4G",
-    description: "O modem inicia a conexão.",
-  },
-  {
-    id: "modbus_tcp_direct",
-    title: "Ethernet",
-    description: "Acesso direto pela rede local.",
-  },
-  {
-    id: "rtu_over_tcp",
-    title: "Gateway Ethernet",
-    description: "Barramento RTU via gateway TCP.",
-  },
-];
-
 export function RegisterGeneratorButton({
   collapsed,
   touchFriendly,
@@ -63,6 +43,7 @@ export function RegisterGeneratorButton({
   touchFriendly?: boolean | undefined;
   onNavigate?: (() => void) | undefined;
 }) {
+  const { user } = useAuth();
   const { generators, refresh } = useGenerators();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);
@@ -364,107 +345,26 @@ export function RegisterGeneratorButton({
             )}
 
             {step === 2 && (
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm font-semibold">Como este gerador se conecta?</p>
-                  <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                    {connectionOptions.map((option) => (
-                      <button
-                        key={option.id}
-                        type="button"
-                        onClick={() => {
-                          setTransport(option.id);
-                          if (option.id === "modbus_tcp_direct" && !listenPort)
-                            setListenPort("502");
-                          setError(null);
-                        }}
-                        className={cn(
-                          "rounded-xl border p-3 text-left transition-colors",
-                          transport === option.id
-                            ? "border-primary bg-primary/10"
-                            : "border-border hover:bg-secondary/40",
-                        )}
-                      >
-                        <b className="text-sm">{option.title}</b>
-                        <p className="mt-1 text-xs text-muted-foreground">{option.description}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {transport !== "reverse_tcp" && (
-                  <label className="block text-sm font-semibold">
-                    Endereço do equipamento
-                    <input
-                      value={host}
-                      onChange={(e) => setHost(e.target.value)}
-                      placeholder="IP ou nome na rede"
-                      className="mt-2 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
-                      required
-                    />
-                  </label>
-                )}
-
-                <div className="rounded-xl border border-online/30 bg-online/8 p-3 text-sm">
-                  <b>Configuração automática</b>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    O sistema escolhe identificação, porta e canal. Use o modo avançado apenas
-                    quando a instalação exigir.
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setAdvanced((value) => !value)}
-                  className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground"
-                >
-                  <Settings2 className="size-4" />
-                  {advanced ? "Ocultar opções avançadas" : "Opções avançadas"}
-                </button>
-
-                {advanced && (
-                  <div className="grid gap-3 rounded-xl border border-border bg-background/35 p-3 sm:grid-cols-2">
-                    <label className="text-xs font-semibold">
-                      Identificação
-                      <input
-                        value={tag}
-                        onChange={(e) => setTag(e.target.value.toUpperCase())}
-                        placeholder={preview.tag}
-                        className="mt-1.5 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                      />
-                    </label>
-                    <label className="text-xs font-semibold">
-                      Porta TCP
-                      <input
-                        inputMode="numeric"
-                        value={listenPort}
-                        onChange={(e) => setListenPort(e.target.value.replace(/\D/g, ""))}
-                        placeholder={String(transport === "reverse_tcp" ? suggestedPort : 502)}
-                        className="mt-1.5 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                      />
-                    </label>
-                    <label className="text-xs font-semibold">
-                      Endereço Modbus
-                      <input
-                        inputMode="numeric"
-                        value={modbusUnit}
-                        onChange={(e) => setModbusUnit(e.target.value.replace(/\D/g, ""))}
-                        className="mt-1.5 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                      />
-                    </label>
-                    <label className="text-xs font-semibold">
-                      Identificador de telemetria
-                      <input
-                        inputMode="numeric"
-                        value={rapidDeviceNum}
-                        onChange={(e) => setRapidDeviceNum(e.target.value.replace(/\D/g, ""))}
-                        placeholder="Automático"
-                        className="mt-1.5 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                      />
-                    </label>
-                  </div>
-                )}
-              </div>
+              <GeneratorConnectionFields
+                transport={transport}
+                setTransport={setTransport}
+                host={host}
+                setHost={setHost}
+                tag={tag}
+                setTag={setTag}
+                listenPort={listenPort}
+                setListenPort={setListenPort}
+                modbusUnit={modbusUnit}
+                setModbusUnit={setModbusUnit}
+                rapidDeviceNum={rapidDeviceNum}
+                setRapidDeviceNum={setRapidDeviceNum}
+                suggestedTag={preview.tag}
+                suggestedPort={suggestedPort}
+                advanced={advanced}
+                setAdvanced={setAdvanced}
+                canScan={user?.role === "administrador"}
+                setError={setError}
+              />
             )}
 
             {step === 3 && (

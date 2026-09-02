@@ -7,7 +7,7 @@ import os
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel, Field
 
-from . import db, domain_bundle, domain_store
+from . import db, domain_bundle, domain_store, network_discovery
 from .auth import require_admin, require_create, require_edit, require_remove, require_view
 from .industrial_routes import router as industrial_router
 from .integration_status import safe_integration_status
@@ -126,6 +126,21 @@ class DeprovisionRequest(BaseModel):
 
 class RetireRequest(BaseModel):
     confirmation: str = Field(min_length=1, max_length=160)
+
+
+class GeneratorReconfigureRequest(BaseModel):
+    transport: str
+    ip: str = Field(default="", max_length=255)
+    listenPort: int = Field(ge=1, le=65535)
+    modbusUnit: int = Field(ge=1, le=247)
+    confirmation: str = Field(min_length=1, max_length=160)
+
+
+class NetworkDiscoveryRequest(BaseModel):
+    cidr: str = Field(min_length=9, max_length=32)
+    port: int = Field(default=502, ge=1, le=65535)
+    timeoutMs: int = Field(default=350, ge=100, le=2000)
+    confirmation: str = Field(min_length=1, max_length=64)
 
 
 async def _privileged_operation(generator_id: str, operation: str) -> dict:
@@ -309,6 +324,128 @@ async def generator_deprovision(
         "generator",
         generator["id"],
         "Rapid SCADA; histórico preservado",
+    )
+    return result
+
+
+@router.post("/api/generators/{generator_id}/reconfigure")
+async def generator_reconfigure(
+    generator_id: str,
+    payload: GeneratorReconfigureRequest,
+    user: dict = Depends(require_admin),
+):
+    generator = db.get_generator(generator_id)
+    if not generator:
+        raise HTTPException(status_code=404, detail="Gerador não encontrado")
+    expected = f"RECONFIGURAR {generator['tag']}"
+    if payload.confirmation.strip().upper() != expected.upper():
+        raise HTTPException(status_code=422, detail=f"Confirmação deve ser {expected}")
+    transport = payload.transport.strip()
+    if transport not in {"reverse_tcp", "modbus_tcp_direct", "rtu_over_tcp"}:
+        raise HTTPException(status_code=422, detail="Tipo de conexão não suportado neste fluxo")
+    host = payload.ip.strip()
+    if transport in {"modbus_tcp_direct", "rtu_over_tcp"} and not host:
+        raise HTTPException(status_code=422, detail="Informe o IP da controladora ou gateway")
+    if transport == "reverse_tcp":
+        host = ""
+
+    identity = {
+        "transport": transport,
+        "host": host,
+        "listen_port": payload.listenPort,
+        "modbus_unit": payload.modbusUnit,
+    }
+    previous = {
+        "transport": generator.get("transport") or "reverse_tcp",
+        "host": generator.get("host") or "",
+        "listen_port": int(generator.get("listen_port") or 0),
+        "modbus_unit": int(generator.get("modbus_unit") or 1),
+        "rapid_device_num": generator.get("rapid_device_num"),
+    }
+    changed = any(identity[key] != previous[key] for key in identity)
+    if not changed:
+        return {"ok": True, "changed": False, "generator": generator}
+
+    was_provisioned = _active_binding(generator["id"]) is not None
+    if was_provisioned:
+        await _privileged_deprovision(generator["id"])
+    if _active_binding(generator["id"]):
+        raise HTTPException(status_code=409, detail="Configuração industrial anterior ainda está ativa")
+
+    try:
+        updated = db.update_generator(
+            generator["id"],
+            identity,
+            actor=actor(user),
+            allow_industrial_identity=True,
+        )
+        domain_store.sync_legacy_generators()
+        provision_result = await _privileged_operation(generator["id"], "provision") if was_provisioned else None
+    except Exception as exc:
+        rollback_error = None
+        try:
+            db.update_generator(
+                generator["id"],
+                previous,
+                actor="system:reconfigure-rollback",
+                allow_industrial_identity=True,
+            )
+            domain_store.sync_legacy_generators()
+            if was_provisioned:
+                await _privileged_operation(generator["id"], "provision")
+        except Exception as rollback_exc:
+            rollback_error = str(rollback_exc)
+        db.add_audit(
+            actor(user),
+            "reconfigure_failed",
+            "generator",
+            generator["id"],
+            f"rollback={'failed: ' + rollback_error if rollback_error else 'ok'}",
+        )
+        detail = "Reconfiguração falhou; configuração anterior restaurada."
+        if rollback_error:
+            detail = (
+                "Reconfiguração falhou e a restauração automática também falhou. "
+                "Equipamento mantido bloqueado para intervenção administrativa."
+            )
+        raise HTTPException(status_code=502, detail=detail) from exc
+
+    db.add_audit(
+        actor(user),
+        "reconfigure",
+        "generator",
+        generator["id"],
+        (
+            f"{previous['transport']}:{previous['listen_port']}/unit={previous['modbus_unit']} -> "
+            f"{transport}:{payload.listenPort}/unit={payload.modbusUnit}"
+        ),
+    )
+    return {
+        "ok": True,
+        "changed": True,
+        "generator": updated,
+        "reprovisioned": was_provisioned,
+        "provision": provision_result,
+    }
+
+
+@router.post("/api/network-discovery/modbus-tcp")
+async def network_discovery_modbus_tcp(
+    payload: NetworkDiscoveryRequest,
+    user: dict = Depends(require_admin),
+):
+    if payload.confirmation.strip().upper() != "SCAN SOMENTE LEITURA":
+        raise HTTPException(status_code=422, detail="Confirmação deve ser SCAN SOMENTE LEITURA")
+    try:
+        result = await network_discovery.scan_tcp(payload.cidr, payload.port, payload.timeoutMs)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    db.add_audit(
+        actor(user),
+        "read_only_scan",
+        "network",
+        result["cidr"],
+        f"port={result['port']};hosts={result['scannedHosts']};found={len(result['found'])}",
     )
     return result
 

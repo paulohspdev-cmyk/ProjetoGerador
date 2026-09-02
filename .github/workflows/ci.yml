@@ -151,6 +151,18 @@ jobs:
           PYTHONPATH: .
         run: python tests/connectivity_evidence.py
 
+      - name: Backend descoberta e reconfiguração segura
+        working-directory: backend
+        env:
+          PYTHONPATH: .
+        run: python tests/network_discovery.py
+
+      - name: Backend rollback de reconfiguração
+        working-directory: backend
+        env:
+          PYTHONPATH: .
+        run: python tests/reconfigure_transaction.py
+
       - name: Backend domínio v3 e catálogo
         working-directory: backend
         env:

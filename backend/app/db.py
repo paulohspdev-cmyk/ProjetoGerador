@@ -412,7 +412,13 @@ def _normalized_generator_value(key, value):
     return value
 
 
-def update_generator(generator_id, patch, actor="system"):
+def update_generator(
+    generator_id,
+    patch,
+    actor="system",
+    *,
+    allow_industrial_identity=False,
+):
     current = get_generator(generator_id)
     if not current:
         return None
@@ -444,7 +450,12 @@ def update_generator(generator_id, patch, actor="system"):
         elif isinstance(current_value, str):
             current_value = current_value.strip()
 
-        if provisioned and key in industrial_identity and value != current_value:
+        if (
+            provisioned
+            and not allow_industrial_identity
+            and key in industrial_identity
+            and value != current_value
+        ):
             raise sqlite3.IntegrityError(
                 "Identidade industrial de gerador provisionado não pode ser alterada diretamente. "
                 "Deprovisione com preservação de histórico antes de mudar tag/controladora/transporte/porta/Unit/Device."
