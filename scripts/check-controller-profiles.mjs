@@ -268,7 +268,9 @@ for (const model of registrationOnlyDse) {
   }
 }
 if (dseAliases.size !== 33) {
-  failures.push(`DSE GenComm: esperado cobertura documental de 33 modelos, encontrado ${dseAliases.size}`);
+  failures.push(
+    `DSE GenComm: esperado cobertura documental de 33 modelos, encontrado ${dseAliases.size}`,
+  );
 }
 
 const template = read("rapid/templates/DrvModbus_RC_IG200.xml");
@@ -320,12 +322,14 @@ if (/Cmd[^>]+address=|readOnly="false"/.test(dseTemplate)) {
 const dseProvisioner = read("rapid/provisioning/provision_dse_gencomm.py");
 for (const marker of [
   "pack_is_production_ready",
-  "mapping.get(\"readOnly\") is True",
+  'mapping.get("readOnly") is True',
   "COMMAND_CAPABILITIES",
-  "provision(str(generator[\"id\"]), restart=False)",
+  'provision(str(generator["id"]), restart=False)',
   "_restart_rapid()",
 ]) {
-  if (!dseProvisioner.includes(marker)) failures.push(`provisionador DSE perdeu guardrail: ${marker}`);
+  if (!dseProvisioner.includes(marker)) {
+    failures.push(`provisionador DSE perdeu guardrail: ${marker}`);
+  }
 }
 
 const card = read("src/components/generators/PowerFlowCard.tsx");
