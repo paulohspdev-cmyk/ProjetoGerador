@@ -16,7 +16,8 @@
   "mapping": {
     "kind": "comap_object_export",
     "readOnly": true,
-    "sourceFile": "IG-NT.TXT",
+    "sourceFile": "modbus/source-export.txt",
+    "sourceSha256": "9a7c3a479ee758452932340f5854713edf3d1fb9f8ff98d670d1669f8fcd1535",
     "objects": {
       "rpm":{"object":10123,"scale":1.0,"sourceName":"RPM","unit":"rpm"},
       "power_kw":{"object":8202,"scale":1.0,"sourceName":"Act power","unit":"kW"},

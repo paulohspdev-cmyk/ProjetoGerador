@@ -16,7 +16,8 @@
   "mapping": {
     "kind": "modbus_register_export",
     "readOnly": true,
-    "sourceFile": "Amf 25  modbus.txt",
+    "sourceFile": "modbus/source-export.txt",
+    "sourceSha256": "c4619293f79ca32f466835bfbe2433ad7ae228f9b758a5a5beb29583b057d6d9",
     "registers": {
       "rpm": {"address":1001,"count":1,"readFunctions":[3,4],"scale":1.0,"sourceName":"RPM","unit":"rpm","object":10123},
       "power_kw": {"address":1020,"count":1,"readFunctions":[3,4],"scale":1.0,"sourceName":"Load kW","unit":"kW","object":8202},

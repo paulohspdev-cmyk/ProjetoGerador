@@ -17,7 +17,8 @@
   "mapping": {
     "kind": "modbus_register_export",
     "readOnly": true,
-    "sourceFile": "ig4 200 modbus.txt",
+    "sourceFile": "modbus/source-export.txt",
+    "sourceSha256": "a726a5ca31dd8f551ff1571c85da076b99e283a60bbafdf1b223f104e375ff1b",
     "registers": {
       "rpm":{"address":1000,"count":1,"readFunctions":[3,4],"scale":1.0,"sourceName":"RPM","unit":"rpm","object":10123},
       "power_kw":{"address":1001,"count":1,"readFunctions":[3,4],"scale":1.0,"sourceName":"Generator P","unit":"kW","object":8202},
