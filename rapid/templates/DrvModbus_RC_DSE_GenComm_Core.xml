@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DeviceTemplate>
+  <Options>
+    <ZeroAddr>true</ZeroAddr>
+    <DecAddr>true</DecAddr>
+    <DefByteOrder2 />
+    <DefByteOrder4 />
+    <DefByteOrder8 />
+  </Options>
+  <ElemGroups>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="772" name="DSE GenComm - modo">
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="controller_mode_raw" name="Controller Mode" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="774" name="DSE GenComm - alarmes">
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="alarm_class_raw" name="Alarm Class" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1024" name="DSE GenComm - instrumentacao basica">
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="oil_pressure" name="Oil Pressure" />
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="coolant_temperature" name="Coolant Temperature" />
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="oil_temperature" name="Oil Temperature" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="fuel_level" name="Fuel Level" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="alternator_voltage" name="Alternator Voltage" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="battery_voltage" name="Battery Voltage" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="rpm" name="Engine Speed" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="frequency" name="Generator Frequency" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="voltage_l1" name="Generator Voltage L1-N" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="voltage_l2" name="Generator Voltage L2-N" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="voltage_l3" name="Generator Voltage L3-N" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="voltage_l1_l2" name="Generator Voltage L1-L2" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="voltage_l2_l3" name="Generator Voltage L2-L3" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="voltage_l3_l1" name="Generator Voltage L3-L1" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="current_l1" name="Generator Current L1" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="current_l2" name="Generator Current L2" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="current_l3" name="Generator Current L3" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1536" name="DSE GenComm - potencia">
+      <Elem type="int" readOnly="true" isBitMask="false" tagCode="power_kw" name="Generator Total Power" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1557" name="DSE GenComm - carga">
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="power_factor" name="Generator Power Factor" />
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="engine_load" name="Engine Load" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1794" name="DSE GenComm - manutencao">
+      <Elem type="int" readOnly="true" isBitMask="false" tagCode="maintenance_hours" name="Maintenance Time" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1798" name="DSE GenComm - acumulados">
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="run_hours" name="Run Time" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="genset_kwh" name="Generator Energy" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1808" name="DSE GenComm - partidas">
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="number_starts" name="Number of Starts" />
+    </ElemGroup>
+  </ElemGroups>
+  <Cmds />
+</DeviceTemplate>
