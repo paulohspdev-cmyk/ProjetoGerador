@@ -146,7 +146,10 @@ export function RegisterGeneratorButton({
   const effectiveUnit = Number(modbusUnit || 1);
 
   const isLabReadOnly = selectedController?.onboardingMode === "lab_read_only";
-  const canContinueStep1 = Boolean(site.trim() && controller && selectedController?.registerable);
+  const isCatalogRegistration = Boolean(
+    selectedController && !selectedController.provisionable && !isLabReadOnly,
+  );
+  const canContinueStep1 = Boolean(site.trim() && controller && selectedController);
   const canContinueStep2 =
     transport === "reverse_tcp" || (host.trim().length > 0 && effectivePort > 0);
 
@@ -172,12 +175,8 @@ export function RegisterGeneratorButton({
       await retryProvision();
       return;
     }
-    if (!site.trim() || !controller) {
+    if (!site.trim() || !controller || !selectedController) {
       setError("Escolha a unidade e a controladora.");
-      return;
-    }
-    if (!selectedController?.registerable) {
-      setError("Esta controladora ainda não possui pacote técnico para cadastro operacional.");
       return;
     }
     if (transport !== "reverse_tcp" && !host.trim()) {
@@ -210,7 +209,7 @@ export function RegisterGeneratorButton({
       setCreatedId(created.id);
       await refresh();
 
-      if (selectedController?.provisionable) {
+      if (selectedController.provisionable) {
         try {
           await industrialApi.lifecycle.provision(created.id);
           await refresh();
@@ -223,8 +222,9 @@ export function RegisterGeneratorButton({
         }
       }
 
-      // Packs LAB entram no inventário operacional para o ensaio de leitura,
-      // mas nunca são materializados no Rapid nem recebem comandos nesta etapa.
+      // Todo modelo de gerador presente no catálogo pode ser cadastrado com sua
+      // identidade industrial (porta/Unit). Sem pack de produção, o cadastro fica
+      // disponível para diagnóstico e homologação, mas Rapid e comandos seguem bloqueados.
       reset();
       setOpen(false);
     } catch (saveError) {
@@ -266,7 +266,8 @@ export function RegisterGeneratorButton({
           <DialogHeader>
             <DialogTitle>Adicionar gerador</DialogTitle>
             <DialogDescription>
-              Informe o essencial; o sistema completa a configuração validada.
+              Todas as controladoras de gerador do catálogo podem ser cadastradas. A configuração
+              automática só é aplicada quando o Controller Pack estiver homologado.
             </DialogDescription>
           </DialogHeader>
 
@@ -345,8 +346,8 @@ export function RegisterGeneratorButton({
                         {item.onboardingMode === "lab_read_only"
                           ? " · LAB (somente leitura)"
                           : item.provisionable
-                            ? ""
-                            : " · somente inventário"}
+                            ? " · PRODUÇÃO"
+                            : " · CADASTRO LIBERADO"}
                       </option>
                     ))}
                   </select>
@@ -408,6 +409,13 @@ export function RegisterGeneratorButton({
                     START, STOP, contatores e configuração automática permanecem bloqueados.
                   </p>
                 )}
+                {isCatalogRegistration && !createdId && (
+                  <p className="mt-4 rounded-lg border border-alert/40 bg-alert/10 p-3 text-sm text-alert">
+                    Cadastro liberado: porta e Unit ID serão salvos para diagnóstico e leitura da
+                    controladora. Rapid automático, START, STOP e contatores permanecem bloqueados
+                    até a homologação do Controller Pack.
+                  </p>
+                )}
                 {createdId && (
                   <p className="mt-4 rounded-lg border border-alert/40 bg-alert/10 p-3 text-sm text-alert">
                     Cadastro salvo. Tente novamente a configuração.
@@ -447,7 +455,9 @@ export function RegisterGeneratorButton({
                       ? "Tentar configuração novamente"
                       : isLabReadOnly
                         ? "Cadastrar para homologação"
-                        : "Criar e configurar"}
+                        : isCatalogRegistration
+                          ? "Cadastrar gerador"
+                          : "Criar e configurar"}
                 </button>
               )}
             </div>
