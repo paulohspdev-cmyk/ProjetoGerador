@@ -51,7 +51,22 @@ for forbidden in (
 # O catálogo não transforma modelos ainda não homologados em produção.
 dse335 = catalog_for_model("DSE335")
 assert dse335 and dse335["provisionable"] is False
+assert dse335["registerable"] is False
+assert dse335["onboardingMode"] == "inventory"
 assert not dse335.get("packLifecycle")
+
+# Pack LAB estritamente read-only pode ser cadastrado para homologação, mas
+# jamais é promovido a provisionamento/controle industrial.
+dse8610 = catalog_for_model("DSE8610 MKII")
+assert dse8610 and dse8610["packLifecycle"] == "lab"
+assert dse8610["registerable"] is True
+assert dse8610["onboardingMode"] == "lab_read_only"
+assert dse8610["provisionable"] is False
+assert dse8610["capabilities"]["telemetry"] is True
+assert not any(
+    dse8610["capabilities"].get(name)
+    for name in ("start", "stop", "auto", "manual", "test", "mcb_open", "mcb_close", "gcb_open", "gcb_close", "paralleling")
+)
 
 # Compatibilidade: geradores legados ganham Asset/Controller/Connection estáveis.
 generator = db.create_generator(
