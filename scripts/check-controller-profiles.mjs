@@ -178,6 +178,46 @@ if (
   failures.push("IG200: política de comandos homologados foi alterada");
 }
 
+const dse8610Path = "controllers/lab/dse/dse8610-mkii/manifest.json";
+if (!labPaths.includes(dse8610Path)) failures.push("DSE8610 MKII documental não está em LAB");
+const dse8610 = load(dse8610Path);
+const dseMap = dse8610.mapping?.registers ?? {};
+const dseExpected = {
+  controller_mode_raw: [772, 1],
+  oil_pressure: [1024, 1],
+  coolant_temperature: [1025, 1],
+  fuel_level: [1027, 1],
+  battery_voltage: [1029, 0.1],
+  rpm: [1030, 1],
+  frequency: [1031, 0.1],
+  voltage_l1: [1032, 0.1],
+  current_l1: [1044, 0.1],
+  power_kw: [1536, 0.001],
+  run_hours: [1798, 1 / 3600],
+  genset_kwh: [1800, 0.1],
+  gcb_closed: [48660, 1],
+};
+for (const [metric, [address, scale]] of Object.entries(dseExpected)) {
+  if (dseMap[metric]?.address !== address || dseMap[metric]?.scale !== scale) {
+    failures.push(`DSE8610: ${metric} deve permanecer em ${address} / escala ${scale}`);
+  }
+}
+if (
+  dse8610.status !== "documented" ||
+  dse8610.mapping?.readOnly !== true ||
+  dse8610.documentedControl?.enabled !== false ||
+  dse8610.documentedControl?.firstAddress !== 4104 ||
+  dse8610.documentedControl?.registerCount !== 2 ||
+  dse8610.documentedControl?.atomicWriteRequired !== true
+) {
+  failures.push("DSE8610: contrato documental/controle bloqueado foi alterado");
+}
+for (const command of forbiddenCommands) {
+  if (dse8610.capabilities?.[command] !== false) {
+    failures.push(`DSE8610: comando ${command} foi habilitado sem homologação`);
+  }
+}
+
 const template = read("rapid/templates/DrvModbus_RC_IG200.xml");
 for (const marker of [
   'tagCode="coolant_temperature"',
