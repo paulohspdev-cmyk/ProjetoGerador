@@ -28,9 +28,11 @@ library = library_summary()
 catalog = library["catalog"]
 assert len(catalog) >= 100, len(catalog)
 assert {item["manufacturer"] for item in catalog} >= {"ComAp", "DSE"}
+assert library["counts"]["catalogRegisterable"] == len(catalog)
 
 ig200 = catalog_for_model("InteliGen 200")
 assert ig200 and ig200["provisionable"] is True
+assert ig200["registerable"] is True
 assert ig200["packLifecycle"] == "production"
 pack = pack_for_model("IG200")
 assert pack and pack["schema"] == 3
@@ -48,12 +50,14 @@ for forbidden in (
 ):
     assert pack["capabilities"][forbidden] is False, forbidden
 
-# O catálogo não transforma modelos ainda não homologados em produção.
+# Todo modelo do catálogo pode ser cadastrado no produto, mas isso não o
+# transforma em pack de produção nem libera provisionamento/comandos.
 dse335 = catalog_for_model("DSE335")
 assert dse335 and dse335["provisionable"] is False
-assert dse335["registerable"] is False
+assert dse335["registerable"] is True
 assert dse335["onboardingMode"] == "inventory"
 assert not dse335.get("packLifecycle")
+assert not dse335.get("capabilities")
 
 # Pack LAB estritamente read-only pode ser cadastrado para homologação, mas
 # jamais é promovido a provisionamento/controle industrial.
