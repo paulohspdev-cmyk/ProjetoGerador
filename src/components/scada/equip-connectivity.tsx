@@ -27,12 +27,20 @@ type TrafficPort = {
   monthBytes: number;
 };
 
+type ConnectionOutage = {
+  id: number;
+  remote_port: number;
+  started_at: number;
+  ended_at?: number | null;
+};
+
 type ProductDiagnostics = SystemDiagnostics & {
   bridge: SystemDiagnostics["bridge"] & {
     traffic?: {
       todayBytes: number;
       monthBytes: number;
       ports: TrafficPort[];
+      outages?: ConnectionOutage[];
     };
   };
 };
@@ -357,6 +365,13 @@ function sessionName(session: BridgeSession) {
   return `Conexão ${session.remotePort}`;
 }
 
+function diagnosisTone(session: BridgeSession) {
+  if (session.diagnosis?.origin === "none") return "ok" as const;
+  if (session.diagnosis?.origin === "controller" || session.diagnosis?.origin === "configuration")
+    return "warn" as const;
+  return "err" as const;
+}
+
 export function ConnectivityScreen() {
   const [health, setHealth] = useState<ProductDiagnostics | null>(null);
   const [error, setError] = useState("");
@@ -395,9 +410,7 @@ export function ConnectivityScreen() {
     <ScreenBody>
       <div>
         <h2 className="text-lg font-extrabold">Conectividade</h2>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          Estado atual das conexões de campo e consumo de dados.
-        </p>
+        <p className="mt-0.5 text-sm text-muted-foreground">Conexões e tráfego.</p>
       </div>
 
       <Stats
@@ -433,10 +446,10 @@ export function ConnectivityScreen() {
         </p>
       )}
 
-      <Panel title="Conexões de campo">
+      <Panel title="Conexões">
         {!sessions.length ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
-            Nenhuma conexão de campo configurada.
+            Sem conexões configuradas.
           </p>
         ) : (
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -447,6 +460,9 @@ export function ConnectivityScreen() {
                 Number(session.lastRxAt || 0),
                 Number(session.lastTxAt || 0),
               );
+              const outages = (traffic?.outages ?? [])
+                .filter((item) => item.remote_port === session.remotePort)
+                .slice(0, 3);
               return (
                 <article
                   key={session.remotePort}
@@ -457,8 +473,8 @@ export function ConnectivityScreen() {
                       <h3 className="truncate text-sm font-extrabold">{sessionName(session)}</h3>
                       <p className="mt-0.5 text-xs text-muted-foreground">
                         {session.generators.length > 1
-                          ? `${session.generators.length} geradores nesta conexão`
-                          : "Conexão de campo"}
+                          ? `${session.generators.length} geradores`
+                          : "Conexão única"}
                       </p>
                     </div>
                     <Pill tone={state.tone}>{state.label}</Pill>
@@ -466,7 +482,7 @@ export function ConnectivityScreen() {
 
                   <dl className="mt-4 grid grid-cols-2 gap-3 text-xs">
                     <div>
-                      <dt className="text-muted-foreground">Última comunicação</dt>
+                      <dt className="text-muted-foreground">Último contato</dt>
                       <dd className="mt-0.5 font-semibold">
                         {lastActivity ? dt(lastActivity) : "—"}
                       </dd>
@@ -491,13 +507,47 @@ export function ConnectivityScreen() {
                     </div>
                   </dl>
 
+                  {session.diagnosis && (
+                    <div className="mt-3 rounded-lg border border-border bg-secondary/25 p-2.5 text-xs">
+                      <div className="flex items-center justify-between gap-2">
+                        <b>Causa provável</b>
+                        <Pill tone={diagnosisTone(session)}>
+                          {session.diagnosis.origin === "field"
+                            ? "CAMPO/MODEM"
+                            : session.diagnosis.origin === "controller"
+                              ? "CONTROLADORA"
+                              : session.diagnosis.origin === "system"
+                                ? "SISTEMA"
+                                : session.diagnosis.origin === "configuration"
+                                  ? "CONFIGURAÇÃO"
+                                  : "NORMAL"}
+                        </Pill>
+                      </div>
+                      <p className="mt-1 text-muted-foreground">{session.diagnosis.label}</p>
+                    </div>
+                  )}
+
+                  {outages.length > 0 && (
+                    <details className="mt-3 border-t border-border/60 pt-3 text-xs">
+                      <summary className="cursor-pointer font-semibold">
+                        Quedas recentes ({outages.length})
+                      </summary>
+                      <ul className="mt-2 space-y-1 text-muted-foreground">
+                        {outages.map((outage) => (
+                          <li key={outage.id}>
+                            Início {dt(outage.started_at)} ·{" "}
+                            {outage.ended_at ? `retorno ${dt(outage.ended_at)}` : "ainda offline"}
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
+
                   <details className="mt-3 border-t border-border/60 pt-3 text-xs text-muted-foreground">
                     <summary className="cursor-pointer font-semibold text-foreground">
                       Detalhes técnicos
                     </summary>
                     <div className="mt-2 space-y-1">
-                      <p>Porta externa: {session.remotePort}</p>
-                      <p>Porta interna: {session.localPort}</p>
                       <p>Reconexões: {session.reconnections}</p>
                       <p>
                         Timeouts: {session.timeouts} · Erros: {session.errors}

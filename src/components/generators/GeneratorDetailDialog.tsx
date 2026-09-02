@@ -33,7 +33,7 @@ export function GeneratorDetailDialog({
       <DialogContent className="max-h-[90dvh] overflow-y-auto border-primary/40 bg-card sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {displayGeneratorName(gen.tag)} <StatusPill status={gen.status} />
+            {displayGeneratorName(gen)} <StatusPill status={gen.status} />
           </DialogTitle>
           <DialogDescription>
             Detalhes operacionais de {gen.tag} — {gen.site}

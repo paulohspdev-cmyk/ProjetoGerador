@@ -1,3 +1,4 @@
+import json
 import sqlite3
 import time
 import uuid
@@ -91,6 +92,14 @@ def init_db():
                 entity_type TEXT NOT NULL,
                 entity_id TEXT NOT NULL,
                 detail TEXT NOT NULL DEFAULT ''
+            );
+
+            CREATE TABLE IF NOT EXISTS generator_telemetry_snapshots (
+                generator_id TEXT PRIMARY KEY,
+                values_json TEXT NOT NULL DEFAULT '{}',
+                defined_json TEXT NOT NULL DEFAULT '[]',
+                updated_at INTEGER NOT NULL,
+                FOREIGN KEY(generator_id) REFERENCES generators(id) ON DELETE CASCADE
             );
             """
         )
@@ -471,6 +480,72 @@ def delete_generator(generator_id, actor="system"):
         )
         conn.execute("DELETE FROM generators WHERE id = ?", (current["id"],))
     return True
+
+
+def get_telemetry_snapshot(generator_id):
+    try:
+        with connect() as conn:
+            row = conn.execute(
+                "SELECT values_json, defined_json, updated_at FROM generator_telemetry_snapshots WHERE generator_id=?",
+                (generator_id,),
+            ).fetchone()
+    except sqlite3.OperationalError:
+        return None
+    if not row:
+        return None
+    try:
+        values = json.loads(row["values_json"])
+        defined = json.loads(row["defined_json"])
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return None
+    if not isinstance(values, dict) or not isinstance(defined, list):
+        return None
+    return {"values": values, "defined": defined, "updated_at": int(row["updated_at"])}
+
+
+def save_telemetry_snapshot(generator_id, values, defined=None, updated_at=None):
+    if not values:
+        return
+    timestamp = int(updated_at or time.time())
+    safe_values = {
+        str(key): value
+        for key, value in dict(values).items()
+        if isinstance(value, (int, float)) and not isinstance(value, bool)
+    }
+    if not safe_values:
+        return
+    metric_names = sorted(set(defined or safe_values.keys()))
+    with connect() as conn:
+        current = conn.execute(
+            "SELECT values_json, defined_json FROM generator_telemetry_snapshots WHERE generator_id=?",
+            (generator_id,),
+        ).fetchone()
+        if current:
+            try:
+                previous_values = json.loads(current["values_json"])
+                previous_defined = json.loads(current["defined_json"])
+                if isinstance(previous_values, dict):
+                    safe_values = {**previous_values, **safe_values}
+                if isinstance(previous_defined, list):
+                    metric_names = sorted(set(previous_defined) | set(metric_names))
+            except (TypeError, ValueError, json.JSONDecodeError):
+                pass
+        conn.execute(
+            """
+            INSERT INTO generator_telemetry_snapshots(generator_id,values_json,defined_json,updated_at)
+            VALUES (?,?,?,?)
+            ON CONFLICT(generator_id) DO UPDATE SET
+                values_json=excluded.values_json,
+                defined_json=excluded.defined_json,
+                updated_at=excluded.updated_at
+            """,
+            (
+                generator_id,
+                json.dumps(safe_values, separators=(",", ":"), sort_keys=True),
+                json.dumps(metric_names, separators=(",", ":")),
+                timestamp,
+            ),
+        )
 
 
 def add_event(generator_id, level, message):

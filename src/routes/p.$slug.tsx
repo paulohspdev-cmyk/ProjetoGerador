@@ -11,10 +11,10 @@ export const Route = createFileRoute("/p/$slug")({
   component: SectionPage,
   head: ({ params }) => {
     const found = findItem(params.slug);
-    const title = found ? `${found.item.label} | RC Geradores SCADA` : "RC Geradores SCADA";
+    const title = found ? `${found.item.label} | RC Geradores` : "RC Geradores";
     const description = found
-      ? `${found.item.label} — módulo ${found.group.title.toLowerCase()} do sistema SCADA RC Geradores.`
-      : "Sistema SCADA de monitoramento e operação de geradores.";
+      ? `${found.item.label} — módulo ${found.group.title.toLowerCase()} do sistema RC Geradores.`
+      : "Sistema profissional de monitoramento e operação de geradores.";
     return {
       meta: [
         { title },
@@ -42,7 +42,7 @@ function SectionPage() {
         <Topbar breadcrumb={[group, label]} title={label} />
         <div className="p-6">
           <div className="rounded-lg border border-border bg-card p-5 text-sm text-muted-foreground">
-            Acesso restrito a administradores.
+            Seu perfil não possui acesso a este módulo.
           </div>
         </div>
       </>

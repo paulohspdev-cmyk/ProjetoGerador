@@ -128,7 +128,7 @@ export function GeneratorEditDialog({
               <p>Comunicação: {generator.transport || "não informada"}</p>
               <p>Porta: {generator.listenPort ?? "automática"}</p>
               <p>Endereço Modbus: {generator.modbusUnit ?? "automático"}</p>
-              <p>Rapid Device: {generator.rapidDeviceNum ?? "não provisionado"}</p>
+              <p>Identificador interno: {generator.rapidDeviceNum ?? "não provisionado"}</p>
             </div>
           </details>
 

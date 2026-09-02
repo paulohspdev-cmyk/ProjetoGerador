@@ -107,7 +107,7 @@ export function ReportsScreen() {
           </div>
         </form>
         <p className="mt-2 text-[11px] text-muted-foreground">
-          O relatório exporta somente dados disponíveis na API/Rapid SCADA; ausência permanece N/D.
+          O relatório exporta somente dados disponíveis; ausência permanece N/D.
         </p>
       </Panel>
       <Panel title="Relatórios">

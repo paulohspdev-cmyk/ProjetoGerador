@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, LayoutGrid, List, RefreshCw, Rows3, SlidersHorizontal } from "lucide-react";
 
 import { Topbar } from "@/components/layout/Topbar";
@@ -39,9 +39,21 @@ const filters: Array<{ id: GenStatus | "todos"; label: string }> = [
 export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
   const { generators, ready, error, refresh } = useGenerators();
   const [view, setView] = useState<View>("principal");
-  const [status, setStatus] = useState<GenStatus | "todos">("todos");
+  const [status, setStatus] = useState<GenStatus | "todos">("online");
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState(0);
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const [viewport, setViewport] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const element = viewportRef.current;
+    if (!element) return;
+    const update = () => setViewport({ width: element.clientWidth, height: element.clientHeight });
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
 
   const items = useMemo(
     () =>
@@ -49,13 +61,25 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
         (generator) =>
           (status === "todos" || generator.status === status) &&
           (generator.tag.toLowerCase().includes(query.toLowerCase()) ||
+            (generator.name ?? "").toLowerCase().includes(query.toLowerCase()) ||
+            (generator.customer ?? "").toLowerCase().includes(query.toLowerCase()) ||
             generator.controller.toLowerCase().includes(query.toLowerCase()) ||
             generator.site.toLowerCase().includes(query.toLowerCase())),
       ),
     [generators, status, query],
   );
 
-  const pageSize = view === "principal" ? 5 : view === "lista" ? 12 : 8;
+  const pageSize = useMemo(() => {
+    if (!viewport.width || !viewport.height) {
+      return view === "principal" ? 5 : view === "lista" ? 12 : 8;
+    }
+    if (view === "lista") return Math.max(1, Math.floor(viewport.height / 43));
+    const minimumWidth = view === "compacto" ? 250 : 210;
+    const minimumHeight = view === "compacto" ? 190 : 520;
+    const columns = Math.max(1, Math.floor(viewport.width / minimumWidth));
+    const rows = Math.max(1, Math.floor(viewport.height / minimumHeight));
+    return columns * rows;
+  }, [view, viewport]);
   const pages = Math.max(1, Math.ceil(items.length / pageSize));
   const page = Math.min(group, pages - 1);
   const visible = items.slice(page * pageSize, page * pageSize + pageSize);
@@ -175,7 +199,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
           </div>
         )}
 
-        <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
+        <div ref={viewportRef} className="min-h-0 min-w-0 flex-1 overflow-hidden">
           {view === "principal" && (
             <div className="generator-vertical-grid generator-six-card-grid scroll-slim grid h-full min-h-0 min-w-0 gap-2 overflow-auto rounded-md bg-panel p-1.5">
               {visible.map((generator) => (
@@ -195,7 +219,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
           )}
 
           {view === "compacto" && (
-            <div className="scroll-slim grid h-full min-h-0 min-w-0 grid-cols-1 content-start gap-2 overflow-auto p-0.5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+            <div className="compact-generator-grid scroll-slim grid h-full min-h-0 min-w-0 content-start gap-2 overflow-auto p-0.5">
               {visible.map((generator) => (
                 <CompactCard key={generator.id} gen={generator} />
               ))}

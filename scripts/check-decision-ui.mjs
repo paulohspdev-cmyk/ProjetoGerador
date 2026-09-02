@@ -58,11 +58,12 @@ for (const marker of [
   'label: "Lista"',
   "<CompactCard",
   "<GeneratorTable",
-  "sm:grid-cols-2",
-  "lg:grid-cols-3",
-  "2xl:grid-cols-4",
+  "ResizeObserver",
+  "minimumWidth",
+  "minimumHeight",
+  "columns * rows",
+  "compact-generator-grid",
   'import "./operator-card-refinement.css"',
-  'view === "lista" ? 12 : 8',
 ]) {
   if (!board.includes(marker))
     failures.push(`toolbar/modos de geradores perdeu seletor ou contrato responsivo: ${marker}`);
@@ -70,9 +71,6 @@ for (const marker of [
 for (const forbidden of ["Cards verticais", "Cards compactos"]) {
   if (board.includes(forbidden))
     failures.push(`toolbar voltou ao grupo de botões antigo: ${forbidden}`);
-}
-if (!board.includes('view === "principal" ? 5')) {
-  failures.push("modo vertical deixou de limitar a cinco cards por página");
 }
 
 const compact = read("src/components/generators/CompactCard.tsx");

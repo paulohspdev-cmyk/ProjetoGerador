@@ -171,7 +171,7 @@ export function buildControllers(list: Generator[]) {
     gen: g.tag,
     site: g.site,
     fw: "—",
-    proto: g.telemetrySource === "rapid_scada" ? "Rapid SCADA" : "—",
+    proto: g.telemetrySource === "rapid_scada" ? "Telemetria" : "—",
     ip: g.ip,
     online: g.status === "online" || g.status === "alerta",
   }));

@@ -12,7 +12,7 @@ export type AppUser = {
 };
 
 export const ROLE_LABEL: Record<UserRole, string> = {
-  administrador: "Administrador",
+  administrador: "Gestor do sistema",
   cadastro: "Cadastro",
   visualizacao: "Visualização",
 };
@@ -20,7 +20,7 @@ export const ROLE_LABEL: Record<UserRole, string> = {
 export const ROLE_META: Array<{ id: UserRole; name: string; perms: string }> = [
   {
     id: "administrador",
-    name: "Administrador",
+    name: "Gestor do sistema",
     perms:
       "Acesso total: visualização, cadastro, usuários, auditoria e START/STOP autorizados. Demais comandos industriais permanecem indisponíveis",
   },

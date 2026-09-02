@@ -82,6 +82,34 @@ def _bridge_runtime_status() -> dict:
         }
 
 
+def _connection_diagnosis(session: dict, listeners: dict[int, dict], status_fresh: bool) -> dict:
+    port = int(session.get("remotePort") or 0)
+    listener = listeners.get(port) or {}
+    if not status_fresh:
+        return {"code": "system_status_stale", "origin": "system", "label": "Monitor do sistema sem atualização"}
+    if not listener.get("remoteListening") or not listener.get("localListening"):
+        return {"code": "system_listener_down", "origin": "system", "label": "Porta do sistema indisponível"}
+    if int(session.get("rejectedConnections") or 0) > 0:
+        return {"code": "connection_rejected", "origin": "configuration", "label": "Conexões recusadas por proteção ou configuração"}
+    if not session.get("connected"):
+        return {"code": "field_tcp_disconnected", "origin": "field", "label": "Modem ou enlace de campo desconectado"}
+
+    unit_health = session.get("unitHealth") if isinstance(session.get("unitHealth"), dict) else {}
+    timed_out = [
+        unit
+        for unit, item in unit_health.items()
+        if isinstance(item, dict) and int(item.get("consecutiveTimeouts") or 0) > 0
+    ]
+    if timed_out:
+        return {
+            "code": "controller_timeout",
+            "origin": "controller",
+            "label": "Modem conectado; controladora ou barramento sem resposta",
+            "units": timed_out,
+        }
+    return {"code": "healthy", "origin": "none", "label": "Comunicação normal"}
+
+
 def _memory():
     values = {}
     try:
@@ -146,6 +174,18 @@ def system_diagnostics():
         )
 
     runtime_bridge = _bridge_runtime_status()
+    listeners_by_port = {int(item["remotePort"]): item for item in reverse_listeners}
+    runtime_bridge["sessions"] = [
+        {
+            **session,
+            "diagnosis": _connection_diagnosis(
+                session,
+                listeners_by_port,
+                bool(runtime_bridge.get("statusFresh")),
+            ),
+        }
+        for session in runtime_bridge.get("sessions") or []
+    ]
     traffic = traffic_store.record_bridge_traffic(
         runtime_bridge.get("sessions") or [],
         runtime_bridge.get("updatedAt") or int(time.time()),

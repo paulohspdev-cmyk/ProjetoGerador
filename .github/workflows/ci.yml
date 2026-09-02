@@ -145,6 +145,12 @@ jobs:
           PYTHONPATH: .
         run: python tests/rapid_overlay_resilience.py
 
+      - name: Backend evidência de quedas de comunicação
+        working-directory: backend
+        env:
+          PYTHONPATH: .
+        run: python tests/connectivity_evidence.py
+
       - name: Backend domínio v3 e catálogo
         working-directory: backend
         env:

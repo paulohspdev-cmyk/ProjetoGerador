@@ -27,6 +27,11 @@ type LibraryWithCatalog = {
   catalog?: CatalogController[];
 };
 
+function provisionMessage(error: unknown) {
+  const detail = error instanceof Error ? `: ${error.message}` : ".";
+  return `Gerador cadastrado; configuração pendente${detail}`;
+}
+
 const connectionOptions: Array<{
   id: GeneratorTransport;
   title: string;
@@ -35,17 +40,17 @@ const connectionOptions: Array<{
   {
     id: "reverse_tcp",
     title: "Modem / 4G",
-    description: "O modem conecta ao servidor. Recomendado para instalações remotas.",
+    description: "O modem inicia a conexão.",
   },
   {
     id: "modbus_tcp_direct",
     title: "Ethernet",
-    description: "A controladora está acessível diretamente pela rede local.",
+    description: "Acesso direto pela rede local.",
   },
   {
     id: "rtu_over_tcp",
     title: "Gateway Ethernet",
-    description: "Comunicação Modbus RTU transportada por um gateway TCP.",
+    description: "Barramento RTU via gateway TCP.",
   },
 ];
 
@@ -62,6 +67,7 @@ export function RegisterGeneratorButton({
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);
   const [site, setSite] = useState("");
+  const [name, setName] = useState("");
   const [controller, setController] = useState("");
   const [transport, setTransport] = useState<GeneratorTransport>("reverse_tcp");
   const [host, setHost] = useState("");
@@ -134,6 +140,7 @@ export function RegisterGeneratorButton({
   const reset = () => {
     setStep(1);
     setSite("");
+    setName("");
     setController("");
     setTransport("reverse_tcp");
     setHost("");
@@ -154,7 +161,7 @@ export function RegisterGeneratorButton({
   );
   const effectiveUnit = Number(modbusUnit || 1);
 
-  const canContinueStep1 = Boolean(site.trim() && controller);
+  const canContinueStep1 = Boolean(site.trim() && controller && selectedController?.provisionable);
   const canContinueStep2 =
     transport === "reverse_tcp" || (host.trim().length > 0 && effectivePort > 0);
 
@@ -168,11 +175,7 @@ export function RegisterGeneratorButton({
       reset();
       setOpen(false);
     } catch (provisionError) {
-      setError(
-        provisionError instanceof Error
-          ? `Gerador cadastrado. Configuração automática pendente: ${provisionError.message}`
-          : "Gerador cadastrado. Configuração automática pendente.",
-      );
+      setError(provisionMessage(provisionError));
     } finally {
       setSaving(false);
     }
@@ -186,6 +189,10 @@ export function RegisterGeneratorButton({
     }
     if (!site.trim() || !controller) {
       setError("Escolha a unidade e a controladora.");
+      return;
+    }
+    if (!selectedController?.provisionable) {
+      setError("Esta controladora ainda não possui pacote validado para configuração automática.");
       return;
     }
     if (transport !== "reverse_tcp" && !host.trim()) {
@@ -206,6 +213,7 @@ export function RegisterGeneratorButton({
     try {
       const created = await rcApi.generators.create({
         tag: effectiveTag,
+        name: name.trim() || effectiveTag,
         controller,
         site: site.trim(),
         transport,
@@ -225,11 +233,7 @@ export function RegisterGeneratorButton({
           setOpen(false);
           return;
         } catch (provisionError) {
-          setError(
-            provisionError instanceof Error
-              ? `Gerador cadastrado. Configuração automática pendente: ${provisionError.message}`
-              : "Gerador cadastrado. Configuração automática pendente.",
-          );
+          setError(provisionMessage(provisionError));
           return;
         }
       }
@@ -275,8 +279,7 @@ export function RegisterGeneratorButton({
           <DialogHeader>
             <DialogTitle>Adicionar gerador</DialogTitle>
             <DialogDescription>
-              Informe o essencial. As configurações técnicas são preenchidas automaticamente quando
-              possível.
+              Informe o essencial; o sistema completa a configuração validada.
             </DialogDescription>
           </DialogHeader>
 
@@ -315,6 +318,16 @@ export function RegisterGeneratorButton({
             {step === 1 && (
               <div className="space-y-4">
                 <label className="block text-sm font-semibold">
+                  Nome do gerador
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Ex.: Gerador principal"
+                    className="mt-2 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
+                    maxLength={160}
+                  />
+                </label>
+                <label className="block text-sm font-semibold">
                   Unidade
                   <input
                     list="rc-generator-sites"
@@ -342,6 +355,7 @@ export function RegisterGeneratorButton({
                     {gensetCatalog.map((item) => (
                       <option key={item.catalogId || item.model} value={item.model}>
                         {item.manufacturer} · {item.model}
+                        {item.provisionable ? "" : " · somente inventário"}
                       </option>
                     ))}
                   </select>
@@ -394,9 +408,8 @@ export function RegisterGeneratorButton({
                 <div className="rounded-xl border border-online/30 bg-online/8 p-3 text-sm">
                   <b>Configuração automática</b>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    O sistema escolhe a identificação, a porta de comunicação e o dispositivo do
-                    SCADA automaticamente. Use opções avançadas somente quando a instalação exigir
-                    valores específicos.
+                    O sistema escolhe identificação, porta e canal. Use o modo avançado apenas
+                    quando a instalação exigir.
                   </p>
                 </div>
 
@@ -440,7 +453,7 @@ export function RegisterGeneratorButton({
                       />
                     </label>
                     <label className="text-xs font-semibold">
-                      Dispositivo SCADA
+                      Identificador de telemetria
                       <input
                         inputMode="numeric"
                         value={rapidDeviceNum}
@@ -460,7 +473,9 @@ export function RegisterGeneratorButton({
                 <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
                   <div>
                     <dt className="text-xs text-muted-foreground">Gerador</dt>
-                    <dd className="font-bold">{effectiveTag}</dd>
+                    <dd className="font-bold">
+                      {name.trim() || effectiveTag} · {effectiveTag}
+                    </dd>
                   </div>
                   <div>
                     <dt className="text-xs text-muted-foreground">Unidade</dt>
@@ -479,7 +494,7 @@ export function RegisterGeneratorButton({
                 </dl>
                 {createdId && (
                   <p className="mt-4 rounded-lg border border-alert/40 bg-alert/10 p-3 text-sm text-alert">
-                    O cadastro já foi salvo. Tente novamente apenas a configuração automática.
+                    Cadastro salvo. Tente novamente a configuração.
                   </p>
                 )}
               </div>

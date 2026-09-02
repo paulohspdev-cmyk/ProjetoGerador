@@ -38,6 +38,23 @@ def init_traffic_db() -> None:
             );
             CREATE INDEX IF NOT EXISTS idx_bridge_traffic_daily_day
               ON bridge_traffic_daily(day);
+
+            CREATE TABLE IF NOT EXISTS bridge_availability_state (
+                remote_port INTEGER PRIMARY KEY,
+                connected INTEGER NOT NULL,
+                changed_at INTEGER NOT NULL,
+                last_seen_at INTEGER NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS bridge_outages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                remote_port INTEGER NOT NULL,
+                started_at INTEGER NOT NULL,
+                ended_at INTEGER,
+                observed_reason TEXT NOT NULL DEFAULT 'tcp_disconnected'
+            );
+            CREATE INDEX IF NOT EXISTS idx_bridge_outages_port_time
+              ON bridge_outages(remote_port, started_at DESC);
             """
         )
 
@@ -123,6 +140,42 @@ def record_bridge_traffic(sessions: list[dict] | None, now: int | None = None) -
             if not 1 <= remote_port <= 65535:
                 continue
 
+            connected = 1 if bool(session.get("connected")) else 0
+            availability = conn.execute(
+                "SELECT connected,changed_at FROM bridge_availability_state WHERE remote_port=?",
+                (remote_port,),
+            ).fetchone()
+            if not availability:
+                conn.execute(
+                    "INSERT INTO bridge_availability_state(remote_port,connected,changed_at,last_seen_at) VALUES (?,?,?,?)",
+                    (remote_port, connected, timestamp, timestamp),
+                )
+                if not connected:
+                    conn.execute(
+                        "INSERT INTO bridge_outages(remote_port,started_at,observed_reason) VALUES (?,?,?)",
+                        (remote_port, timestamp, "tcp_disconnected"),
+                    )
+            elif int(availability["connected"]) != connected:
+                conn.execute(
+                    "UPDATE bridge_availability_state SET connected=?,changed_at=?,last_seen_at=? WHERE remote_port=?",
+                    (connected, timestamp, timestamp, remote_port),
+                )
+                if connected:
+                    conn.execute(
+                        "UPDATE bridge_outages SET ended_at=? WHERE remote_port=? AND ended_at IS NULL",
+                        (timestamp, remote_port),
+                    )
+                else:
+                    conn.execute(
+                        "INSERT INTO bridge_outages(remote_port,started_at,observed_reason) VALUES (?,?,?)",
+                        (remote_port, timestamp, "tcp_disconnected"),
+                    )
+            else:
+                conn.execute(
+                    "UPDATE bridge_availability_state SET last_seen_at=? WHERE remote_port=?",
+                    (timestamp, remote_port),
+                )
+
             previous = conn.execute(
                 "SELECT bytes_rx,bytes_tx FROM bridge_traffic_state WHERE remote_port=?",
                 (remote_port,),
@@ -159,7 +212,16 @@ def record_bridge_traffic(sessions: list[dict] | None, now: int | None = None) -
                     (day, remote_port, delta_rx, delta_tx, timestamp),
                 )
 
-        return _summary(conn, timestamp)
+        summary = _summary(conn, timestamp)
+        states = conn.execute(
+            "SELECT remote_port,connected,changed_at,last_seen_at FROM bridge_availability_state ORDER BY remote_port"
+        ).fetchall()
+        incidents = conn.execute(
+            "SELECT id,remote_port,started_at,ended_at,observed_reason FROM bridge_outages ORDER BY started_at DESC LIMIT 200"
+        ).fetchall()
+        summary["availability"] = [dict(row) for row in states]
+        summary["outages"] = [dict(row) for row in incidents]
+        return summary
 
 
 def traffic_summary(now: int | None = None) -> dict:

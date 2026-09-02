@@ -136,8 +136,8 @@ export function ControllersV3CreatePanel({ catalog, sites, onCreated, onError, o
       });
       onMessage(
         result.provisionable
-          ? "Equipamento cadastrado. O Controller Pack é de produção, mas o Rapid SCADA ainda deve ser provisionado pelo fluxo industrial controlado."
-          : "Equipamento cadastrado em inventário. Sem Controller Pack de produção, polling e comandos permanecem bloqueados.",
+          ? "Equipamento cadastrado. O perfil é de produção, mas a telemetria ainda deve ser ativada pelo fluxo industrial controlado."
+          : "Equipamento cadastrado em inventário. Sem perfil homologado de produção, telemetria e comandos permanecem bloqueados.",
       );
       setTag("");
       setName("");
@@ -230,7 +230,7 @@ export function ControllersV3CreatePanel({ catalog, sites, onCreated, onError, o
               <>
                 <b>{selected.application}</b> → asset <b>{assetKind}</b> ·{" "}
                 {selected.provisionable
-                  ? "Controller Pack de produção"
+                  ? "Perfil homologado de produção"
                   : selected.packLifecycle === "lab"
                     ? "Pack em laboratório"
                     : "somente catálogo"}
@@ -307,7 +307,7 @@ export function ControllersV3CreatePanel({ catalog, sites, onCreated, onError, o
                 />
               </label>
               <label className="text-[11px] font-semibold text-muted-foreground">
-                Rapid Device
+                Identificador de telemetria
                 <input
                   inputMode="numeric"
                   value={rapidDevice}

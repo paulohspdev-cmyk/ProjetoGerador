@@ -11,6 +11,8 @@ export type GeneratorTransport =
   "reverse_tcp" | "modbus_tcp_direct" | "rtu_over_tcp" | "modbus_rtu_serial";
 export type CreateGeneratorPayload = {
   tag: string;
+  name?: string | undefined;
+  customer?: string | undefined;
   controller: string;
   site: string;
   ip?: string | undefined;
@@ -247,6 +249,14 @@ export type BridgeSession = {
   reconnections: number;
   timeouts: number;
   errors: number;
+  diagnosis?:
+    | {
+        code: string;
+        origin: "system" | "field" | "controller" | "configuration" | "none" | string;
+        label: string;
+        units?: string[] | undefined;
+      }
+    | undefined;
   generators: BridgeSessionGenerator[];
 };
 export type BridgeDiagnostics = {

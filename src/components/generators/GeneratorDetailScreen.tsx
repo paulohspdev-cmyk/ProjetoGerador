@@ -169,8 +169,8 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
             <p>Comunicação: {gen.transport || "N/D"}</p>
             <p>Porta: {gen.listenPort ?? "N/D"}</p>
             <p>Endereço Modbus: {gen.modbusUnit ?? "N/D"}</p>
-            <p>Dispositivo SCADA: {gen.rapidDeviceNum ?? "N/D"}</p>
-            <p>Fonte: {gen.telemetrySource === "rapid_scada" ? "SCADA" : "N/D"}</p>
+            <p>Identificador interno: {gen.rapidDeviceNum ?? "N/D"}</p>
+            <p>Fonte: {gen.telemetrySource === "rapid_scada" ? "Telemetria" : "N/D"}</p>
           </div>
         </details>
       </div>

@@ -67,7 +67,7 @@ export function TrendsScreen() {
         if (active) {
           setTrend(null);
           setError(
-            err instanceof Error ? err.message : "Histórico ainda indisponível no Rapid SCADA.",
+            err instanceof Error ? err.message : "Histórico de telemetria ainda indisponível.",
           );
         }
       })
@@ -84,7 +84,7 @@ export function TrendsScreen() {
 
   return (
     <ScreenBody>
-      <Panel title="Tendência Rapid SCADA">
+      <Panel title="Tendência de telemetria">
         <div className="grid gap-2 sm:grid-cols-3">
           <label className="text-[11px] font-semibold text-muted-foreground">
             Gerador
@@ -102,7 +102,7 @@ export function TrendsScreen() {
             </select>
           </label>
           <label className="text-[11px] font-semibold text-muted-foreground">
-            Métrica disponível no Controller Pack
+            Métrica disponível no perfil homologado
             <select
               value={metric}
               onChange={(e) => setMetric(e.target.value)}
@@ -140,7 +140,7 @@ export function TrendsScreen() {
       <Panel title={selected && metric ? `${selected.tag} · ${metric}` : "Histórico"}>
         {loading ? (
           <p className="py-16 text-center text-sm text-muted-foreground">
-            Consultando arquivo do Rapid SCADA…
+            Consultando histórico de telemetria…
           </p>
         ) : chart.length ? (
           <Trend data={chart} />

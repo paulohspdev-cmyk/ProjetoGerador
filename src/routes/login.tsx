@@ -6,8 +6,8 @@ export const Route = createFileRoute("/login")({
   component: LoginScreen,
   head: () => ({
     meta: [
-      { title: "Login | RC Geradores SCADA" },
-      { name: "description", content: "Acesso ao sistema SCADA RC Geradores." },
+      { title: "Acesso | RC Geradores" },
+      { name: "description", content: "Acesso ao sistema RC Geradores." },
     ],
   }),
 });

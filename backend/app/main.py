@@ -56,7 +56,7 @@ from .ops_schemas import (
     WorkOrderCreate,
     WorkOrderUpdate,
 )
-from .rapid import available_metrics, dashboard, overlay_generators, trend_for_generator
+from .rapid import available_metrics, dashboard, load_bindings, overlay_generators, trend_for_generator
 from .reporting import generate_report
 from .schemas import CommandRequest, GeneratorCreate, GeneratorUpdate, LoginRequest, UserCreate, UserUpdate
 from .security_service import begin_login, totp_required, verify_user_totp
@@ -311,6 +311,14 @@ def generator_delete(generator_id: str, user: dict = Depends(require_remove)):
     current = db.get_generator(generator_id)
     if not current:
         raise HTTPException(status_code=404, detail="Gerador não encontrado")
+    if any(
+        str(item.get("generator_id") or "") == current["id"]
+        for item in load_bindings()
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail="Equipamento possui integração industrial ativa. Use a retirada segura.",
+        )
     if not db.delete_generator(generator_id, actor=actor(user)):
         raise HTTPException(status_code=404, detail="Gerador não encontrado")
     domain_store.remove_legacy_generator(current["id"])

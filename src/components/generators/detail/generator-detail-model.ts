@@ -78,7 +78,7 @@ export function buildGeneratorDetailModel(gen: Generator) {
     mainsOk,
     modeLabel,
     ready: statusText(gen, running),
-    name: gen.name?.trim() || displayGeneratorName(gen.tag),
+    name: displayGeneratorName(gen),
     comm: gen.telemetrySource === "rapid_scada" && gen.status !== "offline",
   };
 }
