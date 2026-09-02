@@ -209,7 +209,7 @@ export function RegisterGeneratorButton({
       setCreatedId(created.id);
       await refresh();
 
-      if (selectedController.provisionable) {
+      if (selectedController?.provisionable) {
         try {
           await industrialApi.lifecycle.provision(created.id);
           await refresh();
@@ -411,9 +411,12 @@ export function RegisterGeneratorButton({
                 )}
                 {isCatalogRegistration && !createdId && (
                   <p className="mt-4 rounded-lg border border-alert/40 bg-alert/10 p-3 text-sm text-alert">
-                    Cadastro liberado: porta e Unit ID serão salvos para diagnóstico e leitura da
-                    controladora. Rapid automático, START, STOP e contatores permanecem bloqueados
-                    até a homologação do Controller Pack.
+                    {selectedController?.registerable === false
+                      ? "Cadastro liberado pelo fluxo de geradores: "
+                      : "Cadastro técnico liberado: "}
+                    porta e Unit ID serão salvos para diagnóstico e leitura da controladora. Rapid
+                    automático, START, STOP e contatores permanecem bloqueados até a homologação do
+                    Controller Pack.
                   </p>
                 )}
                 {createdId && (
