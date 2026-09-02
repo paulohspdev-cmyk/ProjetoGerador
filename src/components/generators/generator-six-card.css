@@ -1,20 +1,22 @@
 .generator-vertical-grid.generator-six-card-grid {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
-  grid-auto-rows: max-content;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  grid-template-rows: minmax(0, 1fr);
+  grid-auto-rows: minmax(0, 1fr);
   min-height: 0;
   height: 100%;
-  align-items: start;
-  align-content: start;
+  align-items: stretch;
+  align-content: stretch;
 }
 
 .generator-six-card-grid > .comap-panel-v2 {
   display: flex;
   width: 100%;
   min-width: 0;
-  min-height: 720px;
-  height: max-content;
+  min-height: 0;
+  height: 100%;
   flex-direction: column;
-  align-self: start;
+  align-self: stretch;
+  container-type: inline-size;
 }
 
 .generator-six-card-grid .comap-block {
@@ -86,6 +88,34 @@
   font-size: 11px;
   font-weight: 800;
   text-align: right;
+}
+
+@container (max-width: 270px) {
+  .generator-six-card-grid .comap-engine {
+    grid-template-columns: 13px minmax(60px, auto) minmax(34px, 1fr) minmax(44px, auto);
+    column-gap: 3px;
+    font-size: 9px;
+  }
+
+  .generator-six-card-grid .comap-engine .engine-label {
+    overflow: visible;
+    font-size: 9px;
+    letter-spacing: -0.02em;
+  }
+
+  .generator-six-card-grid .comap-engine .engine-value {
+    min-width: 44px;
+    font-size: 9px;
+  }
+
+  .generator-six-card-grid .comap-header {
+    gap: 4px;
+    padding-inline: 5px;
+  }
+
+  .generator-six-card-grid .controller-model-line {
+    font-size: 9px;
+  }
 }
 
 .generator-six-card-grid .comap-meter,

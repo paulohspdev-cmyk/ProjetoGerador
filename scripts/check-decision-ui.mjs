@@ -144,11 +144,12 @@ for (const forbidden of [
 const cardCss = read("src/components/generators/generator-six-card.css");
 for (const marker of [
   ".generator-vertical-grid.generator-six-card-grid",
-  "minmax(min(100%, 300px), 1fr)",
-  "grid-auto-rows: max-content",
+  "grid-template-rows: minmax(0, 1fr)",
   ".comap-engine > span:nth-child(3):empty",
   ".comap-panel-v2 .comap-flow-v2",
-  "min-height: 720px",
+  "height: 100%",
+  "container-type: inline-size",
+  "@container (max-width: 270px)",
 ]) {
   if (!cardCss.includes(marker))
     failures.push(`layout vertical original perdeu regra de encaixe: ${marker}`);
