@@ -28,6 +28,7 @@ library = library_summary()
 catalog = library["catalog"]
 assert len(catalog) >= 100, len(catalog)
 assert {item["manufacturer"] for item in catalog} >= {"ComAp", "DSE"}
+assert not any(item.get("status") == "inventory_only" for item in catalog)
 
 ig200 = catalog_for_model("InteliGen 200")
 assert ig200 and ig200["provisionable"] is True
@@ -82,18 +83,37 @@ assert not any(
     )
 )
 
-# Pack LAB estritamente read-only pode ser cadastrado para homologação, mas
-# jamais é promovido a provisionamento/controle industrial.
+# DSE GenComm pode ser materializado em produção exclusivamente para leitura
+# quando o contrato documental é completo. Isso não equivale a field validation.
 dse8610 = catalog_for_model("DSE8610 MKII")
-assert dse8610 and dse8610["packLifecycle"] == "lab"
+assert dse8610 and dse8610["packLifecycle"] == "production"
+assert dse8610["packStatus"] == "production"
 assert dse8610["registerable"] is True
-assert dse8610["onboardingMode"] == "lab_read_only"
-assert dse8610["provisionable"] is False
+assert dse8610["onboardingMode"] == "production"
+assert dse8610["provisionable"] is True
 assert dse8610["capabilities"]["telemetry"] is True
+assert dse8610["validatedTelemetry"] == []
+assert dse8610["documentedTelemetry"]
 assert not any(
     dse8610["capabilities"].get(name)
     for name in ("start", "stop", "auto", "manual", "test", "mcb_open", "mcb_close", "gcb_open", "gcb_close", "paralleling")
 )
+
+dse_pack = pack_for_model("DSE7310 MKII")
+assert dse_pack and dse_pack["manufacturer"] == "DSE"
+assert dse_pack["lifecycle"] == "production"
+assert dse_pack["status"] == "production"
+assert dse_pack["mapping"]["readOnly"] is True
+assert dse_pack["rapid"]["channels"]
+
+# DSE antigas sem evidência suficiente de caminho GenComm continuam cadastráveis,
+# mas o sistema não inventa telemetria nem as promove para provisionamento.
+dse501 = catalog_for_model("DSE501")
+assert dse501 and dse501["application"] == "genset"
+assert dse501["registerable"] is True
+assert dse501["provisionable"] is False
+assert dse501["onboardingMode"] == "registration_open"
+assert not dse501.get("packLifecycle")
 
 # Compatibilidade: geradores legados ganham Asset/Controller/Connection estáveis.
 generator = db.create_generator(

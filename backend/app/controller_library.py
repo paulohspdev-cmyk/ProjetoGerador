@@ -10,6 +10,18 @@ from .config import PROJECT_ROOT
 CATALOG_FILE = PROJECT_ROOT / "controllers" / "catalog" / "catalog-v1.json"
 PACK_SCHEMA_FILE = PROJECT_ROOT / "controllers" / "schema" / "controller-pack-v3.schema.json"
 SUPPORTED_PACK_SCHEMA = 3
+COMMAND_CAPABILITIES = (
+    "start",
+    "stop",
+    "auto",
+    "manual",
+    "test",
+    "mcb_open",
+    "mcb_close",
+    "gcb_open",
+    "gcb_close",
+    "paralleling",
+)
 
 
 def _norm(value: object) -> str:
@@ -37,14 +49,41 @@ def _validate_pack_schema(data: dict, path: Path) -> None:
     raise ValueError(f"Controller Pack fora do schema v3 em {path}: " + "; ".join(parts))
 
 
-def pack_is_production_ready(pack: dict | None) -> bool:
+def _documented_read_only_production_contract(pack: dict | None) -> bool:
+    """Aceita produção por especificação apenas quando não existe qualquer caminho de escrita.
+
+    Este contrato é propositalmente mais restritivo que um pack field_validated. Ele serve para
+    protocolos padronizados e documentados, como DSE GenComm, cuja telemetria pode ser
+    materializada em produção sem transformar documentação em validação física de comandos.
+    """
     if not pack:
         return False
+    capabilities = dict(pack.get("capabilities") or {})
+    mapping = dict(pack.get("mapping") or {})
+    rapid = dict(pack.get("rapid") or {})
+    validation = dict(pack.get("validation") or {})
     return (
-        pack.get("lifecycle") == "production"
-        and str(pack.get("status") or "") == "field_validated"
+        str(pack.get("status") or "") == "production"
+        and int(pack.get("schema") or 0) == SUPPORTED_PACK_SCHEMA
+        and capabilities.get("telemetry") is True
+        and mapping.get("readOnly") is True
+        and bool(mapping.get("registers"))
+        and bool(rapid.get("template"))
+        and bool(rapid.get("channels"))
+        and bool(validation.get("documentation"))
+        and validation.get("field") is not True
+        and not any(bool(capabilities.get(name)) for name in COMMAND_CAPABILITIES)
+    )
+
+
+def pack_is_production_ready(pack: dict | None) -> bool:
+    if not pack or pack.get("lifecycle") != "production":
+        return False
+    field_validated = (
+        str(pack.get("status") or "") == "field_validated"
         and int(pack.get("schema") or 0) == SUPPORTED_PACK_SCHEMA
     )
+    return field_validated or _documented_read_only_production_contract(pack)
 
 
 def pack_is_lab_onboarding_ready(pack: dict | None) -> bool:
@@ -53,25 +92,13 @@ def pack_is_lab_onboarding_ready(pack: dict | None) -> bool:
         return False
     capabilities = dict(pack.get("capabilities") or {})
     mapping = dict(pack.get("mapping") or {})
-    command_capabilities = (
-        "start",
-        "stop",
-        "auto",
-        "manual",
-        "test",
-        "mcb_open",
-        "mcb_close",
-        "gcb_open",
-        "gcb_close",
-        "paralleling",
-    )
     return (
         pack.get("lifecycle") == "lab"
         and int(pack.get("schema") or 0) == SUPPORTED_PACK_SCHEMA
         and capabilities.get("telemetry") is True
         and mapping.get("readOnly") is True
         and bool(mapping.get("registers"))
-        and not any(bool(capabilities.get(name)) for name in command_capabilities)
+        and not any(bool(capabilities.get(name)) for name in COMMAND_CAPABILITIES)
     )
 
 
@@ -101,11 +128,13 @@ def _read_manifest(path: Path, lifecycle: str) -> dict:
     _validate_pack_schema(data, path)
     rel = path.relative_to(PROJECT_ROOT).as_posix()
     effective_lifecycle = lifecycle
-    if lifecycle == "production" and not (
-        str(data.get("status") or "") == "field_validated"
-        and int(data.get("schema") or 0) == SUPPORTED_PACK_SCHEMA
-    ):
-        effective_lifecycle = "invalid_production"
+    if lifecycle == "production":
+        field_validated = (
+            str(data.get("status") or "") == "field_validated"
+            and int(data.get("schema") or 0) == SUPPORTED_PACK_SCHEMA
+        )
+        if not field_validated and not _documented_read_only_production_contract(data):
+            effective_lifecycle = "invalid_production"
     return {
         **data,
         "lifecycle": effective_lifecycle,
@@ -156,6 +185,7 @@ def list_controller_catalog() -> list[dict]:
                 "model": model,
                 "application": application,
                 "category": str(row.get("category") or "other"),
+                "status": catalog_status,
                 "catalogStatus": catalog_status,
                 "provisionable": False,
                 "registerable": _catalog_registerable(application),
@@ -263,6 +293,7 @@ def controller_catalog_with_state(packs: list[dict] | None = None) -> list[dict]
                 "model": pack.get("model") or pack.get("packId"),
                 "application": application,
                 "category": pack.get("category") or "pack_only",
+                "status": "pack_only",
                 "catalogStatus": "pack_only",
                 "packId": pack.get("packId"),
                 "packLifecycle": pack.get("lifecycle"),

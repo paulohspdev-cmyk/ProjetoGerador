@@ -75,6 +75,19 @@ function validateSource(path, profile) {
   }
 }
 
+function documentedReadOnlyProduction(profile) {
+  return (
+    profile.status === "production" &&
+    profile.mapping?.readOnly === true &&
+    profile.capabilities?.telemetry === true &&
+    forbiddenCommands.every((command) => profile.capabilities?.[command] === false) &&
+    (profile.validation?.documentation ?? []).length > 0 &&
+    profile.validation?.field !== true &&
+    Boolean(profile.rapid?.template) &&
+    (profile.rapid?.channels ?? []).length > 0
+  );
+}
+
 if (labPaths.length === 0) failures.push("nenhum Controller Pack LAB encontrado");
 if (productionPaths.length === 0) failures.push("nenhum Controller Pack production encontrado");
 
@@ -102,8 +115,10 @@ for (const path of productionPaths) {
   const profile = load(path);
   validateSource(path, profile);
   if (profile.schema !== 3) failures.push(`${path}: production exige schema 3`);
-  if (profile.status !== "field_validated") {
-    failures.push(`${path}: production exige status field_validated`);
+  if (profile.status !== "field_validated" && !documentedReadOnlyProduction(profile)) {
+    failures.push(
+      `${path}: production exige field_validated ou contrato documental estritamente read-only`,
+    );
   }
 }
 
@@ -218,6 +233,46 @@ for (const command of forbiddenCommands) {
   }
 }
 
+const dseProductionPath = "controllers/production/dse/dse-gencomm-v1/manifest.json";
+if (!productionPaths.includes(dseProductionPath)) {
+  failures.push("DSE GenComm production read-only não está em production");
+}
+const dseProduction = load(dseProductionPath);
+if (!documentedReadOnlyProduction(dseProduction)) {
+  failures.push("DSE GenComm: contrato de produção documental read-only inválido");
+}
+if ((dseProduction.validatedTelemetry ?? []).length !== 0) {
+  failures.push("DSE GenComm: telemetria documental não pode fingir validação de campo");
+}
+if (dseProduction.mapping?.wordOrder !== "most_significant_register_first") {
+  failures.push("DSE GenComm: ordem de palavras 32-bit documentada foi alterada");
+}
+
+const catalogRows = load("controllers/catalog/catalog-v1.json").controllers ?? [];
+const dseGensets = catalogRows.filter(
+  (item) => item.manufacturer === "DSE" && item.application === "genset",
+);
+if (dseGensets.length !== 38) {
+  failures.push(`DSE: catálogo deve manter 38 modelos genset, encontrado ${dseGensets.length}`);
+}
+const registrationOnlyDse = new Set(["DSE3110", "DSE5110", "DSE710", "DSE720", "DSE501"]);
+const dseAliases = new Set(dseProduction.aliases ?? []);
+for (const item of dseGensets) {
+  if (!registrationOnlyDse.has(item.model) && !dseAliases.has(item.model)) {
+    failures.push(`DSE: ${item.model} deveria estar coberta pelo pack GenComm read-only`);
+  }
+}
+for (const model of registrationOnlyDse) {
+  if (dseAliases.has(model)) {
+    failures.push(`DSE: ${model} não pode ser provisionada sem evidência GenComm suficiente`);
+  }
+}
+if (dseAliases.size !== 33) {
+  failures.push(
+    `DSE GenComm: esperado cobertura documental de 33 modelos, encontrado ${dseAliases.size}`,
+  );
+}
+
 const template = read("rapid/templates/DrvModbus_RC_IG200.xml");
 for (const marker of [
   'tagCode="coolant_temperature"',
@@ -240,6 +295,41 @@ for (const marker of [
   "<Cmds />",
 ]) {
   if (!template.includes(marker)) failures.push(`IG200 template perdeu: ${marker}`);
+}
+
+const dseTemplate = read("rapid/templates/DrvModbus_RC_DSE_GenComm_Core.xml");
+for (const marker of [
+  'address="772"',
+  'tagCode="controller_mode_raw"',
+  'address="1024"',
+  'tagCode="oil_pressure"',
+  'tagCode="rpm"',
+  'tagCode="voltage_l1"',
+  'tagCode="current_l1"',
+  'address="1536"',
+  'tagCode="power_kw"',
+  'address="1798"',
+  'tagCode="run_hours"',
+  'readOnly="true"',
+  "<Cmds />",
+]) {
+  if (!dseTemplate.includes(marker)) failures.push(`DSE GenComm template perdeu: ${marker}`);
+}
+if (/Cmd[^>]+address=|readOnly="false"/.test(dseTemplate)) {
+  failures.push("DSE GenComm template contém superfície de escrita");
+}
+
+const dseProvisioner = read("rapid/provisioning/provision_dse_gencomm.py");
+for (const marker of [
+  "pack_is_production_ready",
+  'mapping.get("readOnly") is True',
+  "COMMAND_CAPABILITIES",
+  'provision(str(generator["id"]), restart=False)',
+  "_restart_rapid()",
+]) {
+  if (!dseProvisioner.includes(marker)) {
+    failures.push(`provisionador DSE perdeu guardrail: ${marker}`);
+  }
 }
 
 const card = read("src/components/generators/PowerFlowCard.tsx");

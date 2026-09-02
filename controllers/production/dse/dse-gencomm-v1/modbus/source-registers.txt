@@ -1,0 +1,33 @@
+# Normalized register evidence for DSE GenComm genset controllers
+# Sources: DSE GenComm standard and supplied DSE8610 MKII register list.
+# Address = GenComm page * 256 + register offset. Reads use function 3.
+# 32-bit values use the most-significant 16-bit register at the lowest address.
+# This file is evidence only. It does not authorize writes or field operation.
+772 controller_mode_raw page=3 offset=4 type=uint16 scale=1
+774 alarm_class_raw page=3 offset=6 type=uint16 scale=1
+1024 oil_pressure page=4 offset=0 type=uint16 scale=1 unit=kPa
+1025 coolant_temperature page=4 offset=1 type=int16 scale=1 unit=C
+1026 oil_temperature page=4 offset=2 type=int16 scale=1 unit=C
+1027 fuel_level page=4 offset=3 type=uint16 scale=1 unit=percent
+1028 alternator_voltage page=4 offset=4 type=uint16 scale=0.1 unit=V
+1029 battery_voltage page=4 offset=5 type=uint16 scale=0.1 unit=V
+1030 rpm page=4 offset=6 type=uint16 scale=1 unit=rpm
+1031 frequency page=4 offset=7 type=uint16 scale=0.1 unit=Hz
+1032 voltage_l1 page=4 offset=8 type=uint32 scale=0.1 unit=V
+1034 voltage_l2 page=4 offset=10 type=uint32 scale=0.1 unit=V
+1036 voltage_l3 page=4 offset=12 type=uint32 scale=0.1 unit=V
+1038 voltage_l1_l2 page=4 offset=14 type=uint32 scale=0.1 unit=V
+1040 voltage_l2_l3 page=4 offset=16 type=uint32 scale=0.1 unit=V
+1042 voltage_l3_l1 page=4 offset=18 type=uint32 scale=0.1 unit=V
+1044 current_l1 page=4 offset=20 type=uint32 scale=0.1 unit=A
+1046 current_l2 page=4 offset=22 type=uint32 scale=0.1 unit=A
+1048 current_l3 page=4 offset=24 type=uint32 scale=0.1 unit=A
+1536 power_kw page=6 offset=0 type=int32 scale=0.001 unit=kW
+1557 power_factor page=6 offset=21 type=int16 scale=0.01
+1558 engine_load page=6 offset=22 type=int16 scale=0.1 unit=percent
+1794 maintenance_hours page=7 offset=2 type=int32 scale=0.0002777777777777778 unit=h
+1798 run_hours page=7 offset=6 type=uint32 scale=0.0002777777777777778 unit=h
+1800 genset_kwh page=7 offset=8 type=uint32 scale=0.1 unit=kWh
+1808 number_starts page=7 offset=16 type=uint32 scale=1
+4104 system_control_key page=16 offset=8 type=uint16 write=fc16 DISABLED
+4105 system_control_complement page=16 offset=9 type=uint16 write=fc16 DISABLED
