@@ -17,6 +17,27 @@ pinada enquanto os lotes abaixo não passarem por CI, segurança, preflight e sm
 | Média | Mapa | Depende de coordenadas e vínculo por nome da unidade; falha não orienta correção | Validar cadastro, vínculo estável e estados de erro/vazio |
 | Média | Navegação | Seções recolhidas podem ser interpretadas como menus ausentes | Revisar persistência, descoberta e testes de todas as rotas por perfil |
 
+## Fechamento do lote PR #48
+
+O lote de conectividade e cadastro industrial foi concluído no branch
+`fix/auditoria-funcional-profissional` com os seguintes pontos:
+
+- tipos de conexão modelados para TCP reverso, Modbus TCP direto/VPN e RTU sobre TCP;
+- editor administrativo com nome, transporte, IP/gateway, porta TCP e Unit ID;
+- reconfiguração transacional de gerador provisionado, com deprovisionamento,
+  reprovisionamento e rollback automático em caso de falha;
+- descoberta TCP somente leitura restrita a IPv4 privada roteada, sem envio de
+  quadros Modbus e sem escrita industrial;
+- exclusão direta bloqueada quando há integração industrial ativa e retirada
+  segura disponível com confirmação explícita;
+- testes automatizados de descoberta, conectividade, resiliência de telemetria e
+  rollback de reconfiguração;
+- CI e Quality/Security verdes no SHA final do lote antes do merge.
+
+A auditoria ampla do produto continua viva. Itens como evolução do vínculo do mapa
+por identificador estável, expansão de Controller Packs e homologações adicionais
+não fazem parte da liberação funcional deste lote e não habilitam comandos novos.
+
 ## Critério de conclusão 10/10
 
 - Nenhum dado simulado apresentado como real.
