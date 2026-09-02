@@ -75,6 +75,17 @@ def pack_is_lab_onboarding_ready(pack: dict | None) -> bool:
     )
 
 
+def _catalog_registerable(application: object) -> bool:
+    """Cadastro de gerador não é sinônimo de homologação/provisionamento.
+
+    Todo modelo explicitamente classificado como genset no catálogo pode receber
+    identidade operacional (tag, porta, Unit ID) para diagnóstico e homologação.
+    Telemetria Rapid automática e comandos continuam condicionados ao Controller
+    Pack de produção, portanto esta flag nunca concede capacidade industrial.
+    """
+    return _norm(application) == "genset"
+
+
 def _read_manifest(path: Path, lifecycle: str) -> dict:
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
@@ -111,7 +122,7 @@ def list_controller_packs() -> list[dict]:
 
 
 def list_controller_catalog() -> list[dict]:
-    """Lista catálogo comercial/alvo sem transformar inventário em homologação."""
+    """Lista catálogo comercial/alvo sem transformar cadastro em homologação."""
     if not CATALOG_FILE.exists():
         return []
     try:
@@ -129,6 +140,7 @@ def list_controller_catalog() -> list[dict]:
         manufacturer = str(row.get("manufacturer") or "Desconhecido").strip()
         family = str(row.get("family") or "Outros").strip()
         model = str(row["model"]).strip()
+        application = str(row.get("application") or "other")
         result.append(
             {
                 **row,
@@ -136,11 +148,11 @@ def list_controller_catalog() -> list[dict]:
                 "manufacturer": manufacturer,
                 "family": family,
                 "model": model,
-                "application": str(row.get("application") or "other"),
+                "application": application,
                 "category": str(row.get("category") or "other"),
                 "catalogStatus": str(row.get("status") or "inventory_only"),
                 "provisionable": False,
-                "registerable": False,
+                "registerable": _catalog_registerable(application),
                 "onboardingMode": "inventory",
             }
         )
@@ -194,6 +206,9 @@ def controller_catalog_with_state(packs: list[dict] | None = None) -> list[dict]
         key = _norm(row.get("model"))
         pack = by_name.get(key)
         seen.add(key)
+        production_ready = pack_is_production_ready(pack)
+        lab_ready = pack_is_lab_onboarding_ready(pack)
+        catalog_registerable = _catalog_registerable(row.get("application"))
         result.append(
             {
                 **row,
@@ -206,14 +221,13 @@ def controller_catalog_with_state(packs: list[dict] | None = None) -> list[dict]
                 "capabilities": dict(pack.get("capabilities") or {}) if pack else {},
                 **_pack_telemetry_state(pack),
                 **_firmware_state(pack),
-                "provisionable": pack_is_production_ready(pack),
-                "registerable": pack_is_production_ready(pack)
-                or pack_is_lab_onboarding_ready(pack),
+                "provisionable": production_ready,
+                "registerable": production_ready or lab_ready or catalog_registerable,
                 "onboardingMode": (
                     "production"
-                    if pack_is_production_ready(pack)
+                    if production_ready
                     else "lab_read_only"
-                    if pack_is_lab_onboarding_ready(pack)
+                    if lab_ready
                     else "inventory"
                 ),
             }
@@ -223,13 +237,17 @@ def controller_catalog_with_state(packs: list[dict] | None = None) -> list[dict]
         key = _norm(pack.get("model"))
         if not key or key in seen:
             continue
+        application = pack.get("application") or "genset"
+        production_ready = pack_is_production_ready(pack)
+        lab_ready = pack_is_lab_onboarding_ready(pack)
+        catalog_registerable = _catalog_registerable(application)
         result.append(
             {
                 "catalogId": f"pack-{pack.get('packId')}",
                 "manufacturer": pack.get("manufacturer") or "Desconhecido",
                 "family": pack.get("family") or "Outros",
                 "model": pack.get("model") or pack.get("packId"),
-                "application": pack.get("application") or "genset",
+                "application": application,
                 "category": pack.get("category") or "pack_only",
                 "catalogStatus": "pack_only",
                 "packId": pack.get("packId"),
@@ -241,14 +259,13 @@ def controller_catalog_with_state(packs: list[dict] | None = None) -> list[dict]
                 "capabilities": dict(pack.get("capabilities") or {}),
                 **_pack_telemetry_state(pack),
                 **_firmware_state(pack),
-                "provisionable": pack_is_production_ready(pack),
-                "registerable": pack_is_production_ready(pack)
-                or pack_is_lab_onboarding_ready(pack),
+                "provisionable": production_ready,
+                "registerable": production_ready or lab_ready or catalog_registerable,
                 "onboardingMode": (
                     "production"
-                    if pack_is_production_ready(pack)
+                    if production_ready
                     else "lab_read_only"
-                    if pack_is_lab_onboarding_ready(pack)
+                    if lab_ready
                     else "inventory"
                 ),
                 "notes": pack.get("notes") or "",
@@ -319,6 +336,7 @@ def library_summary() -> dict:
             "invalidProduction": sum(p.get("lifecycle") == "invalid_production" for p in packs),
             "catalogTotal": len(catalog),
             "catalogProvisionable": sum(bool(row.get("provisionable")) for row in catalog),
+            "catalogRegisterable": sum(bool(row.get("registerable")) for row in catalog),
             "catalogInventoryOnly": sum(not bool(row.get("packLifecycle")) for row in catalog),
             "productionWithoutFirmwareMatrix": sum(
                 bool(row.get("provisionable")) and not bool(row.get("firmwareMatrixComplete"))
