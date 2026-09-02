@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import ipaddress
 import secrets
 import time
 from typing import Callable
@@ -19,9 +20,30 @@ ROLE_PERMISSIONS = {
     "visualizacao": {"view"},
 }
 
+TRUSTED_PROXY_PEERS = {"127.0.0.1", "::1"}
+
 
 def normalize_email(email: str) -> str:
     return str(email or "").strip().lower()
+
+
+def request_remote_ip(request: Request) -> str:
+    """Retorna o IP auditável sem confiar em headers enviados pelo cliente.
+
+    A API de produção fica em loopback e recebe tráfego do Nginx. Somente quando
+    o peer TCP é o proxy local aceitamos X-Real-IP; em qualquer outra situação
+    usamos diretamente o endereço do socket.
+    """
+    peer = request.client.host if request.client else ""
+    if peer not in TRUSTED_PROXY_PEERS:
+        return peer
+    candidate = request.headers.get("x-real-ip", "").split(",", 1)[0].strip()
+    if not candidate:
+        return peer
+    try:
+        return str(ipaddress.ip_address(candidate))
+    except ValueError:
+        return peer
 
 
 def hash_password(password: str) -> str:
@@ -106,8 +128,7 @@ def create_login_session(user: dict, request: Request, response: Response) -> di
     token = secrets.token_urlsafe(48)
     now = int(time.time())
     expires_at = now + AUTH_SESSION_TTL
-    forwarded = request.headers.get("x-forwarded-for", "").split(",", 1)[0].strip()
-    remote_ip = forwarded or (request.client.host if request.client else "")
+    remote_ip = request_remote_ip(request)
     user_agent = request.headers.get("user-agent", "")[:500]
     db.create_session(token_hash(token), user["id"], expires_at, remote_ip, user_agent)
     db.touch_user_login(user["id"], now)
@@ -142,11 +163,26 @@ def require(permission: str) -> Callable:
     return dependency
 
 
+def require_remove_permission(request: Request, user: dict = Depends(current_user)) -> dict:
+    if not can(user, "remove"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permissão insuficiente")
+
+    # O endpoint legado DELETE /api/generators/{id} não executa o ciclo de vida
+    # industrial. A retirada válida é POST /api/generators/{id}/retire, que
+    # deprovisiona o Rapid SCADA, preserva histórico e só então remove o cadastro.
+    if request.method.upper() == "DELETE" and request.url.path.rstrip("/").startswith("/api/generators/"):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Exclusão direta de gerador bloqueada. Use o fluxo de retirada segura.",
+        )
+    return user
+
+
 require_view = require("view")
 require_operate = require("operate")
 require_create = require("create")
 require_edit = require("edit")
-require_remove = require("remove")
+require_remove = require_remove_permission
 require_manage_users = require("manage_users")
 require_audit = require("audit")
 require_admin = require("admin")

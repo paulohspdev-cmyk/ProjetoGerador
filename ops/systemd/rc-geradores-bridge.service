@@ -11,6 +11,7 @@ WorkingDirectory=/opt/rc-geradores/backend
 EnvironmentFile=-/etc/rc-geradores.env
 RuntimeDirectory=rc-geradores
 RuntimeDirectoryMode=0770
+RuntimeDirectoryPreserve=yes
 ExecStart=/opt/rc-geradores/backend/.venv/bin/python -m app.bridge_runtime
 Restart=on-failure
 RestartSec=3

@@ -27,20 +27,36 @@
     },
     "application": {
       "type": "string",
-      "enum": ["genset", "mains", "ats", "bus", "bess", "engine", "light_tower", "field_gateway", "microgrid", "other"]
+      "enum": [
+        "genset",
+        "mains",
+        "ats",
+        "bus",
+        "bess",
+        "engine",
+        "light_tower",
+        "field_gateway",
+        "microgrid",
+        "other"
+      ]
     },
     "category": { "type": "string" },
     "firmware": {
       "type": "object",
       "properties": {
-        "tested": { "type": "array", "items": { "type": "string" } },
+        "tested": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
         "minimum": { "type": ["string", "null"] },
         "maximum": { "type": ["string", "null"] },
         "notes": { "type": "string" }
       },
       "additionalProperties": false
     },
-    "protocols": { "type": "array", "minItems": 1, "items": { "type": "string" }, "uniqueItems": true },
+    "protocols": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
     "transports": {
       "type": "array",
       "items": {
@@ -68,7 +84,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["key", "tagCode", "name", "scale"],
+            "required": ["key", "tagCode", "scale"],
             "properties": {
               "key": { "type": "string", "minLength": 1 },
               "tagCode": { "type": "string", "minLength": 1 },
@@ -85,7 +101,10 @@
     },
     "capabilities": {
       "type": "object",
-      "required": ["telemetry", "start", "stop", "auto", "manual", "test", "mcb_open", "mcb_close", "gcb_open", "gcb_close", "paralleling"],
+      "required": [
+        "telemetry", "start", "stop", "auto", "manual", "test",
+        "mcb_open", "mcb_close", "gcb_open", "gcb_close", "paralleling"
+      ],
       "properties": {
         "telemetry": { "type": "boolean" },
         "start": { "type": "boolean" },
@@ -102,12 +121,41 @@
       "additionalProperties": true
     },
     "validatedTelemetry": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "documentedTelemetry": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "metricUnits": { "type": "object", "additionalProperties": { "type": "string", "minLength": 1 } },
+    "metricLimits": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "displayMin": { "type": "number" },
+          "displayMax": { "type": "number" },
+          "warningLow": { "type": "number" },
+          "warningHigh": { "type": "number" },
+          "criticalLow": { "type": "number" },
+          "criticalHigh": { "type": "number" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "mapping": {
+      "type": "object",
+      "properties": {
+        "kind": { "type": "string", "enum": ["modbus_register_export", "comap_object_export"] },
+        "readOnly": { "type": "boolean" },
+        "sourceFile": { "type": "string", "minLength": 1 },
+        "registers": { "type": "object" },
+        "objects": { "type": "object" }
+      },
+      "additionalProperties": true
+    },
     "validation": {
       "type": "object",
       "properties": {
         "documentation": { "type": "array", "items": { "type": "string" } },
         "lab": { "type": "boolean" },
         "field": { "type": "boolean" },
+        "fieldReference": { "type": "string" },
         "commandSafety": { "type": "string" }
       },
       "additionalProperties": true

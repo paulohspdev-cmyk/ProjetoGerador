@@ -1,83 +1,83 @@
 import {
-  LayoutDashboard,
-  Fan,
-  Gauge,
-  Power,
-  MapPin,
-  Map,
-  BellRing,
-  Clock,
   Activity,
-  Database,
-  FileText,
-  UtilityPole,
-  Factory,
+  AlertTriangle,
   ArrowLeftRight,
-  GitMerge,
-  Wrench,
-  Fuel,
   BatteryCharging,
-  Timer,
+  Bell,
+  BellRing,
+  Building2,
+  CalendarClock,
   CalendarDays,
   Cpu,
-  Router,
-  Network,
-  Radio,
-  Signal,
-  Settings2,
-  RefreshCcw,
-  CalendarClock,
-  Bell,
-  ArrowUpNarrowWide,
-  Layers,
-  Tags,
-  LayoutTemplate,
-  MonitorCog,
-  Stethoscope,
-  Library,
-  CircuitBoard,
-  Cable,
-  Package,
-  FlaskConical,
-  Users,
-  Building2,
-  UserCog,
-  ShieldCheck,
-  ScrollText,
-  Webhook,
-  Mail,
-  MessageCircle,
-  Plug,
-  Landmark,
-  Settings,
+  Database,
+  Fan,
+  FileText,
+  Fuel,
+  Gauge,
+  GitMerge,
   HardDriveDownload,
   HeartPulse,
   Info,
+  LayoutDashboard,
+  Map,
+  MapPin,
+  Network,
+  Power,
+  Radio,
+  RefreshCcw,
+  Router,
+  ScrollText,
+  Settings,
+  Settings2,
+  ShieldCheck,
+  Signal,
+  Timer,
+  UserCog,
+  Users,
+  UtilityPole,
+  Wrench,
+  Factory,
+  ArrowUpNarrowWide,
   type LucideIcon,
 } from "lucide-react";
 
-export type NavItem = { label: string; slug: string; icon: LucideIcon };
-export type NavGroup = { title: string; items: NavItem[] };
+export type NavItem = {
+  label: string;
+  slug: string;
+  icon: LucideIcon;
+  adminOnly?: boolean;
+};
 
+export type NavGroup = {
+  title: string;
+  items: NavItem[];
+  adminOnly?: boolean;
+};
+
+/*
+ * A navegação principal é orientada à tarefa do operador. Telas de engenharia,
+ * biblioteca e integração continuam existentes e roteáveis, mas não ocupam o
+ * menu diário. Assim o produto deixa de parecer uma console de desenvolvimento.
+ */
 export const navGroups: NavGroup[] = [
   {
-    title: "RC Geradores",
+    title: "Operação",
     items: [
       { label: "Visão Geral", slug: "", icon: LayoutDashboard },
       { label: "Geradores", slug: "geradores", icon: Fan },
       { label: "Central de Operação", slug: "central-de-operacao", icon: Gauge },
-      { label: "Sites", slug: "sites", icon: MapPin },
+      { label: "Alarmes", slug: "alarmes", icon: BellRing },
+      { label: "Eventos", slug: "eventos", icon: Activity },
       { label: "Mapa", slug: "mapa", icon: Map },
     ],
   },
   {
-    title: "Monitoramento",
+    title: "Comunicação",
     items: [
-      { label: "Alarmes", slug: "alarmes", icon: BellRing },
-      { label: "Eventos", slug: "eventos", icon: Clock },
-      { label: "Tendências", slug: "tendencias", icon: Activity },
-      { label: "Histórico", slug: "historico", icon: Database },
-      { label: "Relatórios", slug: "relatorios", icon: FileText },
+      { label: "Modems", slug: "modems", icon: Router },
+      { label: "Conectividade", slug: "conectividade", icon: Signal },
+      { label: "Gateways", slug: "gateways", icon: Network },
+      { label: "Comunicação", slug: "comunicacao", icon: Radio },
     ],
   },
   {
@@ -98,16 +98,15 @@ export const navGroups: NavGroup[] = [
       { label: "Baterias", slug: "baterias", icon: BatteryCharging },
       { label: "Horímetros", slug: "horimetros", icon: Timer },
       { label: "Agenda", slug: "agenda", icon: CalendarDays },
+      { label: "Histórico", slug: "historico", icon: Database },
+      { label: "Relatórios", slug: "relatorios", icon: FileText },
     ],
   },
   {
-    title: "Equipamentos",
+    title: "Gestão",
     items: [
-      { label: "Controladoras", slug: "controladoras", icon: Cpu },
-      { label: "Modems", slug: "modems", icon: Router },
-      { label: "Gateways", slug: "gateways", icon: Network },
-      { label: "Conectividade", slug: "conectividade", icon: Signal },
-      { label: "Comunicação", slug: "comunicacao", icon: Radio },
+      { label: "Clientes", slug: "clientes", icon: Users },
+      { label: "Unidades", slug: "unidades", icon: Building2 },
     ],
   },
   {
@@ -121,60 +120,54 @@ export const navGroups: NavGroup[] = [
     ],
   },
   {
-    title: "SCADA",
+    title: "Administração",
+    adminOnly: true,
     items: [
-      { label: "Canais", slug: "canais", icon: Layers },
-      { label: "Tags", slug: "tags", icon: Tags },
-      { label: "Templates", slug: "templates", icon: LayoutTemplate },
-      { label: "Rapid SCADA", slug: "rapid-scada", icon: MonitorCog },
-      { label: "Diagnóstico", slug: "diagnostico", icon: Stethoscope },
-    ],
-  },
-  {
-    title: "Biblioteca",
-    items: [
-      { label: "Fabricantes", slug: "fabricantes", icon: Library },
-      { label: "Controladoras", slug: "lib-controladoras", icon: CircuitBoard },
-      { label: "Protocolos", slug: "protocolos", icon: Cable },
-      { label: "Controller Packs", slug: "controller-packs", icon: Package },
-      { label: "Laboratório", slug: "laboratorio", icon: FlaskConical },
-    ],
-  },
-  {
-    title: "Gestão",
-    items: [
-      { label: "Clientes", slug: "clientes", icon: Users },
-      { label: "Unidades", slug: "unidades", icon: Building2 },
-      { label: "Usuários", slug: "usuarios", icon: UserCog },
-      { label: "Perfis e permissões", slug: "perfis", icon: ShieldCheck },
-      { label: "Auditoria", slug: "auditoria", icon: ScrollText },
-    ],
-  },
-  {
-    title: "Integrações",
-    items: [
-      { label: "API", slug: "api", icon: Plug },
-      { label: "Webhooks", slug: "webhooks", icon: Webhook },
-      { label: "E-mail", slug: "email", icon: Mail },
-      { label: "WhatsApp", slug: "whatsapp", icon: MessageCircle },
-      { label: "ERP / BMS / outros", slug: "erp-bms", icon: Landmark },
-    ],
-  },
-  {
-    title: "Sistema",
-    items: [
-      { label: "Configurações", slug: "configuracoes", icon: Settings },
-      { label: "Backups", slug: "backups", icon: HardDriveDownload },
-      { label: "Saúde do sistema", slug: "saude", icon: HeartPulse },
-      { label: "Versão", slug: "versao", icon: Info },
+      { label: "Usuários", slug: "usuarios", icon: UserCog, adminOnly: true },
+      { label: "Perfis e permissões", slug: "perfis", icon: ShieldCheck, adminOnly: true },
+      { label: "Controladoras", slug: "controladoras", icon: Cpu, adminOnly: true },
+      { label: "Configurações", slug: "configuracoes", icon: Settings, adminOnly: true },
+      { label: "Saúde do sistema", slug: "saude", icon: HeartPulse, adminOnly: true },
+      { label: "Backups", slug: "backups", icon: HardDriveDownload, adminOnly: true },
+      { label: "Auditoria", slug: "auditoria", icon: ScrollText, adminOnly: true },
+      { label: "Versão", slug: "versao", icon: Info, adminOnly: true },
     ],
   },
 ];
 
+/*
+ * Rotas técnicas preservadas para administração/diagnóstico. Elas saem do menu
+ * principal, mas findItem continua reconhecendo título e grupo quando abertas
+ * por links internos ou por URL direta.
+ */
+const hiddenTechnicalItems: Array<{ group: string; item: NavItem }> = [
+  { group: "Monitoramento", item: { label: "Tendências", slug: "tendencias", icon: Activity } },
+  { group: "SCADA", item: { label: "Canais", slug: "canais", icon: Activity } },
+  { group: "SCADA", item: { label: "Tags", slug: "tags", icon: Activity } },
+  { group: "SCADA", item: { label: "Templates", slug: "templates", icon: Activity } },
+  { group: "SCADA", item: { label: "Rapid SCADA", slug: "rapid-scada", icon: Activity } },
+  { group: "SCADA", item: { label: "Diagnóstico", slug: "diagnostico", icon: AlertTriangle } },
+  { group: "Biblioteca", item: { label: "Fabricantes", slug: "fabricantes", icon: Cpu } },
+  { group: "Biblioteca", item: { label: "Controladoras", slug: "lib-controladoras", icon: Cpu } },
+  { group: "Biblioteca", item: { label: "Protocolos", slug: "protocolos", icon: Network } },
+  { group: "Biblioteca", item: { label: "Controller Packs", slug: "controller-packs", icon: Cpu } },
+  { group: "Biblioteca", item: { label: "Laboratório", slug: "laboratorio", icon: Cpu } },
+  { group: "Integrações", item: { label: "API", slug: "api", icon: Network } },
+  { group: "Integrações", item: { label: "Webhooks", slug: "webhooks", icon: Network } },
+  { group: "Integrações", item: { label: "E-mail", slug: "email", icon: Bell } },
+  { group: "Integrações", item: { label: "WhatsApp", slug: "whatsapp", icon: Bell } },
+  { group: "Integrações", item: { label: "ERP / BMS / outros", slug: "erp-bms", icon: Network } },
+];
+
 export function findItem(slug: string) {
-  for (const g of navGroups) {
-    const found = g.items.find((i) => i.slug === slug);
-    if (found) return { group: g, item: found };
+  for (const group of navGroups) {
+    const found = group.items.find((item) => item.slug === slug);
+    if (found) return { group, item: found };
   }
-  return null;
+  const hidden = hiddenTechnicalItems.find((entry) => entry.item.slug === slug);
+  if (!hidden) return null;
+  return {
+    group: { title: hidden.group, items: [hidden.item], adminOnly: true } satisfies NavGroup,
+    item: hidden.item,
+  };
 }

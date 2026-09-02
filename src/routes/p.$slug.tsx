@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { useAuth } from "@/components/auth/AuthProvider";
 import { Topbar } from "@/components/layout/Topbar";
-import { findItem } from "@/data/nav";
 import { GeneratorsBoard } from "@/components/generators/GeneratorsBoard";
 import { MapScreen } from "@/components/scada/MapScreen";
 import { screens } from "@/components/scada/registry";
+import { findItem } from "@/data/nav";
 
 export const Route = createFileRoute("/p/$slug")({
   component: SectionPage,
@@ -29,9 +30,24 @@ export const Route = createFileRoute("/p/$slug")({
 
 function SectionPage() {
   const { slug } = Route.useParams();
+  const { can } = useAuth();
   const found = findItem(slug);
   const label = found?.item.label ?? "Módulo";
   const group = found?.group.title ?? "RC Geradores";
+  const adminOnly = Boolean(found?.item.adminOnly || found?.group.adminOnly);
+
+  if (adminOnly && !can("manageUsers")) {
+    return (
+      <>
+        <Topbar breadcrumb={[group, label]} title={label} />
+        <div className="p-6">
+          <div className="rounded-lg border border-border bg-card p-5 text-sm text-muted-foreground">
+            Acesso restrito a administradores.
+          </div>
+        </div>
+      </>
+    );
+  }
 
   if (slug === "geradores") {
     return <GeneratorsBoard showKpis={false} />;

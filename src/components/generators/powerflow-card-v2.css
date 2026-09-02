@@ -19,7 +19,7 @@
 .controller-model-line {
   margin-top: 2px;
   overflow: hidden;
-  color: #7890a2;
+  color: var(--industrial-muted);
   font-size: 9px;
   line-height: 1;
   text-overflow: ellipsis;
@@ -39,7 +39,7 @@
 }
 
 .power-gauge-heading > span {
-  color: #7f94a4;
+  color: var(--industrial-muted);
   font-size: 7px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -66,24 +66,24 @@
 }
 
 .kw-gauge-base {
-  stroke: #173447;
+  stroke: var(--industrial-border);
 }
 
 .kw-gauge-green {
-  stroke: #2cc91d;
-  filter: drop-shadow(0 0 3px rgba(67, 239, 0, 0.32));
+  stroke: var(--online);
+  filter: drop-shadow(0 0 3px color-mix(in oklab, var(--online) 32%, transparent));
 }
 
 .kw-gauge-amber {
-  stroke: #ffc21a;
-  filter: drop-shadow(0 0 3px rgba(255, 194, 26, 0.26));
+  stroke: var(--alert);
+  filter: drop-shadow(0 0 3px color-mix(in oklab, var(--alert) 26%, transparent));
 }
 
 .kw-gauge-needle {
-  stroke: #f6fbff;
+  stroke: var(--industrial-foreground);
   stroke-width: 4;
   stroke-linecap: round;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.9));
+  filter: drop-shadow(0 1px 2px color-mix(in oklab, var(--background) 90%, transparent));
   transition: all 0.35s ease;
 }
 
@@ -92,19 +92,20 @@
 }
 
 .kw-gauge-hub {
-  fill: #e8f1f7;
-  stroke: #173447;
+  fill: var(--industrial-foreground);
+  stroke: var(--industrial-border);
   stroke-width: 3;
 }
 
-.kw-gauge-scale {
-  fill: #dce8ef;
-  font-size: 10px;
+.kw-gauge-scale,
+.kw-gauge-unit {
+  fill: var(--industrial-foreground);
   font-weight: 700;
 }
-
+.kw-gauge-scale {
+  font-size: 10px;
+}
 .kw-gauge-unit {
-  fill: #dce8ef;
   font-size: 13px;
   font-weight: 800;
 }
@@ -114,8 +115,8 @@
   bottom: 5px;
   left: 50%;
   transform: translateX(-50%);
-  color: #f5fbff;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
+  color: var(--industrial-foreground);
+  font-family: var(--font-mono);
   font-size: 23px;
   font-weight: 800;
   letter-spacing: -0.04em;
@@ -125,7 +126,7 @@
   position: absolute;
   right: 2px;
   bottom: 1px;
-  color: #617b8d;
+  color: var(--industrial-muted);
   font-size: 6px;
   font-weight: 700;
   text-transform: uppercase;
@@ -151,35 +152,35 @@
   min-width: 0;
   min-height: 25px;
   padding: 2px;
-  border: 1px solid #173b52;
+  border: 1px solid var(--industrial-border);
   border-radius: 3px;
-  background: linear-gradient(180deg, #102636, #081923);
-  color: #8195a4;
+  background: linear-gradient(180deg, var(--industrial-panel), var(--industrial-panel-strong));
+  color: var(--industrial-muted);
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.02em;
 }
 
 .controller-mode-btn.is-active {
-  border-color: #43ef00;
-  background: linear-gradient(180deg, #2fc900, #1a8c00);
-  color: #fff;
-  box-shadow: 0 0 7px rgba(67, 239, 0, 0.28);
+  border-color: var(--online);
+  background: var(--online);
+  color: var(--online-foreground);
+  box-shadow: var(--glow-online);
 }
 
 .controller-mode-generic {
   display: flex;
+  min-height: 25px;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  min-height: 25px;
-  color: #8296a5;
+  color: var(--industrial-muted);
   font-size: 9px;
   font-weight: 800;
 }
 
 .controller-mode-generic b {
-  color: #43ef00;
+  color: var(--online);
 }
 
 .comap-panel-v2 .comap-flow {
@@ -215,7 +216,7 @@
 }
 
 .breaker-single-label {
-  color: #b6c5cf;
+  color: var(--industrial-muted);
   font-size: 9px;
   font-weight: 800;
 }
@@ -225,9 +226,9 @@
   width: 38px;
   height: 4px;
   overflow: hidden;
-  border: 1px solid #234e68;
+  border: 1px solid var(--industrial-border);
   border-radius: 999px;
-  background: #071725;
+  background: var(--industrial-bg);
 }
 
 .breaker-state-track i {
@@ -235,69 +236,71 @@
   width: 100%;
   height: 100%;
   transform-origin: left center;
-  transition: transform 0.25s ease, background 0.25s ease;
+  transition:
+    transform 0.25s ease,
+    background 0.25s ease;
 }
 
 .breaker-single-control.is-closed .breaker-state-track i {
   transform: scaleX(1);
-  background: #43ef00;
-  box-shadow: 0 0 5px rgba(67, 239, 0, 0.7);
+  background: var(--online);
+  box-shadow: var(--glow-online);
 }
 
 .breaker-single-control.is-open .breaker-state-track i {
   transform: scaleX(0.22);
-  background: #8395a1;
+  background: var(--idle);
 }
 
 .breaker-single-control.is-unknown .breaker-state-track i {
   transform: scaleX(0.5);
-  background: #38586b;
+  background: color-mix(in oklab, var(--industrial-muted) 50%, var(--industrial-bg));
 }
 
 .breaker-single-button {
   width: 40px;
   height: 31px;
   padding: 0;
-  border: 1px solid #315a70;
+  border: 1px solid var(--industrial-border);
   border-radius: 4px;
-  background: linear-gradient(180deg, #f6f8fa, #cbd5dc);
-  color: #0d2432;
+  background: var(--industrial-foreground);
+  color: var(--industrial-bg);
   font-size: 10px;
   font-weight: 900;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.55);
   cursor: not-allowed;
 }
 
 .breaker-single-control.is-closed .breaker-single-button {
-  border-color: #43ef00;
-  background: linear-gradient(180deg, #3fe100, #208c00);
-  color: #fff;
+  border-color: var(--online);
+  background: var(--online);
+  color: var(--online-foreground);
 }
 
 .breaker-single-control small {
-  color: #688092;
+  color: var(--industrial-muted);
   font-size: 6px;
   font-weight: 800;
 }
 
 .flow-switch-node.is-unknown {
-  fill: #173447;
-  stroke: #527085;
+  fill: var(--industrial-border);
+  stroke: var(--industrial-muted);
 }
 
 .flow-switch-blade.is-unknown {
-  stroke: #527085;
+  stroke: var(--industrial-muted);
   stroke-dasharray: 4 3;
 }
 
 @keyframes generator-ring-pulse {
-  0%, 100% {
-    stroke: #43ef00;
-    filter: drop-shadow(0 0 3px rgba(67, 239, 0, 0.5));
+  0%,
+  100% {
+    stroke: var(--online);
+    filter: drop-shadow(0 0 3px color-mix(in oklab, var(--online) 50%, transparent));
   }
   50% {
-    stroke: #7dff4f;
-    filter: drop-shadow(0 0 11px rgba(67, 239, 0, 0.95));
+    stroke: color-mix(in oklab, var(--online) 72%, white);
+    filter: drop-shadow(0 0 11px color-mix(in oklab, var(--online) 92%, transparent));
   }
 }
 
@@ -308,13 +311,13 @@
 }
 
 .flow-generator-circle.generator-running {
-  stroke: #43ef00;
+  stroke: var(--online);
   stroke-width: 3.2;
   animation: generator-ring-pulse 1.15s ease-in-out infinite;
 }
 
 .flow-generator-circle.generator-stopped {
-  stroke: #ff2f25;
+  stroke: var(--offline);
   stroke-width: 3.2;
   filter: none;
   animation: none;
@@ -349,8 +352,8 @@
 
 .comap-panel-v2 .comap-meter.is-unscaled,
 .comap-panel-v2 .comap-meter.is-unknown {
-  border-color: #1c4055;
-  background: #061521;
+  border-color: var(--industrial-border);
+  background: var(--industrial-bg);
 }
 
 .engine-status-block {
@@ -387,7 +390,6 @@
   .comap-panel-v2 .comap-sld-stage {
     width: 215px;
   }
-
   .controller-mode-btn {
     font-size: 8px;
   }

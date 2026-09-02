@@ -42,6 +42,12 @@ def init_db():
                 created_at INTEGER NOT NULL,
                 updated_at INTEGER NOT NULL
             );
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_generators_reverse_identity_unique
+                ON generators(listen_port, modbus_unit)
+                WHERE transport='reverse_tcp' AND listen_port > 0;
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_generators_rapid_device_unique
+                ON generators(rapid_device_num)
+                WHERE rapid_device_num IS NOT NULL;
 
             CREATE TABLE IF NOT EXISTS users (
                 id TEXT PRIMARY KEY,
@@ -211,7 +217,8 @@ def create_user(data, actor="system"):
         conn.execute(
             """
             INSERT INTO users(id,name,email,password_hash,role,active,last_access,created_at,updated_at)
-            VALUES (:id,:name,:email,:password_hash,:role,:active,NULL,:created_at,:updated_at)
+            VALUES (:id,:name,:email,:password_hash,:role,:active,NULL,:created_at,:updated_at
+            )
             """,
             record,
         )
@@ -345,7 +352,7 @@ def create_generator(data, actor="system"):
         "name": (data.get("name") or data["tag"]).strip(),
         "customer": (data.get("customer") or "").strip(),
         "site": data["site"].strip(),
-        "controller_type": data["controller_type"].strip(),
+        "controller_type": data["controller_type"].strip().upper(),
         "controller_model": data["controller_model"].strip(),
         "transport": (data.get("transport") or "reverse_tcp").strip(),
         "host": (data.get("host") or "").strip(),
@@ -382,6 +389,20 @@ def create_generator(data, actor="system"):
     return get_generator(generator_id)
 
 
+def _normalized_generator_value(key, value):
+    if key == "enabled":
+        return 1 if bool(value) else 0
+    if key in {"listen_port", "modbus_unit", "rapid_device_num"}:
+        return int(value)
+    if key == "tag":
+        return str(value).strip().upper()
+    if key == "controller_type":
+        return str(value).strip().upper()
+    if key in {"name", "customer", "site", "controller_model", "transport", "host"}:
+        return str(value).strip()
+    return value
+
+
 def update_generator(generator_id, patch, actor="system"):
     current = get_generator(generator_id)
     if not current:
@@ -390,14 +411,37 @@ def update_generator(generator_id, patch, actor="system"):
         "tag", "name", "customer", "site", "controller_type", "controller_model",
         "transport", "host", "listen_port", "modbus_unit", "rapid_device_num", "enabled",
     }
+    industrial_identity = {
+        "tag",
+        "controller_type",
+        "controller_model",
+        "transport",
+        "host",
+        "listen_port",
+        "modbus_unit",
+        "rapid_device_num",
+    }
+    provisioned = int(current.get("rapid_device_num") or 0) > 0
     fields, values, detail = [], [], []
     for key, value in patch.items():
         if key not in allowed or value is None:
             continue
-        if key == "enabled":
-            value = 1 if bool(value) else 0
-        if key in {"listen_port", "modbus_unit"}:
-            value = int(value)
+        value = _normalized_generator_value(key, value)
+        current_value = current.get(key)
+        if key in {"listen_port", "modbus_unit", "rapid_device_num"} and current_value is not None:
+            current_value = int(current_value)
+        elif key in {"tag", "controller_type"} and current_value is not None:
+            current_value = str(current_value).strip().upper()
+        elif isinstance(current_value, str):
+            current_value = current_value.strip()
+
+        if provisioned and key in industrial_identity and value != current_value:
+            raise sqlite3.IntegrityError(
+                "Identidade industrial de gerador provisionado não pode ser alterada diretamente. "
+                "Deprovisione com preservação de histórico antes de mudar tag/controladora/transporte/porta/Unit/Device."
+            )
+        if value == current_value:
+            continue
         fields.append(f"{key}=?")
         values.append(value)
         detail.append(f"{key}={value}")

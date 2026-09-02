@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -67,6 +68,7 @@ const empty: OpsState = {
 
 type Ctx = {
   ready: boolean;
+  error: string;
   refresh: () => Promise<void>;
   switches: Record<string, boolean>;
   switchOn: (id: string, fallback?: boolean) => boolean;
@@ -76,11 +78,14 @@ type Ctx = {
   ackAlarm: (id: string) => void;
   ackAll: (ids: string[]) => void;
   reports: ReportRow[];
-  generateReport: (input: { name: string; period: string; format: string }, gens: Generator[]) => void;
+  generateReport: (
+    input: { name: string; period: string; format: string },
+    gens: Generator[],
+  ) => void;
   downloadReport: (id: string, gens: Generator[]) => void;
   workOrders: WorkOrder[];
   setWorkOrderStatus: (id: string, status: string) => void;
-  addWorkOrder: (input: { gen: string; type: string; site: string }) => void;
+  addWorkOrder: (input: { gen: string; type: string; site: string; tech?: string }) => void;
   agenda: AgendaItem[];
   addAgenda: (input: { title: string; when: string; site: string }) => void;
   rules: RuleRow[];
@@ -99,56 +104,59 @@ function message(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
+function stateFromPayload(payload: Awaited<ReturnType<typeof rcApi.ops.bootstrap>>): OpsState {
+  return {
+    settings: payload.settings ?? {},
+    alarmAcks: payload.alarmAcks ?? [],
+    reports: payload.reports ?? [],
+    workOrders: payload.workOrders ?? [],
+    agenda: payload.agenda ?? [],
+    rules: payload.rules ?? [],
+    clients: payload.clients ?? [],
+    backups: payload.backups ?? [],
+    webhooks: payload.webhooks ?? [],
+  };
+}
+
 export function ScadaOpsProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<OpsState>(empty);
   const [ready, setReady] = useState(false);
+  const [error, setError] = useState("");
+  const refreshInFlight = useRef<Promise<void> | null>(null);
 
-  const refresh = useCallback(async () => {
-    try {
-      const payload = await rcApi.ops.bootstrap();
-      setState({
-        settings: payload.settings ?? {},
-        alarmAcks: payload.alarmAcks ?? [],
-        reports: payload.reports ?? [],
-        workOrders: payload.workOrders ?? [],
-        agenda: payload.agenda ?? [],
-        rules: payload.rules ?? [],
-        clients: payload.clients ?? [],
-        backups: payload.backups ?? [],
-        webhooks: payload.webhooks ?? [],
-      });
-    } finally {
-      setReady(true);
-    }
+  const refresh = useCallback(() => {
+    if (refreshInFlight.current) return refreshInFlight.current;
+    const task = (async () => {
+      try {
+        const payload = await rcApi.ops.bootstrap();
+        setState(stateFromPayload(payload));
+        setError("");
+      } catch (err) {
+        setError(message(err, "Falha ao carregar dados operacionais."));
+      } finally {
+        setReady(true);
+      }
+    })();
+    refreshInFlight.current = task.finally(() => {
+      refreshInFlight.current = null;
+    });
+    return refreshInFlight.current;
   }, []);
 
   useEffect(() => {
-    let active = true;
-    void (async () => {
-      try {
-        const payload = await rcApi.ops.bootstrap();
-        if (!active) return;
-        setState({
-          settings: payload.settings ?? {},
-          alarmAcks: payload.alarmAcks ?? [],
-          reports: payload.reports ?? [],
-          workOrders: payload.workOrders ?? [],
-          agenda: payload.agenda ?? [],
-          rules: payload.rules ?? [],
-          clients: payload.clients ?? [],
-          backups: payload.backups ?? [],
-          webhooks: payload.webhooks ?? [],
-        });
-      } catch {
-        if (active) setState(empty);
-      } finally {
-        if (active) setReady(true);
-      }
-    })();
-    return () => {
-      active = false;
+    void refresh();
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void refresh();
+    }, 15_000);
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") void refresh();
     };
-  }, []);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [refresh]);
 
   const switches = useMemo(() => {
     const values: Record<string, boolean> = {};
@@ -168,6 +176,7 @@ export function ScadaOpsProvider({ children }: { children: ReactNode }) {
   const value = useMemo<Ctx>(
     () => ({
       ready,
+      error,
       refresh,
       switches,
       switchOn: (id, fallback = true) => switches[id] ?? fallback,
@@ -180,8 +189,8 @@ export function ScadaOpsProvider({ children }: { children: ReactNode }) {
         void rcApi.settings
           .set(`switch.${id}`, next)
           .then(() => notify(next ? "Ligado" : "Desligado"))
-          .catch((error) => {
-            notify(message(error, "Não foi possível alterar a configuração."));
+          .catch((err) => {
+            notify(message(err, "Não foi possível alterar a configuração."));
             void refresh();
           });
       },
@@ -197,18 +206,21 @@ export function ScadaOpsProvider({ children }: { children: ReactNode }) {
             }));
             notify("Alarme reconhecido");
           })
-          .catch((error) => notify(message(error, "Falha ao reconhecer alarme.")));
+          .catch((err) => notify(message(err, "Falha ao reconhecer alarme.")));
       },
       ackAll: (ids) => {
         void Promise.all(ids.map((id) => rcApi.alarms.acknowledge(id)))
           .then((items) => {
             setState((prev) => {
               const keys = new Set(items.map((x) => x.alarmKey));
-              return { ...prev, alarmAcks: [...items, ...prev.alarmAcks.filter((x) => !keys.has(x.alarmKey))] };
+              return {
+                ...prev,
+                alarmAcks: [...items, ...prev.alarmAcks.filter((x) => !keys.has(x.alarmKey))],
+              };
             });
             notify("Alarmes reconhecidos");
           })
-          .catch((error) => notify(message(error, "Falha ao reconhecer alarmes.")));
+          .catch((err) => notify(message(err, "Falha ao reconhecer alarmes.")));
       },
       reports: state.reports,
       generateReport: (input) => {
@@ -217,15 +229,15 @@ export function ScadaOpsProvider({ children }: { children: ReactNode }) {
           .then(async (report) => {
             setState((prev) => ({ ...prev, reports: [report, ...prev.reports] }));
             await rcApi.reports.download(report.id);
-            notify("Relatório real gerado");
+            notify("Relatório gerado");
           })
-          .catch((error) => notify(message(error, "Falha ao gerar relatório.")));
+          .catch((err) => notify(message(err, "Falha ao gerar relatório.")));
       },
       downloadReport: (id) => {
         void rcApi.reports
           .download(id)
           .then(() => notify("Download iniciado"))
-          .catch((error) => notify(message(error, "Falha no download.")));
+          .catch((err) => notify(message(err, "Falha no download.")));
       },
       workOrders: state.workOrders,
       setWorkOrderStatus: (id, status) => {
@@ -234,20 +246,27 @@ export function ScadaOpsProvider({ children }: { children: ReactNode }) {
           .then((updated) => {
             setState((prev) => ({
               ...prev,
-              workOrders: prev.workOrders.map((w) => (w.id === id ? updated : w)),
+              workOrders: prev.workOrders.map((workOrder) =>
+                workOrder.id === id ? updated : workOrder,
+              ),
             }));
             notify(`OS ${id}: ${status}`);
           })
-          .catch((error) => notify(message(error, "Falha ao atualizar ordem de serviço.")));
+          .catch((err) => notify(message(err, "Falha ao atualizar ordem de serviço.")));
       },
       addWorkOrder: (input) => {
         void rcApi.workOrders
-          .create({ ...input, due: 0, tech: "Equipe campo", status: "Planejada" })
+          .create({
+            ...input,
+            due: 0,
+            tech: input.tech?.trim() || "",
+            status: "Planejada",
+          })
           .then((created) => {
             setState((prev) => ({ ...prev, workOrders: [created, ...prev.workOrders] }));
             notify("Ordem de serviço criada");
           })
-          .catch((error) => notify(message(error, "Falha ao criar ordem de serviço.")));
+          .catch((err) => notify(message(err, "Falha ao criar ordem de serviço.")));
       },
       agenda: state.agenda,
       addAgenda: (input) => {
@@ -257,22 +276,22 @@ export function ScadaOpsProvider({ children }: { children: ReactNode }) {
             setState((prev) => ({ ...prev, agenda: [created, ...prev.agenda] }));
             notify("Compromisso adicionado");
           })
-          .catch((error) => notify(message(error, "Falha ao adicionar compromisso.")));
+          .catch((err) => notify(message(err, "Falha ao adicionar compromisso.")));
       },
       rules: state.rules,
       toggleRule: (id) => {
-        const current = state.rules.find((r) => r.id === id);
+        const current = state.rules.find((rule) => rule.id === id);
         if (!current) return;
         void rcApi.rules
           .update(id, { enabled: !current.enabled })
           .then((updated) => {
             setState((prev) => ({
               ...prev,
-              rules: prev.rules.map((r) => (r.id === id ? updated : r)),
+              rules: prev.rules.map((rule) => (rule.id === id ? updated : rule)),
             }));
             notify(updated.enabled ? "Regra habilitada" : "Regra desabilitada");
           })
-          .catch((error) => notify(message(error, "Falha ao alterar regra.")));
+          .catch((err) => notify(message(err, "Falha ao alterar regra.")));
       },
       clients: state.clients,
       addClient: (input) => {
@@ -282,7 +301,7 @@ export function ScadaOpsProvider({ children }: { children: ReactNode }) {
             setState((prev) => ({ ...prev, clients: [...prev.clients, created] }));
             notify("Cliente cadastrado");
           })
-          .catch((error) => notify(message(error, "Falha ao cadastrar cliente.")));
+          .catch((err) => notify(message(err, "Falha ao cadastrar cliente.")));
       },
       backups: state.backups,
       runBackup: () => {
@@ -292,11 +311,11 @@ export function ScadaOpsProvider({ children }: { children: ReactNode }) {
             setState((prev) => ({ ...prev, backups: [created, ...prev.backups] }));
             notify(created.result === "OK" ? "Backup concluído" : "Backup falhou");
           })
-          .catch((error) => notify(message(error, "Falha ao executar backup.")));
+          .catch((err) => notify(message(err, "Falha ao executar backup.")));
       },
       webhooks: state.webhooks,
       toggleWebhook: (id) => {
-        const current = state.webhooks.find((w) => w.id === id);
+        const current = state.webhooks.find((webhook) => webhook.id === id);
         if (!current) return;
         const status = current.status === "Ativo" ? "Pausado" : "Ativo";
         void rcApi.webhooks
@@ -304,13 +323,13 @@ export function ScadaOpsProvider({ children }: { children: ReactNode }) {
           .then((updated) => {
             setState((prev) => ({
               ...prev,
-              webhooks: prev.webhooks.map((w) => (w.id === id ? updated : w)),
+              webhooks: prev.webhooks.map((webhook) => (webhook.id === id ? updated : webhook)),
             }));
           })
-          .catch((error) => notify(message(error, "Falha ao alterar webhook.")));
+          .catch((err) => notify(message(err, "Falha ao alterar webhook.")));
       },
     }),
-    [ackMap, ready, refresh, state, switches],
+    [ackMap, error, ready, refresh, state, switches],
   );
 
   return <ScadaOpsContext.Provider value={value}>{children}</ScadaOpsContext.Provider>;

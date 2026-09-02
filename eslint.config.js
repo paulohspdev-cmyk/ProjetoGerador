@@ -32,8 +32,20 @@ export default tseslint.config(
           ],
         },
       ],
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      // Fast Refresh é uma otimização de HMR do ambiente de desenvolvimento. Providers e
+      // componentes-base deste projeto exportam hooks/variants de propósito; isso não afeta
+      // build ou runtime de produção e não deve poluir o gate PRE-VM.
+      "react-refresh/only-export-components": "off",
       "@typescript-eslint/no-unused-vars": "off",
+    },
+  },
+  {
+    files: ["src/components/scada/scada-lib.tsx"],
+    rules: {
+      // useRemote é deliberadamente mount-only e todos os loaders atuais são endpoints rcApi
+      // estáticos. check:functional impede a introdução de novos useEffect neste arquivo sem
+      // revisão explícita dessa exceção.
+      "react-hooks/exhaustive-deps": "off",
     },
   },
   eslintPluginPrettier,

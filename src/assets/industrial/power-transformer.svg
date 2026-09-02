@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="65" height="65" fill="none" viewBox="0 0 65 65">
+  <g clip-path="url(#a)">
+    <rect width="65" height="65" fill="#59ABF9" fill-opacity=".2" rx="11.5"/>
+    <rect width="52" height="52" x="6.5" y="6.5" fill="#59ABF9" rx="5"/>
+    <rect width="25.76" height="28" x="19.453" y="22.2" fill="#fff" fill-opacity=".5" stroke="#fff" rx=".42"/>
+    <path fill="#fff" fill-opacity=".5" stroke="#fff" stroke-width=".45" d="M18.558 50.27c0-.108.088-.195.195-.195h27.16c.108 0 .195.087.195.195v2.31a.195.195 0 0 1-.194.195h-27.16a.195.195 0 0 1-.196-.195v-2.31Z"/>
+    <path fill="#fff" stroke="#fff" stroke-width=".56" d="M35.776 39.682H28.89a.14.14 0 0 1-.121-.21l3.442-5.946a.14.14 0 0 1 .242 0l3.443 5.946a.14.14 0 0 1-.121.21Z"/>
+    <path fill="#59ABF9" d="m32.64 36.364-1.18 1.056a.114.114 0 0 0 .066.197l.921.089-.552.769a.09.09 0 0 0 .01.115.088.088 0 0 0 .122.002l1.179-1.056a.114.114 0 0 0-.066-.197l-.92-.089.551-.769a.09.09 0 0 0-.009-.115.088.088 0 0 0-.123-.002Z"/>
+    <g fill="#fff" fill-opacity=".5" stroke="#fff" stroke-width=".367"><rect width="4.4" height="7.1" x="23.1" y="13" rx="2.2"/><rect width="4.4" height="7.1" x="30.1" y="13" rx="2.2"/><rect width="4.4" height="7.1" x="37.1" y="13" rx="2.2"/></g>
+    <path fill="#fff" fill-opacity=".5" stroke="#fff" stroke-width=".45" d="M18.558 21.01c0-.108.088-.195.195-.195h27.16c.108 0 .195.087.195.195v1.12a.195.195 0 0 1-.195.195h-27.16a.195.195 0 0 1-.195-.195v-1.12Z"/>
+  </g>
+  <defs><clipPath id="a"><path fill="#fff" d="M0 0h65v65H0z"/></clipPath></defs>
+</svg>

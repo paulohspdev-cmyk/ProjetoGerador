@@ -23,8 +23,8 @@ class UserUpdate(BaseModel):
 
 class GeneratorCreate(BaseModel):
     tag: str = Field(min_length=1, max_length=32)
-    name: str | None = None
-    customer: str | None = None
+    name: str | None = Field(default=None, max_length=160)
+    customer: str | None = Field(default=None, max_length=160)
     site: str = Field(min_length=1, max_length=160)
     controller: str = Field(min_length=1, max_length=160)
     controllerType: str | None = None
@@ -41,14 +41,32 @@ class GeneratorCreate(BaseModel):
             raise ValueError("Transporte inválido")
         if self.transport == "modbus_tcp_direct" and self.listenPort == 0:
             self.listenPort = 502
+        if self.transport in {"reverse_tcp", "rtu_over_tcp"} and self.listenPort == 0:
+            raise ValueError("Transporte TCP exige porta válida entre 1 e 65535")
+        if self.transport in {"modbus_tcp_direct", "rtu_over_tcp"} and not str(self.ip or "").strip():
+            raise ValueError("Transporte TCP direto exige host/IP")
+        if self.transport == "modbus_rtu_serial" and not str(self.ip or "").strip():
+            raise ValueError("Transporte serial exige dispositivo, por exemplo /dev/ttyUSB0")
         if not self.controllerType:
-            text = self.controller.strip().lower()
-            if text.startswith("comap"):
+            text = " ".join(self.controller.strip().lower().replace("-", " ").split())
+            comap_markers = (
+                "comap",
+                "inteligen",
+                "intelisys",
+                "inteli compact",
+                "inteli lite",
+                "inteli drive",
+                "inteli mains",
+                "inteli vision",
+            )
+            if any(marker in text for marker in comap_markers):
                 self.controllerType = "COMAP"
-            elif text.startswith("dse") or text.startswith("deep sea"):
+            elif text.startswith("dse") or text.startswith("deep sea") or "deep sea electronics" in text:
                 self.controllerType = "DSE"
             else:
                 self.controllerType = "GENERIC"
+        else:
+            self.controllerType = self.controllerType.strip().upper()
         return self
 
     def to_db(self):
@@ -80,7 +98,7 @@ class GeneratorUpdate(BaseModel):
     site: str | None = Field(default=None, min_length=1, max_length=160)
     transport: str | None = None
     ip: str | None = None
-    listenPort: int | None = Field(default=None, ge=0, le=65535)
+    listenPort: int | None = Field(default=None, ge=1, le=65535)
     modbusUnit: int | None = Field(default=None, ge=1, le=247)
     rapidDeviceNum: int | None = Field(default=None, ge=1)
     enabled: bool | None = None
@@ -89,6 +107,8 @@ class GeneratorUpdate(BaseModel):
     def validate_transport(self):
         if self.transport is not None and self.transport not in {"reverse_tcp", "modbus_tcp_direct", "rtu_over_tcp", "modbus_rtu_serial"}:
             raise ValueError("Transporte inválido")
+        if self.transport in {"modbus_tcp_direct", "rtu_over_tcp", "modbus_rtu_serial"} and self.ip is not None and not self.ip.strip():
+            raise ValueError("Host/dispositivo não pode ficar vazio para este transporte")
         return self
 
     def to_db(self):

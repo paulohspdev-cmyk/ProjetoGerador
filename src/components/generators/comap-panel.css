@@ -1,24 +1,25 @@
 .comap-panel {
-  --bg: #020810;
-  --panel: #031725;
-  --border: #031522;
-  --text: #f4f7fb;
-  --muted: #a8bac8;
-  --green: #43ef00;
-  --yellow: #ffc400;
-  --red: #ff2f25;
-  --inactive: #193246;
+  --comap-bg: var(--industrial-bg);
+  --comap-panel: var(--industrial-panel);
+  --comap-panel-strong: var(--industrial-panel-strong);
+  --comap-border: var(--industrial-border);
+  --comap-text: var(--industrial-foreground);
+  --comap-muted: var(--industrial-muted);
+  --comap-online: var(--online);
+  --comap-alert: var(--alert);
+  --comap-offline: var(--offline);
+
   position: relative;
   display: flex;
-  height: 100%;
   width: 100%;
+  height: 100%;
   min-width: 0;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid rgba(255, 122, 0, 0.28);
+  border: 1px solid color-mix(in oklab, var(--primary) 28%, transparent);
   border-radius: 12px;
-  background: linear-gradient(180deg, #031522, #020d16);
-  color: var(--text);
+  background: linear-gradient(180deg, var(--comap-panel), var(--comap-bg));
+  color: var(--comap-text);
   font-family: "Roboto Condensed", "Arial Narrow", Arial, sans-serif;
   font-stretch: condensed;
 }
@@ -31,18 +32,21 @@
 
 @keyframes comap-logo {
   0%,
-  to {
-    box-shadow: inset 0 0 0 2px #0e2d42a6, 0 0 4px #43ef0066;
+  100% {
+    box-shadow:
+      inset 0 0 0 2px color-mix(in oklab, var(--info) 30%, transparent),
+      var(--glow-online);
   }
   50% {
-    box-shadow: inset 0 0 0 2px #0e2d42a6, 0 0 10px #43ef00e6;
+    box-shadow:
+      inset 0 0 0 2px color-mix(in oklab, var(--info) 40%, transparent),
+      0 0 12px color-mix(in oklab, var(--online) 70%, transparent);
   }
 }
 
 .comap-panel * {
   box-sizing: border-box;
 }
-
 .comap-panel svg {
   shape-rendering: geometricPrecision;
 }
@@ -62,23 +66,27 @@
   height: 20px;
   flex: 0 0 auto;
   place-items: center;
-  border: 1.5px solid #3c6884;
+  border: 1.5px solid var(--info);
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #16384f, #071724 65%);
-  box-shadow: inset 0 0 0 2px #0e2d42a6;
+  background: radial-gradient(
+    circle at 35% 30%,
+    color-mix(in oklab, var(--info) 28%, var(--comap-panel)),
+    var(--comap-panel-strong) 65%
+  );
+  box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--info) 30%, transparent);
   font-size: 11px;
   font-weight: 900;
   line-height: 1;
 }
 
 .comap-logo.online {
-  border-color: var(--green);
+  border-color: var(--comap-online);
   animation: comap-logo 1.5s ease-in-out infinite;
 }
 
 .comap-logo.offline {
-  border-color: var(--red);
-  box-shadow: inset 0 0 0 2px #0e2d42a6, 0 0 10px #ff3333b3;
+  border-color: var(--comap-offline);
+  box-shadow: var(--glow-offline);
 }
 
 .comap-name {
@@ -98,14 +106,14 @@
   gap: 3px;
   padding: 1px 4px;
   border-radius: 4px;
-  background: #ff33331a;
+  background: color-mix(in oklab, var(--comap-offline) 12%, transparent);
 }
 
 .comap-alarm svg {
   width: 10px;
   height: 10px;
   fill: none;
-  stroke: var(--red);
+  stroke: var(--comap-offline);
   stroke-width: 2;
 }
 
@@ -113,8 +121,8 @@
   min-width: 12px;
   padding: 0 3px;
   border-radius: 8px;
-  background: var(--red);
-  color: #fff;
+  background: var(--comap-offline);
+  color: var(--offline-foreground);
   font-size: 8px;
   font-weight: 800;
   line-height: 1.3;
@@ -125,14 +133,14 @@
   min-width: 0;
   margin: 3px;
   overflow: hidden;
-  border: 1px solid var(--border);
+  border: 1px solid var(--comap-border);
   border-radius: 8px;
-  background: linear-gradient(180deg, #041928fa, #02111cfa);
+  background: linear-gradient(180deg, var(--comap-panel), var(--comap-panel-strong));
 }
 
 .comap-title {
   margin: 0;
-  color: #f8fbff;
+  color: var(--comap-text);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.05px;
@@ -140,10 +148,10 @@
 }
 
 .comap-mode {
+  color: var(--comap-online);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.5px;
-  color: var(--green);
 }
 
 .comap-flow {
@@ -178,26 +186,26 @@
 }
 
 .flow-load-card {
-  fill: #051a29;
-  stroke: #1f4f6a;
+  fill: var(--comap-panel);
+  stroke: var(--comap-border);
   stroke-width: 1.5;
 }
 
 .flow-load-card-title {
-  fill: #fff;
+  fill: var(--comap-text);
   font-size: 13px;
   font-weight: 700;
 }
 
 .flow-load-card-value {
-  fill: var(--green);
+  fill: var(--comap-online);
   font-size: 15px;
   font-weight: 800;
 }
 
 .flow-device-circle {
-  fill: #031420;
-  stroke: #436a80;
+  fill: var(--comap-panel-strong);
+  stroke: var(--info);
   stroke-width: 2;
   transition:
     stroke 0.3s ease,
@@ -205,8 +213,8 @@
 }
 
 .flow-device-circle.source-active {
-  stroke: #43ef00;
-  filter: drop-shadow(0 0 5px rgba(67, 239, 0, 0.6));
+  stroke: var(--comap-online);
+  filter: drop-shadow(0 0 5px color-mix(in oklab, var(--comap-online) 60%, transparent));
 }
 
 .flow-generator-circle {
@@ -215,7 +223,7 @@
 
 .flow-device-icon {
   fill: none;
-  stroke: #eef5f8;
+  stroke: var(--comap-text);
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -226,29 +234,29 @@
 }
 
 .flow-generator-letter {
-  fill: #fff;
+  fill: var(--comap-text);
   font-size: 34px;
   font-weight: 900;
 }
 
 .flow-bus-base {
   fill: none;
-  stroke: #24485d;
+  stroke: color-mix(in oklab, var(--comap-border) 78%, var(--comap-bg));
   stroke-width: 4;
   stroke-linecap: round;
 }
 
 .flow-bus-glow {
   fill: none;
-  stroke: #43ef00;
+  stroke: var(--comap-online);
   stroke-width: 3.6;
   stroke-linecap: round;
-  filter: drop-shadow(0 0 4px rgba(67, 239, 0, 0.75));
+  filter: drop-shadow(0 0 4px color-mix(in oklab, var(--comap-online) 72%, transparent));
 }
 
 .flow-bus-dash {
   fill: none;
-  stroke: #f4fff8;
+  stroke: var(--comap-text);
   stroke-width: 2.4;
   stroke-linecap: round;
   stroke-dasharray: 10 8;
@@ -260,25 +268,25 @@
 }
 
 .flow-switch-node {
-  fill: #18394a;
-  stroke: #43ef00;
+  fill: color-mix(in oklab, var(--comap-border) 70%, var(--comap-panel));
+  stroke: var(--comap-online);
   stroke-width: 1.8;
 }
 
 .flow-switch-blade {
-  stroke: #43ef00;
+  stroke: var(--comap-online);
   stroke-width: 4;
   stroke-linecap: round;
 }
 
 .flow-junction {
-  fill: #43ef00;
-  filter: drop-shadow(0 0 4px rgba(67, 239, 0, 0.65));
+  fill: var(--comap-online);
+  filter: drop-shadow(0 0 4px color-mix(in oklab, var(--comap-online) 65%, transparent));
 }
 
 .flow-breaker-name {
   margin-bottom: 2px;
-  color: var(--muted);
+  color: var(--comap-muted);
   font-size: 11px;
   font-weight: 700;
 }
@@ -287,46 +295,30 @@
   width: 26px;
   height: 26px;
   padding: 0;
-  border: 1px solid #234e68;
+  border: 1px solid var(--comap-border);
   border-radius: 4px;
-  background: #0b2638;
-  color: #eaf1f5;
+  background: var(--comap-panel);
+  color: var(--comap-text);
   font-size: 14px;
   font-weight: 800;
   cursor: pointer;
 }
 
 .flow-breaker-btn.active-on {
-  border-color: #58ff21;
-  background: linear-gradient(#3fe100, #208c00);
-  color: #fff;
-  box-shadow: 0 0 9px #43ef0047;
+  border-color: var(--comap-online);
+  background: var(--comap-online);
+  color: var(--online-foreground);
+  box-shadow: var(--glow-online);
 }
 
 .flow-breaker-btn.active-off {
-  border-color: #f55;
-  background: linear-gradient(#e83737, #a20f19);
-  color: #fff;
-  box-shadow: 0 0 8px #ff484838;
+  border-color: var(--comap-offline);
+  background: var(--comap-offline);
+  color: var(--offline-foreground);
+  box-shadow: var(--glow-offline);
 }
 
-.comap-start {
-  display: flex;
-  width: 45px;
-  height: 45px;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: none;
-  border-radius: 6px;
-  background: linear-gradient(#2fc900, #1a8c00);
-  color: #fff;
-  font-size: 10px;
-  font-weight: 700;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-  cursor: pointer;
-}
-
+.comap-start,
 .comap-stop {
   display: flex;
   width: 45px;
@@ -336,12 +328,25 @@
   padding: 0;
   border: none;
   border-radius: 6px;
-  background: linear-gradient(#e12c27, #a00f15);
-  color: #fff;
   font-size: 10px;
   font-weight: 700;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
   cursor: pointer;
+}
+
+.comap-start {
+  background: var(--comap-online);
+  color: var(--online-foreground);
+}
+
+.comap-stop {
+  background: var(--comap-offline);
+  color: var(--offline-foreground);
+}
+
+.comap-start:disabled,
+.comap-stop:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .comap-engine {
@@ -357,7 +362,7 @@
   width: 16px;
   height: 16px;
   fill: none;
-  stroke: #eef4f8;
+  stroke: var(--comap-text);
   stroke-width: 1.65;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -365,7 +370,7 @@
 
 .comap-engine .engine-label {
   overflow: hidden;
-  color: #eaf1f5;
+  color: var(--comap-text);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -373,9 +378,9 @@
 .comap-meter {
   height: 7px;
   overflow: hidden;
-  border: 1px solid #244b63;
+  border: 1px solid var(--comap-border);
   border-radius: 999px;
-  background: #071725;
+  background: var(--comap-bg);
 }
 
 .comap-meter > i {
@@ -386,87 +391,9 @@
 
 .comap-engine .engine-value {
   padding-left: 4px;
-  color: #eef4f8;
+  color: var(--comap-text);
   font-weight: 700;
   white-space: nowrap;
-}
-
-.comap-engine.maint .icon,
-.comap-engine.maint .engine-label,
-.comap-engine.maint .engine-value {
-  color: var(--yellow);
-  stroke: var(--yellow);
-}
-
-.rpm-svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-
-.comap-rpm-block {
-  overflow: visible;
-  flex: 0 0 auto;
-}
-
-.comap-rpm-wrap {
-  height: 136px;
-  overflow: visible;
-}
-
-.gauge-bg {
-  fill: none;
-  stroke: #1a3a4e;
-  stroke-linecap: butt;
-}
-
-.gauge-zone {
-  fill: none;
-  stroke-linecap: butt;
-}
-
-.gauge-green {
-  stroke: var(--green);
-}
-
-.gauge-yellow {
-  stroke: var(--yellow);
-}
-
-.gauge-red {
-  stroke: var(--red);
-}
-
-.rpm-scale-label {
-  fill: #fff;
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.rpm-needle-floating {
-  fill: #f8fafc;
-  stroke: #ffffff73;
-  stroke-width: 0.45;
-  stroke-linejoin: round;
-  filter: drop-shadow(0 1px 1.6px rgba(0, 0, 0, 0.95));
-}
-
-.needle {
-  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.rpm-unit {
-  fill: #ffffff;
-  font-size: 17px;
-  font-weight: 700;
-}
-
-.rpm-percent {
-  fill: var(--green);
-  font-size: 27px;
-  font-weight: 800;
-  letter-spacing: -0.25px;
 }
 
 .comap-table-head,
@@ -479,7 +406,7 @@
 
 .comap-table-head {
   margin: 2px 0 4px;
-  color: #fff;
+  color: var(--comap-text);
   font-size: 9px;
   font-weight: 700;
   text-align: right;
@@ -492,7 +419,7 @@
 
 .comap-table-row {
   min-height: 18px;
-  border-bottom: 1px solid #031522;
+  border-bottom: 1px solid var(--comap-border);
   font-size: 11px;
   font-weight: 700;
 }
@@ -503,37 +430,28 @@
 
 .comap-table-row .label {
   overflow: hidden;
-  color: #edf3f7;
+  color: var(--comap-text);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .comap-table-row .mains {
-  color: #dce7ee;
+  color: var(--comap-muted);
   text-align: right;
   white-space: nowrap;
 }
 
 .comap-table-row .gen {
-  color: var(--green);
+  color: var(--comap-online);
   text-align: right;
   white-space: nowrap;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .comap-panel,
-  .comap-logo.online,
-  .needle {
-    animation: none;
-    transition: none;
-  }
-}
-
 .comap-detail {
-  height: auto;
-  min-height: calc(100% - 4px);
   width: 100%;
   max-width: 880px;
+  height: auto;
+  min-height: calc(100% - 4px);
   margin: 0 auto;
   overflow: visible;
   border-radius: 14px;
@@ -563,10 +481,6 @@
   min-height: 520px;
 }
 
-.comap-detail .comap-rpm-wrap {
-  height: 280px;
-}
-
 .comap-detail .comap-title {
   font-size: 13px;
 }
@@ -579,27 +493,27 @@
 .mode-switch button {
   min-width: 52px;
   padding: 4px 10px;
-  border: 1px solid #17445f;
+  border: 1px solid var(--comap-border);
   border-radius: 6px;
-  background: #061824;
-  color: #8fa4b4;
+  background: var(--comap-panel-strong);
+  color: var(--comap-muted);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.04em;
 }
 
 .mode-switch button.active {
-  border-color: #43ef00;
-  background: #0b2a16;
-  color: #43ef00;
-  box-shadow: 0 0 10px #43ef0044;
+  border-color: var(--comap-online);
+  background: color-mix(in oklab, var(--comap-online) 22%, var(--comap-bg));
+  color: var(--comap-online);
+  box-shadow: var(--glow-online);
 }
 
 .mode-switch button.off.active {
-  border-color: #ff2f25;
-  background: #2a0b0b;
-  color: #ff2f25;
-  box-shadow: 0 0 10px #ff2f2544;
+  border-color: var(--comap-offline);
+  background: color-mix(in oklab, var(--comap-offline) 22%, var(--comap-bg));
+  color: var(--comap-offline);
+  box-shadow: var(--glow-offline);
 }
 
 .comap-kpi-grid {
@@ -609,23 +523,17 @@
   margin: 4px;
 }
 
-@media (max-width: 640px) {
-  .comap-kpi-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
 .comap-kpi {
   padding: 10px 8px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--comap-border);
   border-radius: 8px;
-  background: linear-gradient(180deg, #041928fa, #02111cfa);
+  background: linear-gradient(180deg, var(--comap-panel), var(--comap-panel-strong));
   text-align: center;
 }
 
 .comap-kpi span {
   display: block;
-  color: var(--muted);
+  color: var(--comap-muted);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -635,14 +543,14 @@
 .comap-kpi strong {
   display: block;
   margin-top: 4px;
-  color: var(--green);
+  color: var(--comap-online);
   font-size: 18px;
   font-weight: 800;
   letter-spacing: -0.03em;
 }
 
 .comap-kpi strong.dim {
-  color: #9fb0c0;
+  color: var(--comap-muted);
 }
 
 .fuel-tank {
@@ -655,39 +563,37 @@
 .fuel-tank-visual {
   height: 88px;
   overflow: hidden;
-  border: 1.5px solid #245a78;
+  border: 1.5px solid var(--info);
   border-radius: 8px;
-  background: #071725;
+  background: var(--comap-bg);
 }
 
 .fuel-tank-visual i {
   display: block;
   width: 100%;
   margin-top: auto;
-  background: linear-gradient(180deg, #1da5f2, #0d73af);
+  background: var(--info);
 }
 
 .detail-row {
   display: flex;
+  min-height: 28px;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  min-height: 28px;
-  border-bottom: 1px solid #031522;
+  border-bottom: 1px solid var(--comap-border);
   font-size: 13px;
 }
 
 .detail-row:last-child {
   border-bottom: 0;
 }
-
 .detail-row dt {
-  color: #a8bac8;
+  color: var(--comap-muted);
 }
-
 .detail-row dd {
   margin: 0;
-  color: #f4f7fb;
+  color: var(--comap-text);
   font-weight: 700;
 }
 
@@ -698,8 +604,8 @@
   gap: 10px;
   align-items: center;
   padding: 6px 10px;
-  border: 1px solid #8d1e25;
-  background: linear-gradient(90deg, #66141afa, #440a0ffa);
+  border: 1px solid color-mix(in oklab, var(--comap-offline) 60%, var(--comap-border));
+  background: color-mix(in oklab, var(--comap-offline) 18%, var(--comap-panel-strong));
   font-size: 12px;
 }
 
@@ -708,17 +614,31 @@
 }
 
 .alarm-item.warning {
-  border-color: #745d10;
-  background: linear-gradient(90deg, #4a3607fa, #2f2305fa);
+  border-color: color-mix(in oklab, var(--comap-alert) 60%, var(--comap-border));
+  background: color-mix(in oklab, var(--comap-alert) 18%, var(--comap-panel-strong));
 }
 
 .alarm-dot {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: var(--red);
+  background: var(--comap-offline);
 }
 
 .alarm-item.warning .alarm-dot {
-  background: var(--yellow);
+  background: var(--comap-alert);
+}
+
+@media (max-width: 640px) {
+  .comap-kpi-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .comap-logo.online,
+  .flow-bus-dash {
+    animation: none;
+    transition: none;
+  }
 }

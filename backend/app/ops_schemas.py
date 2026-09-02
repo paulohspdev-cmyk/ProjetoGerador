@@ -39,7 +39,7 @@ class WorkOrderCreate(BaseModel):
     site: str = Field(default="", max_length=160)
     type: str = Field(default="Preventiva", max_length=80)
     due: float = Field(default=0, ge=0)
-    tech: str = Field(default="Equipe campo", max_length=160)
+    tech: str = Field(default="", max_length=160)
     status: str = Field(default="Planejada", max_length=40)
     description: str = Field(default="", max_length=4000)
 

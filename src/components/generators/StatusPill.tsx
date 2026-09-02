@@ -32,5 +32,7 @@ export function StatusDot({ status }: { status: GenStatus }) {
         : status === "offline"
           ? "text-offline"
           : "text-idle";
-  return <span className={cn("led inline-block size-2", color)} style={{ background: "currentColor" }} />;
+  return (
+    <span className={cn("led inline-block size-2", color)} style={{ background: "currentColor" }} />
+  );
 }

@@ -1,6 +1,4 @@
-import asyncio
 import json
-import os
 import time
 from pathlib import Path
 
@@ -12,6 +10,7 @@ from . import db, ops_store, platform_store, transport_store
 from .auth import current_user, hash_password, require_admin, require_operate, require_view
 from .automation_engine import approve_rule, set_rule_enabled
 from .backup_manager import safe_archive_path
+from .completion_routes import router as completion_router
 from .config import LOGIN_LOCK_SECONDS, LOGIN_MAX_FAILURES
 from .controller_library import channel_catalog, library_summary
 from .control import send_homologated_command
@@ -31,7 +30,6 @@ from .security_service import (
 )
 
 router = APIRouter()
-PROVISION_SOCKET = os.environ.get("RC_PROVISION_SOCKET", "/run/rc-geradores/provision.sock")
 
 
 def actor(user: dict):
@@ -121,7 +119,6 @@ class RuleEnable(BaseModel):
     enabled: bool
 
 
-# ---------------------- biblioteca e diagnóstico ---------------------------
 @router.get("/api/library")
 def library(user: dict = Depends(require_view)):
     return library_summary()
@@ -142,7 +139,6 @@ def version(user: dict = Depends(require_view)):
     return version_info()
 
 
-# ------------------------- inventário de campo -----------------------------
 @router.get("/api/field-devices")
 def field_devices(kind: str | None = None, user: dict = Depends(require_view)):
     return platform_store.list_field_devices(kind)
@@ -158,7 +154,11 @@ def field_device_create(payload: FieldDeviceCreate, user: dict = Depends(require
 
 @router.patch("/api/field-devices/{item_id}")
 def field_device_update(item_id: str, payload: FieldDeviceUpdate, user: dict = Depends(require_admin)):
-    updated = platform_store.update_field_device(item_id, payload.model_dump(exclude_unset=True), actor(user))
+    updated = platform_store.update_field_device(
+        item_id,
+        payload.model_dump(exclude_unset=True),
+        actor(user),
+    )
     if not updated:
         raise HTTPException(status_code=404, detail="Equipamento não encontrado")
     return updated
@@ -170,7 +170,6 @@ def field_device_delete(item_id: str, user: dict = Depends(require_admin)):
         raise HTTPException(status_code=404, detail="Equipamento não encontrado")
 
 
-# ------------------------- transporte/provisionamento ----------------------
 @router.get("/api/generators/{generator_id}/transport-config")
 def transport_config_get(generator_id: str, user: dict = Depends(require_view)):
     if not db.get_generator(generator_id):
@@ -179,44 +178,17 @@ def transport_config_get(generator_id: str, user: dict = Depends(require_view)):
 
 
 @router.put("/api/generators/{generator_id}/transport-config")
-def transport_config_set(generator_id: str, payload: TransportConfigPayload, user: dict = Depends(require_admin)):
+def transport_config_set(
+    generator_id: str,
+    payload: TransportConfigPayload,
+    user: dict = Depends(require_admin),
+):
     try:
         return transport_store.set_transport_config(generator_id, payload.config, actor(user))
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
-async def _provision(generator_id: str):
-    try:
-        reader, writer = await asyncio.open_unix_connection(PROVISION_SOCKET)
-    except OSError as exc:
-        raise HTTPException(status_code=503, detail="Serviço de provisionamento não está disponível") from exc
-    writer.write((json.dumps({"generator_id": generator_id, "confirm": "PROVISION_CONFIRMED"}) + "\n").encode())
-    await writer.drain()
-    try:
-        raw = await asyncio.wait_for(reader.readline(), timeout=70)
-    finally:
-        writer.close()
-        await writer.wait_closed()
-    try:
-        result = json.loads(raw.decode())
-    except Exception as exc:
-        raise HTTPException(status_code=502, detail="Resposta inválida do provisionador") from exc
-    if not result.get("ok"):
-        raise HTTPException(status_code=409, detail=result.get("error") or "Provisionamento recusado")
-    return result
-
-
-@router.post("/api/generators/{generator_id}/provision")
-async def generator_provision(generator_id: str, user: dict = Depends(require_admin)):
-    if not db.get_generator(generator_id):
-        raise HTTPException(status_code=404, detail="Gerador não encontrado")
-    result = await _provision(generator_id)
-    db.add_audit(actor(user), "provision", "generator", generator_id, "Rapid SCADA")
-    return result
-
-
-# ------------------------- notificações e scheduler ------------------------
 @router.get("/api/notifications")
 def notification_list(limit: int = 200, user: dict = Depends(require_view)):
     return platform_store.list_notifications(limit)
@@ -231,7 +203,14 @@ def delivery_list(limit: int = 200, user: dict = Depends(require_admin)):
 def notification_test(payload: NotificationTest, user: dict = Depends(require_admin)):
     if payload.channel not in {"panel", "email", "whatsapp", "webhook"}:
         raise HTTPException(status_code=422, detail="Canal inválido")
-    item_id = platform_store.enqueue_notification("system.test", payload.channel, destination=payload.destination, subject=payload.subject, body=payload.body, payload={"actor": actor(user)})
+    item_id = platform_store.enqueue_notification(
+        "system.test",
+        payload.channel,
+        destination=payload.destination,
+        subject=payload.subject,
+        body=payload.body,
+        payload={"actor": actor(user)},
+    )
     return {"id": item_id, "status": "queued"}
 
 
@@ -248,7 +227,10 @@ def scheduler_list(user: dict = Depends(require_view)):
 @router.post("/api/scheduler", status_code=201)
 def scheduler_upsert(payload: SchedulerPayload, user: dict = Depends(require_admin)):
     if payload.kind not in {"backup", "report", "notification"}:
-        raise HTTPException(status_code=422, detail="Scheduler aceita somente backup, report e notification. Comandos industriais são proibidos.")
+        raise HTTPException(
+            status_code=422,
+            detail="Scheduler aceita somente backup, report e notification. Comandos industriais são proibidos.",
+        )
     return platform_store.upsert_scheduler_job(payload.model_dump(), actor(user))
 
 
@@ -261,7 +243,6 @@ def scheduler_delete(item_id: str, user: dict = Depends(require_admin)):
     db.add_audit(actor(user), "delete", "scheduler_job", item_id, "")
 
 
-# ------------------------- automação segura --------------------------------
 @router.post("/api/automation/rules/{rule_id}/approve")
 def automation_approve(rule_id: str, user: dict = Depends(require_admin)):
     try:
@@ -284,7 +265,6 @@ def automation_enable(rule_id: str, payload: RuleEnable, user: dict = Depends(re
     return item
 
 
-# ------------------------- segurança da conta ------------------------------
 @router.post("/api/auth/password/change", status_code=204)
 def password_change(payload: PasswordChange, user: dict = Depends(current_user)):
     try:
@@ -338,7 +318,6 @@ def sessions_revoke(user: dict = Depends(current_user)):
     revoke_all_sessions(user["id"])
 
 
-# ------------------------- API externa -------------------------------------
 def external_token(authorization: str | None = Header(default=None)):
     if not authorization or not authorization.lower().startswith("bearer "):
         raise HTTPException(status_code=401, detail="Bearer token obrigatório")
@@ -367,7 +346,12 @@ def token_create(payload: ApiTokenCreate, user: dict = Depends(require_admin)):
     requested = sorted(set(payload.scopes))
     if not requested or any(s not in allowed for s in requested):
         raise HTTPException(status_code=422, detail="Escopos permitidos: ops.read, ops.command")
-    raw, item = platform_store.create_api_token(payload.name, requested, payload.rateLimit, payload.expiresAt)
+    raw, item = platform_store.create_api_token(
+        payload.name,
+        requested,
+        payload.rateLimit,
+        payload.expiresAt,
+    )
     db.add_audit(actor(user), "create", "api_token", item["id"], " ".join(requested))
     return {**item, "token": raw, "warning": "O token é exibido somente nesta resposta."}
 
@@ -388,14 +372,26 @@ def external_generators(token: dict = Depends(external_token)):
 @router.get("/api/v1/generators/{generator_id}")
 def external_generator(generator_id: str, token: dict = Depends(external_token)):
     scope(token, "ops.read")
-    item = next((g for g in overlay_generators(db.list_generators()) if g["id"] == generator_id or g["tag"].lower() == generator_id.lower()), None)
+    item = next(
+        (
+            g
+            for g in overlay_generators(db.list_generators())
+            if g["id"] == generator_id or g["tag"].lower() == generator_id.lower()
+        ),
+        None,
+    )
     if not item:
         raise HTTPException(status_code=404, detail="Gerador não encontrado")
     return item
 
 
 @router.post("/api/v1/generators/{generator_id}/commands/{action}")
-async def external_command(generator_id: str, action: str, x_rc_confirm: str | None = Header(default=None), token: dict = Depends(external_token)):
+async def external_command(
+    generator_id: str,
+    action: str,
+    x_rc_confirm: str | None = Header(default=None),
+    token: dict = Depends(external_token),
+):
     scope(token, "ops.command")
     action = action.lower()
     if action not in {"start", "stop"}:
@@ -409,13 +405,18 @@ async def external_command(generator_id: str, action: str, x_rc_confirm: str | N
         result = await send_homologated_command(generator, action)
     except Exception as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
-    db.add_audit(f"api-token:{token['id']}", f"command_{action}", "generator", generator["id"], f"accepted={result.get('accepted')}")
+    db.add_audit(
+        f"api-token:{token['id']}",
+        f"command_{action}",
+        "generator",
+        generator["id"],
+        f"accepted={result.get('accepted')}",
+    )
     if not result.get("accepted"):
         raise HTTPException(status_code=409, detail=result.get("reason") or "Comando recusado")
     return result
 
 
-# ------------------------- downloads reais ---------------------------------
 @router.get("/api/backups/{backup_id}/download")
 def backup_download(backup_id: str, user: dict = Depends(require_admin)):
     item = next((x for x in ops_store.list_backups() if x["id"] == backup_id), None)
@@ -442,3 +443,6 @@ def report_artifact(report_id: str, user: dict = Depends(require_view)):
         path = Path(artifact["path"])
         media_type = artifact["media_type"]
     return FileResponse(path, media_type=media_type, filename=path.name)
+
+
+router.include_router(completion_router)

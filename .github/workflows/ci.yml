@@ -10,7 +10,7 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Higiene do repositório
         run: |
@@ -23,7 +23,7 @@ jobs:
           fi
 
       - name: Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: npm
@@ -33,10 +33,19 @@ jobs:
           NODE_ENV: production
         run: npm ci --include=dev
 
+      - name: Arquitetura frontend
+        run: npm run check:architecture
+
+      - name: Superfícies funcionais frontend
+        run: npm run check:functional
+
+      - name: Frontend ESLint
+        run: npm run lint
+
       - name: Frontend TypeScript
         env:
           NODE_ENV: production
-        run: npx tsc --noEmit
+        run: npm run typecheck
 
       - name: Frontend build para VM
         env:
@@ -71,30 +80,35 @@ jobs:
             exit 1
           fi
           test ! -f src/components/generators/detail-widgets.tsx
-          grep -q 'availableMetrics' src/components/generators/PowerFlowCard.tsx
-          grep -q 'availableMetrics' src/components/generators/GeneratorDetailScreen.tsx
-          grep -q -E 'BLOQUEADO|não homologado' src/components/generators/GeneratorDetailScreen.tsx
-          grep -q 'className="gen-top"' src/components/generators/GeneratorDetailScreen.tsx
-          grep -q 'className="comap-panel gen-flow"' src/components/generators/GeneratorDetailScreen.tsx
-          grep -q 'const genPre = runningKnown && running && genHzKnown && genHz > 1' src/components/generators/PowerFlowCard.tsx
-          grep -q 'const genPost = genPre && gcbKnown && gcb' src/components/generators/PowerFlowCard.tsx
-          grep -q 'Math.abs(loadKw) > 0.1' src/components/generators/PowerFlowCard.tsx
+          test -f src/components/generators/detail/generator-detail-model.ts
+          test -f src/components/generators/detail/useGeneratorDetailData.ts
+          test -f src/components/generators/power-flow/PowerFlowDiagram.tsx
+          grep -q 'metricNumber' src/components/generators/detail/generator-detail-model.ts
+          grep -q 'const genPre' src/components/generators/power-flow/PowerFlowDiagram.tsx
+          grep -q 'const genPost' src/components/generators/power-flow/PowerFlowDiagram.tsx
           grep -q 'industrialApi.lifecycle.retire' src/components/generators/DeleteGeneratorButton.tsx
           grep -q 'IndustrialAlarmsScreen' src/components/scada/registry.ts
           grep -q 'ProcessHistoryScreen' src/components/scada/registry.ts
-          grep -q 'MaintenanceV3Screen' src/components/scada/registry.ts
+          grep -q 'MaintenanceHubScreen' src/components/scada/registry.ts
+          grep -q 'MaintenanceV3Screen' src/components/scada/MaintenanceHubScreen.tsx
           grep -q 'EscalationV3Screen' src/components/scada/registry.ts
-          if grep -q 'rapidDeviceNum === 200' src/components/generators/PowerFlowCard.tsx; then
+          grep -q 'refreshInFlight' src/components/generators/GeneratorsProvider.tsx
+          grep -q 'document.hidden' src/components/generators/GeneratorsProvider.tsx
+          if grep -R -n -E 'Generator Freq\.|autoKwScale|meterColor|batt < 12|n < 12\.2|n < 11\.5' src/components/generators --include='*.ts' --include='*.tsx'; then
+            echo 'ERRO: voltou lógica visual/telemetria não homologada no frontend.' >&2
+            exit 1
+          fi
+          if grep -R -n 'rapidDeviceNum === 200' src/components/generators --include='*.ts' --include='*.tsx'; then
             echo 'ERRO: frontend voltou a restringir o IG200 ao Rapid Device 200.' >&2
             exit 1
           fi
-          if grep -n -E 'gridHz[[:space:]]*=.*60|Math\.max\(gen\.mains.*> 50' src/components/generators/PowerFlowCard.tsx; then
+          if grep -R -n -E 'gridHz[[:space:]]*=.*60|Math\.max\(gen\.mains.*> 50' src/components/generators --include='*.ts' --include='*.tsx'; then
             echo 'ERRO: power-flow voltou a inferir rede/Hz sem canal homologado.' >&2
             exit 1
           fi
 
       - name: Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
@@ -119,6 +133,18 @@ jobs:
           PYTHONPATH: .
         run: python tests/smoke.py
 
+      - name: Backend sessão e inventário pós-login
+        working-directory: backend
+        env:
+          PYTHONPATH: .
+        run: python tests/session_inventory.py
+
+      - name: Backend overlay Rapid resiliente
+        working-directory: backend
+        env:
+          PYTHONPATH: .
+        run: python tests/rapid_overlay_resilience.py
+
       - name: Backend domínio v3 e catálogo
         working-directory: backend
         env:
@@ -137,14 +163,31 @@ jobs:
           PYTHONPATH: .
         run: python tests/control_multi_device.py
 
+      - name: Backend hardening de produção
+        working-directory: backend
+        env:
+          PYTHONPATH: .
+        run: python tests/production_hardening.py
+
+      - name: Backend timeout de provisionamento privilegiado
+        working-directory: backend
+        env:
+          PYTHONPATH: .
+        run: python tests/provision_timeout.py
+
       - name: Instaladores Bash
         run: |
           set -euo pipefail
           bash -n ops/install.sh
           bash -n ops/status.sh
           bash -n ops/vm-smoke.sh
+          bash -n ops/preflight_vm.sh
           bash -n ops/deploy_release.sh
+          bash -n ops/deploy_release_v2.sh
+          bash -n ops/configure_https.sh
           bash -n rapid/provisioning/provision_ig200.sh
+          bash ops/preflight_vm.sh --help >/tmp/preflight-help.txt
+          grep -q 'sha-esperado' /tmp/preflight-help.txt
           bash ops/install.sh --help >/tmp/install-help.txt
           grep -q -- '--skip-initial-generator' /tmp/install-help.txt
           grep -q -- '--ig200-port' /tmp/install-help.txt
@@ -165,11 +208,18 @@ jobs:
           grep -q 'app.bridge_runtime' ops/systemd/rc-geradores-bridge.service
           grep -q 'app.worker' ops/systemd/rc-geradores-worker.service
           grep -q 'app.provision_service' ops/systemd/rc-geradores-provision.service
+          grep -q '^RuntimeDirectoryPreserve=yes$' ops/systemd/rc-geradores-bridge.service
+          grep -q '^RuntimeDirectoryPreserve=yes$' ops/systemd/rc-geradores-provision.service
           grep -q 'rc-geradores-worker.service' ops/install.sh
           grep -q 'rc-geradores-provision.service' ops/install.sh
           grep -q '^RC_PROVISION_SOCKET=' ops/rc-geradores.env.example
+          grep -q '^RC_PROVISION_OPERATION_TIMEOUT=' ops/rc-geradores.env.example
+          grep -q '^RC_MODBUS_DEVICE_TIMEOUT_MS=' ops/rc-geradores.env.example
+          grep -q '^RC_RAPID_READER_TIMEOUT=' ops/rc-geradores.env.example
           grep -q '^RC_LOGIN_MAX_FAILURES=' ops/rc-geradores.env.example
           grep -q '^RC_BACKUP_RETENTION=' ops/rc-geradores.env.example
+          grep -q '^RC_RAPID_REQUIRE_ALLOWLIST=' ops/rc-geradores.env.example
+          grep -q '^RC_BACKUP_OFFSITE_REQUIRED=' ops/rc-geradores.env.example
           if grep -q -E 'rapid_device.*!= *200|device.*!= *200' ops/bootstrap_ig200.py; then
             echo 'ERRO: bootstrap voltou a tratar Device 200 como autorização de controle.' >&2
             exit 1
@@ -185,9 +235,14 @@ jobs:
           grep -q 'preservando identidade atual' ops/bootstrap_ig200.py
           grep -q 'historyPreserved' rapid/provisioning/deprovision_generator.py
           grep -q 'DEPROVISION_CONFIRMED' backend/app/provision_service.py
+          grep -q 'start_new_session=True' backend/app/provision_service.py
+          grep -q '_terminate_process' backend/app/provision_service.py
           grep -q 'RETIRAR' backend/app/domain_routes.py
-          grep -q 'Git HEAD: OK' ops/deploy_release.sh
-          grep -q 'deployed-commit' ops/deploy_release.sh
+          grep -q 'deploy_release_v2.sh' ops/deploy_release.sh
+          grep -q 'Git HEAD: OK' ops/deploy_release_v2.sh
+          grep -q 'deployed-commit' ops/deploy_release_v2.sh
+          grep -q 'RC_HTTPS_SKIP_APP_SMOKE=1' ops/deploy_release_v2.sh
+          grep -q "trap 'rc=\$?; rollback; exit" ops/deploy_release_v2.sh
 
       - name: Política industrial segura
         run: |
@@ -196,6 +251,8 @@ jobs:
           grep -q 'bridge.resolve_ig200 = resolve_ig200_bound_device' backend/app/bridge_runtime.py
           grep -q 'int(item.get("rapid_device_num") or 0) == device_num' backend/app/bridge_runtime.py
           grep -q '"device": rapid_device' backend/app/control.py
+          grep -q '_validated_binding' backend/app/control.py
+          grep -q 'pack_is_production_ready' backend/app/control.py
           if grep -q 'rapid_device != 200' backend/app/control.py; then
             echo 'ERRO: control.py voltou a restringir o controle ao Device 200.' >&2
             exit 1

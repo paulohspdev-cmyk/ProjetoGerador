@@ -2,6 +2,8 @@ import os
 import tempfile
 from pathlib import Path
 
+from fastapi import HTTPException
+
 # Isola completamente o banco do teste antes de importar app.config/db.
 tmp = tempfile.TemporaryDirectory(prefix="rc-domain-v3-")
 os.environ["RC_DATA_DIR"] = tmp.name
@@ -10,10 +12,17 @@ os.environ["RC_ENABLE_IG200_CONTROL"] = "0"
 
 from app import db, domain_bundle, domain_store  # noqa: E402
 from app.controller_library import catalog_for_model, library_summary, pack_for_model  # noqa: E402
+from app.domain_routes import (  # noqa: E402
+    asset_delete,
+    asset_link_delete,
+    connection_delete,
+    controller_delete,
+)
 
 
 db.init_db()
 domain_store.init_domain_db()
+user = {"email": "test@local", "role": "administrador"}
 
 library = library_summary()
 catalog = library["catalog"]
@@ -27,7 +36,16 @@ pack = pack_for_model("IG200")
 assert pack and pack["schema"] == 3
 assert pack["capabilities"]["start"] is True
 assert pack["capabilities"]["stop"] is True
-for forbidden in ("auto", "manual", "test", "mcb_open", "mcb_close", "gcb_open", "gcb_close", "paralleling"):
+for forbidden in (
+    "auto",
+    "manual",
+    "test",
+    "mcb_open",
+    "mcb_close",
+    "gcb_open",
+    "gcb_close",
+    "paralleling",
+):
     assert pack["capabilities"][forbidden] is False, forbidden
 
 # O catálogo não transforma modelos ainda não homologados em produção.
@@ -57,10 +75,25 @@ assert domain_store.sync_legacy_generators() == 1
 snapshot = domain_store.topology_snapshot()
 assert snapshot["counts"] == {"assets": 1, "controllers": 1, "connections": 1, "links": 0}
 legacy_asset = snapshot["assets"][0]
+legacy_controller = legacy_asset["controllers"][0]
+legacy_connection = legacy_controller["connections"][0]
 assert legacy_asset["legacy_generator_id"] == generator["id"]
 assert legacy_asset["kind"] == "genset"
-assert legacy_asset["controllers"][0]["pack_lifecycle"] == "production"
-assert legacy_asset["controllers"][0]["connections"][0]["modbus_unit"] == 2
+assert legacy_controller["pack_lifecycle"] == "production"
+assert legacy_connection["modbus_unit"] == 2
+
+# Espelhos legacy não podem ser apagados pelo domínio v3.
+for remover, item_id in (
+    (asset_delete, legacy_asset["id"]),
+    (controller_delete, legacy_controller["id"]),
+    (connection_delete, legacy_connection["id"]),
+):
+    try:
+        remover(item_id, user=user)
+    except HTTPException as exc:
+        assert exc.status_code == 409
+    else:
+        raise AssertionError(f"espelho legacy foi removido por {remover.__name__}")
 
 # ATS pode existir como asset próprio sem virar "gerador" e sem obter poderes
 # industriais apenas por estar no catálogo.
@@ -68,7 +101,12 @@ bundle = domain_bundle.create_equipment_bundle(
     {
         "asset": {"tag": "ATS001", "name": "ATS principal", "kind": "ats", "site": "Site A"},
         "controller": {"model": "DSE335"},
-        "connection": {"transport": "modbus_tcp_direct", "host": "10.10.10.50", "listen_port": 502, "modbus_unit": 1},
+        "connection": {
+            "transport": "modbus_tcp_direct",
+            "host": "10.10.10.50",
+            "listen_port": 502,
+            "modbus_unit": 1,
+        },
     },
     actor="test",
 )
@@ -97,6 +135,48 @@ snapshot = domain_store.topology_snapshot()
 assert snapshot["counts"]["assets"] == 2
 assert snapshot["counts"]["controllers"] == 2
 assert snapshot["counts"]["connections"] == 2
+
+# Lifecycle de remoção v3: nada de cascade implícito nem remoção ativa.
+try:
+    asset_delete(bundle["asset"]["id"], user=user)
+except HTTPException as exc:
+    assert exc.status_code == 409
+    assert "controladora" in str(exc.detail).lower()
+else:
+    raise AssertionError("asset com controladora foi removido por cascade")
+
+try:
+    connection_delete(bundle["connection"]["id"], user=user)
+except HTTPException as exc:
+    assert exc.status_code == 409
+    assert "desative" in str(exc.detail).lower()
+else:
+    raise AssertionError("conexão ativa foi removida")
+
+domain_store.update_connection(bundle["connection"]["id"], {"enabled": False}, actor="test")
+assert connection_delete(bundle["connection"]["id"], user=user).status_code == 204
+assert controller_delete(bundle["controller"]["id"], user=user).status_code == 204
+
+# Vínculos de topologia também precisam de remoção explícita antes do asset.
+link = domain_store.create_asset_link(
+    bundle["asset"]["id"],
+    legacy_asset["id"],
+    "feeds",
+    {},
+    actor="test",
+)
+try:
+    asset_delete(bundle["asset"]["id"], user=user)
+except HTTPException as exc:
+    assert exc.status_code == 409
+    assert "topologia" in str(exc.detail).lower()
+else:
+    raise AssertionError("asset vinculado na topologia foi removido")
+assert asset_link_delete(link["id"], user=user).status_code == 204
+assert asset_delete(bundle["asset"]["id"], user=user).status_code == 204
+
+snapshot = domain_store.topology_snapshot()
+assert snapshot["counts"] == {"assets": 1, "controllers": 1, "connections": 1, "links": 0}
 
 print("RC Geradores domain v3 smoke: OK")
 tmp.cleanup()

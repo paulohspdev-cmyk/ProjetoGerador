@@ -1,10 +1,12 @@
+import json
 import os
 import shutil
 import subprocess
+import time
 from pathlib import Path
 
-from . import db
-from .config import CONTROL_SOCKET, PROJECT_ROOT, RAPID_BINDINGS_FILE, RAPID_COMM_CONFIG, RAPID_READER_DLL
+from . import db, traffic_store
+from .config import APP_VERSION, BRIDGE_STATUS_FILE, CONTROL_SOCKET, PROJECT_ROOT, RAPID_BINDINGS_FILE, RAPID_COMM_CONFIG, RAPID_READER_DLL
 from .rapid import overlay_generators
 
 SERVICES = [
@@ -55,6 +57,31 @@ def _listening_ports() -> set[int]:
     return ports
 
 
+def _bridge_runtime_status() -> dict:
+    try:
+        raw = json.loads(BRIDGE_STATUS_FILE.read_text(encoding="utf-8"))
+        updated = int(raw.get("updatedAt") or 0)
+        ports = raw.get("ports") if isinstance(raw.get("ports"), list) else []
+        age = max(0, int(time.time()) - updated) if updated else None
+        return {
+            "statusFile": str(BRIDGE_STATUS_FILE),
+            "statusAvailable": True,
+            "statusFresh": bool(age is not None and age <= 15),
+            "updatedAt": updated or None,
+            "ageSeconds": age,
+            "sessions": ports,
+        }
+    except Exception:
+        return {
+            "statusFile": str(BRIDGE_STATUS_FILE),
+            "statusAvailable": False,
+            "statusFresh": False,
+            "updatedAt": None,
+            "ageSeconds": None,
+            "sessions": [],
+        }
+
+
 def _memory():
     values = {}
     try:
@@ -79,7 +106,7 @@ def version_info():
     rc, rapid_pkg = _run(["dpkg-query", "-W", "-f=${Version}", "rapidscada"])
     return {
         "application": "RC Geradores",
-        "apiVersion": "2.0.0",
+        "apiVersion": APP_VERSION,
         "gitSha": git_sha if git_sha and "fatal:" not in git_sha else "N/D",
         "gitBranch": git_branch or "N/D",
         "rapidScada": rapid_pkg if rc == 0 else "detectar na VM",
@@ -118,6 +145,11 @@ def system_diagnostics():
             }
         )
 
+    runtime_bridge = _bridge_runtime_status()
+    traffic = traffic_store.record_bridge_traffic(
+        runtime_bridge.get("sessions") or [],
+        runtime_bridge.get("updatedAt") or int(time.time()),
+    )
     return {
         "ok": all(item["status"] == "OK" for item in services),
         "services": services,
@@ -130,6 +162,8 @@ def system_diagnostics():
             "controlSocket": CONTROL_SOCKET,
             "controlSocketExists": Path(CONTROL_SOCKET).exists(),
             "listeners": reverse_listeners,
+            **runtime_bridge,
+            "traffic": traffic,
         },
         "host": {
             "loadAverage": load_avg,

@@ -1,174 +1,111 @@
-import { ScrollText, ShieldCheck, UserCog } from "lucide-react";
-import { type FormEvent, useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { Check, Minus, ScrollText, ShieldCheck, Users } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
-import { ROLE_LABEL, ROLE_META, type UserRole } from "@/lib/auth";
+import { ROLE_LABEL, ROLE_PERMS, type Permission, type UserRole } from "@/lib/auth";
 import { rcApi, type AuditItem } from "@/lib/api";
-import { Panel, ScadaTable, ScreenBody, Stats, Tone } from "./kit";
+import { Panel, ScadaTable, ScreenBody, Stats } from "./kit";
 
 function NoAccess() {
   return (
     <ScreenBody>
-      <div className="rounded-md border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
+      <div className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
         Seu perfil não possui permissão para este módulo.
       </div>
     </ScreenBody>
   );
 }
 
-export function UsersScreen() {
-  const { users, can, createUser, updateUser, removeUser } = useAuth();
-  const allowed = can("manageUsers");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState<UserRole>("visualizacao");
-  const [message, setMessage] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const [busy, setBusy] = useState(false);
+const roles: UserRole[] = ["administrador", "cadastro", "visualizacao"];
+const permissionLabels: Array<{ id: Permission; label: string }> = [
+  { id: "view", label: "Visualizar" },
+  { id: "operate", label: "Operar START/STOP" },
+  { id: "create", label: "Cadastrar" },
+  { id: "edit", label: "Editar" },
+  { id: "remove", label: "Excluir" },
+  { id: "manageUsers", label: "Gerenciar usuários" },
+];
 
-  if (!allowed) return <NoAccess />;
-
-  const onCreate = async (e: FormEvent) => {
-    e.preventDefault();
-    setBusy(true);
-    const error = await createUser({ name, email, password, role });
-    setBusy(false);
-    if (error) {
-      setSuccess(false);
-      setMessage(error);
-      return;
-    }
-    setSuccess(true);
-    setMessage("Usuário cadastrado com sucesso.");
-    setName("");
-    setEmail("");
-    setPassword("");
-    setRole("visualizacao");
-  };
+export function RolesScreen() {
+  const { users } = useAuth();
 
   return (
     <ScreenBody>
+      <div>
+        <h2 className="text-lg font-extrabold">Perfis e permissões</h2>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          Veja exatamente o que cada perfil pode fazer no sistema.
+        </p>
+      </div>
+
       <Stats
         items={[
-          { icon: UserCog, label: "Usuários", value: users.length },
-          { icon: ShieldCheck, label: "Ativos", value: users.filter((u) => u.active).length, tone: "text-online" },
+          { icon: ShieldCheck, label: "Perfis", value: roles.length },
+          {
+            icon: Users,
+            label: "Usuários ativos",
+            value: users.filter((item) => item.active).length,
+          },
         ]}
       />
 
-      <Panel title="Cadastrar usuário">
-        <form onSubmit={onCreate} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-          <label className="text-[11px] font-semibold text-muted-foreground">
-            Nome
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              minLength={2}
-              className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-            />
-          </label>
-          <label className="text-[11px] font-semibold text-muted-foreground">
-            E-mail
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-            />
-          </label>
-          <label className="text-[11px] font-semibold text-muted-foreground">
-            Senha inicial
-            <input
-              type="password"
-              autoComplete="new-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-              className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-            />
-          </label>
-          <label className="text-[11px] font-semibold text-muted-foreground">
-            Perfil
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value as UserRole)}
-              className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-            >
-              <option value="visualizacao">Visualização</option>
-              <option value="cadastro">Cadastro</option>
-              <option value="administrador">Administrador</option>
-            </select>
-          </label>
-          <div className="flex items-end">
-            <button
-              type="submit"
-              disabled={busy}
-              className="h-9 w-full rounded-md bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
-            >
-              {busy ? "Salvando…" : "Cadastrar"}
-            </button>
-          </div>
-        </form>
-        {message && <p className={`mt-2 text-[12px] ${success ? "text-online" : "text-offline"}`}>{message}</p>}
-      </Panel>
-
-      <Panel title="Usuários">
-        <ScadaTable
-          rows={users}
-          columns={[
-            { label: "Nome", render: (row) => <b>{row.name}</b> },
-            { label: "E-mail", render: (row) => <span className="num">{row.email}</span> },
-            { label: "Perfil", render: (row) => ROLE_LABEL[row.role] },
-            {
-              label: "Status",
-              render: (row) => <Tone tone={row.active ? "ok" : "muted"}>{row.active ? "Ativo" : "Inativo"}</Tone>,
-            },
-            { label: "Último acesso", render: (row) => row.lastAccess ?? "—" },
-            {
-              label: "Ações",
-              render: (row) => (
-                <span className="flex flex-wrap gap-1">
-                  <button
-                    type="button"
-                    className="rounded border border-border px-2 py-0.5 text-[11px] hover:bg-secondary"
-                    onClick={() => void updateUser(row.id, { active: !row.active })}
-                  >
-                    {row.active ? "Desativar" : "Ativar"}
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded border border-offline/40 px-2 py-0.5 text-[11px] text-offline hover:bg-offline/10"
-                    onClick={() => {
-                      if (window.confirm(`Excluir o usuário ${row.email}?`)) void removeUser(row.id);
-                    }}
-                  >
-                    Excluir
-                  </button>
-                </span>
-              ),
-            },
-          ]}
-        />
-      </Panel>
-    </ScreenBody>
-  );
-}
-
-export function RolesScreen() {
-  return (
-    <ScreenBody>
-      <Stats items={[{ icon: ShieldCheck, label: "Perfis", value: ROLE_META.length }]} />
-      <Panel title="Perfis e permissões">
-        <ScadaTable
-          rows={ROLE_META}
-          columns={[
-            { label: "Perfil", render: (row) => <b>{row.name}</b> },
-            { label: "Permissões", render: (row) => row.perms },
-          ]}
-        />
+      <Panel
+        title="Permissões"
+        actions={
+          <Link
+            to="/p/$slug"
+            params={{ slug: "usuarios" }}
+            className="text-xs font-semibold text-primary hover:underline"
+          >
+            Gerenciar usuários
+          </Link>
+        }
+      >
+        <div className="scroll-slim overflow-x-auto">
+          <table className="w-full min-w-[760px] border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-border text-xs text-muted-foreground">
+                <th className="px-3 py-3 text-left">Perfil</th>
+                <th className="px-3 py-3 text-center">Pessoas</th>
+                {permissionLabels.map((permission) => (
+                  <th key={permission.id} className="px-3 py-3 text-center">
+                    {permission.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {roles.map((role) => (
+                <tr key={role} className="border-b border-border/50 last:border-0">
+                  <td className="px-3 py-3 font-bold">{ROLE_LABEL[role]}</td>
+                  <td className="num px-3 py-3 text-center">
+                    {users.filter((item) => item.active && item.role === role).length}
+                  </td>
+                  {permissionLabels.map((permission) => {
+                    const allowed = ROLE_PERMS[role][permission.id];
+                    return (
+                      <td key={permission.id} className="px-3 py-3 text-center">
+                        {allowed ? (
+                          <Check className="mx-auto size-4 text-online" aria-label="Permitido" />
+                        ) : (
+                          <Minus
+                            className="mx-auto size-4 text-muted-foreground"
+                            aria-label="Não permitido"
+                          />
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-3 text-xs text-muted-foreground">
+          O perfil é atribuído individualmente na tela Usuários. Funções industriais não liberadas
+          pelo produto continuam indisponíveis mesmo para administrador.
+        </p>
       </Panel>
     </ScreenBody>
   );
@@ -204,12 +141,19 @@ export function AuditScreen() {
   return (
     <ScreenBody>
       <Stats items={[{ icon: ScrollText, label: "Eventos de auditoria", value: rows.length }]} />
-      {error && <p className="rounded-md border border-offline/40 bg-offline/10 px-3 py-2 text-[12px] text-offline">{error}</p>}
-      <Panel title="Auditoria real do sistema">
+      {error && (
+        <p className="rounded-xl border border-offline/40 bg-offline/10 px-3 py-2 text-sm text-offline">
+          {error}
+        </p>
+      )}
+      <Panel title="Auditoria">
         <ScadaTable
           rows={rows}
           columns={[
-            { label: "Quando", render: (row) => <span className="num">{formatAuditDate(row.created_at)}</span> },
+            {
+              label: "Quando",
+              render: (row) => <span className="num">{formatAuditDate(row.created_at)}</span>,
+            },
             { label: "Usuário", render: (row) => row.actor },
             { label: "Ação", render: (row) => row.action },
             { label: "Tipo", render: (row) => row.entity_type },

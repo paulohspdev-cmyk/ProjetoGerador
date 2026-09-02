@@ -20,10 +20,11 @@ type SiteMapRow = OpsSite & {
   online: number;
   alerta: number;
   offline: number;
-  load: number;
+  load: number | null;
 };
 
 function siteColor(site: SiteMapRow) {
+  if (site.gens.length === 0) return "var(--muted-foreground)";
   if (site.offline > 0) return "var(--offline)";
   if (site.alerta > 0) return "var(--alert)";
   return "var(--online)";
@@ -37,13 +38,20 @@ function tileUrl(theme: "dark" | "light") {
 
 function popupHtml(site: SiteMapRow) {
   const gens = site.gens
-    .map(
-      (g) =>
-        `<li class="flex items-center justify-between gap-2">
+    .map((g) => {
+      const status =
+        g.status === "online"
+          ? { label: "ONLINE", css: "text-online" }
+          : g.status === "alerta"
+            ? { label: "ALERTA", css: "text-alert" }
+            : g.status === "offline"
+              ? { label: "OFFLINE", css: "text-offline" }
+              : { label: "N/D", css: "text-muted-foreground" };
+      return `<li class="flex items-center justify-between gap-2">
           <a href="/p/geradores/${esc(g.id)}" class="font-semibold text-primary hover:underline">${esc(g.tag)}</a>
-          <span class="${g.status === "online" ? "text-online" : g.status === "alerta" ? "text-alert" : "text-offline"}">${esc(g.status)}</span>
-        </li>`,
-    )
+          <span class="${status.css}">${status.label}</span>
+        </li>`;
+    })
     .join("");
 
   return `<div class="min-w-48 p-1">
@@ -54,7 +62,7 @@ function popupHtml(site: SiteMapRow) {
       <span class="text-alert">${site.alerta} alerta</span> ·
       <span class="text-offline">${site.offline} off</span>
     </p>
-    <p class="num mt-1 text-[11px] text-muted-foreground">${site.load.toFixed(0)} kW conhecidos</p>
+    <p class="num mt-1 text-[11px] text-muted-foreground">${site.load == null ? "Potência N/D" : `${site.load.toFixed(0)} kW medidos`}</p>
     <ul class="mt-2 space-y-0.5 text-[11px]">${gens}</ul>
   </div>`;
 }
@@ -97,16 +105,29 @@ export function OperationalMap() {
   const sites = useMemo<SiteMapRow[]>(
     () =>
       siteRows
-        .filter((site): site is OpsSite & { lat: number; lng: number } => site.lat != null && site.lng != null)
+        .filter(
+          (site): site is OpsSite & { lat: number; lng: number } =>
+            site.lat != null && site.lng != null,
+        )
         .map((site) => {
-          const gens = generators.filter((g) => g.site.trim().toLowerCase() === site.name.trim().toLowerCase());
+          const gens = generators.filter(
+            (g) => g.site.trim().toLowerCase() === site.name.trim().toLowerCase(),
+          );
+          const measuredLoad = gens.filter(
+            (g) =>
+              (g.availableMetrics ?? []).includes("power_kw") &&
+              g.load != null &&
+              Number.isFinite(Number(g.load)),
+          );
           return {
             ...site,
             gens,
             online: gens.filter((g) => g.status === "online").length,
             alerta: gens.filter((g) => g.status === "alerta").length,
             offline: gens.filter((g) => g.status === "offline").length,
-            load: gens.reduce((sum, g) => sum + Number(g.load || 0), 0),
+            load: measuredLoad.length
+              ? measuredLoad.reduce((sum, g) => sum + Number(g.load), 0)
+              : null,
           };
         }),
     [generators, siteRows],
@@ -146,7 +167,8 @@ export function OperationalMap() {
     if (!ready || !ctx) return;
     ctx.tiles?.remove();
     ctx.tiles = ctx.L.tileLayer(tileUrl(theme), {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
       subdomains: "abcd",
     }).addTo(ctx.map);
   }, [ready, theme]);
@@ -180,7 +202,11 @@ export function OperationalMap() {
 
   return (
     <div className="relative h-full min-h-0 w-full">
-      {!ready && <div className="absolute inset-0 z-[500] grid place-items-center bg-panel text-sm text-muted-foreground">Carregando mapa…</div>}
+      {!ready && (
+        <div className="absolute inset-0 z-[500] grid place-items-center bg-panel text-sm text-muted-foreground">
+          Carregando mapa…
+        </div>
+      )}
       {ready && sites.length === 0 && (
         <div className="pointer-events-none absolute left-1/2 top-4 z-[600] -translate-x-1/2 rounded-md border border-border bg-card/95 px-3 py-2 text-xs text-muted-foreground shadow">
           {error || "Nenhum site possui latitude/longitude cadastradas."}
