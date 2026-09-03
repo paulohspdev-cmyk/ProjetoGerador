@@ -47,7 +47,7 @@ O Rapid SCADA, FUXA, ThingsBoard, software do fabricante ou outro driver é quem
 
 # 2. Arquitetura runtime atual
 
-O schema ativo passou para **3** e usa `tunnels`.
+O schema ativo é **3** e usa `tunnels`.
 
 Cada Tunnel possui:
 
@@ -106,29 +106,34 @@ Se vários sistemas precisarem dos mesmos dados, o fan-out acontece depois do SC
 
 ---
 
-# 4. O que mudou no refactor bridge-first de 2026-09-03
+# 4. Refactor bridge-first realizado em 2026-09-03
 
-Código alterado até o commit de implementação `fee74de9ff0d4e29fd6cfa926bee144086eb6c5a`:
+Implementado:
 
-- criado `internal/bridge/tunnel.go`;
-- criado teste byte-for-byte duplex `internal/bridge/tunnel_test.go`;
+- `internal/bridge/tunnel.go` com cópia duplex byte-transparent;
+- teste byte-for-byte em `internal/bridge/tunnel_test.go`;
 - `Gateway.Run` deixou de produzir Records e passou a subir Túneis raw;
 - schema de configuração mudou de 2 para 3;
-- `field` e `consumer` são endpoints simétricos `listen/connect`;
-- `TCP_NODELAY`, keepalive, reconnect e allowlist CIDR entram no Tunnel;
-- sessões/admin/métricas agora representam **pares de bridge**, não telemetria;
+- `field` e `consumer` viraram endpoints simétricos `listen/connect`;
+- `TCP_NODELAY`, keepalive, reconnect e allowlist CIDR fazem parte do Tunnel;
+- sessões/admin/métricas representam pares de bridge, não telemetria;
 - removido runtime de spool;
 - removido sink HTTP de Records normalizados;
 - removido inventário/registry de identidade de dispositivos do core;
 - removido `configs/identity.example.json`;
 - removida permissão systemd de escrita em `/var/lib/rc-gateway-umbrella`;
-- README, arquitetura, plugin contract e matriz de produção foram realinhados.
+- README, arquitetura, plugin contract e matriz de produção realinhados.
+
+Correção posterior no commit `0650d31ba9ec882c58c3870e1bf6ff661d6a6e1f`:
+
+- `io.ErrClosedPipe` passou a ser tratado como encerramento normal do par duplex, assim como EOF/net.ErrClosed/context cancellation;
+- motivo: o primeiro ciclo do CI do novo Tunnel passou em `gofmt` e `go vet`, mas o teste duplex falhou ao fechar `net.Pipe` porque a segunda direção retornou `io: read/write on closed pipe` após os bytes já terem sido preservados corretamente.
 
 ## Segurança
 
 `commandPlaneEnabled=true` continua rejeitado.
 
-Allowlist CIDR continua disponível para endpoints `listen`. TLS/mTLS deverá voltar como **tipo/camada de endpoint raw**, não como motor de telemetria.
+Allowlist CIDR continua disponível para endpoints `listen`. TLS/mTLS deverá existir como **tipo/camada de endpoint raw**, não como motor de telemetria.
 
 ---
 
@@ -183,11 +188,18 @@ Detalhes: [`THINGSBOARD_REFERENCE.md`](./THINGSBOARD_REFERENCE.md).
 
 # 7. Estado de validação deste checkpoint
 
-Último HEAD antes deste handoff: `fee74de9ff0d4e29fd6cfa926bee144086eb6c5a`.
+Primeiro CI do runtime bridge-first, no HEAD `c46d8ab20d658ab1f68091c31bc37793c8904626`:
 
-As mudanças de runtime bridge-first foram gravadas, porém **o CI do novo conjunto ainda deve ser consultado depois deste commit de handoff antes de afirmar que está verde**.
+- Canonical project state: `success`;
+- `gofmt`: `success`;
+- `go vet`: `success`;
+- adapters experimentais: testes/build `success`;
+- unit tests do core: `failure` exclusivamente em `TestCopyDuplexPreservesBytesBothDirections` por `io.ErrClosedPipe` durante encerramento do `net.Pipe`;
+- race/build do core foram pulados por consequência da falha unitária.
 
-O último checkpoint anterior à refatoração bridge-first estava verde em Gateway Umbrella, CI geral e Quality/Security, mas isso não substitui a validação do novo Tunnel.
+A correção está no commit `0650d31ba9ec882c58c3870e1bf6ff661d6a6e1f`.
+
+**O CI do HEAD após esta atualização do handoff deve ser consultado antes de afirmar que o checkpoint está totalmente verde.**
 
 ---
 
@@ -195,16 +207,15 @@ O último checkpoint anterior à refatoração bridge-first estava verde em Gate
 
 Ordem:
 
-1. zerar `gofmt`, `go vet`, unit tests, race e build do novo core;
-2. corrigir qualquer regressão encontrada pelo CI;
-3. adicionar teste de integração `listen ↔ listen` real em loopback;
-4. adicionar teste `connect ↔ listen`;
-5. validar PUSR real ↔ Gateway ↔ Rapid em uma porta de laboratório sem tocar o bridge legado;
-6. implementar TLS/mTLS como endpoint raw;
-7. implementar Serial RS232/422/485 como endpoint raw;
-8. implementar UDP bridge com política explícita de sessão;
-9. refatorar/remover adapters experimentais antigos;
-10. HIL, impairment de rede e soak antes de qualquer produção.
+1. confirmar `gofmt`, `go vet`, unit tests, race e build verdes após `0650d31...`;
+2. adicionar teste de integração `listen ↔ listen` real em loopback;
+3. adicionar teste `connect ↔ listen`;
+4. validar PUSR real ↔ Gateway ↔ Rapid em uma porta de laboratório sem tocar o bridge legado;
+5. implementar TLS/mTLS como endpoint raw;
+6. implementar Serial RS232/422/485 como endpoint raw;
+7. implementar UDP bridge com política explícita de sessão;
+8. refatorar/remover adapters experimentais antigos;
+9. HIL, impairment de rede e soak antes de qualquer produção.
 
 ---
 
