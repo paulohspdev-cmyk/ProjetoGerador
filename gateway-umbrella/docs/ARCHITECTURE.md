@@ -2,7 +2,7 @@
 
 > Handoff canônico: [`PROJECT_STATE.md`](./PROJECT_STATE.md).
 
-## 1. Missão
+## Missão
 
 O RC Universal Gateway é uma **ponte universal de conectividade**. Ele conecta dois endpoints e transporta bytes nos dois sentidos sem precisar entender a semântica do equipamento.
 
@@ -13,154 +13,103 @@ NO DEVICE MEMORY DATABASE
 NO TELEMETRY HISTORIAN
 ```
 
-Geradores são apenas um caso de uso.
-
-## 2. Unidade fundamental: Tunnel
-
-O core é construído em torno de um `Tunnel`:
+## Unidade fundamental: Tunnel
 
 ```text
 FIELD ENDPOINT  <======== raw duplex bytes ========>  CONSUMER ENDPOINT
 ```
 
-Os dois lados são simétricos e podem ser:
+Os dois lados são simétricos e podem ser `listen` ou `connect`. No milestone atual, o core suporta TCP.
+
+### PUSR TCP Client + Rapid
 
 ```text
-listen  -> aguarda peer
-connect -> inicia conexão
-```
-
-No primeiro milestone de bridge real, o network suportado pelo core é TCP.
-
-### Exemplo A — modem TCP Client + Rapid SCADA
-
-```text
-Controladora -> PUSR -> Internet -> MikroTik -> Gateway
-                                            field listen :15003
+Controladora -> PUSR -> Internet -> MikroTik -> Gateway field listen :15003
                                                      ||
                                                 raw tunnel
                                                      ||
-                                       consumer listen :25003
-                                                     <- Rapid SCADA
+                                       consumer listen :25003 <- Rapid
 ```
 
-### Exemplo B — equipamento direto por VPN/IP
+### Equipamento direto por VPN/IP
 
 ```text
 Gateway field connect -> 10.60.20.222:502
          ||
      raw tunnel
          ||
-consumer listen :25020 <- Rapid SCADA
+consumer listen :25020 <- Rapid
 ```
 
-## 3. Responsabilidades do core
+Em `listen ↔ connect`, o peer inbound é o trigger: só depois dele existir o Gateway disca o outro lado.
 
-O caminho principal deve conter somente:
+## Responsabilidades do core
 
-1. **Transport** — abrir/aceitar a conexão;
-2. **Session/Pair** — parear os dois endpoints;
-3. **Security** — allowlist, TLS quando implementado no Tunnel, firewall externo e políticas;
-4. **Routing** — determinar qual `field` pertence a qual `consumer`;
-5. **Raw forwarding** — transportar bytes sem modificação;
-6. **Reconnect/lifecycle** — restabelecer endpoints `connect` e fechar pares quebrados;
-7. **Operations** — health, readiness, sessões, logs e métricas de comunicação.
+1. abrir/aceitar transporte;
+2. parear endpoints;
+3. aplicar segurança de conexão/allowlist;
+4. rotear túnel;
+5. encaminhar bytes sem modificação;
+6. reconnect/lifecycle;
+7. health, readiness, sessões, logs e métricas operacionais.
 
-## 4. O que não pertence ao core
-
-Não pertencem ao runtime principal:
+## Fora do core
 
 - banco de registradores;
-- mapa Modbus por fabricante/modelo;
+- mapas Modbus por fabricante/modelo;
 - polling de pontos;
-- converter RPM/pressão/tensão/alarme;
-- histórico de telemetria;
-- historian;
-- banco de dispositivos necessário para transportar bytes;
-- engine de alarmes;
-- dashboard;
+- conversão de RPM/pressão/tensão/alarme;
+- historian/storage de processo;
+- banco obrigatório de dispositivos;
+- engine de alarmes/dashboard;
 - fan-out semântico de telemetria.
 
-ComAp, DSE, Siemens, Schneider, DEIF, Woodward e outros devem ser interpretados pelo Rapid SCADA, FUXA, software do fabricante ou driver apropriado.
+Um protocolo desconhecido deve atravessar o túnel raw normalmente.
 
-## 5. Framing/protocolo é opcional
+## Framing/protocolo opcional
 
-O Gateway pode conhecer framing quando for **necessário para transportar corretamente**, por exemplo:
+Framing só entra quando necessário para **transportar corretamente**, por exemplo conversão serial/encapsulamento ou arbitragem especializada. Conhecer framing nunca autoriza o core a conhecer o significado de registradores.
 
-- preservar limites de frame em uma conversão serial;
-- validar CRC RTU em um adapter específico;
-- selecionar Unit ID em uma multiplexação explicitamente projetada;
-- encapsular/desencapsular um transporte.
+## Sem fan-out raw
 
-Isso não autoriza o core a conhecer o significado dos registradores.
+Uma sessão request/response não pode ser copiada cegamente para múltiplos mestres. Um Tunnel raw possui um consumidor ativo por vez. Compartilhamento de dados ocorre depois do driver/SCADA/broker ou por plugin protocol-aware separado.
 
-Um protocolo completamente desconhecido deve poder atravessar um túnel raw.
+## Observabilidade
 
-## 6. Não fazer fan-out raw
+Métricas do Gateway descrevem a ponte, não o processo industrial: pares, conexões, bytes por direção, erros, reconnects e readiness.
 
-Uma sessão request/response não pode ser copiada cegamente para vários mestres:
-
-```text
-              X--> Rapid
-FIELD --> GW -X--> FUXA        ERRADO como cópia raw simultânea
-              X--> outro master
-```
-
-Transações Modbus, protocolos proprietários e barramentos seriais podem colidir/intercalar requisições.
-
-Regra do core:
-
-> **um Tunnel raw possui um consumidor ativo por vez.**
-
-Se vários sistemas precisarem dos mesmos valores, o compartilhamento ocorre depois do driver/SCADA ou em plugin protocol-aware separado, com arbitragem explícita.
-
-## 7. Observabilidade não é telemetria industrial
-
-O Gateway pode e deve medir o próprio funcionamento:
-
-- pares ativos;
-- conexões abertas/fechadas;
-- bytes `field -> consumer`;
-- bytes `consumer -> field`;
-- erros de bridge;
-- reconnects;
-- uptime/readiness.
-
-Isso não é histórico do processo industrial e não requer banco de telemetria.
-
-## 8. Código principal atual
+## Estrutura atual
 
 ```text
 cmd/rc-gateway
       |
       v
-internal/config   schema 3 / tunnels
+internal/config
       |
       v
-internal/gateway  lifecycle + admin + métricas
+internal/gateway
       |
       v
-internal/bridge   pairing + io.Copy duplex
-      |
-      +--> field endpoint
-      |
-      +--> consumer endpoint
+internal/bridge
+   /       \
+field    consumer
 ```
 
-Os adapters criados antes da decisão bridge-first são experimentos de conectividade/bibliotecas. Eles não são iniciados pelo runtime atual e devem ser convertidos futuramente em providers de endpoint raw ou removidos se forem apenas leitores semânticos.
+Packages mantidos no caminho principal: `admin`, `bridge`, `config`, `core/session`, `gateway`, `metrics` e `transport/netutil`.
 
-## 9. Próximas extensões corretas
+O antigo módulo `adapters/`, event bus, parsers/detectores, ingest, spool e leitores semânticos foram removidos após a decisão bridge-first.
 
-A expansão deve ocorrer por **novos tipos de endpoint**, não por mapas de memória:
+## Extensões futuras corretas
 
-- TLS/mTLS endpoint;
-- UDP session bridge;
-- Serial RS232/422/485 endpoint;
-- RTU-over-TCP transparent endpoint;
-- WebSocket raw endpoint;
-- MQTT tunnel/connector apenas quando houver contrato de bytes/mensagens adequado;
-- SocketCAN endpoint;
+A expansão ocorre por novos **endpoint providers duplex**:
+
+- TLS/mTLS;
+- Serial RS232/422/485;
+- UDP com política explícita de sessão;
+- WebSocket/WSS;
 - Unix socket/local IPC;
-- dynamic session routing para muitos modems compartilhando listeners, quando houver identidade/registro seguro.
+- SocketCAN/CAN-FD quando houver contrato duplex apropriado;
+- MQTT apenas quando houver contrato de mensagens request/response adequado;
+- roteamento dinâmico seguro para muitos modems.
 
-Cada transporte deve continuar entregando um stream/datagram ao roteador sem converter valores de processo.
+Cada novo provider precisa provar preservação de payload e comportamento de reconnect antes de integrar o runtime.

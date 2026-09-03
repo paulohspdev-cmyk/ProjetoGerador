@@ -2,7 +2,7 @@
 
 > **Antes de alterar este projeto:** leia [`docs/PROJECT_STATE.md`](./docs/PROJECT_STATE.md). O handoff é obrigatório e deve ser atualizado em toda mudança.
 
-`gateway-umbrella/` é um **gateway universal de conectividade industrial/IoT**. O objetivo principal é ser uma ponte entre o campo e o software que realmente entende o equipamento.
+`gateway-umbrella/` é um **gateway universal de conectividade industrial/IoT**. Seu core é uma ponte byte-transparent entre o campo e o software que realmente entende o equipamento.
 
 ## Regra central
 
@@ -13,7 +13,7 @@ NO DEVICE MEMORY DATABASE
 NO TELEMETRY HISTORIAN
 ```
 
-O core não contém mapas de memória de ComAp, DSE, PLC, IHM ou qualquer fabricante. Ele não faz polling de registradores para descobrir RPM, tensão ou alarmes e não mantém histórico de telemetria.
+O core não contém mapas de memória de ComAp, DSE, PLC, IHM ou qualquer fabricante. Não faz polling de registradores, não converte RPM/tensão/alarmes e não mantém histórico de telemetria.
 
 ## Fluxo principal
 
@@ -35,29 +35,17 @@ raw byte tunnel
 Rapid SCADA / FUXA / software do fabricante / outro destino
 ```
 
-O destino envia as requisições. O Gateway encaminha os bytes até o equipamento e devolve a resposta sem alterar o payload.
+O destino envia as requisições. O Gateway encaminha bytes até o equipamento e devolve a resposta sem interpretar ou alterar o payload.
 
-## Runtime bridge-first atual
+## Runtime atual
 
-O schema atual é `3` e usa `tunnels`.
+Schema `3`, baseado em `tunnels`. Cada túnel tem `field` e `consumer`; cada lado pode ser `listen` ou `connect`.
 
-Cada túnel possui dois lados simétricos:
-
-- `field`: lado do equipamento/modem;
-- `consumer`: lado do SCADA/software.
-
-Cada lado pode operar em:
-
-- `listen`: aguarda conexão;
-- `connect`: inicia conexão.
-
-### PUSR reverso + Rapid SCADA
+### PUSR reverso + Rapid
 
 ```text
 PUSR ----TCP----> :15003  Gateway  :25003 <----TCP---- Rapid
 ```
-
-Configuração:
 
 ```json
 {
@@ -67,7 +55,7 @@ Configuração:
 }
 ```
 
-### Controladora acessível diretamente por IP/VPN
+### Equipamento direto por IP/VPN
 
 ```text
 10.60.20.222:502 <---- Gateway :25020 <---- Rapid
@@ -81,33 +69,23 @@ Configuração:
 }
 ```
 
-## Importante: uma conexão raw não pode ser fan-out cego
+Quando um lado é `listen` e o outro `connect`, a conexão inbound é o trigger; o Gateway só disca o endpoint outbound quando existe peer para usar o túnel.
 
-O core não replica uma mesma sessão raw simultaneamente para Rapid, FUXA e outros mestres. Isso corromperia protocolos request/response e poderia misturar transações.
+## Sem fan-out raw cego
 
-**Um túnel raw tem um consumidor ativo por vez.** Se vários sistemas precisarem dos mesmos dados, o fan-out deve acontecer depois do driver/SCADA ou por um plugin protocol-aware explicitamente projetado para multiplexação.
+Um túnel request/response tem **um consumidor ativo por vez**. Replicar bytes simultaneamente para vários mestres pode misturar transações. Fan-out de dados pertence ao SCADA/driver/broker ou a um componente protocol-aware com arbitragem explícita.
 
-## O que permanece no core
+## Core mantido propositalmente pequeno
 
-- túnel TCP duplex byte-transparent;
-- TCP `listen` e `connect` nos dois lados;
-- allowlist CIDR opcional em endpoints `listen`;
-- TCP keepalive e `TCP_NODELAY`;
-- reconnect para endpoints `connect`;
-- sessões de pares ativos;
-- métricas somente operacionais de bytes/sessões/erros;
-- `/healthz`, `/readyz`, `/status`, `/sessions`, `/metrics`;
-- Command Plane desabilitado.
+- `internal/bridge` — pairing e forwarding duplex;
+- `internal/config` — schema declarativo dos túneis;
+- `internal/core/session.go` — pares/sessões operacionais;
+- `internal/gateway` — lifecycle;
+- `internal/admin` — health/readiness/status/sessions/metrics;
+- `internal/metrics` — métricas operacionais;
+- `internal/transport/netutil` — helpers de rede/allowlist.
 
-## O que saiu do core
-
-- spool/histórico de telemetria;
-- HTTP sink de Records normalizados;
-- inventário/banco de identidade de dispositivos;
-- obrigação de interpretar Modbus/OPC UA/SNMP/CoAP;
-- obrigação de conhecer registradores/controladoras.
-
-Os adapters antigos permanecem temporariamente como **experimentos de bibliotecas**, não são iniciados pelo runtime bridge-first e não definem a arquitetura final.
+O código experimental da antiga arquitetura de telemetria foi removido. Novos meios (TLS, serial, UDP, CAN, WebSocket etc.) só entram quando implementados como **endpoint duplex de ponte**, com testes byte-for-byte.
 
 ## Executar
 
@@ -124,7 +102,7 @@ Admin padrão: `127.0.0.1:18080`.
 ## Documentos
 
 - [`docs/PROJECT_STATE.md`](./docs/PROJECT_STATE.md) — handoff canônico;
-- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — arquitetura bridge-first;
-- [`docs/THINGSBOARD_REFERENCE.md`](./docs/THINGSBOARD_REFERENCE.md) — comparação com ThingsBoard Gateway;
-- [`docs/PRODUCTION_MATRIX.md`](./docs/PRODUCTION_MATRIX.md) — validação e roadmap;
-- [`docs/PLUGIN_CONTRACT.md`](./docs/PLUGIN_CONTRACT.md) — direção de plugins de transporte.
+- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — arquitetura;
+- [`docs/THINGSBOARD_REFERENCE.md`](./docs/THINGSBOARD_REFERENCE.md) — referência comparativa;
+- [`docs/PRODUCTION_MATRIX.md`](./docs/PRODUCTION_MATRIX.md) — gates de produção;
+- [`docs/PLUGIN_CONTRACT.md`](./docs/PLUGIN_CONTRACT.md) — direção de endpoint providers.

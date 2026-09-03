@@ -1,68 +1,55 @@
-# Transport / Endpoint Plugin Contract — direção bridge-first
+# Endpoint Provider Contract — direção bridge-first
 
 > Leia primeiro [`PROJECT_STATE.md`](./PROJECT_STATE.md).
 
-A arquitetura atual não usa plugins para converter telemetria. Plugins futuros existem para **oferecer endpoints de comunicação ao core raw bridge**.
+Plugins/providers futuros existem para oferecer **endpoints duplex de comunicação** ao core raw bridge. Eles não convertem telemetria.
 
-## Regra
+## Pergunta que um provider deve responder
 
-Um plugin de transporte deve responder à pergunta:
+> Como eu abro/aceito este meio e leio/escrevo bytes ou datagramas com integridade?
 
-> "Como eu obtenho/entrego bytes ou datagramas por este meio físico/protocolo de transporte?"
+Não:
 
-Ele não deve responder:
-
-> "Qual registrador significa RPM, pressão ou alarme?"
+> Qual registrador significa RPM, pressão ou alarme?
 
 ## Responsabilidades permitidas
 
-- abrir RS232/422/485;
-- abrir SocketCAN;
-- estabelecer TLS/mTLS;
-- encapsular/desencapsular WebSocket;
-- manter conexão MQTT quando MQTT for o próprio meio de transporte contratado;
-- converter framing necessário para transportar corretamente;
-- reconnect e lifecycle do endpoint;
-- expor erros/estado operacional.
+- abrir/aceitar o transporte;
+- Read/Write bidirecional;
+- reconnect/lifecycle;
+- TLS/mTLS quando aplicável;
+- framing estritamente necessário ao meio;
+- status e erros operacionais.
 
-## Responsabilidades fora do core/plugin de transporte
+## Fora do contrato
 
-- mapas de memória por fabricante;
-- polling semântico de registradores;
-- converter valores para telemetria de domínio;
-- historian/storage de processo;
-- engine de alarmes;
+- mapas de memória;
+- polling semântico;
+- converter valores de processo;
+- historian/storage;
+- alarmes;
 - comandos industriais genéricos.
 
-## Estado dos adapters antigos
-
-Os executáveis em `gateway-umbrella/adapters/` foram criados antes da decisão bridge-first e permanecem apenas como **experimentos de bibliotecas/conectividade**. Eles não são iniciados pelo runtime schema 3.
-
-Antes de reutilizar um adapter antigo, ele deve ser classificado:
-
-1. se puder virar endpoint raw/transport, refatorar;
-2. se apenas lê/converte dados semanticamente, mover para projeto/plugin externo ou remover;
-3. nunca ligar automaticamente ao core só porque compila.
-
-## Contrato alvo
-
-A interface final de plugins ainda será definida, mas deve representar operações equivalentes a:
+## Interface alvo conceitual
 
 ```text
-Acquire/Open endpoint
-Read bytes/datagram
-Write bytes/datagram
+Open/Acquire
+Read
+Write
 Close
 Reconnect/lifecycle
+Local/Remote identity metadata
 Operational status
 ```
 
-O core deve conseguir parear esse endpoint com outro endpoint e transportar os bytes bidirecionalmente.
+O provider deve poder ser pareado com outro endpoint pelo `Tunnel`.
 
-Lifecycle continua explícito:
+O antigo módulo de adapters de leitura foi removido. Bibliotecas externas só serão adicionadas novamente quando necessárias a um provider duplex concreto.
+
+Lifecycle:
 
 ```text
 experimental -> lab_validated -> field_validated -> production
 ```
 
-Command Plane permanece fora desse contrato.
+Command Plane permanece fora deste contrato.

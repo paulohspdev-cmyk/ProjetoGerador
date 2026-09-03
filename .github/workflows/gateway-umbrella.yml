@@ -27,8 +27,8 @@ jobs:
       - name: Require PROJECT_STATE update
         run: bash gateway-umbrella/scripts/check-project-state-updated.sh
 
-  core:
-    name: Core Go
+  bridge:
+    name: Bridge Core Go
     needs: handoff
     runs-on: ubuntu-latest
     steps:
@@ -43,7 +43,7 @@ jobs:
       - name: Vet
         working-directory: gateway-umbrella
         run: go vet ./...
-      - name: Unit tests
+      - name: Unit and socket integration tests
         working-directory: gateway-umbrella
         run: go test ./... -count=1
       - name: Race detector
@@ -52,29 +52,3 @@ jobs:
       - name: Build
         working-directory: gateway-umbrella
         run: go build ./cmd/rc-gateway
-
-  adapters:
-    name: Industrial adapters
-    needs: handoff
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-go@v6
-        with:
-          go-version: '1.27.1'
-          cache-dependency-path: gateway-umbrella/adapters/go.mod
-      - name: Download pinned dependencies
-        working-directory: gateway-umbrella/adapters
-        run: go mod download
-      - name: Format
-        working-directory: gateway-umbrella/adapters
-        run: test -z "$(gofmt -l .)"
-      - name: Vet
-        working-directory: gateway-umbrella/adapters
-        run: go vet ./...
-      - name: Tests
-        working-directory: gateway-umbrella/adapters
-        run: go test ./... -count=1
-      - name: Build all adapters
-        working-directory: gateway-umbrella/adapters
-        run: go build ./...
