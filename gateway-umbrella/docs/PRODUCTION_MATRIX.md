@@ -1,84 +1,125 @@
-# Production Readiness Matrix
+# Production Readiness Matrix — Bridge First
 
 > Estado/handoff canônico: [`PROJECT_STATE.md`](./PROJECT_STATE.md). Toda mudança no Gateway deve atualizar esse documento.
 
-Nenhum adapter ou integração vira `production` só porque compila.
+Nenhum transporte, bridge, connector ou integração vira `production` só porque compila.
+
+## Escopo de produção
+
+O RC Universal Gateway é uma ponte universal de conectividade.
+
+A validação de produção mede:
+
+- estabilidade da conexão;
+- integridade dos bytes;
+- reconnect;
+- timeout;
+- roteamento;
+- multiplexação;
+- segurança;
+- limites de memória;
+- observabilidade;
+- comportamento sob perda/jitter/reordenação;
+- compatibilidade com o sistema de destino.
+
+Não mede se o Gateway sabe interpretar mapas de memória de cada fabricante, porque isso não pertence ao core.
 
 ## Gates obrigatórios
 
-- unit e negative tests
-- race detector
-- fuzz de parsers
-- malformed input / memory-bound tests
-- churn/reconnect
-- timeout, fragmentação e coalescência TCP
-- soak mínimo de 24 h em bancada; alvo de 7 dias antes de rollout amplo
-- hardware-in-the-loop para mídia física
-- validação em pelo menos um equipamento conhecido
-- métricas e diagnóstico
-- revisão de segurança, dependências e licenças
-- rollback documentado
-- Command Plane desabilitado salvo homologação separada
-- atualização obrigatória de `PROJECT_STATE.md`
+- unit e negative tests;
+- race detector;
+- fuzz de parsers/framing usados pelo bridge;
+- malformed input / memory-bound tests;
+- churn/reconnect;
+- timeout, fragmentação e coalescência TCP;
+- soak mínimo de 24 h em bancada; alvo de 7 dias antes de rollout amplo;
+- hardware-in-the-loop para mídia física;
+- validação com modem/conversor/equipamento real quando aplicável;
+- métricas e diagnóstico;
+- revisão de segurança, dependências e licenças;
+- rollback documentado;
+- Command Plane bloqueado salvo homologação separada;
+- atualização obrigatória de `PROJECT_STATE.md`.
 
-## Cobertura Southbound / aquisição
+## Transportes / bridge Southbound
 
-| Família | Implementação alvo | HIL obrigatório |
-|---|---|---|
-| TCP server/client | Go nativo | impairment de rede |
-| UDP | Go nativo | perda/reordenação/duplicação |
-| TLS/mTLS | crypto/tls | rotação/revogação/expiração |
-| RS232/422/485 | adapter nativo ou sidecar | conversores reais + matriz baud/paridade |
-| Modbus TCP/RTU/ASCII | framing nativo + adapter | equipamentos reais + simuladores |
-| MQTT/MQTTS inbound | Eclipse Paho sidecar/native | restart broker/QoS/session |
-| OPC UA client/read | gopcua adapter | security modes/certificados |
-| CAN/CAN-FD/J1939 | SocketCAN | barramento físico |
-| CANopen | SocketCAN + adapter | device profiles |
-| NMEA/GNSS | nativo/adapter | GNSS real |
-| SNMP | adapter | v2c/v3 |
-| BACnet | stack maduro em sidecar | BACnet/IP + casos BTL |
-| IEC 101/104 | lib60870 sidecar | serial/TCP/TLS |
-| DNP3 | stack mantido/comercial | master/outstation + security |
-| CoAP/LwM2M | adapter | DTLS/reconnect |
-| LoRaWAN | ChirpStack -> MQTT | outage/replay |
-| M-Bus/W-MBus | sidecar | barramento físico |
-
-## Cobertura Northbound / consumidores
-
-Northbound é multi-consumidor. Um mesmo `Record` pode alimentar vários destinos. O status abaixo é propositalmente conservador.
-
-| Destino / interface | Estado atual | Caminho alvo | Condição para `production` |
+| Família | Papel no Gateway | Estado alvo | HIL obrigatório |
 |---|---|---|---|
-| HTTP/HTTPS JSON genérico | implementado no core, ainda em evolução | sink assíncrono com fila, retry, replay/ACK e auth | soak + outage/replay + limites de fila |
-| MQTT publish genérico | planejado | publisher Northbound separado dos adapters MQTT inbound | QoS/session/reconnect + credenciais/TLS + replay |
-| RC Geradores | planejado no Umbrella | consumer/adapter por contrato estável | equivalência de telemetria + soak + rollback |
-| Rapid SCADA | planejado como consumer independente | adapter Northbound; não dependência do core | equivalência de canais/qualidade + restart/replay + HIL |
-| FUXA | planejado | OPC UA/Modbus TCP/MQTT ou contrato homologado | interoperabilidade real + reconexão + qualidade |
-| ThingsBoard | planejado | MQTT/HTTP Northbound | device identity + auth/TLS + outage/replay |
-| Node-RED | planejado | MQTT/HTTP/WebSocket | contrato estável + backpressure/reconnect |
-| Prometheus/OpenMetrics | métricas operacionais já existem; telemetria geral ainda não | exporter separado quando apropriado | cardinalidade/escala/retention validados |
-| TSDB (InfluxDB/Timescale/PostgreSQL etc.) | planejado | sink dedicado/batch | retenção + retry + idempotência + carga |
-| Grafana | não é sink direto obrigatório | consulta Prometheus/TSDB alimentada pelo Gateway | depende do pipeline de dados escolhido |
-| OPC UA server/exposure | planejado | Northbound server isolado | security modes/certificados + namespace versionado |
-| Modbus TCP virtual server | planejado quando necessário | mapa virtual derivado de Records | mapa/versionamento + limites + read-only inicial |
-| WebSocket outbound | planejado | stream de Records/telemetria | auth + reconnect + slow-client/backpressure |
-| Outros SCADA/IoT/MES/BMS | extensível | adapters/sinks por contrato | testes específicos do destino |
+| TCP server / reverse TCP | receber modems/dispositivos que iniciam conexão | production | modem real + impairment de rede |
+| TCP client | alcançar equipamentos por LAN/VPN/IP | production | equipamento real + perda/reconnect |
+| UDP | bridge datagram | production quando houver caso real | perda/reordenação/duplicação |
+| TLS/mTLS | proteger transporte | production | rotação/revogação/expiração |
+| RS232/422/485 | bridge serial local/remota | production | conversores reais + matriz baud/paridade |
+| RTU-over-TCP | transportar serial transparente em TCP | production | modem/DTU real + fragmentação/coalescência |
+| Modbus TCP framing | auxiliar de framing/multiplexação, não mapa de memória | production | múltiplos Units + MBAP fragmentado |
+| Modbus RTU framing | auxiliar de framing/CRC, não leitura semântica | production | CRC/timeout/múltiplos Units |
+| MQTT | transporte/bridge quando a origem/destino usa broker | production por caso | broker restart/QoS/session/TLS |
+| WebSocket/WSS | transporte/bridge | production por caso | reconnect/slow-client/TLS |
+| SocketCAN/CAN | transporte de frames | production por caso | barramento físico |
+| CAN-FD/J1939 | transporte/framing especializado | futuro | barramento físico |
+| protocolo proprietário raw | byte-transparent bridge | production por rota | software de destino + equipamento real |
 
-### Regra arquitetural
+## Destinos / Northbound
 
-Nenhum destino Northbound pode virar dependência obrigatória da aquisição. Rapid SCADA, FUXA, ThingsBoard, Node-RED, Grafana/TSDB e RC Geradores são consumidores independentes.
+O destino é o sistema que realmente entende ou utiliza a conexão.
 
-O adapter MQTT existente hoje é **inbound/read-only**: ele assina tópicos e transforma mensagens recebidas em observations. Isso não deve ser confundido com o futuro MQTT publisher Northbound.
+| Destino | Papel do Gateway | Objetivo |
+|---|---|---|
+| Rapid SCADA | apresentar endpoint/conexão estável | Rapid continua responsável por driver, polling, canais, histórico e interpretação |
+| FUXA | encaminhar protocolo/conexão suportada | FUXA interpreta os pontos conforme sua configuração |
+| ThingsBoard | bridge por MQTT/HTTP/socket ou connector apropriado | ThingsBoard faz modelagem/telemetria conforme sua arquitetura |
+| Node-RED | bridge por MQTT/HTTP/WebSocket/TCP | fluxo Node-RED interpreta/processa |
+| software do fabricante | transporte transparente | software entende protocolo proprietário |
+| outro SCADA | endpoint/bridge | SCADA/driver interpreta o equipamento |
+| RC Geradores | normalmente através do Rapid/backend ou contrato específico | Gateway não contém mapas ComAp/DSE |
 
-## Aceitação de escala antes de substituir integrações legadas
+## Componentes fora do escopo do core
 
-- >= 1.000 sessões TCP concorrentes em teste sintético
-- >= 10.000 records/s em burst sem crash
-- memória limitada sob tráfego malformado/slow-client
-- spool íntegro após restart abrupto
-- replay sem duplicação silenciosa/ordenação indefinida onde o contrato exigir
-- consumidor Northbound indisponível não derruba aquisição
-- backpressure e descarte, se inevitáveis, devem ser explícitos e métricos
-- nenhum caminho de comando a partir dos listeners de telemetria
-- restart gracioso restaura connectors e sidecars
-- fan-out para múltiplos consumidores validado sem acoplamento entre destinos
+Os itens abaixo **não devem receber status de produção como funções do core**:
+
+- banco de telemetria;
+- SQLite/TSDB para dados de processo;
+- spool persistente de telemetria;
+- mapa de registradores ComAp;
+- mapa de registradores DSE;
+- mapa de PLC/IHM;
+- leitura semântica de RPM/pressão/tensão;
+- converters de pontos;
+- historian;
+- dashboards;
+- alarm engine.
+
+Se algum desses recursos for necessário, deve existir no consumidor ou em plugin externo claramente separado do bridge.
+
+## Componentes experimentais existentes
+
+A branch atualmente contém adapters/readers criados durante a fase em que o Gateway estava sendo desenhado como motor de dados, incluindo OPC UA client/read, SNMP read, CoAP GET e outros.
+
+Eles devem ser classificados antes do merge:
+
+- se servem como **transporte/bridge**, podem permanecer após simplificação;
+- se fazem **polling/conversão semântica**, devem sair do core, ser movidos para plugin opcional externo ou ser removidos;
+- sua existência no repositório não muda a decisão arquitetural bridge-first.
+
+## Aceitação de escala
+
+Antes de substituir o bridge legado:
+
+- >= 1.000 sessões TCP concorrentes em teste sintético;
+- nenhuma corrupção de payload em fragmentação/coalescência;
+- memória limitada sob tráfego malformado/slow-client;
+- reconnect automático após queda de modem/rede;
+- múltiplas sessões e Units sem cross-talk;
+- destino indisponível não pode causar crescimento ilimitado de memória;
+- backpressure deve ser explícito;
+- nenhuma dependência de banco de telemetria;
+- nenhum mapa de memória necessário para criar uma rota;
+- restart gracioso restaura listeners/rotas;
+- software de destino consegue conversar com o equipamento através do Gateway como se tivesse a conexão esperada;
+- migração deve ter rollback simples para o bridge legado.
+
+## Critério 10/10
+
+Um equipamento com protocolo desconhecido para o Gateway, mas conhecido pelo software de destino, deve poder funcionar por uma rota transparente sem exigir código novo de telemetria.
+
+Esse é o principal critério de universalidade do produto.
