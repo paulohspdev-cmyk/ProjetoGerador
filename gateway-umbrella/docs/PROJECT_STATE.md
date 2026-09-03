@@ -65,3 +65,5 @@ A reprodução local isolada passou `go test -race ./...`. **Consultar o CI do H
 ## Regra de produção
 
 Software field-test-ready = todos os gates automatizáveis verdes. Produção validada = somente após HIL/soak físico. Invariável: nenhum payload pode ser alterado silenciosamente e nenhum recurso pode crescer sem limite.
+
+- Autoformat Go aplicado ao checkpoint TLS/mTLS/Unix antes da validacao completa de CI.
