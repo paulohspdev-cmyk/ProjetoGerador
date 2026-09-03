@@ -59,7 +59,7 @@ Mantidos no produto:
 - `internal/transport/netutil`;
 - config, docs, scripts e systemd.
 
-Removidos nesta limpeza:
+Removidos na limpeza bridge-first:
 
 - módulo `gateway-umbrella/adapters/` inteiro;
 - MQTT/MQTT5 reader;
@@ -77,43 +77,101 @@ Removidos nesta limpeza:
 - TCP client/server antigos substituídos pelo Tunnel;
 - TLS client/server antigos;
 - UDP server antigo;
-- helper TLS antigo.
+- helper TLS antigo;
+- spool/historian de telemetria;
+- sink HTTP de Records;
+- inventário obrigatório de dispositivos.
 
-A remoção é intencional: esses componentes foram criados para uma arquitetura de aquisição/conversão que não é mais o produto. Serial/TLS/UDP/CAN/WS etc. voltarão apenas como endpoint providers **duplex**.
+A remoção é intencional. Serial/TLS/UDP/CAN/WS etc. só devem voltar como endpoint providers **duplex**, preservando payload e sem leitura semântica de dispositivos.
 
-# 4. Validação já confirmada antes desta limpeza
+# 4. Checkpoint bridge-first confirmado
 
-No HEAD `1c5fafdc872a9576e07c91366c5ca50281b51b68`, o workflow Gateway Umbrella estava totalmente verde:
+## SHA de código limpo validado
 
-- handoff `success`;
-- `gofmt` `success`;
-- `go vet` `success`;
-- unit tests `success`;
-- testes TCP reais `listen↔listen` e `connect↔listen` `success`;
-- race detector `success`;
-- build `success`;
-- antigo módulo adapters também estava verde antes de ser removido.
+`249a7f0d55c840e5e95764468a6400db8a401fea`
 
-# 5. Estado deste commit de limpeza
+Commit: `refactor(gateway): reduz core a ponte duplex universal`
 
-Este commit remove dead code e dependências antigas e simplifica o workflow para um único job **Bridge Core Go** depois do handoff.
+Validação confirmada em 2026-09-03:
 
-**O CI deste novo HEAD deve ser consultado antes de afirmar que a limpeza está verde.**
+### Workflow Gateway Umbrella
 
-# 6. Referência ThingsBoard
+- Canonical project state: `success`;
+- Bridge Core Go: `success`;
+- `gofmt`: `success`;
+- `go vet`: `success`;
+- unit + socket integration tests: `success`;
+- race detector: `success`;
+- build: `success`.
 
-Foi estudado `thingsboard/thingsboard-gateway`. Aproveitar modularidade, reconnect, supervisão, configuração e métricas. Não copiar converters, storage, mapas de memória ou polling semântico. Ver `THINGSBOARD_REFERENCE.md`.
+### Repositório
 
-# 7. Próximos passos
+- CI geral: `success`;
+- Quality and Security: `success`.
 
-1. confirmar CI verde após a limpeza;
-2. adicionar testes de reset/reconnect/half-close/slow peer;
+Portanto este é o checkpoint canônico de código bridge-first limpo e verde.
+
+Os testes atuais já cobrem:
+
+- preservação binária byte-for-byte nos dois sentidos;
+- `listen ↔ listen` com sockets TCP reais;
+- `connect ↔ listen` com sockets TCP reais;
+- outbound só é discado após existir o peer inbound quando o outro lado é `listen`;
+- encerramento normal por EOF/closed pipe/net closed/context cancel;
+- race detector no core.
+
+# 5. Referência ThingsBoard
+
+Foi estudado `thingsboard/thingsboard-gateway`.
+
+Aproveitar:
+
+- modularidade de connectors;
+- reconnect;
+- supervisão;
+- configuração declarativa;
+- extensibilidade;
+- métricas.
+
+Não copiar para o core:
+
+- converters de telemetria;
+- storage/historian;
+- mapas de registradores;
+- polling semântico de dispositivos.
+
+Ver `THINGSBOARD_REFERENCE.md`.
+
+# 6. Pontos técnicos ainda abertos
+
+Antes de produção ainda faltam, entre outros:
+
+- testes de reset/reconnect repetido;
+- comportamento de half-close TCP;
+- slow peer e backpressure;
+- limite explícito para espera durante estabelecimento do par;
+- métricas de bytes atualizadas durante sessões longas, não somente ao encerrar `io.Copy`;
+- testes de leak de goroutines/sockets;
+- escala/concurrency;
+- impairment de rede celular;
+- HIL e soak;
+- TLS/mTLS como endpoint duplex;
+- Serial RS232/422/485 como endpoint duplex;
+- UDP com semântica de sessão definida;
+- outros meios apenas quando implementados como ponte real.
+
+# 7. Próximos passos recomendados
+
+Ordem recomendada:
+
+1. fortalecer o Tunnel TCP: reconnect/reset/half-close/slow peer/pair establishment timeout/métricas em tempo real;
+2. testar ausência de leaks e concorrência;
 3. implementar TLS/mTLS como endpoint duplex raw;
 4. implementar Serial RS232/422/485 como endpoint duplex raw;
-5. implementar UDP com política de sessão;
-6. adicionar outros meios somente como endpoints bridge;
-7. validar PUSR real ↔ Gateway ↔ Rapid em laboratório sem tocar o bridge legado;
-8. HIL + impairment celular + soak antes de produção.
+5. implementar UDP bridge com política explícita de sessão;
+6. adicionar WebSocket/CAN/MQTT somente quando houver contrato de endpoint duplex claro;
+7. validar PUSR real ↔ Gateway ↔ Rapid em porta de laboratório sem tocar o bridge legado;
+8. HIL + impairment celular + soak antes de qualquer produção.
 
 # 8. Regra de produção
 
@@ -125,3 +183,7 @@ bytes enviados B == bytes recebidos A
 ```
 
 sem mutar payload, sem misturar consumidores e sem vazar conexões, goroutines ou memória.
+
+# 9. Regra para qualquer próximo chat/agente
+
+Não reintroduzir a arquitetura antiga de telemetria no core para “aproveitar” bibliotecas. Se uma nova conexão precisar ser suportada, modelar primeiro como **Endpoint duplex**. Se não for possível transportar de forma transparente, documentar por que um adapter protocol-aware é indispensável e mantê-lo fora do núcleo genérico sempre que possível.
