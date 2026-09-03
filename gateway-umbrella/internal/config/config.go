@@ -12,10 +12,12 @@ import (
 type Admin struct {
 	Bind string `json:"bind"`
 }
+
 type Security struct {
 	RequireAllowlist    bool `json:"requireAllowlist"`
 	CommandPlaneEnabled bool `json:"commandPlaneEnabled"`
 }
+
 type TLS struct {
 	Enabled           bool   `json:"enabled,omitempty"`
 	CAFile            string `json:"caFile,omitempty"`
@@ -24,6 +26,7 @@ type TLS struct {
 	ServerName        string `json:"serverName,omitempty"`
 	RequireClientCert bool   `json:"requireClientCert,omitempty"`
 }
+
 type Endpoint struct {
 	Mode         string   `json:"mode"`
 	Network      string   `json:"network,omitempty"`
@@ -35,6 +38,7 @@ type Endpoint struct {
 	KeepAliveS   int      `json:"keepAliveSeconds,omitempty"`
 	TLS          TLS      `json:"tls,omitempty"`
 }
+
 type Tunnel struct {
 	ID            string   `json:"id"`
 	Field         Endpoint `json:"field"`
@@ -43,6 +47,7 @@ type Tunnel struct {
 	WriteTimeoutS int      `json:"writeTimeoutSeconds,omitempty"`
 	DrainTimeoutS int      `json:"drainTimeoutSeconds,omitempty"`
 }
+
 type SerialProvider struct {
 	ID            string `json:"id"`
 	Socket        string `json:"socket"`
@@ -56,6 +61,23 @@ type SerialProvider struct {
 	RTS           bool   `json:"rts,omitempty"`
 	DTR           bool   `json:"dtr,omitempty"`
 }
+
+type UDPEndpoint struct {
+	Mode         string   `json:"mode"`
+	Bind         string   `json:"bind,omitempty"`
+	Address      string   `json:"address,omitempty"`
+	AllowedCIDRs []string `json:"allowedCidrs,omitempty"`
+}
+
+type UDPTunnel struct {
+	ID               string      `json:"id"`
+	Field            UDPEndpoint `json:"field"`
+	Consumer         UDPEndpoint `json:"consumer"`
+	IdleTimeoutS     int         `json:"idleTimeoutSeconds,omitempty"`
+	MaxSessions      int         `json:"maxSessions,omitempty"`
+	MaxDatagramBytes int         `json:"maxDatagramBytes,omitempty"`
+}
+
 type Config struct {
 	Schema          int              `json:"schema"`
 	NodeID          string           `json:"nodeId"`
@@ -63,6 +85,7 @@ type Config struct {
 	Security        Security         `json:"security"`
 	SerialProviders []SerialProvider `json:"serialProviders,omitempty"`
 	Tunnels         []Tunnel         `json:"tunnels"`
+	UDPTunnels      []UDPTunnel      `json:"udpTunnels,omitempty"`
 }
 
 func Load(path string) (Config, error) {
@@ -92,47 +115,11 @@ func Load(path string) (Config, error) {
 	if cfg.Security.CommandPlaneEnabled {
 		return cfg, fmt.Errorf("commandPlaneEnabled is intentionally unsupported in this release")
 	}
-	providerIDs := map[string]bool{}
-	providerSockets := map[string]bool{}
-	for i := range cfg.SerialProviders {
-		p := &cfg.SerialProviders[i]
-		p.ID = strings.TrimSpace(p.ID)
-		p.Standard = strings.ToLower(strings.TrimSpace(p.Standard))
-		p.Parity = strings.ToLower(strings.TrimSpace(p.Parity))
-		p.StopBits = strings.TrimSpace(p.StopBits)
-		if p.ID == "" || providerIDs[p.ID] {
-			return cfg, fmt.Errorf("serialProvider[%d] requires unique id", i)
-		}
-		providerIDs[p.ID] = true
-		if !filepath.IsAbs(p.Socket) || providerSockets[p.Socket] {
-			return cfg, fmt.Errorf("serialProvider %s requires unique absolute socket", p.ID)
-		}
-		providerSockets[p.Socket] = true
-		if strings.TrimSpace(p.Device) == "" {
-			return cfg, fmt.Errorf("serialProvider %s device is required", p.ID)
-		}
-		if p.Standard != "rs232" && p.Standard != "rs422" && p.Standard != "rs485" {
-			return cfg, fmt.Errorf("serialProvider %s invalid standard %q", p.ID, p.Standard)
-		}
-		if p.BaudRate <= 0 || p.DataBits < 5 || p.DataBits > 8 {
-			return cfg, fmt.Errorf("serialProvider %s invalid baudRate/dataBits", p.ID)
-		}
-		if p.Parity == "" {
-			p.Parity = "none"
-		}
-		if p.Parity != "none" && p.Parity != "odd" && p.Parity != "even" && p.Parity != "mark" && p.Parity != "space" {
-			return cfg, fmt.Errorf("serialProvider %s invalid parity", p.ID)
-		}
-		if p.StopBits == "" {
-			p.StopBits = "1"
-		}
-		if p.StopBits != "1" && p.StopBits != "1.5" && p.StopBits != "2" {
-			return cfg, fmt.Errorf("serialProvider %s invalid stopBits", p.ID)
-		}
-		if p.ReadTimeoutMS < 0 || p.ReadTimeoutMS > 60000 {
-			return cfg, fmt.Errorf("serialProvider %s invalid readTimeoutMilliseconds", p.ID)
-		}
+
+	if err := validateSerialProviders(&cfg); err != nil {
+		return cfg, err
 	}
+
 	seen := map[string]bool{}
 	for i := range cfg.Tunnels {
 		t := &cfg.Tunnels[i]
@@ -163,7 +150,85 @@ func Load(path string) (Config, error) {
 			return cfg, err
 		}
 	}
+
+	for i := range cfg.UDPTunnels {
+		t := &cfg.UDPTunnels[i]
+		t.ID = strings.TrimSpace(t.ID)
+		if t.ID == "" {
+			return cfg, fmt.Errorf("udpTunnel[%d] requires id", i)
+		}
+		if seen[t.ID] {
+			return cfg, fmt.Errorf("duplicate tunnel id %q", t.ID)
+		}
+		seen[t.ID] = true
+		if t.IdleTimeoutS <= 0 {
+			t.IdleTimeoutS = 60
+		}
+		if t.MaxSessions <= 0 {
+			t.MaxSessions = 1024
+		}
+		if t.MaxDatagramBytes <= 0 {
+			t.MaxDatagramBytes = 65507
+		}
+		if t.IdleTimeoutS > 3600 {
+			return cfg, fmt.Errorf("udp tunnel %s idle timeout exceeds safe limit", t.ID)
+		}
+		if t.MaxSessions > 10000 {
+			return cfg, fmt.Errorf("udp tunnel %s maxSessions exceeds safe limit", t.ID)
+		}
+		if t.MaxDatagramBytes > 65507 {
+			return cfg, fmt.Errorf("udp tunnel %s maxDatagramBytes exceeds UDP payload limit", t.ID)
+		}
+		if err := validateUDPTunnel(t, cfg.Security.RequireAllowlist); err != nil {
+			return cfg, err
+		}
+	}
 	return cfg, nil
+}
+
+func validateSerialProviders(cfg *Config) error {
+	providerIDs := map[string]bool{}
+	providerSockets := map[string]bool{}
+	for i := range cfg.SerialProviders {
+		p := &cfg.SerialProviders[i]
+		p.ID = strings.TrimSpace(p.ID)
+		p.Standard = strings.ToLower(strings.TrimSpace(p.Standard))
+		p.Parity = strings.ToLower(strings.TrimSpace(p.Parity))
+		p.StopBits = strings.TrimSpace(p.StopBits)
+		if p.ID == "" || providerIDs[p.ID] {
+			return fmt.Errorf("serialProvider[%d] requires unique id", i)
+		}
+		providerIDs[p.ID] = true
+		if !filepath.IsAbs(p.Socket) || providerSockets[p.Socket] {
+			return fmt.Errorf("serialProvider %s requires unique absolute socket", p.ID)
+		}
+		providerSockets[p.Socket] = true
+		if strings.TrimSpace(p.Device) == "" {
+			return fmt.Errorf("serialProvider %s device is required", p.ID)
+		}
+		if p.Standard != "rs232" && p.Standard != "rs422" && p.Standard != "rs485" {
+			return fmt.Errorf("serialProvider %s invalid standard %q", p.ID, p.Standard)
+		}
+		if p.BaudRate <= 0 || p.DataBits < 5 || p.DataBits > 8 {
+			return fmt.Errorf("serialProvider %s invalid baudRate/dataBits", p.ID)
+		}
+		if p.Parity == "" {
+			p.Parity = "none"
+		}
+		if p.Parity != "none" && p.Parity != "odd" && p.Parity != "even" && p.Parity != "mark" && p.Parity != "space" {
+			return fmt.Errorf("serialProvider %s invalid parity", p.ID)
+		}
+		if p.StopBits == "" {
+			p.StopBits = "1"
+		}
+		if p.StopBits != "1" && p.StopBits != "1.5" && p.StopBits != "2" {
+			return fmt.Errorf("serialProvider %s invalid stopBits", p.ID)
+		}
+		if p.ReadTimeoutMS < 0 || p.ReadTimeoutMS > 60000 {
+			return fmt.Errorf("serialProvider %s invalid readTimeoutMilliseconds", p.ID)
+		}
+	}
+	return nil
 }
 
 func validateEndpoint(ep *Endpoint, label string, requireAllowlist bool) error {
@@ -239,6 +304,56 @@ func validateTCPEndpoint(ep *Endpoint, label string, requireAllowlist bool) erro
 		}
 		if (ep.TLS.CertFile == "") != (ep.TLS.KeyFile == "") {
 			return fmt.Errorf("%s TLS certFile/keyFile must be configured together", label)
+		}
+	default:
+		return fmt.Errorf("%s mode must be listen or connect", label)
+	}
+	return nil
+}
+
+func validateUDPTunnel(t *UDPTunnel, requireAllowlist bool) error {
+	fieldMode := strings.TrimSpace(t.Field.Mode)
+	consumerMode := strings.TrimSpace(t.Consumer.Mode)
+	t.Field.Mode = fieldMode
+	t.Consumer.Mode = consumerMode
+	if !((fieldMode == "listen" && consumerMode == "connect") || (fieldMode == "connect" && consumerMode == "listen")) {
+		return fmt.Errorf("udp tunnel %s requires exactly one listen endpoint and one connect endpoint", t.ID)
+	}
+	if err := validateUDPEndpoint(&t.Field, "udp tunnel "+t.ID+" field", requireAllowlist); err != nil {
+		return err
+	}
+	if err := validateUDPEndpoint(&t.Consumer, "udp tunnel "+t.ID+" consumer", requireAllowlist); err != nil {
+		return err
+	}
+	return nil
+}
+
+func validateUDPEndpoint(ep *UDPEndpoint, label string, requireAllowlist bool) error {
+	switch ep.Mode {
+	case "listen":
+		if strings.TrimSpace(ep.Bind) == "" {
+			return fmt.Errorf("%s requires bind in listen mode", label)
+		}
+		if _, _, err := net.SplitHostPort(ep.Bind); err != nil {
+			return fmt.Errorf("%s invalid bind: %w", label, err)
+		}
+		for _, cidr := range ep.AllowedCIDRs {
+			if _, _, err := net.ParseCIDR(cidr); err != nil {
+				return fmt.Errorf("%s invalid allowedCidrs entry %q: %w", label, cidr, err)
+			}
+		}
+		if requireAllowlist && len(ep.AllowedCIDRs) == 0 && !isLoopbackBind(ep.Bind) {
+			return fmt.Errorf("%s requires allowedCidrs by security policy", label)
+		}
+	case "connect":
+		if strings.TrimSpace(ep.Address) == "" {
+			return fmt.Errorf("%s requires address in connect mode", label)
+		}
+		if _, _, err := net.SplitHostPort(ep.Address); err != nil {
+			return fmt.Errorf("%s invalid address: %w", label, err)
+		}
+		if len(ep.AllowedCIDRs) > 0 {
+			return fmt.Errorf("%s allowedCidrs only applies to listen mode", label)
 		}
 	default:
 		return fmt.Errorf("%s mode must be listen or connect", label)
