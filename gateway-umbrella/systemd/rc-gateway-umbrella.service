@@ -1,0 +1,29 @@
+[Unit]
+Description=RC Gateway Umbrella
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=rc-gateway
+Group=rc-gateway
+WorkingDirectory=/opt/rc-geradores/gateway-umbrella
+ExecStart=/opt/rc-geradores/gateway-umbrella/bin/rc-gateway -config /etc/rc-gateway-umbrella.json
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/rc-gateway-umbrella
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+LockPersonality=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+MemoryDenyWriteExecute=true
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

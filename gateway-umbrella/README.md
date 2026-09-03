@@ -1,84 +1,52 @@
 # RC Gateway Umbrella
 
-Novo núcleo de conectividade industrial da RC Geradores.
+Novo núcleo de conectividade industrial da RC Geradores, deliberadamente isolado do bridge legado, backend, frontend e Rapid SCADA.
 
-Este diretório é deliberadamente independente do bridge legado, do backend web, do frontend e do Rapid SCADA. A migração só deve ocorrer depois de testes de bancada e campo.
+## Runtime já implementado na branch
 
-## Objetivo
+- TCP server / reverse TCP;
+- TCP client para controladoras acessíveis por IP/VPN;
+- UDP server;
+- TLS 1.3 e mTLS server;
+- TLS client;
+- HTTP ingest;
+- allowlist CIDR e limite de conexões;
+- sessões connect/data/disconnect;
+- event bus;
+- reassembly de Modbus TCP em stream;
+- detecção conservadora Modbus TCP/RTU e CRC16;
+- detecção NMEA 0183 e JSON;
+- records normalizados com qualidade SCADA;
+- spool persistente JSONL com fsync/rotação;
+- health/readiness/status/sessions/metrics;
+- northbound HTTP JSON;
+- supervisor de sidecars para stacks MQTT, serial, CAN/J1939, OPC UA, BACnet, DNP3, IEC-104 etc.;
+- Command Plane explicitamente bloqueado.
 
-Receber conexões heterogêneas de campo, manter identidade e saúde das sessões, detectar/decodificar protocolos através de adapters e entregar uma interface normalizada para consumidores como Rapid SCADA e backend RC.
+Isso **não significa** que todos os protocolos do catálogo estejam `production`. O lifecycle é explícito e exige HIL, soak, segurança e campo.
 
 ## Princípios
 
-- fail-closed: nenhuma escrita industrial é habilitada por padrão;
-- uma sessão de campo não é confiável apenas porque conseguiu abrir TCP;
-- transporte, framing, protocolo e modelo de controladora são camadas diferentes;
-- nenhum driver conhece frontend ou regras de UI;
-- observabilidade e auditoria fazem parte do núcleo;
-- backpressure, timeout e isolamento por sessão/dispositivo são obrigatórios;
-- adapters novos entram sem alterar o core.
-
-## Estado desta fundação
-
-Implementado nesta primeira base:
-
-- daemon Go independente;
-- listeners TCP server/reverse TCP;
-- listener UDP;
-- allowlist CIDR para TCP;
-- registro de sessão connect/data/disconnect;
-- event bus interno;
-- detecção conservadora de frame Modbus TCP completo;
-- detecção/CRC de frame Modbus RTU completo;
-- logs estruturados JSON;
-- testes do detector Modbus.
-
-Ainda **não** significa suporte de produção para MQTT, serial, CAN, OPC UA, DNP3, IEC-104 etc. Esses entram como adapters independentes e só recebem status `production` após testes próprios.
-
-## Famílias previstas
-
-### Transportes
-
-- TCP server / reverse TCP
-- TCP client / direct TCP
-- UDP server/client
-- TLS/mTLS
-- serial local RS232/RS422/RS485
-- serial transparente sobre TCP/UDP
-- MQTT/MQTTS
-- HTTP/HTTPS ingest
-- WebSocket
-- VPN-reachable endpoints
-- CAN/CAN-FD via SocketCAN
-- UNIX sockets/local IPC
-
-### Protocolos/adapters
-
-- raw bytes
-- Modbus TCP
-- Modbus RTU
-- Modbus ASCII
-- RTU-over-TCP
-- MQTT/Sparkplug-style payloads
-- OPC UA
-- BACnet/IP
-- DNP3
-- IEC 60870-5-101/104
-- CAN/J1939/CANopen
-- NMEA/GNSS
-- SNMP
-- CoAP/LwM2M
-- M-Bus/Wireless M-Bus
-- LoRaWAN integrations
-- vendor-specific drivers
-
-## Segurança
-
-O core nasce somente em recepção/observação. Escritas e comandos devem passar por um Command Plane separado, com identidade forte do dispositivo, ACL, permissivos, confirmação, auditoria e adapter explicitamente homologado.
+- fail-closed;
+- nenhuma escrita industrial por padrão;
+- transporte, framing, protocolo e controladora são camadas diferentes;
+- TCP não é tratado como `um read = um frame`;
+- dispositivo desconhecido permanece desconhecido;
+- adapter não recebe permissão de comando por estar instalado;
+- aquisição não depende do frontend;
+- Rapid/backend são consumidores;
+- observabilidade e persistência pertencem ao runtime.
 
 ## Executar
 
 ```bash
+cd gateway-umbrella
 go test ./...
+go vet ./...
+go build ./cmd/rc-gateway
 go run ./cmd/rc-gateway -config ./configs/gateway.example.json
 ```
+
+Admin padrão: `127.0.0.1:18080` com `/healthz`, `/readyz`, `/status`, `/sessions` e `/metrics`.
+
+Lifecycle: `experimental -> lab_validated -> field_validated -> production`.

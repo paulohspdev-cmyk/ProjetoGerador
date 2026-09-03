@@ -1,60 +1,60 @@
-# Arquitetura do RC Gateway Umbrella
+# RC Gateway Umbrella Architecture
 
-## Camadas
+`gateway-umbrella/` é independente do bridge, backend, frontend e Rapid atuais.
+
+O core possui quatro planos:
+
+1. **Transport Plane** — TCP/UDP/TLS/HTTP e adapters futuros serial/CAN/MQTT.
+2. **Protocol Plane** — framing, classificação e adapters de protocolo.
+3. **Telemetry Plane** — records normalizados, spool, métricas e northbound.
+4. **Command Plane** — deliberadamente desabilitado nesta fase.
 
 ```text
-CAMPO
-  |
-  v
-Transport adapters
-TCP | UDP | Serial | MQTT | TLS | CAN | HTTP | ...
-  |
-  v
-Session + Identity
-  |
-  v
-Framing / protocol adapters
-Modbus | MQTT payload | OPC UA | DNP3 | IEC104 | J1939 | ...
-  |
-  v
-Normalized Device Events
-  |
-  +------------------+
-  |                  |
-  v                  v
-Rapid adapter     Backend/event adapter
+FIELD / MODEM / VPN / DIRECT IP / SIDECAR
+                 |
+                 v
+       transport adapter
+                 |
+                 v
+          core event bus
+                 |
+                 v
+      stream/framing engine
+                 |
+                 v
+        normalized Record
+           /     |      \
+          v      v       v
+        spool  metrics  northbound
 ```
 
-## Regra de ouro
+## Fail closed
 
-O Gateway não deve assumir que `porta = controladora`. A identidade final é composta e pode usar peer, certificado, modem/IMEI, VPN identity, registration packet, Unit ID, serial number e fingerprints de protocolo.
+- allowlist pode ser obrigatória;
+- TLS mínimo 1.3;
+- mTLS em listeners;
+- HTTP ingest pode exigir bearer token por env;
+- `commandPlaneEnabled=true` é rejeitado pela configuração;
+- payload desconhecido vira `raw/UNKNOWN`, nunca telemetria inventada.
 
-## Southbound x Northbound
+## TCP stream
 
-Southbound é tudo que fala com o campo. Northbound é tudo que entrega dados normalizados para os consumidores internos.
+TCP não preserva mensagens. O engine mantém buffer por sessão, suporta MBAP fragmentado e múltiplos frames no mesmo read. RTU é conservador e exige CRC válido.
 
-O núcleo não deve depender do Rapid SCADA. Rapid será um adapter northbound, assim como o backend RC.
+## Persistência
 
-## Command Plane
+Records normalizados podem ser gravados em segmentos JSONL rotativos com `fsync` antes do northbound. Isso cria fonte de replay/auditoria mesmo com consumidores indisponíveis.
 
-Comandos industriais não compartilham o mesmo caminho permissivo da telemetria. O command plane deverá exigir:
+## Operação
 
-1. equipamento identificado;
-2. controller pack exato;
-3. comando homologado;
-4. estado/permissivos válidos;
-5. autorização do operador;
-6. trilha de auditoria;
-7. retorno/feedback quando o protocolo oferecer.
+Admin em loopback por padrão:
 
-## Fases
+- `/healthz`
+- `/readyz`
+- `/status`
+- `/sessions`
+- `/metrics`
 
-1. Core + TCP/UDP + sessão + observabilidade.
-2. Modbus TCP/RTU stream decoder e proxy compatível com o bridge atual.
-3. TCP direct e serial local.
-4. MQTT/MQTTS + broker/client adapters.
-5. mTLS e identidade de modem/dispositivo.
-6. CAN/J1939/SocketCAN.
-7. OPC UA, DNP3, IEC-104 e adapters adicionais.
-8. northbound Rapid + backend em paralelo.
-9. migração controlada por gerador, nunca big-bang.
+## Migração
+
+Nenhum gerador sai do bridge legado antes de transporte + protocolo chegarem a `field_validated`, passarem HIL/soak e terem rollback.
