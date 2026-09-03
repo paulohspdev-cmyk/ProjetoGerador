@@ -4,6 +4,7 @@
   "eventBuffer": 8192,
   "admin": {"bind": "127.0.0.1:18080"},
   "spool": {"enabled": true, "dir": "/var/lib/rc-gateway-umbrella/spool", "maxSegmentBytes": 67108864, "syncEvery": 1},
+  "identity": {"inventoryFile": "./configs/identity.example.json", "requireEnrollment": false},
   "security": {"requireAllowlist": true, "commandPlaneEnabled": false},
   "listeners": [
     {"id": "reverse-modems", "kind": "tcp_server", "bind": "0.0.0.0:15001", "allowedCidrs": ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"], "readTimeoutSeconds": 60, "maxConnections": 1024, "protocolHint": "auto"},
