@@ -16,17 +16,17 @@ import (
 )
 
 type Config struct {
-	ID            string
-	Socket        string
-	Device        string
-	Standard      string
-	BaudRate      int
-	DataBits      int
-	Parity        string
-	StopBits      string
-	ReadTimeout   time.Duration
-	RTS           bool
-	DTR           bool
+	ID          string
+	Socket      string
+	Device      string
+	Standard    string
+	BaudRate    int
+	DataBits    int
+	Parity      string
+	StopBits    string
+	ReadTimeout time.Duration
+	RTS         bool
+	DTR         bool
 }
 
 func Run(ctx context.Context, cfg Config, logger *slog.Logger) error {
@@ -103,10 +103,10 @@ func servePair(ctx context.Context, cfg Config, conn net.Conn, logger *slog.Logg
 	parity, _ := parseParity(cfg.Parity)
 	stopBits, _ := parseStopBits(cfg.StopBits)
 	mode := &serial.Mode{
-		BaudRate: cfg.BaudRate,
-		DataBits: cfg.DataBits,
-		Parity: parity,
-		StopBits: stopBits,
+		BaudRate:          cfg.BaudRate,
+		DataBits:          cfg.DataBits,
+		Parity:            parity,
+		StopBits:          stopBits,
 		InitialStatusBits: &serial.ModemOutputBits{RTS: cfg.RTS, DTR: cfg.DTR},
 	}
 	port, err := serial.Open(cfg.Device, mode)

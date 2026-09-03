@@ -59,3 +59,5 @@ Qualquer protocolo que já seja transportável byte-transparent por TCP/TLS atra
 ## Regra de produção
 
 Software field-test-ready = todos os gates automatizáveis verdes. Produção validada = somente após HIL/soak físico. Não reintroduzir polling, mapas de memória ou historian no core.
+
+- Autoformat aplicado ao checkpoint Serial antes da validacao completa.
