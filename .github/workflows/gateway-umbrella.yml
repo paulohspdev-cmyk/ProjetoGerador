@@ -1,0 +1,68 @@
+name: Gateway Umbrella
+
+on:
+  push:
+    branches:
+      - 'feat/gateway-umbrella-*'
+    paths:
+      - 'gateway-umbrella/**'
+      - '.github/workflows/gateway-umbrella.yml'
+  pull_request:
+    paths:
+      - 'gateway-umbrella/**'
+      - '.github/workflows/gateway-umbrella.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  core:
+    name: Core Go
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.1'
+          cache-dependency-path: gateway-umbrella/go.mod
+      - name: Format
+        working-directory: gateway-umbrella
+        run: test -z "$(gofmt -l .)"
+      - name: Vet
+        working-directory: gateway-umbrella
+        run: go vet ./...
+      - name: Unit tests
+        working-directory: gateway-umbrella
+        run: go test ./... -count=1
+      - name: Race detector
+        working-directory: gateway-umbrella
+        run: go test -race ./... -count=1
+      - name: Build
+        working-directory: gateway-umbrella
+        run: go build ./cmd/rc-gateway
+
+  adapters:
+    name: Industrial adapters
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.1'
+          cache-dependency-path: gateway-umbrella/adapters/go.mod
+      - name: Download pinned dependencies
+        working-directory: gateway-umbrella/adapters
+        run: go mod download
+      - name: Format
+        working-directory: gateway-umbrella/adapters
+        run: test -z "$(gofmt -l .)"
+      - name: Vet
+        working-directory: gateway-umbrella/adapters
+        run: go vet ./...
+      - name: Tests
+        working-directory: gateway-umbrella/adapters
+        run: go test ./... -count=1
+      - name: Build all adapters
+        working-directory: gateway-umbrella/adapters
+        run: go build ./...
