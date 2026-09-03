@@ -20,52 +20,44 @@ O Gateway é uma ponte universal de conectividade. Rapid SCADA, FUXA, ThingsBoar
 - `52b2d76665fb73ac212e5cf085551aa7c658c2e1`: TLS/mTLS + Unix + RST/half-close; Gateway CI passou format, vet, testes, race e build.
 - `ffa2d548fb14899aad4052cc17dbe1c9d53dab92`: Serial RS232/RS422/RS485 integrado; Gateway CI, CI geral e Quality/Security passaram.
 - `905f82c7036bb00c7539c26ce12ad0f55db5ba48`: UDP datagram/session bridge; Gateway CI, CI geral e Quality/Security passaram, incluindo race detector.
+- `0016e2a629e2169024bfea8fd1fb66d7ec0fe1f4`: SocketCAN/CAN-FD software checkpoint; Gateway CI, CI geral e Quality/Security passaram. O runner GitHub não possui módulo `vcan`, então o round-trip kernel permanece gate da VM/HIL.
 
 ## Transportes validados em software
 
-### Stream
-
-- TCP listen/connect;
-- TLS 1.3 e mTLS sobre TCP;
-- Unix socket listen/connect;
-- Serial RS232/RS422/RS485 por `serialProviders`, exposto internamente como Unix socket raw;
-- pair timeout, slow-peer/write timeout, half-close drain, keepalive, NODELAY e allowlist CIDR;
-- métricas por chunk e bytes por direção;
+- TCP listen/connect, TLS 1.3/mTLS e Unix sockets;
+- Serial RS232/RS422/RS485 raw;
+- UDP preservando datagramas e sessões por peer;
+- SocketCAN/CAN-FD preservando frames do ABI Linux; J1939/CANopen continuam no consumidor;
+- CAN TX bloqueado por padrão (`allowTransmit=false`);
+- pair timeout, slow-peer/write timeout, half-close drain, keepalive, NODELAY e CIDR allowlist;
+- métricas/sessões por transporte e direção;
 - churn/reconnect, RST e half-close testados.
 
-### Datagram
+## Em validação neste HEAD — carga/leak/concurrency
 
-- UDP com exatamente um lado `listen` e um lado `connect`;
-- sessão independente por peer remoto;
-- preservação dos limites de cada datagrama;
-- idle timeout, limites de sessão/payload, allowlist e métricas;
-- testes com múltiplos peers, expiração, oversize e session limit.
+Foi adicionado gate de stress separado do job funcional:
 
-## Em validação neste HEAD — SocketCAN/CAN-FD
+- 1.000 pares duplex simultâneos usando o mesmo `copyDuplex` do core;
+- payload binário validado nos dois sentidos em todos os pares;
+- 1.000 ciclos reais de conexão/desconexão TCP usando `acquirePair` e sockets reais;
+- contagem de `/proc/self/fd` antes/depois para detectar vazamento de descritores;
+- contagem de goroutines antes/depois para detectar leak;
+- limites de entrada para impedir configuração acidental de stress não limitado;
+- job `Stress and leak gate` com timeout próprio.
 
-O provider Linux SocketCAN é orientado a frame e exposto por Unix `SOCK_SEQPACKET`. Ele preserva o ABI do kernel: 16 bytes para CAN clássico e 72 bytes para CAN-FD.
+**Consultar o CI deste HEAD antes de declarar stress/leak verde.**
 
-Regras:
+## Protocolos cobertos sem adapter semântico
 
-- J1939, CANopen e mapas de sinais ficam fora do core;
-- `allowTransmit` é `false` por padrão;
-- IDs/sockets de providers Serial/CAN não podem colidir;
-- métricas e sessões CAN são registradas;
-- systemd permite apenas AF_UNIX/AF_INET/AF_INET6/AF_NETLINK/AF_CAN;
-- testes unitários preservam frames clássico/FD e validam bloqueio de TX;
-- existe teste real `vcan0` de round-trip clássico + FD.
-
-No GitHub-hosted runner atual, o kernel Azure não possui o módulo `vcan`; portanto o workflow executa o teste kernel quando o host oferecer `vcan` e registra notice quando não oferecer. O teste `vcan0` permanece gate obrigatório na VM/HIL antes de declarar CAN validado fisicamente.
-
-**Consultar o CI deste HEAD antes de declarar o checkpoint de software CAN verde.**
+Qualquer protocolo transportável byte-transparent por TCP/TLS atravessa o core sem biblioteca específica: Modbus TCP, MQTT, OPC UA, IEC-104, DNP3/TCP, HTTP(S), WebSocket e protocolos proprietários. Serial transporta Modbus RTU/ASCII, IEC-101, DNP3 serial, NMEA e protocolos proprietários. UDP preserva datagramas. CAN preserva frames.
 
 ## Ainda falta para software field-test-ready universal
 
-1. fechar CI CAN (format/vet/unit/race/build; `vcan` quando disponível);
-2. carga/leak/concurrency;
-3. impairment de rede e soak automatizado;
-4. `--check-config`, instalação, release e rollback atômicos;
-5. checksums/SBOM e gates de release;
+1. validar carga/leak/concurrency no CI;
+2. impairment de rede e soak automatizado;
+3. `--check-config` e validação estrita/conflitos;
+4. instalação standalone, release e rollback atômicos;
+5. checksums/SBOM/vulnerability/release gates;
 6. documentação operacional final e matriz de compatibilidade;
 7. HIL físico para declarar produção validada.
 
