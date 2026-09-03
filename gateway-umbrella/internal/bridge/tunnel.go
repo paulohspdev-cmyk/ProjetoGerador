@@ -78,7 +78,7 @@ func (t *Tunnel) Run(ctx context.Context) error {
 		if ctx.Err() != nil {
 			return nil
 		}
-		fieldConn, consumerConn, err := acquirePair(ctx, field, consumer)
+		fieldConn, consumerConn, err := acquirePair(ctx, field, consumer, t.Field.Mode, t.Consumer.Mode)
 		if err != nil {
 			if ctx.Err() != nil {
 				return nil
@@ -118,7 +118,37 @@ func (t *Tunnel) Run(ctx context.Context) error {
 	}
 }
 
-func acquirePair(ctx context.Context, field, consumer connectionSource) (net.Conn, net.Conn, error) {
+// acquirePair deliberately treats an inbound listener as the trigger when the
+// opposite side is outbound. This prevents the Gateway from opening a device or
+// consumer connection and leaving it idle before the initiating peer exists.
+func acquirePair(ctx context.Context, field, consumer connectionSource, fieldMode, consumerMode string) (net.Conn, net.Conn, error) {
+	switch {
+	case fieldMode == "listen" && consumerMode == "connect":
+		return acquireTriggered(ctx, "field", field, "consumer", consumer)
+	case fieldMode == "connect" && consumerMode == "listen":
+		return acquireTriggered(ctx, "consumer", consumer, "field", field)
+	default:
+		return acquireConcurrent(ctx, field, consumer)
+	}
+}
+
+func acquireTriggered(ctx context.Context, firstName string, first connectionSource, secondName string, second connectionSource) (net.Conn, net.Conn, error) {
+	firstConn, err := first.Acquire(ctx)
+	if err != nil {
+		return nil, nil, fmt.Errorf("%s: %w", firstName, err)
+	}
+	secondConn, err := second.Acquire(ctx)
+	if err != nil {
+		_ = firstConn.Close()
+		return nil, nil, fmt.Errorf("%s: %w", secondName, err)
+	}
+	if firstName == "field" {
+		return firstConn, secondConn, nil
+	}
+	return secondConn, firstConn, nil
+}
+
+func acquireConcurrent(ctx context.Context, field, consumer connectionSource) (net.Conn, net.Conn, error) {
 	type result struct {
 		name string
 		conn net.Conn
