@@ -1,5 +1,5 @@
 [Unit]
-Description=RC Gateway Umbrella
+Description=RC Universal Gateway (bridge-first)
 After=network-online.target
 Wants=network-online.target
 
@@ -15,7 +15,6 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/var/lib/rc-gateway-umbrella
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true
