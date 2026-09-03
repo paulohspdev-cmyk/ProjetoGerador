@@ -1,14 +1,10 @@
 # RC Universal Gateway — Architecture
 
-> Estado/handoff canônico: [`PROJECT_STATE.md`](./PROJECT_STATE.md). Toda mudança no Gateway deve atualizar esse documento.
+> Handoff canônico: [`PROJECT_STATE.md`](./PROJECT_STATE.md).
 
-## Decisão arquitetural vigente
+## 1. Missão
 
-O RC Universal Gateway é uma **ponte universal de conectividade industrial/IoT**.
-
-Ele não é o motor SCADA, não é historiador e não deve manter um banco universal de mapas de memória/registradores dos equipamentos.
-
-Princípio:
+O RC Universal Gateway é uma **ponte universal de conectividade**. Ele conecta dois endpoints e transporta bytes nos dois sentidos sem precisar entender a semântica do equipamento.
 
 ```text
 BRIDGE FIRST
@@ -17,235 +13,154 @@ NO DEVICE MEMORY DATABASE
 NO TELEMETRY HISTORIAN
 ```
 
-## Fluxo principal
+Geradores são apenas um caso de uso.
+
+## 2. Unidade fundamental: Tunnel
+
+O core é construído em torno de um `Tunnel`:
 
 ```text
-EQUIPAMENTO / CONTROLADORA / PLC / IHM / RTU / IED
-                         |
-                RS232 / RS485 / Ethernet
-                         |
-                         v
-               MODEM / ROUTER / VPN
-                         |
-                         v
-                  INTERNET / LAN
-                         |
-                         v
-                 MIKROTIK / NAT
-                         |
-                         v
-               RC UNIVERSAL GATEWAY
-           accept / identify / protect
-          session / route / reconnect
-                         |
-        +----------------+----------------+
-        |                |                |
-        v                v                v
-   Rapid SCADA          FUXA        software/SCADA X
-        |
-        v
-   RC Geradores
+FIELD ENDPOINT  <======== raw duplex bytes ========>  CONSUMER ENDPOINT
 ```
 
-### Exemplo PUSR
+Os dois lados são simétricos e podem ser:
 
 ```text
-Controladora RS485
-      |
-PUSR TCP Client
-      |
-IP público:porta
-      |
-MikroTik DNAT
-      |
-Gateway listener
-      |
-rota configurada
-      |
-Rapid SCADA
+listen  -> aguarda peer
+connect -> inicia conexão
 ```
 
-Rapid SCADA envia uma requisição através da sessão virtual/bridge. O Gateway encaminha os bytes ao modem/controladora e devolve a resposta ao Rapid.
+No primeiro milestone de bridge real, o network suportado pelo core é TCP.
 
-O Gateway não precisa saber que determinado registrador significa RPM, tensão ou pressão.
-
-## Componentes do core
-
-### 1. Transport Plane
-
-Responsável por abrir e manter meios de comunicação:
-
-- TCP server/reverse TCP;
-- TCP client;
-- UDP;
-- TLS/mTLS;
-- serial RS-232/422/485;
-- WebSocket;
-- MQTT quando usado como transporte;
-- SocketCAN/CAN quando usado como transporte;
-- adapters futuros.
-
-### 2. Session Plane
-
-Responsável por:
-
-- conexão/desconexão;
-- timeout;
-- reconnect;
-- ownership de sessão;
-- origem/destino;
-- identificação disponível;
-- limites por origem;
-- estado operacional.
-
-### 3. Routing Plane
-
-É o coração do produto.
-
-Mantém regras de encaminhamento como:
+### Exemplo A — modem TCP Client + Rapid SCADA
 
 ```text
-listener tcp-reverse-15020
-    -> route gen163-link
-    -> target rapid-local:25020
+Controladora -> PUSR -> Internet -> MikroTik -> Gateway
+                                            field listen :15003
+                                                     ||
+                                                raw tunnel
+                                                     ||
+                                       consumer listen :25003
+                                                     <- Rapid SCADA
 ```
 
-ou:
+### Exemplo B — equipamento direto por VPN/IP
 
 ```text
-vpn-device 10.60.20.222:502
-    -> local virtual endpoint
-    -> Rapid/FUXA/outro consumidor
+Gateway field connect -> 10.60.20.222:502
+         ||
+     raw tunnel
+         ||
+consumer listen :25020 <- Rapid SCADA
 ```
 
-Uma rota pode ser byte-transparent ou usar framing mínimo quando necessário.
+## 3. Responsabilidades do core
 
-### 4. Identity/Security Plane
+O caminho principal deve conter somente:
 
-Responsável por confiança e segurança da conexão, não pela semântica da telemetria.
+1. **Transport** — abrir/aceitar a conexão;
+2. **Session/Pair** — parear os dois endpoints;
+3. **Security** — allowlist, TLS quando implementado no Tunnel, firewall externo e políticas;
+4. **Routing** — determinar qual `field` pertence a qual `consumer`;
+5. **Raw forwarding** — transportar bytes sem modificação;
+6. **Reconnect/lifecycle** — restabelecer endpoints `connect` e fechar pares quebrados;
+7. **Operations** — health, readiness, sessões, logs e métricas de comunicação.
 
-Pode usar:
+## 4. O que não pertence ao core
 
-- certificado/mTLS;
-- fingerprint;
-- MQTT Client ID;
-- IMEI/ICCID quando disponível;
-- VPN peer;
-- IP/CIDR como evidência auxiliar;
-- registration packet/heartbeat do modem;
-- serial/device identifier fornecido pelo transporte.
+Não pertencem ao runtime principal:
 
-Estados podem continuar como `enrolled`, `quarantined`, `unknown` e `revoked`.
+- banco de registradores;
+- mapa Modbus por fabricante/modelo;
+- polling de pontos;
+- converter RPM/pressão/tensão/alarme;
+- histórico de telemetria;
+- historian;
+- banco de dispositivos necessário para transportar bytes;
+- engine de alarmes;
+- dashboard;
+- fan-out semântico de telemetria.
 
-### 5. Framing Plane — mínimo e opcional
+ComAp, DSE, Siemens, Schneider, DEIF, Woodward e outros devem ser interpretados pelo Rapid SCADA, FUXA, software do fabricante ou driver apropriado.
 
-Framing existe somente para transportar corretamente quando byte-transparent não é suficiente.
+## 5. Framing/protocolo é opcional
 
-Exemplos:
+O Gateway pode conhecer framing quando for **necessário para transportar corretamente**, por exemplo:
 
-- reconstrução de MBAP Modbus TCP fragmentado;
-- separação de múltiplos frames no mesmo stream;
-- CRC16 RTU;
-- Unit ID para multiplexação de um barramento;
-- protocolo de registro/heartbeat de modem;
-- delimitadores de protocolo proprietário.
+- preservar limites de frame em uma conversão serial;
+- validar CRC RTU em um adapter específico;
+- selecionar Unit ID em uma multiplexação explicitamente projetada;
+- encapsular/desencapsular um transporte.
 
-Framing **não significa interpretar mapa de memória**.
+Isso não autoriza o core a conhecer o significado dos registradores.
 
-### 6. Destination/Connector Plane
+Um protocolo completamente desconhecido deve poder atravessar um túnel raw.
 
-Adapters de saída apresentam a conexão ao sistema consumidor.
+## 6. Não fazer fan-out raw
 
-Destinos possíveis:
+Uma sessão request/response não pode ser copiada cegamente para vários mestres:
 
-- Rapid SCADA;
-- FUXA;
-- ThingsBoard;
-- Node-RED;
-- software do fabricante;
-- outro SCADA;
-- TCP/UDP endpoint;
-- MQTT broker;
-- WebSocket endpoint;
-- custom connector.
+```text
+              X--> Rapid
+FIELD --> GW -X--> FUXA        ERRADO como cópia raw simultânea
+              X--> outro master
+```
 
-O destino pode interpretar o protocolo. O core do Gateway não precisa.
+Transações Modbus, protocolos proprietários e barramentos seriais podem colidir/intercalar requisições.
 
-### 7. Operations Plane
+Regra do core:
 
-Somente dados operacionais do próprio Gateway:
+> **um Tunnel raw possui um consumidor ativo por vez.**
 
-- health;
-- readiness;
-- sessões ativas;
-- bytes RX/TX;
+Se vários sistemas precisarem dos mesmos valores, o compartilhamento ocorre depois do driver/SCADA ou em plugin protocol-aware separado, com arbitragem explícita.
+
+## 7. Observabilidade não é telemetria industrial
+
+O Gateway pode e deve medir o próprio funcionamento:
+
+- pares ativos;
+- conexões abertas/fechadas;
+- bytes `field -> consumer`;
+- bytes `consumer -> field`;
+- erros de bridge;
 - reconnects;
-- timeouts;
-- CRC/framing errors;
-- latência;
-- filas/buffers;
-- logs.
+- uptime/readiness.
 
-Não é banco de processo nem histórico SCADA.
+Isso não é histórico do processo industrial e não requer banco de telemetria.
 
-## Sem banco de telemetria
-
-O produto não deve possuir SQLite/PostgreSQL/Influx/Timescale ou outro banco para armazenar processo industrial.
-
-Buffers necessários para bridging devem ser:
-
-- limitados;
-- orientados a sessão/transporte;
-- preferencialmente em memória;
-- descartados conforme política explícita quando a sessão termina ou o limite é atingido.
-
-Se um consumidor precisa de histórico, isso pertence ao consumidor/historiador, por exemplo Rapid SCADA, ThingsBoard ou um TSDB externo.
-
-## Sem mapas de memória
-
-Não manter dentro do Gateway:
+## 8. Código principal atual
 
 ```text
-DSE4520 register X = RPM
-ComAp IG200 register Y = battery
-PLC Siemens DBx.DBy = pressure
+cmd/rc-gateway
+      |
+      v
+internal/config   schema 3 / tunnels
+      |
+      v
+internal/gateway  lifecycle + admin + métricas
+      |
+      v
+internal/bridge   pairing + io.Copy duplex
+      |
+      +--> field endpoint
+      |
+      +--> consumer endpoint
 ```
 
-Esses mapas pertencem aos drivers/sistemas que interpretam o equipamento.
+Os adapters criados antes da decisão bridge-first são experimentos de conectividade/bibliotecas. Eles não são iniciados pelo runtime atual e devem ser convertidos futuramente em providers de endpoint raw ou removidos se forem apenas leitores semânticos.
 
-A troca de DSE por ComAp, PLC ou equipamento proprietário **não deve exigir alterar o core do Gateway**.
+## 9. Próximas extensões corretas
 
-## Referência ThingsBoard
+A expansão deve ocorrer por **novos tipos de endpoint**, não por mapas de memória:
 
-O ThingsBoard IoT Gateway usa connectors e converters e encaminha dados convertidos para storage/ThingsBoard. Essa modularidade é uma boa referência, mas nosso produto deliberadamente para antes da conversão semântica.
+- TLS/mTLS endpoint;
+- UDP session bridge;
+- Serial RS232/422/485 endpoint;
+- RTU-over-TCP transparent endpoint;
+- WebSocket raw endpoint;
+- MQTT tunnel/connector apenas quando houver contrato de bytes/mensagens adequado;
+- SocketCAN endpoint;
+- Unix socket/local IPC;
+- dynamic session routing para muitos modems compartilhando listeners, quando houver identidade/registro seguro.
 
-Aproveitar conceitos:
-
-- connectors isolados;
-- lifecycle/supervisão;
-- reconnect;
-- configuração modular;
-- custom connectors;
-- métricas/logs.
-
-Não copiar para o core:
-
-- converters de pontos;
-- polling de registradores para formar telemetria;
-- storage de telemetria;
-- modelo específico de uma plataforma;
-- RPC industrial genérico.
-
-## Command Plane
-
-Continua bloqueado nesta fase.
-
-Uma ponte bidirecional pode tecnicamente transportar bytes enviados pelo sistema consumidor, mas qualquer liberação de comandos industriais precisa de política explícita e homologação separada. Não deve surgir um endpoint de escrita genérico no Gateway apenas porque a conexão é bidirecional.
-
-## Critério de universalidade
-
-O teste mais importante é:
-
-> Se amanhã surgir um equipamento cujo protocolo o Gateway nunca viu, mas existe um software/SCADA capaz de entendê-lo, o Gateway deve conseguir transportar a conexão sem precisar receber um novo mapa de memória.
-
-Se isso for verdade, o Gateway continua universal.
+Cada transporte deve continuar entregando um stream/datagram ao roteador sem converter valores de processo.
