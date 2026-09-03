@@ -2,8 +2,9 @@
 
 package main
 
-import(
+import (
 	"fmt"
 	"os"
 )
-func main(){fmt.Fprintln(os.Stderr,"SocketCAN adapter requires Linux");os.Exit(2)}
+
+func main() { fmt.Fprintln(os.Stderr, "SocketCAN adapter requires Linux"); os.Exit(2) }
