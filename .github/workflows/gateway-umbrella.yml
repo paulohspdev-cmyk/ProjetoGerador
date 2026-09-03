@@ -46,6 +46,14 @@ jobs:
       - name: Unit and socket integration tests
         working-directory: gateway-umbrella
         run: go test ./... -count=1
+      - name: Kernel vcan integration
+        working-directory: gateway-umbrella
+        run: |
+          sudo modprobe vcan || true
+          sudo ip link add dev vcan0 type vcan
+          sudo ip link set dev vcan0 mtu 72 || true
+          sudo ip link set dev vcan0 up
+          RC_GATEWAY_TEST_VCAN=1 go test ./internal/provider/canbridge -run TestVCANRoundTripClassicAndFD -count=1
       - name: Race detector
         working-directory: gateway-umbrella
         run: go test -race ./... -count=1

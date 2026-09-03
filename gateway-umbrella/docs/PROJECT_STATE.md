@@ -47,22 +47,36 @@ O Gateway é uma ponte universal de conectividade. Rapid SCADA, FUXA, ThingsBoar
 
 O provider serial usa `go.bug.st/serial v1.8.0`, abre a porta física somente quando o túnel/consumidor precisa dela e nunca interpreta Modbus/IEC/DNP3/NMEA. RS485 com adaptadores que fazem direção automática funciona como stream serial comum; hardware que exija controle kernel/vendor específico de direção deve ser homologado em HIL antes de produção.
 
+## Em validação neste HEAD — SocketCAN/CAN-FD
+
+Foi adicionado provider Linux SocketCAN orientado a frame, exposto por Unix `SOCK_SEQPACKET`. O formato interno preserva exatamente o ABI do kernel: 16 bytes para `struct can_frame` e 72 bytes para `struct canfd_frame`.
+
+Regras do checkpoint:
+
+- CAN clássico e CAN-FD permanecem frame-transparent;
+- J1939, CANopen e mapas de sinais ficam fora do core;
+- `allowTransmit` é `false` por padrão; escrita CAN precisa ser explicitamente habilitada;
+- IDs e sockets de providers Serial/CAN não podem colidir;
+- métricas/sessões CAN são registradas pelo runtime;
+- systemd restringe famílias de socket a AF_UNIX/AF_INET/AF_INET6/AF_NETLINK/AF_CAN;
+- testes unitários preservam frames clássico/FD e validam bloqueio de TX;
+- CI cria `vcan0` e executa round-trip kernel clássico + FD.
+
+**Consultar o CI deste HEAD antes de declarar CAN/CAN-FD verde.**
+
 ## Protocolos cobertos sem adapter semântico
 
-Qualquer protocolo que já seja transportável byte-transparent por TCP/TLS atravessa o core sem biblioteca específica: Modbus TCP, MQTT, OPC UA, IEC-104, DNP3/TCP, HTTP(S), WebSocket, protocolos proprietários e outros. Serial transporta Modbus RTU/ASCII, IEC-101, DNP3 serial, NMEA e protocolos proprietários sem conhecer seu significado. UDP transporta protocolos orientados a datagrama sem alterar os limites dos pacotes.
-
-## Próximo checkpoint — CAN
-
-Implementar SocketCAN/CAN-FD como transporte orientado a frame. O Gateway deve preservar ID, formato standard/extended, RTR/error quando aplicável, tamanho, dados e flags CAN-FD/BRS/ESI. J1939 e CANopen continuam sendo semântica do consumidor, nunca banco de sinais no Gateway.
+Qualquer protocolo transportável byte-transparent por TCP/TLS atravessa o core sem biblioteca específica: Modbus TCP, MQTT, OPC UA, IEC-104, DNP3/TCP, HTTP(S), WebSocket, protocolos proprietários e outros. Serial transporta Modbus RTU/ASCII, IEC-101, DNP3 serial, NMEA e protocolos proprietários sem conhecer seu significado. UDP preserva datagramas. CAN preserva frames; J1939/CANopen continuam no consumidor.
 
 ## Ainda falta para software field-test-ready universal
 
-1. SocketCAN/CAN-FD frame transport;
+1. validar SocketCAN/CAN-FD no CI;
 2. carga/leak/concurrency;
 3. impairment de rede e soak automatizado;
-4. validação de config/dry-run, instalação, release e rollback atômicos;
-5. documentação operacional final e matriz de compatibilidade;
-6. HIL físico continua sendo o passo posterior para declarar produção validada.
+4. `--check-config`, instalação, release e rollback atômicos;
+5. checksums/SBOM e gates de release;
+6. documentação operacional final e matriz de compatibilidade;
+7. HIL físico continua sendo o passo posterior para declarar produção validada.
 
 ## Regra de produção
 

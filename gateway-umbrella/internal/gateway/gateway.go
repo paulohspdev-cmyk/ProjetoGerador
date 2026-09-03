@@ -14,6 +14,7 @@ import (
 	"github.com/paulohspdev-cmyk/ProjetoGerador/gateway-umbrella/internal/core"
 	"github.com/paulohspdev-cmyk/ProjetoGerador/gateway-umbrella/internal/datagram"
 	"github.com/paulohspdev-cmyk/ProjetoGerador/gateway-umbrella/internal/metrics"
+	"github.com/paulohspdev-cmyk/ProjetoGerador/gateway-umbrella/internal/provider/canbridge"
 	"github.com/paulohspdev-cmyk/ProjetoGerador/gateway-umbrella/internal/provider/serialbridge"
 )
 
@@ -25,6 +26,7 @@ type Gateway struct {
 	admin      *admin.Server
 	pairActive atomic.Int64
 	udpActive  atomic.Int64
+	canActive  atomic.Int64
 }
 
 func New(cfg config.Config, logger *slog.Logger) *Gateway {
@@ -36,7 +38,8 @@ func New(cfg config.Config, logger *slog.Logger) *Gateway {
 
 func (g *Gateway) Run(ctx context.Context) error {
 	var wg sync.WaitGroup
-	errCh := make(chan error, 1+len(g.cfg.Tunnels)+len(g.cfg.SerialProviders)+len(g.cfg.UDPTunnels))
+	errCh := make(chan error, 1+len(g.cfg.Tunnels)+len(g.cfg.SerialProviders)+len(g.cfg.CANProviders)+len(g.cfg.UDPTunnels))
+
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -44,6 +47,7 @@ func (g *Gateway) Run(ctx context.Context) error {
 			sendErr(errCh, fmt.Errorf("admin: %w", err))
 		}
 	}()
+
 	for _, p := range g.cfg.SerialProviders {
 		p := p
 		wg.Add(1)
@@ -55,6 +59,19 @@ func (g *Gateway) Run(ctx context.Context) error {
 			}
 		}()
 	}
+
+	for _, p := range g.cfg.CANProviders {
+		p := p
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			cfg := canbridge.Config{ID: p.ID, Interface: p.Interface, Socket: p.Socket, EnableFD: p.EnableFD, ReceiveOwn: p.ReceiveOwn, AllowTransmit: p.AllowTransmit}
+			if err := canbridge.Run(ctx, cfg, g.logger, g.canHooks(p.ID, p.Interface)); err != nil && ctx.Err() == nil {
+				sendErr(errCh, fmt.Errorf("CAN provider %s: %w", p.ID, err))
+			}
+		}()
+	}
+
 	for _, cfgTunnel := range g.cfg.Tunnels {
 		cfgTunnel := cfgTunnel
 		tunnel := &bridge.Tunnel{ID: cfgTunnel.ID, Field: bridgeEndpoint("field", cfgTunnel.Field), Consumer: bridgeEndpoint("consumer", cfgTunnel.Consumer), Logger: g.logger, Hooks: g.tunnelHooks(cfgTunnel.ID), PairTimeout: time.Duration(cfgTunnel.PairTimeoutS) * time.Second, WriteTimeout: time.Duration(cfgTunnel.WriteTimeoutS) * time.Second, DrainTimeout: time.Duration(cfgTunnel.DrainTimeoutS) * time.Second}
@@ -66,6 +83,7 @@ func (g *Gateway) Run(ctx context.Context) error {
 			}
 		}()
 	}
+
 	for _, cfgTunnel := range g.cfg.UDPTunnels {
 		cfgTunnel := cfgTunnel
 		tunnel := &datagram.Tunnel{
@@ -86,12 +104,15 @@ func (g *Gateway) Run(ctx context.Context) error {
 			}
 		}()
 	}
+
 	g.admin.SetReady(true)
 	g.metrics.Set("rc_gateway_ready", 1)
 	g.metrics.Set("rc_gateway_configured_tunnels", int64(len(g.cfg.Tunnels)))
 	g.metrics.Set("rc_gateway_configured_udp_tunnels", int64(len(g.cfg.UDPTunnels)))
 	g.metrics.Set("rc_gateway_configured_serial_providers", int64(len(g.cfg.SerialProviders)))
-	g.logger.Info("bridge runtime ready", "nodeId", g.cfg.NodeID, "tunnels", len(g.cfg.Tunnels), "udpTunnels", len(g.cfg.UDPTunnels), "serialProviders", len(g.cfg.SerialProviders))
+	g.metrics.Set("rc_gateway_configured_can_providers", int64(len(g.cfg.CANProviders)))
+	g.logger.Info("bridge runtime ready", "nodeId", g.cfg.NodeID, "tunnels", len(g.cfg.Tunnels), "udpTunnels", len(g.cfg.UDPTunnels), "serialProviders", len(g.cfg.SerialProviders), "canProviders", len(g.cfg.CANProviders))
+
 	select {
 	case <-ctx.Done():
 		g.admin.SetReady(false)
@@ -180,6 +201,41 @@ func (g *Gateway) udpHooks(tunnelID string) datagram.Hooks {
 			g.metrics.Inc("rc_gateway_udp_drops_total")
 			g.metrics.Inc(prefix + "_drops_total")
 			g.metrics.Inc(prefix + "_drops_" + reason + "_total")
+		},
+	}
+}
+
+func (g *Gateway) canHooks(providerID, interfaceName string) canbridge.Hooks {
+	prefix := "rc_gateway_can_provider_" + providerID
+	return canbridge.Hooks{
+		OnOpen: func(sessionID string) {
+			now := time.Now().UTC()
+			g.sessions.Open(core.Session{ID: sessionID, ListenerID: providerID, Transport: "socketcan", RemoteAddr: interfaceName, LocalAddr: "unixpacket", OpenedAt: now, LastSeenAt: now})
+			g.metrics.Inc("rc_gateway_can_sessions_opened_total")
+			g.metrics.Inc(prefix + "_sessions_opened_total")
+			g.metrics.Set("rc_gateway_can_active_sessions", g.canActive.Add(1))
+			g.metrics.Set("rc_gateway_active_sessions", int64(g.sessions.Count()))
+			g.metrics.Set(prefix+"_active", 1)
+		},
+		OnFrame: func(sessionID, direction string, n uint64) {
+			g.sessions.Touch(sessionID, direction, int(n), time.Now().UTC())
+			g.metrics.Inc("rc_gateway_can_frames_total")
+			g.metrics.Inc(prefix + "_frames_total")
+			g.metrics.Add("rc_gateway_can_bytes_total", n)
+			g.metrics.Add(prefix+"_bytes_total", n)
+			g.metrics.Add(prefix+"_"+direction+"_bytes_total", n)
+		},
+		OnClose: func(sessionID string, err error) {
+			g.sessions.Close(sessionID)
+			g.metrics.Inc("rc_gateway_can_sessions_closed_total")
+			g.metrics.Inc(prefix + "_sessions_closed_total")
+			g.metrics.Set("rc_gateway_can_active_sessions", g.canActive.Add(-1))
+			g.metrics.Set("rc_gateway_active_sessions", int64(g.sessions.Count()))
+			g.metrics.Set(prefix+"_active", 0)
+			if err != nil {
+				g.metrics.Inc("rc_gateway_can_errors_total")
+				g.metrics.Inc(prefix + "_errors_total")
+			}
 		},
 	}
 }

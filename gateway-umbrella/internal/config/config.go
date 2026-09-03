@@ -62,6 +62,15 @@ type SerialProvider struct {
 	DTR           bool   `json:"dtr,omitempty"`
 }
 
+type CANProvider struct {
+	ID            string `json:"id"`
+	Interface     string `json:"interface"`
+	Socket        string `json:"socket"`
+	EnableFD      bool   `json:"enableFd,omitempty"`
+	ReceiveOwn    bool   `json:"receiveOwn,omitempty"`
+	AllowTransmit bool   `json:"allowTransmit,omitempty"`
+}
+
 type UDPEndpoint struct {
 	Mode         string   `json:"mode"`
 	Bind         string   `json:"bind,omitempty"`
@@ -84,6 +93,7 @@ type Config struct {
 	Admin           Admin            `json:"admin"`
 	Security        Security         `json:"security"`
 	SerialProviders []SerialProvider `json:"serialProviders,omitempty"`
+	CANProviders    []CANProvider    `json:"canProviders,omitempty"`
 	Tunnels         []Tunnel         `json:"tunnels"`
 	UDPTunnels      []UDPTunnel      `json:"udpTunnels,omitempty"`
 }
@@ -115,8 +125,7 @@ func Load(path string) (Config, error) {
 	if cfg.Security.CommandPlaneEnabled {
 		return cfg, fmt.Errorf("commandPlaneEnabled is intentionally unsupported in this release")
 	}
-
-	if err := validateSerialProviders(&cfg); err != nil {
+	if err := validateProviders(&cfg); err != nil {
 		return cfg, err
 	}
 
@@ -186,23 +195,37 @@ func Load(path string) (Config, error) {
 	return cfg, nil
 }
 
-func validateSerialProviders(cfg *Config) error {
-	providerIDs := map[string]bool{}
-	providerSockets := map[string]bool{}
+func validateProviders(cfg *Config) error {
+	ids := map[string]string{}
+	sockets := map[string]string{}
+	claim := func(kind, id, socket string) error {
+		if prev, exists := ids[id]; exists {
+			return fmt.Errorf("provider id %q is already used by %s", id, prev)
+		}
+		ids[id] = kind
+		if prev, exists := sockets[socket]; exists {
+			return fmt.Errorf("provider socket %q is already used by %s", socket, prev)
+		}
+		sockets[socket] = kind + " " + id
+		return nil
+	}
+
 	for i := range cfg.SerialProviders {
 		p := &cfg.SerialProviders[i]
 		p.ID = strings.TrimSpace(p.ID)
+		p.Socket = strings.TrimSpace(p.Socket)
 		p.Standard = strings.ToLower(strings.TrimSpace(p.Standard))
 		p.Parity = strings.ToLower(strings.TrimSpace(p.Parity))
 		p.StopBits = strings.TrimSpace(p.StopBits)
-		if p.ID == "" || providerIDs[p.ID] {
-			return fmt.Errorf("serialProvider[%d] requires unique id", i)
+		if p.ID == "" {
+			return fmt.Errorf("serialProvider[%d] requires id", i)
 		}
-		providerIDs[p.ID] = true
-		if !filepath.IsAbs(p.Socket) || providerSockets[p.Socket] {
-			return fmt.Errorf("serialProvider %s requires unique absolute socket", p.ID)
+		if !filepath.IsAbs(p.Socket) {
+			return fmt.Errorf("serialProvider %s requires absolute socket", p.ID)
 		}
-		providerSockets[p.Socket] = true
+		if err := claim("serialProvider", p.ID, p.Socket); err != nil {
+			return err
+		}
 		if strings.TrimSpace(p.Device) == "" {
 			return fmt.Errorf("serialProvider %s device is required", p.ID)
 		}
@@ -226,6 +249,25 @@ func validateSerialProviders(cfg *Config) error {
 		}
 		if p.ReadTimeoutMS < 0 || p.ReadTimeoutMS > 60000 {
 			return fmt.Errorf("serialProvider %s invalid readTimeoutMilliseconds", p.ID)
+		}
+	}
+
+	for i := range cfg.CANProviders {
+		p := &cfg.CANProviders[i]
+		p.ID = strings.TrimSpace(p.ID)
+		p.Interface = strings.TrimSpace(p.Interface)
+		p.Socket = strings.TrimSpace(p.Socket)
+		if p.ID == "" {
+			return fmt.Errorf("canProvider[%d] requires id", i)
+		}
+		if p.Interface == "" {
+			return fmt.Errorf("canProvider %s interface is required", p.ID)
+		}
+		if !filepath.IsAbs(p.Socket) {
+			return fmt.Errorf("canProvider %s requires absolute socket", p.ID)
+		}
+		if err := claim("canProvider", p.ID, p.Socket); err != nil {
+			return err
 		}
 	}
 	return nil
