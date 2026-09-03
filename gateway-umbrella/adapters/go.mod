@@ -3,6 +3,8 @@ module github.com/paulohspdev-cmyk/ProjetoGerador/gateway-umbrella/adapters
 go 1.27.0
 
 require (
+	github.com/coder/websocket v1.8.15
+	github.com/eclipse/paho.golang v0.23.0
 	github.com/eclipse/paho.mqtt.golang v1.5.1
 	github.com/gopcua/opcua v0.9.1
 	github.com/gosnmp/gosnmp v1.44.0
