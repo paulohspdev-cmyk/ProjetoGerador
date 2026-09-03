@@ -23,33 +23,17 @@ NO TELEMETRY HISTORIAN
 
 O Gateway deve funcionar mesmo sem entender semanticamente o protocolo do equipamento.
 
-A função principal é:
+A função principal é abrir/aceitar os dois lados, parear as conexões, transportar bytes sem modificação, reconectar de forma limpa e expor apenas observabilidade operacional.
 
-1. abrir/aceitar a conexão de campo;
-2. abrir/aceitar a conexão do software consumidor;
-3. parear os dois lados;
-4. transportar bytes nos dois sentidos sem modificação;
-5. fechar/reconectar pares de forma limpa;
-6. expor somente observabilidade operacional.
+Não pertence ao core: banco de registradores, mapas ComAp/DSE/PLC/IHM, polling de pontos, normalização de processo, historian, spool de telemetria, alarmes ou dashboards.
 
-Não pertence ao core:
-
-- banco de registradores;
-- mapas de memória ComAp/DSE/PLC/IHM;
-- polling para descobrir RPM/tensão/pressão/alarmes;
-- normalização de telemetria de processo;
-- historian/spool de telemetria;
-- engine de alarmes/dashboards.
-
-O Rapid SCADA, FUXA, ThingsBoard, software do fabricante ou outro driver é quem interpreta o equipamento.
+Rapid SCADA, FUXA, ThingsBoard, software do fabricante ou outro driver é quem interpreta o equipamento.
 
 ---
 
 # 2. Arquitetura runtime atual
 
-O schema ativo é **3** e usa `tunnels`.
-
-Cada Tunnel possui:
+Schema ativo: **3**, baseado em `tunnels`.
 
 ```text
 FIELD ENDPOINT <====== raw duplex bytes ======> CONSUMER ENDPOINT
@@ -62,7 +46,7 @@ Cada endpoint pode ser:
 
 No milestone atual o core Tunnel suporta `network=tcp`.
 
-## Exemplo PUSR reverso + Rapid
+## PUSR reverso + Rapid
 
 ```text
 Controladora -> PUSR -> Internet -> MikroTik -> Gateway :15003
@@ -72,8 +56,6 @@ Controladora -> PUSR -> Internet -> MikroTik -> Gateway :15003
 Rapid SCADA ------------------------------> Gateway :25003
 ```
 
-Config:
-
 ```json
 {
   "id": "pusr-15003-to-rapid",
@@ -82,9 +64,7 @@ Config:
 }
 ```
 
-O Rapid envia a requisição; o Gateway encaminha; a resposta retorna byte-for-byte.
-
-## Exemplo equipamento direto por VPN/IP
+## Equipamento direto por VPN/IP
 
 ```text
 Gateway field connect -> 10.60.20.222:502
@@ -94,15 +74,17 @@ Gateway field connect -> 10.60.20.222:502
 Gateway :25020 <- Rapid SCADA
 ```
 
+Quando um lado é `listen` e o outro `connect`, o endpoint `listen` agora atua como **trigger**: o Gateway só abre a conexão outbound depois que o peer inbound existir. Isso evita manter conexão ociosa com controladora ou consumidor antes de haver quem a utilize.
+
 ---
 
-# 3. Regra importante: sem fan-out raw cego
+# 3. Regra de multiplexação
 
 Um Tunnel raw possui **um consumidor ativo por vez**.
 
-Não copiar simultaneamente uma conexão request/response para Rapid + FUXA + outro master. Isso pode misturar transações e corromper protocolos.
+Não copiar uma conexão request/response simultaneamente para Rapid + FUXA + outro master. Isso pode misturar transações e corromper protocolos.
 
-Se vários sistemas precisarem dos mesmos dados, o fan-out acontece depois do SCADA/driver, por broker, ou por plugin protocol-aware com arbitragem explícita.
+Fan-out de dados deve ocorrer depois do SCADA/driver, por broker, ou por plugin protocol-aware com arbitragem explícita.
 
 ---
 
@@ -111,37 +93,30 @@ Se vários sistemas precisarem dos mesmos dados, o fan-out acontece depois do SC
 Implementado:
 
 - `internal/bridge/tunnel.go` com cópia duplex byte-transparent;
-- teste byte-for-byte em `internal/bridge/tunnel_test.go`;
-- `Gateway.Run` deixou de produzir Records e passou a subir Túneis raw;
-- schema de configuração mudou de 2 para 3;
-- `field` e `consumer` viraram endpoints simétricos `listen/connect`;
-- `TCP_NODELAY`, keepalive, reconnect e allowlist CIDR fazem parte do Tunnel;
-- sessões/admin/métricas representam pares de bridge, não telemetria;
-- removido runtime de spool;
-- removido sink HTTP de Records normalizados;
-- removido inventário/registry de identidade de dispositivos do core;
+- schema 3 com `field`/`consumer` simétricos `listen/connect`;
+- `Gateway.Run` sobe Túneis raw e não produz telemetria;
+- `TCP_NODELAY`, keepalive, reconnect e allowlist CIDR;
+- sessões/admin/métricas representam pares de bridge;
+- removidos spool, HTTP sink de Records e inventário de dispositivos do core;
 - removido `configs/identity.example.json`;
-- removida permissão systemd de escrita em `/var/lib/rc-gateway-umbrella`;
-- README, arquitetura, plugin contract e matriz de produção realinhados.
+- removida necessidade de storage gravável no systemd;
+- documentação realinhada para bridge-first.
 
-Correção posterior no commit `0650d31ba9ec882c58c3870e1bf6ff661d6a6e1f`:
+Correções/fortalecimento:
 
-- `io.ErrClosedPipe` passou a ser tratado como encerramento normal do par duplex, assim como EOF/net.ErrClosed/context cancellation;
-- motivo: o primeiro ciclo do CI do novo Tunnel passou em `gofmt` e `go vet`, mas o teste duplex falhou ao fechar `net.Pipe` porque a segunda direção retornou `io: read/write on closed pipe` após os bytes já terem sido preservados corretamente.
-
-## Segurança
+- `0650d31ba9ec882c58c3870e1bf6ff661d6a6e1f`: `io.ErrClosedPipe` tratado como fechamento normal do par;
+- `7e93a54b5bfba3f8f53c18c915dc0e7523d411c6`: pairing `listen ↔ connect` passou a aguardar primeiro o peer inbound;
+- `a8156af6025d5c796bd8ac23beec79f1cbb2d87e`: adicionados testes com sockets TCP reais para `listen ↔ listen` e `connect ↔ listen`, além do teste binário duplex via `net.Pipe`.
 
 `commandPlaneEnabled=true` continua rejeitado.
 
-Allowlist CIDR continua disponível para endpoints `listen`. TLS/mTLS deverá existir como **tipo/camada de endpoint raw**, não como motor de telemetria.
-
 ---
 
-# 5. Código legado/experimental ainda presente
+# 5. Código experimental ainda presente
 
-Alguns packages/adapters da fase anterior continuam no repositório para não jogar fora experimentos de bibliotecas:
+Adapters da fase anterior permanecem temporariamente no repositório como experimentos de biblioteca/conectividade, mas **não são iniciados pelo runtime schema 3**:
 
-- adapters MQTT/MQTT5;
+- MQTT/MQTT5;
 - serial;
 - SocketCAN/J1939;
 - OPC UA read;
@@ -150,15 +125,7 @@ Alguns packages/adapters da fase anterior continuam no repositório para não jo
 - WebSocket/WSS;
 - event bus/protocol helpers antigos.
 
-**Eles não são iniciados pelo runtime schema 3 e não definem o produto.**
-
-Próxima revisão deve classificar cada um:
-
-1. refatorar para endpoint raw/provider;
-2. mover para experimental externo;
-3. remover se for apenas leitor/converter semântico.
-
-Não reintroduzir storage/Record/polling no core para aproveitar esses adapters.
+Cada um deve ser futuramente refatorado para endpoint raw/provider, movido para experimental externo ou removido se for apenas leitor/converter semântico.
 
 ---
 
@@ -166,62 +133,59 @@ Não reintroduzir storage/Record/polling no core para aproveitar esses adapters.
 
 Foi estudado `thingsboard/thingsboard-gateway`.
 
-Aproveitar como referência:
+Aproveitar: modularidade de connectors, reconnect, supervisão, configuração declarativa, extensibilidade e métricas.
 
-- modularidade de connectors;
-- reconnect;
-- supervisão;
-- configuração declarativa;
-- extensibilidade;
-- métricas.
-
-Não copiar para o core:
-
-- converters de telemetria;
-- storage de eventos/telemetria;
-- mapas de registradores;
-- polling semântico por dispositivo.
+Não copiar para o core: converters de telemetria, storage, mapas de registradores e polling semântico.
 
 Detalhes: [`THINGSBOARD_REFERENCE.md`](./THINGSBOARD_REFERENCE.md).
 
 ---
 
-# 7. Estado de validação deste checkpoint
+# 7. Estado de validação
 
-Primeiro CI do runtime bridge-first, no HEAD `c46d8ab20d658ab1f68091c31bc37793c8904626`:
+## Checkpoint verde anterior
+
+No HEAD `c23aa90f759499f92b51cba491d9d9f9544d5ef0`, o workflow próprio **Gateway Umbrella** passou completamente:
 
 - Canonical project state: `success`;
 - `gofmt`: `success`;
 - `go vet`: `success`;
-- adapters experimentais: testes/build `success`;
-- unit tests do core: `failure` exclusivamente em `TestCopyDuplexPreservesBytesBothDirections` por `io.ErrClosedPipe` durante encerramento do `net.Pipe`;
-- race/build do core foram pulados por consequência da falha unitária.
+- unit tests: `success`;
+- race detector: `success`;
+- build do core: `success`;
+- adapters experimentais: format/vet/tests/build `success`.
 
-A correção está no commit `0650d31ba9ec882c58c3870e1bf6ff661d6a6e1f`.
+Esse foi o primeiro checkpoint totalmente verde do novo runtime bridge-first.
 
-**O CI do HEAD após esta atualização do handoff deve ser consultado antes de afirmar que o checkpoint está totalmente verde.**
+## Alterações posteriores ainda em validação
+
+Depois desse checkpoint foram adicionados:
+
+- pairing acionado pelo endpoint `listen` quando o outro lado é `connect`;
+- teste TCP real `listen ↔ listen`;
+- teste TCP real `connect ↔ listen` verificando inclusive que o dispositivo outbound não é discado antes da conexão do consumidor.
+
+**O CI do HEAD após este handoff deve ser consultado antes de afirmar que esses novos testes estão verdes.**
 
 ---
 
 # 8. Próximos passos recomendados
 
-Ordem:
-
-1. confirmar `gofmt`, `go vet`, unit tests, race e build verdes após `0650d31...`;
-2. adicionar teste de integração `listen ↔ listen` real em loopback;
-3. adicionar teste `connect ↔ listen`;
-4. validar PUSR real ↔ Gateway ↔ Rapid em uma porta de laboratório sem tocar o bridge legado;
+1. confirmar novo ciclo `gofmt`/`vet`/tests/race/build;
+2. corrigir qualquer falha dos testes TCP reais;
+3. adicionar testes de reconnect/reset/half-close e slow peer;
+4. validar PUSR real ↔ Gateway ↔ Rapid em porta de laboratório sem tocar o bridge legado;
 5. implementar TLS/mTLS como endpoint raw;
 6. implementar Serial RS232/422/485 como endpoint raw;
 7. implementar UDP bridge com política explícita de sessão;
 8. refatorar/remover adapters experimentais antigos;
-9. HIL, impairment de rede e soak antes de qualquer produção.
+9. HIL, impairment de rede e soak antes de produção.
 
 ---
 
 # 9. Regra para produção
 
-O Gateway só será considerado production quando provar:
+O Gateway só será considerado production quando provar continuamente:
 
 ```text
 bytes enviados pelo lado A == bytes recebidos no lado B
