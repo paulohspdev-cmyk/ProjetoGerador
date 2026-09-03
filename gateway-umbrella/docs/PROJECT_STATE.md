@@ -13,181 +13,78 @@ NO DEVICE MEMORY DATABASE
 NO TELEMETRY HISTORIAN
 ```
 
-O RC Universal Gateway é uma ponte industrial/IoT universal. Ele funciona mesmo sem conhecer o protocolo ou modelo do equipamento.
-
-O core deve apenas abrir/aceitar os dois lados, parear, proteger, rotear e transportar bytes sem modificação, com reconnect e observabilidade operacional.
-
-Rapid SCADA, FUXA, ThingsBoard, software do fabricante ou outro driver interpreta os equipamentos. Não colocar mapas ComAp/DSE/PLC/IHM, polling, historian, alarmes ou telemetria semântica no core.
+O RC Universal Gateway é uma ponte industrial/IoT universal. O core abre/aceita os dois lados, pareia, protege, roteia e transporta bytes sem interpretar registradores, controladoras ou telemetria. Rapid SCADA, FUXA, ThingsBoard, software do fabricante ou outro driver interpreta o equipamento.
 
 # 2. Runtime atual
 
-Schema **3** baseado em `tunnels`:
+Schema **3**, baseado em túneis duplex:
 
 ```text
 FIELD ENDPOINT <====== raw duplex bytes ======> CONSUMER ENDPOINT
 ```
 
-Cada lado pode ser `listen` ou `connect`. Core atual: TCP.
+O core atual suporta TCP `listen`/`connect`. Um túnel raw possui um consumidor ativo por vez; não fazer fan-out byte-transparent para múltiplos masters.
 
-PUSR reverso:
+# 3. Checkpoint bridge-first limpo
 
-```text
-PUSR -> Gateway :15003  <== tunnel ==>  Gateway :25003 <- Rapid
-```
+SHA de código limpo validado anteriormente: `249a7f0d55c840e5e95764468a6400db8a401fea`.
 
-Equipamento direto:
+Nesse checkpoint: Gateway Umbrella, `gofmt`, `go vet`, unit/socket tests, race detector, build, CI geral e Quality/Security passaram.
 
-```text
-Gateway -> 10.60.20.222:502  <== tunnel ==>  Gateway :25020 <- Rapid
-```
+# 4. Endurecimento TCP implementado nesta etapa
 
-Em `listen ↔ connect`, o inbound listener é o trigger; só então o lado outbound é discado.
+Adicionado ao core:
 
-Um Tunnel raw possui **um consumidor ativo por vez**. Não fazer fan-out byte-transparent para múltiplos masters.
+- `pairTimeoutSeconds` (default 30 s): um peer não fica preso indefinidamente esperando o outro lado;
+- `writeTimeoutSeconds` (default 30 s): slow peer não pode bloquear a ponte para sempre;
+- `drainTimeoutSeconds` (default 2 s): half-close permite dreno curto e depois libera o par;
+- `OnBytes` passou a ser emitido durante cada chunk encaminhado, e não somente quando `io.Copy` termina;
+- escrita usa loop completo para não perder bytes em `Write` parcial;
+- listener passa a respeitar deadline de formação do par sem destruir o listener para o próximo ciclo;
+- métrica `rc_gateway_pair_wait_timeouts_total` e métrica por túnel;
+- `/sessions` passa a separar `bytesFieldToConsumer` e `bytesConsumerToField` em tempo real;
+- exemplo de configuração agora usa `requireAllowlist=true` e timeouts explícitos.
 
-# 3. Estrutura do core após limpeza
+Testes adicionados:
 
-Mantidos no produto:
+- atualização de métricas antes do fechamento da sessão;
+- peer lento com timeout de escrita;
+- timeout de pairing sem inutilizar o listener;
+- 50 ciclos seguidos de reconnect/churn preservando bytes;
+- permanecem testes de sockets TCP reais `listen↔listen` e `connect↔listen` e byte-for-byte nos dois sentidos.
 
-- `cmd/rc-gateway`;
-- `internal/admin`;
-- `internal/bridge`;
-- `internal/config`;
-- `internal/core/session.go`;
-- `internal/gateway`;
-- `internal/metrics`;
-- `internal/transport/netutil`;
-- config, docs, scripts e systemd.
+A reprodução local isolada do core passou `go test -race ./...`. **O CI do repositório para o HEAD desta alteração ainda deve ser consultado antes de declarar este novo checkpoint verde.**
 
-Removidos na limpeza bridge-first:
+# 5. O que continua deliberadamente fora do core
 
-- módulo `gateway-umbrella/adapters/` inteiro;
-- MQTT/MQTT5 reader;
-- OPC UA reader;
-- SNMP reader;
-- CoAP reader;
-- serial receive-only antigo;
-- SocketCAN receive-only antigo;
-- WebSocket receive-only antigo;
-- event bus/Record da fase de telemetria;
-- detectores/parsers Modbus/NMEA antigos não usados pelo bridge;
-- protocol registry;
-- supervisor de sidecars;
-- HTTP ingest antigo;
-- TCP client/server antigos substituídos pelo Tunnel;
-- TLS client/server antigos;
-- UDP server antigo;
-- helper TLS antigo;
-- spool/historian de telemetria;
-- sink HTTP de Records;
-- inventário obrigatório de dispositivos.
+- banco de registradores/mapas ComAp/DSE/PLC/IHM;
+- polling e normalização de telemetria;
+- historian/spool de telemetria;
+- Command Plane;
+- readers semânticos OPC UA/SNMP/CoAP/MQTT.
 
-A remoção é intencional. Serial/TLS/UDP/CAN/WS etc. só devem voltar como endpoint providers **duplex**, preservando payload e sem leitura semântica de dispositivos.
+Novos meios devem voltar apenas como endpoints/bridges duplex quando tecnicamente possível.
 
-# 4. Checkpoint bridge-first confirmado
+# 6. Próximos passos obrigatórios para software field-test-ready
 
-## SHA de código limpo validado
+1. confirmar CI do endurecimento TCP;
+2. adicionar teste de TCP RST e teste explícito de half-close em sockets reais;
+3. adicionar teste de leak de goroutines/sockets e carga/concurrency;
+4. implementar TLS/mTLS como endpoint duplex raw;
+5. implementar Unix socket como endpoint duplex local;
+6. implementar Serial RS232/422/485 como endpoint duplex;
+7. implementar UDP como bridge datagram/session-aware;
+8. implementar WebSocket/WSS como transporte de stream/mensagem com contrato explícito;
+9. classificar CAN/SocketCAN e MQTT como transports message-oriented, sem fingir semântica de TCP;
+10. criar suíte de impairment/soak e pacote de instalação/rollback para homologação em campo.
 
-`249a7f0d55c840e5e95764468a6400db8a401fea`
+# 7. Regra de produção
 
-Commit: `refactor(gateway): reduz core a ponte duplex universal`
-
-Validação confirmada em 2026-09-03:
-
-### Workflow Gateway Umbrella
-
-- Canonical project state: `success`;
-- Bridge Core Go: `success`;
-- `gofmt`: `success`;
-- `go vet`: `success`;
-- unit + socket integration tests: `success`;
-- race detector: `success`;
-- build: `success`.
-
-### Repositório
-
-- CI geral: `success`;
-- Quality and Security: `success`.
-
-Este é o checkpoint canônico **de código** bridge-first limpo e verde. Commits posteriores que alteram somente este handoff/documentação não invalidam esse checkpoint de código, mas o workflow do novo HEAD ainda deve ser consultado antes de afirmar que o HEAD inteiro está verde.
-
-Os testes atuais já cobrem:
-
-- preservação binária byte-for-byte nos dois sentidos;
-- `listen ↔ listen` com sockets TCP reais;
-- `connect ↔ listen` com sockets TCP reais;
-- outbound só é discado após existir o peer inbound quando o outro lado é `listen`;
-- encerramento normal por EOF/closed pipe/net closed/context cancel;
-- race detector no core.
-
-# 5. Referência ThingsBoard
-
-Foi estudado `thingsboard/thingsboard-gateway`.
-
-Aproveitar:
-
-- modularidade de connectors;
-- reconnect;
-- supervisão;
-- configuração declarativa;
-- extensibilidade;
-- métricas.
-
-Não copiar para o core:
-
-- converters de telemetria;
-- storage/historian;
-- mapas de registradores;
-- polling semântico de dispositivos.
-
-Ver `THINGSBOARD_REFERENCE.md`.
-
-# 6. Pontos técnicos ainda abertos
-
-Antes de produção ainda faltam, entre outros:
-
-- testes de reset/reconnect repetido;
-- comportamento de half-close TCP;
-- slow peer e backpressure;
-- limite explícito para espera durante estabelecimento do par;
-- métricas de bytes atualizadas durante sessões longas, não somente ao encerrar `io.Copy`;
-- testes de leak de goroutines/sockets;
-- escala/concurrency;
-- impairment de rede celular;
-- HIL e soak;
-- TLS/mTLS como endpoint duplex;
-- Serial RS232/422/485 como endpoint duplex;
-- UDP com semântica de sessão definida;
-- outros meios apenas quando implementados como ponte real.
-
-# 7. Próximos passos recomendados
-
-Ordem recomendada:
-
-1. fortalecer o Tunnel TCP: reconnect/reset/half-close/slow peer/pair establishment timeout/métricas em tempo real;
-2. testar ausência de leaks e concorrência;
-3. implementar TLS/mTLS como endpoint duplex raw;
-4. implementar Serial RS232/422/485 como endpoint duplex raw;
-5. implementar UDP bridge com política explícita de sessão;
-6. adicionar WebSocket/CAN/MQTT somente quando houver contrato de endpoint duplex claro;
-7. validar PUSR real ↔ Gateway ↔ Rapid em porta de laboratório sem tocar o bridge legado;
-8. HIL + impairment celular + soak antes de qualquer produção.
-
-# 8. Regra de produção
-
-O Gateway só é confiável quando prova, inclusive sob falhas e execução prolongada:
+O software só fica pronto para homologação em campo quando todos os gates automatizáveis estão verdes. Produção real só pode ser declarada após HIL/soak físico. A invariável central permanece:
 
 ```text
 bytes enviados A == bytes recebidos B
 bytes enviados B == bytes recebidos A
 ```
 
-sem mutar payload, sem misturar consumidores e sem vazar conexões, goroutines ou memória.
-
-# 9. Regra para qualquer próximo chat/agente
-
-Não reintroduzir a arquitetura antiga de telemetria no core para “aproveitar” bibliotecas. Se uma nova conexão precisar ser suportada, modelar primeiro como **Endpoint duplex**. Se não for possível transportar de forma transparente, documentar por que um adapter protocol-aware é indispensável e mantê-lo fora do núcleo genérico sempre que possível.
-
-# 10. Status desta etapa
-
-A limpeza arquitetural solicitada nesta conversa está **concluída no código**: o produto deixou de ser um motor de aquisição/conversão e ficou reduzido a uma fundação de ponte TCP duplex universal. O próximo trabalho deve começar pelo endurecimento do Tunnel TCP, não pela reintrodução de protocolos semânticos.
+sem mutação de payload, mistura de consumidores, leak contínuo de recursos ou armazenamento semântico no core.

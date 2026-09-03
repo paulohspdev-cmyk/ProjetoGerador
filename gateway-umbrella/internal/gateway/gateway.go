@@ -32,7 +32,6 @@ func New(cfg config.Config, logger *slog.Logger) *Gateway {
 func (g *Gateway) Run(ctx context.Context) error {
 	var wg sync.WaitGroup
 	errCh := make(chan error, 1+len(g.cfg.Tunnels))
-
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -40,15 +39,17 @@ func (g *Gateway) Run(ctx context.Context) error {
 			sendErr(errCh, fmt.Errorf("admin: %w", err))
 		}
 	}()
-
 	for _, cfgTunnel := range g.cfg.Tunnels {
 		cfgTunnel := cfgTunnel
 		tunnel := &bridge.Tunnel{
-			ID:       cfgTunnel.ID,
-			Field:    bridgeEndpoint("field", cfgTunnel.Field),
-			Consumer: bridgeEndpoint("consumer", cfgTunnel.Consumer),
-			Logger:   g.logger,
-			Hooks:    g.tunnelHooks(cfgTunnel.ID),
+			ID:           cfgTunnel.ID,
+			Field:        bridgeEndpoint("field", cfgTunnel.Field),
+			Consumer:     bridgeEndpoint("consumer", cfgTunnel.Consumer),
+			Logger:       g.logger,
+			Hooks:        g.tunnelHooks(cfgTunnel.ID),
+			PairTimeout:  time.Duration(cfgTunnel.PairTimeoutS) * time.Second,
+			WriteTimeout: time.Duration(cfgTunnel.WriteTimeoutS) * time.Second,
+			DrainTimeout: time.Duration(cfgTunnel.DrainTimeoutS) * time.Second,
 		}
 		wg.Add(1)
 		go func() {
@@ -58,12 +59,10 @@ func (g *Gateway) Run(ctx context.Context) error {
 			}
 		}()
 	}
-
 	g.admin.SetReady(true)
 	g.metrics.Set("rc_gateway_ready", 1)
 	g.metrics.Set("rc_gateway_configured_tunnels", int64(len(g.cfg.Tunnels)))
 	g.logger.Info("bridge runtime ready", "nodeId", g.cfg.NodeID, "tunnels", len(g.cfg.Tunnels))
-
 	select {
 	case <-ctx.Done():
 		g.admin.SetReady(false)
@@ -95,22 +94,14 @@ func (g *Gateway) tunnelHooks(tunnelID string) bridge.Hooks {
 	prefix := "rc_gateway_tunnel_" + tunnelID
 	return bridge.Hooks{
 		OnOpen: func(info bridge.PairInfo) {
-			g.sessions.Open(core.Session{
-				ID:         info.PairID,
-				ListenerID: info.TunnelID,
-				Transport:  "raw_tcp_bridge",
-				RemoteAddr: info.FieldRemote,
-				LocalAddr:  info.ConsumerRemote,
-				OpenedAt:   info.OpenedAt,
-				LastSeenAt: info.OpenedAt,
-			})
+			g.sessions.Open(core.Session{ID: info.PairID, ListenerID: info.TunnelID, Transport: "raw_tcp_bridge", RemoteAddr: info.FieldRemote, LocalAddr: info.ConsumerRemote, OpenedAt: info.OpenedAt, LastSeenAt: info.OpenedAt})
 			g.metrics.Inc("rc_gateway_pairs_opened_total")
 			g.metrics.Inc(prefix + "_pairs_opened_total")
 			g.metrics.Set("rc_gateway_active_pairs", int64(g.sessions.Count()))
 			g.metrics.Set(prefix+"_active", 1)
 		},
 		OnBytes: func(pairID, direction string, n uint64) {
-			g.sessions.Touch(pairID, int(n), time.Now().UTC())
+			g.sessions.Touch(pairID, direction, int(n), time.Now().UTC())
 			g.metrics.Add("rc_gateway_bytes_forwarded_total", n)
 			g.metrics.Add(prefix+"_bytes_forwarded_total", n)
 			g.metrics.Add(prefix+"_"+direction+"_bytes_total", n)
@@ -125,6 +116,10 @@ func (g *Gateway) tunnelHooks(tunnelID string) bridge.Hooks {
 				g.metrics.Inc("rc_gateway_bridge_errors_total")
 				g.metrics.Inc(prefix + "_errors_total")
 			}
+		},
+		OnPairWaitTimeout: func(_ string) {
+			g.metrics.Inc("rc_gateway_pair_wait_timeouts_total")
+			g.metrics.Inc(prefix + "_pair_wait_timeouts_total")
 		},
 	}
 }

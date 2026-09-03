@@ -15,8 +15,6 @@ import (
 )
 
 // Endpoint describes one side of a raw byte tunnel.
-// Listen waits for a peer to connect. Connect dials a peer.
-// The bridge never interprets the application payload.
 type Endpoint struct {
 	Name         string
 	Mode         string
@@ -40,18 +38,22 @@ type PairInfo struct {
 }
 
 type Hooks struct {
-	OnOpen  func(PairInfo)
-	OnBytes func(pairID, direction string, n uint64)
-	OnClose func(PairInfo, error)
+	OnOpen            func(PairInfo)
+	OnBytes           func(pairID, direction string, n uint64)
+	OnClose           func(PairInfo, error)
+	OnPairWaitTimeout func(tunnelID string)
 }
 
 type Tunnel struct {
-	ID       string
-	Field    Endpoint
-	Consumer Endpoint
-	Logger   *slog.Logger
-	Hooks    Hooks
-	counter  atomic.Uint64
+	ID           string
+	Field        Endpoint
+	Consumer     Endpoint
+	Logger       *slog.Logger
+	Hooks        Hooks
+	PairTimeout  time.Duration
+	WriteTimeout time.Duration
+	DrainTimeout time.Duration
+	counter      atomic.Uint64
 }
 
 type connectionSource interface {
@@ -63,6 +65,15 @@ func (t *Tunnel) Run(ctx context.Context) error {
 	if t.ID == "" {
 		return fmt.Errorf("tunnel id is required")
 	}
+	if t.PairTimeout <= 0 {
+		t.PairTimeout = 30 * time.Second
+	}
+	if t.WriteTimeout <= 0 {
+		t.WriteTimeout = 30 * time.Second
+	}
+	if t.DrainTimeout <= 0 {
+		t.DrainTimeout = 2 * time.Second
+	}
 	field, err := newSource(ctx, t.Field)
 	if err != nil {
 		return fmt.Errorf("tunnel %s field: %w", t.ID, err)
@@ -73,36 +84,37 @@ func (t *Tunnel) Run(ctx context.Context) error {
 		return fmt.Errorf("tunnel %s consumer: %w", t.ID, err)
 	}
 	defer consumer.Close()
-
 	for {
 		if ctx.Err() != nil {
 			return nil
 		}
-		fieldConn, consumerConn, err := acquirePair(ctx, field, consumer, t.Field.Mode, t.Consumer.Mode)
+		pairCtx, cancel := context.WithTimeout(ctx, t.PairTimeout)
+		fieldConn, consumerConn, err := acquirePair(pairCtx, field, consumer, t.Field.Mode, t.Consumer.Mode)
+		cancel()
 		if err != nil {
 			if ctx.Err() != nil {
 				return nil
 			}
+			if errors.Is(err, context.DeadlineExceeded) {
+				if t.Hooks.OnPairWaitTimeout != nil {
+					t.Hooks.OnPairWaitTimeout(t.ID)
+				}
+				if t.Logger != nil {
+					t.Logger.Warn("bridge pair wait timed out", "tunnel", t.ID, "timeout", t.PairTimeout)
+				}
+				continue
+			}
 			return fmt.Errorf("tunnel %s acquire pair: %w", t.ID, err)
 		}
 		pairID := fmt.Sprintf("%s-%d-%d", t.ID, time.Now().UnixNano(), t.counter.Add(1))
-		info := PairInfo{
-			TunnelID:       t.ID,
-			PairID:         pairID,
-			FieldLocal:     addr(fieldConn.LocalAddr()),
-			FieldRemote:    addr(fieldConn.RemoteAddr()),
-			ConsumerLocal:  addr(consumerConn.LocalAddr()),
-			ConsumerRemote: addr(consumerConn.RemoteAddr()),
-			OpenedAt:       time.Now().UTC(),
-		}
+		info := PairInfo{TunnelID: t.ID, PairID: pairID, FieldLocal: addr(fieldConn.LocalAddr()), FieldRemote: addr(fieldConn.RemoteAddr()), ConsumerLocal: addr(consumerConn.LocalAddr()), ConsumerRemote: addr(consumerConn.RemoteAddr()), OpenedAt: time.Now().UTC()}
 		if t.Hooks.OnOpen != nil {
 			t.Hooks.OnOpen(info)
 		}
 		if t.Logger != nil {
 			t.Logger.Info("bridge pair open", "tunnel", t.ID, "pair", pairID, "fieldRemote", info.FieldRemote, "consumerRemote", info.ConsumerRemote)
 		}
-
-		err = copyDuplex(ctx, pairID, fieldConn, consumerConn, t.Hooks)
+		err = copyDuplex(ctx, pairID, fieldConn, consumerConn, t.Hooks, t.WriteTimeout, t.DrainTimeout)
 		_ = fieldConn.Close()
 		_ = consumerConn.Close()
 		if t.Hooks.OnClose != nil {
@@ -118,9 +130,6 @@ func (t *Tunnel) Run(ctx context.Context) error {
 	}
 }
 
-// acquirePair deliberately treats an inbound listener as the trigger when the
-// opposite side is outbound. This prevents the Gateway from opening a device or
-// consumer connection and leaving it idle before the initiating peer exists.
 func acquirePair(ctx context.Context, field, consumer connectionSource, fieldMode, consumerMode string) (net.Conn, net.Conn, error) {
 	switch {
 	case fieldMode == "listen" && consumerMode == "connect":
@@ -155,88 +164,150 @@ func acquireConcurrent(ctx context.Context, field, consumer connectionSource) (n
 		err  error
 	}
 	ch := make(chan result, 2)
-	go func() {
-		c, err := field.Acquire(ctx)
-		ch <- result{name: "field", conn: c, err: err}
-	}()
-	go func() {
-		c, err := consumer.Acquire(ctx)
-		ch <- result{name: "consumer", conn: c, err: err}
-	}()
-
-	var fieldConn, consumerConn net.Conn
+	go func() { c, e := field.Acquire(ctx); ch <- result{"field", c, e} }()
+	go func() { c, e := consumer.Acquire(ctx); ch <- result{"consumer", c, e} }()
+	var fc, cc net.Conn
 	for i := 0; i < 2; i++ {
 		select {
 		case <-ctx.Done():
-			if fieldConn != nil {
-				_ = fieldConn.Close()
+			if fc != nil {
+				_ = fc.Close()
 			}
-			if consumerConn != nil {
-				_ = consumerConn.Close()
+			if cc != nil {
+				_ = cc.Close()
 			}
 			return nil, nil, ctx.Err()
 		case r := <-ch:
 			if r.err != nil {
-				if fieldConn != nil {
-					_ = fieldConn.Close()
+				if fc != nil {
+					_ = fc.Close()
 				}
-				if consumerConn != nil {
-					_ = consumerConn.Close()
+				if cc != nil {
+					_ = cc.Close()
 				}
 				return nil, nil, fmt.Errorf("%s: %w", r.name, r.err)
 			}
 			if r.name == "field" {
-				fieldConn = r.conn
+				fc = r.conn
 			} else {
-				consumerConn = r.conn
+				cc = r.conn
 			}
 		}
 	}
-	return fieldConn, consumerConn, nil
+	return fc, cc, nil
 }
 
 type copyResult struct {
 	direction string
-	n         int64
 	err       error
 }
 
-func copyDuplex(ctx context.Context, pairID string, field, consumer net.Conn, hooks Hooks) error {
-	results := make(chan copyResult, 2)
-	copyOne := func(direction string, dst, src net.Conn) {
-		buf := make([]byte, 64*1024)
-		n, err := io.CopyBuffer(dst, src, buf)
-		results <- copyResult{direction: direction, n: n, err: normalizeCopyError(err)}
+func copyDuplex(ctx context.Context, pairID string, field, consumer net.Conn, hooks Hooks, writeTimeout, drainTimeout time.Duration) error {
+	if drainTimeout <= 0 {
+		drainTimeout = 2 * time.Second
 	}
-	go copyOne("field_to_consumer", consumer, field)
-	go copyOne("consumer_to_field", field, consumer)
-
+	results := make(chan copyResult, 2)
+	go func() {
+		results <- copyResult{"field_to_consumer", copyDirection(pairID, "field_to_consumer", consumer, field, hooks, writeTimeout)}
+	}()
+	go func() {
+		results <- copyResult{"consumer_to_field", copyDirection(pairID, "consumer_to_field", field, consumer, hooks, writeTimeout)}
+	}()
 	var first copyResult
 	select {
 	case <-ctx.Done():
-		first.err = ctx.Err()
+		_ = field.Close()
+		_ = consumer.Close()
+		return nil
 	case first = <-results:
 	}
-	if first.n > 0 && hooks.OnBytes != nil {
-		hooks.OnBytes(pairID, first.direction, uint64(first.n))
+	if first.err != nil {
+		_ = field.Close()
+		_ = consumer.Close()
+		select {
+		case <-results:
+		case <-time.After(drainTimeout):
+		}
+		return first.err
 	}
-	_ = field.Close()
-	_ = consumer.Close()
-
+	timer := time.NewTimer(drainTimeout)
+	defer timer.Stop()
 	select {
 	case second := <-results:
-		if second.n > 0 && hooks.OnBytes != nil {
-			hooks.OnBytes(pairID, second.direction, uint64(second.n))
+		if second.err != nil {
+			return second.err
 		}
-		if first.err == nil {
-			first.err = second.err
+		return nil
+	case <-ctx.Done():
+		_ = field.Close()
+		_ = consumer.Close()
+		return nil
+	case <-timer.C:
+		_ = field.Close()
+		_ = consumer.Close()
+		select {
+		case second := <-results:
+			if second.err != nil {
+				return second.err
+			}
+		default:
 		}
-	case <-time.After(2 * time.Second):
-		if first.err == nil {
-			first.err = fmt.Errorf("bridge copy shutdown timeout")
+		return nil
+	}
+}
+
+func copyDirection(pairID, direction string, dst, src net.Conn, hooks Hooks, writeTimeout time.Duration) error {
+	buf := make([]byte, 64*1024)
+	for {
+		n, rerr := src.Read(buf)
+		if n > 0 {
+			if writeTimeout > 0 {
+				_ = dst.SetWriteDeadline(time.Now().Add(writeTimeout))
+			}
+			written, werr := writeAll(dst, buf[:n])
+			if writeTimeout > 0 {
+				_ = dst.SetWriteDeadline(time.Time{})
+			}
+			if written > 0 && hooks.OnBytes != nil {
+				hooks.OnBytes(pairID, direction, uint64(written))
+			}
+			if werr != nil {
+				return normalizeCopyError(werr)
+			}
+			if written != n {
+				return io.ErrShortWrite
+			}
+		}
+		if rerr != nil {
+			err := normalizeCopyError(rerr)
+			if err == nil {
+				closeWrite(dst)
+			}
+			return err
 		}
 	}
-	return normalizeCopyError(first.err)
+}
+
+func writeAll(dst io.Writer, p []byte) (int, error) {
+	total := 0
+	for len(p) > 0 {
+		n, err := dst.Write(p)
+		total += n
+		p = p[n:]
+		if err != nil {
+			return total, err
+		}
+		if n == 0 {
+			return total, io.ErrShortWrite
+		}
+	}
+	return total, nil
+}
+
+func closeWrite(conn net.Conn) {
+	if cw, ok := conn.(interface{ CloseWrite() error }); ok {
+		_ = cw.CloseWrite()
+	}
 }
 
 func normalizeCopyError(err error) error {
@@ -264,10 +335,7 @@ func newSource(ctx context.Context, ep Endpoint) (connectionSource, error) {
 			return nil, err
 		}
 		s := &listenSource{ln: ln, allowed: allowed, keepAlive: ep.KeepAlive}
-		go func() {
-			<-ctx.Done()
-			_ = s.Close()
-		}()
+		go func() { <-ctx.Done(); _ = s.Close() }()
 		return s, nil
 	case "connect":
 		if ep.DialTimeout <= 0 {
@@ -292,10 +360,22 @@ type listenSource struct {
 }
 
 func (s *listenSource) Acquire(ctx context.Context) (net.Conn, error) {
+	if dl, ok := ctx.Deadline(); ok {
+		if l, ok := s.ln.(interface{ SetDeadline(time.Time) error }); ok {
+			_ = l.SetDeadline(dl)
+			defer l.SetDeadline(time.Time{})
+		}
+	}
 	for {
 		conn, err := s.ln.Accept()
 		if err != nil {
-			if ctx.Err() != nil || errors.Is(err, net.ErrClosed) {
+			if ctx.Err() != nil {
+				return nil, ctx.Err()
+			}
+			if ne, ok := err.(net.Error); ok && ne.Timeout() {
+				return nil, context.DeadlineExceeded
+			}
+			if errors.Is(err, net.ErrClosed) {
 				return nil, ctx.Err()
 			}
 			return nil, err
@@ -312,10 +392,8 @@ func (s *listenSource) Acquire(ctx context.Context) (net.Conn, error) {
 func (s *listenSource) Close() error { return s.ln.Close() }
 
 type dialSource struct {
-	address   string
-	timeout   time.Duration
-	reconnect time.Duration
-	keepAlive time.Duration
+	address                       string
+	timeout, reconnect, keepAlive time.Duration
 }
 
 func (s *dialSource) Acquire(ctx context.Context) (net.Conn, error) {
@@ -329,12 +407,12 @@ func (s *dialSource) Acquire(ctx context.Context) (net.Conn, error) {
 		if ctx.Err() != nil {
 			return nil, ctx.Err()
 		}
-		t := time.NewTimer(s.reconnect)
+		timer := time.NewTimer(s.reconnect)
 		select {
 		case <-ctx.Done():
-			t.Stop()
+			timer.Stop()
 			return nil, ctx.Err()
-		case <-t.C:
+		case <-timer.C:
 		}
 	}
 }

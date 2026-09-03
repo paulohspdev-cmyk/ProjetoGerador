@@ -17,8 +17,6 @@ type Security struct {
 	CommandPlaneEnabled bool `json:"commandPlaneEnabled"`
 }
 
-// Endpoint is one side of a byte-transparent tunnel.
-// mode=listen waits for an incoming peer; mode=connect dials a peer.
 type Endpoint struct {
 	Mode         string   `json:"mode"`
 	Network      string   `json:"network,omitempty"`
@@ -31,9 +29,12 @@ type Endpoint struct {
 }
 
 type Tunnel struct {
-	ID       string   `json:"id"`
-	Field    Endpoint `json:"field"`
-	Consumer Endpoint `json:"consumer"`
+	ID            string   `json:"id"`
+	Field         Endpoint `json:"field"`
+	Consumer      Endpoint `json:"consumer"`
+	PairTimeoutS  int      `json:"pairTimeoutSeconds,omitempty"`
+	WriteTimeoutS int      `json:"writeTimeoutSeconds,omitempty"`
+	DrainTimeoutS int      `json:"drainTimeoutSeconds,omitempty"`
 }
 
 type Config struct {
@@ -71,7 +72,6 @@ func Load(path string) (Config, error) {
 	if cfg.Security.CommandPlaneEnabled {
 		return cfg, fmt.Errorf("commandPlaneEnabled is intentionally unsupported in this release")
 	}
-
 	seen := map[string]bool{}
 	for i := range cfg.Tunnels {
 		t := &cfg.Tunnels[i]
@@ -83,6 +83,18 @@ func Load(path string) (Config, error) {
 			return cfg, fmt.Errorf("duplicate tunnel id %q", t.ID)
 		}
 		seen[t.ID] = true
+		if t.PairTimeoutS <= 0 {
+			t.PairTimeoutS = 30
+		}
+		if t.WriteTimeoutS <= 0 {
+			t.WriteTimeoutS = 30
+		}
+		if t.DrainTimeoutS <= 0 {
+			t.DrainTimeoutS = 2
+		}
+		if t.PairTimeoutS > 3600 || t.WriteTimeoutS > 3600 || t.DrainTimeoutS > 300 {
+			return cfg, fmt.Errorf("tunnel %s timeout exceeds safe configuration limit", t.ID)
+		}
 		if err := validateEndpoint(&t.Field, "tunnel "+t.ID+" field", cfg.Security.RequireAllowlist); err != nil {
 			return cfg, err
 		}
