@@ -100,7 +100,7 @@ func main() {
 					RemoteAddr: *endpoint,
 					Protocol:   "opcua",
 					Meta: map[string]any{
-						"nodeId": nodeNames[i],
+						"nodeId":  nodeNames[i],
 						"quality": "BAD",
 						"error":   err.Error(),
 					},
