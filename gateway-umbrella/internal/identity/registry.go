@@ -20,35 +20,35 @@ const (
 )
 
 type Device struct {
-	ID                    string   `json:"id"`
-	State                 State    `json:"state"`
-	ComponentIDs          []string `json:"componentIds,omitempty"`
-	RemoteCIDRs           []string `json:"remoteCidrs,omitempty"`
-	TLSCertSHA256         []string `json:"tlsCertSha256,omitempty"`
-	TLSCommonNames        []string `json:"tlsCommonNames,omitempty"`
-	TLSSerials            []string `json:"tlsSerials,omitempty"`
-	MQTTClientIDs         []string `json:"mqttClientIds,omitempty"`
-	IMEIs                 []string `json:"imeis,omitempty"`
-	ICCIDs                []string `json:"iccids,omitempty"`
-	SerialNumbers         []string `json:"serialNumbers,omitempty"`
-	VPNPeers              []string `json:"vpnPeers,omitempty"`
-	UnitIDs               []int    `json:"unitIds,omitempty"`
-	Protocols             []string `json:"protocols,omitempty"`
+	ID             string   `json:"id"`
+	State          State    `json:"state"`
+	ComponentIDs   []string `json:"componentIds,omitempty"`
+	RemoteCIDRs    []string `json:"remoteCidrs,omitempty"`
+	TLSCertSHA256  []string `json:"tlsCertSha256,omitempty"`
+	TLSCommonNames []string `json:"tlsCommonNames,omitempty"`
+	TLSSerials     []string `json:"tlsSerials,omitempty"`
+	MQTTClientIDs  []string `json:"mqttClientIds,omitempty"`
+	IMEIs          []string `json:"imeis,omitempty"`
+	ICCIDs         []string `json:"iccids,omitempty"`
+	SerialNumbers  []string `json:"serialNumbers,omitempty"`
+	VPNPeers       []string `json:"vpnPeers,omitempty"`
+	UnitIDs        []int    `json:"unitIds,omitempty"`
+	Protocols      []string `json:"protocols,omitempty"`
 }
 
 type Evidence struct {
-	ComponentID       string
-	RemoteAddr        string
-	TLSCertSHA256     string
-	TLSCommonName     string
-	TLSSerial         string
-	MQTTClientID      string
-	IMEI              string
-	ICCID             string
-	SerialNumber      string
-	VPNPeer           string
-	UnitID            *int
-	Protocol          string
+	ComponentID   string
+	RemoteAddr    string
+	TLSCertSHA256 string
+	TLSCommonName string
+	TLSSerial     string
+	MQTTClientID  string
+	IMEI          string
+	ICCID         string
+	SerialNumber  string
+	VPNPeer       string
+	UnitID        *int
+	Protocol      string
 }
 
 type Result struct {
