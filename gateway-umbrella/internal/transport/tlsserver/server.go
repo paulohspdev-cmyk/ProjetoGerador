@@ -2,16 +2,19 @@ package tlsserver
 
 import (
 	"context"
+	"crypto/sha256"
 	"crypto/tls"
+	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/paulohspdev-cmyk/ProjetoGerador/gateway-umbrella/internal/core"
-	"github.com/paulohspdev-cmyk/ProjetoGerador/gateway-umbrella/internal/security"
-	"github.com/paulohspdev-cmyk/ProjetoGerador/gateway-umbrella/internal/transport/netutil"
 	"io"
 	"net"
 	"sync/atomic"
 	"time"
+
+	"github.com/paulohspdev-cmyk/ProjetoGerador/gateway-umbrella/internal/core"
+	"github.com/paulohspdev-cmyk/ProjetoGerador/gateway-umbrella/internal/security"
+	"github.com/paulohspdev-cmyk/ProjetoGerador/gateway-umbrella/internal/transport/netutil"
 )
 
 type Server struct {
@@ -63,6 +66,7 @@ func (s *Server) Run(ctx context.Context, sink core.Sink) error {
 		go func(conn net.Conn) { defer s.active.Add(-1); s.handle(ctx, conn, sink) }(raw)
 	}
 }
+
 func (s *Server) handle(ctx context.Context, conn net.Conn, sink core.Sink) {
 	defer conn.Close()
 	tc, ok := conn.(*tls.Conn)
@@ -75,8 +79,11 @@ func (s *Server) handle(ctx context.Context, conn net.Conn, sink core.Sink) {
 	state := tc.ConnectionState()
 	meta := map[string]any{"tlsVersion": state.Version, "cipherSuite": state.CipherSuite}
 	if len(state.PeerCertificates) > 0 {
-		meta["peerCommonName"] = state.PeerCertificates[0].Subject.CommonName
-		meta["peerSerial"] = state.PeerCertificates[0].SerialNumber.String()
+		cert := state.PeerCertificates[0]
+		sum := sha256.Sum256(cert.Raw)
+		meta["peerCommonName"] = cert.Subject.CommonName
+		meta["peerSerial"] = cert.SerialNumber.String()
+		meta["peerCertSHA256"] = hex.EncodeToString(sum[:])
 	}
 	id := fmt.Sprintf("%s-%d-%d", s.ID, time.Now().UnixNano(), s.counter.Add(1))
 	base := core.Event{ListenerID: s.ID, SessionID: id, Transport: "tls", RemoteAddr: conn.RemoteAddr().String(), LocalAddr: conn.LocalAddr().String(), ProtocolHint: s.ProtocolHint, Meta: meta}
