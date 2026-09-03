@@ -3,3 +3,5 @@ module github.com/paulohspdev-cmyk/ProjetoGerador/gateway-umbrella
 go 1.27.0
 
 require go.bug.st/serial v1.8.0
+
+require golang.org/x/sys v0.43.0 // indirect

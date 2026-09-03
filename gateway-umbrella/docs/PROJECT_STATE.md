@@ -61,3 +61,5 @@ Qualquer protocolo que já seja transportável byte-transparent por TCP/TLS atra
 Software field-test-ready = todos os gates automatizáveis verdes. Produção validada = somente após HIL/soak físico. Não reintroduzir polling, mapas de memória ou historian no core.
 
 - Autoformat aplicado ao checkpoint Serial antes da validacao completa.
+
+- `go mod tidy` aplicado ao checkpoint Serial com Go 1.27.1.
