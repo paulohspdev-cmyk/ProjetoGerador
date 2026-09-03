@@ -46,24 +46,23 @@ Um túnel raw possui um consumidor ativo por vez. Não fazer fan-out byte-transp
 - payload binário preservado dentro do túnel TLS;
 - Unix socket duplex preservando bytes;
 - TCP half-close real permitindo resposta pendente;
-- TCP RST encerrando o par sem travar.
+- TCP RST encerrando o par sem travar;
+- `gofmt` aplicado ao checkpoint antes da validação completa.
 
-A reprodução local isolada passou `go test -race ./...`. **Consultar o CI do HEAD desta etapa antes de declarar este checkpoint verde.**
+O checkpoint TCP anterior está verde. O HEAD atual contém TLS/mTLS + Unix + RST/half-close e deve ser validado pelo workflow Gateway Umbrella antes de ser promovido a checkpoint verde.
 
 ## Próximos passos
 
 1. confirmar CI TLS/mTLS + Unix + RST/half-close;
 2. implementar Serial RS232/422/485 como endpoint duplex;
 3. implementar UDP como bridge orientada a datagramas/sessão;
-4. implementar WebSocket/WSS com contrato explícito de framing;
+4. tratar MQTT/OPC UA/Modbus TCP/IEC-104/DNP3-TCP/HTTP(S)/WebSocket como protocolos transportados por TCP/TLS quando o destino já os entende, evitando adapters desnecessários;
 5. adicionar suíte de carga/leak/concurrency;
 6. adicionar impairment/soak automatizado;
-7. classificar SocketCAN e MQTT como transports message-oriented, sem mapas de equipamento;
+7. classificar SocketCAN como transporte frame-oriented separado;
 8. fechar instalação, config validation e rollback;
 9. somente depois iniciar HIL/soak físico.
 
 ## Regra de produção
 
 Software field-test-ready = todos os gates automatizáveis verdes. Produção validada = somente após HIL/soak físico. Invariável: nenhum payload pode ser alterado silenciosamente e nenhum recurso pode crescer sem limite.
-
-- Autoformat Go aplicado ao checkpoint TLS/mTLS/Unix antes da validacao completa de CI.
