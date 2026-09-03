@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"net"
+	"net/netip"
 	"sync/atomic"
 	"time"
 
@@ -256,7 +257,7 @@ func newSource(ctx context.Context, ep Endpoint) (connectionSource, error) {
 
 type listenSource struct {
 	ln        net.Listener
-	allowed   []*net.IPNet
+	allowed   []netip.Prefix
 	keepAlive time.Duration
 }
 
