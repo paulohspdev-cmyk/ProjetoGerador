@@ -109,7 +109,7 @@ Validação confirmada em 2026-09-03:
 - CI geral: `success`;
 - Quality and Security: `success`.
 
-Portanto este é o checkpoint canônico de código bridge-first limpo e verde.
+Este é o checkpoint canônico **de código** bridge-first limpo e verde. Commits posteriores que alteram somente este handoff/documentação não invalidam esse checkpoint de código, mas o workflow do novo HEAD ainda deve ser consultado antes de afirmar que o HEAD inteiro está verde.
 
 Os testes atuais já cobrem:
 
