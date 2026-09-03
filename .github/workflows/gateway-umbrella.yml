@@ -17,8 +17,19 @@ permissions:
   contents: read
 
 jobs:
+  handoff:
+    name: Canonical project state
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Require PROJECT_STATE update
+        run: bash gateway-umbrella/scripts/check-project-state-updated.sh
+
   core:
     name: Core Go
+    needs: handoff
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -44,6 +55,7 @@ jobs:
 
   adapters:
     name: Industrial adapters
+    needs: handoff
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
