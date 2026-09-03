@@ -12,6 +12,7 @@ import (
 	"github.com/paulohspdev-cmyk/ProjetoGerador/gateway-umbrella/internal/config"
 	"github.com/paulohspdev-cmyk/ProjetoGerador/gateway-umbrella/internal/core"
 	"github.com/paulohspdev-cmyk/ProjetoGerador/gateway-umbrella/internal/metrics"
+	"github.com/paulohspdev-cmyk/ProjetoGerador/gateway-umbrella/internal/provider/serialbridge"
 )
 
 type Gateway struct {
@@ -28,9 +29,10 @@ func New(cfg config.Config, logger *slog.Logger) *Gateway {
 	a := &admin.Server{Bind: cfg.Admin.Bind, NodeID: cfg.NodeID, Sessions: sessions, Metrics: m}
 	return &Gateway{cfg: cfg, sessions: sessions, metrics: m, logger: logger, admin: a}
 }
+
 func (g *Gateway) Run(ctx context.Context) error {
 	var wg sync.WaitGroup
-	errCh := make(chan error, 1+len(g.cfg.Tunnels))
+	errCh := make(chan error, 1+len(g.cfg.Tunnels)+len(g.cfg.SerialProviders))
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -38,6 +40,17 @@ func (g *Gateway) Run(ctx context.Context) error {
 			sendErr(errCh, fmt.Errorf("admin: %w", err))
 		}
 	}()
+	for _, p := range g.cfg.SerialProviders {
+		p := p
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			cfg := serialbridge.Config{ID: p.ID, Socket: p.Socket, Device: p.Device, Standard: p.Standard, BaudRate: p.BaudRate, DataBits: p.DataBits, Parity: p.Parity, StopBits: p.StopBits, ReadTimeout: time.Duration(p.ReadTimeoutMS) * time.Millisecond, RTS: p.RTS, DTR: p.DTR}
+			if err := serialbridge.Run(ctx, cfg, g.logger); err != nil && ctx.Err() == nil {
+				sendErr(errCh, fmt.Errorf("serial provider %s: %w", p.ID, err))
+			}
+		}()
+	}
 	for _, cfgTunnel := range g.cfg.Tunnels {
 		cfgTunnel := cfgTunnel
 		tunnel := &bridge.Tunnel{ID: cfgTunnel.ID, Field: bridgeEndpoint("field", cfgTunnel.Field), Consumer: bridgeEndpoint("consumer", cfgTunnel.Consumer), Logger: g.logger, Hooks: g.tunnelHooks(cfgTunnel.ID), PairTimeout: time.Duration(cfgTunnel.PairTimeoutS) * time.Second, WriteTimeout: time.Duration(cfgTunnel.WriteTimeoutS) * time.Second, DrainTimeout: time.Duration(cfgTunnel.DrainTimeoutS) * time.Second}
@@ -52,7 +65,8 @@ func (g *Gateway) Run(ctx context.Context) error {
 	g.admin.SetReady(true)
 	g.metrics.Set("rc_gateway_ready", 1)
 	g.metrics.Set("rc_gateway_configured_tunnels", int64(len(g.cfg.Tunnels)))
-	g.logger.Info("bridge runtime ready", "nodeId", g.cfg.NodeID, "tunnels", len(g.cfg.Tunnels))
+	g.metrics.Set("rc_gateway_configured_serial_providers", int64(len(g.cfg.SerialProviders)))
+	g.logger.Info("bridge runtime ready", "nodeId", g.cfg.NodeID, "tunnels", len(g.cfg.Tunnels), "serialProviders", len(g.cfg.SerialProviders))
 	select {
 	case <-ctx.Done():
 		g.admin.SetReady(false)
@@ -65,9 +79,11 @@ func (g *Gateway) Run(ctx context.Context) error {
 		return err
 	}
 }
+
 func bridgeEndpoint(name string, ep config.Endpoint) bridge.Endpoint {
 	return bridge.Endpoint{Name: name, Mode: ep.Mode, Network: ep.Network, Bind: ep.Bind, Address: ep.Address, AllowedCIDRs: ep.AllowedCIDRs, DialTimeout: time.Duration(ep.DialTimeoutS) * time.Second, Reconnect: time.Duration(ep.ReconnectS) * time.Second, KeepAlive: time.Duration(ep.KeepAliveS) * time.Second, TLS: bridge.TLSOptions{Enabled: ep.TLS.Enabled, CAFile: ep.TLS.CAFile, CertFile: ep.TLS.CertFile, KeyFile: ep.TLS.KeyFile, ServerName: ep.TLS.ServerName, RequireClientCert: ep.TLS.RequireClientCert}}
 }
+
 func (g *Gateway) tunnelHooks(tunnelID string) bridge.Hooks {
 	prefix := "rc_gateway_tunnel_" + tunnelID
 	return bridge.Hooks{OnOpen: func(info bridge.PairInfo) {
@@ -96,6 +112,7 @@ func (g *Gateway) tunnelHooks(tunnelID string) bridge.Hooks {
 		g.metrics.Inc(prefix + "_pair_wait_timeouts_total")
 	}}
 }
+
 func sendErr(ch chan<- error, err error) {
 	select {
 	case ch <- err:

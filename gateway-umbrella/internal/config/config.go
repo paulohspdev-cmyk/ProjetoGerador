@@ -43,12 +43,26 @@ type Tunnel struct {
 	WriteTimeoutS int      `json:"writeTimeoutSeconds,omitempty"`
 	DrainTimeoutS int      `json:"drainTimeoutSeconds,omitempty"`
 }
+type SerialProvider struct {
+	ID            string `json:"id"`
+	Socket        string `json:"socket"`
+	Device        string `json:"device"`
+	Standard      string `json:"standard"`
+	BaudRate      int    `json:"baudRate"`
+	DataBits      int    `json:"dataBits"`
+	Parity        string `json:"parity"`
+	StopBits      string `json:"stopBits"`
+	ReadTimeoutMS int    `json:"readTimeoutMilliseconds,omitempty"`
+	RTS           bool   `json:"rts,omitempty"`
+	DTR           bool   `json:"dtr,omitempty"`
+}
 type Config struct {
-	Schema   int      `json:"schema"`
-	NodeID   string   `json:"nodeId"`
-	Admin    Admin    `json:"admin"`
-	Security Security `json:"security"`
-	Tunnels  []Tunnel `json:"tunnels"`
+	Schema          int              `json:"schema"`
+	NodeID          string           `json:"nodeId"`
+	Admin           Admin            `json:"admin"`
+	Security        Security         `json:"security"`
+	SerialProviders []SerialProvider `json:"serialProviders,omitempty"`
+	Tunnels         []Tunnel         `json:"tunnels"`
 }
 
 func Load(path string) (Config, error) {
@@ -77,6 +91,47 @@ func Load(path string) (Config, error) {
 	}
 	if cfg.Security.CommandPlaneEnabled {
 		return cfg, fmt.Errorf("commandPlaneEnabled is intentionally unsupported in this release")
+	}
+	providerIDs := map[string]bool{}
+	providerSockets := map[string]bool{}
+	for i := range cfg.SerialProviders {
+		p := &cfg.SerialProviders[i]
+		p.ID = strings.TrimSpace(p.ID)
+		p.Standard = strings.ToLower(strings.TrimSpace(p.Standard))
+		p.Parity = strings.ToLower(strings.TrimSpace(p.Parity))
+		p.StopBits = strings.TrimSpace(p.StopBits)
+		if p.ID == "" || providerIDs[p.ID] {
+			return cfg, fmt.Errorf("serialProvider[%d] requires unique id", i)
+		}
+		providerIDs[p.ID] = true
+		if !filepath.IsAbs(p.Socket) || providerSockets[p.Socket] {
+			return cfg, fmt.Errorf("serialProvider %s requires unique absolute socket", p.ID)
+		}
+		providerSockets[p.Socket] = true
+		if strings.TrimSpace(p.Device) == "" {
+			return cfg, fmt.Errorf("serialProvider %s device is required", p.ID)
+		}
+		if p.Standard != "rs232" && p.Standard != "rs422" && p.Standard != "rs485" {
+			return cfg, fmt.Errorf("serialProvider %s invalid standard %q", p.ID, p.Standard)
+		}
+		if p.BaudRate <= 0 || p.DataBits < 5 || p.DataBits > 8 {
+			return cfg, fmt.Errorf("serialProvider %s invalid baudRate/dataBits", p.ID)
+		}
+		if p.Parity == "" {
+			p.Parity = "none"
+		}
+		if p.Parity != "none" && p.Parity != "odd" && p.Parity != "even" && p.Parity != "mark" && p.Parity != "space" {
+			return cfg, fmt.Errorf("serialProvider %s invalid parity", p.ID)
+		}
+		if p.StopBits == "" {
+			p.StopBits = "1"
+		}
+		if p.StopBits != "1" && p.StopBits != "1.5" && p.StopBits != "2" {
+			return cfg, fmt.Errorf("serialProvider %s invalid stopBits", p.ID)
+		}
+		if p.ReadTimeoutMS < 0 || p.ReadTimeoutMS > 60000 {
+			return cfg, fmt.Errorf("serialProvider %s invalid readTimeoutMilliseconds", p.ID)
+		}
 	}
 	seen := map[string]bool{}
 	for i := range cfg.Tunnels {
@@ -110,6 +165,7 @@ func Load(path string) (Config, error) {
 	}
 	return cfg, nil
 }
+
 func validateEndpoint(ep *Endpoint, label string, requireAllowlist bool) error {
 	ep.Mode = strings.TrimSpace(ep.Mode)
 	ep.Network = strings.TrimSpace(ep.Network)
@@ -141,6 +197,7 @@ func validateEndpoint(ep *Endpoint, label string, requireAllowlist bool) error {
 		return fmt.Errorf("%s unsupported network %q", label, ep.Network)
 	}
 }
+
 func validateTCPEndpoint(ep *Endpoint, label string, requireAllowlist bool) error {
 	if ep.KeepAliveS <= 0 {
 		ep.KeepAliveS = 30
@@ -188,6 +245,7 @@ func validateTCPEndpoint(ep *Endpoint, label string, requireAllowlist bool) erro
 	}
 	return nil
 }
+
 func isLoopbackBind(bind string) bool {
 	host, _, err := net.SplitHostPort(bind)
 	if err != nil {

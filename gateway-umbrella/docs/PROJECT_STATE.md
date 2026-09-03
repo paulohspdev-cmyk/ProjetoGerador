@@ -11,58 +11,51 @@ NO DEVICE MEMORY DATABASE
 NO TELEMETRY HISTORIAN
 ```
 
-O Gateway é ponte universal de conectividade. Rapid SCADA, FUXA, ThingsBoard, software do fabricante ou outro driver interpreta registradores/protocolos de aplicação.
+O Gateway é uma ponte universal de conectividade. Rapid SCADA, FUXA, ThingsBoard, software do fabricante ou outro driver interpreta registradores e protocolos de aplicação.
 
-## Arquitetura
+## Checkpoints verdes
 
-```text
-FIELD ENDPOINT <====== raw duplex ======> CONSUMER ENDPOINT
-```
+- `249a7f0d55c840e5e95764468a6400db8a401fea`: limpeza bridge-first.
+- `9dc17491e370a59926d9069c898c0e3bba8b8171`: hardening TCP.
+- `52b2d76665fb73ac212e5cf085551aa7c658c2e1`: TLS/mTLS + Unix + RST/half-close; workflow Gateway Umbrella passou format, vet, testes, race e build.
 
-Um túnel raw possui um consumidor ativo por vez. Não fazer fan-out byte-transparent para múltiplos masters.
+## Transportes stream implementados
 
-## Checkpoints
+- TCP listen/connect;
+- TLS 1.3 e mTLS sobre TCP;
+- Unix socket listen/connect;
+- Serial RS232/RS422/RS485 por `serialProviders`, exposto internamente como Unix socket raw;
+- pair timeout, slow-peer/write timeout, half-close drain, keepalive, NODELAY e allowlist CIDR;
+- métricas por chunk e bytes por direção;
+- 50 ciclos de churn/reconnect, RST e half-close testados.
 
-- `249a7f0d55c840e5e95764468a6400db8a401fea`: limpeza bridge-first, verde.
-- `9dc17491e370a59926d9069c898c0e3bba8b8171`: hardening TCP; Gateway CI passou format, vet, testes, race e build.
+O provider serial usa `go.bug.st/serial v1.8.0`, abre a porta física somente quando o túnel/consumidor precisa dela e nunca interpreta Modbus/IEC/DNP3/NMEA. RS485 com adaptadores que fazem direção automática funciona como stream serial comum; hardware que exija controle kernel/vendor específico de direção deve ser homologado em HIL antes de produção.
 
-## Implementado no core
+## Protocolos cobertos sem adapter semântico
 
-- TCP `listen` e `connect`;
-- `listen↔listen` e `connect↔listen` testados com sockets reais;
-- bytes byte-for-byte nos dois sentidos;
-- pair timeout, write timeout/backpressure, drain timeout/half-close;
-- métricas por chunk durante sessão;
-- 50 ciclos de reconnect/churn;
-- allowlist CIDR, keepalive, NODELAY;
-- TLS 1.3 e mTLS como camada de endpoint TCP;
-- Unix socket `listen`/`connect` como endpoint stream local;
-- Command Plane rejeitado;
-- sem banco, polling, mapas de memória ou telemetria semântica.
+Qualquer protocolo que já seja transportável byte-transparent por TCP/TLS atravessa o core sem biblioteca específica: Modbus TCP, MQTT, OPC UA, IEC-104, DNP3/TCP, HTTP(S), WebSocket, protocolos proprietários e outros. Serial transporta Modbus RTU/ASCII, IEC-101, DNP3 serial, NMEA e protocolos proprietários sem conhecer seu significado.
 
-## Testes adicionados nesta etapa
+## Em validação neste HEAD
 
-- TLS 1.3/mTLS com CA, certificado de servidor e certificado cliente reais gerados em teste;
-- payload binário preservado dentro do túnel TLS;
-- Unix socket duplex preservando bytes;
-- TCP half-close real permitindo resposta pendente;
-- TCP RST encerrando o par sem travar;
-- `gofmt` aplicado ao checkpoint antes da validação completa.
+- dependência serial integrada ao módulo principal;
+- configuração `serialProviders`;
+- provider RS232/422/485 duplex;
+- systemd com `RuntimeDirectory=rc-gateway` e grupo suplementar `dialout`;
+- exemplo `gateway.serial.example.json`;
+- testes de validação serial sem exigir hardware no CI.
 
-O checkpoint TCP anterior está verde. O HEAD atual contém TLS/mTLS + Unix + RST/half-close e deve ser validado pelo workflow Gateway Umbrella antes de ser promovido a checkpoint verde.
+**Consultar o CI deste HEAD antes de declarar serial verde.**
 
-## Próximos passos
+## Ainda falta para software field-test-ready universal
 
-1. confirmar CI TLS/mTLS + Unix + RST/half-close;
-2. implementar Serial RS232/422/485 como endpoint duplex;
-3. implementar UDP como bridge orientada a datagramas/sessão;
-4. tratar MQTT/OPC UA/Modbus TCP/IEC-104/DNP3-TCP/HTTP(S)/WebSocket como protocolos transportados por TCP/TLS quando o destino já os entende, evitando adapters desnecessários;
-5. adicionar suíte de carga/leak/concurrency;
-6. adicionar impairment/soak automatizado;
-7. classificar SocketCAN como transporte frame-oriented separado;
-8. fechar instalação, config validation e rollback;
-9. somente depois iniciar HIL/soak físico.
+1. UDP datagram/session bridge;
+2. carga/leak/concurrency;
+3. impairment de rede e soak automatizado;
+4. SocketCAN/CAN-FD/J1939/CANopen como frame transport, sem mapa de sinais;
+5. instalação, validação de config, release e rollback atômicos;
+6. documentação operacional final e matriz de compatibilidade;
+7. HIL físico continua sendo o passo posterior para declarar produção validada.
 
 ## Regra de produção
 
-Software field-test-ready = todos os gates automatizáveis verdes. Produção validada = somente após HIL/soak físico. Invariável: nenhum payload pode ser alterado silenciosamente e nenhum recurso pode crescer sem limite.
+Software field-test-ready = todos os gates automatizáveis verdes. Produção validada = somente após HIL/soak físico. Não reintroduzir polling, mapas de memória ou historian no core.
