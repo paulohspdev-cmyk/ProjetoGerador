@@ -5,6 +5,11 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"log/slog"
+	"sync"
+	"sync/atomic"
+	"time"
+
 	"github.com/paulohspdev-cmyk/ProjetoGerador/gateway-umbrella/internal/admin"
 	"github.com/paulohspdev-cmyk/ProjetoGerador/gateway-umbrella/internal/config"
 	"github.com/paulohspdev-cmyk/ProjetoGerador/gateway-umbrella/internal/core"
@@ -19,13 +24,10 @@ import (
 	tlsclient "github.com/paulohspdev-cmyk/ProjetoGerador/gateway-umbrella/internal/transport/tlsclient"
 	tlsserver "github.com/paulohspdev-cmyk/ProjetoGerador/gateway-umbrella/internal/transport/tlsserver"
 	udptransport "github.com/paulohspdev-cmyk/ProjetoGerador/gateway-umbrella/internal/transport/udp"
-	"log/slog"
-	"sync"
-	"sync/atomic"
-	"time"
 )
 
 type recordSink interface{ Publish(core.Record) error }
+
 type Gateway struct {
 	cfg        config.Config
 	bus        *core.Bus
@@ -35,6 +37,7 @@ type Gateway struct {
 	admin      *admin.Server
 	spool      *spool.Writer
 	northbound []recordSink
+	identities identityResolver
 	seq        atomic.Uint64
 	streamsMu  sync.Mutex
 	streams    map[string]*modbus.Stream
@@ -46,7 +49,11 @@ func New(cfg config.Config, logger *slog.Logger) *Gateway {
 	a := &admin.Server{Bind: cfg.Admin.Bind, NodeID: cfg.NodeID, Sessions: sessions, Metrics: m}
 	return &Gateway{cfg: cfg, bus: core.NewBus(cfg.EventBuf), sessions: sessions, metrics: m, logger: logger, admin: a, streams: make(map[string]*modbus.Stream)}
 }
+
 func (g *Gateway) Run(ctx context.Context) error {
+	if err := g.loadIdentity(); err != nil {
+		return err
+	}
 	var err error
 	if g.cfg.Spool.Enabled {
 		g.spool, err = spool.New(g.cfg.Spool.Dir, g.cfg.Spool.MaxSegmentBytes, g.cfg.Spool.SyncEvery)
@@ -123,6 +130,7 @@ func (g *Gateway) Run(ctx context.Context) error {
 		return err
 	}
 }
+
 func (g *Gateway) runListener(ctx context.Context, l config.Listener) error {
 	switch l.Kind {
 	case "tcp_server":
@@ -137,6 +145,7 @@ func (g *Gateway) runListener(ctx context.Context, l config.Listener) error {
 		return fmt.Errorf("unsupported listener kind %q", l.Kind)
 	}
 }
+
 func (g *Gateway) runConnector(ctx context.Context, c config.Connector) error {
 	switch c.Kind {
 	case "tcp_client":
@@ -147,6 +156,7 @@ func (g *Gateway) runConnector(ctx context.Context, c config.Connector) error {
 		return fmt.Errorf("unsupported connector kind %q", c.Kind)
 	}
 }
+
 func (g *Gateway) handleEvent(event core.Event) {
 	g.metrics.Inc("rc_gateway_events_total")
 	switch event.Kind {
@@ -170,6 +180,7 @@ func (g *Gateway) handleEvent(event core.Event) {
 		g.metrics.Inc("rc_gateway_sidecar_events_total")
 	}
 	for _, record := range g.normalize(event) {
+		g.applyIdentity(event, &record)
 		if g.spool != nil {
 			if err := g.spool.Append(record); err != nil {
 				g.metrics.Inc("rc_gateway_spool_errors_total")
@@ -184,9 +195,10 @@ func (g *Gateway) handleEvent(event core.Event) {
 				g.logger.Warn("northbound publish failed", "error", err)
 			}
 		}
-		g.logger.Info("gateway record", "kind", record.Kind, "listener", record.ListenerID, "session", record.SessionID, "transport", record.Transport, "protocol", record.Protocol, "framing", record.Framing, "bytes", record.Size, "remote", record.RemoteAddr, "previewHex", preview(event.Payload))
+		g.logger.Info("gateway record", "kind", record.Kind, "listener", record.ListenerID, "session", record.SessionID, "device", record.DeviceID, "transport", record.Transport, "protocol", record.Protocol, "framing", record.Framing, "quality", record.Quality, "bytes", record.Size, "remote", record.RemoteAddr, "previewHex", preview(event.Payload))
 	}
 }
+
 func (g *Gateway) normalize(event core.Event) []core.Record {
 	base := core.Record{Schema: 1, NodeID: g.cfg.NodeID, Kind: event.Kind, ListenerID: event.ListenerID, SessionID: event.SessionID, Transport: event.Transport, RemoteAddr: event.RemoteAddr, LocalAddr: event.LocalAddr, ReceivedAt: event.ReceivedAt, Quality: core.QualityGood, Size: len(event.Payload), Meta: cloneMeta(event.Meta)}
 	if len(event.Payload) > 0 {
@@ -231,6 +243,7 @@ func (g *Gateway) normalize(event core.Event) []core.Record {
 	}
 	return out
 }
+
 func (g *Gateway) ensureStream(id string) *modbus.Stream {
 	g.streamsMu.Lock()
 	defer g.streamsMu.Unlock()
@@ -241,11 +254,13 @@ func (g *Gateway) ensureStream(id string) *modbus.Stream {
 	}
 	return s
 }
+
 func (g *Gateway) dropStream(id string) {
 	g.streamsMu.Lock()
 	defer g.streamsMu.Unlock()
 	delete(g.streams, id)
 }
+
 func cloneMeta(in map[string]any) map[string]any {
 	out := make(map[string]any, len(in)+2)
 	for k, v := range in {
@@ -253,6 +268,7 @@ func cloneMeta(in map[string]any) map[string]any {
 	}
 	return out
 }
+
 func preview(payload []byte) string {
 	const max = 32
 	if len(payload) > max {
@@ -260,6 +276,7 @@ func preview(payload []byte) string {
 	}
 	return hex.EncodeToString(payload)
 }
+
 func sendErr(ch chan<- error, err error) {
 	select {
 	case ch <- err:
