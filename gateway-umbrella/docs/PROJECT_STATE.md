@@ -6,7 +6,7 @@
 
 ## Regra obrigatória de manutenção
 
-**Toda modificação, correção, melhoria, remoção, mudança de arquitetura, mudança de dependência, novo protocolo, novo transporte, novo consumidor, nova integração, alteração de segurança, alteração operacional ou mudança de status dentro do Gateway DEVE atualizar este arquivo no mesmo conjunto de mudanças.**
+**Toda modificação, correção, melhoria, remoção, mudança de arquitetura, mudança de dependência, novo protocolo, novo transporte, novo consumidor, nova integração, alteração de segurança, alteração operacional ou mudança de status dentro do Gateway DEVE atualizar este arquivo.**
 
 A atualização mínima deve registrar:
 
@@ -17,7 +17,9 @@ A atualização mínima deve registrar:
 5. riscos ou limitações ainda existentes;
 6. o próximo passo recomendado.
 
-O workflow próprio do Gateway deve possuir uma trava para impedir alterações em `gateway-umbrella/` sem atualização deste documento.
+Essa regra é agora protegida pelo workflow `.github/workflows/gateway-umbrella.yml`, que executa `gateway-umbrella/scripts/check-project-state-updated.sh`.
+
+A trava compara o commit mais recente que alterou `gateway-umbrella/` ou o workflow próprio do Gateway com o commit mais recente deste arquivo. Se existir uma alteração posterior ao handoff, o job **Canonical project state** falha e os jobs de core/adapters não avançam até o documento ser sincronizado.
 
 ---
 
@@ -218,7 +220,7 @@ Branch ativa deste trabalho: `feat/gateway-umbrella-foundation`
 
 Pull Request: **#62** — mantido isolado do runtime de produção enquanto a fundação é construída e validada.
 
-### Último checkpoint de código confirmado antes da criação deste documento
+### Último checkpoint de código confirmado antes da universalização documental
 
 SHA: `489c72e01a4f6a157a8699c01f38908f45c1e6c0`
 
@@ -239,7 +241,20 @@ No workflow próprio do Gateway passaram:
 - testes dos adapters;
 - build de todos os adapters.
 
-**Não considerar um commit posterior validado apenas porque aparece neste documento. Sempre conferir o CI do HEAD atual.**
+### Alterações posteriores ao checkpoint acima
+
+Foram feitas alterações de documentação/governança, sem habilitar Command Plane nem mudar integração industrial de produção:
+
+- criação deste `PROJECT_STATE.md`;
+- README redefinido para escopo universal;
+- `ARCHITECTURE.md` redefinido para arquitetura universal/multi-consumidor;
+- criação de `scripts/check-project-state-updated.sh`;
+- workflow `gateway-umbrella.yml` passou a exigir handoff sincronizado;
+- workflow temporário `gateway-autofmt-temp.yml` removido após cumprir sua função.
+
+O SHA imediatamente anterior a esta sincronização do documento é `a9ffc0d7266eaeb3b48046d4d0e8f6f37b790bbe`.
+
+**O CI do HEAD posterior a essas mudanças deve ser consultado antes de afirmar que esse novo conjunto está verde.**
 
 ---
 
@@ -295,7 +310,7 @@ A presença de um adapter no repositório **não significa automaticamente `prod
 
 Já existe registry de identidade com matching por evidências e estados `enrolled/quarantined/unknown/revoked`.
 
-O TLS server já coleta dados do certificado peer e a integração mais recente adicionou fingerprint SHA-256 como evidência forte.
+O TLS server coleta dados do certificado peer e a integração atual inclui fingerprint SHA-256 como evidência forte.
 
 Weak evidence continua em quarentena.
 
@@ -317,7 +332,7 @@ Nunca promover equipamento para `enrolled` apenas para fazer uma tela ficar onli
 
 ## 8. Northbound universal — direção obrigatória
 
-A próxima arquitetura de saída deve permitir **fan-out**: um único Record pode alimentar zero, um ou vários consumidores.
+A arquitetura de saída deve permitir **fan-out**: um único Record pode alimentar zero, um ou vários consumidores.
 
 Interfaces de destino que devem ser consideradas:
 
@@ -342,6 +357,18 @@ Grafana deve ser tratado corretamente como camada de visualização/consulta. O 
 
 Rapid SCADA deixa de ser o destino obrigatório do core. Deve ser **um adapter/consumer northbound**. O Gateway deve poder continuar operando e persistindo dados quando o Rapid estiver parado.
 
+### FUXA
+
+FUXA deve ser integrado por interfaces industriais/padrões adequados ao produto (por exemplo OPC UA, Modbus TCP, MQTT ou outra interface homologada), sem inserir regras específicas de FUXA no core.
+
+### ThingsBoard
+
+ThingsBoard deve ser um consumidor via adapter Northbound, preferencialmente MQTT/HTTP conforme o contrato escolhido, com autenticação/segredos fora do código.
+
+### Node-RED
+
+Node-RED deve poder consumir dados por MQTT/HTTP/WebSocket ou outra interface estável, sem participar da aquisição de campo do core.
+
 ### RC Geradores
 
 O sistema de geradores deve consumir dados do Gateway por contrato estável, sem possuir lógica de transporte industrial dentro do frontend e sem exigir que o Gateway seja exclusivo para geradores.
@@ -362,6 +389,7 @@ O sistema de geradores deve consumir dados do Gateway por contrato estável, sem
 10. **Lifecycle real:** `production` somente após evidência de laboratório/campo correspondente.
 11. **Sem bypass de segurança:** não liberar escrita industrial direta para “testar”.
 12. **Documentação sincronizada:** toda alteração atualiza este arquivo.
+13. **CI como fonte de verdade:** não afirmar validação que o HEAD atual não comprovou.
 
 ---
 
@@ -378,8 +406,9 @@ Ao retomar o trabalho:
 7. Fazer mudanças pequenas e isoladas.
 8. Rodar/confirmar `gofmt`, `go vet`, testes, race detector e build aplicáveis.
 9. Não promover lifecycle sem evidência correspondente.
-10. **Atualizar este arquivo no mesmo conjunto de mudanças.**
-11. Registrar abaixo a mudança e o próximo passo.
+10. **Atualizar este arquivo após qualquer mudança.**
+11. Registrar na seção de mudanças o que foi feito, testes, limitações e próximo passo.
+12. Confirmar que o job **Canonical project state** passa antes de considerar a mudança completa.
 
 ### Comandos locais de referência
 
@@ -407,21 +436,20 @@ O CI do GitHub continua sendo a fonte final de verdade para o branch/PR.
 
 Ordem recomendada, sempre mantendo o CI verde entre blocos:
 
-1. consolidar esta documentação canônica e a trava automática de atualização;
-2. remover workflows temporários de manutenção/autoformat;
-3. fechar backpressure no event bus e nos sinks;
-4. evoluir spool para replay com ACK/checkpoint e retenção;
-5. endurecer supervisor de adapters/sidecars com exponential backoff, jitter e circuit-breaker onde fizer sentido;
-6. consolidar roteamento northbound multi-sink/fan-out;
-7. criar contratos northbound universais;
-8. implementar primeiro conjunto de consumidores: RC Geradores + HTTP/MQTT genéricos;
-9. integrar Rapid SCADA como consumer isolado;
-10. preparar integração FUXA, ThingsBoard e Node-RED sem acoplamento ao core;
-11. definir pipeline TSDB/Prometheus para uso com Grafana;
-12. continuar CAN-FD/CANopen e protocolos industriais adicionais;
-13. IEC-60870-5-101/104, BACnet e DNP3 preferencialmente por stacks/sidecars maduros antes de qualquer implementação própria extensa;
-14. ampliar HIL, fault injection, soak tests e testes de reconexão/perda de consumidor;
-15. somente muito depois projetar Command Plane, separado e homologado.
+1. confirmar CI do novo handoff + trava canônica;
+2. fechar backpressure no event bus e nos sinks;
+3. evoluir spool para replay com ACK/checkpoint e retenção;
+4. endurecer supervisor de adapters/sidecars com exponential backoff, jitter e circuit-breaker onde fizer sentido;
+5. consolidar roteamento Northbound multi-sink/fan-out;
+6. criar contratos Northbound universais;
+7. implementar primeiro conjunto de consumidores: RC Geradores + HTTP/MQTT genéricos;
+8. integrar Rapid SCADA como consumer isolado;
+9. preparar integração FUXA, ThingsBoard e Node-RED sem acoplamento ao core;
+10. definir pipeline TSDB/Prometheus para uso com Grafana;
+11. continuar CAN-FD/CANopen e protocolos industriais adicionais;
+12. IEC-60870-5-101/104, BACnet e DNP3 preferencialmente por stacks/sidecars maduros antes de qualquer implementação própria extensa;
+13. ampliar HIL, fault injection, soak tests e testes de reconexão/perda de consumidor;
+14. somente muito depois projetar Command Plane, separado e homologado.
 
 ---
 
@@ -429,6 +457,7 @@ Ordem recomendada, sempre mantendo o CI verde entre blocos:
 
 - não transformar o Gateway em componente exclusivo de RC Geradores;
 - não fazer Rapid SCADA virar dependência obrigatória do core;
+- não fazer FUXA, ThingsBoard, Node-RED ou Grafana virarem dependências do core;
 - não duplicar lógica de protocolo em cada consumidor;
 - não assumir que TCP preserva frames;
 - não usar IP/porta como identidade definitiva;
@@ -443,14 +472,22 @@ Ordem recomendada, sempre mantendo o CI verde entre blocos:
 
 ## 13. Registro de mudanças / handoff
 
-### 2026-09-03 — Documento canônico e escopo universal
+### 2026-09-03 — Handoff obrigatório + escopo universal + trava de CI
 
-**Mudança:** criado este documento para continuidade obrigatória do projeto. O escopo foi formalizado como **Gateway industrial/IoT universal**, não exclusivo de geradores.
+**O que mudou:**
 
-**Decisão:** Rapid SCADA, FUXA, ThingsBoard, Node-RED, Grafana/TSDB, RC Geradores e demais sistemas são consumidores Northbound independentes.
+- criado `docs/PROJECT_STATE.md` como documento canônico de continuidade;
+- `README.md` passou a definir explicitamente o produto como **RC Universal Gateway**;
+- `ARCHITECTURE.md` passou a ter Transport, Protocol, Identity, Telemetry, Durability, Northbound e Command Plane;
+- formalizado que Rapid SCADA, FUXA, ThingsBoard, Node-RED, Grafana/TSDB e RC Geradores são consumidores Northbound independentes;
+- criado `scripts/check-project-state-updated.sh`;
+- workflow `Gateway Umbrella` ganhou job **Canonical project state** e `core/adapters` dependem dele;
+- removido o workflow temporário `gateway-autofmt-temp.yml`.
 
-**Estado validado antes desta mudança:** SHA `489c72e01a4f6a157a8699c01f38908f45c1e6c0` com Gateway Umbrella + CI + Quality/Security verdes.
+**Por que:** impedir perda de contexto entre chats/agentes e impedir que a arquitetura seja limitada ao projeto de geradores ou a um SCADA específico.
 
-**Limitação atual:** o Northbound implementado no core ainda é principalmente HTTP JSON; os contratos multi-sink e integrações específicas universais ainda precisam ser consolidados.
+**Validação conhecida:** o checkpoint de código `489c72e01a4f6a157a8699c01f38908f45c1e6c0` estava totalmente verde em Gateway Umbrella, CI e Quality/Security. As mudanças de governança/documentação acima ainda precisam ter o CI do HEAD confirmado depois desta sincronização.
 
-**Próximo passo:** instalar a trava de CI que exige atualização deste documento e remover o workflow temporário de autoformat. Depois seguir para backpressure/spool replay e roteamento northbound universal.
+**Risco/limitação atual:** Northbound de produção universal ainda não está pronto. O core possui HTTP JSON, mas fan-out robusto, replay/ACK e integrações específicas ainda precisam ser implementados.
+
+**Próximo passo:** confirmar o CI deste novo HEAD. Depois iniciar backpressure + spool replay/ACK e então estruturar o roteamento Northbound universal para que RC Geradores, Rapid SCADA, FUXA, ThingsBoard, Node-RED e pipelines de Grafana coexistam como consumidores independentes.
