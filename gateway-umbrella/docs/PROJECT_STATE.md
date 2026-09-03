@@ -187,3 +187,7 @@ sem mutar payload, sem misturar consumidores e sem vazar conexões, goroutines o
 # 9. Regra para qualquer próximo chat/agente
 
 Não reintroduzir a arquitetura antiga de telemetria no core para “aproveitar” bibliotecas. Se uma nova conexão precisar ser suportada, modelar primeiro como **Endpoint duplex**. Se não for possível transportar de forma transparente, documentar por que um adapter protocol-aware é indispensável e mantê-lo fora do núcleo genérico sempre que possível.
+
+# 10. Status desta etapa
+
+A limpeza arquitetural solicitada nesta conversa está **concluída no código**: o produto deixou de ser um motor de aquisição/conversão e ficou reduzido a uma fundação de ponte TCP duplex universal. O próximo trabalho deve começar pelo endurecimento do Tunnel TCP, não pela reintrodução de protocolos semânticos.
