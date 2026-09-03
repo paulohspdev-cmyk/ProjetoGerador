@@ -12,12 +12,19 @@ import (
 type Admin struct {
 	Bind string `json:"bind"`
 }
+
 type Spool struct {
 	Enabled         bool   `json:"enabled"`
 	Dir             string `json:"dir"`
 	MaxSegmentBytes int64  `json:"maxSegmentBytes"`
 	SyncEvery       int    `json:"syncEvery"`
 }
+
+type Identity struct {
+	InventoryFile     string `json:"inventoryFile,omitempty"`
+	RequireEnrollment bool   `json:"requireEnrollment"`
+}
+
 type Listener struct {
 	ID                string   `json:"id"`
 	Kind              string   `json:"kind"`
@@ -34,6 +41,7 @@ type Listener struct {
 	BearerTokenEnv    string   `json:"bearerTokenEnv,omitempty"`
 	MaxBodyBytes      int64    `json:"maxBodyBytes,omitempty"`
 }
+
 type Connector struct {
 	ID                 string   `json:"id"`
 	Kind               string   `json:"kind"`
@@ -48,6 +56,7 @@ type Connector struct {
 	RootCAFile         string   `json:"rootCAFile,omitempty"`
 	InsecureSkipVerify bool     `json:"insecureSkipVerify,omitempty"`
 }
+
 type Northbound struct {
 	ID             string `json:"id"`
 	Kind           string `json:"kind"`
@@ -56,6 +65,7 @@ type Northbound struct {
 	Queue          int    `json:"queue,omitempty"`
 	BearerTokenEnv string `json:"bearerTokenEnv,omitempty"`
 }
+
 type Sidecar struct {
 	ID        string            `json:"id"`
 	Command   string            `json:"command"`
@@ -65,16 +75,19 @@ type Sidecar struct {
 	Lifecycle string            `json:"lifecycle,omitempty"`
 	Protocol  string            `json:"protocol,omitempty"`
 }
+
 type Security struct {
 	RequireAllowlist    bool `json:"requireAllowlist"`
 	CommandPlaneEnabled bool `json:"commandPlaneEnabled"`
 }
+
 type Config struct {
 	Schema     int          `json:"schema"`
 	NodeID     string       `json:"nodeId"`
 	EventBuf   int          `json:"eventBuffer"`
 	Admin      Admin        `json:"admin"`
 	Spool      Spool        `json:"spool"`
+	Identity   Identity     `json:"identity"`
 	Security   Security     `json:"security"`
 	Listeners  []Listener   `json:"listeners"`
 	Connectors []Connector  `json:"connectors,omitempty"`
@@ -120,6 +133,11 @@ func Load(path string) (Config, error) {
 	if cfg.Security.CommandPlaneEnabled {
 		return cfg, fmt.Errorf("commandPlaneEnabled is intentionally unsupported in this release")
 	}
+	cfg.Identity.InventoryFile = strings.TrimSpace(cfg.Identity.InventoryFile)
+	if cfg.Identity.RequireEnrollment && cfg.Identity.InventoryFile == "" {
+		return cfg, fmt.Errorf("identity.inventoryFile is required when requireEnrollment=true")
+	}
+
 	seen := map[string]bool{}
 	for i := range cfg.Listeners {
 		l := &cfg.Listeners[i]
