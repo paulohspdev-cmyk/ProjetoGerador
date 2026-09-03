@@ -1,10 +1,8 @@
 # RC Universal Gateway — estado do projeto e handoff obrigatório
 
-> **LEIA ESTE ARQUIVO PRIMEIRO antes de modificar `gateway-umbrella/`.**
->
-> Este é o documento canônico de continuidade. Toda mudança no Gateway deve atualizar este arquivo no mesmo ciclo. O workflow `gateway-umbrella.yml` aplica essa regra.
+> **LEIA ESTE ARQUIVO PRIMEIRO antes de modificar `gateway-umbrella/`.** Toda alteração no Gateway deve atualizar este arquivo no mesmo ciclo.
 
-# 1. Decisão vigente
+## Decisão fixa
 
 ```text
 BRIDGE FIRST
@@ -13,78 +11,57 @@ NO DEVICE MEMORY DATABASE
 NO TELEMETRY HISTORIAN
 ```
 
-O RC Universal Gateway é uma ponte industrial/IoT universal. O core abre/aceita os dois lados, pareia, protege, roteia e transporta bytes sem interpretar registradores, controladoras ou telemetria. Rapid SCADA, FUXA, ThingsBoard, software do fabricante ou outro driver interpreta o equipamento.
+O Gateway é ponte universal de conectividade. Rapid SCADA, FUXA, ThingsBoard, software do fabricante ou outro driver interpreta registradores/protocolos de aplicação.
 
-# 2. Runtime atual
-
-Schema **3**, baseado em túneis duplex:
+## Arquitetura
 
 ```text
-FIELD ENDPOINT <====== raw duplex bytes ======> CONSUMER ENDPOINT
+FIELD ENDPOINT <====== raw duplex ======> CONSUMER ENDPOINT
 ```
 
-O core atual suporta TCP `listen`/`connect`. Um túnel raw possui um consumidor ativo por vez; não fazer fan-out byte-transparent para múltiplos masters.
+Um túnel raw possui um consumidor ativo por vez. Não fazer fan-out byte-transparent para múltiplos masters.
 
-# 3. Checkpoint bridge-first limpo
+## Checkpoints
 
-SHA de código limpo validado anteriormente: `249a7f0d55c840e5e95764468a6400db8a401fea`.
+- `249a7f0d55c840e5e95764468a6400db8a401fea`: limpeza bridge-first, verde.
+- `9dc17491e370a59926d9069c898c0e3bba8b8171`: hardening TCP; Gateway CI passou format, vet, testes, race e build.
 
-Nesse checkpoint: Gateway Umbrella, `gofmt`, `go vet`, unit/socket tests, race detector, build, CI geral e Quality/Security passaram.
+## Implementado no core
 
-# 4. Endurecimento TCP implementado nesta etapa
+- TCP `listen` e `connect`;
+- `listen↔listen` e `connect↔listen` testados com sockets reais;
+- bytes byte-for-byte nos dois sentidos;
+- pair timeout, write timeout/backpressure, drain timeout/half-close;
+- métricas por chunk durante sessão;
+- 50 ciclos de reconnect/churn;
+- allowlist CIDR, keepalive, NODELAY;
+- TLS 1.3 e mTLS como camada de endpoint TCP;
+- Unix socket `listen`/`connect` como endpoint stream local;
+- Command Plane rejeitado;
+- sem banco, polling, mapas de memória ou telemetria semântica.
 
-Adicionado ao core:
+## Testes adicionados nesta etapa
 
-- `pairTimeoutSeconds` (default 30 s): um peer não fica preso indefinidamente esperando o outro lado;
-- `writeTimeoutSeconds` (default 30 s): slow peer não pode bloquear a ponte para sempre;
-- `drainTimeoutSeconds` (default 2 s): half-close permite dreno curto e depois libera o par;
-- `OnBytes` passou a ser emitido durante cada chunk encaminhado, e não somente quando `io.Copy` termina;
-- escrita usa loop completo para não perder bytes em `Write` parcial;
-- listener passa a respeitar deadline de formação do par sem destruir o listener para o próximo ciclo;
-- métrica `rc_gateway_pair_wait_timeouts_total` e métrica por túnel;
-- `/sessions` passa a separar `bytesFieldToConsumer` e `bytesConsumerToField` em tempo real;
-- exemplo de configuração agora usa `requireAllowlist=true` e timeouts explícitos.
+- TLS 1.3/mTLS com CA, certificado de servidor e certificado cliente reais gerados em teste;
+- payload binário preservado dentro do túnel TLS;
+- Unix socket duplex preservando bytes;
+- TCP half-close real permitindo resposta pendente;
+- TCP RST encerrando o par sem travar.
 
-Testes adicionados:
+A reprodução local isolada passou `go test -race ./...`. **Consultar o CI do HEAD desta etapa antes de declarar este checkpoint verde.**
 
-- atualização de métricas antes do fechamento da sessão;
-- peer lento com timeout de escrita;
-- timeout de pairing sem inutilizar o listener;
-- 50 ciclos seguidos de reconnect/churn preservando bytes;
-- permanecem testes de sockets TCP reais `listen↔listen` e `connect↔listen` e byte-for-byte nos dois sentidos.
+## Próximos passos
 
-A reprodução local isolada do core passou `go test -race ./...`. **O CI do repositório para o HEAD desta alteração ainda deve ser consultado antes de declarar este novo checkpoint verde.**
+1. confirmar CI TLS/mTLS + Unix + RST/half-close;
+2. implementar Serial RS232/422/485 como endpoint duplex;
+3. implementar UDP como bridge orientada a datagramas/sessão;
+4. implementar WebSocket/WSS com contrato explícito de framing;
+5. adicionar suíte de carga/leak/concurrency;
+6. adicionar impairment/soak automatizado;
+7. classificar SocketCAN e MQTT como transports message-oriented, sem mapas de equipamento;
+8. fechar instalação, config validation e rollback;
+9. somente depois iniciar HIL/soak físico.
 
-# 5. O que continua deliberadamente fora do core
+## Regra de produção
 
-- banco de registradores/mapas ComAp/DSE/PLC/IHM;
-- polling e normalização de telemetria;
-- historian/spool de telemetria;
-- Command Plane;
-- readers semânticos OPC UA/SNMP/CoAP/MQTT.
-
-Novos meios devem voltar apenas como endpoints/bridges duplex quando tecnicamente possível.
-
-# 6. Próximos passos obrigatórios para software field-test-ready
-
-1. confirmar CI do endurecimento TCP;
-2. adicionar teste de TCP RST e teste explícito de half-close em sockets reais;
-3. adicionar teste de leak de goroutines/sockets e carga/concurrency;
-4. implementar TLS/mTLS como endpoint duplex raw;
-5. implementar Unix socket como endpoint duplex local;
-6. implementar Serial RS232/422/485 como endpoint duplex;
-7. implementar UDP como bridge datagram/session-aware;
-8. implementar WebSocket/WSS como transporte de stream/mensagem com contrato explícito;
-9. classificar CAN/SocketCAN e MQTT como transports message-oriented, sem fingir semântica de TCP;
-10. criar suíte de impairment/soak e pacote de instalação/rollback para homologação em campo.
-
-# 7. Regra de produção
-
-O software só fica pronto para homologação em campo quando todos os gates automatizáveis estão verdes. Produção real só pode ser declarada após HIL/soak físico. A invariável central permanece:
-
-```text
-bytes enviados A == bytes recebidos B
-bytes enviados B == bytes recebidos A
-```
-
-sem mutação de payload, mistura de consumidores, leak contínuo de recursos ou armazenamento semântico no core.
+Software field-test-ready = todos os gates automatizáveis verdes. Produção validada = somente após HIL/soak físico. Invariável: nenhum payload pode ser alterado silenciosamente e nenhum recurso pode crescer sem limite.
