@@ -26,7 +26,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	logger.Info("gateway starting", "nodeId", cfg.NodeID, "listeners", len(cfg.Listeners))
+	logger.Info("gateway starting", "nodeId", cfg.NodeID, "tunnels", len(cfg.Tunnels), "mode", "bridge-first")
 	if err := gateway.New(cfg, logger).Run(ctx); err != nil {
 		logger.Error("gateway stopped with error", "error", err)
 		os.Exit(1)
