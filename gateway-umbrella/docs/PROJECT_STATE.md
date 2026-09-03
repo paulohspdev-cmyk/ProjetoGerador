@@ -17,7 +17,7 @@ A atualização mínima deve registrar:
 5. riscos ou limitações ainda existentes;
 6. o próximo passo recomendado.
 
-Essa regra é agora protegida pelo workflow `.github/workflows/gateway-umbrella.yml`, que executa `gateway-umbrella/scripts/check-project-state-updated.sh`.
+Essa regra é protegida pelo workflow `.github/workflows/gateway-umbrella.yml`, que executa `gateway-umbrella/scripts/check-project-state-updated.sh`.
 
 A trava compara o commit mais recente que alterou `gateway-umbrella/` ou o workflow próprio do Gateway com o commit mais recente deste arquivo. Se existir uma alteração posterior ao handoff, o job **Canonical project state** falha e os jobs de core/adapters não avançam até o documento ser sincronizado.
 
@@ -248,13 +248,14 @@ Foram feitas alterações de documentação/governança, sem habilitar Command P
 - criação deste `PROJECT_STATE.md`;
 - README redefinido para escopo universal;
 - `ARCHITECTURE.md` redefinido para arquitetura universal/multi-consumidor;
+- `PRODUCTION_MATRIX.md` passou a ter uma matriz Northbound universal separada da aquisição Southbound;
 - criação de `scripts/check-project-state-updated.sh`;
 - workflow `gateway-umbrella.yml` passou a exigir handoff sincronizado;
 - workflow temporário `gateway-autofmt-temp.yml` removido após cumprir sua função.
 
-O SHA imediatamente anterior a esta sincronização do documento é `a9ffc0d7266eaeb3b48046d4d0e8f6f37b790bbe`.
+O job **Canonical project state** já foi observado passando após a criação da trava no SHA `4c615ba3b752307af53b579aed742550aafd06f6`. Core/adapters desse ciclo ainda estavam executando quando a matriz Northbound foi atualizada.
 
-**O CI do HEAD posterior a essas mudanças deve ser consultado antes de afirmar que esse novo conjunto está verde.**
+**O CI do HEAD atual deve ser consultado antes de afirmar que esse novo conjunto está completamente verde.**
 
 ---
 
@@ -294,13 +295,13 @@ O SHA imediatamente anterior a esta sincronização do documento é `a9ffc0d7266
 ### Adapters existentes na branch
 
 - serial;
-- MQTT;
-- MQTT v5;
+- MQTT inbound;
+- MQTT v5 inbound;
 - SocketCAN/J1939 clássico;
-- OPC UA;
-- SNMP;
-- CoAP;
-- WebSocket/WSS.
+- OPC UA client/read;
+- SNMP read;
+- CoAP GET/read;
+- WebSocket/WSS receive-only.
 
 A presença de um adapter no repositório **não significa automaticamente `production`**. O lifecycle deve continuar explícito:
 
@@ -338,7 +339,7 @@ Interfaces de destino que devem ser consideradas:
 
 - HTTP/HTTPS JSON;
 - MQTT publish;
-- WebSocket;
+- WebSocket outbound;
 - OPC UA server/exposure;
 - Modbus TCP server/virtual mapping quando fizer sentido;
 - Prometheus/OpenMetrics para métricas e, quando apropriado, séries tratadas;
@@ -349,13 +350,15 @@ Interfaces de destino que devem ser consideradas:
 - integração Node-RED;
 - integração RC Geradores.
 
+O adapter MQTT existente hoje é **inbound/read-only**: assina tópicos e envia observations ao core. Ele não deve ser confundido com o futuro publisher MQTT Northbound.
+
 ### Grafana
 
 Grafana deve ser tratado corretamente como camada de visualização/consulta. O Gateway deve normalmente alimentar uma fonte de dados apropriada (por exemplo Prometheus, InfluxDB, Timescale/PostgreSQL ou outra TSDB), e o Grafana consulta essa fonte. Não criar dependência do core com uma UI Grafana específica.
 
 ### Rapid SCADA
 
-Rapid SCADA deixa de ser o destino obrigatório do core. Deve ser **um adapter/consumer northbound**. O Gateway deve poder continuar operando e persistindo dados quando o Rapid estiver parado.
+Rapid SCADA deixa de ser o destino obrigatório do core. Deve ser **um adapter/consumer Northbound**. O Gateway deve poder continuar operando e persistindo dados quando o Rapid estiver parado.
 
 ### FUXA
 
@@ -382,7 +385,7 @@ O sistema de geradores deve consumir dados do Gateway por contrato estável, sem
 3. **Read-only por padrão:** aquisição primeiro; comando é outro plano e continua bloqueado.
 4. **Sem telemetria falsa:** valores ausentes/indefinidos permanecem ausentes/indefinidos.
 5. **Payload preservado:** quando possível, manter a evidência original para auditoria/reprocessamento.
-6. **Desacoplamento:** field adapters e northbound adapters evoluem independentemente.
+6. **Desacoplamento:** field adapters e Northbound adapters evoluem independentemente.
 7. **Offline tolerant:** indisponibilidade de consumidor não pode derrubar aquisição.
 8. **Observabilidade:** health, readiness, sessões, erros, filas e perdas precisam ser mensuráveis.
 9. **Backpressure explícito:** nunca esconder descarte por fila cheia.
@@ -407,7 +410,7 @@ Ao retomar o trabalho:
 8. Rodar/confirmar `gofmt`, `go vet`, testes, race detector e build aplicáveis.
 9. Não promover lifecycle sem evidência correspondente.
 10. **Atualizar este arquivo após qualquer mudança.**
-11. Registrar na seção de mudanças o que foi feito, testes, limitações e próximo passo.
+11. Registrar nesta seção de mudanças o que foi feito, testes, limitações e próximo passo.
 12. Confirmar que o job **Canonical project state** passa antes de considerar a mudança completa.
 
 ### Comandos locais de referência
@@ -436,7 +439,7 @@ O CI do GitHub continua sendo a fonte final de verdade para o branch/PR.
 
 Ordem recomendada, sempre mantendo o CI verde entre blocos:
 
-1. confirmar CI do novo handoff + trava canônica;
+1. confirmar CI do novo handoff + matriz Northbound + trava canônica;
 2. fechar backpressure no event bus e nos sinks;
 3. evoluir spool para replay com ACK/checkpoint e retenção;
 4. endurecer supervisor de adapters/sidecars com exponential backoff, jitter e circuit-breaker onde fizer sentido;
@@ -472,6 +475,18 @@ Ordem recomendada, sempre mantendo o CI verde entre blocos:
 
 ## 13. Registro de mudanças / handoff
 
+### 2026-09-03 — Matriz Northbound universal
+
+**O que mudou:** `PRODUCTION_MATRIX.md` foi dividido conceitualmente em cobertura Southbound/aquisição e cobertura Northbound/consumidores. Foram registrados HTTP JSON, MQTT publish futuro, RC Geradores, Rapid SCADA, FUXA, ThingsBoard, Node-RED, Prometheus, TSDB, Grafana, OPC UA server, Modbus virtual e WebSocket outbound com estado real e gates de produção.
+
+**Por que:** impedir que adapters de entrada sejam confundidos com integrações de saída e formalizar o Gateway como plataforma multi-consumidor.
+
+**Validação:** alteração documental; o job canônico deve ser executado novamente neste HEAD e o CI completo deve ser consultado antes de declarar o conjunto verde.
+
+**Limitação:** apenas HTTP JSON Northbound está implementado no core neste momento; os demais destinos permanecem planejados até código + testes + lifecycle correspondente.
+
+**Próximo passo:** confirmar CI do HEAD e então começar backpressure/spool replay antes de ampliar os sinks Northbound.
+
 ### 2026-09-03 — Handoff obrigatório + escopo universal + trava de CI
 
 **O que mudou:**
@@ -486,8 +501,8 @@ Ordem recomendada, sempre mantendo o CI verde entre blocos:
 
 **Por que:** impedir perda de contexto entre chats/agentes e impedir que a arquitetura seja limitada ao projeto de geradores ou a um SCADA específico.
 
-**Validação conhecida:** o checkpoint de código `489c72e01a4f6a157a8699c01f38908f45c1e6c0` estava totalmente verde em Gateway Umbrella, CI e Quality/Security. As mudanças de governança/documentação acima ainda precisam ter o CI do HEAD confirmado depois desta sincronização.
+**Validação conhecida:** o checkpoint de código `489c72e01a4f6a157a8699c01f38908f45c1e6c0` estava totalmente verde em Gateway Umbrella, CI e Quality/Security. O job `Canonical project state` foi confirmado em `success` após a instalação da trava.
 
 **Risco/limitação atual:** Northbound de produção universal ainda não está pronto. O core possui HTTP JSON, mas fan-out robusto, replay/ACK e integrações específicas ainda precisam ser implementados.
 
-**Próximo passo:** confirmar o CI deste novo HEAD. Depois iniciar backpressure + spool replay/ACK e então estruturar o roteamento Northbound universal para que RC Geradores, Rapid SCADA, FUXA, ThingsBoard, Node-RED e pipelines de Grafana coexistam como consumidores independentes.
+**Próximo passo:** confirmar o CI do HEAD. Depois iniciar backpressure + spool replay/ACK e então estruturar o roteamento Northbound universal para que RC Geradores, Rapid SCADA, FUXA, ThingsBoard, Node-RED e pipelines de Grafana coexistam como consumidores independentes.
