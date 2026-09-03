@@ -1,0 +1,35 @@
+name: Gateway Umbrella Autoformat Temp
+
+on:
+  push:
+    branches:
+      - feat/gateway-umbrella-foundation
+
+permissions:
+  contents: write
+
+jobs:
+  gofmt:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: feat/gateway-umbrella-foundation
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.1'
+          cache: false
+      - name: Format Gateway Go sources
+        run: |
+          set -euo pipefail
+          find gateway-umbrella -type f -name '*.go' -print0 | xargs -0 gofmt -w
+          if git diff --quiet -- gateway-umbrella; then
+            exit 0
+          fi
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add gateway-umbrella
+          git commit -m 'style(gateway): format new protocol adapters'
+          git push origin HEAD:feat/gateway-umbrella-foundation
