@@ -4,23 +4,15 @@
 >
 > Este é o documento canônico de continuidade. Qualquer novo chat, agente, desenvolvedor ou operador deve começar por ele.
 
-## Regra obrigatória de manutenção
+## Regra obrigatória
 
-Toda modificação, correção, melhoria, remoção, mudança arquitetural, dependência, protocolo, transporte, destino, segurança, operação ou lifecycle do Gateway **DEVE atualizar este arquivo**.
-
-O workflow `.github/workflows/gateway-umbrella.yml` executa `gateway-umbrella/scripts/check-project-state-updated.sh` para impedir que o projeto avance com handoff desatualizado.
+Toda modificação no Gateway **DEVE atualizar este arquivo** no mesmo ciclo de trabalho. O workflow `.github/workflows/gateway-umbrella.yml` executa `gateway-umbrella/scripts/check-project-state-updated.sh` para impedir handoff desatualizado.
 
 ---
 
 # 1. Decisão arquitetural vigente
 
 O produto é um **Gateway industrial/IoT universal de conectividade e ponte**.
-
-Nome: **RC Universal Gateway**.
-
-Codename/pasta atual: `gateway-umbrella/`.
-
-A decisão oficial é:
 
 ```text
 BRIDGE FIRST
@@ -29,453 +21,200 @@ NO DEVICE MEMORY DATABASE
 NO TELEMETRY HISTORIAN
 ```
 
-O Gateway existe primeiro para:
+O Gateway deve funcionar mesmo sem entender semanticamente o protocolo do equipamento.
 
-1. receber uma conexão de campo;
-2. manter essa conexão viva;
-3. identificar e proteger a sessão;
-4. rotear a sessão para o destino correto;
-5. encaminhar bytes nos dois sentidos com integridade;
-6. reconectar e diagnosticar problemas de comunicação.
+A função principal é:
 
-Ele **não deve precisar entender a semântica do equipamento** para funcionar como ponte.
+1. abrir/aceitar a conexão de campo;
+2. abrir/aceitar a conexão do software consumidor;
+3. parear os dois lados;
+4. transportar bytes nos dois sentidos sem modificação;
+5. fechar/reconectar pares de forma limpa;
+6. expor somente observabilidade operacional.
 
----
+Não pertence ao core:
 
-# 2. O que o Gateway NÃO é
+- banco de registradores;
+- mapas de memória ComAp/DSE/PLC/IHM;
+- polling para descobrir RPM/tensão/pressão/alarmes;
+- normalização de telemetria de processo;
+- historian/spool de telemetria;
+- engine de alarmes/dashboards.
 
-O Gateway não é:
-
-- Rapid SCADA;
-- FUXA;
-- ThingsBoard;
-- historiador;
-- banco de telemetria;
-- engine de alarmes;
-- engine de dashboards;
-- banco universal de drivers;
-- banco de memória Modbus;
-- catálogo de todos os modelos ComAp/DSE/PLC/IHM;
-- sistema RC Geradores.
-
-Esses sistemas podem ser **destinos/consumidores** da conexão.
+O Rapid SCADA, FUXA, ThingsBoard, software do fabricante ou outro driver é quem interpreta o equipamento.
 
 ---
 
-# 3. Problema que o Gateway resolve
+# 2. Arquitetura runtime atual
 
-Exemplo principal do projeto:
+O schema ativo passou para **3** e usa `tunnels`.
+
+Cada Tunnel possui:
 
 ```text
-Controladora
-   |
-RS232 / RS485 / Ethernet
-   |
-PUSR / Teltonika / Robustel / outro modem
-   |
-TCP Client / VPN / Internet
-   |
-IP público
-   |
-MikroTik / NAT
-   |
-RC Universal Gateway
-   |
-Rapid SCADA
+FIELD ENDPOINT <====== raw duplex bytes ======> CONSUMER ENDPOINT
 ```
 
-O modem aponta para IP/porta do site. A MikroTik entrega essa porta ao Gateway. O Gateway mantém a sessão e apresenta a comunicação ao Rapid SCADA.
+Cada endpoint pode ser:
 
-O Rapid envia a requisição ao equipamento através da ponte. A resposta retorna pelo mesmo caminho.
+- `listen` — aguarda peer;
+- `connect` — inicia conexão.
 
-O Gateway não precisa saber que um endereço significa RPM, combustível, tensão ou pressão.
+No milestone atual o core Tunnel suporta `network=tcp`.
 
----
-
-# 4. Universalidade real
-
-A principal condição de sucesso é:
-
-> Se surgir amanhã um equipamento cujo protocolo o Gateway nunca viu, mas existe um software/SCADA que entende esse equipamento, o Gateway deve conseguir transportar a conexão sem receber um novo mapa de memória.
-
-Exemplos de destinos possíveis:
-
-- Rapid SCADA;
-- FUXA;
-- ThingsBoard;
-- Node-RED;
-- software do fabricante;
-- outro SCADA;
-- broker MQTT;
-- aplicação TCP/UDP;
-- integração customizada;
-- sistema RC Geradores através da arquitetura apropriada.
-
-Geradores são apenas um caso de uso.
-
----
-
-# 5. Responsabilidades do core
-
-## Transport Plane
-
-- TCP server / reverse TCP;
-- TCP client;
-- UDP;
-- TLS/mTLS;
-- serial RS-232/422/485;
-- WebSocket/WSS;
-- MQTT quando usado como transporte/bridge;
-- SocketCAN/CAN quando usado como transporte;
-- adapters futuros.
-
-## Session Plane
-
-- connect/disconnect;
-- timeout;
-- reconnect;
-- sessão ativa;
-- ownership;
-- origem/destino;
-- limites e proteção.
-
-## Routing Plane
-
-É o coração do produto.
-
-Exemplo:
+## Exemplo PUSR reverso + Rapid
 
 ```text
-listener 0.0.0.0:15020
-    -> session PUSR-X
-    -> route equipment-link-X
-    -> destination Rapid local endpoint
+Controladora -> PUSR -> Internet -> MikroTik -> Gateway :15003
+                                              ||
+                                          raw tunnel
+                                              ||
+Rapid SCADA ------------------------------> Gateway :25003
 ```
 
-ou:
+Config:
+
+```json
+{
+  "id": "pusr-15003-to-rapid",
+  "field": {"mode": "listen", "bind": "0.0.0.0:15003"},
+  "consumer": {"mode": "listen", "bind": "127.0.0.1:25003"}
+}
+```
+
+O Rapid envia a requisição; o Gateway encaminha; a resposta retorna byte-for-byte.
+
+## Exemplo equipamento direto por VPN/IP
 
 ```text
-direct/VPN 10.60.20.222:502
-    -> gateway virtual endpoint
-    -> Rapid/FUXA/outro destino
+Gateway field connect -> 10.60.20.222:502
+         ||
+     raw tunnel
+         ||
+Gateway :25020 <- Rapid SCADA
 ```
 
-## Identity/Security Plane
+---
 
-Pode usar:
+# 3. Regra importante: sem fan-out raw cego
 
-- mTLS/fingerprint;
-- IMEI/ICCID quando o modem fornece;
-- MQTT Client ID;
-- VPN peer;
-- registration packet/heartbeat;
-- IP/CIDR como evidência auxiliar;
-- identificadores específicos do transporte.
+Um Tunnel raw possui **um consumidor ativo por vez**.
 
-Estados atuais possíveis:
+Não copiar simultaneamente uma conexão request/response para Rapid + FUXA + outro master. Isso pode misturar transações e corromper protocolos.
 
-- `enrolled`;
-- `quarantined`;
-- `unknown`;
-- `revoked`.
-
-IP/porta sozinhos não são identidade forte.
-
-## Framing Plane
-
-Somente quando necessário para transportar corretamente:
-
-- reconstrução de stream TCP;
-- MBAP Modbus TCP;
-- CRC16 Modbus RTU;
-- Unit ID para multiplexação;
-- delimitadores;
-- registration/heartbeat de modem.
-
-**Framing não significa mapa de memória.**
-
-## Operations Plane
-
-Somente saúde do Gateway:
-
-- health/readiness;
-- sessões;
-- RX/TX;
-- reconnects;
-- timeouts;
-- latência;
-- framing/CRC errors;
-- buffers;
-- logs/métricas.
+Se vários sistemas precisarem dos mesmos dados, o fan-out acontece depois do SCADA/driver, por broker, ou por plugin protocol-aware com arbitragem explícita.
 
 ---
 
-# 6. O que fica fora do core
+# 4. O que mudou no refactor bridge-first de 2026-09-03
 
-Não manter no Gateway:
+Código alterado até o commit de implementação `fee74de9ff0d4e29fd6cfa926bee144086eb6c5a`:
 
-```text
-DSE4520 register X = RPM
-ComAp IG200 register Y = battery
-PLC Siemens DBx.DBy = pressure
-```
+- criado `internal/bridge/tunnel.go`;
+- criado teste byte-for-byte duplex `internal/bridge/tunnel_test.go`;
+- `Gateway.Run` deixou de produzir Records e passou a subir Túneis raw;
+- schema de configuração mudou de 2 para 3;
+- `field` e `consumer` são endpoints simétricos `listen/connect`;
+- `TCP_NODELAY`, keepalive, reconnect e allowlist CIDR entram no Tunnel;
+- sessões/admin/métricas agora representam **pares de bridge**, não telemetria;
+- removido runtime de spool;
+- removido sink HTTP de Records normalizados;
+- removido inventário/registry de identidade de dispositivos do core;
+- removido `configs/identity.example.json`;
+- removida permissão systemd de escrita em `/var/lib/rc-gateway-umbrella`;
+- README, arquitetura, plugin contract e matriz de produção foram realinhados.
 
-Também ficam fora:
+## Segurança
 
-- SQLite/TSDB de telemetria;
-- spool persistente de dados de processo;
-- polling semântico de registradores;
-- conversão de registrador -> ponto SCADA;
-- historian;
-- alarm engine;
-- controller packs específicos de fabricantes;
-- dashboards.
+`commandPlaneEnabled=true` continua rejeitado.
 
-Mapas ComAp/DSE continuam onde fazem sentido hoje: controller packs/driver/Rapid/backend do sistema de geradores, e não no núcleo universal.
-
----
-
-# 7. Referência ThingsBoard estudada
-
-Foi revisado o projeto público `thingsboard/thingsboard-gateway` em 2026-09-03.
-
-O ThingsBoard IoT Gateway é uma boa referência para:
-
-- connectors modulares;
-- custom connectors;
-- reconnect;
-- lifecycle;
-- configuração;
-- métricas;
-- isolamento de integrações.
-
-Mas o ThingsBoard Gateway também usa **converters**, polling/leitura de protocolos e **storage** para transformar dados no modelo ThingsBoard.
-
-Essa parte **não deve ser copiada para o core do RC Universal Gateway**.
-
-Documento específico:
-
-- [`THINGSBOARD_REFERENCE.md`](./THINGSBOARD_REFERENCE.md)
+Allowlist CIDR continua disponível para endpoints `listen`. TLS/mTLS deverá voltar como **tipo/camada de endpoint raw**, não como motor de telemetria.
 
 ---
 
-# 8. Estado atual do código
+# 5. Código legado/experimental ainda presente
 
-Repositório: `paulohspdev-cmyk/ProjetoGerador`
+Alguns packages/adapters da fase anterior continuam no repositório para não jogar fora experimentos de bibliotecas:
 
-Branch: `feat/gateway-umbrella-foundation`
-
-PR: **#62** — Draft.
-
-Antes da redefinição bridge-first, foram implementados e validados vários componentes de transporte e também alguns adapters de aquisição semântica.
-
-## Componentes úteis para o bridge que já existem
-
-- TCP server/reverse TCP;
-- TCP client;
-- UDP;
-- TLS 1.3/mTLS;
-- HTTP ingest;
-- sessões/event bus;
-- reassembly de Modbus TCP;
-- CRC/framing Modbus RTU;
-- serial adapter;
-- MQTT/MQTT v5 adapters;
-- WebSocket/WSS adapter;
-- SocketCAN/J1939 experimental;
-- identity/enrollment;
-- health/readiness/status/metrics;
-- supervisor de adapters;
-- Command Plane bloqueado.
-
-## Componentes que precisam ser revistos após a decisão bridge-first
-
-Existem experimentos de:
-
-- OPC UA client/read;
+- adapters MQTT/MQTT5;
+- serial;
+- SocketCAN/J1939;
+- OPC UA read;
 - SNMP read;
-- CoAP GET/read;
-- normalização de telemetria;
-- spool persistente JSONL;
-- northbound orientado a Records;
-- outros elementos criados quando o Gateway estava sendo tratado também como motor de dados.
+- CoAP GET;
+- WebSocket/WSS;
+- event bus/protocol helpers antigos.
 
-Eles **não devem ser considerados parte definitiva do core**.
+**Eles não são iniciados pelo runtime schema 3 e não definem o produto.**
 
-Próxima revisão de código deve classificar cada item como:
+Próxima revisão deve classificar cada um:
 
-1. `bridge-core` — permanece;
-2. `framing-helper` — permanece se necessário;
-3. `semantic-reader` — mover para plugin opcional externo ou remover;
-4. `telemetry-persistence` — remover do core;
-5. `operations` — permanece somente para saúde do Gateway.
+1. refatorar para endpoint raw/provider;
+2. mover para experimental externo;
+3. remover se for apenas leitor/converter semântico.
+
+Não reintroduzir storage/Record/polling no core para aproveitar esses adapters.
 
 ---
 
-# 9. Último checkpoint validado antes desta redefinição
+# 6. Referência ThingsBoard Gateway
 
-SHA validado anteriormente:
+Foi estudado `thingsboard/thingsboard-gateway`.
 
-`2750833dd24e2b4c11517a0182ea055c20c980f6`
+Aproveitar como referência:
 
-Nesse SHA estavam verdes:
+- modularidade de connectors;
+- reconnect;
+- supervisão;
+- configuração declarativa;
+- extensibilidade;
+- métricas.
 
-- Gateway Umbrella workflow;
-- Core Go;
-- Industrial adapters;
-- `gofmt`;
-- `go vet`;
-- testes;
-- race detector;
-- build;
-- CI geral;
-- Quality and Security.
+Não copiar para o core:
 
-Depois desse checkpoint foram alterados apenas documentos de arquitetura/escopo para consolidar a decisão bridge-first e criada a referência ThingsBoard.
+- converters de telemetria;
+- storage de eventos/telemetria;
+- mapas de registradores;
+- polling semântico por dispositivo.
 
-**Não afirmar que o HEAD posterior está verde sem verificar os workflows atuais.**
-
----
-
-# 10. Próximo passo técnico obrigatório
-
-Antes de adicionar novos protocolos, limpar o runtime para combinar com a decisão vigente.
-
-Ordem recomendada:
-
-1. inventariar todos os arquivos/componentes atuais;
-2. remover/desabilitar spool persistente de telemetria do caminho padrão;
-3. remover normalização semântica do core;
-4. tirar polling/readers OPC UA/SNMP/CoAP do core principal;
-5. manter adapters apenas como bridge/transport quando fizer sentido;
-6. criar `Route`/`Target` como abstração central;
-7. implementar virtual endpoints para Rapid/FUXA/outros destinos;
-8. garantir raw transparent forwarding;
-9. garantir RTU-over-TCP e Modbus TCP bridge sem mapas de memória;
-10. validar múltiplos equipamentos/Units por sessão;
-11. testar PUSR real -> MikroTik -> Gateway -> Rapid;
-12. soak/reconnect/impairment;
-13. somente depois promover lifecycle.
+Detalhes: [`THINGSBOARD_REFERENCE.md`](./THINGSBOARD_REFERENCE.md).
 
 ---
 
-# 11. Fluxos que precisam ser suportados
+# 7. Estado de validação deste checkpoint
 
-## Modem reverse TCP
+Último HEAD antes deste handoff: `fee74de9ff0d4e29fd6cfa926bee144086eb6c5a`.
+
+As mudanças de runtime bridge-first foram gravadas, porém **o CI do novo conjunto ainda deve ser consultado depois deste commit de handoff antes de afirmar que está verde**.
+
+O último checkpoint anterior à refatoração bridge-first estava verde em Gateway Umbrella, CI geral e Quality/Security, mas isso não substitui a validação do novo Tunnel.
+
+---
+
+# 8. Próximos passos recomendados
+
+Ordem:
+
+1. zerar `gofmt`, `go vet`, unit tests, race e build do novo core;
+2. corrigir qualquer regressão encontrada pelo CI;
+3. adicionar teste de integração `listen ↔ listen` real em loopback;
+4. adicionar teste `connect ↔ listen`;
+5. validar PUSR real ↔ Gateway ↔ Rapid em uma porta de laboratório sem tocar o bridge legado;
+6. implementar TLS/mTLS como endpoint raw;
+7. implementar Serial RS232/422/485 como endpoint raw;
+8. implementar UDP bridge com política explícita de sessão;
+9. refatorar/remover adapters experimentais antigos;
+10. HIL, impairment de rede e soak antes de qualquer produção.
+
+---
+
+# 9. Regra para produção
+
+O Gateway só será considerado production quando provar:
 
 ```text
-controladora -> modem TCP Client -> internet -> MikroTik -> Gateway -> Rapid
+bytes enviados pelo lado A == bytes recebidos no lado B
+bytes enviados pelo lado B == bytes recebidos no lado A
 ```
 
-## Equipamento direto por VPN/IP
-
-```text
-Rapid -> Gateway virtual endpoint -> VPN/LAN -> controladora
-```
-
-## RTU serial transparente
-
-```text
-RS485 -> modem/DTU -> TCP transparente -> Gateway -> sistema de destino
-```
-
-## Vários Units em um único barramento
-
-```text
-RS485 bus
-  Unit 1
-  Unit 2
-  Unit 3
-     |
-   modem
-     |
- Gateway
-     |
- sistema de destino
-```
-
-Sem exigir mapa de memória dos Units no Gateway.
-
-## Protocolo proprietário desconhecido
-
-```text
-equipamento -> modem -> Gateway -> software do fabricante
-```
-
-O Gateway transporta mesmo sem entender o payload.
-
----
-
-# 12. Regra para banco/persistência
-
-O produto **não terá banco de dados de telemetria**.
-
-Buffers de sessão podem existir para framing/backpressure, mas devem ser limitados e operacionais.
-
-Histórico pertence ao sistema de destino.
-
-Se no futuro for necessário store-and-forward para um transporte específico, isso deverá ser um recurso opcional e explicitamente separado de qualquer banco/historiador de processo — nunca requisito do core bridge.
-
----
-
-# 13. Segurança
-
-Command Plane continua bloqueado nesta fase.
-
-Uma bridge industrial é naturalmente bidirecional, mas isso não significa liberar qualquer origem para escrever no equipamento.
-
-Políticas futuras devem controlar:
-
-- quais destinos podem iniciar tráfego;
-- quais rotas são read-only quando tecnicamente possível;
-- ACL por sessão;
-- mTLS/VPN/identity;
-- audit logs operacionais;
-- rate limits;
-- proteção contra conexão desconhecida.
-
-Nunca criar comandos específicos de gerador dentro do Gateway universal.
-
----
-
-# 14. Como qualquer novo chat/agente deve continuar
-
-1. Leia este arquivo inteiro.
-2. Leia `README.md`.
-3. Leia `ARCHITECTURE.md`.
-4. Leia `THINGSBOARD_REFERENCE.md`.
-5. Leia `PRODUCTION_MATRIX.md`.
-6. Verifique o HEAD real da branch/PR.
-7. Verifique CI do HEAD antes de afirmar que está verde.
-8. Não adicionar mapa de memória de fabricante ao Gateway.
-9. Não adicionar banco/historiador de telemetria ao core.
-10. Priorizar `Route`, `Session`, `Transport`, `Target` e segurança.
-11. Toda alteração deve atualizar este arquivo.
-
----
-
-# 15. Registro desta mudança
-
-Data: 2026-09-03.
-
-Mudança:
-
-- escopo redefinido formalmente para **bridge-first**;
-- removida da arquitetura a obrigação de normalizar/interpretar telemetria;
-- estabelecido que o Gateway não terá banco de mapas de memória;
-- estabelecido que o Gateway não terá banco/historiador de telemetria;
-- ThingsBoard IoT Gateway revisado como referência modular;
-- criado `THINGSBOARD_REFERENCE.md`;
-- README, arquitetura e matriz de produção alinhados à nova decisão.
-
-Motivo:
-
-Evitar transformar o Gateway em um segundo SCADA/driver universal impossível de manter e preservar a universalidade: qualquer equipamento deve poder usar a ponte se o sistema de destino souber falar com ele.
-
-Validação:
-
-Mudança atual é documental/arquitetural. O último checkpoint de código totalmente verde continua sendo o SHA `2750833dd24e2b4c11517a0182ea055c20c980f6`. Conferir o CI do HEAD atual antes de qualquer afirmação adicional.
-
-Próximo passo:
-
-**Auditar e simplificar o código atual para remover do caminho principal tudo que viola bridge-first, mantendo apenas transporte, sessão, identidade, framing mínimo, roteamento, targets e observabilidade operacional.**
+sob reconnect, fragmentação TCP, latência, perda de link, resets, slow peer e execução prolongada, sem alterar payload e sem vazar sessões/goroutines/memória.
