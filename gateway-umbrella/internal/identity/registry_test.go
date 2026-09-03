@@ -15,6 +15,18 @@ func TestMatchRequiresStrongEvidence(t *testing.T) {
 	}
 }
 
+func TestComponentIDAloneIsWeak(t *testing.T) {
+	r := New([]Device{{
+		ID:           "GEN203",
+		State:        StateEnrolled,
+		ComponentIDs: []string{"reverse-modems"},
+	}})
+	got := r.Match(Evidence{ComponentID: "reverse-modems"})
+	if got.Resolved || got.State != StateQuarantined {
+		t.Fatalf("listener/component id alone must not identify a device, got %+v", got)
+	}
+}
+
 func TestMatchStrongCertificate(t *testing.T) {
 	r := New([]Device{{
 		ID:            "GEN163",
