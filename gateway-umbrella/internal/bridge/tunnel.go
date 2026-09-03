@@ -210,7 +210,7 @@ func copyDuplex(ctx context.Context, pairID string, field, consumer net.Conn, ho
 }
 
 func normalizeCopyError(err error) error {
-	if err == nil || errors.Is(err, io.EOF) || errors.Is(err, net.ErrClosed) || errors.Is(err, context.Canceled) {
+	if err == nil || errors.Is(err, io.EOF) || errors.Is(err, io.ErrClosedPipe) || errors.Is(err, net.ErrClosed) || errors.Is(err, context.Canceled) {
 		return nil
 	}
 	return err
