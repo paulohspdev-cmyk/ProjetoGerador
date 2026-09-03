@@ -18,22 +18,35 @@ type Security struct {
 }
 
 // Endpoint is one side of a byte-transparent tunnel.
-// mode=listens waits for an incoming peer; mode=connect dials a peer.
+// mode=listen waits for an incoming peer; mode=connect dials a peer.
 type Endpoint struct {
-	Mode          string   `json:"mode"`
-	Network       string   `json:"network,omitempty"`
-	Bind          string   `json:"bind,omitempty"`
-	Address       string   `json:"address,omitempty"`
-	AllowedCIDRs  []string `json:"allowedCidrs,omitempty"`
-	DialTimeoutS  int      `json:"dialTimeoutSeconds,omitempty"`
-	ReconnectS    int      `json:"reconnectSeconds,omitempty"`
-	KeepAliveS    int      `json:"keepAliveSeconds,omitempty"`
+	Mode         string   `json:"mode"`
+	Network      string   `json:"network,omitempty"`
+	Bind         string   `json:"bind,omitempty"`
+	Address      string   `json:"address,omitempty"`
+	AllowedCIDRs []string `json:"allowedCidrs,omitempty"`
+	DialTimeoutS int      `json:"dialTimeoutSeconds,omitempty"`
+	ReconnectS   int      `json:"reconnectSeconds,omitempty"`
+	KeepAliveS   int      `json:"keepAliveSeconds,omitempty"`
 }
 
 type Tunnel struct {
 	ID       string   `json:"id"`
 	Field    Endpoint `json:"field"`
 	Consumer Endpoint `json:"consumer"`
+}
+
+// Sidecar remains only as an experimental adapter contract for packages outside
+// the bridge runtime. It is intentionally not part of Config and is not started
+// by the core Gateway.
+type Sidecar struct {
+	ID        string            `json:"id"`
+	Command   string            `json:"command"`
+	Args      []string          `json:"args,omitempty"`
+	Env       map[string]string `json:"env,omitempty"`
+	RestartS  int               `json:"restartSeconds,omitempty"`
+	Lifecycle string            `json:"lifecycle,omitempty"`
+	Protocol  string            `json:"protocol,omitempty"`
 }
 
 type Config struct {
