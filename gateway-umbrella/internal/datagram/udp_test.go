@@ -185,7 +185,7 @@ func TestUDPTunnelEnforcesMaxSessions(t *testing.T) {
 		IdleTimeout:      time.Second,
 		MaxSessions:      1,
 		MaxDatagramBytes: 1024,
-		Hooks: Hooks{OnDrop: func(_ string, reason string) { drops <- reason }},
+		Hooks:            Hooks{OnDrop: func(_ string, reason string) { drops <- reason }},
 	}
 	runTunnel(t, tunnel)
 	clientA := udpClient(t, listen)
@@ -222,7 +222,7 @@ func TestUDPTunnelDropsOversizedDatagram(t *testing.T) {
 		IdleTimeout:      time.Second,
 		MaxSessions:      4,
 		MaxDatagramBytes: 4,
-		Hooks: Hooks{OnDrop: func(_ string, reason string) { dropped <- reason }},
+		Hooks:            Hooks{OnDrop: func(_ string, reason string) { dropped <- reason }},
 	}
 	runTunnel(t, tunnel)
 	client := udpClient(t, listen)
@@ -255,7 +255,7 @@ func TestUDPTunnelEnforcesAllowlist(t *testing.T) {
 		IdleTimeout:      time.Second,
 		MaxSessions:      4,
 		MaxDatagramBytes: 1024,
-		Hooks: Hooks{OnDrop: func(_ string, reason string) { dropped <- reason }},
+		Hooks:            Hooks{OnDrop: func(_ string, reason string) { dropped <- reason }},
 	}
 	runTunnel(t, tunnel)
 	client := udpClient(t, listen)

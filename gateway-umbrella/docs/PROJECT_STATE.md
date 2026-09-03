@@ -68,3 +68,5 @@ Implementado nesta etapa:
 ## Regra de produção
 
 Software field-test-ready = todos os gates automatizáveis verdes. Produção validada = somente após HIL/soak físico. Não reintroduzir polling, mapas de memória ou historian no core. Nenhum payload pode ser alterado silenciosamente e nenhum recurso pode crescer sem limite.
+
+- Autoformat aplicado ao checkpoint UDP antes da validacao completa.
