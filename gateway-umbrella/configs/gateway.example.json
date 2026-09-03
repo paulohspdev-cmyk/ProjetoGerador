@@ -1,19 +1,43 @@
 {
-  "schema": 2,
+  "schema": 3,
   "nodeId": "rc-gateway-01",
-  "eventBuffer": 8192,
   "admin": {"bind": "127.0.0.1:18080"},
-  "spool": {"enabled": true, "dir": "/var/lib/rc-gateway-umbrella/spool", "maxSegmentBytes": 67108864, "syncEvery": 1},
-  "identity": {"inventoryFile": "./configs/identity.example.json", "requireEnrollment": false},
-  "security": {"requireAllowlist": true, "commandPlaneEnabled": false},
-  "listeners": [
-    {"id": "reverse-modems", "kind": "tcp_server", "bind": "0.0.0.0:15001", "allowedCidrs": ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"], "readTimeoutSeconds": 60, "maxConnections": 1024, "protocolHint": "auto"},
-    {"id": "udp-ingress", "kind": "udp_server", "bind": "0.0.0.0:15100", "allowedCidrs": ["10.0.0.0/8"], "protocolHint": "auto"},
-    {"id": "http-ingest", "kind": "http_ingest", "bind": "127.0.0.1:18081", "path": "/ingest", "bearerTokenEnv": "RC_GATEWAY_INGEST_TOKEN", "maxBodyBytes": 1048576, "protocolHint": "json"}
-  ],
-  "connectors": [
-    {"id": "example-direct-controller", "kind": "tcp_client", "address": "127.0.0.1:25002", "readTimeoutSeconds": 60, "reconnectSeconds": 5, "protocolHint": "modbus_tcp"}
-  ],
-  "northbound": [],
-  "sidecars": []
+  "security": {
+    "requireAllowlist": false,
+    "commandPlaneEnabled": false
+  },
+  "tunnels": [
+    {
+      "id": "pusr-15003-to-rapid",
+      "field": {
+        "mode": "listen",
+        "network": "tcp",
+        "bind": "0.0.0.0:15003",
+        "keepAliveSeconds": 30
+      },
+      "consumer": {
+        "mode": "listen",
+        "network": "tcp",
+        "bind": "127.0.0.1:25003",
+        "keepAliveSeconds": 30
+      }
+    },
+    {
+      "id": "direct-device-to-rapid",
+      "field": {
+        "mode": "connect",
+        "network": "tcp",
+        "address": "10.60.20.222:502",
+        "dialTimeoutSeconds": 10,
+        "reconnectSeconds": 5,
+        "keepAliveSeconds": 30
+      },
+      "consumer": {
+        "mode": "listen",
+        "network": "tcp",
+        "bind": "127.0.0.1:25020",
+        "keepAliveSeconds": 30
+      }
+    }
+  ]
 }
