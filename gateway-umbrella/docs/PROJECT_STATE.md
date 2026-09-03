@@ -51,9 +51,10 @@ Implementado nesta etapa:
 - limite máximo de payload UDP;
 - CIDR allowlist no lado listener;
 - métricas de sessões, datagramas, bytes e drops;
-- testes de preservação, múltiplos peers, idle expiry, limite de sessões, oversize e allowlist.
+- testes de preservação, múltiplos peers, idle expiry, limite de sessões, oversize e allowlist;
+- `gofmt` aplicado com Go 1.27.1 e workflow temporário removido.
 
-**Consultar o CI deste HEAD antes de declarar UDP verde.**
+**O workflow permanente Gateway Umbrella foi redisparado neste HEAD; consultar o resultado antes de declarar UDP verde.**
 
 ## Ainda falta para software field-test-ready universal
 
@@ -68,5 +69,3 @@ Implementado nesta etapa:
 ## Regra de produção
 
 Software field-test-ready = todos os gates automatizáveis verdes. Produção validada = somente após HIL/soak físico. Não reintroduzir polling, mapas de memória ou historian no core. Nenhum payload pode ser alterado silenciosamente e nenhum recurso pode crescer sem limite.
-
-- Autoformat aplicado ao checkpoint UDP antes da validacao completa.
