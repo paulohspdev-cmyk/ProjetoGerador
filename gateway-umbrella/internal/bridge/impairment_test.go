@@ -57,7 +57,9 @@ func TestImpairedDuplexPreservesStream(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	done := make(chan error, 1)
-	go func() { done <- copyDuplex(ctx, "impaired", fieldGW, consumerGW, Hooks{}, 2*time.Second, 100*time.Millisecond) }()
+	go func() {
+		done <- copyDuplex(ctx, "impaired", fieldGW, consumerGW, Hooks{}, 2*time.Second, 100*time.Millisecond)
+	}()
 
 	if err := roundTripPayload(fieldApp, consumerApp, stressPayload(41, 4096)); err != nil {
 		t.Fatal(err)

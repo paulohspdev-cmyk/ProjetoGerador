@@ -46,7 +46,7 @@ Foi adicionado impairment reproduzível em user-space, sem depender de privilég
 - verificação de goroutines após soak;
 - `scripts/run-soak.sh` usa exatamente o mesmo teste e aceita de 1 segundo a 604800 segundos (7 dias), permitindo 24h/7d na VM.
 
-O mini-soak CI é gate de regressão, não substitui soak físico de 24h/7d nem `tc netem` na VM/HIL.
+O erro anterior deste checkpoint era somente formatação `gofmt`. Neste ciclo o arquivo foi formatado sem alteração de lógica e arquivos temporários de edição foram removidos da árvore. O mini-soak CI é gate de regressão e não substitui soak físico de 24h/7d nem `tc netem` na VM/HIL.
 
 **Consultar o CI deste HEAD antes de declarar impairment/mini-soak verde.**
 
