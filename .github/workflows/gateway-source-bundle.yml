@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - 'feat/gateway-umbrella-foundation'
+  pull_request:
+    paths:
+      - 'gateway-umbrella/**'
+      - '.github/workflows/gateway-source-bundle.yml'
   workflow_dispatch:
 
 permissions:
