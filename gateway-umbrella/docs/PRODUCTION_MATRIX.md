@@ -1,61 +1,102 @@
 # Production Readiness Matrix — RC Universal Gateway
 
-> Estado/handoff canônico: [`PROJECT_STATE.md`](./PROJECT_STATE.md).
+> Estado/handoff canônico: [`PROJECT_STATE.md`](./PROJECT_STATE.md).  
+> Procedimentos: [`RUNBOOK.md`](./RUNBOOK.md).  
+> Compatibilidade: [`COMPATIBILITY_MATRIX.md`](./COMPATIBILITY_MATRIX.md).
 
 O critério de produção é **qualidade da ponte**, não quantidade de protocolos interpretados.
 
-## Core bridge TCP
+## Core e transportes
 
 | Capacidade | Estado |
 |---|---|
-| Tunnel raw duplex | implementado |
-| TCP listen/connect | implementado |
-| listen ↔ listen | testado com sockets reais |
-| connect ↔ listen | testado com sockets reais |
-| byte-for-byte bidirecional | testado |
-| reconnect/churn repetido | teste de 50 ciclos implementado |
-| pair establishment timeout | implementado |
-| slow peer/write timeout | implementado |
-| half-close drain | implementado; falta teste TCP explícito |
-| métricas durante sessão longa | implementado por chunk |
-| bytes separados por direção em `/sessions` | implementado |
-| allowlist CIDR | implementado |
+| Tunnel raw duplex | software validated |
+| TCP listen/connect | software validated |
+| listen ↔ listen / connect ↔ listen | sockets reais validados |
+| byte-for-byte bidirecional | validado |
+| pair timeout | validado |
+| slow-peer/write timeout | validado |
+| half-close drain | validado |
+| RST/queda abrupta | validado |
+| reconnect/churn | 1.000 ciclos no stress gate |
+| escala/concurrency | 1.000 pares duplex simultâneos no stress gate |
+| FD/goroutine leak gate | validado |
+| impairment user-space | validado |
+| mini-soak CI | validado |
+| TLS 1.3/mTLS | software validated |
+| Unix socket | software validated |
+| RS232/422/485 | software validated; HIL físico pendente |
+| UDP | software validated |
+| SocketCAN/CAN-FD | software validated; `vcan` executa quando kernel do runner oferece módulo; HIL físico pendente |
+| métricas/sessões | implementado |
+| CIDR allowlist | implementado |
 | TCP keepalive/NODELAY | implementado |
 | race detector | gate CI |
-| RST/queda abrupta | falta teste explícito |
-| leak de sockets/goroutines | falta teste de carga |
-| escala/concurrency | falta benchmark/carga |
-| impairment celular | falta suíte |
-| HIL/soak físico | obrigatório antes de produção real |
+| Command Plane | bloqueado |
+
+## Configuração
+
+| Gate | Estado |
+|---|---|
+| JSON estrito / campos desconhecidos | validado |
+| JSON extra/trailing document | validado |
+| IDs únicos entre recursos | validado |
+| colisão TCP/admin bind | validado |
+| colisão UDP bind | validado |
+| colisão Unix/provider | validado |
+| porta serial duplicada | validado |
+| `--check-config` sem abrir transports | validado |
+| `--version` | validado |
+| exemplos `configs/*.json` | validados pelo binário no CI |
+
+## Release e supply chain
+
+O checkpoint final deve provar no mesmo HEAD:
+
+- build Linux amd64 e arm64;
+- `-trimpath` e metadados de versão/commit;
+- pacote tar.gz determinístico/reproduzível;
+- SHA256;
+- SBOM CycloneDX;
+- `govulncheck`;
+- dry-run do instalador contra o pacote real;
+- unit systemd standalone;
+- releases imutáveis com `current`/`previous`;
+- configuração validada antes da troca;
+- health/readiness após restart;
+- rollback automático em falha;
+- rollback manual com health gate.
 
 ## Segurança
 
-- `commandPlaneEnabled=true` continua rejeitado;
-- configuração exemplo passa a usar `requireAllowlist=true`;
-- portas públicas devem ser protegidas também por firewall/VPN quando disponível;
-- TLS/mTLS será endpoint de transporte, não motor de telemetria.
+- `commandPlaneEnabled=true` é rejeitado;
+- CAN TX é bloqueado por padrão;
+- configuração pública deve usar allowlist/firewall/VPN conforme topologia;
+- TLS/mTLS é transporte, não autorização para comandos;
+- admin deve permanecer em rede local/management;
+- nenhuma liberação de escrita industrial nasce do suporte ao transporte.
 
-## Próximos endpoint providers
+## Gate final automatizável
 
-| Meio | Objetivo |
-|---|---|
-| TLS/mTLS | túnel criptografado listen/connect |
-| Unix socket | integração local eficiente |
-| Serial RS232/422/485 | serial ↔ stream sem semântica |
-| UDP | datagram bridge com sessão explícita |
-| WebSocket/WSS | transporte com contrato de framing explícito |
-| SocketCAN | frames CAN com contrato de encapsulamento explícito |
-| MQTT | connector message-oriented somente com contrato explícito |
+Software field-test-ready exige, no mesmo HEAD:
 
-OPC UA, SNMP, CoAP, BACnet, IEC e DNP3 não precisam ser interpretados pelo core se o software de destino já fala o protocolo.
+1. Canonical project state;
+2. Bridge Core Go;
+3. Stress and leak gate;
+4. Impairment and mini-soak gate;
+5. Release and supply-chain gate;
+6. CI geral;
+7. Quality and Security.
 
-## Gate final de software antes do primeiro campo
+Depois disso ainda permanecem os gates físicos:
 
-- todos os workflows verdes;
-- RST/half-close/churn/slow-peer/pair-timeout verdes;
-- teste de leak e carga concluído;
-- endpoints previstos para a primeira homologação implementados;
-- pacote systemd/config/rollback validado;
-- `PROJECT_STATE.md` atualizado.
+- PUSR/USR real;
+- controlador/dispositivo real;
+- VPN/4G/MikroTik real;
+- serial real;
+- CAN/CAN-FD físico;
+- `tc netem`/falhas de rede em HIL;
+- soak mínimo 24 h, alvo 7 dias;
+- rollback em máquina de homologação.
 
-Depois disso começa HIL/soak com hardware real; só HIL pode transformar “field-test-ready” em “production validated”.
+Esses itens físicos são o que transforma **software field-test-ready** em **production validated**.

@@ -13,7 +13,7 @@ NO TELEMETRY HISTORIAN
 
 O Gateway é uma ponte universal de conectividade. Rapid SCADA, FUXA, ThingsBoard, software do fabricante ou outro driver interpreta registradores e protocolos de aplicação.
 
-## Checkpoints verdes
+## Checkpoints verdes anteriores
 
 - `249a7f0d55c840e5e95764468a6400db8a401fea`: limpeza bridge-first.
 - `9dc17491e370a59926d9069c898c0e3bba8b8171`: hardening TCP.
@@ -21,8 +21,9 @@ O Gateway é uma ponte universal de conectividade. Rapid SCADA, FUXA, ThingsBoar
 - `ffa2d548fb14899aad4052cc17dbe1c9d53dab92`: Serial RS232/RS422/RS485.
 - `905f82c7036bb00c7539c26ce12ad0f55db5ba48`: UDP datagram/session bridge.
 - `0016e2a629e2169024bfea8fd1fb66d7ec0fe1f4`: SocketCAN/CAN-FD software checkpoint; Gateway CI, CI geral e Quality/Security passaram. `vcan` kernel permanece gate da VM/HIL quando o host suporta o módulo.
-- `5aa5eb721c76d611f25aac8d3479b336e7475ce4`: stress/leak checkpoint; 1.000 pares duplex simultâneos + 1.000 ciclos TCP churn passaram no job `Stress and leak gate`, com limites de FD/goroutines respeitados.
-- `5dc90212cb6f72138b25e51aedf30a6dcf5f150f`: impairment + mini-soak; bridge, stress e `Impairment and mini-soak gate` passaram no mesmo HEAD, incluindo fragmentação extrema, latência/jitter determinísticos, flapping/reconnect e verificação de goroutines.
+- `5aa5eb721c76d611f25aac8d3479b336e7475ce4`: stress/leak; 1.000 pares duplex simultâneos + 1.000 ciclos TCP churn.
+- `5dc90212cb6f72138b25e51aedf30a6dcf5f150f`: impairment + mini-soak; bridge, stress e soak passaram no mesmo HEAD.
+- `a81db7e9cce5db4f4c3107b9ff7ec76ca76678db`: configuração estrita/`--check-config`; Gateway Umbrella, CI geral e Quality/Security passaram.
 
 ## Transportes validados em software
 
@@ -35,13 +36,7 @@ O Gateway é uma ponte universal de conectividade. Rapid SCADA, FUXA, ThingsBoar
 - métricas/sessões por transporte e direção;
 - churn/reconnect, RST, half-close, concorrência, leak, impairment e mini-soak automatizados.
 
-## Soak prolongado
-
-`scripts/run-soak.sh` executa o mesmo cenário de impairment/reconnect usado no CI e aceita de 1 segundo a 604800 segundos (7 dias). O mini-soak CI é gate de regressão; 24h/7d na VM e `tc netem` continuam parte da homologação HIL física.
-
-## Em validação neste HEAD — configuração de produção
-
-Este ciclo adiciona um entrypoint de configuração estrita usado pelo daemon e pelo novo `--check-config`:
+## Configuração de produção validada
 
 - rejeição de campos JSON desconhecidos;
 - rejeição de valores JSON extras após o documento principal;
@@ -52,19 +47,38 @@ Este ciclo adiciona um entrypoint de configuração estrita usado pelo daemon e 
 - no máximo um túnel consumidor por socket de provider físico;
 - rejeição de porta serial física duplicada;
 - `--check-config` valida sem abrir transports;
-- `--version` expõe versão/commit/build para releases;
-- CI valida todos os exemplos `configs/*.json` pelo binário real.
+- `--version` expõe versão/commit/build;
+- CI valida todos os exemplos `configs/*.json`.
 
-**Consultar o CI deste HEAD antes de declarar este checkpoint verde.**
+## Este ciclo — release industrial standalone em validação
 
-## Ainda falta para software field-test-ready universal
+Este ciclo adiciona os últimos gates automatizáveis:
 
-1. validar configuração estrita/`--check-config` no CI;
-2. instalação standalone, release e rollback atômicos;
-3. checksums/SBOM/vulnerability/release gates;
-4. documentação operacional final e matriz de compatibilidade;
-5. HIL físico para declarar produção validada.
+- raiz standalone `/opt/rc-gateway-umbrella`, sem dependência de `/opt/rc-geradores`;
+- releases imutáveis em `releases/<versão>` com symlinks `current` e `previous`;
+- unit systemd com `ExecStartPre --check-config`;
+- build Linux amd64/arm64 com `-trimpath`, versão/commit/build embutidos;
+- build determinística com timestamp do commit e tar/gzip reproduzíveis;
+- SHA256 por artefato;
+- SBOM CycloneDX por arquitetura usando `cyclonedx-gomod v1.12.0`;
+- `govulncheck v1.1.4` como gate;
+- instalador transacional: verifica checksum/path traversal/estrutura/config, troca release atomicamente e exige readiness;
+- rollback automático de release + configuração em falha;
+- rollback manual que também exige readiness e reverte a própria tentativa se necessário;
+- dry-run do instalador contra o pacote real no CI;
+- comparação byte-a-byte de duas builds idênticas para provar reprodutibilidade;
+- artifact CI de release candidate;
+- runbook operacional e matriz de compatibilidade atualizados.
+
+**Consultar o CI deste HEAD antes de declarar este checkpoint e o estado `software field-test-ready` verdes.**
+
+## Soak prolongado e HIL
+
+`scripts/run-soak.sh` aceita de 1 segundo a 604800 segundos (7 dias). O mini-soak CI é gate de regressão; 24 h/7 d na VM, `tc netem`, PUSR/USR real, serial real, CAN/CAN-FD físico, VPN/4G/MikroTik e consumidor real continuam gates HIL.
 
 ## Regra de produção
 
-Software field-test-ready = todos os gates automatizáveis verdes. Produção validada = somente após HIL/soak físico. Não reintroduzir polling, mapas de memória ou historian no core. Nenhum payload pode ser alterado silenciosamente e nenhum recurso pode crescer sem limite.
+- **software field-test-ready** = todos os gates automatizáveis, release/supply-chain e documentação verdes no mesmo HEAD;
+- **production validated** = somente após HIL/soak físico da topologia real.
+
+Não reintroduzir polling, mapas de memória ou historian no core. Nenhum payload pode ser alterado silenciosamente e nenhum recurso pode crescer sem limite. Suporte a transporte nunca libera automaticamente o Command Plane.

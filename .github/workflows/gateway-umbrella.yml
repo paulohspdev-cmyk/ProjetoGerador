@@ -107,3 +107,61 @@ jobs:
           RC_GATEWAY_SOAK: '1'
           RC_GATEWAY_SOAK_SECONDS: '20'
         run: go test ./internal/bridge -run '^TestSoakImpairedReconnect$' -count=1 -timeout=2m
+
+  release:
+    name: Release and supply-chain gate
+    needs: soak
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.1'
+          cache-dependency-path: gateway-umbrella/go.mod
+      - name: Install pinned supply-chain tools
+        working-directory: gateway-umbrella
+        run: |
+          mkdir -p "$RUNNER_TEMP/gobin"
+          GOBIN="$RUNNER_TEMP/gobin" go install golang.org/x/vuln/cmd/govulncheck@v1.1.4
+          GOBIN="$RUNNER_TEMP/gobin" go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.12.0
+          echo "$RUNNER_TEMP/gobin" >> "$GITHUB_PATH"
+      - name: Vulnerability scan
+        working-directory: gateway-umbrella
+        run: |
+          "$RUNNER_TEMP/gobin/govulncheck" ./...
+      - name: Shell syntax
+        working-directory: gateway-umbrella
+        run: bash -n scripts/*.sh
+      - name: Reproducible release build
+        working-directory: gateway-umbrella
+        run: |
+          VERSION="ci-${GITHUB_SHA}"
+          REQUIRE_SBOM=1 ARCHES="amd64 arm64" DIST_DIR="$PWD/dist-a" bash scripts/build-release.sh "$VERSION"
+          REQUIRE_SBOM=1 ARCHES="amd64 arm64" DIST_DIR="$PWD/dist-b" bash scripts/build-release.sh "$VERSION"
+          for arch in amd64 arm64; do
+            a="dist-a/rc-gateway-umbrella_${VERSION}_linux_${arch}.tar.gz"
+            b="dist-b/rc-gateway-umbrella_${VERSION}_linux_${arch}.tar.gz"
+            cmp "$a" "$b"
+            cmp "$a.sha256" "$b.sha256"
+          done
+      - name: Validate real release archive and installer dry-run
+        working-directory: gateway-umbrella
+        run: |
+          VERSION="ci-${GITHUB_SHA}"
+          archive="dist-a/rc-gateway-umbrella_${VERSION}_linux_amd64.tar.gz"
+          bash scripts/install-release.sh --dry-run "$archive" "$archive.sha256" configs/gateway.example.json
+          tar -tzf "$archive" | grep -q '/sbom.cdx.json$'
+          tar -tzf "$archive" | grep -q '/systemd/rc-gateway-umbrella.service$'
+          tar -tzf "$archive" | grep -q '/scripts/rollback-release.sh$'
+      - name: Upload release candidates
+        uses: actions/upload-artifact@v4
+        with:
+          name: rc-gateway-umbrella-${{ github.sha }}
+          path: |
+            gateway-umbrella/dist-a/*.tar.gz
+            gateway-umbrella/dist-a/*.sha256
+          if-no-files-found: error
+          retention-days: 14
