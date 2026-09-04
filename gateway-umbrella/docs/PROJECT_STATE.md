@@ -22,6 +22,7 @@ O Gateway é uma ponte universal de conectividade. Rapid SCADA, FUXA, ThingsBoar
 - `905f82c7036bb00c7539c26ce12ad0f55db5ba48`: UDP datagram/session bridge.
 - `0016e2a629e2169024bfea8fd1fb66d7ec0fe1f4`: SocketCAN/CAN-FD software checkpoint; Gateway CI, CI geral e Quality/Security passaram. `vcan` kernel permanece gate da VM/HIL quando o host suporta o módulo.
 - `5aa5eb721c76d611f25aac8d3479b336e7475ce4`: stress/leak checkpoint; 1.000 pares duplex simultâneos + 1.000 ciclos TCP churn passaram no job `Stress and leak gate`, com limites de FD/goroutines respeitados.
+- `5dc90212cb6f72138b25e51aedf30a6dcf5f150f`: impairment + mini-soak; bridge, stress e `Impairment and mini-soak gate` passaram no mesmo HEAD, incluindo fragmentação extrema, latência/jitter determinísticos, flapping/reconnect e verificação de goroutines.
 
 ## Transportes validados em software
 
@@ -32,32 +33,37 @@ O Gateway é uma ponte universal de conectividade. Rapid SCADA, FUXA, ThingsBoar
 - CAN TX bloqueado por padrão (`allowTransmit=false`);
 - pair timeout, slow-peer/write timeout, half-close drain, keepalive, NODELAY e CIDR allowlist;
 - métricas/sessões por transporte e direção;
-- churn/reconnect, RST, half-close, concorrência e leak gates automatizados.
+- churn/reconnect, RST, half-close, concorrência, leak, impairment e mini-soak automatizados.
 
-## Em validação neste HEAD — impairment e soak
+## Soak prolongado
 
-Foi adicionado impairment reproduzível em user-space, sem depender de privilégios `tc/netem` do runner:
+`scripts/run-soak.sh` executa o mesmo cenário de impairment/reconnect usado no CI e aceita de 1 segundo a 604800 segundos (7 dias). O mini-soak CI é gate de regressão; 24h/7d na VM e `tc netem` continuam parte da homologação HIL física.
 
-- fragmentação agressiva de reads/writes;
-- latência e jitter determinísticos por operação;
-- preservação byte-a-byte sob fragmentação extrema;
-- recriação contínua de pares para simular flapping/reconexões;
-- mini-soak CI de 20 segundos com payload variável nos dois sentidos;
-- verificação de goroutines após soak;
-- `scripts/run-soak.sh` usa exatamente o mesmo teste e aceita de 1 segundo a 604800 segundos (7 dias), permitindo 24h/7d na VM.
+## Em validação neste HEAD — configuração de produção
 
-O erro anterior deste checkpoint era somente formatação `gofmt`. Neste ciclo o arquivo foi formatado sem alteração de lógica e arquivos temporários de edição foram removidos da árvore. O mini-soak CI é gate de regressão e não substitui soak físico de 24h/7d nem `tc netem` na VM/HIL.
+Este ciclo adiciona um entrypoint de configuração estrita usado pelo daemon e pelo novo `--check-config`:
 
-**Consultar o CI deste HEAD antes de declarar impairment/mini-soak verde.**
+- rejeição de campos JSON desconhecidos;
+- rejeição de valores JSON extras após o documento principal;
+- IDs de recursos únicos entre providers/túneis;
+- detecção antecipada de colisão de binds TCP, incluindo wildcard e porta administrativa;
+- detecção antecipada de colisão de binds UDP;
+- rejeição de listener Unix sobre socket pertencente a provider;
+- no máximo um túnel consumidor por socket de provider físico;
+- rejeição de porta serial física duplicada;
+- `--check-config` valida sem abrir transports;
+- `--version` expõe versão/commit/build para releases;
+- CI valida todos os exemplos `configs/*.json` pelo binário real.
+
+**Consultar o CI deste HEAD antes de declarar este checkpoint verde.**
 
 ## Ainda falta para software field-test-ready universal
 
-1. validar impairment/mini-soak no CI;
-2. `--check-config` e validação JSON estrita/conflitos;
-3. instalação standalone, release e rollback atômicos;
-4. checksums/SBOM/vulnerability/release gates;
-5. documentação operacional final e matriz de compatibilidade;
-6. HIL físico para declarar produção validada.
+1. validar configuração estrita/`--check-config` no CI;
+2. instalação standalone, release e rollback atômicos;
+3. checksums/SBOM/vulnerability/release gates;
+4. documentação operacional final e matriz de compatibilidade;
+5. HIL físico para declarar produção validada.
 
 ## Regra de produção
 

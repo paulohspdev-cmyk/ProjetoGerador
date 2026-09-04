@@ -62,6 +62,14 @@ jobs:
       - name: Build
         working-directory: gateway-umbrella
         run: go build ./cmd/rc-gateway
+      - name: Production config validation
+        working-directory: gateway-umbrella
+        run: |
+          ./rc-gateway --version
+          for cfg in configs/*.json; do
+            echo "checking $cfg"
+            ./rc-gateway --check-config --config "$cfg"
+          done
 
   stress:
     name: Stress and leak gate
