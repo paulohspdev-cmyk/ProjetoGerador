@@ -13,80 +13,111 @@ NO TELEMETRY HISTORIAN
 
 O Gateway é uma ponte universal de conectividade. Rapid SCADA, FUXA, ThingsBoard, software do fabricante ou outro driver interpreta registradores e protocolos de aplicação.
 
-## Checkpoints verdes anteriores
+## Status atual
+
+O RC Universal Gateway atingiu o estado **software field-test-ready** nos gates automatizáveis do produto.
+
+Checkpoint de código/release validado: `069a5d786d83e621e74328488e882d8c49165594`.
+
+Nesse checkpoint, o workflow `Gateway Umbrella` passou integralmente:
+
+- Canonical project state;
+- Bridge Core Go: format, vet, testes, race detector, build e configuração de produção;
+- Stress and leak gate: 1.000 pares duplex simultâneos + 1.000 ciclos TCP churn;
+- Impairment and mini-soak gate;
+- Release and supply-chain gate: vulnerability scan, shell syntax, build reproduzível, SHA256, SBOM, dry-run do instalador e artifact de release.
+
+O CI geral também passou nesse checkpoint. O workflow global `Quality and Security` do monorepo falhou por `npm audit` do frontend legado; essa falha não é do `gateway-umbrella/` e não invalida o gate de produto do Gateway, que possui vulnerability/supply-chain gate próprio. Ela pode continuar sendo um bloqueio de merge do monorepo conforme a política do repositório e deve ser tratada no escopo do frontend.
+
+Este ciclo final apenas alinha documentação operacional e matriz de prontidão ao scanner `govulncheck` compatível com Go 1.27.1. **Consultar o CI do HEAD documental antes de afirmar que o novo HEAD também está verde.**
+
+## Checkpoints verdes
 
 - `249a7f0d55c840e5e95764468a6400db8a401fea`: limpeza bridge-first.
 - `9dc17491e370a59926d9069c898c0e3bba8b8171`: hardening TCP.
 - `52b2d76665fb73ac212e5cf085551aa7c658c2e1`: TLS/mTLS + Unix + RST/half-close.
 - `ffa2d548fb14899aad4052cc17dbe1c9d53dab92`: Serial RS232/RS422/RS485.
 - `905f82c7036bb00c7539c26ce12ad0f55db5ba48`: UDP datagram/session bridge.
-- `0016e2a629e2169024bfea8fd1fb66d7ec0fe1f4`: SocketCAN/CAN-FD software checkpoint; Gateway CI, CI geral e Quality/Security passaram. `vcan` kernel permanece gate da VM/HIL quando o host suporta o módulo.
-- `5aa5eb721c76d611f25aac8d3479b336e7475ce4`: stress/leak; 1.000 pares duplex simultâneos + 1.000 ciclos TCP churn.
-- `5dc90212cb6f72138b25e51aedf30a6dcf5f150f`: impairment + mini-soak; bridge, stress e soak passaram no mesmo HEAD.
-- `a81db7e9cce5db4f4c3107b9ff7ec76ca76678db`: configuração estrita/`--check-config`; Gateway Umbrella, CI geral e Quality/Security passaram.
+- `0016e2a629e2169024bfea8fd1fb66d7ec0fe1f4`: SocketCAN/CAN-FD software checkpoint.
+- `5aa5eb721c76d611f25aac8d3479b336e7475ce4`: stress/leak; 1.000 pares + 1.000 churn.
+- `5dc90212cb6f72138b25e51aedf30a6dcf5f150f`: impairment + mini-soak.
+- `a81db7e9cce5db4f4c3107b9ff7ec76ca76678db`: configuração estrita/`--check-config`.
+- `069a5d786d83e621e74328488e882d8c49165594`: release/supply-chain completo com scanner compatível com Go 1.27.1.
 
 ## Transportes validados em software
 
-- TCP listen/connect, TLS 1.3/mTLS e Unix sockets;
+- TCP listen/connect;
+- reverse TCP de modem;
+- TCP direto por IP/VPN;
+- TLS 1.3 e mTLS;
+- Unix sockets;
 - Serial RS232/RS422/RS485 raw;
 - UDP preservando datagramas e sessões por peer;
-- SocketCAN/CAN-FD preservando frames do ABI Linux; J1939/CANopen continuam no consumidor;
+- SocketCAN/CAN-FD preservando frames do ABI Linux;
 - CAN TX bloqueado por padrão (`allowTransmit=false`);
 - pair timeout, slow-peer/write timeout, half-close drain, keepalive, NODELAY e CIDR allowlist;
 - métricas/sessões por transporte e direção;
 - churn/reconnect, RST, half-close, concorrência, leak, impairment e mini-soak automatizados.
 
-## Configuração de produção validada
+## Configuração de produção
 
-- rejeição de campos JSON desconhecidos;
-- rejeição de valores JSON extras após o documento principal;
-- IDs de recursos únicos entre providers/túneis;
-- detecção antecipada de colisão de binds TCP, incluindo wildcard e porta administrativa;
-- detecção antecipada de colisão de binds UDP;
-- rejeição de listener Unix sobre socket pertencente a provider;
+- JSON estrito: campos desconhecidos e documentos extras são rejeitados;
+- IDs únicos entre providers/túneis;
+- colisões TCP/admin e UDP detectadas antes do runtime;
+- colisão Unix/provider rejeitada;
+- porta serial física duplicada rejeitada;
 - no máximo um túnel consumidor por socket de provider físico;
-- rejeição de porta serial física duplicada;
 - `--check-config` valida sem abrir transports;
 - `--version` expõe versão/commit/build;
-- CI valida todos os exemplos `configs/*.json`.
+- exemplos `configs/*.json` são validados no CI.
 
-## Release industrial standalone — em validação final
+## Release industrial standalone
 
-O ciclo `d278903ba8bb1ba7666f272a76e5983c64effe9e` adicionou:
-
-- raiz standalone `/opt/rc-gateway-umbrella`, sem dependência de `/opt/rc-geradores`;
-- releases imutáveis em `releases/<versão>` com symlinks `current` e `previous`;
-- unit systemd com `ExecStartPre --check-config`;
-- build Linux amd64/arm64 com `-trimpath`, versão/commit/build embutidos;
-- build determinística com timestamp do commit e tar/gzip reproduzíveis;
-- SHA256 por artefato;
-- SBOM CycloneDX por arquitetura usando `cyclonedx-gomod v1.12.0`;
-- instalador transacional com verificação de checksum/path traversal/estrutura/config, troca atômica e readiness;
-- rollback automático de release + configuração em falha;
-- rollback manual com readiness e autorreversão em falha;
-- dry-run do instalador contra o pacote real no CI;
+- raiz `/opt/rc-gateway-umbrella`;
+- releases imutáveis em `releases/<versão>`;
+- symlinks `current` e `previous`;
+- systemd com `ExecStartPre --check-config`;
+- build Linux amd64/arm64 com `-trimpath` e metadados embutidos;
+- timestamp derivado do commit e pacotes reprodutíveis;
+- SHA256;
+- SBOM CycloneDX;
+- `govulncheck` pinado na revisão upstream `8fcedea455d953a0f8470e1f41420bb6f2e72665`, compatível com Go 1.27.1;
+- instalador transacional com checksum, proteção contra path traversal, staging e validação de config;
+- troca atômica de release;
+- readiness após restart;
+- rollback automático em falha;
+- rollback manual com health gate e autorreversão;
+- dry-run contra pacote real no CI;
 - comparação byte-a-byte de duas builds idênticas;
-- artifact CI de release candidate;
-- runbook operacional e matriz de compatibilidade.
+- artifact de release candidate no CI.
 
-No primeiro ciclo desse gate, core, stress e mini-soak passaram, mas `govulncheck v1.1.4` **não chegou a analisar vulnerabilidades**: a ferramenta panica em Go 1.27.1 (`unexpected expr: *ast.KeyValueExpr`) porque carrega `golang.org/x/tools v0.29.0`.
+## Documentação operacional final
 
-Este ciclo corrige o scanner sem relaxar o gate:
+- `docs/RUNBOOK.md`: instalação, atualização, rollback, observabilidade, segurança, soak, HIL e diagnóstico;
+- `docs/COMPATIBILITY_MATRIX.md`: meios/protocolos e limites de suporte;
+- `docs/PRODUCTION_MATRIX.md`: gates automatizáveis e físicos;
+- `docs/ARCHITECTURE.md`: arquitetura bridge-first;
+- `docs/PROJECT_STATE.md`: handoff canônico obrigatório.
 
-- `govulncheck` fica pinado na revisão upstream `8fcedea455d953a0f8470e1f41420bb6f2e72665` (2026-09-02), posterior ao lançamento do Go 1.27;
-- essa revisão usa `golang.org/x/tools v0.49.0` e declara Go 1.26+, portanto é compatível com a toolchain Go 1.27.1 usada pelo Gateway;
-- CycloneDX permanece pinado em `v1.12.0`;
-- o vulnerability gate continua obrigatório: uma vulnerabilidade alcançável deve falhar a release.
+## O que ainda falta para “production validated”
 
-**Consultar o CI deste HEAD antes de declarar `Release and supply-chain gate` e `software field-test-ready` verdes.**
+Não falta desenvolvimento de software obrigatório para iniciar homologação em campo. Restam gates físicos/HIL:
 
-## Soak prolongado e HIL
+1. PUSR/USR real em reverse TCP → Gateway → Rapid/FUXA/consumidor;
+2. dispositivo direto por IP/VPN;
+3. RS232/RS422/RS485 reais;
+4. UDP real quando aplicável;
+5. CAN e CAN-FD físicos;
+6. VPN/4G/MikroTik e power-cycle/reconnect reais;
+7. `tc netem`/impairment de rede em ambiente HIL;
+8. soak mínimo 24 h, alvo 7 dias;
+9. rollback em máquina de homologação.
 
-`scripts/run-soak.sh` aceita de 1 segundo a 604800 segundos (7 dias). O mini-soak CI é gate de regressão; 24 h/7 d na VM, `tc netem`, PUSR/USR real, serial real, CAN/CAN-FD físico, VPN/4G/MikroTik e consumidor real continuam gates HIL.
+`scripts/run-soak.sh` aceita de 1 segundo a 604800 segundos (7 dias).
 
 ## Regra de produção
 
-- **software field-test-ready** = todos os gates automatizáveis, release/supply-chain e documentação verdes no mesmo HEAD;
+- **software field-test-ready** = todos os gates automatizáveis do produto, release/supply-chain e documentação verdes;
 - **production validated** = somente após HIL/soak físico da topologia real.
 
 Não reintroduzir polling, mapas de memória ou historian no core. Nenhum payload pode ser alterado silenciosamente e nenhum recurso pode crescer sem limite. Suporte a transporte nunca libera automaticamente o Command Plane.
