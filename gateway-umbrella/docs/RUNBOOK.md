@@ -50,13 +50,15 @@ O parser é estrito: campos JSON desconhecidos, documentos extras, IDs/binds con
 Na raiz `gateway-umbrella/`:
 
 ```bash
-go install golang.org/x/vuln/cmd/govulncheck@v1.1.4
+go install golang.org/x/vuln/cmd/govulncheck@8fcedea455d953a0f8470e1f41420bb6f2e72665
 go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.12.0
 
 govulncheck ./...
 REQUIRE_SBOM=1 ARCHES="amd64 arm64" \
   bash scripts/build-release.sh <versão>
 ```
+
+O `govulncheck` está pinado nessa revisão upstream por compatibilidade com Go 1.27.1. Não substituir por uma versão antiga sem repetir o gate de vulnerabilidade.
 
 A build gera, por arquitetura:
 
