@@ -125,7 +125,8 @@ jobs:
         working-directory: gateway-umbrella
         run: |
           mkdir -p "$RUNNER_TEMP/gobin"
-          GOBIN="$RUNNER_TEMP/gobin" go install golang.org/x/vuln/cmd/govulncheck@v1.1.4
+          # Pin a post-Go-1.27 x/vuln revision. v1.1.4 embeds x/tools v0.29.0 and panics on Go 1.27 syntax.
+          GOBIN="$RUNNER_TEMP/gobin" go install golang.org/x/vuln/cmd/govulncheck@8fcedea455d953a0f8470e1f41420bb6f2e72665
           GOBIN="$RUNNER_TEMP/gobin" go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.12.0
           echo "$RUNNER_TEMP/gobin" >> "$GITHUB_PATH"
       - name: Vulnerability scan

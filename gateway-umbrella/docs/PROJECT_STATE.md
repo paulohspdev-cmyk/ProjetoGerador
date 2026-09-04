@@ -50,9 +50,9 @@ O Gateway é uma ponte universal de conectividade. Rapid SCADA, FUXA, ThingsBoar
 - `--version` expõe versão/commit/build;
 - CI valida todos os exemplos `configs/*.json`.
 
-## Este ciclo — release industrial standalone em validação
+## Release industrial standalone — em validação final
 
-Este ciclo adiciona os últimos gates automatizáveis:
+O ciclo `d278903ba8bb1ba7666f272a76e5983c64effe9e` adicionou:
 
 - raiz standalone `/opt/rc-gateway-umbrella`, sem dependência de `/opt/rc-geradores`;
 - releases imutáveis em `releases/<versão>` com symlinks `current` e `previous`;
@@ -61,16 +61,24 @@ Este ciclo adiciona os últimos gates automatizáveis:
 - build determinística com timestamp do commit e tar/gzip reproduzíveis;
 - SHA256 por artefato;
 - SBOM CycloneDX por arquitetura usando `cyclonedx-gomod v1.12.0`;
-- `govulncheck v1.1.4` como gate;
-- instalador transacional: verifica checksum/path traversal/estrutura/config, troca release atomicamente e exige readiness;
+- instalador transacional com verificação de checksum/path traversal/estrutura/config, troca atômica e readiness;
 - rollback automático de release + configuração em falha;
-- rollback manual que também exige readiness e reverte a própria tentativa se necessário;
+- rollback manual com readiness e autorreversão em falha;
 - dry-run do instalador contra o pacote real no CI;
-- comparação byte-a-byte de duas builds idênticas para provar reprodutibilidade;
+- comparação byte-a-byte de duas builds idênticas;
 - artifact CI de release candidate;
-- runbook operacional e matriz de compatibilidade atualizados.
+- runbook operacional e matriz de compatibilidade.
 
-**Consultar o CI deste HEAD antes de declarar este checkpoint e o estado `software field-test-ready` verdes.**
+No primeiro ciclo desse gate, core, stress e mini-soak passaram, mas `govulncheck v1.1.4` **não chegou a analisar vulnerabilidades**: a ferramenta panica em Go 1.27.1 (`unexpected expr: *ast.KeyValueExpr`) porque carrega `golang.org/x/tools v0.29.0`.
+
+Este ciclo corrige o scanner sem relaxar o gate:
+
+- `govulncheck` fica pinado na revisão upstream `8fcedea455d953a0f8470e1f41420bb6f2e72665` (2026-09-02), posterior ao lançamento do Go 1.27;
+- essa revisão usa `golang.org/x/tools v0.49.0` e declara Go 1.26+, portanto é compatível com a toolchain Go 1.27.1 usada pelo Gateway;
+- CycloneDX permanece pinado em `v1.12.0`;
+- o vulnerability gate continua obrigatório: uma vulnerabilidade alcançável deve falhar a release.
+
+**Consultar o CI deste HEAD antes de declarar `Release and supply-chain gate` e `software field-test-ready` verdes.**
 
 ## Soak prolongado e HIL
 
