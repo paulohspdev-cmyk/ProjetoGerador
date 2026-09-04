@@ -17,7 +17,7 @@ O Gateway é uma ponte universal de conectividade. Rapid SCADA, FUXA, ThingsBoar
 
 O RC Universal Gateway atingiu o estado **software field-test-ready** nos gates automatizáveis do produto.
 
-Checkpoint de código/release validado: `069a5d786d83e621e74328488e882d8c49165594`.
+Checkpoint de runtime/release validado: `ecb9ee0cfd8c3a3c96125230cd07a4bbd8d20987`.
 
 Nesse checkpoint, o workflow `Gateway Umbrella` passou integralmente:
 
@@ -27,9 +27,13 @@ Nesse checkpoint, o workflow `Gateway Umbrella` passou integralmente:
 - Impairment and mini-soak gate;
 - Release and supply-chain gate: vulnerability scan, shell syntax, build reproduzível, SHA256, SBOM, dry-run do instalador e artifact de release.
 
-O CI geral também passou nesse checkpoint. O workflow global `Quality and Security` do monorepo falhou por `npm audit` do frontend legado; essa falha não é do `gateway-umbrella/` e não invalida o gate de produto do Gateway, que possui vulnerability/supply-chain gate próprio. Ela pode continuar sendo um bloqueio de merge do monorepo conforme a política do repositório e deve ser tratada no escopo do frontend.
+Também passaram no mesmo checkpoint:
 
-Este ciclo final apenas alinha documentação operacional e matriz de prontidão ao scanner `govulncheck` compatível com Go 1.27.1. **Consultar o CI do HEAD documental antes de afirmar que o novo HEAD também está verde.**
+- CI geral;
+- Quality and Security;
+- Gateway Source Bundle.
+
+O artifact de release candidate foi gerado pelo workflow para o mesmo HEAD. Este documento apenas registra o fechamento do estado validado; qualquer alteração futura de runtime/release deve repetir os gates antes de promover novo checkpoint.
 
 ## Checkpoints verdes
 
@@ -43,6 +47,7 @@ Este ciclo final apenas alinha documentação operacional e matriz de prontidão
 - `5dc90212cb6f72138b25e51aedf30a6dcf5f150f`: impairment + mini-soak.
 - `a81db7e9cce5db4f4c3107b9ff7ec76ca76678db`: configuração estrita/`--check-config`.
 - `069a5d786d83e621e74328488e882d8c49165594`: release/supply-chain completo com scanner compatível com Go 1.27.1.
+- `ecb9ee0cfd8c3a3c96125230cd07a4bbd8d20987`: checkpoint integrado atual; Gateway Umbrella, CI, Quality/Security e Source Bundle verdes.
 
 ## Transportes validados em software
 
