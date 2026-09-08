@@ -54,11 +54,11 @@
 }
 
 .comap-panel-v2 .generator-power-instrument {
-  min-height: 188px;
+  min-height: 172px;
 }
 
 .comap-panel-v2 .generator-power-gauge {
-  width: min(100%, 258px);
+  width: min(100%, 220px);
 }
 
 .comap-panel-v2 .generator-gauge-scale {
@@ -66,13 +66,13 @@
 }
 
 .comap-panel-v2 .generator-power-meta {
-  width: 88px;
+  width: min(100%, 164px);
 }
 
 .comap-panel-v2 .generator-power-meta > span {
-  min-height: 22px;
-  grid-template-columns: 33px 1fr;
-  font-size: 9px;
+  min-height: 19px;
+  grid-template-columns: 28px 1fr;
+  font-size: 8px;
 }
 
 .comap-panel-v2 .generator-power-readout strong {
@@ -85,7 +85,7 @@
 }
 
 .comap-panel-v2 .generator-battery-badge {
-  min-width: 89px;
+  min-width: 0;
   font-size: 8.5px;
 }
 
@@ -95,7 +95,7 @@
   }
 
   .comap-panel-v2 .generator-power-gauge {
-    width: min(100%, 246px);
+    width: min(100%, 205px);
   }
 
   .comap-panel-v2 .generator-gauge-scale {

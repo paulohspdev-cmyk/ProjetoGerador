@@ -9,14 +9,8 @@ import { cn } from "@/lib/utils";
 import { DeleteGeneratorButton } from "./DeleteGeneratorButton";
 import { useGenerators } from "./GeneratorsProvider";
 import { readGeneratorTelemetry } from "./generator-health";
-import {
-  displayGeneratorName,
-  fmt,
-  formatGeneratorMetric,
-  hasFreshMetric,
-  metricNumber,
-} from "./generator-metrics";
-import { hasPositiveMeasurement, isPositiveMeasurement } from "./generator-presence";
+import { displayGeneratorName, fmt, hasFreshMetric, metricNumber } from "./generator-metrics";
+import { isPositiveMeasurement } from "./generator-presence";
 import { PowerFlowSld } from "./power-flow/PowerFlowDiagram";
 import {
   BreakerControl,
@@ -24,15 +18,7 @@ import {
   EngineRow,
   PowerGaugeKw,
 } from "./power-flow/PowerFlowPrimitives";
-import {
-  IconBolt,
-  IconClock,
-  IconFuelPump,
-  IconHouse,
-  IconOilCan,
-  IconRunHours,
-  IconThermometer,
-} from "./scada-icons";
+import { IconClock, IconFuelPump, IconHouse, IconRunHours } from "./scada-icons";
 import "./comap-panel.css";
 import "./powerflow-card-v2.css";
 
@@ -49,13 +35,9 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const telemetry = readGeneratorTelemetry(gen);
   const {
     rpm,
-    oil,
-    oilUnit,
-    coolant: temp,
     fuel,
     fuelUnit,
     battery: batt,
-    alternator: alt,
     maintenance,
     runHours,
     frequency,
@@ -82,19 +64,44 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     "mains_voltage_l1_l2",
   ];
   const genKeys = ["voltage_l1", "voltage_l2", "voltage_l3", "voltage_l1_l2"];
-  const mainsKnown = mainsKeys.some((key) => hasFreshMetric(gen, key));
-  const genVoltageKnown = genKeys.some((key) => hasFreshMetric(gen, key));
-  const mainsOk =
+  const mainsVoltageValues = [
+    metricNumber(gen, "mains_voltage_l1", gen.mains.l1),
+    metricNumber(gen, "mains_voltage_l2", gen.mains.l2),
+    metricNumber(gen, "mains_voltage_l3", gen.mains.l3),
+    metricNumber(gen, "mains_voltage_l1_l2", gen.mains.l12),
+  ];
+  const mainsVoltageKnown = mainsKeys.some((key) => hasFreshMetric(gen, key));
+  const mainsFrequencyKnown = hasFreshMetric(gen, "mains_frequency");
+  const mainsKnown = mainsVoltageKnown || mainsFrequencyKnown;
+  const mainsPeakVoltage = Math.max(
+    0,
+    ...mainsVoltageValues.filter((value): value is number => value != null),
+  );
+  const mainsPresent =
     mainsKnown &&
-    hasPositiveMeasurement([
-      metricNumber(gen, "mains_voltage_l1", gen.mains.l1),
-      metricNumber(gen, "mains_voltage_l2", gen.mains.l2),
-      metricNumber(gen, "mains_voltage_l3", gen.mains.l3),
-      metricNumber(gen, "mains_voltage_l1_l2", gen.mains.l12),
-    ]);
+    (mainsPeakVoltage >= 80 ||
+      (mainsFrequencyKnown && mainsFrequency != null && mainsFrequency >= 20) ||
+      (mcbKnown && gen.mcb));
+  const genVoltageKnown = genKeys.some((key) => hasFreshMetric(gen, key));
+  const mainsOk = mainsPresent;
+
+  const cardMetric = (key: string, value: number | null | undefined, unit: string, digits = 1) => {
+    const actual = metricNumber(gen, key, value);
+    if (actual == null) return "N/D";
+    const text = unit ? `${fmt(actual, digits)} ${unit}` : fmt(actual, digits);
+    return hasFreshMetric(gen, key) ? text : `${text} · últ.`;
+  };
 
   const canStart = can("operate") && gen.capabilities?.start === true;
   const canStop = can("operate") && gen.capabilities?.stop === true;
+  const powerStateLabel =
+    load == null
+      ? "POTÊNCIA N/D"
+      : Math.abs(load) <= 0.1 && runningKnown && !running
+        ? "PARADO / SEM CARGA"
+        : Math.abs(load) <= 0.1
+          ? "SEM CARGA"
+          : "POTÊNCIA ATIVA";
 
   const runCommand = async (action: "start" | "stop") => {
     const label = action.toUpperCase();
@@ -104,7 +111,11 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     setCommandMessage(null);
     try {
       const result = await rcApi.generators.command(gen.id, action);
-      setCommandMessage(result.reason || `${label} aceito pelo sistema.`);
+      const rpmConfirmation =
+        result.rpm_after != null
+          ? ` · RPM após comando: ${fmt(result.rpm_after, 0)} · sincronizando telemetria`
+          : " · aguardando sincronização da telemetria";
+      setCommandMessage(`${result.reason || `${label} aceito pelo controlador`}${rpmConfirmation}`);
       await refresh();
     } catch (error) {
       setCommandMessage(error instanceof Error ? error.message : `Falha no comando ${label}.`);
@@ -176,11 +187,13 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
 
         <div className="comap-sld">
           <div className="comap-sld-stage">
-            <div className="absolute left-0 top-[23%] z-10">
-              <BreakerControl label="MCB" known={mcbKnown} closed={gen.mcb} />
-            </div>
+            {mainsPresent && (
+              <div className="absolute left-0 top-[23%] z-10">
+                <BreakerControl label="MCB" known={mcbKnown} closed={gen.mcb} />
+              </div>
+            )}
 
-            <div className="absolute left-0 top-[53%] z-10">
+            <div className={cn("absolute left-0 z-10", mainsPresent ? "top-[53%]" : "top-[38%]")}>
               <BreakerControl label="GCB" known={gcbKnown} closed={gen.gcb} />
             </div>
 
@@ -199,6 +212,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
               gridHzKnown={mainsFrequency != null}
               genHzKnown={frequency != null}
               loadKnown={load != null}
+              showMainsSource={mainsPresent}
             />
 
             <div className="absolute bottom-[3%] right-0 z-10 flex flex-col gap-2">
@@ -231,40 +245,14 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       <section className="comap-block engine-status-block shrink-0 px-2 py-1.5">
         <h2 className="comap-title mb-1">Estado do motor</h2>
         <EngineRow
-          icon={<IconOilCan />}
-          label="Pressão do óleo"
-          value={oil == null ? "N/D" : `${fmt(oil, 2)} ${oilUnit}`}
-          pct={percents.oil}
-          bar
-          known={oil != null}
-          tone={tones.oil}
-        />
-        <EngineRow
-          icon={<IconThermometer />}
-          label="Temp. do líquido"
-          value={temp == null ? "N/D" : `${fmt(temp, 0)} °C`}
-          pct={percents.coolant}
-          bar
-          known={temp != null}
-          tone={tones.coolant}
-        />
-        <EngineRow
           icon={<IconFuelPump />}
           label="Combustível"
           value={fuel == null ? "N/D" : `${fmt(fuel, 0)} ${fuelUnit}`}
           pct={percents.fuel}
           bar
           known={fuel != null}
-          tone={tones.fuel}
-        />
-        <EngineRow
-          icon={<IconBolt />}
-          label="Tensão alternador"
-          value={alt == null ? "N/D" : `${fmt(alt)} V`}
-          pct={percents.alternator}
-          bar
-          known={alt != null}
-          tone={tones.alternator}
+          lastKnown={fuel != null && !hasFreshMetric(gen, "fuel_level")}
+          tone={hasFreshMetric(gen, "fuel_level") ? tones.fuel : "neutral"}
         />
         <EngineRow
           icon={<IconClock />}
@@ -273,7 +261,8 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
           pct={percents.maintenance}
           bar
           known={maintenance != null}
-          tone={tones.maintenance}
+          lastKnown={maintenance != null && !hasFreshMetric(gen, "maintenance_hours")}
+          tone={hasFreshMetric(gen, "maintenance_hours") ? tones.maintenance : "neutral"}
         />
         <EngineRow
           icon={<IconRunHours />}
@@ -282,14 +271,15 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
           pct={percents.runHours}
           bar
           known={runHours != null}
-          tone={tones.runHours}
+          lastKnown={runHours != null && !hasFreshMetric(gen, "run_hours")}
+          tone={hasFreshMetric(gen, "run_hours") ? tones.runHours : "neutral"}
         />
       </section>
 
       <section className="comap-block comap-power-gauge-block">
         <div className="power-gauge-heading">
           <h2 className="comap-title">Potência do gerador</h2>
-          <span>{load == null ? "POTÊNCIA N/D" : "POTÊNCIA ATIVA"}</span>
+          <span>{powerStateLabel}</span>
         </div>
         <PowerGaugeKw
           value={load}
@@ -301,24 +291,29 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       </section>
 
       <section className="comap-block mains-generator-block mb-1.5 shrink-0 px-2 py-1.5">
-        <h2 className="comap-title">Rede / Gerador</h2>
-        <div className="comap-table-head">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="comap-title">{mainsPresent ? "Rede / Gerador" : "Gerador"}</h2>
+          <span className={cn("mains-presence", mainsPresent ? "is-present" : "is-absent")}>
+            {mainsPresent ? "REDE PRESENTE" : mainsKnown ? "SEM REDE" : "REDE N/D"}
+          </span>
+        </div>
+        <div className={cn("comap-table-head", !mainsPresent && "is-generator-only")}>
           <span />
-          <span>Rede</span>
+          {mainsPresent && <span>Rede</span>}
           <span>Gerador</span>
         </div>
         {tableRows.map(([label, mainsKey, mainsValue, genKey, genValue]) => (
-          <div key={label} className="comap-table-row">
+          <div key={label} className={cn("comap-table-row", !mainsPresent && "is-generator-only")}>
             <span className="label">{label}</span>
-            <span className="mains">
-              {formatGeneratorMetric(gen, mainsKey, mainsValue, "V", 0)}
-            </span>
-            <span className="gen">{formatGeneratorMetric(gen, genKey, genValue, "V", 0)}</span>
+            {mainsPresent && (
+              <span className="mains">{cardMetric(mainsKey, mainsValue, "V", 0)}</span>
+            )}
+            <span className="gen">{cardMetric(genKey, genValue, "V", 0)}</span>
           </div>
         ))}
-        {!mainsKnown && !genVoltageKnown && (
+        {!mainsPresent && !genVoltageKnown && (
           <p className="py-1 text-[9px] text-muted-foreground">
-            Tensões N/D para esta controladora.
+            Tensões do gerador N/D para esta controladora.
           </p>
         )}
       </section>
