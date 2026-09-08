@@ -16,6 +16,7 @@ from .config import (
 )
 from .controller_library import pack_for_model
 from . import db
+from .dse_lab import is_target as is_dse_lab_target
 from .ig4_lab import is_target as is_ig4_lab_target
 
 _cache = {"at": 0.0, "channels": {}, "error": "", "requested": set()}
@@ -387,14 +388,20 @@ def _effective_capabilities(generator, status: str, binding_present: bool) -> di
     ig4_lab_start = bool(
         field_validated and online and binding_present and is_ig4_lab_target(generator)
     )
+    dse_lab_control = bool(
+        binding_present
+        and status in {"online", "partial", "connected"}
+        and is_dse_lab_target(generator)
+    )
     return {
         # Telemetria read-only pode ser liberada por um pack production que a
         # declara explicitamente, mesmo quando o contrato do pack não libera
         # comandos de campo (caso DSE GenComm documentado).
         "telemetry": bool(production_pack and binding_present and declared.get("telemetry")),
-        # Ações industriais continuam exigindo homologação física de campo.
-        "start": bool(field_validated and online and declared.get("start")) or ig4_lab_start,
-        "stop": bool(field_validated and online and declared.get("stop")),
+        # Ações production continuam exigindo homologação física. O ensaio DSE
+        # é um caminho LAB separado, explicitamente habilitado e limitado por allowlist.
+        "start": bool(field_validated and online and declared.get("start")) or ig4_lab_start or dse_lab_control,
+        "stop": bool(field_validated and online and declared.get("stop")) or dse_lab_control,
         "auto": False,
         "manual": False,
         "test": False,
