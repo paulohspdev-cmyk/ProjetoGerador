@@ -16,6 +16,7 @@ export function EngineRow({
   bar = false,
   known = true,
   tone = "neutral",
+  lastKnown = false,
 }: {
   icon: ReactNode;
   label: string;
@@ -24,13 +25,14 @@ export function EngineRow({
   bar?: boolean;
   known?: boolean;
   tone?: MeterTone;
+  lastKnown?: boolean;
 }) {
   const showBar = bar || pct != null;
   const hasScale = known && pct != null;
   const fill = hasScale ? Math.min(100, Math.max(0, pct)) : 0;
 
   return (
-    <div className={cn("comap-engine", !known && "opacity-65")}>
+    <div className={cn("comap-engine", !known && "opacity-65", lastKnown && "is-last-known")}>
       {icon}
       <span className="engine-label">{label}</span>
       {showBar ? (
@@ -47,7 +49,10 @@ export function EngineRow({
       ) : (
         <span />
       )}
-      <span className="engine-value">{known ? value : "N/D"}</span>
+      <span className="engine-value">
+        {known ? value : "N/D"}
+        {known && lastKnown && <small>ÚLT.</small>}
+      </span>
     </div>
   );
 }

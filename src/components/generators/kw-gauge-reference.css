@@ -1,8 +1,10 @@
 .generator-power-instrument {
   position: relative;
-  display: grid;
-  min-height: 194px;
-  place-items: center;
+  display: flex;
+  min-height: 214px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
   overflow: visible;
   border: 0;
   border-radius: 0;
@@ -13,7 +15,7 @@
   display: block;
   width: min(100%, 272px);
   height: auto;
-  margin: 18px auto 0;
+  margin: 0 auto;
   overflow: visible;
 }
 
@@ -94,18 +96,18 @@
 }
 
 .generator-power-meta {
-  position: absolute;
+  position: static;
   z-index: 6;
-  top: 2px;
-  right: 0;
   display: grid;
-  width: 84px;
-  gap: 3px;
+  width: min(100%, 190px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+  margin: 0 auto -2px;
 }
 
 .generator-power-meta > span {
   display: grid;
-  min-height: 21px;
+  min-height: 23px;
   grid-template-columns: 31px 1fr;
   align-items: center;
   padding: 2px 4px;

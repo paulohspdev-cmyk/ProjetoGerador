@@ -15,7 +15,7 @@ DEFAULT_DEVICE_TIMEOUT_MS = max(
 )
 DEFAULT_POLL_DELAY_MS = max(
     100,
-    int(os.environ.get("RC_MODBUS_POLL_DELAY_MS", "1000")),
+    int(os.environ.get("RC_MODBUS_POLL_DELAY_MS", "100")),
 )
 
 

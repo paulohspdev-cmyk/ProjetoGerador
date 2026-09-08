@@ -83,6 +83,7 @@ export function PowerFlowSld({
   gridHzKnown = true,
   genHzKnown = true,
   loadKnown = true,
+  showMainsSource = true,
 }: {
   mcb: boolean;
   gcb: boolean;
@@ -98,8 +99,9 @@ export function PowerFlowSld({
   gridHzKnown?: boolean;
   genHzKnown?: boolean;
   loadKnown?: boolean;
+  showMainsSource?: boolean;
 }) {
-  const mainsPre = mainsKnown && mainsOk;
+  const mainsPre = showMainsSource && mainsKnown && mainsOk;
   const mainsPost = mainsPre && mcbKnown && mcb;
   const genPre = runningKnown && running && genHzKnown && genHz > MIN_FLOW_FREQUENCY_HZ;
   const genPost = genPre && gcbKnown && gcb;
@@ -107,28 +109,30 @@ export function PowerFlowSld({
 
   return (
     <svg
-      viewBox="0 0 230 400"
-      className="flow-diagram"
+      viewBox={showMainsSource ? "0 0 230 400" : "0 150 230 250"}
+      className={cn("flow-diagram", !showMainsSource && "is-generator-only")}
       preserveAspectRatio="xMidYMid meet"
-      aria-label="Fluxo de energia"
+      aria-label={showMainsSource ? "Fluxo de energia com rede" : "Fluxo de energia do gerador"}
     >
-      <g transform="translate(80 40)">
-        <circle r="28" className={cn("flow-device-circle", mainsPre && "source-active")} />
-        <g className="flow-device-icon tower-icon">
-          <path d="M0-20 0 18M-8 18 0-20 8 18M-12-8H12M-15 2H15M-18 12H18" />
-          <path d="m-11-8 11 10 11-10M-14 2 0 12 14 2" />
+      {showMainsSource && (
+        <g transform="translate(80 40)">
+          <circle r="28" className={cn("flow-device-circle", mainsPre && "source-active")} />
+          <g className="flow-device-icon tower-icon">
+            <path d="M0-20 0 18M-8 18 0-20 8 18M-12-8H12M-15 2H15M-18 12H18" />
+            <path d="m-11-8 11 10 11-10M-14 2 0 12 14 2" />
+          </g>
+          <text
+            x="35"
+            y="5"
+            fontSize="15"
+            fontWeight="bold"
+            fill="var(--foreground)"
+            textAnchor="start"
+          >
+            {gridHzKnown ? `${fmt(gridHz)} Hz` : "N/D"}
+          </text>
         </g>
-        <text
-          x="35"
-          y="5"
-          fontSize="15"
-          fontWeight="bold"
-          fill="var(--foreground)"
-          textAnchor="start"
-        >
-          {gridHzKnown ? `${fmt(gridHz)} Hz` : "N/D"}
-        </text>
-      </g>
+      )}
 
       <g transform="translate(178 200)">
         <rect x="-46" y="-32" width="90" height="64" rx="6" className="flow-load-card" />
@@ -177,37 +181,40 @@ export function PowerFlowSld({
         </text>
       </g>
 
-      <path d="M80 68 V110" className="flow-bus-base" />
-      <path d="M80 140 V200" className="flow-bus-base" />
+      {showMainsSource && (
+        <>
+          <path d="M80 68 V110" className="flow-bus-base" />
+          <path d="M80 140 V200" className="flow-bus-base" />
+          <FlowWire d="M80 68 V110" live={mainsPre} />
+          <FlowWire d="M80 140 V200" live={mainsPost} />
+          <circle
+            cx="80"
+            cy="110"
+            r="4"
+            className={cn("flow-switch-node", !mcbKnown && "is-unknown")}
+          />
+          <circle
+            cx="80"
+            cy="140"
+            r="4"
+            className={cn("flow-switch-node", !mcbKnown && "is-unknown")}
+          />
+          <line
+            x1="80"
+            y1="110"
+            x2={mcbKnown && mcb ? "80" : "100"}
+            y2={mcbKnown && mcb ? "140" : "130"}
+            className={cn("flow-switch-blade", !mcbKnown && "is-unknown")}
+          />
+        </>
+      )}
       <path d="M80 200 V260" className="flow-bus-base" />
       <path d="M80 290 V326" className="flow-bus-base" />
       <path d="M80 200 H142" className="flow-bus-base" />
 
-      <FlowWire d="M80 68 V110" live={mainsPre} />
-      <FlowWire d="M80 140 V200" live={mainsPost} />
       <FlowWire d="M80 200 V260" live={genPost} reverse />
       <FlowWire d="M80 290 V326" live={genPre} reverse />
       <FlowWire d="M80 200 H142" live={loadLive} />
-
-      <circle
-        cx="80"
-        cy="110"
-        r="4"
-        className={cn("flow-switch-node", !mcbKnown && "is-unknown")}
-      />
-      <circle
-        cx="80"
-        cy="140"
-        r="4"
-        className={cn("flow-switch-node", !mcbKnown && "is-unknown")}
-      />
-      <line
-        x1="80"
-        y1="110"
-        x2={mcbKnown && mcb ? "80" : "100"}
-        y2={mcbKnown && mcb ? "140" : "130"}
-        className={cn("flow-switch-blade", !mcbKnown && "is-unknown")}
-      />
 
       <circle
         cx="80"

@@ -71,11 +71,20 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
 
   const pageSize = useMemo(() => {
     if (!viewport.width || !viewport.height) {
-      return view === "principal" ? 5 : view === "lista" ? 12 : 8;
+      return view === "principal" ? 4 : view === "lista" ? 12 : 8;
     }
     if (view === "lista") return Math.max(1, Math.floor(viewport.height / 43));
-    const minimumWidth = view === "compacto" ? 250 : 210;
-    const minimumHeight = view === "compacto" ? 190 : 520;
+
+    if (view === "principal") {
+      // O cartão vertical precisa continuar legível. Ele nunca é dividido em
+      // duas linhas comprimidas: usamos uma fileira por página e deixamos a
+      // paginação absorver o restante da frota.
+      const readableCardWidth = viewport.width >= 2200 ? 300 : 285;
+      return Math.max(1, Math.min(8, Math.floor((viewport.width + 8) / (readableCardWidth + 8))));
+    }
+
+    const minimumWidth = 250;
+    const minimumHeight = 190;
     const columns = Math.max(1, Math.floor(viewport.width / minimumWidth));
     const rows = Math.max(1, Math.floor(viewport.height / minimumHeight));
     return columns * rows;

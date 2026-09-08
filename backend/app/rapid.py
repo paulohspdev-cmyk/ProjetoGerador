@@ -22,7 +22,26 @@ from .ig4_lab import is_target as is_ig4_lab_target
 _cache = {"at": 0.0, "channels": {}, "error": "", "requested": set()}
 _cache_lock = threading.Lock()
 
-_IG200_UNDEFINED = {-32768.0, 32768.0, -2147483648.0, 2147483648.0}
+_COMAP_UNDEFINED = {-32768.0, 32768.0, -2147483648.0, 2147483648.0}
+_COMAP_SENTINEL_KEYS = {
+    "fuel_rate",
+    "coolant_temperature",
+    "intake_temperature",
+    "oil_pressure",
+    "intake_pressure",
+    "engine_load",
+    "power_kw",
+    "power_kvar",
+    "power_kva",
+    "power_factor",
+    "mains_power_kw",
+    "mains_power_kvar",
+    "mains_power_factor",
+    "battery_voltage",
+    "alternator_voltage",
+    "fuel_level",
+    "maintenance_hours",
+}
 RAPID_READER_TIMEOUT = max(1.0, float(os.environ.get("RC_RAPID_READER_TIMEOUT", "4")))
 BRIDGE_STATUS_STALE_SECONDS = max(
     5.0,
@@ -93,12 +112,19 @@ def _reader_ready():
     return ""
 
 
-def _is_undefined_raw(generator, raw_value):
-    model = str(generator.get("controller_model") or "").strip().lower()
-    if model not in {"inteligen 200", "comap inteligen 200", "ig200", "ig 200"}:
+def _is_undefined_raw(generator, key, raw_value):
+    """Filtra sentinelas Modbus sem transformar N/D em grandezas físicas.
+
+    Os exports ComAp usam -32768/32768 (e equivalentes 32-bit) para
+    valores analógicos indisponíveis. A filtragem é limitada a métricas
+    analógicas conhecidas para não confundir contadores unsigned legítimos.
+    """
+    if str(generator.get("controller_type") or "").strip().upper() != "COMAP":
+        return False
+    if key not in _COMAP_SENTINEL_KEYS:
         return False
     try:
-        return float(raw_value) in _IG200_UNDEFINED
+        return float(raw_value) in _COMAP_UNDEFINED
     except (TypeError, ValueError, OverflowError):
         return False
 
@@ -295,7 +321,7 @@ def trend_for_generator(generator, metric, hours=24, archive_bit=1):
         if not item.get("defined"):
             continue
         raw_value = item.get("val", 0)
-        if _is_undefined_raw(generator, raw_value):
+        if _is_undefined_raw(generator, key, raw_value):
             continue
         try:
             value = float(raw_value) * scale
@@ -572,7 +598,18 @@ def _overlay_generators(generators):
         def last_known():
             if not snapshot:
                 return {}, [], None
-            return snapshot["values"], snapshot["defined"], snapshot["updated_at"]
+            allowed = set(configured)
+            # MCB/GCB são derivados do Breaker State e podem permanecer como
+            # último feedback enquanto esse registrador estiver no pack atual.
+            if "breaker_state_raw" in allowed:
+                allowed.update({"mcb_closed", "gcb_closed"})
+            values = {
+                key: value
+                for key, value in snapshot["values"].items()
+                if key in allowed
+            }
+            defined = [key for key in snapshot["defined"] if key in allowed]
+            return values, defined, snapshot["updated_at"]
 
         if not generator.get("enabled"):
             health.update({"controller": "unknown", "telemetry": "not_configured"})
@@ -613,7 +650,7 @@ def _overlay_generators(generators):
             if not item or not item.get("defined"):
                 continue
             raw_value = item.get("val")
-            if _is_undefined_raw(generator, raw_value):
+            if _is_undefined_raw(generator, key, raw_value):
                 continue
             try:
                 scale = float(cfg.get("scale", 1.0))
@@ -622,6 +659,11 @@ def _overlay_generators(generators):
                 invalid_values.append(key)
                 continue
             if not math.isfinite(value):
+                invalid_values.append(key)
+                continue
+            # PF físico é adimensional e deve permanecer no intervalo [-1, 1].
+            # Qualquer valor fora disso é erro de mapa/escala ou sentinela.
+            if key == "power_factor" and not -1.001 <= value <= 1.001:
                 invalid_values.append(key)
                 continue
             values[key] = (

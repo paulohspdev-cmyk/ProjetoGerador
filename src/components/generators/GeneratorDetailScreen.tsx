@@ -62,7 +62,13 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
     setMessage(null);
     try {
       const result = await rcApi.generators.command(gen.id, action);
-      setMessage(result.reason || `Comando ${action.toUpperCase()} aceito pelo controlador.`);
+      const rpmConfirmation =
+        result.rpm_after != null
+          ? ` · RPM após comando: ${Math.round(result.rpm_after)} · sincronizando telemetria`
+          : " · aguardando sincronização da telemetria";
+      setMessage(
+        `${result.reason || `Comando ${action.toUpperCase()} aceito pelo controlador`}${rpmConfirmation}`,
+      );
       await refresh();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Falha ao executar o comando.");

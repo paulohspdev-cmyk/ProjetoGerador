@@ -1,7 +1,7 @@
 import type { Generator } from "@/data/generators";
 
-import { displayGeneratorName, hasMetric, metricNumber } from "../generator-metrics";
-import { hasPositiveMeasurement, isPositiveMeasurement } from "../generator-presence";
+import { displayGeneratorName, hasFreshMetric, metricNumber } from "../generator-metrics";
+import { isPositiveMeasurement } from "../generator-presence";
 
 export type GeneratorDetailModel = ReturnType<typeof buildGeneratorDetailModel>;
 
@@ -35,15 +35,27 @@ export function buildGeneratorDetailModel(gen: Generator) {
   const runHours = metricNumber(gen, "run_hours", gen.runHours);
   const alarms = metricNumber(gen, "alarm_count", gen.alarms);
 
-  const runningKnown = rpm != null;
+  const runningKnown = rpm != null && hasFreshMetric(gen, "rpm");
   const running = runningKnown ? isPositiveMeasurement(rpm) : null;
-  const mcbKnown = hasMetric(gen, "mcb_closed");
-  const gcbKnown = hasMetric(gen, "gcb_closed");
-  const modeKnown = hasMetric(gen, "controller_mode_raw");
+  const mcbKnown = hasFreshMetric(gen, "mcb_closed");
+  const gcbKnown = hasFreshMetric(gen, "gcb_closed");
+  const modeKnown = hasFreshMetric(gen, "controller_mode_raw");
   const mcb = mcbKnown && gen.mcb;
   const gcb = gcbKnown && gen.gcb;
-  const mainsKnown = [mainsL1, mainsL2, mainsL3, mainsL12].some((value) => value != null);
-  const mainsOk = mainsKnown && hasPositiveMeasurement([mainsL1, mainsL2, mainsL3, mainsL12]);
+  const mainsKnown =
+    ["mains_voltage_l1", "mains_voltage_l2", "mains_voltage_l3", "mains_voltage_l1_l2"].some(
+      (key) => hasFreshMetric(gen, key),
+    ) || hasFreshMetric(gen, "mains_frequency");
+  const mainsPeakVoltage = Math.max(
+    0,
+    ...[mainsL1, mainsL2, mainsL3, mainsL12].filter((value): value is number => value != null),
+  );
+  const mainsPresent =
+    mainsKnown &&
+    (mainsPeakVoltage >= 80 ||
+      (hasFreshMetric(gen, "mains_frequency") && (gen.mainsFrequency ?? 0) >= 20) ||
+      (mcbKnown && mcb));
+  const mainsOk = mainsPresent;
   const modeLabel = modeKnown ? gen.mode : "N/D";
 
   return {
@@ -75,6 +87,7 @@ export function buildGeneratorDetailModel(gen: Generator) {
     mcb,
     gcb,
     mainsKnown,
+    mainsPresent,
     mainsOk,
     modeLabel,
     ready: statusText(gen, running),

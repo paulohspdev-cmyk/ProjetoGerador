@@ -447,6 +447,38 @@
   white-space: nowrap;
 }
 
+.comap-engine.is-last-known .engine-value {
+  color: var(--comap-muted);
+}
+
+.comap-engine .engine-value small {
+  margin-left: 4px;
+  color: var(--comap-muted);
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.comap-table-head.is-generator-only,
+.comap-table-row.is-generator-only {
+  grid-template-columns: minmax(0, 1fr) 68px;
+}
+
+.mains-presence {
+  color: var(--comap-muted);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.mains-presence.is-present {
+  color: var(--comap-online);
+}
+
+.mains-presence.is-absent {
+  color: var(--comap-muted);
+}
+
 .comap-detail {
   width: 100%;
   max-width: 880px;

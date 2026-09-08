@@ -24,6 +24,8 @@ import argparse
 import json
 import os
 import shutil
+import socket
+import struct
 import sys
 import time
 import xml.etree.ElementTree as ET
@@ -63,6 +65,90 @@ LINE_OPTION_DEFAULTS = {
     "PollAfterCmd": "false",
     "DetailedLog": "true",
 }
+
+
+def _decode_ascii_registers(registers: list[int]) -> str:
+    raw = b"".join(struct.pack(">H", int(value) & 0xFFFF) for value in registers)
+    return raw.split(b"\x00", 1)[0].decode("ascii", errors="ignore").strip()
+
+
+def _read_modbus_tcp_registers(host: str, port: int, unit: int, address: int, count: int) -> list[int]:
+    """Leitura FC03 curta usada apenas para identificação antes do provisionamento."""
+    tid = int(time.time() * 1000) & 0xFFFF or 1
+    pdu = struct.pack(">BHH", 3, int(address), int(count))
+    frame = struct.pack(">HHHB", tid, 0, len(pdu) + 1, int(unit)) + pdu
+    with socket.create_connection((host, int(port)), timeout=1.5) as sock:
+        sock.settimeout(1.5)
+        sock.sendall(frame)
+        header = b""
+        while len(header) < 7:
+            chunk = sock.recv(7 - len(header))
+            if not chunk:
+                raise ConnectionError("resposta Modbus encerrada durante o cabeçalho")
+            header += chunk
+        r_tid, proto, length, r_unit = struct.unpack(">HHHB", header)
+        if r_tid != tid or proto != 0 or r_unit != int(unit) or length < 2:
+            raise ValueError("resposta Modbus de identificação inválida")
+        body = b""
+        while len(body) < length - 1:
+            chunk = sock.recv(length - 1 - len(body))
+            if not chunk:
+                raise ConnectionError("resposta Modbus encerrada durante o PDU")
+            body += chunk
+        if body[0] & 0x80:
+            raise ValueError(f"exceção Modbus FC03/{body[1]}")
+        if body[0] != 3 or body[1] != count * 2:
+            raise ValueError("payload FC03 inesperado na identificação")
+        return list(struct.unpack(">" + "H" * count, body[2:]))
+
+
+def _probe_comap_identity(generator: dict) -> dict | None:
+    if str(generator.get("controller_type") or "").upper() != "COMAP":
+        return None
+    transport = str(generator.get("transport") or "")
+    if transport == "reverse_tcp":
+        host = "127.0.0.1"
+        port = int(generator.get("listen_port") or 0) + LOCAL_OFFSET
+    elif transport == "modbus_tcp_direct":
+        host = str(generator.get("host") or "").strip()
+        port = int(generator.get("listen_port") or 502)
+    else:
+        return None
+    unit = int(generator.get("modbus_unit") or 1)
+    probes = (
+        ("inteligen-200", 1265, 16),
+        ("ig4-200", 1328, 16),
+    )
+    for family, address, count in probes:
+        try:
+            text = _decode_ascii_registers(_read_modbus_tcp_registers(host, port, unit, address, count))
+        except Exception:
+            continue
+        normalized = text.lower().replace(" ", "")
+        if "inteligen4200" in normalized:
+            return {"family": "ig4-200", "identity": text, "endpoint": f"{host}:{port}", "unit": unit}
+        if "inteligen200" in normalized:
+            return {"family": "inteligen-200", "identity": text, "endpoint": f"{host}:{port}", "unit": unit}
+    return None
+
+
+def _verify_controller_identity(generator: dict, pack: dict) -> dict | None:
+    probe = _probe_comap_identity(generator)
+    if not probe:
+        return None
+    pack_id = str(pack.get("packId") or "")
+    expected = None
+    if pack_id.endswith("/inteligen-200"):
+        expected = "inteligen-200"
+    elif pack_id.endswith("/ig4-200"):
+        expected = "ig4-200"
+    if expected and probe["family"] != expected:
+        raise ValueError(
+            "Controller Pack incompatível com a controladora física: "
+            f"cadastro={generator.get('controller_model')}; detectado={probe['identity']}; "
+            f"endpoint={probe['endpoint']} Unit={probe['unit']}"
+        )
+    return probe
 
 
 def _max_pk(path: Path, key: str, floor: int) -> int:
@@ -748,6 +834,10 @@ def provision(generator_id: str, restart: bool = True):
     config = get_transport_config(generator["id"])
     validate_for_transport(generator, config)
     _ensure_unique_reverse_identity(generator)
+    # Se a controladora estiver alcançável, o próprio equipamento confirma a
+    # família antes de qualquer mutação Rapid. Equipamento offline continua
+    # provisionável, mas uma identidade legível e incompatível bloqueia fail-closed.
+    _verify_controller_identity(generator, pack)
 
     required = [DAT / "commline.dat", DAT / "device.dat", DAT / "cnl.dat", CFG, BASE / template_rel]
     for path in required:

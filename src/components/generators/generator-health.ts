@@ -105,7 +105,14 @@ export function readGeneratorTelemetry(gen: Generator) {
   const frequency = metricNumber(gen, "frequency", gen.frequency);
   const mainsFrequency = metricNumber(gen, "mains_frequency", gen.mainsFrequency);
   const powerKw = metricNumber(gen, "power_kw", gen.load);
-  const powerFactor = metricNumber(gen, "power_factor", undefined);
+  const rawPowerFactor = metricNumber(gen, "power_factor", undefined);
+  const powerFactor =
+    rawPowerFactor != null &&
+    Math.abs(rawPowerFactor) <= 1.001 &&
+    powerKw != null &&
+    Math.abs(powerKw) > 0.1
+      ? rawPowerFactor
+      : null;
   const nominalPower =
     metricNumber(gen, "nominal_power_kw", gen.nominalPower) ??
     metricNumber(gen, "nominal_power", gen.nominalPower);

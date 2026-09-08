@@ -25,6 +25,7 @@ export function GeneratorDetailPowerFlow({
     mcb,
     gcb,
     mainsKnown,
+    mainsPresent,
     mainsOk,
     modeLabel,
     frequency,
@@ -60,25 +61,32 @@ export function GeneratorDetailPowerFlow({
             N/D
           </button>
 
-          <div className="absolute left-[1%] top-[24%] z-[2] flex flex-col items-center gap-0.5">
-            <span className="flow-breaker-name">MCB</span>
-            <div className="flex flex-col gap-0.5">
-              <IoBtn
-                label="I"
-                tone="close"
-                active={mcbKnown && mcb}
-                ariaLabel={mcbKnown ? "MCB fechado" : "Estado MCB indisponível"}
-              />
-              <IoBtn
-                label="O"
-                tone="open"
-                active={mcbKnown && !mcb}
-                ariaLabel={mcbKnown ? "MCB aberto" : "Estado MCB indisponível"}
-              />
+          {mainsPresent && (
+            <div className="absolute left-[1%] top-[24%] z-[2] flex flex-col items-center gap-0.5">
+              <span className="flow-breaker-name">MCB</span>
+              <div className="flex flex-col gap-0.5">
+                <IoBtn
+                  label="I"
+                  tone="close"
+                  active={mcbKnown && mcb}
+                  ariaLabel={mcbKnown ? "MCB fechado" : "Estado MCB indisponível"}
+                />
+                <IoBtn
+                  label="O"
+                  tone="open"
+                  active={mcbKnown && !mcb}
+                  ariaLabel={mcbKnown ? "MCB aberto" : "Estado MCB indisponível"}
+                />
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="absolute left-[1%] top-[50%] z-[2] flex flex-col items-center gap-0.5">
+          <div
+            className={cn(
+              "absolute left-[1%] z-[2] flex flex-col items-center gap-0.5",
+              mainsPresent ? "top-[50%]" : "top-[38%]",
+            )}
+          >
             <span className="flow-breaker-name">GCB</span>
             <div className="flex flex-col gap-0.5">
               <IoBtn
@@ -111,6 +119,7 @@ export function GeneratorDetailPowerFlow({
             gridHzKnown={false}
             genHzKnown={frequency != null}
             loadKnown={load != null}
+            showMainsSource={mainsPresent}
           />
 
           <div className="absolute bottom-[2%] right-[1%] z-10 flex flex-col gap-1">
