@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "@tanstack/react-router";
 import {
-  Bell,
   ChevronDown,
   LayoutGrid,
   List,
@@ -24,8 +22,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useLayout } from "@/components/layout/LayoutContext";
 import { useTheme } from "@/components/layout/ThemeProvider";
-import { useScadaOps } from "@/components/scada/ScadaOpsProvider";
-import { buildAlarms } from "@/data/scada";
 import { statusLabel, type GenStatus } from "@/data/generators";
 import { cn } from "@/lib/utils";
 import { CompactCard } from "./CompactCard";
@@ -56,16 +52,12 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
   const { generators, ready, error, refresh } = useGenerators();
   const { fullscreen, toggleFullscreen } = useLayout();
   const { theme, toggleTheme } = useTheme();
-  const { isAcked } = useScadaOps();
   const [view, setView] = useState<View>("principal");
   const [status, setStatus] = useState<GenStatus | "todos">("online");
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState(0);
   const viewportRef = useRef<HTMLDivElement>(null);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
-  const alarmCount = buildAlarms(generators).filter(
-    (alarm) => !isAcked(alarm.id, alarm.ack),
-  ).length;
 
   useEffect(() => {
     const element = viewportRef.current;
@@ -98,6 +90,9 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
     if (view === "lista") return Math.max(1, Math.floor(viewport.height / 43));
 
     if (view === "principal") {
+      // O cartão vertical precisa continuar legível. Ele nunca é dividido em
+      // duas linhas comprimidas: usamos uma fileira por página e deixamos a
+      // paginação absorver o restante da frota.
       const readableCardWidth = viewport.width >= 2200 ? 300 : 285;
       return Math.max(1, Math.min(8, Math.floor((viewport.width + 8) / (readableCardWidth + 8))));
     }
@@ -199,20 +194,6 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
       >
         {fullscreen ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
       </button>
-      <Link
-        to="/p/$slug"
-        params={{ slug: "alarmes" }}
-        title="Alarmes"
-        aria-label="Alarmes"
-        className="relative grid size-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-      >
-        <Bell className="size-3.5" />
-        {alarmCount > 0 && (
-          <span className="num absolute -right-0.5 -top-1 rounded-full bg-destructive px-1 text-[8px] font-bold leading-3.5 text-destructive-foreground">
-            {alarmCount}
-          </span>
-        )}
-      </Link>
     </div>
   );
 
