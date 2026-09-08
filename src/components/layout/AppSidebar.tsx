@@ -1,11 +1,29 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { ChevronDown, PanelLeftClose, PanelLeftOpen, X, Zap } from "lucide-react";
+import {
+  Bell,
+  ChevronDown,
+  LogOut,
+  Maximize2,
+  Minimize2,
+  Moon,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Sun,
+  UserRound,
+  X,
+  Zap,
+} from "lucide-react";
 
 import { navGroups } from "@/data/nav";
 import { cn } from "@/lib/utils";
 import { useLayout } from "@/components/layout/LayoutContext";
+import { useTheme } from "@/components/layout/ThemeProvider";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useGenerators } from "@/components/generators/GeneratorsProvider";
+import { useScadaOps } from "@/components/scada/ScadaOpsProvider";
+import { buildAlarms } from "@/data/scada";
+import { ROLE_LABEL } from "@/lib/auth";
 import { RegisterGeneratorButton } from "@/components/generators/RegisterGeneratorButton";
 import { canManageGenerators } from "@/components/generators/DeleteGeneratorButton";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
@@ -20,7 +38,14 @@ type NavProps = {
 
 function SidebarNav({ collapsed, onNavigate, onToggle, onClose, touchFriendly }: NavProps) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
-  const { can } = useAuth();
+  const { can, user, logout } = useAuth();
+  const { fullscreen, toggleFullscreen } = useLayout();
+  const { theme, toggleTheme } = useTheme();
+  const { generators } = useGenerators();
+  const { isAcked } = useScadaOps();
+  const alarmCount = buildAlarms(generators).filter(
+    (alarm) => !isAcked(alarm.id, alarm.ack),
+  ).length;
   const canRegister = canManageGenerators(can);
   const admin = can("manageUsers");
   const hrefFor = (slug: string) => (slug === "" ? "/" : `/p/${slug}`);
@@ -107,6 +132,49 @@ function SidebarNav({ collapsed, onNavigate, onToggle, onClose, touchFriendly }:
             <X className="size-4" />
           </button>
         )}
+      </div>
+
+      <div
+        className={cn(
+          "shrink-0 border-b border-sidebar-border",
+          collapsed ? "grid grid-cols-1 gap-1 px-2 py-2" : "grid grid-cols-3 gap-1.5 px-2 py-2",
+        )}
+        aria-label="Ações rápidas"
+      >
+        <button
+          type="button"
+          onClick={toggleTheme}
+          title={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
+          aria-label={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
+          className="grid h-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        >
+          {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+        </button>
+        <button
+          type="button"
+          onClick={toggleFullscreen}
+          title={fullscreen ? "Sair da tela cheia" : "Tela cheia"}
+          aria-label={fullscreen ? "Sair da tela cheia" : "Tela cheia"}
+          aria-pressed={fullscreen}
+          className="grid h-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        >
+          {fullscreen ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
+        </button>
+        <Link
+          to="/p/$slug"
+          params={{ slug: "alarmes" }}
+          title="Alarmes"
+          aria-label="Alarmes"
+          onClick={onNavigate}
+          className="relative grid h-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        >
+          <Bell className="size-4" />
+          {alarmCount > 0 && (
+            <span className="num absolute right-1 top-0 rounded-full bg-destructive px-1.5 text-[9px] font-bold leading-4 text-destructive-foreground">
+              {alarmCount}
+            </span>
+          )}
+        </Link>
       </div>
 
       <nav className="scroll-slim flex-1 overflow-y-auto overscroll-contain px-2 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
@@ -196,18 +264,63 @@ function SidebarNav({ collapsed, onNavigate, onToggle, onClose, touchFriendly }:
         })}
       </nav>
 
-      {!collapsed && (
-        <div className="border-t border-sidebar-border px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-          <p className="text-xs text-muted-foreground">RC Geradores • Operação industrial</p>
-        </div>
-      )}
+      <div
+        className={cn(
+          "shrink-0 border-t border-sidebar-border pb-[max(0.5rem,env(safe-area-inset-bottom))]",
+          collapsed ? "grid place-items-center gap-1 px-2 py-2" : "px-2 py-2",
+        )}
+      >
+        {collapsed ? (
+          <>
+            <div
+              className="grid size-9 place-items-center rounded-full bg-sidebar-accent text-muted-foreground"
+              title={`${user?.name ?? "Usuário"} · ${user ? ROLE_LABEL[user.role] : ""}`}
+              aria-label={user?.name ?? "Usuário"}
+            >
+              <UserRound className="size-4" />
+            </div>
+            <button
+              type="button"
+              onClick={logout}
+              title="Sair"
+              aria-label="Sair"
+              className="grid size-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            >
+              <LogOut className="size-4" />
+            </button>
+          </>
+        ) : (
+          <div className="flex min-w-0 items-center gap-2 rounded-md px-1 py-1">
+            <div className="grid size-9 shrink-0 place-items-center rounded-full bg-sidebar-accent text-muted-foreground">
+              <UserRound className="size-4" />
+            </div>
+            <div className="min-w-0 flex-1 leading-tight">
+              <p className="truncate text-xs font-bold text-sidebar-foreground">
+                {user?.name ?? "—"}
+              </p>
+              <p className="truncate text-[10px] text-muted-foreground">
+                {user ? ROLE_LABEL[user.role] : ""}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={logout}
+              title="Sair"
+              aria-label="Sair"
+              className="grid size-9 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            >
+              <LogOut className="size-4" />
+            </button>
+          </div>
+        )}
+      </div>
     </>
   );
 }
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
-  const { collapsed, toggleCollapsed, mobileOpen, setMobileOpen, fullscreen } = useLayout();
+  const { collapsed, toggleCollapsed, mobileOpen, setMobileOpen } = useLayout();
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname, setMobileOpen]);
@@ -218,7 +331,6 @@ export function AppSidebar() {
         className={cn(
           "sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-200 lg:flex",
           collapsed ? "w-[72px]" : "w-[252px] 3xl:w-[280px]",
-          fullscreen && "!hidden",
         )}
       >
         <SidebarNav collapsed={collapsed} onToggle={toggleCollapsed} />
