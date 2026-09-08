@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, LayoutGrid, List, RefreshCw, Rows3, SlidersHorizontal } from "lucide-react";
-
-import { Topbar } from "@/components/layout/Topbar";
+import {
+  ChevronDown,
+  LayoutGrid,
+  List,
+  RefreshCw,
+  Rows3,
+  Search,
+  SlidersHorizontal,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -102,8 +108,8 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
     setGroup(0);
   };
 
-  const tools = (
-    <div className="flex min-w-max items-center gap-2 pr-2 lg:min-w-0 lg:flex-1 lg:px-2">
+  const footerControls = (
+    <div className="flex min-w-max items-center gap-2">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
@@ -164,19 +170,6 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      <Topbar
-        breadcrumb={["RC Geradores", "Geradores"]}
-        title="Geradores"
-        tools={tools}
-        search={{
-          value: query,
-          onChange: (value) => {
-            setQuery(value);
-            setGroup(0);
-          },
-        }}
-      />
-
       <div
         className={cn(
           "flex min-h-0 min-w-0 flex-1 flex-col gap-1 overflow-hidden p-1",
@@ -258,8 +251,10 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
           )}
         </div>
 
-        {pages > 1 && (
-          <div className="flex shrink-0 items-center justify-center gap-3 border-t border-border/60 pt-1 text-xs text-muted-foreground">
+        <div className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 border-t border-border/60 pt-1 text-xs text-muted-foreground">
+          <div className="scroll-slim min-w-0 overflow-x-auto">{footerControls}</div>
+
+          <div className="flex items-center justify-center gap-3">
             <button
               type="button"
               disabled={page === 0}
@@ -268,7 +263,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
             >
               Anterior
             </button>
-            <span className="num font-semibold">
+            <span className="num whitespace-nowrap font-semibold">
               Página {page + 1} de {pages}
             </span>
             <button
@@ -280,7 +275,21 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
               Próxima
             </button>
           </div>
-        )}
+
+          <label className="ml-auto flex h-8 min-w-0 max-w-52 items-center gap-1.5 rounded-md border border-input bg-background px-2.5 focus-within:border-primary">
+            <Search className="size-3.5 shrink-0 text-muted-foreground" />
+            <input
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setGroup(0);
+              }}
+              placeholder="Buscar"
+              aria-label="Buscar gerador"
+              className="min-w-0 w-full bg-transparent text-xs outline-none placeholder:text-muted-foreground"
+            />
+          </label>
+        </div>
       </div>
     </div>
   );
