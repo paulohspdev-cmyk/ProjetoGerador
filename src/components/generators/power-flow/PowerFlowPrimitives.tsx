@@ -136,13 +136,10 @@ function gaugeLabelValues(maximum: number) {
 export function PowerGaugeKw({
   value,
   nominal,
-  rpm,
   battery,
-  powerFactor = null,
 }: {
   value: number | null;
   nominal: number | null;
-  rpm: number | null;
   battery: number | null;
   powerFactor?: number | null;
 }) {
@@ -223,17 +220,6 @@ export function PowerGaugeKw({
 
   return (
     <div className="generator-power-instrument">
-      <div className="generator-power-meta" aria-label="Dados auxiliares do instrumento">
-        <span>
-          <b>RPM:</b>
-          <strong>{rpm == null ? "N/D" : fmt(rpm, 0)}</strong>
-        </span>
-        <span>
-          <b>PF:</b>
-          <strong>{powerFactor == null ? "N/D" : fmt(powerFactor, 2)}</strong>
-        </span>
-      </div>
-
       <svg
         viewBox="0 0 300 205"
         className="generator-power-gauge"
