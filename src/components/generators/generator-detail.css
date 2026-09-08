@@ -694,3 +694,424 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* --------------------------------------------------------------------------
+ * Dashboard de detalhe legível
+ * Evita comprimir todo o detalhe dentro de uma única viewport. Em desktop,
+ * os blocos ganham proporção de painel industrial; em telas menores passam
+ * para fluxo vertical sem sobreposição.
+ * -------------------------------------------------------------------------- */
+.gen-detail {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-rows: auto;
+  grid-template-areas: none;
+  gap: 10px;
+  height: 100%;
+  padding: 8px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  align-content: start;
+}
+
+.gen-top {
+  grid-area: auto;
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(320px, 1.15fr) minmax(0, 3fr) minmax(190px, 0.8fr);
+  gap: 10px;
+}
+
+.gen-top > details {
+  grid-column: 1 / -1;
+}
+
+.gen-ident {
+  min-height: 112px;
+  padding: 10px 12px;
+  border-radius: 12px;
+}
+
+.gen-ident-photo {
+  width: 132px;
+  height: 90px;
+}
+
+.gen-ident h1 {
+  font-size: 22px;
+  line-height: 1.05;
+}
+
+.gen-ident p {
+  font-size: 12px;
+}
+
+.gen-true {
+  padding: 5px 10px;
+  font-size: 11px;
+}
+
+.gen-kpis {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.gen-kpi {
+  display: flex;
+  min-height: 112px;
+  flex-direction: column;
+  justify-content: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+}
+
+.gen-kpi p {
+  font-size: 10px;
+}
+
+.gen-kpi strong {
+  margin-top: 6px;
+  font-size: clamp(20px, 1.55vw, 28px);
+}
+
+.gen-kpi span {
+  margin-top: 5px;
+  font-size: 10px;
+}
+
+.gen-cmds {
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.gen-cmds button {
+  min-height: 50px;
+  border: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.flow-icons {
+  grid-area: auto;
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-rows: none;
+  gap: 8px;
+  min-height: 0;
+}
+
+.flow-chip {
+  min-height: 82px;
+  padding: 10px 12px;
+  border-radius: 12px;
+}
+
+.flow-chip p {
+  font-size: 10px;
+}
+
+.flow-chip strong {
+  margin-top: 4px;
+  font-size: clamp(18px, 1.45vw, 25px);
+}
+
+.flow-chip-icon {
+  width: 44px;
+  height: 44px;
+}
+
+.gen-flow {
+  grid-area: auto;
+  grid-column: span 5;
+  min-height: 530px !important;
+  height: 530px !important;
+  border-radius: 12px;
+}
+
+.gen-flow .comap-sld-stage {
+  width: min(100%, 310px);
+  max-width: 310px;
+}
+
+.gen-flow .comap-start,
+.gen-flow .comap-stop {
+  width: 54px;
+  height: 38px;
+  font-size: 10px;
+}
+
+.gen-flow .comap-table-head,
+.gen-flow .comap-table-row {
+  min-height: 21px;
+  font-size: 11px;
+}
+
+.gen-mid {
+  grid-area: auto;
+  grid-column: span 7;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: auto auto;
+  gap: 10px;
+  overflow: visible;
+}
+
+.gen-mid > .gen-card {
+  min-height: 192px;
+}
+
+.gen-mid > .gen-motor {
+  grid-column: 1 / -1;
+  min-height: 356px;
+}
+
+.gen-card,
+.gen-read,
+.maint-bar {
+  border-radius: 12px;
+}
+
+.gen-card-head {
+  min-height: 42px;
+  padding: 9px 12px 7px;
+}
+
+.gen-card-head h2 {
+  color: var(--foreground);
+  font-size: 12px;
+  letter-spacing: 0.055em;
+}
+
+.gen-flags {
+  gap: 6px;
+  padding: 0 10px 10px;
+}
+
+.gen-flag {
+  min-height: 38px;
+  padding: 6px 9px;
+}
+
+.gen-flag span,
+.gen-flag b {
+  font-size: 10px;
+}
+
+.gen-metrics {
+  gap: 6px;
+  padding: 0 10px 10px;
+}
+
+.gen-cell {
+  min-height: 54px;
+  padding: 7px 9px;
+}
+
+.gen-cell p {
+  font-size: 9px;
+  white-space: normal;
+  line-height: 1.15;
+}
+
+.gen-cell strong {
+  margin-top: 4px;
+  font-size: 14px;
+  white-space: normal;
+  line-height: 1.15;
+}
+
+.gen-ecu-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: minmax(58px, auto);
+}
+
+.gen-data {
+  grid-area: auto;
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1.2fr 1.5fr 0.72fr;
+  grid-template-rows: minmax(320px, auto);
+  gap: 10px;
+  min-height: 320px;
+  overflow: visible;
+}
+
+.gen-data > .gen-elec,
+.gen-data > .gen-dials,
+.gen-data > .maint-bar {
+  min-height: 320px;
+}
+
+.gen-elec .gen-metrics {
+  grid-auto-rows: minmax(48px, auto);
+  padding: 0 10px 10px;
+}
+
+.gen-dials {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.gen-read {
+  padding: 12px 10px;
+}
+
+.gen-read p {
+  font-size: 10px;
+}
+
+.gen-read strong {
+  font-size: clamp(22px, 2vw, 32px);
+}
+
+.gen-data > .maint-bar {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 18px 14px;
+}
+
+.maint-bar h3 {
+  font-size: 10px;
+}
+
+.maint-bar strong {
+  font-size: 24px;
+}
+
+.maint-track {
+  height: 12px;
+  margin-top: 12px;
+}
+
+.maint-bar p {
+  margin-top: 10px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.gen-bottom {
+  grid-area: auto;
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(360px, 1.5fr) repeat(3, minmax(230px, 1fr));
+  gap: 10px;
+  min-height: 280px;
+}
+
+.gen-chart-card,
+.gen-bottom > .gen-card {
+  min-height: 280px;
+}
+
+.gen-resumo {
+  gap: 5px;
+  padding: 0 10px 10px;
+}
+
+.gen-resumo > div {
+  min-height: 25px;
+  align-items: center;
+  font-size: 11px;
+}
+
+.gen-phase {
+  gap: 5px 12px;
+  padding: 0 10px 10px;
+  font-size: 11px;
+}
+
+@media (max-width: 1500px) {
+  .gen-top {
+    grid-template-columns: minmax(300px, 1fr) minmax(0, 2.2fr);
+  }
+
+  .gen-cmds {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .gen-cmds button {
+    min-height: 42px;
+  }
+
+  .gen-kpis {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .flow-icons {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .gen-flow {
+    grid-column: 1 / -1;
+    min-height: 500px !important;
+    height: 500px !important;
+  }
+
+  .gen-mid {
+    grid-column: 1 / -1;
+  }
+
+  .gen-data {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .gen-data > .maint-bar {
+    grid-column: 1 / -1;
+    min-height: 150px;
+  }
+
+  .gen-bottom {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .gen-detail {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .gen-top {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .gen-kpis,
+  .flow-icons,
+  .gen-mid,
+  .gen-data,
+  .gen-bottom {
+    grid-template-columns: 1fr;
+  }
+
+  .gen-mid > .gen-motor,
+  .gen-data > .maint-bar {
+    grid-column: auto;
+  }
+
+  .gen-cmds {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .gen-flow {
+    min-height: 500px !important;
+    height: 500px !important;
+  }
+
+  .gen-ecu-grid,
+  .gen-metrics-4,
+  .gen-metrics-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .gen-bottom > .gen-card,
+  .gen-chart-card,
+  .gen-data > .gen-elec,
+  .gen-data > .gen-dials,
+  .gen-data > .maint-bar {
+    min-height: 260px;
+  }
+}
