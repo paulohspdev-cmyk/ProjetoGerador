@@ -39,9 +39,9 @@ class GeneratorCreate(BaseModel):
     def normalize_controller(self):
         if self.transport not in {"reverse_tcp", "modbus_tcp_direct", "rtu_over_tcp", "modbus_rtu_serial"}:
             raise ValueError("Transporte inválido")
-        if self.transport == "modbus_tcp_direct" and self.listenPort == 0:
+        if self.transport in {"modbus_tcp_direct", "rtu_over_tcp"} and self.listenPort == 0:
             self.listenPort = 502
-        if self.transport in {"reverse_tcp", "rtu_over_tcp"} and self.listenPort == 0:
+        if self.transport == "reverse_tcp" and self.listenPort == 0:
             raise ValueError("Transporte TCP exige porta válida entre 1 e 65535")
         if self.transport in {"modbus_tcp_direct", "rtu_over_tcp"} and not str(self.ip or "").strip():
             raise ValueError("Transporte TCP direto exige host/IP")
