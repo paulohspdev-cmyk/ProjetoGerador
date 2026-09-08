@@ -1,12 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import {
+  Bell,
   ChevronDown,
   LayoutGrid,
   List,
+  Maximize2,
+  Minimize2,
+  Moon,
   RefreshCw,
   Rows3,
   Search,
   SlidersHorizontal,
+  Sun,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -16,6 +22,10 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useLayout } from "@/components/layout/LayoutContext";
+import { useTheme } from "@/components/layout/ThemeProvider";
+import { useScadaOps } from "@/components/scada/ScadaOpsProvider";
+import { buildAlarms } from "@/data/scada";
 import { statusLabel, type GenStatus } from "@/data/generators";
 import { cn } from "@/lib/utils";
 import { CompactCard } from "./CompactCard";
@@ -44,12 +54,18 @@ const filters: Array<{ id: GenStatus | "todos"; label: string }> = [
 
 export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
   const { generators, ready, error, refresh } = useGenerators();
+  const { fullscreen, toggleFullscreen } = useLayout();
+  const { theme, toggleTheme } = useTheme();
+  const { isAcked } = useScadaOps();
   const [view, setView] = useState<View>("principal");
   const [status, setStatus] = useState<GenStatus | "todos">("online");
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState(0);
   const viewportRef = useRef<HTMLDivElement>(null);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
+  const alarmCount = buildAlarms(generators).filter(
+    (alarm) => !isAcked(alarm.id, alarm.ack),
+  ).length;
 
   useEffect(() => {
     const element = viewportRef.current;
@@ -82,9 +98,6 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
     if (view === "lista") return Math.max(1, Math.floor(viewport.height / 43));
 
     if (view === "principal") {
-      // O cartão vertical precisa continuar legível. Ele nunca é dividido em
-      // duas linhas comprimidas: usamos uma fileira por página e deixamos a
-      // paginação absorver o restante da frota.
       const readableCardWidth = viewport.width >= 2200 ? 300 : 285;
       return Math.max(1, Math.min(8, Math.floor((viewport.width + 8) / (readableCardWidth + 8))));
     }
@@ -114,11 +127,11 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="inline-flex h-8 items-center gap-2 rounded-md border border-border bg-card px-3 text-xs font-bold transition-colors hover:bg-secondary data-[state=open]:border-primary/50 data-[state=open]:bg-secondary"
+            className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border bg-card px-2.5 text-[11px] font-bold transition-colors hover:bg-secondary data-[state=open]:border-primary/50 data-[state=open]:bg-secondary"
           >
-            <currentView.icon className="size-4 text-primary" />
+            <currentView.icon className="size-3.5 text-primary" />
             <span>{currentView.label}</span>
-            <ChevronDown className="size-3.5 text-muted-foreground" />
+            <ChevronDown className="size-3 text-muted-foreground" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-48">
@@ -144,11 +157,11 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="inline-flex h-8 items-center gap-2 rounded-md border border-border bg-card px-3 text-xs font-bold transition-colors hover:bg-secondary data-[state=open]:border-primary/50 data-[state=open]:bg-secondary"
+            className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border bg-card px-2.5 text-[11px] font-bold transition-colors hover:bg-secondary data-[state=open]:border-primary/50 data-[state=open]:bg-secondary"
           >
-            <SlidersHorizontal className="size-4 text-primary" />
+            <SlidersHorizontal className="size-3.5 text-primary" />
             <span>{currentFilter.label}</span>
-            <ChevronDown className="size-3.5 text-muted-foreground" />
+            <ChevronDown className="size-3 text-muted-foreground" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-52">
@@ -165,6 +178,41 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <span className="mx-0.5 h-5 w-px bg-border" aria-hidden />
+      <button
+        type="button"
+        onClick={toggleTheme}
+        title={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
+        aria-label={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
+        className="grid size-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+      >
+        {theme === "dark" ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
+      </button>
+      <button
+        type="button"
+        onClick={toggleFullscreen}
+        title={fullscreen ? "Sair da tela cheia" : "Tela cheia"}
+        aria-label={fullscreen ? "Sair da tela cheia" : "Tela cheia"}
+        aria-pressed={fullscreen}
+        className="grid size-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+      >
+        {fullscreen ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
+      </button>
+      <Link
+        to="/p/$slug"
+        params={{ slug: "alarmes" }}
+        title="Alarmes"
+        aria-label="Alarmes"
+        className="relative grid size-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+      >
+        <Bell className="size-3.5" />
+        {alarmCount > 0 && (
+          <span className="num absolute -right-0.5 -top-1 rounded-full bg-destructive px-1 text-[8px] font-bold leading-3.5 text-destructive-foreground">
+            {alarmCount}
+          </span>
+        )}
+      </Link>
     </div>
   );
 
@@ -251,7 +299,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
           )}
         </div>
 
-        <div className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 border-t border-border/60 pt-1 text-xs text-muted-foreground">
+        <div className="grid min-h-8 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5 border-t border-border/60 py-0.5 text-[11px] text-muted-foreground">
           <div className="scroll-slim min-w-0 overflow-x-auto">{footerControls}</div>
 
           <div className="flex items-center justify-center gap-3">
@@ -259,7 +307,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
               type="button"
               disabled={page === 0}
               onClick={() => setGroup((current) => Math.max(0, current - 1))}
-              className="h-7 rounded-md border border-border px-3 font-semibold text-foreground disabled:opacity-40"
+              className="h-6 rounded-md border border-border px-2.5 text-[11px] font-semibold text-foreground disabled:opacity-40"
             >
               Anterior
             </button>
@@ -270,13 +318,13 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
               type="button"
               disabled={page >= pages - 1}
               onClick={() => setGroup((current) => Math.min(pages - 1, current + 1))}
-              className="h-7 rounded-md border border-border px-3 font-semibold text-foreground disabled:opacity-40"
+              className="h-6 rounded-md border border-border px-2.5 text-[11px] font-semibold text-foreground disabled:opacity-40"
             >
               Próxima
             </button>
           </div>
 
-          <label className="ml-auto flex h-8 min-w-0 max-w-52 items-center gap-1.5 rounded-md border border-input bg-background px-2.5 focus-within:border-primary">
+          <label className="ml-auto flex h-7 min-w-0 max-w-48 items-center gap-1.5 rounded-md border border-input bg-background px-2 focus-within:border-primary">
             <Search className="size-3.5 shrink-0 text-muted-foreground" />
             <input
               value={query}
