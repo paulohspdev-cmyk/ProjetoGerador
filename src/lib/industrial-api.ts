@@ -88,10 +88,7 @@ export type GeneratorLifecycle = {
 };
 
 export type LifecycleTransport =
-  | "reverse_tcp"
-  | "modbus_tcp_direct"
-  | "rtu_over_tcp"
-  | "modbus_rtu_serial";
+  "reverse_tcp" | "modbus_tcp_direct" | "rtu_over_tcp" | "modbus_rtu_serial";
 
 export const industrialApi = {
   alarms: {
