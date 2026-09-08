@@ -83,12 +83,15 @@ export function GeneratorEditDialog({
       return;
     }
     if (transport !== "reverse_tcp" && !host.trim()) {
-      setError(isSerial ? "Informe o dispositivo serial." : "Informe o IP da controladora ou do gateway.");
+      setError(
+        isSerial ? "Informe o dispositivo serial." : "Informe o IP da controladora ou do gateway.",
+      );
       return;
     }
 
     const currentTransport = normalizedTransport(generator);
-    const currentPort = currentTransport === "modbus_rtu_serial" ? 0 : Number(generator.listenPort || 0);
+    const currentPort =
+      currentTransport === "modbus_rtu_serial" ? 0 : Number(generator.listenPort || 0);
     const connectionChanged =
       transport !== currentTransport ||
       (transport !== "reverse_tcp" && host.trim() !== generator.ip) ||
@@ -242,8 +245,8 @@ export function GeneratorEditDialog({
 
               {transport === "modbus_rtu_serial" && (
                 <p className="rounded-md border border-border bg-secondary/20 px-3 py-2 text-[11px] text-muted-foreground">
-                  Baud rate, paridade e stop bits devem estar definidos na configuração de transporte
-                  antes de provisionar. O sistema não inventa parâmetros seriais.
+                  Baud rate, paridade e stop bits devem estar definidos na configuração de
+                  transporte antes de provisionar. O sistema não inventa parâmetros seriais.
                 </p>
               )}
             </fieldset>
