@@ -45,7 +45,23 @@ export function GeneratorDetailOverview({
     alt,
     modeLabel,
     ready,
+    intakeTemp,
+    intakePressure,
+    engineLoad,
+    fuelRate,
+    powerFactor,
+    gensetKwh,
+    numberStarts,
+    totalFuelConsumption,
+    oilTemp,
+    engineStateRaw,
+    breakerStateRaw,
   } = model;
+
+  const fuelUnit = gen.metricUnits?.["fuel_level"] || "%";
+  const oilUnit = gen.metricUnits?.["oil_pressure"] || "bar";
+  const fuelRateUnit = gen.metricUnits?.["fuel_rate"] || "L/h";
+  const oilTempUnit = gen.metricUnits?.["oil_temperature"] || "°C";
 
   return (
     <>
@@ -53,7 +69,7 @@ export function GeneratorDetailOverview({
         <FlowChip
           icon={<IconFuelPump size={34} />}
           label="Combustível"
-          value={formatMetric(fuel, "%", 0)}
+          value={formatMetric(fuel, fuelUnit, 0)}
         />
         <FlowChip
           icon={<IconThermometer size={34} />}
@@ -63,7 +79,7 @@ export function GeneratorDetailOverview({
         <FlowChip
           icon={<IconOilCan size={34} />}
           label="Óleo"
-          value={formatMetric(oil, "bar", 1)}
+          value={formatMetric(oil, oilUnit, 1)}
         />
         <FlowChip
           icon={<IconBattery size={34} />}
@@ -149,25 +165,43 @@ export function GeneratorDetailOverview({
             <h2>Motor / ECU</h2>
             <StatusPill status={gen.status} />
           </header>
-          <div className="gen-metrics gen-metrics-4">
+          <div className="gen-metrics gen-metrics-4 gen-ecu-grid">
             <MetricCell label="RPM" value={formatMetric(rpm, "rpm", 0)} />
-            <MetricCell label="Óleo" value={formatMetric(oil, "bar", 1)} />
+            <MetricCell label="Pressão do óleo" value={formatMetric(oil, oilUnit, 1)} />
             <MetricCell label="Temp. água" value={formatMetric(temp, "°C", 0)} />
-            <MetricCell label="Combustível" value={formatMetric(fuel, "%", 0)} />
+            <MetricCell label="Temp. óleo" value={formatMetric(oilTemp, oilTempUnit, 0)} />
+            <MetricCell label="Combustível" value={formatMetric(fuel, fuelUnit, 0)} />
+            <MetricCell
+              label="Consumo instantâneo"
+              value={formatMetric(fuelRate, fuelRateUnit, 1)}
+            />
+            <MetricCell label="Carga do motor" value={formatMetric(engineLoad, "%", 0)} />
+            <MetricCell label="Temp. admissão" value={formatMetric(intakeTemp, "°C", 0)} />
+            <MetricCell label="Pressão admissão" value={formatMetric(intakePressure, "bar", 2)} />
             <MetricCell label="Bateria" value={formatMetric(batt, "V", 1)} />
             <MetricCell label="Alternador" value={formatMetric(alt, "V", 1)} />
             <MetricCell label="Horímetro" value={formatMetric(runHours, "h", 1)} />
-            <MetricCell label="Manutenção" value={formatMetric(maintenance, "h", 0)} />
-            <MetricCell label="Modo" value={modeLabel} />
+            <MetricCell label="Partidas" value={formatMetric(numberStarts, "", 0)} />
+            <MetricCell label="Energia" value={formatMetric(gensetKwh, "kWh", 0)} />
             <MetricCell
-              label="Origem"
-              value={gen.telemetrySource === "rapid_scada" ? "Telemetria" : "N/D"}
+              label="Combustível total"
+              value={formatMetric(totalFuelConsumption, "L", 0)}
             />
+            <MetricCell label="Fator de potência" value={formatMetric(powerFactor, "", 2)} />
+            <MetricCell label="MCB" value={mcbKnown ? (gen.mcb ? "FECHADO" : "ABERTO") : "N/D"} />
+            <MetricCell label="GCB" value={gcbKnown ? (gen.gcb ? "FECHADO" : "ABERTO") : "N/D"} />
+            <MetricCell label="Estado motor (raw)" value={formatMetric(engineStateRaw, "", 0)} />
+            <MetricCell label="Disjuntor (raw)" value={formatMetric(breakerStateRaw, "", 0)} />
+            <MetricCell label="Modo" value={modeLabel} />
+            <MetricCell label="Estado" value={ready} />
             <MetricCell
               label="Dispositivo"
               value={gen.rapidDeviceNum == null ? "N/D" : String(gen.rapidDeviceNum)}
             />
-            <MetricCell label="Estado" value={ready} />
+            <MetricCell
+              label="Origem"
+              value={gen.telemetrySource === "rapid_scada" ? "Telemetria" : "N/D"}
+            />
           </div>
         </section>
       </div>
