@@ -22,6 +22,15 @@ def _is_active(service: str) -> bool:
     return result.returncode == 0 and result.stdout.strip() == "active"
 
 
+def ensure_stopped_for_mutation() -> None:
+    active = [service for service in SERVICES if _is_active(service)]
+    if active:
+        raise RuntimeError(
+            "Mutação Rapid com --no-restart recusada porque há serviço ativo: "
+            + ", ".join(active)
+        )
+
+
 def stop_for_mutation() -> dict[str, bool]:
     """Para apenas serviços que estavam ativos e confirma a parada.
 
@@ -32,11 +41,7 @@ def stop_for_mutation() -> dict[str, bool]:
     for service in SERVICES:
         if state[service]:
             _run("stop", service, check=True)
-    still_active = [service for service in SERVICES if _is_active(service)]
-    if still_active:
-        raise RuntimeError(
-            "Rapid SCADA permaneceu ativo após systemctl stop: " + ", ".join(still_active)
-        )
+    ensure_stopped_for_mutation()
     return state
 
 
