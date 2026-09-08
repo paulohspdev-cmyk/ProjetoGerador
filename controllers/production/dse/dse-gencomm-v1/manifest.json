@@ -21,6 +21,7 @@
     "DSE4610",
     "DSE4620",
     "DSE4510 MKII",
+    "DSE4520",
     "DSE4520 MKII",
     "DSE8910",
     "DSE8920",
@@ -47,8 +48,16 @@
     "maximum": null,
     "notes": "Pack de produção somente leitura por contrato GenComm. A matriz de firmware de campo será preenchida conforme unidades reais forem conectadas."
   },
-  "protocols": ["dse_gencomm_v1", "modbus"],
-  "transports": ["reverse_tcp", "modbus_tcp_direct", "rtu_over_tcp", "modbus_rtu_serial"],
+  "protocols": [
+    "dse_gencomm_v1",
+    "modbus"
+  ],
+  "transports": [
+    "reverse_tcp",
+    "modbus_tcp_direct",
+    "rtu_over_tcp",
+    "modbus_rtu_serial"
+  ],
   "reverseTcpFraming": "modbus_rtu",
   "defaults": {
     "batteryNominalVoltage": null,
@@ -127,67 +136,347 @@
     "sourceFile": "modbus/source-registers.txt",
     "sourceSha256": "35fc5d2fcb382e900b5a4027f12e9ea4011fdc38cc4c86a97906caf9a305b302",
     "addressFormula": "page * 256 + offset",
-    "readFunctions": [3],
+    "readFunctions": [
+      3
+    ],
     "wordOrder": "most_significant_register_first",
     "registers": {
-      "controller_mode_raw": {"address": 772, "count": 1, "type": "uint16", "scale": 1},
-      "alarm_class_raw": {"address": 774, "count": 1, "type": "uint16", "scale": 1},
-      "oil_pressure": {"address": 1024, "count": 1, "type": "uint16", "scale": 1, "unit": "kPa"},
-      "coolant_temperature": {"address": 1025, "count": 1, "type": "int16", "scale": 1, "unit": "°C"},
-      "oil_temperature": {"address": 1026, "count": 1, "type": "int16", "scale": 1, "unit": "°C"},
-      "fuel_level": {"address": 1027, "count": 1, "type": "uint16", "scale": 1, "unit": "%"},
-      "alternator_voltage": {"address": 1028, "count": 1, "type": "uint16", "scale": 0.1, "unit": "V"},
-      "battery_voltage": {"address": 1029, "count": 1, "type": "uint16", "scale": 0.1, "unit": "V"},
-      "rpm": {"address": 1030, "count": 1, "type": "uint16", "scale": 1, "unit": "rpm"},
-      "frequency": {"address": 1031, "count": 1, "type": "uint16", "scale": 0.1, "unit": "Hz"},
-      "voltage_l1": {"address": 1032, "count": 2, "type": "uint32", "scale": 0.1, "unit": "V"},
-      "voltage_l2": {"address": 1034, "count": 2, "type": "uint32", "scale": 0.1, "unit": "V"},
-      "voltage_l3": {"address": 1036, "count": 2, "type": "uint32", "scale": 0.1, "unit": "V"},
-      "voltage_l1_l2": {"address": 1038, "count": 2, "type": "uint32", "scale": 0.1, "unit": "V"},
-      "voltage_l2_l3": {"address": 1040, "count": 2, "type": "uint32", "scale": 0.1, "unit": "V"},
-      "voltage_l3_l1": {"address": 1042, "count": 2, "type": "uint32", "scale": 0.1, "unit": "V"},
-      "current_l1": {"address": 1044, "count": 2, "type": "uint32", "scale": 0.1, "unit": "A"},
-      "current_l2": {"address": 1046, "count": 2, "type": "uint32", "scale": 0.1, "unit": "A"},
-      "current_l3": {"address": 1048, "count": 2, "type": "uint32", "scale": 0.1, "unit": "A"},
-      "power_kw": {"address": 1536, "count": 2, "type": "int32", "scale": 0.001, "unit": "kW"},
-      "power_factor": {"address": 1557, "count": 1, "type": "int16", "scale": 0.01},
-      "engine_load": {"address": 1558, "count": 1, "type": "int16", "scale": 0.1, "unit": "%"},
-      "maintenance_hours": {"address": 1794, "count": 2, "type": "int32", "scale": 0.0002777777777777778, "unit": "h"},
-      "run_hours": {"address": 1798, "count": 2, "type": "uint32", "scale": 0.0002777777777777778, "unit": "h"},
-      "genset_kwh": {"address": 1800, "count": 2, "type": "uint32", "scale": 0.1, "unit": "kWh"},
-      "number_starts": {"address": 1808, "count": 2, "type": "uint32", "scale": 1}
+      "controller_mode_raw": {
+        "address": 772,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1
+      },
+      "alarm_class_raw": {
+        "address": 774,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1
+      },
+      "oil_pressure": {
+        "address": 1024,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "kPa"
+      },
+      "coolant_temperature": {
+        "address": 1025,
+        "count": 1,
+        "type": "int16",
+        "scale": 1,
+        "unit": "°C"
+      },
+      "oil_temperature": {
+        "address": 1026,
+        "count": 1,
+        "type": "int16",
+        "scale": 1,
+        "unit": "°C"
+      },
+      "fuel_level": {
+        "address": 1027,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "%"
+      },
+      "alternator_voltage": {
+        "address": 1028,
+        "count": 1,
+        "type": "uint16",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "battery_voltage": {
+        "address": 1029,
+        "count": 1,
+        "type": "uint16",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "rpm": {
+        "address": 1030,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "rpm"
+      },
+      "frequency": {
+        "address": 1031,
+        "count": 1,
+        "type": "uint16",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      "voltage_l1": {
+        "address": 1032,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "voltage_l2": {
+        "address": 1034,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "voltage_l3": {
+        "address": 1036,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "voltage_l1_l2": {
+        "address": 1038,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "voltage_l2_l3": {
+        "address": 1040,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "voltage_l3_l1": {
+        "address": 1042,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "current_l1": {
+        "address": 1044,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "A"
+      },
+      "current_l2": {
+        "address": 1046,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "A"
+      },
+      "current_l3": {
+        "address": 1048,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "A"
+      },
+      "power_kw": {
+        "address": 1536,
+        "count": 2,
+        "type": "int32",
+        "scale": 0.001,
+        "unit": "kW"
+      },
+      "power_factor": {
+        "address": 1557,
+        "count": 1,
+        "type": "int16",
+        "scale": 0.01
+      },
+      "engine_load": {
+        "address": 1558,
+        "count": 1,
+        "type": "int16",
+        "scale": 0.1,
+        "unit": "%"
+      },
+      "maintenance_hours": {
+        "address": 1794,
+        "count": 2,
+        "type": "int32",
+        "scale": 0.0002777777777777778,
+        "unit": "h"
+      },
+      "run_hours": {
+        "address": 1798,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.0002777777777777778,
+        "unit": "h"
+      },
+      "genset_kwh": {
+        "address": 1800,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "kWh"
+      },
+      "number_starts": {
+        "address": 1808,
+        "count": 2,
+        "type": "uint32",
+        "scale": 1
+      }
     }
   },
   "rapid": {
     "template": "rapid/templates/DrvModbus_RC_DSE_GenComm_Core.xml",
     "driver": "DrvModbus",
     "channels": [
-      {"key": "controller_mode_raw", "tagCode": "controller_mode_raw", "scale": 1},
-      {"key": "alarm_class_raw", "tagCode": "alarm_class_raw", "scale": 1},
-      {"key": "oil_pressure", "tagCode": "oil_pressure", "scale": 1, "unit": "kPa"},
-      {"key": "coolant_temperature", "tagCode": "coolant_temperature", "scale": 1, "unit": "°C"},
-      {"key": "oil_temperature", "tagCode": "oil_temperature", "scale": 1, "unit": "°C"},
-      {"key": "fuel_level", "tagCode": "fuel_level", "scale": 1, "unit": "%"},
-      {"key": "alternator_voltage", "tagCode": "alternator_voltage", "scale": 0.1, "unit": "V"},
-      {"key": "battery_voltage", "tagCode": "battery_voltage", "scale": 0.1, "unit": "V"},
-      {"key": "rpm", "tagCode": "rpm", "scale": 1, "unit": "rpm"},
-      {"key": "frequency", "tagCode": "frequency", "scale": 0.1, "unit": "Hz"},
-      {"key": "voltage_l1", "tagCode": "voltage_l1", "scale": 0.1, "unit": "V"},
-      {"key": "voltage_l2", "tagCode": "voltage_l2", "scale": 0.1, "unit": "V"},
-      {"key": "voltage_l3", "tagCode": "voltage_l3", "scale": 0.1, "unit": "V"},
-      {"key": "voltage_l1_l2", "tagCode": "voltage_l1_l2", "scale": 0.1, "unit": "V"},
-      {"key": "voltage_l2_l3", "tagCode": "voltage_l2_l3", "scale": 0.1, "unit": "V"},
-      {"key": "voltage_l3_l1", "tagCode": "voltage_l3_l1", "scale": 0.1, "unit": "V"},
-      {"key": "current_l1", "tagCode": "current_l1", "scale": 0.1, "unit": "A"},
-      {"key": "current_l2", "tagCode": "current_l2", "scale": 0.1, "unit": "A"},
-      {"key": "current_l3", "tagCode": "current_l3", "scale": 0.1, "unit": "A"},
-      {"key": "power_kw", "tagCode": "power_kw", "scale": 0.001, "unit": "kW"},
-      {"key": "power_factor", "tagCode": "power_factor", "scale": 0.01},
-      {"key": "engine_load", "tagCode": "engine_load", "scale": 0.1, "unit": "%"},
-      {"key": "maintenance_hours", "tagCode": "maintenance_hours", "scale": 0.0002777777777777778, "unit": "h"},
-      {"key": "run_hours", "tagCode": "run_hours", "scale": 0.0002777777777777778, "unit": "h"},
-      {"key": "genset_kwh", "tagCode": "genset_kwh", "scale": 0.1, "unit": "kWh"},
-      {"key": "number_starts", "tagCode": "number_starts", "scale": 1}
+      {
+        "key": "controller_mode_raw",
+        "tagCode": "controller_mode_raw",
+        "scale": 1
+      },
+      {
+        "key": "alarm_class_raw",
+        "tagCode": "alarm_class_raw",
+        "scale": 1
+      },
+      {
+        "key": "oil_pressure",
+        "tagCode": "oil_pressure",
+        "scale": 1,
+        "unit": "kPa"
+      },
+      {
+        "key": "coolant_temperature",
+        "tagCode": "coolant_temperature",
+        "scale": 1,
+        "unit": "°C"
+      },
+      {
+        "key": "oil_temperature",
+        "tagCode": "oil_temperature",
+        "scale": 1,
+        "unit": "°C"
+      },
+      {
+        "key": "fuel_level",
+        "tagCode": "fuel_level",
+        "scale": 1,
+        "unit": "%"
+      },
+      {
+        "key": "alternator_voltage",
+        "tagCode": "alternator_voltage",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "battery_voltage",
+        "tagCode": "battery_voltage",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "rpm",
+        "tagCode": "rpm",
+        "scale": 1,
+        "unit": "rpm"
+      },
+      {
+        "key": "frequency",
+        "tagCode": "frequency",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      {
+        "key": "voltage_l1",
+        "tagCode": "voltage_l1",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l2",
+        "tagCode": "voltage_l2",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l3",
+        "tagCode": "voltage_l3",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l1_l2",
+        "tagCode": "voltage_l1_l2",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l2_l3",
+        "tagCode": "voltage_l2_l3",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l3_l1",
+        "tagCode": "voltage_l3_l1",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "current_l1",
+        "tagCode": "current_l1",
+        "scale": 0.1,
+        "unit": "A"
+      },
+      {
+        "key": "current_l2",
+        "tagCode": "current_l2",
+        "scale": 0.1,
+        "unit": "A"
+      },
+      {
+        "key": "current_l3",
+        "tagCode": "current_l3",
+        "scale": 0.1,
+        "unit": "A"
+      },
+      {
+        "key": "power_kw",
+        "tagCode": "power_kw",
+        "scale": 0.001,
+        "unit": "kW"
+      },
+      {
+        "key": "power_factor",
+        "tagCode": "power_factor",
+        "scale": 0.01
+      },
+      {
+        "key": "engine_load",
+        "tagCode": "engine_load",
+        "scale": 0.1,
+        "unit": "%"
+      },
+      {
+        "key": "maintenance_hours",
+        "tagCode": "maintenance_hours",
+        "scale": 0.0002777777777777778,
+        "unit": "h"
+      },
+      {
+        "key": "run_hours",
+        "tagCode": "run_hours",
+        "scale": 0.0002777777777777778,
+        "unit": "h"
+      },
+      {
+        "key": "genset_kwh",
+        "tagCode": "genset_kwh",
+        "scale": 0.1,
+        "unit": "kWh"
+      },
+      {
+        "key": "number_starts",
+        "tagCode": "number_starts",
+        "scale": 1
+      }
     ]
   },
   "validation": {

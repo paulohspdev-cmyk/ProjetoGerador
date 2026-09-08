@@ -2,7 +2,7 @@ import asyncio
 import json
 from pathlib import Path
 
-from . import ig4_lab
+from . import dse_control, dse_lab, ig4_lab
 from .config import CONTROL_SOCKET
 from .controller_library import pack_for_model, pack_is_production_ready
 from .rapid import load_bindings
@@ -86,28 +86,37 @@ async def send_homologated_command(generator: dict, action: str) -> dict:
     rapid_device = int(generator.get("rapid_device_num") or 0)
     transport = str(generator.get("transport") or "")
     lab_ig4 = ig4_lab.is_target(generator)
+    lab_dse = dse_lab.is_target(generator)
 
     if lab_ig4:
         if action != "start":
             raise ValueError("Modo LAB do IG4 libera somente START; STOP de produção permanece bloqueado")
         if transport != "reverse_tcp":
             raise ValueError("START LAB do IG4 exige transporte reverse_tcp")
+    elif lab_dse:
+        if action not in {"start", "stop"}:
+            raise ValueError("Ensaio DSE LAB libera somente START e STOP")
+        if transport != "modbus_tcp_direct":
+            raise ValueError("Controle DSE LAB somente no transporte modbus_tcp_direct")
     else:
         if controller_type != "COMAP" or controller_model != "inteligen 200" or rapid_device <= 0:
-            raise ValueError("Controle remoto disponível somente para o ComAp InteliGen 200 homologado ou IG4 LAB explicitamente autorizado")
+            raise ValueError("Controle remoto disponível somente para o ComAp InteliGen 200 homologado ou ensaio LAB explicitamente autorizado")
         if transport != "reverse_tcp":
             raise ValueError("Controle remoto IG200 homologado somente no transporte reverse_tcp")
 
     pack = pack_for_model(generator.get("controller_model") or "")
-    if not pack_is_production_ready(pack):
+    if not lab_dse and not pack_is_production_ready(pack):
         raise ValueError("Controle bloqueado: Controller Pack não está field_validated em production")
 
-    if not lab_ig4:
+    if not lab_ig4 and not lab_dse:
         capabilities = dict((pack or {}).get("capabilities") or {})
         if not bool(capabilities.get(action)):
             raise ValueError(f"Controle bloqueado: comando {action.upper()} não está homologado neste Controller Pack")
 
     _validated_binding(generator)
+
+    if lab_dse:
+        return await dse_control.send_command(generator, action)
 
     if lab_ig4:
         payload = {
