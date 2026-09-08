@@ -59,6 +59,9 @@ export function RegisterGeneratorButton({
   const [listenPort, setListenPort] = useState("");
   const [modbusUnit, setModbusUnit] = useState("1");
   const [rapidDeviceNum, setRapidDeviceNum] = useState("");
+  const [baudRate, setBaudRate] = useState("");
+  const [parity, setParity] = useState("");
+  const [stopBits, setStopBits] = useState("");
   const [advanced, setAdvanced] = useState(false);
   const [catalog, setCatalog] = useState<CatalogController[]>([]);
   const [sites, setSites] = useState<string[]>([]);
@@ -132,6 +135,9 @@ export function RegisterGeneratorButton({
     setListenPort("");
     setModbusUnit("1");
     setRapidDeviceNum("");
+    setBaudRate("");
+    setParity("");
+    setStopBits("");
     setAdvanced(false);
     setSaving(false);
     setError(null);
@@ -139,11 +145,17 @@ export function RegisterGeneratorButton({
   };
 
   const effectiveTag = (tag.trim() || preview.tag).toUpperCase();
+  const isSerial = transport === "modbus_rtu_serial";
   const effectivePort = Number(
     listenPort ||
-      (transport === "reverse_tcp" ? suggestedPort : transport === "modbus_tcp_direct" ? 502 : 0),
+      (transport === "reverse_tcp"
+        ? suggestedPort
+        : transport === "modbus_tcp_direct" || transport === "rtu_over_tcp"
+          ? 502
+          : 0),
   );
   const effectiveUnit = Number(modbusUnit || 1);
+  const effectiveBaud = Number(baudRate);
 
   const isLabReadOnly = selectedController?.onboardingMode === "lab_read_only";
   const isCatalogRegistration = Boolean(
@@ -151,13 +163,34 @@ export function RegisterGeneratorButton({
   );
   const canContinueStep1 = Boolean(site.trim() && controller && selectedController);
   const canContinueStep2 =
-    transport === "reverse_tcp" || (host.trim().length > 0 && effectivePort > 0);
+    transport === "reverse_tcp"
+      ? effectivePort > 0
+      : isSerial
+        ? Boolean(
+            host.trim() &&
+              Number.isInteger(effectiveBaud) &&
+              effectiveBaud > 0 &&
+              parity &&
+              stopBits,
+          )
+        : Boolean(host.trim() && effectivePort > 0);
+
+  const applyTransportConfig = async (generatorId: string) => {
+    if (!isSerial) return;
+    await rcApi.generators.setTransportConfig(generatorId, {
+      baudRate: effectiveBaud,
+      dataBits: 8,
+      parity,
+      stopBits,
+    });
+  };
 
   const retryProvision = async () => {
     if (!createdId) return;
     setSaving(true);
     setError(null);
     try {
+      await applyTransportConfig(createdId);
       await industrialApi.lifecycle.provision(createdId);
       await refresh();
       reset();
@@ -180,15 +213,22 @@ export function RegisterGeneratorButton({
       return;
     }
     if (transport !== "reverse_tcp" && !host.trim()) {
-      setError("Informe o endereço da controladora ou gateway.");
+      setError(isSerial ? "Informe o dispositivo serial." : "Informe o endereço da controladora ou gateway.");
       return;
     }
-    if (!Number.isInteger(effectivePort) || effectivePort < 1 || effectivePort > 65535) {
+    if (!isSerial && (!Number.isInteger(effectivePort) || effectivePort < 1 || effectivePort > 65535)) {
       setError("A porta informada não é válida.");
       return;
     }
     if (!Number.isInteger(effectiveUnit) || effectiveUnit < 1 || effectiveUnit > 247) {
       setError("O endereço Modbus deve ficar entre 1 e 247.");
+      return;
+    }
+    if (
+      isSerial &&
+      (!Number.isInteger(effectiveBaud) || effectiveBaud <= 0 || !parity || !stopBits)
+    ) {
+      setError("Informe baud rate, paridade e stop bits para a conexão serial.");
       return;
     }
 
@@ -201,12 +241,27 @@ export function RegisterGeneratorButton({
         controller,
         site: site.trim(),
         transport,
-        listenPort: effectivePort,
+        listenPort: isSerial ? 0 : effectivePort,
         modbusUnit: effectiveUnit,
         ...(host.trim() ? { ip: host.trim() } : {}),
         ...(rapidDeviceNum ? { rapidDeviceNum: Number(rapidDeviceNum) } : {}),
       });
       setCreatedId(created.id);
+
+      try {
+        await applyTransportConfig(created.id);
+      } catch (transportError) {
+        await refresh();
+        setError(
+          provisionMessage(
+            transportError instanceof Error
+              ? new Error(`falha ao salvar parâmetros de transporte: ${transportError.message}`)
+              : transportError,
+          ),
+        );
+        return;
+      }
+
       await refresh();
 
       if (selectedController?.provisionable) {
@@ -325,8 +380,8 @@ export function RegisterGeneratorButton({
                     required
                   />
                   <datalist id="rc-generator-sites">
-                    {sites.map((name) => (
-                      <option key={name} value={name} />
+                    {sites.map((siteName) => (
+                      <option key={siteName} value={siteName} />
                     ))}
                   </datalist>
                 </label>
@@ -369,6 +424,12 @@ export function RegisterGeneratorButton({
                 setModbusUnit={setModbusUnit}
                 rapidDeviceNum={rapidDeviceNum}
                 setRapidDeviceNum={setRapidDeviceNum}
+                baudRate={baudRate}
+                setBaudRate={setBaudRate}
+                parity={parity}
+                setParity={setParity}
+                stopBits={stopBits}
+                setStopBits={setStopBits}
                 suggestedTag={preview.tag}
                 suggestedPort={suggestedPort}
                 advanced={advanced}
@@ -402,6 +463,14 @@ export function RegisterGeneratorButton({
                       {connectionOptions.find((option) => option.id === transport)?.title}
                     </dd>
                   </div>
+                  {isSerial && (
+                    <div className="sm:col-span-2">
+                      <dt className="text-xs text-muted-foreground">Serial</dt>
+                      <dd className="font-bold">
+                        {host} · {effectiveBaud} baud · {parity} · {stopBits}
+                      </dd>
+                    </div>
+                  )}
                 </dl>
                 {isLabReadOnly && !createdId && (
                   <p className="mt-4 rounded-lg border border-alert/40 bg-alert/10 p-3 text-sm text-alert">
@@ -414,9 +483,9 @@ export function RegisterGeneratorButton({
                     {selectedController?.registerable === false
                       ? "Cadastro liberado pelo fluxo de geradores: "
                       : "Cadastro técnico liberado: "}
-                    porta e Unit ID serão salvos para diagnóstico e leitura da controladora. Rapid
-                    automático, START, STOP e contatores permanecem bloqueados até a homologação do
-                    Controller Pack.
+                    porta/serial e Unit ID serão salvos para diagnóstico e leitura da controladora.
+                    Rapid automático, START, STOP e contatores permanecem bloqueados até a homologação
+                    do Controller Pack.
                   </p>
                 )}
                 {createdId && (
