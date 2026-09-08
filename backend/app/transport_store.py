@@ -3,6 +3,7 @@ import os
 import time
 
 from . import db
+from .binding_store import BindingStoreError, load_runtime_bindings
 
 BRIDGE_TIMEOUT_MS = max(
     500,
@@ -56,8 +57,30 @@ def get_transport_config(generator_id: str):
     return {**_defaults(), **stored}
 
 
+def _assert_not_actively_bound(generator_id: str) -> None:
+    try:
+        bindings = load_runtime_bindings()
+    except BindingStoreError as exc:
+        raise ValueError(
+            "Configuração de transporte bloqueada: bindings Rapid estão inválidos ou corrompidos"
+        ) from exc
+    if any(str(item.get("generator_id") or "") == generator_id for item in bindings):
+        raise ValueError(
+            "Gerador está provisionado no Rapid SCADA. Retire/reconfigure pelo ciclo de vida "
+            "industrial antes de alterar parâmetros de transporte; gravação isolada foi recusada "
+            "para evitar divergência entre SQLite e Rapid."
+        )
+
+
 def set_transport_config(generator_id: str, config: dict, actor: str):
     init_transport_db()
+    with db.connect() as conn:
+        exists = conn.execute("SELECT 1 FROM generators WHERE id=?", (generator_id,)).fetchone()
+    if not exists:
+        raise ValueError("Gerador não encontrado")
+
+    _assert_not_actively_bound(generator_id)
+
     allowed = {
         "baudRate", "dataBits", "parity", "stopBits", "dtrEnable", "rtsEnable",
         "tcpPort", "host", "transMode", "timeoutMs", "pollDelayMs"
@@ -81,9 +104,6 @@ def set_transport_config(generator_id: str, config: dict, actor: str):
 
     now = int(time.time())
     with db.connect() as conn:
-        exists = conn.execute("SELECT 1 FROM generators WHERE id=?", (generator_id,)).fetchone()
-        if not exists:
-            raise ValueError("Gerador não encontrado")
         conn.execute(
             """INSERT INTO generator_transport_config(generator_id,config_json,updated_by,updated_at) VALUES (?,?,?,?)
                ON CONFLICT(generator_id) DO UPDATE SET config_json=excluded.config_json,updated_by=excluded.updated_by,updated_at=excluded.updated_at""",
