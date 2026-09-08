@@ -101,7 +101,7 @@ def validate_for_transport(generator: dict, config: dict):
             raise ValueError("TCP reverso exige porta de escuta válida")
     elif transport in {"modbus_tcp_direct", "rtu_over_tcp"}:
         host = str(generator.get("host") or config.get("host") or "").strip()
-        port = int(generator.get("listen_port") or config.get("tcpPort") or (502 if transport == "modbus_tcp_direct" else 0))
+        port = int(generator.get("listen_port") or config.get("tcpPort") or 502)
         if not host:
             raise ValueError("Transporte TCP direto exige host/IP")
         if not 1 <= port <= 65535:
