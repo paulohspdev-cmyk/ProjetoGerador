@@ -9,7 +9,7 @@ Regras de segurança:
 - preserva cabeçalho e definições de campo byte a byte;
 - atualização substitui somente o bloco da linha selecionada;
 - remoção retira somente o bloco selecionado, sem reserializar outras linhas;
-- gravação é feita em arquivo temporário + os.replace;
+- toda gravação usa arquivo temporário + fsync + os.replace;
 - toda escrita é relida e validada antes de retornar.
 """
 
@@ -162,7 +162,9 @@ def _row_spans(data: bytes, field_count: int) -> list[tuple[int, int]]:
 def _atomic_replace(path: str, data: bytes) -> None:
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp_name = tempfile.mkstemp(prefix=f".{target.name}.", suffix=".tmp", dir=str(target.parent))
+    fd, tmp_name = tempfile.mkstemp(
+        prefix=f".{target.name}.", suffix=".tmp", dir=str(target.parent)
+    )
     try:
         with os.fdopen(fd, "wb") as fh:
             fh.write(data)
@@ -267,17 +269,27 @@ def append_row(path: str, pk_name: str, values: dict[str, Any]) -> str:
                     )
             return "exists"
 
+    raw = Path(path).read_bytes()
     block = _encode_row(fields, values)
-    with open(path, "ab") as fh:
-        fh.write(block)
-        fh.flush()
-        os.fsync(fh.fileno())
+    _atomic_replace(path, raw + block)
 
-    read_table(path)
+    _, verified_rows = read_table(path)
+    matches = [row for row in verified_rows if row.get(pk_name) == pk_value]
+    if len(matches) != 1:
+        raise ValueError(
+            f"{path}: validação pós-append falhou para {pk_name}={pk_value}"
+        )
+    verified = matches[0]
+    if any(verified.get(key) != value for key, value in values.items()):
+        raise ValueError(
+            f"{path}: valores divergentes após append para {pk_name}={pk_value}"
+        )
     return "added"
 
 
-def update_row(path: str, pk_name: str, pk_value: Any, patch: dict[str, Any]) -> dict[str, Any]:
+def update_row(
+    path: str, pk_name: str, pk_value: Any, patch: dict[str, Any]
+) -> dict[str, Any]:
     """Atualiza uma linha BaseDAT preservando todo o restante byte a byte."""
     fields, rows = read_table(path)
     field_names = {field.name for field in fields}
@@ -298,7 +310,11 @@ def update_row(path: str, pk_name: str, pk_value: Any, patch: dict[str, Any]) ->
     index = matches[0]
     before = dict(rows[index])
     after = {**before, **patch}
-    changed = {key: {"from": before.get(key), "to": after.get(key)} for key in patch if before.get(key) != after.get(key)}
+    changed = {
+        key: {"from": before.get(key), "to": after.get(key)}
+        for key in patch
+        if before.get(key) != after.get(key)
+    }
     if not changed:
         return {"status": "unchanged", "before": before, "after": before, "changed": {}}
 
