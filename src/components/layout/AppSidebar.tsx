@@ -134,48 +134,50 @@ function SidebarNav({ collapsed, onNavigate, onToggle, onClose, touchFriendly }:
         )}
       </div>
 
-      <div
-        className={cn(
-          "shrink-0 border-b border-sidebar-border",
-          collapsed ? "grid grid-cols-1 gap-1 px-2 py-2" : "grid grid-cols-3 gap-1.5 px-2 py-2",
-        )}
-        aria-label="Ações rápidas"
-      >
-        <button
-          type="button"
-          onClick={toggleTheme}
-          title={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
-          aria-label={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
-          className="grid h-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-        >
-          {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
-        </button>
-        <button
-          type="button"
-          onClick={toggleFullscreen}
-          title={fullscreen ? "Sair da tela cheia" : "Tela cheia"}
-          aria-label={fullscreen ? "Sair da tela cheia" : "Tela cheia"}
-          aria-pressed={fullscreen}
-          className="grid h-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-        >
-          {fullscreen ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
-        </button>
-        <Link
-          to="/p/$slug"
-          params={{ slug: "alarmes" }}
-          title="Alarmes"
-          aria-label="Alarmes"
-          onClick={onNavigate}
-          className="relative grid h-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-        >
-          <Bell className="size-4" />
-          {alarmCount > 0 && (
-            <span className="num absolute right-1 top-0 rounded-full bg-destructive px-1.5 text-[9px] font-bold leading-4 text-destructive-foreground">
-              {alarmCount}
-            </span>
+      {pathname !== "/p/geradores" && (
+        <div
+          className={cn(
+            "shrink-0 border-b border-sidebar-border",
+            collapsed ? "grid grid-cols-1 gap-1 px-2 py-2" : "grid grid-cols-3 gap-1.5 px-2 py-2",
           )}
-        </Link>
-      </div>
+          aria-label="Ações rápidas"
+        >
+          <button
+            type="button"
+            onClick={toggleTheme}
+            title={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
+            aria-label={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
+            className="grid h-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          >
+            {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+          </button>
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            title={fullscreen ? "Sair da tela cheia" : "Tela cheia"}
+            aria-label={fullscreen ? "Sair da tela cheia" : "Tela cheia"}
+            aria-pressed={fullscreen}
+            className="grid h-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          >
+            {fullscreen ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
+          </button>
+          <Link
+            to="/p/$slug"
+            params={{ slug: "alarmes" }}
+            title="Alarmes"
+            aria-label="Alarmes"
+            onClick={onNavigate}
+            className="relative grid h-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          >
+            <Bell className="size-4" />
+            {alarmCount > 0 && (
+              <span className="num absolute right-1 top-0 rounded-full bg-destructive px-1.5 text-[9px] font-bold leading-4 text-destructive-foreground">
+                {alarmCount}
+              </span>
+            )}
+          </Link>
+        </div>
+      )}
 
       <nav className="scroll-slim flex-1 overflow-y-auto overscroll-contain px-2 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         {visibleGroups.map((group, groupIndex) => {
