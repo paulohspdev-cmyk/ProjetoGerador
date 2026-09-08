@@ -31,20 +31,6 @@ def ensure_stopped_for_mutation() -> None:
         )
 
 
-def stop_for_mutation() -> dict[str, bool]:
-    """Para apenas serviços que estavam ativos e confirma a parada.
-
-    Qualquer falha bloqueia a mutação do BaseDAT/XML. O estado retornado deve ser
-    usado por restore_after_mutation() no finally.
-    """
-    state = {service: _is_active(service) for service in SERVICES}
-    for service in SERVICES:
-        if state[service]:
-            _run("stop", service, check=True)
-    ensure_stopped_for_mutation()
-    return state
-
-
 def restore_after_mutation(state: dict[str, bool]) -> None:
     """Restaura somente os serviços que estavam ativos antes da mutação."""
     errors: list[str] = []
@@ -62,3 +48,28 @@ def restore_after_mutation(state: dict[str, bool]) -> None:
             errors.append(f"{COMM_SERVICE}: {exc.stderr.strip() or exc}")
     if errors:
         raise RuntimeError("Falha ao restaurar serviços Rapid SCADA: " + "; ".join(errors))
+
+
+def stop_for_mutation() -> dict[str, bool]:
+    """Para apenas serviços ativos e nunca deixa parada parcial silenciosa.
+
+    Se qualquer stop falhar, tenta restaurar imediatamente o estado anterior antes
+    de propagar a falha. Assim o chamador só recebe um state quando a janela de
+    mutação foi realmente estabelecida com ambos os serviços parados.
+    """
+    state = {service: _is_active(service) for service in SERVICES}
+    try:
+        for service in SERVICES:
+            if state[service]:
+                _run("stop", service, check=True)
+        ensure_stopped_for_mutation()
+        return state
+    except Exception as stop_exc:
+        try:
+            restore_after_mutation(state)
+        except Exception as restore_exc:
+            raise RuntimeError(
+                "Falha ao estabelecer janela segura de mutação do Rapid e também ao "
+                f"restaurar o estado anterior: {restore_exc}"
+            ) from stop_exc
+        raise
