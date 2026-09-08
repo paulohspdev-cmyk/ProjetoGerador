@@ -127,15 +127,39 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
 
         <div className="gen-kpis">
           <KpiTile
-            label="Status"
-            value={model.ready}
-            sub={model.comm ? "Comunicação ativa" : "Sem comunicação atual"}
-            tone={model.comm ? "success" : "danger"}
+            label="Potência ativa"
+            value={formatMetric(model.load, "kW", 0)}
+            sub={
+              model.nominalPower == null
+                ? "Nominal N/D"
+                : `${Math.round(model.nominalPower)} kW nominal`
+            }
+            tone="accent"
           />
-          <KpiTile label="RPM" value={formatMetric(model.rpm, "rpm", 0)} tone="info" />
-          <KpiTile label="Potência" value={formatMetric(model.load, "kW", 0)} tone="accent" />
-          <KpiTile label="Frequência" value={formatMetric(model.frequency, "Hz", 2)} tone="info" />
-          <KpiTile label="Tensão L1-L2" value={formatMetric(model.genL12, "V", 0)} tone="info" />
+          <KpiTile
+            label="Tensão"
+            value={formatMetric(model.genL12, "V", 0)}
+            sub="L1-L2"
+            tone="info"
+          />
+          <KpiTile
+            label="Frequência"
+            value={formatMetric(model.frequency, "Hz", 2)}
+            sub={model.frequency == null ? "Frequência N/D" : "Gerador"}
+            tone="info"
+          />
+          <KpiTile label="Rotação" value={formatMetric(model.rpm, "rpm", 0)} tone="info" />
+          <KpiTile
+            label="Combustível"
+            value={formatMetric(model.fuel, gen.metricUnits?.["fuel_level"] || "%", 0)}
+            tone="success"
+          />
+          <KpiTile
+            label="Horímetro"
+            value={formatMetric(model.runHours, "h", 1)}
+            sub={model.comm ? "Telemetria atual" : "Último valor disponível"}
+            tone={model.comm ? "success" : "warning"}
+          />
         </div>
 
         <div className="gen-cmds">
