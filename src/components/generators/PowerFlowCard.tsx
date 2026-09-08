@@ -114,10 +114,10 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   };
 
   const tableRows = [
-    ["L1-N Voltage", "mains_voltage_l1", gen.mains.l1, "voltage_l1", gen.gen.l1],
-    ["L2-N Voltage", "mains_voltage_l2", gen.mains.l2, "voltage_l2", gen.gen.l2],
-    ["L3-N Voltage", "mains_voltage_l3", gen.mains.l3, "voltage_l3", gen.gen.l3],
-    ["L1-L2 Voltage", "mains_voltage_l1_l2", gen.mains.l12, "voltage_l1_l2", gen.gen.l12],
+    ["Tensão L1-N", "mains_voltage_l1", gen.mains.l1, "voltage_l1", gen.gen.l1],
+    ["Tensão L2-N", "mains_voltage_l2", gen.mains.l2, "voltage_l2", gen.gen.l2],
+    ["Tensão L3-N", "mains_voltage_l3", gen.mains.l3, "voltage_l3", gen.gen.l3],
+    ["Tensão L1-L2", "mains_voltage_l1_l2", gen.mains.l12, "voltage_l1_l2", gen.gen.l12],
   ] as const;
 
   return (
@@ -170,8 +170,8 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
 
       <section className="comap-block comap-flow comap-flow-v2">
         <div className="mb-1 flex items-baseline justify-between gap-3">
-          <h2 className="comap-title">Power Flow</h2>
-          <span className="comap-mode">MODE: {modeKnown ? gen.mode : "N/D"}</span>
+          <h2 className="comap-title">Fluxo de potência</h2>
+          <span className="comap-mode">MODO: {modeKnown ? gen.mode : "N/D"}</span>
         </div>
 
         <div className="comap-sld">
@@ -229,10 +229,10 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       </section>
 
       <section className="comap-block engine-status-block shrink-0 px-2 py-1.5">
-        <h2 className="comap-title mb-1">Engine Status</h2>
+        <h2 className="comap-title mb-1">Estado do motor</h2>
         <EngineRow
           icon={<IconOilCan />}
-          label="Oil Pressure"
+          label="Pressão do óleo"
           value={oil == null ? "N/D" : `${fmt(oil, 2)} ${oilUnit}`}
           pct={percents.oil}
           bar
@@ -241,7 +241,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         />
         <EngineRow
           icon={<IconThermometer />}
-          label="Coolant Temp."
+          label="Temp. do líquido"
           value={temp == null ? "N/D" : `${fmt(temp, 0)} °C`}
           pct={percents.coolant}
           bar
@@ -250,7 +250,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         />
         <EngineRow
           icon={<IconFuelPump />}
-          label="Fuel Level"
+          label="Combustível"
           value={fuel == null ? "N/D" : `${fmt(fuel, 0)} ${fuelUnit}`}
           pct={percents.fuel}
           bar
@@ -259,7 +259,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         />
         <EngineRow
           icon={<IconBolt />}
-          label="Alternator Volt."
+          label="Tensão alternador"
           value={alt == null ? "N/D" : `${fmt(alt)} V`}
           pct={percents.alternator}
           bar
@@ -268,7 +268,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         />
         <EngineRow
           icon={<IconClock />}
-          label="Maintenance"
+          label="Manutenção"
           value={maintenance == null ? "N/D" : `${fmt(maintenance, 0)} h`}
           pct={percents.maintenance}
           bar
@@ -277,7 +277,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         />
         <EngineRow
           icon={<IconRunHours />}
-          label="Run Hours"
+          label="Horímetro"
           value={runHours == null ? "N/D" : `${fmt(runHours)} h`}
           pct={percents.runHours}
           bar
@@ -288,7 +288,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
 
       <section className="comap-block comap-power-gauge-block">
         <div className="power-gauge-heading">
-          <h2 className="comap-title">Generator P</h2>
+          <h2 className="comap-title">Potência do gerador</h2>
           <span>{load == null ? "POTÊNCIA N/D" : "POTÊNCIA ATIVA"}</span>
         </div>
         <PowerGaugeKw
@@ -301,11 +301,11 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       </section>
 
       <section className="comap-block mains-generator-block mb-1.5 shrink-0 px-2 py-1.5">
-        <h2 className="comap-title">Mains / Generator</h2>
+        <h2 className="comap-title">Rede / Gerador</h2>
         <div className="comap-table-head">
           <span />
-          <span>Mains</span>
-          <span>Generator</span>
+          <span>Rede</span>
+          <span>Gerador</span>
         </div>
         {tableRows.map(([label, mainsKey, mainsValue, genKey, genValue]) => (
           <div key={label} className="comap-table-row">
