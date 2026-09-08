@@ -68,8 +68,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const gcbKnown = hasFreshMetric(gen, "gcb_closed");
   const modeKnown = hasFreshMetric(gen, "controller_mode_raw");
   const alarmCountKnown = hasFreshMetric(gen, "alarm_count");
-  const metricConfigured = (key: string) => (gen.configuredMetrics ?? []).includes(key);
-  const unavailableLabel = (key: string) => (metricConfigured(key) ? "N/D" : "N/A");
+  const unavailableLabel = (_key: string) => "N/D";
   const statusClass =
     gen.status === "online"
       ? "online"
@@ -178,7 +177,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
             <path d="M12 8.5v5.8m0 2.7h.01" />
           </svg>
           <span className="comap-alarm-count">
-            {alarmCountKnown ? gen.alarms : gen.status === "alerta" ? "!" : "—"}
+            {alarmCountKnown ? gen.alarms : gen.status === "alerta" ? "!" : "N/D"}
           </span>
         </span>
         <Link
@@ -328,9 +327,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
           label="PF"
           value={powerFactor == null ? "N/D" : fmt(powerFactor, 2)}
           known={powerFactor != null}
-          unknownLabel={
-            load != null && Math.abs(load) <= 0.1 ? "N/A" : unavailableLabel("power_factor")
-          }
+          unknownLabel={unavailableLabel("power_factor")}
           lastKnown={powerFactor != null && !hasFreshMetric(gen, "power_factor")}
         />
         <EngineRow
