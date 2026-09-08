@@ -100,12 +100,12 @@ export function CompactCard({ gen }: { gen: Generator }) {
             <Metric
               icon={<IconRunHours size={12} />}
               label="Tempo operação"
-              value={hoursKnown ? `${fmt(gen.runHours)} h` : "N/D"}
+              value={hoursKnown && gen.runHours != null ? `${fmt(gen.runHours)} h` : "N/D"}
             />
             <Metric
               icon={<Clock className="size-3" />}
               label="Manutenção"
-              value={maintKnown ? `${fmt(gen.maintenance, 0)} h` : "N/D"}
+              value={maintKnown && gen.maintenance != null ? `${fmt(gen.maintenance, 0)} h` : "N/D"}
             />
             <Metric icon={<Signal className="size-3" />} label="Latência" value={lat} />
           </div>

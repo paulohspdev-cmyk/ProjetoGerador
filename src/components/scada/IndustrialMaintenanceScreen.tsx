@@ -64,7 +64,7 @@ export function MaintenanceV3Screen() {
         name,
         ...(intervalHours ? { intervalHours } : {}),
         ...(intervalDays ? { intervalDays } : {}),
-        ...(runKnown ? { lastServiceHours: generator.runHours } : {}),
+        ...(runKnown && generator.runHours != null ? { lastServiceHours: generator.runHours } : {}),
       });
       setMessage("Plano de manutenção criado.");
       await load();

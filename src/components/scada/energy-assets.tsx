@@ -41,7 +41,7 @@ export function FuelScreen() {
   const commonUnit = units.length === 1 ? (units[0] ?? "") : "";
   const mean =
     measured.length && commonUnit
-      ? measured.reduce((s, g) => s + g.fuelLevel, 0) / measured.length
+      ? measured.reduce((s, g) => s + (g.fuelLevel ?? 0), 0) / measured.length
       : null;
   return (
     <ScreenBody>
@@ -149,7 +149,7 @@ export function BatteriesScreen() {
 export function HourmetersScreen() {
   const { generators } = useGenerators();
   const measured = generators.filter((g) => hasMetric(g, "run_hours"));
-  const total = measured.reduce((s, g) => s + g.runHours, 0);
+  const total = measured.reduce((s, g) => s + (g.runHours ?? 0), 0);
   return (
     <ScreenBody>
       <Stats

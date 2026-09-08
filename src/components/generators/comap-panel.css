@@ -89,6 +89,41 @@
   box-shadow: var(--glow-offline);
 }
 
+.comap-logo.alert {
+  border-color: var(--alert);
+  box-shadow: 0 0 8px color-mix(in oklab, var(--alert) 55%, transparent);
+}
+
+.comap-logo.not-configured {
+  border-color: var(--industrial-muted);
+  box-shadow: none;
+  opacity: 0.9;
+}
+
+.generator-card-state {
+  flex: 0 0 auto;
+  padding: 2px 7px 3px;
+  border-top: 1px solid color-mix(in oklab, var(--industrial-border) 72%, transparent);
+  border-bottom: 1px solid color-mix(in oklab, var(--industrial-border) 72%, transparent);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+.generator-card-state.is-offline {
+  color: var(--offline);
+  background: color-mix(in oklab, var(--offline) 9%, transparent);
+}
+.generator-card-state.is-alert {
+  color: var(--alert);
+  background: color-mix(in oklab, var(--alert) 9%, transparent);
+}
+.generator-card-state.is-not-configured {
+  color: var(--industrial-muted);
+  background: color-mix(in oklab, var(--industrial-muted) 7%, transparent);
+}
+
 .comap-name {
   min-width: 0;
   flex: 1;

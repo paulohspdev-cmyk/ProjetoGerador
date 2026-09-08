@@ -37,9 +37,9 @@ export function gensBySite(list: Generator[] = []): SiteAggregate[] {
   return [...map.entries()].map(([name, gens]) => {
     const loadRows = gens.filter((g) => (g.availableMetrics ?? []).includes("power_kw"));
     const fuelRows = gens.filter((g) => (g.availableMetrics ?? []).includes("fuel_level"));
-    const measuredLoad = loadRows.length ? loadRows.reduce((s, g) => s + g.load, 0) : null;
+    const measuredLoad = loadRows.length ? loadRows.reduce((s, g) => s + (g.load ?? 0), 0) : null;
     const measuredFuel = fuelRows.length
-      ? fuelRows.reduce((s, g) => s + g.fuelLevel, 0) / fuelRows.length
+      ? fuelRows.reduce((s, g) => s + (g.fuelLevel ?? 0), 0) / fuelRows.length
       : null;
     return {
       id:

@@ -321,7 +321,7 @@ def trend_for_generator(generator, metric, hours=24, archive_bit=1):
         if not item.get("defined"):
             continue
         raw_value = item.get("val", 0)
-        if _is_undefined_raw(generator, key, raw_value):
+        if _is_undefined_raw(generator, metric, raw_value):
             continue
         try:
             value = float(raw_value) * scale
@@ -479,7 +479,6 @@ def _frontend_generator(
     stale_metrics=None,
 ):
     enabled = bool(generator.get("enabled"))
-    rpm = int(values.get("rpm") or 0)
     online = status == "online"
     warning = status in {"fault", "connected", "partial"}
     defined_metrics = sorted(set(defined or []))
@@ -498,7 +497,7 @@ def _frontend_generator(
     }
     ui_status = (
         "nao_configurado"
-        if not enabled
+        if not enabled or status == "not_configured"
         else "online"
         if online
         else "alerta"
@@ -526,29 +525,29 @@ def _frontend_generator(
         "frequency": values.get("frequency"),
         "mainsFrequency": values.get("mains_frequency"),
         "nominalPower": values.get("nominal_power_kw"),
-        "rpm": rpm,
-        "load": float(values.get("power_kw") or 0),
-        "oilPressure": float(values.get("oil_pressure") or 0),
-        "coolantTemp": float(values.get("coolant_temperature") or 0),
-        "fuelLevel": float(values.get("fuel_level") or 0),
-        "alternatorVoltage": float(values.get("alternator_voltage") or 0),
-        "maintenance": float(values.get("maintenance_hours") or 0),
-        "runHours": float(values.get("run_hours") or 0),
+        "rpm": values.get("rpm"),
+        "load": values.get("power_kw"),
+        "oilPressure": values.get("oil_pressure"),
+        "coolantTemp": values.get("coolant_temperature"),
+        "fuelLevel": values.get("fuel_level"),
+        "alternatorVoltage": values.get("alternator_voltage"),
+        "maintenance": values.get("maintenance_hours"),
+        "runHours": values.get("run_hours"),
         "latency": None,
         "alarms": 1 if status == "fault" else int(values.get("alarm_count") or 0),
         "mcb": bool(values.get("mcb_closed", False)),
         "gcb": bool(values.get("gcb_closed", False)),
         "mains": {
-            "l1": float(values.get("mains_voltage_l1") or 0),
-            "l2": float(values.get("mains_voltage_l2") or 0),
-            "l3": float(values.get("mains_voltage_l3") or 0),
-            "l12": float(values.get("mains_voltage_l1_l2") or 0),
+            "l1": values.get("mains_voltage_l1"),
+            "l2": values.get("mains_voltage_l2"),
+            "l3": values.get("mains_voltage_l3"),
+            "l12": values.get("mains_voltage_l1_l2"),
         },
         "gen": {
-            "l1": float(values.get("voltage_l1") or 0),
-            "l2": float(values.get("voltage_l2") or 0),
-            "l3": float(values.get("voltage_l3") or 0),
-            "l12": float(values.get("voltage_l1_l2") or 0),
+            "l1": values.get("voltage_l1"),
+            "l2": values.get("voltage_l2"),
+            "l3": values.get("voltage_l3"),
+            "l12": values.get("voltage_l1_l2"),
         },
         "metrics": dict(values),
         "availableMetrics": sorted(values.keys()),
@@ -628,13 +627,24 @@ def _overlay_generators(generators):
 
         if not binding:
             health.update({"controller": "unknown", "telemetry": "not_configured"})
-            state = "connected" if health.get("transport") == "connected" else "offline"
+            pack = _pack(generator)
+            production_profile = bool(
+                pack
+                and pack.get("lifecycle") == "production"
+                and (pack.get("capabilities") or {}).get("telemetry")
+            )
+            if production_profile:
+                state = "connected" if health.get("transport") == "connected" else "offline"
+                detail = "Controladora homologada sem binding Rapid SCADA"
+            else:
+                state = "not_configured"
+                detail = "Sem perfil de telemetria de produção homologado"
             result.append(
                 _frontend_generator(
                     generator,
                     {},
                     state,
-                    "Sem binding Rapid SCADA",
+                    detail,
                     defined=[],
                     configured_metrics=[],
                     binding_present=False,
@@ -753,7 +763,9 @@ def _overlay_generators(generators):
             )
         else:
             health.update({"controller": "unknown", "telemetry": "no_data"})
-            state = "offline" if health.get("transport") == "disconnected" else "connected"
+            state = (
+                "connected" if health.get("transport") == "connected" else "offline"
+            )
             stale_values, _stale_defined, stale_at = last_known()
             result.append(
                 _frontend_generator(

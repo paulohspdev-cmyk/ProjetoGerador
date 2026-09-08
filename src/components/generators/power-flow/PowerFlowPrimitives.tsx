@@ -17,6 +17,7 @@ export function EngineRow({
   known = true,
   tone = "neutral",
   lastKnown = false,
+  unknownLabel = "N/D",
 }: {
   icon: ReactNode;
   label: string;
@@ -26,6 +27,7 @@ export function EngineRow({
   known?: boolean;
   tone?: MeterTone;
   lastKnown?: boolean;
+  unknownLabel?: string;
 }) {
   const showBar = bar || pct != null;
   const hasScale = known && pct != null;
@@ -50,7 +52,7 @@ export function EngineRow({
         <span />
       )}
       <span className="engine-value">
-        {known ? value : "N/D"}
+        {known ? value : unknownLabel}
         {known && lastKnown && <small>ÚLT.</small>}
       </span>
     </div>

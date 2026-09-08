@@ -101,7 +101,10 @@ export function OperationCenter() {
           ) : (
             <div className="grid gap-2 sm:grid-cols-2 2xl:grid-cols-3">
               {generators.map((generator) => {
-                const rpm = hasMetric(generator, "rpm") ? `${fmt(generator.rpm, 0)} rpm` : "—";
+                const rpm =
+                  hasMetric(generator, "rpm") && generator.rpm != null
+                    ? `${fmt(generator.rpm, 0)} rpm`
+                    : "—";
                 const hz =
                   hasMetric(generator, "frequency") && generator.frequency != null
                     ? `${fmt(generator.frequency, 1)} Hz`

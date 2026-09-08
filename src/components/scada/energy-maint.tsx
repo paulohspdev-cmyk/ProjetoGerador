@@ -114,12 +114,14 @@ export function EnergyRede() {
 
 export function EnergyGens() {
   const { generators } = useGenerators();
-  const running = generators.filter((g) => hasMetric(g, "rpm") && g.rpm > 300).length;
+  const running = generators.filter(
+    (g) => hasMetric(g, "rpm") && g.rpm != null && g.rpm > 300,
+  ).length;
   const powerSupported = supportedCount(generators, "power_kw");
   const freqSupported = supportedCount(generators, "frequency");
   const totalKw = generators
     .filter((g) => hasMetric(g, "power_kw"))
-    .reduce((sum, g) => sum + g.load, 0);
+    .reduce((sum, g) => sum + (g.load ?? 0), 0);
 
   return (
     <ScreenBody>
@@ -170,7 +172,7 @@ export function EnergyLoad() {
     c: hasMetric(g, "power_kw") ? "Medido" : "Sem canal de potência",
   }));
   const measured = generators.filter((g) => hasMetric(g, "power_kw"));
-  const total = measured.reduce((s, g) => s + g.load, 0);
+  const total = measured.reduce((s, g) => s + (g.load ?? 0), 0);
   return (
     <ScreenBody>
       <Stats
