@@ -23,12 +23,6 @@ export function GeneratorDetailElectrical({
     batt,
     runHours,
     maintenance,
-    currentL1,
-    currentL2,
-    currentL3,
-    powerFactor,
-    powerKvar,
-    powerKva,
   } = model;
 
   return (
@@ -44,13 +38,7 @@ export function GeneratorDetailElectrical({
           <MetricCell label="L3-N" value={formatMetric(genL3, "V", 0)} />
           <MetricCell label="L1-L2" value={formatMetric(genL12, "V", 0)} />
           <MetricCell label="Frequência" value={formatMetric(frequency, "Hz", 2)} />
-          <MetricCell label="Potência ativa" value={formatMetric(load, "kW", 0)} />
-          <MetricCell label="Potência reativa" value={formatMetric(powerKvar, "kvar", 0)} />
-          <MetricCell label="Potência aparente" value={formatMetric(powerKva, "kVA", 0)} />
-          <MetricCell label="Fator potência" value={formatMetric(powerFactor, "", 2)} />
-          <MetricCell label="Corrente L1" value={formatMetric(currentL1, "A", 0)} />
-          <MetricCell label="Corrente L2" value={formatMetric(currentL2, "A", 0)} />
-          <MetricCell label="Corrente L3" value={formatMetric(currentL3, "A", 0)} />
+          <MetricCell label="Potência" value={formatMetric(load, "kW", 0)} />
           <MetricCell label="GCB" value={gcbKnown ? (gen.gcb ? "FECHADO" : "ABERTO") : "N/D"} />
           <MetricCell label="RPM" value={formatMetric(rpm, "rpm", 0)} />
           <MetricCell
