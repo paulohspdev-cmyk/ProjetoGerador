@@ -168,10 +168,10 @@ export function RegisterGeneratorButton({
       : isSerial
         ? Boolean(
             host.trim() &&
-              Number.isInteger(effectiveBaud) &&
-              effectiveBaud > 0 &&
-              parity &&
-              stopBits,
+            Number.isInteger(effectiveBaud) &&
+            effectiveBaud > 0 &&
+            parity &&
+            stopBits,
           )
         : Boolean(host.trim() && effectivePort > 0);
 
@@ -213,10 +213,17 @@ export function RegisterGeneratorButton({
       return;
     }
     if (transport !== "reverse_tcp" && !host.trim()) {
-      setError(isSerial ? "Informe o dispositivo serial." : "Informe o endereço da controladora ou gateway.");
+      setError(
+        isSerial
+          ? "Informe o dispositivo serial."
+          : "Informe o endereço da controladora ou gateway.",
+      );
       return;
     }
-    if (!isSerial && (!Number.isInteger(effectivePort) || effectivePort < 1 || effectivePort > 65535)) {
+    if (
+      !isSerial &&
+      (!Number.isInteger(effectivePort) || effectivePort < 1 || effectivePort > 65535)
+    ) {
       setError("A porta informada não é válida.");
       return;
     }
@@ -484,8 +491,8 @@ export function RegisterGeneratorButton({
                       ? "Cadastro liberado pelo fluxo de geradores: "
                       : "Cadastro técnico liberado: "}
                     porta/serial e Unit ID serão salvos para diagnóstico e leitura da controladora.
-                    Rapid automático, START, STOP e contatores permanecem bloqueados até a homologação
-                    do Controller Pack.
+                    Rapid automático, START, STOP e contatores permanecem bloqueados até a
+                    homologação do Controller Pack.
                   </p>
                 )}
                 {createdId && (
