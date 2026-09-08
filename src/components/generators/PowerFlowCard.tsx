@@ -18,15 +18,7 @@ import {
   EngineRow,
   PowerGaugeKw,
 } from "./power-flow/PowerFlowPrimitives";
-import {
-  IconBolt,
-  IconClock,
-  IconFuelPump,
-  IconHouse,
-  IconOilCan,
-  IconRunHours,
-  IconThermometer,
-} from "./scada-icons";
+import { IconClock, IconFuelPump, IconHouse, IconRunHours } from "./scada-icons";
 import "./comap-panel.css";
 import "./powerflow-card-v2.css";
 
@@ -43,13 +35,9 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const telemetry = readGeneratorTelemetry(gen);
   const {
     rpm,
-    oil,
-    oilUnit,
-    coolant: temp,
     fuel,
     fuelUnit,
     battery: batt,
-    alternator: alt,
     maintenance,
     runHours,
     frequency,
@@ -257,26 +245,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       <section className="comap-block engine-status-block shrink-0 px-2 py-1.5">
         <h2 className="comap-title mb-1">Estado do motor</h2>
         <EngineRow
-          icon={<IconOilCan />}
-          label="Pressão do óleo"
-          value={oil == null ? "N/D" : `${fmt(oil, 2)} ${oilUnit}`}
-          pct={percents.oil}
-          bar
-          known={oil != null}
-          lastKnown={oil != null && !hasFreshMetric(gen, "oil_pressure")}
-          tone={hasFreshMetric(gen, "oil_pressure") ? tones.oil : "neutral"}
-        />
-        <EngineRow
-          icon={<IconThermometer />}
-          label="Temp. do líquido"
-          value={temp == null ? "N/D" : `${fmt(temp, 0)} °C`}
-          pct={percents.coolant}
-          bar
-          known={temp != null}
-          lastKnown={temp != null && !hasFreshMetric(gen, "coolant_temperature")}
-          tone={hasFreshMetric(gen, "coolant_temperature") ? tones.coolant : "neutral"}
-        />
-        <EngineRow
           icon={<IconFuelPump />}
           label="Combustível"
           value={fuel == null ? "N/D" : `${fmt(fuel, 0)} ${fuelUnit}`}
@@ -285,16 +253,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
           known={fuel != null}
           lastKnown={fuel != null && !hasFreshMetric(gen, "fuel_level")}
           tone={hasFreshMetric(gen, "fuel_level") ? tones.fuel : "neutral"}
-        />
-        <EngineRow
-          icon={<IconBolt />}
-          label="Tensão alternador"
-          value={alt == null ? "N/D" : `${fmt(alt)} V`}
-          pct={percents.alternator}
-          bar
-          known={alt != null}
-          lastKnown={alt != null && !hasFreshMetric(gen, "alternator_voltage")}
-          tone={hasFreshMetric(gen, "alternator_voltage") ? tones.alternator : "neutral"}
         />
         <EngineRow
           icon={<IconClock />}

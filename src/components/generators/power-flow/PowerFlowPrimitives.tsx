@@ -117,15 +117,20 @@ export function ControllerModeBar({ gen, known }: { gen: Generator; known: boole
   );
 }
 
-function niceGaugeMaximum(nominal: number | null) {
-  if (nominal == null || !Number.isFinite(nominal) || nominal <= 0) return 500;
+function controllerGaugeMaximum(nominal: number | null) {
+  return nominal != null && Number.isFinite(nominal) && nominal > 0 ? nominal : null;
+}
 
-  const roughStep = nominal / 5;
+function gaugeLabelValues(maximum: number) {
+  const roughStep = maximum / 5;
   const magnitude = 10 ** Math.floor(Math.log10(roughStep));
   const normalized = roughStep / magnitude;
   const niceStep = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
-
-  return niceStep * magnitude * 5;
+  const step = niceStep * magnitude;
+  const values = [0];
+  for (let value = step; value < maximum && values.length < 6; value += step) values.push(value);
+  if (values.at(-1) !== maximum) values.push(maximum);
+  return values;
 }
 
 export function PowerGaugeKw({
@@ -142,15 +147,11 @@ export function PowerGaugeKw({
   powerFactor?: number | null;
 }) {
   const hasValue = value != null && Number.isFinite(value);
-  const displayMax = niceGaugeMaximum(nominal);
+  const displayMax = controllerGaugeMaximum(nominal);
   const gaugeValue = hasValue ? Math.max(0, value) : 0;
-  const pct = Math.min(1, gaugeValue / displayMax);
-  const nominalPct =
-    nominal != null && Number.isFinite(nominal) && nominal > 0
-      ? Math.min(1, nominal / displayMax)
-      : 0.88;
-  const greenEnd = Math.min(0.76, Math.max(0.62, nominalPct - 0.13));
-  const amberEnd = Math.min(0.92, Math.max(greenEnd + 0.08, nominalPct));
+  const pct = displayMax == null ? 0 : Math.min(1, gaugeValue / displayMax);
+  const greenEnd = 0.76;
+  const amberEnd = 0.92;
 
   const cx = 150;
   const cy = 143;
@@ -190,17 +191,26 @@ export function PowerGaugeKw({
     };
   });
 
-  const labels = Array.from({ length: 6 }, (_, index) => {
-    const fraction = index / 5;
-    const angle = 180 + fraction * 180;
+  const labels =
+    displayMax == null
+      ? [
+          { index: 0, fraction: 0, text: "0" },
+          { index: 1, fraction: 1, text: "N/D" },
+        ]
+      : gaugeLabelValues(displayMax).map((labelValue, index) => ({
+          index,
+          fraction: labelValue / displayMax,
+          text: fmt(labelValue, 0),
+        }));
+
+  const positionedLabels = labels.map((label) => {
+    const angle = 180 + label.fraction * 180;
     const rad = (angle * Math.PI) / 180;
     const radius = 132;
-
     return {
-      index,
+      ...label,
       x: cx + Math.cos(rad) * radius,
       y: cy + Math.sin(rad) * radius + 3,
-      text: fmt(displayMax * fraction, 0),
     };
   });
 
@@ -231,26 +241,30 @@ export function PowerGaugeKw({
         aria-label={value == null ? "Potência indisponível" : `Potência ${fmt(value, 0)} kW`}
       >
         <path d={arcPath} pathLength="100" className="generator-gauge-base" />
-        <path
-          d={arcPath}
-          pathLength="100"
-          className="generator-gauge-zone generator-gauge-green"
-          strokeDasharray={`${greenPct} ${100 - greenPct}`}
-        />
-        <path
-          d={arcPath}
-          pathLength="100"
-          className="generator-gauge-zone generator-gauge-amber"
-          strokeDasharray={`${amberPct} ${100 - amberPct}`}
-          strokeDashoffset={-greenPct}
-        />
-        <path
-          d={arcPath}
-          pathLength="100"
-          className="generator-gauge-zone generator-gauge-red"
-          strokeDasharray={`${redPct} ${100 - redPct}`}
-          strokeDashoffset={-(greenPct + amberPct)}
-        />
+        {displayMax != null && (
+          <>
+            <path
+              d={arcPath}
+              pathLength="100"
+              className="generator-gauge-zone generator-gauge-green"
+              strokeDasharray={`${greenPct} ${100 - greenPct}`}
+            />
+            <path
+              d={arcPath}
+              pathLength="100"
+              className="generator-gauge-zone generator-gauge-amber"
+              strokeDasharray={`${amberPct} ${100 - amberPct}`}
+              strokeDashoffset={-greenPct}
+            />
+            <path
+              d={arcPath}
+              pathLength="100"
+              className="generator-gauge-zone generator-gauge-red"
+              strokeDasharray={`${redPct} ${100 - redPct}`}
+              strokeDashoffset={-(greenPct + amberPct)}
+            />
+          </>
+        )}
 
         {ticks.map((tick) => (
           <line
@@ -267,7 +281,7 @@ export function PowerGaugeKw({
           />
         ))}
 
-        {labels.map((label) => (
+        {positionedLabels.map((label) => (
           <text
             key={label.index}
             x={label.x}
@@ -281,7 +295,10 @@ export function PowerGaugeKw({
 
         <polygon
           points={needlePoints}
-          className={cn("generator-gauge-needle", !hasValue && "is-unknown")}
+          className={cn(
+            "generator-gauge-needle",
+            (!hasValue || displayMax == null) && "is-unknown",
+          )}
         />
         <circle cx={cx} cy={cy} r="7.5" className="generator-gauge-hub" />
         <circle cx={cx} cy={cy} r="2.6" className="generator-gauge-hub-center" />
@@ -292,12 +309,14 @@ export function PowerGaugeKw({
         <span>kW</span>
       </div>
 
-      <div className={cn("generator-battery-badge", battery == null && "is-unknown")}>
+      <div
+        className={cn("generator-battery-badge", battery == null && "is-unknown")}
+        aria-label="Tensão da bateria"
+      >
         <svg className="generator-battery-icon" viewBox="0 0 24 16" aria-hidden="true">
           <rect x="1" y="3" width="20" height="12" rx="1.5" />
           <path d="M21 7h2v4h-2M5 7v4M3 9h4M15 7v4" />
         </svg>
-        <span>BAT</span>
         <b>{battery == null ? "N/D" : `${fmt(battery)} V`}</b>
       </div>
     </div>
