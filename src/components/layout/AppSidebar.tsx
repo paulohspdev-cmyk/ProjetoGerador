@@ -1,7 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  Bell,
   ChevronDown,
   LogOut,
   Maximize2,
@@ -138,7 +137,7 @@ function SidebarNav({ collapsed, onNavigate, onToggle, onClose, touchFriendly }:
         <div
           className={cn(
             "shrink-0 border-b border-sidebar-border",
-            collapsed ? "grid grid-cols-1 gap-1 px-2 py-2" : "grid grid-cols-3 gap-1.5 px-2 py-2",
+            collapsed ? "grid grid-cols-1 gap-1 px-2 py-2" : "grid grid-cols-2 gap-1.5 px-2 py-2",
           )}
           aria-label="Ações rápidas"
         >
@@ -161,21 +160,6 @@ function SidebarNav({ collapsed, onNavigate, onToggle, onClose, touchFriendly }:
           >
             {fullscreen ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
           </button>
-          <Link
-            to="/p/$slug"
-            params={{ slug: "alarmes" }}
-            title="Alarmes"
-            aria-label="Alarmes"
-            onClick={onNavigate}
-            className="relative grid h-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          >
-            <Bell className="size-4" />
-            {alarmCount > 0 && (
-              <span className="num absolute right-1 top-0 rounded-full bg-destructive px-1.5 text-[9px] font-bold leading-4 text-destructive-foreground">
-                {alarmCount}
-              </span>
-            )}
-          </Link>
         </div>
       )}
 
@@ -222,6 +206,7 @@ function SidebarNav({ collapsed, onNavigate, onToggle, onClose, touchFriendly }:
                 <ul className="space-y-0.5 overflow-hidden">
                   {group.items.map((item) => {
                     const active = isActive(item.slug);
+                    const alarmItem = item.slug === "alarmes";
                     return (
                       <Fragment key={item.slug + item.label}>
                         <li>
@@ -230,7 +215,7 @@ function SidebarNav({ collapsed, onNavigate, onToggle, onClose, touchFriendly }:
                             title={collapsed ? item.label : undefined}
                             onClick={onNavigate}
                             className={cn(
-                              "group flex items-center gap-2.5 rounded-md px-2 text-sm transition-colors",
+                              "group relative flex items-center gap-2.5 rounded-md px-2 text-sm transition-colors",
                               touchFriendly ? "min-h-11 py-2" : "min-h-9 py-1.5",
                               collapsed && "justify-center px-0",
                               active
@@ -244,7 +229,20 @@ function SidebarNav({ collapsed, onNavigate, onToggle, onClose, touchFriendly }:
                                 active ? "text-primary" : "text-muted-foreground",
                               )}
                             />
-                            {!collapsed && <span className="truncate">{item.label}</span>}
+                            {!collapsed && <span className="truncate pr-8">{item.label}</span>}
+                            {alarmItem && alarmCount > 0 && (
+                              <span
+                                className={cn(
+                                  "num absolute rounded-full bg-destructive px-1.5 text-[9px] font-bold leading-4 text-destructive-foreground",
+                                  collapsed
+                                    ? "right-0.5 top-0"
+                                    : "right-2 top-1/2 -translate-y-1/2",
+                                )}
+                                aria-label={`${alarmCount} alarmes pendentes`}
+                              >
+                                {alarmCount}
+                              </span>
+                            )}
                           </Link>
                         </li>
                         {canRegister && item.slug === "geradores" && (
@@ -322,21 +320,23 @@ function SidebarNav({ collapsed, onNavigate, onToggle, onClose, touchFriendly }:
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
-  const { collapsed, toggleCollapsed, mobileOpen, setMobileOpen } = useLayout();
+  const { collapsed, toggleCollapsed, mobileOpen, setMobileOpen, fullscreen } = useLayout();
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname, setMobileOpen]);
 
   return (
     <>
-      <aside
-        className={cn(
-          "sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-200 lg:flex",
-          collapsed ? "w-[72px]" : "w-[252px] 3xl:w-[280px]",
-        )}
-      >
-        <SidebarNav collapsed={collapsed} onToggle={toggleCollapsed} />
-      </aside>
+      {!(pathname === "/p/geradores" && fullscreen) && (
+        <aside
+          className={cn(
+            "sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-200 lg:flex",
+            collapsed ? "w-[72px]" : "w-[252px] 3xl:w-[280px]",
+          )}
+        >
+          <SidebarNav collapsed={collapsed} onToggle={toggleCollapsed} />
+        </aside>
+      )}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetContent
           side="left"
