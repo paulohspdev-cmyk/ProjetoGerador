@@ -41,7 +41,11 @@ from provision_generator import (  # noqa: E402
     _restore_backup,
     _save_bindings,
 )
-from service_guard import restore_after_mutation, stop_for_mutation  # noqa: E402
+from service_guard import (  # noqa: E402
+    ensure_stopped_for_mutation,
+    restore_after_mutation,
+    stop_for_mutation,
+)
 
 
 def _load_retired() -> list[dict]:
@@ -123,11 +127,14 @@ def deprovision(generator_id: str, restart: bool = True) -> dict:
     runtime_existed = RUNTIME_BINDINGS.exists()
     backup = _backup([*required, RUNTIME_BINDINGS, RETIRED_BINDINGS])
     service_state: dict[str, bool] | None = None
+    mutation_failed = False
     changes: list[str] = []
 
     try:
         if restart:
             service_state = stop_for_mutation()
+        else:
+            ensure_stopped_for_mutation()
 
         for key, cfg in _all_bound_channels(binding).items():
             cnl = int(cfg.get("cnl") or 0)
@@ -199,6 +206,7 @@ def deprovision(generator_id: str, restart: bool = True) -> dict:
             f"line={line_num};device={device_num};channels_preserved=true;backup={backup}",
         )
     except Exception:
+        mutation_failed = True
         _restore_backup(
             backup,
             [
@@ -221,11 +229,11 @@ def deprovision(generator_id: str, restart: bool = True) -> dict:
             try:
                 restore_after_mutation(service_state)
             except Exception as restore_exc:
-                if sys.exc_info()[0] is None:
+                if not mutation_failed:
                     raise
                 print(
                     json.dumps(
-                        {"warning": "falha ao restaurar serviços após erro", "error": str(restore_exc)},
+                        {"warning": "falha ao restaurar serviços após rollback", "error": str(restore_exc)},
                         ensure_ascii=False,
                     ),
                     file=sys.stderr,
