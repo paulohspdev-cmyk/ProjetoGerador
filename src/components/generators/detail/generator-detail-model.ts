@@ -34,25 +34,6 @@ export function buildGeneratorDetailModel(gen: Generator) {
   const maintenance = metricNumber(gen, "maintenance_hours", gen.maintenance);
   const runHours = metricNumber(gen, "run_hours", gen.runHours);
   const alarms = metricNumber(gen, "alarm_count", gen.alarms);
-  const intakeTemp = metricNumber(gen, "intake_temperature", undefined);
-  const intakePressure = metricNumber(gen, "intake_pressure", undefined);
-  const engineLoad = metricNumber(gen, "engine_load", undefined);
-  const fuelRate = metricNumber(gen, "fuel_rate", undefined);
-  const powerFactor = metricNumber(gen, "power_factor", undefined);
-  const powerKvar = metricNumber(gen, "power_kvar", undefined);
-  const powerKva = metricNumber(gen, "power_kva", undefined);
-  const gensetKwh = metricNumber(gen, "genset_kwh", undefined);
-  const numberStarts = metricNumber(gen, "number_starts", undefined);
-  const totalFuelConsumption = metricNumber(gen, "total_fuel_consumption", undefined);
-  const nominalPower = metricNumber(gen, "nominal_power_kw", gen.nominalPower);
-  const nominalVoltage = metricNumber(gen, "nominal_voltage", undefined);
-  const nominalCurrent = metricNumber(gen, "nominal_current", undefined);
-  const currentL1 = metricNumber(gen, "current_l1", undefined);
-  const currentL2 = metricNumber(gen, "current_l2", undefined);
-  const currentL3 = metricNumber(gen, "current_l3", undefined);
-  const oilTemp = metricNumber(gen, "oil_temperature", undefined);
-  const engineStateRaw = metricNumber(gen, "engine_state_raw", undefined);
-  const breakerStateRaw = metricNumber(gen, "breaker_state_raw", undefined);
 
   const runningKnown = rpm != null;
   const running = runningKnown ? isPositiveMeasurement(rpm) : null;
@@ -86,25 +67,6 @@ export function buildGeneratorDetailModel(gen: Generator) {
     maintenance,
     runHours,
     alarms,
-    intakeTemp,
-    intakePressure,
-    engineLoad,
-    fuelRate,
-    powerFactor,
-    powerKvar,
-    powerKva,
-    gensetKwh,
-    numberStarts,
-    totalFuelConsumption,
-    nominalPower,
-    nominalVoltage,
-    nominalCurrent,
-    currentL1,
-    currentL2,
-    currentL3,
-    oilTemp,
-    engineStateRaw,
-    breakerStateRaw,
     runningKnown,
     running,
     mcbKnown,
