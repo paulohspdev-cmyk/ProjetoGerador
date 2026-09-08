@@ -27,6 +27,11 @@ function hasMetric(g: Generator, key: string) {
   return (g.availableMetrics ?? []).includes(key);
 }
 
+function metricUnit(g: Generator, key: string, fallback = "") {
+  const unit = g.metricUnits?.[key];
+  return typeof unit === "string" && unit.trim() ? unit.trim() : fallback;
+}
+
 function valueOrDash(
   g: Generator,
   key: string,
@@ -35,7 +40,8 @@ function valueOrDash(
   digits = 1,
 ) {
   if (!hasMetric(g, key) || value == null) return "—";
-  return `${fmt(value, digits)}${unit ? ` ${unit}` : ""}`;
+  const resolvedUnit = metricUnit(g, key, unit);
+  return `${fmt(value, digits)}${resolvedUnit ? ` ${resolvedUnit}` : ""}`;
 }
 
 function supportedCount(generators: Generator[], metric: string) {
@@ -101,7 +107,7 @@ export function EnergyRede() {
           id: g.id,
           gen: g.tag,
           a: valueOrDash(g, "mains_voltage_l1", g.mains.l1, "V", 1),
-          b: valueOrDash(g, "mains_frequency", null, "Hz", 2),
+          b: valueOrDash(g, "mains_frequency", g.mainsFrequency, "Hz", 2),
           c: hasMetric(g, "mcb_closed") ? (g.mcb ? "MCB fechado" : "MCB aberto") : "MCB N/D",
         }))}
       />
@@ -418,7 +424,9 @@ export function MaintenanceScreen() {
 export function FuelScreen() {
   const { generators } = useGenerators();
   const measured = generators.filter((g) => hasMetric(g, "fuel_level"));
-  const mean = measured.length
+  const units = [...new Set(measured.map((g) => metricUnit(g, "fuel_level")).filter(Boolean))];
+  const commonUnit = units.length === 1 ? units[0] ?? "" : "";
+  const mean = measured.length && commonUnit
     ? measured.reduce((s, g) => s + g.fuelLevel, 0) / measured.length
     : null;
   return (
@@ -427,8 +435,13 @@ export function FuelScreen() {
         items={[
           {
             icon: Fuel,
-            label: "Nível médio medido",
-            value: mean == null ? "N/D" : `${fmt(mean, 0)} %`,
+            label: "Média medida",
+            value:
+              mean == null
+                ? measured.length
+                  ? "Unidades mistas"
+                  : "N/D"
+                : `${fmt(mean, 0)} ${commonUnit}`,
           },
           {
             icon: Fuel,
@@ -438,8 +451,8 @@ export function FuelScreen() {
         ]}
       />
       <InfoNotice>
-        O painel mostra o nível medido, mas só classifica combustível como baixo quando existir um
-        limite configurado para o equipamento.
+        A unidade informada pelo Controller Pack é preservada por equipamento. Litros não são
+        convertidos em porcentagem sem capacidade de tanque configurada.
       </InfoNotice>
       <Panel title="Tanques / geradores">
         <ScadaTable
@@ -447,7 +460,11 @@ export function FuelScreen() {
           columns={[
             { label: "Gerador", render: (r) => <b>{r.tag}</b> },
             { label: "Site", render: (r) => r.site },
-            { label: "Nível", render: (r) => valueOrDash(r, "fuel_level", r.fuelLevel, "%", 0) },
+            {
+              label: "Nível",
+              render: (r) =>
+                valueOrDash(r, "fuel_level", r.fuelLevel, metricUnit(r, "fuel_level"), 0),
+            },
             {
               label: "Estado",
               render: (r) =>
