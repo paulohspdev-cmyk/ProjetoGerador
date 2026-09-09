@@ -566,3 +566,99 @@
     font-size: 10.5px;
   }
 }
+
+/* vertical-card-layout-v5: compact commands, centered generator, readable instrumentation */
+.generator-six-card-grid .generator-command-stack {
+  bottom: 2px;
+  left: calc(50% + 20px);
+  gap: 3px;
+}
+
+.generator-six-card-grid .generator-command-stack.with-mains {
+  left: calc(35% + 20px);
+}
+
+.generator-six-card-grid .generator-command-stack .comap-start,
+.generator-six-card-grid .generator-command-stack .comap-stop {
+  width: 34px;
+  height: 25px;
+  border-radius: 4px;
+  font-size: 7.5px;
+  line-height: 1;
+}
+
+@media (min-width: 1540px) {
+  .generator-six-card-grid .generator-command-stack .comap-start,
+  .generator-six-card-grid .generator-command-stack .comap-stop {
+    width: 34px;
+    height: 25px;
+  }
+}
+
+.generator-six-card-grid .flow-load-card-title {
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.generator-six-card-grid .flow-device-icon {
+  stroke-width: 2.35px;
+}
+
+.generator-six-card-grid .engine-status-block .comap-title {
+  font-size: 13px;
+}
+
+.generator-six-card-grid .comap-engine {
+  grid-template-columns: 17px minmax(74px, 0.95fr) minmax(56px, 1.2fr) minmax(54px, auto);
+  min-height: 19px;
+  column-gap: 4px;
+  font-size: 11.5px;
+}
+
+.generator-six-card-grid .comap-engine .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.generator-six-card-grid .comap-engine .engine-label,
+.generator-six-card-grid .comap-engine .engine-value {
+  font-size: 11.5px;
+}
+
+.generator-six-card-grid .comap-engine .engine-label {
+  font-weight: 750;
+}
+
+.generator-six-card-grid .comap-engine .engine-value {
+  min-width: 54px;
+  font-weight: 900;
+}
+
+.generator-six-card-grid .generator-gauge-scale {
+  font-size: 17px;
+  font-weight: 950;
+  paint-order: stroke fill;
+  stroke: var(--industrial-bg);
+  stroke-width: 1.35px;
+}
+
+.generator-six-card-grid .generator-power-readout strong {
+  font-size: 33px;
+}
+
+.generator-six-card-grid .generator-power-readout span {
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.generator-six-card-grid .generator-battery-badge {
+  right: 3px;
+  bottom: 3px;
+  gap: 4px;
+  font-size: 9.5px;
+}
+
+.generator-six-card-grid .generator-battery-icon {
+  width: 18px;
+  height: 13px;
+}
