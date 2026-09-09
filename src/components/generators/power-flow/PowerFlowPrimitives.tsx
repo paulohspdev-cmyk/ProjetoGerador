@@ -34,7 +34,7 @@ export function EngineRow({
   const fill = hasScale ? Math.min(100, Math.max(0, pct)) : 0;
 
   return (
-    <div className={cn("comap-engine", !known && "opacity-65", lastKnown && "is-last-known")}>
+    <div className={cn("comap-engine", !known && "is-unknown", lastKnown && "is-last-known")}>
       {icon}
       <span className="engine-label">{label}</span>
       {showBar ? (
@@ -191,7 +191,7 @@ export function PowerGaugeKw({
   const positionedLabels = labels.map((label) => {
     const angle = 180 + label.fraction * 180;
     const rad = (angle * Math.PI) / 180;
-    const radius = 132;
+    const radius = 124;
     return {
       ...label,
       x: cx + Math.cos(rad) * radius,
