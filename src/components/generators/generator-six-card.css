@@ -1072,21 +1072,6 @@
   font-size: 20px;
 }
 
-/* Use the remaining card height for the generator voltage rows instead of dead space. */
-.generator-six-card-grid .mains-generator-block {
-  display: grid;
-  grid-template-rows: auto auto repeat(4, minmax(21px, 1fr));
-  min-height: 0;
-  flex: 1 1 auto;
-  margin-bottom: 5px;
-  padding-bottom: 7px !important;
-}
-
-.generator-six-card-grid .mains-generator-block .comap-table-row {
-  min-height: 21px;
-  align-items: center;
-}
-
 /* Keep a small safe margin for narrow cards while preserving readability. */
 @container (max-width: 270px) {
   .generator-six-card-grid .comap-header {
@@ -1105,5 +1090,48 @@
 
   .generator-six-card-grid .controller-model-line {
     font-size: 10px;
+  }
+}
+/* vertical-card-layout-v10: engine spacing, command clearance and gauge breathing room */
+/* Keep GERADOR compact: only typography from v8 remains, no artificial vertical stretching. */
+.generator-six-card-grid .mains-generator-block {
+  display: block;
+  flex: 0 0 auto;
+  margin-bottom: 3px;
+  padding-bottom: 6px !important;
+}
+
+/* Engine Status gets the requested breathing room: icon -> label -> bar -> value. */
+.generator-six-card-grid .comap-engine {
+  grid-template-columns: 20px 84px minmax(46px, 1fr) 60px;
+  column-gap: 6px;
+}
+
+.generator-six-card-grid .comap-engine .engine-label {
+  padding-left: 3px;
+}
+
+.generator-six-card-grid .comap-engine .engine-value {
+  padding-left: 3px;
+  padding-right: 2px;
+}
+
+/* Give START/STOP a little more clearance from the generator circle. */
+.generator-six-card-grid .generator-command-stack {
+  left: calc(50% + 34px);
+}
+
+.generator-six-card-grid .generator-command-stack.with-mains {
+  left: calc(35% + 34px);
+}
+
+@container (max-width: 270px) {
+  .generator-six-card-grid .comap-engine {
+    grid-template-columns: 18px 72px minmax(36px, 1fr) 54px;
+    column-gap: 5px;
+  }
+
+  .generator-six-card-grid .comap-engine .engine-label {
+    padding-left: 2px;
   }
 }
