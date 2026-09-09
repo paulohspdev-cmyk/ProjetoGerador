@@ -955,3 +955,89 @@
     top: 82%;
   }
 }
+
+/* vertical-card-layout-v8: requested final alignment and typography */
+/* GCB closer to its contact, with visible clearance from the bus. */
+.generator-six-card-grid .generator-gcb-control {
+  left: 52px;
+}
+
+.generator-six-card-grid .generator-gcb-control.with-mains {
+  left: 18px;
+}
+
+/* Commands move slightly left and down; their first button starts near the lower face of G. */
+.generator-six-card-grid .generator-command-stack {
+  top: 86%;
+  left: calc(50% + 26px);
+}
+
+.generator-six-card-grid .generator-command-stack.with-mains {
+  top: 86%;
+  left: calc(35% + 26px);
+}
+
+/* Keep the flow block height unchanged; unused vertical space remains here by design. */
+.generator-six-card-grid .power-gauge-heading {
+  justify-content: flex-start;
+  padding-left: 3px;
+  text-align: left;
+}
+
+.generator-six-card-grid .power-gauge-heading .comap-title {
+  font-size: 14px;
+  letter-spacing: 0.08em;
+}
+
+/* Slightly larger, more separated gauge scale without moving the KW block upward. */
+.generator-six-card-grid .generator-gauge-scale {
+  font-size: 19.5px;
+  font-weight: 950;
+}
+
+/* Generator voltage table gets the same operator-readable weight as Engine Status. */
+.generator-six-card-grid .mains-generator-block {
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+}
+
+.generator-six-card-grid .mains-generator-block .comap-title {
+  font-size: 14px;
+}
+
+.generator-six-card-grid .mains-generator-block .comap-table-head {
+  min-height: 18px;
+  font-size: 10.5px;
+  font-weight: 850;
+}
+
+.generator-six-card-grid .mains-generator-block .comap-table-row {
+  min-height: 21px;
+  font-size: 12.5px;
+  line-height: 1.15;
+}
+
+.generator-six-card-grid .mains-generator-block .comap-table-row .label {
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+.generator-six-card-grid .mains-generator-block .comap-table-row .mains,
+.generator-six-card-grid .mains-generator-block .comap-table-row .gen {
+  font-size: 12.5px;
+  font-weight: 900;
+}
+
+.generator-six-card-grid .mains-presence {
+  font-size: 9.5px;
+  font-weight: 850;
+}
+
+@container (max-width: 270px) {
+  .generator-six-card-grid .mains-generator-block .comap-table-row,
+  .generator-six-card-grid .mains-generator-block .comap-table-row .label,
+  .generator-six-card-grid .mains-generator-block .comap-table-row .mains,
+  .generator-six-card-grid .mains-generator-block .comap-table-row .gen {
+    font-size: 11.5px;
+  }
+}
