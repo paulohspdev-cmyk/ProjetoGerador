@@ -30,12 +30,12 @@
 
 /* START/STOP keep their horizontal clearance but sit higher, including fullscreen. */
 .generator-six-card-grid .generator-command-stack {
-  top: 81%;
+  top: 75%;
   left: calc(50% + 38px);
 }
 
 .generator-six-card-grid .generator-command-stack.with-mains {
-  top: 81%;
+  top: 75%;
   left: calc(35% + 38px);
 }
 
