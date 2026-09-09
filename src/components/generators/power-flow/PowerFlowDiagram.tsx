@@ -110,13 +110,13 @@ export function PowerFlowSld({
   // Com rede, preservamos o eixo da torre. Sem rede, o eixo do gerador usa o
   // centro real do viewBox para que todos os cards generator-only fiquem simétricos.
   const busX = showMainsSource ? 80 : 115;
-  const loadX = showMainsSource ? 178 : 184;
-  const loadHalfWidth = 24;
+  const loadX = showMainsSource ? 178 : 180;
+  const loadHalfWidth = 21;
   const loadJoinX = loadX - loadHalfWidth;
 
   return (
     <svg
-      viewBox={showMainsSource ? "0 0 230 400" : "0 150 230 250"}
+      viewBox={showMainsSource ? "0 0 230 400" : "0 175 230 215"}
       className={cn("flow-diagram", !showMainsSource && "is-generator-only")}
       preserveAspectRatio="xMidYMid meet"
       aria-label={showMainsSource ? "Fluxo de energia com rede" : "Fluxo de energia do gerador"}
@@ -142,8 +142,8 @@ export function PowerFlowSld({
       )}
 
       <g transform={`translate(${loadX} 200)`}>
-        <rect x="-24" y="-19" width="48" height="38" rx="5" className="flow-load-card" />
-        <g transform="scale(0.9)" className="flow-device-icon">
+        <rect x="-21" y="-17" width="42" height="34" rx="5" className="flow-load-card" />
+        <g transform="scale(0.82)" className="flow-device-icon">
           <path d="M-16 10 h32" strokeWidth="1.6" />
           <path
             d="M-12 10 V-2 l 7 2 V-12 l 8 2 V10 M 3 -1 l 7 2 V10"
