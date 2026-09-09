@@ -77,24 +77,16 @@ export function ControllerModeBar({ gen, known }: { gen: Generator; known: boole
     );
   }
 
-  const buttons =
-    vendor === "comap"
-      ? [
-          { label: "OFF", active: gen.mode === "OFF" || gen.mode === "STOP" },
-          { label: "MAN", active: gen.mode === "MANUAL" },
-          { label: "AUTO", active: gen.mode === "AUTO" },
-          { label: "TEST", active: gen.mode === "TESTE" },
-        ]
-      : [
-          {
-            label: "STOP",
-            active: gen.mode === "OFF" || gen.mode === "STOP",
-            title: "STOP / RESET",
-          },
-          { label: "MAN", active: gen.mode === "MANUAL" },
-          { label: "AUTO", active: gen.mode === "AUTO" },
-          { label: "TEST", active: gen.mode === "TESTE" },
-        ];
+  const buttons = [
+    {
+      label: "OFF",
+      active: gen.mode === "OFF" || gen.mode === "STOP",
+      title: vendor === "dse" ? "OFF / STOP-RESET" : "OFF",
+    },
+    { label: "MAN", active: gen.mode === "MANUAL" },
+    { label: "AUTO", active: gen.mode === "AUTO" },
+    { label: "TEST", active: gen.mode === "TESTE" },
+  ];
 
   return (
     <div

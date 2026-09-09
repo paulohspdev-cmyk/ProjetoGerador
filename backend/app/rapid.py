@@ -54,6 +54,10 @@ _CONTROLLER_HEALTH_KEYS = (
     "engine_state_raw",
 )
 
+# Somente estas métricas podem sobreviver à perda de leitura no overlay do card.
+# O histórico completo continua pertencendo ao Rapid SCADA.
+_LAST_KNOWN_CARD_METRICS = {"fuel_level", "maintenance_hours", "run_hours"}
+
 
 def load_bindings():
     """Bindings ausentes significam VM ainda não provisionada; corrupção é erro real."""
@@ -597,11 +601,9 @@ def _overlay_generators(generators):
         def last_known():
             if not snapshot:
                 return {}, [], None
-            allowed = set(configured)
-            # MCB/GCB são derivados do Breaker State e podem permanecer como
-            # último feedback enquanto esse registrador estiver no pack atual.
-            if "breaker_state_raw" in allowed:
-                allowed.update({"mcb_closed", "gcb_closed"})
+            # Regra operacional: somente combustível, manutenção e horímetro
+            # permanecem no card quando a leitura atual deixa de existir.
+            allowed = set(configured) & _LAST_KNOWN_CARD_METRICS
             values = {
                 key: value
                 for key, value in snapshot["values"].items()

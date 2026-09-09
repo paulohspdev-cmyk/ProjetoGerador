@@ -29,6 +29,9 @@ binding = {
     "channels": {
         "rpm": {"cnl": 1001, "scale": 1},
         "frequency": {"cnl": 1002, "scale": 1},
+        "fuel_level": {"cnl": 1003, "scale": 1},
+        "maintenance_hours": {"cnl": 1004, "scale": 1},
+        "run_hours": {"cnl": 1005, "scale": 1},
     },
 }
 
@@ -90,6 +93,9 @@ try:
         {
             1001: {"val": 1500, "stat": 1, "defined": True},
             1002: {"val": 60.0, "stat": 1, "defined": True},
+            1003: {"val": 516, "stat": 1, "defined": True},
+            1004: {"val": 159, "stat": 1, "defined": True},
+            1005: {"val": 1294.2, "stat": 1, "defined": True},
         },
         "",
     )
@@ -97,13 +103,16 @@ try:
     assert rows[0]["status"] == "online"
     assert rows[0]["health"]["controller"] == "responding"
 
-    # Ao perder comunicação, valores históricos permanecem disponíveis sem
-    # declarar motor, disjuntores ou fluxo como telemetria atual.
+    # Ao perder comunicação, somente combustível, manutenção e horímetro
+    # permanecem no card. Métricas instantâneas devem voltar a N/D.
     rapid.read_channels = lambda _nums: ({}, "falha de comunicação sintética")
     rows = rapid.overlay_generators([generator])
     assert rows[0]["status"] in {"offline", "alerta"}
-    assert rows[0]["rpm"] == 1500
-    assert rows[0]["frequency"] == 60.0
+    assert rows[0]["rpm"] is None
+    assert rows[0]["frequency"] is None
+    assert rows[0]["fuelLevel"] == 516
+    assert rows[0]["maintenance"] == 159
+    assert rows[0]["runHours"] == 1294.2
     assert rows[0]["telemetryStale"] is True
     assert rows[0]["definedMetrics"] == []
     assert rows[0]["telemetrySource"] == "last_known"

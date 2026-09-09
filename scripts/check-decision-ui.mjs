@@ -63,7 +63,6 @@ for (const marker of [
   "minimumHeight",
   "columns * rows",
   "compact-generator-grid",
-  'import "./operator-card-refinement.css"',
 ]) {
   if (!board.includes(marker))
     failures.push(`toolbar/modos de geradores perdeu seletor ou contrato responsivo: ${marker}`);
@@ -71,6 +70,9 @@ for (const marker of [
 for (const forbidden of ["Cards verticais", "Cards compactos"]) {
   if (board.includes(forbidden))
     failures.push(`toolbar voltou ao grupo de botões antigo: ${forbidden}`);
+}
+if (board.includes('import "./operator-card-refinement.css"')) {
+  failures.push("board voltou a carregar CSS concorrente do card vertical");
 }
 
 const compact = read("src/components/generators/CompactCard.tsx");
@@ -163,9 +165,9 @@ for (const forbidden of [
 const cardCss = read("src/components/generators/generator-six-card.css");
 for (const marker of [
   ".generator-vertical-grid.generator-six-card-grid",
-  "minmax(min(100%, 285px), 1fr)",
-  "grid-template-rows: minmax(640px, 1fr)",
-  "grid-auto-rows: minmax(640px, 1fr)",
+  "minmax(min(100%, 258px), 1fr)",
+  "grid-template-rows: minmax(620px, 1fr)",
+  "grid-auto-rows: minmax(620px, 1fr)",
   ".comap-engine > span:nth-child(3):empty",
   ".comap-panel-v2 .comap-flow-v2",
   "height: 100%",

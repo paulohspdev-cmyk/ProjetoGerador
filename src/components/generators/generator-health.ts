@@ -8,14 +8,10 @@ type VisualScale = MetricLimit & {
   direction?: "higher_worse" | "lower_worse" | "neutral";
 };
 
-// Escalas de apresentação usadas somente quando o pack não fornece displayMin/displayMax.
-// Elas não geram alarmes nem substituem setpoints da controladora. A manutenção de 300 h é
-// o intervalo visual definido pelo produto; instalações com outro plano devem sobrescrevê-lo
-// no metricLimits do pack homologado.
+// Escalas sem setpoint de proteção são apenas geométricas e ficam neutras.
+// Verde/laranja/vermelho só é usado quando existe threshold real da controladora
+// ou uma regra de produto explícita (manutenção 300 h).
 const VISUAL_SCALES: Record<string, VisualScale> = {
-  oil_pressure: { displayMin: 0, displayMax: 10, direction: "lower_worse" },
-  coolant_temperature: { displayMin: 0, displayMax: 120, direction: "higher_worse" },
-  fuel_level: { displayMin: 0, displayMax: 100, direction: "lower_worse" },
   alternator_voltage: { displayMin: 0, displayMax: 30, direction: "neutral" },
   maintenance_hours: { displayMin: 0, displayMax: 300, direction: "higher_worse" },
 };
@@ -59,13 +55,16 @@ export function percentFromLimit(value: number | null, limit?: MetricLimit) {
   return Math.min(100, Math.max(0, ((value - minimum) / span) * 100));
 }
 
-function effectiveScale(key: string, configured?: MetricLimit): VisualScale | undefined {
-  const fallback = VISUAL_SCALES[key];
-  if (!configured) return fallback;
-  return {
-    ...fallback,
-    ...configured,
-  };
+function mergedScale(
+  fallback: VisualScale | undefined,
+  configured?: MetricLimit,
+): VisualScale | undefined {
+  if (!fallback && !configured) return undefined;
+  return { ...(fallback ?? {}), ...(configured ?? {}) } as VisualScale;
+}
+
+function positiveThreshold(value: number | null) {
+  return value != null && Number.isFinite(value) && value > 0 ? value : undefined;
 }
 
 function visualTone(percent: number | null, scale?: VisualScale): MeterTone {
@@ -76,13 +75,12 @@ function visualTone(percent: number | null, scale?: VisualScale): MeterTone {
   return "good";
 }
 
-function meterState(key: string, value: number | null, configured?: MetricLimit) {
-  const scale = effectiveScale(key, configured);
+function meterState(value: number | null, scale?: VisualScale) {
   const percent = percentFromLimit(value, scale);
-  const configuredTone = toneFromLimit(value, configured);
+  const thresholdTone = toneFromLimit(value, scale);
   return {
     percent,
-    tone: configuredTone === "neutral" ? visualTone(percent, scale) : configuredTone,
+    tone: thresholdTone === "neutral" ? visualTone(percent, scale) : thresholdTone,
   };
 }
 
@@ -127,6 +125,11 @@ export function readGeneratorTelemetry(gen: Generator) {
   const fuelCapacity =
     metricNumber(gen, "fuel_capacity_l", undefined) ??
     metricNumber(gen, "fuel_capacity", undefined);
+  const oilWarning = metricNumber(gen, "oil_warning_bar", undefined);
+  const oilShutdown = metricNumber(gen, "oil_shutdown_bar", undefined);
+  const coolantWarning = metricNumber(gen, "coolant_warning_c", undefined);
+  const fuelWarning = metricNumber(gen, "fuel_warning_l", undefined);
+  const fuelShutdown = metricNumber(gen, "fuel_shutdown_l", undefined);
   const fuelPercent =
     fuelUnit === "%"
       ? progressPercent(fuel, 100)
@@ -135,18 +138,51 @@ export function readGeneratorTelemetry(gen: Generator) {
         : null;
 
   const limits = gen.metricLimits ?? {};
-  const oilMeter = meterState("oil_pressure", oil, limits["oil_pressure"]);
-  const coolantMeter = meterState("coolant_temperature", coolant, limits["coolant_temperature"]);
-  const fuelMeter = meterState("fuel_level", fuel, limits["fuel_level"]);
+  const oilDisplay: VisualScale | undefined =
+    oilUnit === "bar" ? { displayMin: 0, displayMax: 10, direction: "neutral" } : undefined;
+  const oilScale = mergedScale(oilDisplay, limits["oil_pressure"]);
+  if (oilScale) {
+    const warning = positiveThreshold(oilWarning);
+    const shutdown = positiveThreshold(oilShutdown);
+    if (warning != null) oilScale.warningLow = warning;
+    if (shutdown != null) oilScale.criticalLow = shutdown;
+  }
+
+  const coolantScale = mergedScale(
+    { displayMin: -40, displayMax: 120, direction: "neutral" },
+    limits["coolant_temperature"],
+  );
+  if (coolantScale) {
+    const warning = positiveThreshold(coolantWarning);
+    if (warning != null) coolantScale.warningHigh = warning;
+  }
+
+  const fuelDisplay: VisualScale =
+    fuelUnit === "%"
+      ? { displayMin: 0, displayMax: 100, direction: "neutral" }
+      : {
+          displayMin: 0,
+          displayMax: fuelCapacity != null && fuelCapacity > 0 ? fuelCapacity : 682,
+          direction: "neutral",
+        };
+  const fuelScale = mergedScale(fuelDisplay, limits["fuel_level"]);
+  if (fuelScale && fuelUnit === "L") {
+    const warning = positiveThreshold(fuelWarning);
+    const shutdown = positiveThreshold(fuelShutdown);
+    if (warning != null) fuelScale.warningLow = warning;
+    if (shutdown != null) fuelScale.criticalLow = shutdown;
+  }
+
+  const oilMeter = meterState(oil, oilScale);
+  const coolantMeter = meterState(coolant, coolantScale);
+  const fuelMeter = meterState(fuel, fuelScale);
   const alternatorMeter = meterState(
-    "alternator_voltage",
     alternator,
-    limits["alternator_voltage"],
+    mergedScale(VISUAL_SCALES["alternator_voltage"], limits["alternator_voltage"]),
   );
   const maintenanceMeter = meterState(
-    "maintenance_hours",
     maintenance,
-    limits["maintenance_hours"],
+    mergedScale(VISUAL_SCALES["maintenance_hours"], limits["maintenance_hours"]),
   );
   const tones = {
     oil: oilMeter.tone,

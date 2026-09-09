@@ -96,6 +96,20 @@
     <ElemGroup active="true" dataBlock="HoldingRegisters" address="1342" name="Modo controlador">
       <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="controller_mode_raw" name="Controller Mode" />
     </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="3081" name="Protecao ECU - oleo">
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="oil_warning_raw" name="ECU Oil Pressure Warning" />
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="oil_shutdown_raw" name="ECU Oil Pressure Shutdown" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="3087" name="Protecao ECU - temperatura">
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="coolant_warning_c" name="ECU Coolant Temperature Warning" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="3100" name="Protecao - combustivel">
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="fuel_warning_l" name="Fuel Level Warning" />
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="fuel_shutdown_l" name="Fuel Level Shutdown" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="3106" name="Tanque - capacidade">
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="fuel_capacity_l" name="Fuel Tank Volume" />
+    </ElemGroup>
   </ElemGroups>
   <Cmds />
 </DeviceTemplate>

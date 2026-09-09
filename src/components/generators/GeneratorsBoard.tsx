@@ -30,7 +30,6 @@ import { KpiStrip } from "./KpiStrip";
 import { PowerFlowCard } from "./PowerFlowCard";
 import { useGenerators } from "./GeneratorsProvider";
 import "./generator-six-card.css";
-import "./operator-card-refinement.css";
 
 type View = "principal" | "compacto" | "lista";
 
@@ -93,7 +92,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
       // O cartão vertical precisa continuar legível. Ele nunca é dividido em
       // duas linhas comprimidas: usamos uma fileira por página e deixamos a
       // paginação absorver o restante da frota.
-      const readableCardWidth = viewport.width >= 2200 ? 300 : 285;
+      const readableCardWidth = viewport.width >= 2200 ? 270 : 258;
       return Math.max(1, Math.min(8, Math.floor((viewport.width + 8) / (readableCardWidth + 8))));
     }
 

@@ -77,15 +77,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         : gen.status === "nao_configurado"
           ? "not-configured"
           : "offline";
-  const statusMessage =
-    gen.status === "nao_configurado"
-      ? "SEM PERFIL DE PRODUÇÃO"
-      : gen.status === "offline"
-        ? "SEM COMUNICAÇÃO"
-        : gen.status === "alerta"
-          ? "TELEMETRIA INDISPONÍVEL"
-          : null;
-
   const mainsKeys = [
     "mains_voltage_l1",
     "mains_voltage_l2",
@@ -191,16 +182,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         <DeleteGeneratorButton id={gen.id} tag={gen.tag} className="size-5" />
       </header>
 
-      {statusMessage && (
-        <p className={cn("generator-card-state", `is-${statusClass}`)}>{statusMessage}</p>
-      )}
-
-      {gen.telemetryStale && (
-        <p className="border-b border-alert/30 bg-alert/10 px-2 py-1 text-[10px] font-semibold text-alert">
-          Última leitura conhecida · equipamento offline
-        </p>
-      )}
-
       <section className="comap-block controller-mode-section">
         <ControllerModeBar gen={gen} known={modeKnown} />
       </section>
@@ -278,7 +259,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
           bar
           known={oil != null}
           unknownLabel={unavailableLabel("oil_pressure")}
-          lastKnown={oil != null && !hasFreshMetric(gen, "oil_pressure")}
+          lastKnown={false}
           tone={hasFreshMetric(gen, "oil_pressure") ? tones.oil : "neutral"}
         />
         <EngineRow
@@ -289,7 +270,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
           bar
           known={temp != null}
           unknownLabel={unavailableLabel("coolant_temperature")}
-          lastKnown={temp != null && !hasFreshMetric(gen, "coolant_temperature")}
+          lastKnown={false}
           tone={hasFreshMetric(gen, "coolant_temperature") ? tones.coolant : "neutral"}
         />
         <EngineRow
@@ -311,7 +292,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
           bar
           known={alt != null}
           unknownLabel={unavailableLabel("alternator_voltage")}
-          lastKnown={alt != null && !hasFreshMetric(gen, "alternator_voltage")}
+          lastKnown={false}
           tone={hasFreshMetric(gen, "alternator_voltage") ? tones.alternator : "neutral"}
         />
         <EngineRow
@@ -320,7 +301,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
           value={rpm == null ? "N/D" : `${fmt(rpm, 0)} rpm`}
           known={rpm != null}
           unknownLabel={unavailableLabel("rpm")}
-          lastKnown={rpm != null && !hasFreshMetric(gen, "rpm")}
+          lastKnown={false}
         />
         <EngineRow
           icon={<IconBolt />}
@@ -328,7 +309,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
           value={powerFactor == null ? "N/D" : fmt(powerFactor, 2)}
           known={powerFactor != null}
           unknownLabel={unavailableLabel("power_factor")}
-          lastKnown={powerFactor != null && !hasFreshMetric(gen, "power_factor")}
+          lastKnown={false}
         />
         <EngineRow
           icon={<IconClock />}

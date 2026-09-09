@@ -3,11 +3,7 @@
   "manufacturer": "ComAp",
   "family": "InteliGen",
   "model": "InteliGen 200",
-  "aliases": [
-    "IG200",
-    "IG 200",
-    "ComAp InteliGen 200"
-  ],
+  "aliases": ["IG200", "IG 200", "ComAp InteliGen 200"],
   "status": "field_validated",
   "application": "genset",
   "category": "paralleling_genset",
@@ -17,15 +13,8 @@
     "maximum": null,
     "notes": "Registrar a versão exata do firmware em cada homologação de campo."
   },
-  "protocols": [
-    "modbus"
-  ],
-  "transports": [
-    "reverse_tcp",
-    "modbus_tcp_direct",
-    "rtu_over_tcp",
-    "modbus_rtu_serial"
-  ],
+  "protocols": ["modbus"],
+  "transports": ["reverse_tcp", "modbus_tcp_direct", "rtu_over_tcp", "modbus_rtu_serial"],
   "defaults": {
     "batteryNominalVoltage": null,
     "modbusUnit": null,
@@ -194,24 +183,10 @@
     "exportTool": "ComAp InteliConfig",
     "exportName": "in200.txt",
     "format": "2.3",
-    "valuesAddressRange": [
-      1000,
-      2999
-    ],
-    "valuesReadFunctions": [
-      3,
-      4
-    ],
-    "setpointsAddressRange": [
-      3000,
-      3999
-    ],
-    "setpointFunctions": [
-      3,
-      4,
-      6,
-      16
-    ],
+    "valuesAddressRange": [1000, 2999],
+    "valuesReadFunctions": [3, 4],
+    "setpointsAddressRange": [3000, 3999],
+    "setpointFunctions": [3, 4, 6, 16],
     "registers": {
       "rpm": {
         "address": 1000,
@@ -649,6 +624,42 @@
         "scale": 0.1
       },
       {
+        "key": "oil_warning_bar",
+        "tagCode": "oil_warning_raw",
+        "scale": 0.01,
+        "unit": "bar"
+      },
+      {
+        "key": "oil_shutdown_bar",
+        "tagCode": "oil_shutdown_raw",
+        "scale": 0.01,
+        "unit": "bar"
+      },
+      {
+        "key": "coolant_warning_c",
+        "tagCode": "coolant_warning_c",
+        "scale": 1,
+        "unit": "°C"
+      },
+      {
+        "key": "fuel_warning_l",
+        "tagCode": "fuel_warning_l",
+        "scale": 1,
+        "unit": "L"
+      },
+      {
+        "key": "fuel_shutdown_l",
+        "tagCode": "fuel_shutdown_l",
+        "scale": 1,
+        "unit": "L"
+      },
+      {
+        "key": "fuel_capacity_l",
+        "tagCode": "fuel_capacity_l",
+        "scale": 1,
+        "unit": "L"
+      },
+      {
         "key": "number_starts",
         "tagCode": "number_starts",
         "scale": 1
@@ -732,9 +743,7 @@
     "controller_mode_raw"
   ],
   "validation": {
-    "documentation": [
-      "ComAp InteliGen 200 — export Modbus in200.txt, formato 2.3, Values FC03/04"
-    ],
+    "documentation": ["ComAp InteliGen 200 — export Modbus in200.txt, formato 2.3, Values FC03/04"],
     "lab": true,
     "field": true,
     "fieldReference": "GEN005 / Unit 16 / reverse TCP",
