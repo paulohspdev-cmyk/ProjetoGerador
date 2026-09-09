@@ -322,7 +322,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         />
         <EngineRow
           icon={<IconClock />}
-          label="Maintenance"
+          label="Mainten"
           value={maintenance == null ? "N/D" : `${fmt(maintenance, 0)} h`}
           pct={percents.maintenance}
           bar

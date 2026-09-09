@@ -28,12 +28,14 @@
   padding-right: 2px;
 }
 
-/* START/STOP get a little more clearance from the generator circle. */
+/* START/STOP keep their horizontal clearance but sit higher, including fullscreen. */
 .generator-six-card-grid .generator-command-stack {
+  top: 81%;
   left: calc(50% + 38px);
 }
 
 .generator-six-card-grid .generator-command-stack.with-mains {
+  top: 81%;
   left: calc(35% + 38px);
 }
 
