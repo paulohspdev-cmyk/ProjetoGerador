@@ -1,7 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, LayoutGrid, List, RefreshCw, Rows3, SlidersHorizontal } from "lucide-react";
-
-import { Topbar } from "@/components/layout/Topbar";
+import {
+  ChevronDown,
+  LayoutGrid,
+  List,
+  Maximize2,
+  Minimize2,
+  Moon,
+  RefreshCw,
+  Rows3,
+  Search,
+  SlidersHorizontal,
+  Sun,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +20,8 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useLayout } from "@/components/layout/LayoutContext";
+import { useTheme } from "@/components/layout/ThemeProvider";
 import { statusLabel, type GenStatus } from "@/data/generators";
 import { cn } from "@/lib/utils";
 import { CompactCard } from "./CompactCard";
@@ -18,7 +30,7 @@ import { KpiStrip } from "./KpiStrip";
 import { PowerFlowCard } from "./PowerFlowCard";
 import { useGenerators } from "./GeneratorsProvider";
 import "./generator-six-card.css";
-import "./operator-card-refinement.css";
+import "./generator-six-card-v10.css";
 
 type View = "principal" | "compacto" | "lista";
 
@@ -38,6 +50,8 @@ const filters: Array<{ id: GenStatus | "todos"; label: string }> = [
 
 export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
   const { generators, ready, error, refresh } = useGenerators();
+  const { fullscreen, toggleFullscreen } = useLayout();
+  const { theme, toggleTheme } = useTheme();
   const [view, setView] = useState<View>("principal");
   const [status, setStatus] = useState<GenStatus | "todos">("online");
   const [query, setQuery] = useState("");
@@ -71,11 +85,20 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
 
   const pageSize = useMemo(() => {
     if (!viewport.width || !viewport.height) {
-      return view === "principal" ? 5 : view === "lista" ? 12 : 8;
+      return view === "principal" ? 4 : view === "lista" ? 12 : 8;
     }
     if (view === "lista") return Math.max(1, Math.floor(viewport.height / 43));
-    const minimumWidth = view === "compacto" ? 250 : 210;
-    const minimumHeight = view === "compacto" ? 190 : 520;
+
+    if (view === "principal") {
+      // O cartão vertical precisa continuar legível. Ele nunca é dividido em
+      // duas linhas comprimidas: usamos uma fileira por página e deixamos a
+      // paginação absorver o restante da frota.
+      const readableCardWidth = viewport.width >= 2200 ? 270 : 258;
+      return Math.max(1, Math.min(8, Math.floor((viewport.width + 8) / (readableCardWidth + 8))));
+    }
+
+    const minimumWidth = 250;
+    const minimumHeight = 190;
     const columns = Math.max(1, Math.floor(viewport.width / minimumWidth));
     const rows = Math.max(1, Math.floor(viewport.height / minimumHeight));
     return columns * rows;
@@ -93,17 +116,17 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
     setGroup(0);
   };
 
-  const tools = (
-    <div className="flex min-w-max items-center gap-2 pr-2 lg:min-w-0 lg:flex-1 lg:px-2">
+  const footerControls = (
+    <div className="flex min-w-max items-center gap-2">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="inline-flex h-8 items-center gap-2 rounded-md border border-border bg-card px-3 text-xs font-bold transition-colors hover:bg-secondary data-[state=open]:border-primary/50 data-[state=open]:bg-secondary"
+            className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border bg-card px-2.5 text-[11px] font-bold transition-colors hover:bg-secondary data-[state=open]:border-primary/50 data-[state=open]:bg-secondary"
           >
-            <currentView.icon className="size-4 text-primary" />
+            <currentView.icon className="size-3.5 text-primary" />
             <span>{currentView.label}</span>
-            <ChevronDown className="size-3.5 text-muted-foreground" />
+            <ChevronDown className="size-3 text-muted-foreground" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-48">
@@ -129,11 +152,11 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="inline-flex h-8 items-center gap-2 rounded-md border border-border bg-card px-3 text-xs font-bold transition-colors hover:bg-secondary data-[state=open]:border-primary/50 data-[state=open]:bg-secondary"
+            className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border bg-card px-2.5 text-[11px] font-bold transition-colors hover:bg-secondary data-[state=open]:border-primary/50 data-[state=open]:bg-secondary"
           >
-            <SlidersHorizontal className="size-4 text-primary" />
+            <SlidersHorizontal className="size-3.5 text-primary" />
             <span>{currentFilter.label}</span>
-            <ChevronDown className="size-3.5 text-muted-foreground" />
+            <ChevronDown className="size-3 text-muted-foreground" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-52">
@@ -150,24 +173,32 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <span className="mx-0.5 h-5 w-px bg-border" aria-hidden />
+      <button
+        type="button"
+        onClick={toggleTheme}
+        title={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
+        aria-label={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
+        className="grid size-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+      >
+        {theme === "dark" ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
+      </button>
+      <button
+        type="button"
+        onClick={toggleFullscreen}
+        title={fullscreen ? "Sair da tela cheia" : "Tela cheia"}
+        aria-label={fullscreen ? "Sair da tela cheia" : "Tela cheia"}
+        aria-pressed={fullscreen}
+        className="grid size-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+      >
+        {fullscreen ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
+      </button>
     </div>
   );
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      <Topbar
-        breadcrumb={["RC Geradores", "Geradores"]}
-        title="Geradores"
-        tools={tools}
-        search={{
-          value: query,
-          onChange: (value) => {
-            setQuery(value);
-            setGroup(0);
-          },
-        }}
-      />
-
       <div
         className={cn(
           "flex min-h-0 min-w-0 flex-1 flex-col gap-1 overflow-hidden p-1",
@@ -249,29 +280,45 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
           )}
         </div>
 
-        {pages > 1 && (
-          <div className="flex shrink-0 items-center justify-center gap-3 border-t border-border/60 pt-1 text-xs text-muted-foreground">
+        <div className="grid min-h-8 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5 border-t border-border/60 py-0.5 text-[11px] text-muted-foreground">
+          <div className="scroll-slim min-w-0 overflow-x-auto">{footerControls}</div>
+
+          <div className="flex items-center justify-center gap-3">
             <button
               type="button"
               disabled={page === 0}
               onClick={() => setGroup((current) => Math.max(0, current - 1))}
-              className="h-7 rounded-md border border-border px-3 font-semibold text-foreground disabled:opacity-40"
+              className="h-6 rounded-md border border-border px-2.5 text-[11px] font-semibold text-foreground disabled:opacity-40"
             >
               Anterior
             </button>
-            <span className="num font-semibold">
+            <span className="num whitespace-nowrap font-semibold">
               Página {page + 1} de {pages}
             </span>
             <button
               type="button"
               disabled={page >= pages - 1}
               onClick={() => setGroup((current) => Math.min(pages - 1, current + 1))}
-              className="h-7 rounded-md border border-border px-3 font-semibold text-foreground disabled:opacity-40"
+              className="h-6 rounded-md border border-border px-2.5 text-[11px] font-semibold text-foreground disabled:opacity-40"
             >
               Próxima
             </button>
           </div>
-        )}
+
+          <label className="ml-auto flex h-7 min-w-0 max-w-48 items-center gap-1.5 rounded-md border border-input bg-background px-2 focus-within:border-primary">
+            <Search className="size-3.5 shrink-0 text-muted-foreground" />
+            <input
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setGroup(0);
+              }}
+              placeholder="Buscar"
+              aria-label="Buscar gerador"
+              className="min-w-0 w-full bg-transparent text-xs outline-none placeholder:text-muted-foreground"
+            />
+          </label>
+        </div>
       </div>
     </div>
   );

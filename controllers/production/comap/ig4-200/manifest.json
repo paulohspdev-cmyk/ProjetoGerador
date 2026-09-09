@@ -8,7 +8,7 @@
   "application": "genset",
   "category": "paralleling_genset",
   "firmware": {
-    "tested": ["2.1.4.1", "2.1.0.15"],
+    "tested": ["2.0.3.1", "2.1.4.1", "2.1.0.15"],
     "minimum": null,
     "maximum": null,
     "notes": "Validado em campo nos Units 3 e 4 do barramento RS485 reverse TCP 15003."
@@ -52,6 +52,7 @@
     "mains_voltage_l3_l1",
     "battery_voltage",
     "alternator_voltage",
+    "nominal_power_kw",
     "genset_kwh",
     "run_hours",
     "number_starts",
@@ -83,6 +84,7 @@
     "mains_voltage_l3_l1",
     "battery_voltage",
     "alternator_voltage",
+    "nominal_power_kw",
     "oil_pressure",
     "coolant_temperature",
     "fuel_level",
@@ -118,6 +120,7 @@
     "mains_voltage_l3_l1": "V",
     "battery_voltage": "V",
     "alternator_voltage": "V",
+    "nominal_power_kw": "kW",
     "oil_pressure": "bar",
     "coolant_temperature": "°C",
     "fuel_level": "L",
@@ -161,6 +164,7 @@
       "oil_pressure": {"address": 1053, "count": 1, "readFunctions": [3, 4], "scale": 0.1, "sourceName": "Analog oil-pressure channel", "unit": "bar", "object": 9151},
       "coolant_temperature": {"address": 1054, "count": 1, "readFunctions": [3, 4], "scale": 1.0, "sourceName": "Analog coolant-temperature channel", "unit": "°C", "object": 9152},
       "fuel_level": {"address": 1055, "count": 1, "readFunctions": [3, 4], "scale": 1.0, "sourceName": "Diesel", "unit": "L", "object": 9153},
+      "nominal_power_kw": {"address": 1280, "count": 1, "readFunctions": [3, 4], "scale": 1.0, "sourceName": "Nominal Power", "unit": "kW", "object": 9018},
       "genset_kwh": {"address": 1283, "count": 2, "readFunctions": [3, 4], "scale": 1.0, "sourceName": "Genset kWh", "unit": "kWh", "object": 8205},
       "run_hours": {"address": 1291, "count": 2, "readFunctions": [3, 4], "scale": 0.1, "sourceName": "Running Hours", "unit": "h", "object": 8206},
       "number_starts": {"address": 1293, "count": 1, "readFunctions": [3, 4], "scale": 1.0, "sourceName": "Num Starts", "object": 8207},
@@ -198,6 +202,7 @@
       {"key": "mains_voltage_l3_l1", "tagCode": "mains_voltage_l3_l1", "scale": 1.0, "unit": "V"},
       {"key": "battery_voltage", "tagCode": "battery_voltage_raw", "scale": 0.1, "unit": "V"},
       {"key": "alternator_voltage", "tagCode": "alternator_voltage_raw", "scale": 0.1, "unit": "V"},
+      {"key": "nominal_power_kw", "tagCode": "nominal_power_kw", "scale": 1.0, "unit": "kW"},
       {"key": "genset_kwh", "tagCode": "genset_kwh", "scale": 1.0, "unit": "kWh"},
       {"key": "run_hours", "tagCode": "run_hours_raw", "scale": 0.1, "unit": "h"},
       {"key": "number_starts", "tagCode": "number_starts", "scale": 1.0},
@@ -211,7 +216,7 @@
     "documentation": ["ig4 200 modbus.txt — formato 2.3, Values FC03/04"],
     "lab": true,
     "field": true,
-    "fieldReference": "IG4-U3 / Unit 3 / FW 2.1.4.1 e IG4-U4 / Unit 4 / FW 2.1.0.15; reverse TCP 15003; RS485 Modbus RTU transparente; leituras FC03 individuais sem timeout/erro.",
+    "fieldReference": "GEN152 / Unit 15 / FW 2.0.3.1, IG4-U3 / Unit 3 / FW 2.1.4.1 e IG4-U4 / Unit 4 / FW 2.1.0.15; Nominal Power HR1280 validado em leitura FC03; reverse TCP; leituras sem escrita de comando.",
     "commandSafety": "Perfil de produção somente leitura. START/STOP/AUTO/MANUAL/TEST/MCB/GCB/paralelismo permanecem bloqueados. O mapa fornecido não contém setpoints de comando utilizáveis."
   },
   "notes": "Telemetria read-only promovida após validação de campo nos Units 3 e 4. Óleo, temperatura e nível instantâneo de diesel permanecem documentados, mas não são materializados no Rapid porque retornaram sentinela/valor fora da faixa no ensaio. Estados GCB/MCB da interface são derivados de Breaker State até validação dedicada dos binaries FC01/02."

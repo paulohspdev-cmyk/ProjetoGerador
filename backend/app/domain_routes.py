@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 from . import db, domain_bundle, domain_store, network_discovery
 from .auth import require_admin, require_create, require_edit, require_remove, require_view
+from .binding_store import BindingStoreError
 from .industrial_routes import router as industrial_router
 from .integration_status import safe_integration_status
 from .rapid import load_bindings
@@ -131,8 +132,9 @@ class RetireRequest(BaseModel):
 class GeneratorReconfigureRequest(BaseModel):
     transport: str
     ip: str = Field(default="", max_length=255)
-    listenPort: int = Field(ge=1, le=65535)
+    listenPort: int = Field(default=0, ge=0, le=65535)
     modbusUnit: int = Field(ge=1, le=247)
+    enabled: bool | None = None
     confirmation: str = Field(min_length=1, max_length=160)
 
 
@@ -191,14 +193,32 @@ async def _privileged_deprovision(generator_id: str) -> dict:
 
 
 def _active_binding(generator_id: str) -> dict | None:
+    try:
+        bindings = load_bindings()
+    except BindingStoreError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail="Estado dos bindings Rapid está corrompido ou inconsistente; operação bloqueada até reconciliação.",
+        ) from exc
     return next(
         (
             item
-            for item in load_bindings()
+            for item in bindings
             if str(item.get("generator_id") or "") == generator_id
         ),
         None,
     )
+
+
+def _assert_industrial_state_consistent(generator: dict, binding: dict | None) -> None:
+    if binding is None and int(generator.get("rapid_device_num") or 0) > 0:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Cadastro possui Rapid Device, mas o binding ativo está ausente. "
+                "Reconcilie o estado industrial antes de alterar, desativar ou retirar o gerador."
+            ),
+        )
 
 
 def _assert_asset_not_legacy_mirror(asset_id: str) -> None:
@@ -268,12 +288,14 @@ def generator_lifecycle(generator_id: str, user: dict = Depends(require_view)):
     if not generator:
         raise HTTPException(status_code=404, detail="Gerador não encontrado")
     binding = _active_binding(generator["id"])
+    consistent = not (binding is None and int(generator.get("rapid_device_num") or 0) > 0)
     return {
         "generatorId": generator["id"],
         "tag": generator["tag"],
         "provisioned": binding is not None,
         "binding": binding,
-        "canDeleteSafely": binding is None,
+        "industrialStateConsistent": consistent,
+        "canDeleteSafely": binding is None and consistent,
     }
 
 
@@ -288,12 +310,14 @@ async def generator_provision(
     generator = db.get_generator(generator_id)
     if not generator:
         raise HTTPException(status_code=404, detail="Gerador não encontrado")
-    if _active_binding(generator["id"]):
+    binding = _active_binding(generator["id"])
+    _assert_industrial_state_consistent(generator, binding)
+    if binding:
         return {
             "ok": True,
             "existing": True,
             "generatorId": generator["id"],
-            "binding": _active_binding(generator["id"]),
+            "binding": binding,
         }
     result = await _privileged_operation(generator["id"], "provision")
     db.add_audit(
@@ -340,19 +364,30 @@ async def generator_reconfigure(
     expected = f"RECONFIGURAR {generator['tag']}"
     if payload.confirmation.strip().upper() != expected.upper():
         raise HTTPException(status_code=422, detail=f"Confirmação deve ser {expected}")
+
     transport = payload.transport.strip()
-    if transport not in {"reverse_tcp", "modbus_tcp_direct", "rtu_over_tcp"}:
+    supported = {"reverse_tcp", "modbus_tcp_direct", "rtu_over_tcp", "modbus_rtu_serial"}
+    if transport not in supported:
         raise HTTPException(status_code=422, detail="Tipo de conexão não suportado neste fluxo")
     host = payload.ip.strip()
-    if transport in {"modbus_tcp_direct", "rtu_over_tcp"} and not host:
-        raise HTTPException(status_code=422, detail="Informe o IP da controladora ou gateway")
+    if transport in {"modbus_tcp_direct", "rtu_over_tcp", "modbus_rtu_serial"} and not host:
+        raise HTTPException(status_code=422, detail="Informe o IP/gateway ou dispositivo serial")
     if transport == "reverse_tcp":
         host = ""
+    listen_port = int(payload.listenPort or 0)
+    if transport in {"reverse_tcp", "modbus_tcp_direct", "rtu_over_tcp"}:
+        if listen_port == 0 and transport in {"modbus_tcp_direct", "rtu_over_tcp"}:
+            listen_port = 502
+        if not 1 <= listen_port <= 65535:
+            raise HTTPException(status_code=422, detail="Informe uma porta TCP válida")
+    else:
+        listen_port = 0
 
+    target_enabled = bool(generator.get("enabled")) if payload.enabled is None else bool(payload.enabled)
     identity = {
         "transport": transport,
         "host": host,
-        "listen_port": payload.listenPort,
+        "listen_port": listen_port,
         "modbus_unit": payload.modbusUnit,
     }
     previous = {
@@ -361,29 +396,46 @@ async def generator_reconfigure(
         "listen_port": int(generator.get("listen_port") or 0),
         "modbus_unit": int(generator.get("modbus_unit") or 1),
         "rapid_device_num": generator.get("rapid_device_num"),
+        "enabled": bool(generator.get("enabled")),
     }
-    changed = any(identity[key] != previous[key] for key in identity)
-    if not changed:
+    identity_changed = any(identity[key] != previous[key] for key in identity)
+    enabled_changed = target_enabled != previous["enabled"]
+    if not identity_changed and not enabled_changed:
         return {"ok": True, "changed": False, "generator": generator}
 
-    was_provisioned = _active_binding(generator["id"]) is not None
-    if was_provisioned:
-        await _privileged_deprovision(generator["id"])
-    if _active_binding(generator["id"]):
-        raise HTTPException(status_code=409, detail="Configuração industrial anterior ainda está ativa")
+    active_binding = _active_binding(generator["id"])
+    _assert_industrial_state_consistent(generator, active_binding)
+    was_provisioned = active_binding is not None
+    should_deprovision = was_provisioned and (identity_changed or not target_enabled)
+    should_provision = target_enabled and (
+        was_provisioned or (payload.enabled is True and not previous["enabled"])
+    )
 
+    if should_deprovision:
+        await _privileged_deprovision(generator["id"])
+        if _active_binding(generator["id"]):
+            raise HTTPException(status_code=409, detail="Configuração industrial anterior ainda está ativa")
+
+    update_patch = {**identity, "enabled": target_enabled}
+    provision_result = None
     try:
         updated = db.update_generator(
             generator["id"],
-            identity,
+            update_patch,
             actor=actor(user),
             allow_industrial_identity=True,
         )
         domain_store.sync_legacy_generators()
-        provision_result = await _privileged_operation(generator["id"], "provision") if was_provisioned else None
+        if should_provision:
+            provision_result = await _privileged_operation(generator["id"], "provision")
+            updated = db.get_generator(generator["id"])
     except Exception as exc:
         rollback_error = None
         try:
+            # Se a tentativa chegou a provisionar parcialmente, retire primeiro.
+            rollback_binding = _active_binding(generator["id"])
+            if rollback_binding:
+                await _privileged_deprovision(generator["id"])
             db.update_generator(
                 generator["id"],
                 previous,
@@ -416,15 +468,17 @@ async def generator_reconfigure(
         "generator",
         generator["id"],
         (
-            f"{previous['transport']}:{previous['listen_port']}/unit={previous['modbus_unit']} -> "
-            f"{transport}:{payload.listenPort}/unit={payload.modbusUnit}"
+            f"{previous['transport']}:{previous['listen_port']}/unit={previous['modbus_unit']} "
+            f"enabled={previous['enabled']} -> "
+            f"{transport}:{listen_port}/unit={payload.modbusUnit} enabled={target_enabled}"
         ),
     )
     return {
         "ok": True,
         "changed": True,
         "generator": updated,
-        "reprovisioned": was_provisioned,
+        "reprovisioned": bool(should_provision),
+        "deprovisioned": bool(should_deprovision),
         "provision": provision_result,
     }
 
@@ -463,8 +517,10 @@ async def generator_retire(
     if payload.confirmation.strip().upper() != expected.upper():
         raise HTTPException(status_code=422, detail=f"Confirmação deve ser {expected}")
 
+    binding = _active_binding(generator["id"])
+    _assert_industrial_state_consistent(generator, binding)
     deprovision_result = None
-    if _active_binding(generator["id"]):
+    if binding:
         if str(user.get("role") or "") != "administrador":
             raise HTTPException(
                 status_code=403,
@@ -473,6 +529,12 @@ async def generator_retire(
         deprovision_result = await _privileged_deprovision(generator["id"])
     if _active_binding(generator["id"]):
         raise HTTPException(status_code=409, detail="Binding Rapid ainda está ativo; retirada recusada")
+    refreshed = db.get_generator(generator["id"])
+    if refreshed and int(refreshed.get("rapid_device_num") or 0) > 0:
+        raise HTTPException(
+            status_code=409,
+            detail="Rapid Device ainda está associado ao cadastro; retirada recusada",
+        )
 
     if not db.delete_generator(generator["id"], actor=actor(user)):
         raise HTTPException(status_code=404, detail="Gerador não encontrado")

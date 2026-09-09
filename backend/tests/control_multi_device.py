@@ -40,6 +40,7 @@ Path(os.environ["RC_RAPID_BINDINGS"]).write_text(
                 "transport": "reverse_tcp",
                 "listen_port": 15002,
                 "modbus_unit": 16,
+                "rapid_line_num": 102,
                 "rapid_device_num": 204,
             }
         ]
@@ -162,6 +163,7 @@ async def validate_ig4_lab_gate_and_payload():
             "transport": "reverse_tcp",
             "listen_port": 15003,
             "modbus_unit": 4,
+            "rapid_line_num": 103,
             "rapid_device_num": 206,
         }
     )

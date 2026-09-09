@@ -2,17 +2,14 @@ import { type FormEvent, useMemo, useState } from "react";
 import {
   AlertTriangle,
   ArrowLeftRight,
-  BatteryCharging,
   CalendarDays,
   ClipboardList,
   Factory,
   Fan,
-  Fuel,
   Gauge,
   GitMerge,
   HardHat,
   Power,
-  Timer,
   UtilityPole,
   Waves,
 } from "lucide-react";
@@ -21,10 +18,15 @@ import type { Generator } from "@/data/generators";
 import { fmt } from "@/data/scada";
 import { useGenerators } from "@/components/generators/GeneratorsProvider";
 import { useScadaOps } from "./ScadaOpsProvider";
-import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats, Tone } from "./kit";
+import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats } from "./kit";
 
 function hasMetric(g: Generator, key: string) {
   return (g.availableMetrics ?? []).includes(key);
+}
+
+function metricUnit(g: Generator, key: string, fallback = "") {
+  const unit = g.metricUnits?.[key];
+  return typeof unit === "string" && unit.trim() ? unit.trim() : fallback;
 }
 
 function valueOrDash(
@@ -35,7 +37,8 @@ function valueOrDash(
   digits = 1,
 ) {
   if (!hasMetric(g, key) || value == null) return "—";
-  return `${fmt(value, digits)}${unit ? ` ${unit}` : ""}`;
+  const resolvedUnit = metricUnit(g, key, unit);
+  return `${fmt(value, digits)}${resolvedUnit ? ` ${resolvedUnit}` : ""}`;
 }
 
 function supportedCount(generators: Generator[], metric: string) {
@@ -101,7 +104,7 @@ export function EnergyRede() {
           id: g.id,
           gen: g.tag,
           a: valueOrDash(g, "mains_voltage_l1", g.mains.l1, "V", 1),
-          b: valueOrDash(g, "mains_frequency", null, "Hz", 2),
+          b: valueOrDash(g, "mains_frequency", g.mainsFrequency, "Hz", 2),
           c: hasMetric(g, "mcb_closed") ? (g.mcb ? "MCB fechado" : "MCB aberto") : "MCB N/D",
         }))}
       />
@@ -415,150 +418,7 @@ export function MaintenanceScreen() {
   );
 }
 
-export function FuelScreen() {
-  const { generators } = useGenerators();
-  const measured = generators.filter((g) => hasMetric(g, "fuel_level"));
-  const mean = measured.length
-    ? measured.reduce((s, g) => s + g.fuelLevel, 0) / measured.length
-    : null;
-  return (
-    <ScreenBody>
-      <Stats
-        items={[
-          {
-            icon: Fuel,
-            label: "Nível médio medido",
-            value: mean == null ? "N/D" : `${fmt(mean, 0)} %`,
-          },
-          {
-            icon: Fuel,
-            label: "Tanques monitorados",
-            value: `${measured.length}/${generators.length}`,
-          },
-        ]}
-      />
-      <InfoNotice>
-        O painel mostra o nível medido, mas só classifica combustível como baixo quando existir um
-        limite configurado para o equipamento.
-      </InfoNotice>
-      <Panel title="Tanques / geradores">
-        <ScadaTable
-          rows={generators}
-          columns={[
-            { label: "Gerador", render: (r) => <b>{r.tag}</b> },
-            { label: "Site", render: (r) => r.site },
-            { label: "Nível", render: (r) => valueOrDash(r, "fuel_level", r.fuelLevel, "%", 0) },
-            {
-              label: "Estado",
-              render: (r) =>
-                hasMetric(r, "fuel_level") ? (
-                  <Tone tone="muted">Medido · sem limite configurado</Tone>
-                ) : (
-                  <Tone tone="muted">N/D</Tone>
-                ),
-            },
-          ]}
-        />
-      </Panel>
-    </ScreenBody>
-  );
-}
-
-export function BatteriesScreen() {
-  const { generators } = useGenerators();
-  const measured = generators.filter((g) => hasMetric(g, "battery_voltage") && g.battery != null);
-  const mean = measured.length
-    ? measured.reduce((s, g) => s + Number(g.battery), 0) / measured.length
-    : null;
-  return (
-    <ScreenBody>
-      <Stats
-        items={[
-          {
-            icon: BatteryCharging,
-            label: "Média medida",
-            value: mean == null ? "N/D" : `${fmt(mean)} V`,
-          },
-          {
-            icon: BatteryCharging,
-            label: "Baterias monitoradas",
-            value: `${measured.length}/${generators.length}`,
-          },
-        ]}
-      />
-      <InfoNotice>
-        A tensão é exibida somente quando medida. Saúde e baixa tensão só são classificadas quando
-        existirem referência nominal e limites configurados para o equipamento.
-      </InfoNotice>
-      <Panel title="Bancos de baterias">
-        <ScadaTable
-          rows={generators}
-          columns={[
-            { label: "Gerador", render: (r) => <b>{r.tag}</b> },
-            {
-              label: "Tensão",
-              render: (r) => valueOrDash(r, "battery_voltage", r.battery, "V", 1),
-            },
-            {
-              label: "Saúde",
-              render: (r) =>
-                !hasMetric(r, "battery_voltage") || r.battery == null ? (
-                  <Tone tone="muted">N/D</Tone>
-                ) : (
-                  <Tone tone="muted">Sem referência nominal</Tone>
-                ),
-            },
-          ]}
-        />
-      </Panel>
-    </ScreenBody>
-  );
-}
-
-export function HourmetersScreen() {
-  const { generators } = useGenerators();
-  const measured = generators.filter((g) => hasMetric(g, "run_hours"));
-  const total = measured.reduce((s, g) => s + g.runHours, 0);
-  return (
-    <ScreenBody>
-      <Stats
-        items={[
-          {
-            icon: Timer,
-            label: "Horas medidas",
-            value: measured.length ? `${fmt(total, 0)} h` : "N/D",
-          },
-          {
-            icon: Timer,
-            label: "Horímetros monitorados",
-            value: `${measured.length}/${generators.length}`,
-          },
-        ]}
-      />
-      <Panel title="Horímetros">
-        <ScadaTable
-          rows={generators}
-          columns={[
-            { label: "Gerador", render: (r) => <b>{r.tag}</b> },
-            {
-              label: "Horas trabalhadas",
-              render: (r) => valueOrDash(r, "run_hours", r.runHours, "h", 1),
-            },
-            {
-              label: "Próxima manutenção",
-              render: (r) => valueOrDash(r, "maintenance_hours", r.maintenance, "h", 1),
-            },
-            {
-              label: "Fonte",
-              render: (r) =>
-                hasMetric(r, "run_hours") ? <Pill tone="ok">Telemetria</Pill> : <Pill>N/D</Pill>,
-            },
-          ]}
-        />
-      </Panel>
-    </ScreenBody>
-  );
-}
+export { FuelScreen, BatteriesScreen, HourmetersScreen } from "./energy-assets";
 
 export function AgendaScreen() {
   const { agenda, addAgenda } = useScadaOps();

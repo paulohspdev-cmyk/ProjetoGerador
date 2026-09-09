@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 import sqlite3
@@ -9,6 +10,7 @@ from pathlib import Path
 from cryptography.fernet import Fernet, InvalidToken
 
 from . import db
+from .binding_store import BindingStoreError, load_runtime_bindings, validate_runtime_bindings
 from .config import (
     BACKUP_OFFSITE_DIR,
     BACKUP_OFFSITE_KEY_FILE,
@@ -16,10 +18,13 @@ from .config import (
     DATA_DIR,
     DB_FILE,
     PROJECT_ROOT,
+    RAPID_BINDINGS_FILE,
     TOTP_KEY_FILE,
 )
 
 BACKUP_DIR = DATA_DIR / "backups"
+RUNTIME_BINDINGS = Path(RAPID_BINDINGS_FILE)
+RETIRED_BINDINGS = DATA_DIR / "rapid-retired-bindings.json"
 DEFAULT_RETENTION = int(os.environ.get("RC_BACKUP_RETENTION", "14"))
 INCLUDE_SECRETS = os.environ.get("RC_BACKUP_INCLUDE_SECRETS", "0").strip() == "1"
 
@@ -46,6 +51,30 @@ def _snapshot_database(target: Path) -> None:
         finally:
             dest.close()
     _quick_check(target)
+
+
+def _database_requires_bindings(path: Path) -> bool:
+    connection = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+    try:
+        row = connection.execute(
+            "SELECT 1 FROM generators WHERE rapid_device_num IS NOT NULL LIMIT 1"
+        ).fetchone()
+        return row is not None
+    finally:
+        connection.close()
+
+
+def _validate_binding_file(path: Path) -> None:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        raise ValueError(f"Bindings Rapid inválidos no backup: {path}: {exc}") from exc
+    if not isinstance(value, list):
+        raise ValueError(f"Bindings Rapid inválidos no backup: {path} deve conter uma lista")
+    try:
+        validate_runtime_bindings(value)
+    except BindingStoreError as exc:
+        raise ValueError(f"Bindings Rapid inválidos no backup: {exc}") from exc
 
 
 def _add_if_exists(tar: tarfile.TarFile, path: Path, arcname: str):
@@ -132,13 +161,26 @@ def create_full_backup(actor: str = "system", retention: int | None = None) -> d
     result = "OK"
     detail = ""
     offsite_path = None
+    bindings_included = False
 
     try:
         with tempfile.TemporaryDirectory(prefix="rc-backup-") as tmp:
             db_copy = Path(tmp) / "product-db.sqlite3"
             _snapshot_database(db_copy)
+            requires_bindings = _database_requires_bindings(db_copy)
+            if RUNTIME_BINDINGS.exists():
+                load_runtime_bindings(RUNTIME_BINDINGS)
+                bindings_included = True
+            elif requires_bindings:
+                raise ValueError(
+                    "Backup completo recusado: banco possui gerador(es) provisionado(s), "
+                    "mas rapid-bindings.json não existe"
+                )
+
             with tarfile.open(archive, "w:gz") as tar:
                 tar.add(db_copy, arcname="product/product-db.sqlite3")
+                _add_if_exists(tar, RUNTIME_BINDINGS, "product/rapid-bindings.json")
+                _add_if_exists(tar, RETIRED_BINDINGS, "product/rapid-retired-bindings.json")
                 if INCLUDE_SECRETS:
                     _add_if_exists(tar, Path("/etc/rc-geradores.env"), "product/rc-geradores.env")
                     _add_if_exists(tar, Path(TOTP_KEY_FILE), "product/totp-fernet.key")
@@ -156,6 +198,7 @@ def create_full_backup(actor: str = "system", retention: int | None = None) -> d
     except Exception as exc:
         result = "Falha"
         detail = str(exc)[:1000]
+        archive.unlink(missing_ok=True)
 
     size = archive.stat().st_size if archive.exists() else 0
     backup_id = f"bk-{stamp}"
@@ -169,7 +212,7 @@ def create_full_backup(actor: str = "system", retention: int | None = None) -> d
         "backup",
         "system",
         backup_id,
-        f"{result} {size} bytes; secrets={'included' if INCLUDE_SECRETS else 'excluded'}; offsite={bool(offsite_path)}",
+        f"{result} {size} bytes; bindings={bindings_included}; secrets={'included' if INCLUDE_SECRETS else 'excluded'}; offsite={bool(offsite_path)}",
     )
     if result == "OK":
         apply_retention(retention if retention is not None else DEFAULT_RETENTION)
@@ -182,6 +225,7 @@ def create_full_backup(actor: str = "system", retention: int | None = None) -> d
         "result": result,
         "detail": detail,
         "created_at": int(time.time()),
+        "bindingsIncluded": bindings_included,
         "secretsIncluded": INCLUDE_SECRETS,
         "totpSecretEncryptedInDatabase": True,
         "offsiteCarriesTotpRecoveryKey": bool(offsite_path and Path(TOTP_KEY_FILE).is_file()),
@@ -276,6 +320,42 @@ def _restore_product_ownership(path: Path = DB_FILE) -> None:
         pass
 
 
+def _restore_state_file_ownership(path: Path) -> None:
+    try:
+        shutil.chown(path, user="rcgeradores", group="rcgeradores")
+        os.chmod(path, 0o640)
+    except (LookupError, PermissionError, FileNotFoundError):
+        pass
+
+
+def _install_state_file(source: Path, target: Path, *, validate_bindings: bool = False) -> None:
+    if validate_bindings:
+        _validate_binding_file(source)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    staged = target.parent / f".{target.name}.restore-{os.getpid()}.tmp"
+    shutil.copy2(source, staged)
+    _restore_state_file_ownership(staged)
+    os.replace(staged, target)
+    _restore_state_file_ownership(target)
+
+
+def _capture_state_file(path: Path) -> tuple[bool, bytes | None]:
+    return (path.exists(), path.read_bytes() if path.exists() else None)
+
+
+def _rollback_state_file(path: Path, snapshot: tuple[bool, bytes | None]) -> None:
+    existed, content = snapshot
+    if not existed:
+        path.unlink(missing_ok=True)
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    staged = path.parent / f".{path.name}.rollback-{os.getpid()}.tmp"
+    staged.write_bytes(content or b"")
+    _restore_state_file_ownership(staged)
+    os.replace(staged, path)
+    _restore_state_file_ownership(path)
+
+
 def _pre_restore_snapshot() -> Path | None:
     if not DB_FILE.exists():
         return None
@@ -330,6 +410,8 @@ def restore_archive(archive_path: str | Path, restore_rapid: bool = True) -> dic
     archive = safe_archive_path(archive_path)
     pre_restore: Path | None = None
     secrets_restored = False
+    bindings_restored = False
+    retired_bindings_restored = False
 
     with tempfile.TemporaryDirectory(prefix="rc-restore-") as tmp:
         root = Path(tmp)
@@ -341,10 +423,33 @@ def restore_archive(archive_path: str | Path, restore_rapid: bool = True) -> dic
         if not db_src.exists():
             raise ValueError("Backup sem banco do produto")
         _quick_check(db_src)
+
+        binding_src = root / "product/rapid-bindings.json"
+        retired_src = root / "product/rapid-retired-bindings.json"
+        if binding_src.exists():
+            _validate_binding_file(binding_src)
+        if restore_rapid and _database_requires_bindings(db_src) and not binding_src.exists():
+            raise ValueError(
+                "Restore Rapid recusado: o banco do backup possui gerador(es) provisionado(s), "
+                "mas o archive não contém product/rapid-bindings.json"
+            )
+
         pre_restore = _pre_restore_snapshot()
+        bindings_before = _capture_state_file(RUNTIME_BINDINGS)
+        retired_before = _capture_state_file(RETIRED_BINDINGS)
 
         try:
             _install_database(db_src)
+
+            if binding_src.exists():
+                _install_state_file(binding_src, RUNTIME_BINDINGS, validate_bindings=True)
+                bindings_restored = True
+            elif not _database_requires_bindings(db_src):
+                RUNTIME_BINDINGS.unlink(missing_ok=True)
+
+            if retired_src.exists():
+                _install_state_file(retired_src, RETIRED_BINDINGS)
+                retired_bindings_restored = True
 
             env_src = root / "product/rc-geradores.env"
             if env_src.exists():
@@ -374,12 +479,16 @@ def restore_archive(archive_path: str | Path, restore_rapid: bool = True) -> dic
                         shutil.copytree(src, dst)
         except Exception:
             _rollback_database(pre_restore)
+            _rollback_state_file(RUNTIME_BINDINGS, bindings_before)
+            _rollback_state_file(RETIRED_BINDINGS, retired_before)
             raise
 
     return {
         "ok": True,
         "archive": str(archive),
         "rapidRestored": bool(restore_rapid),
+        "bindingsRestored": bindings_restored,
+        "retiredBindingsRestored": retired_bindings_restored,
         "secretsRestored": secrets_restored,
         "preRestoreSnapshot": str(pre_restore) if pre_restore else None,
         "databaseQuickCheck": "ok",

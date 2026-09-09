@@ -1,25 +1,8 @@
 import { type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import {
-  Bell,
-  ChevronRight,
-  LogOut,
-  Maximize2,
-  Menu,
-  Minimize2,
-  Moon,
-  Search,
-  Sun,
-  UserRound,
-} from "lucide-react";
+import { ChevronRight, Menu, Search } from "lucide-react";
 
-import { useAuth } from "@/components/auth/AuthProvider";
 import { useLayout } from "@/components/layout/LayoutContext";
-import { useTheme } from "@/components/layout/ThemeProvider";
-import { useGenerators } from "@/components/generators/GeneratorsProvider";
-import { useScadaOps } from "@/components/scada/ScadaOpsProvider";
-import { buildAlarms } from "@/data/scada";
-import { ROLE_LABEL } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -31,14 +14,7 @@ type Props = {
 };
 
 export function Topbar({ breadcrumb = [], title, tools, search, back }: Props) {
-  const { toggleMobile, fullscreen, toggleFullscreen } = useLayout();
-  const { theme, toggleTheme } = useTheme();
-  const { user, logout } = useAuth();
-  const { generators } = useGenerators();
-  const { isAcked } = useScadaOps();
-  const alarmCount = buildAlarms(generators).filter(
-    (alarm) => !isAcked(alarm.id, alarm.ack),
-  ).length;
+  const { toggleMobile } = useLayout();
 
   return (
     <header className="sticky top-0 z-20 shrink-0 border-b border-border bg-card/95 pt-[env(safe-area-inset-top)] backdrop-blur">
@@ -100,55 +76,6 @@ export function Topbar({ breadcrumb = [], title, tools, search, back }: Props) {
               Buscar gerador
             </Link>
           )}
-          <button
-            type="button"
-            onClick={toggleTheme}
-            aria-label={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
-            className="grid size-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-          >
-            {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
-          </button>
-          <button
-            type="button"
-            onClick={toggleFullscreen}
-            aria-label={fullscreen ? "Sair da tela cheia" : "Tela cheia"}
-            aria-pressed={fullscreen}
-            className="hidden size-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:grid"
-          >
-            {fullscreen ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
-          </button>
-          <Link
-            to="/p/$slug"
-            params={{ slug: "alarmes" }}
-            aria-label="Alarmes"
-            className="relative grid size-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-          >
-            <Bell className="size-4" />
-            {alarmCount > 0 && (
-              <span className="num absolute right-0 top-0 rounded-full bg-destructive px-1.5 text-[10px] font-bold leading-4 text-destructive-foreground">
-                {alarmCount}
-              </span>
-            )}
-          </Link>
-          <div className="ml-1 flex items-center gap-1.5 border-l border-border pl-2 sm:gap-2">
-            <div className="hidden size-7 place-items-center rounded-full bg-secondary text-muted-foreground min-[420px]:grid">
-              <UserRound className="size-4" />
-            </div>
-            <div className="hidden leading-tight md:block">
-              <p className="max-w-36 truncate text-xs font-bold">{user?.name ?? "—"}</p>
-              <p className="text-[11px] text-muted-foreground">
-                {user ? ROLE_LABEL[user.role] : ""}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={logout}
-              aria-label="Sair"
-              className="grid size-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-            >
-              <LogOut className="size-4" />
-            </button>
-          </div>
         </div>
       </div>
     </header>

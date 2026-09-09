@@ -17,7 +17,6 @@ import argparse
 import json
 import os
 import shutil
-import subprocess
 import sys
 import time
 import xml.etree.ElementTree as ET
@@ -34,13 +33,18 @@ sys.path.insert(0, str(BASE / "backend"))
 sys.path.insert(0, str(BASE / "rapid/provisioning"))
 
 from app import db  # noqa: E402
+from app.binding_store import BindingStoreError, load_runtime_bindings  # noqa: E402
 from rapid_dat import delete_row, read_table, update_row  # noqa: E402
 from provision_generator import (  # noqa: E402
     _backup,
     _find_line,
-    _load_bindings,
     _restore_backup,
     _save_bindings,
+)
+from service_guard import (  # noqa: E402
+    ensure_stopped_for_mutation,
+    restore_after_mutation,
+    stop_for_mutation,
 )
 
 
@@ -49,9 +53,13 @@ def _load_retired() -> list[dict]:
         return []
     try:
         value = json.loads(RETIRED_BINDINGS.read_text(encoding="utf-8"))
-        return value if isinstance(value, list) else []
-    except Exception:
-        return []
+    except Exception as exc:
+        raise ValueError(f"Arquivo de bindings retirados está corrompido: {RETIRED_BINDINGS}: {exc}") from exc
+    if not isinstance(value, list):
+        raise ValueError(f"Arquivo de bindings retirados deve conter uma lista JSON: {RETIRED_BINDINGS}")
+    if not all(isinstance(item, dict) for item in value):
+        raise ValueError(f"Arquivo de bindings retirados contém entrada inválida: {RETIRED_BINDINGS}")
+    return value
 
 
 def _save_retired(items: list[dict]) -> None:
@@ -88,10 +96,21 @@ def deprovision(generator_id: str, restart: bool = True) -> dict:
     if not generator:
         raise ValueError("Gerador não encontrado")
 
-    bindings = _load_bindings()
+    try:
+        bindings = load_runtime_bindings(RUNTIME_BINDINGS)
+    except BindingStoreError as exc:
+        raise ValueError(
+            "Deprovisionamento bloqueado: estado dos bindings Rapid não é confiável. "
+            "Corrija/reconcilie os bindings antes de retirar qualquer equipamento."
+        ) from exc
+
     binding = next((item for item in bindings if str(item.get("generator_id") or "") == generator["id"]), None)
     if not binding:
-        _clear_generator_rapid_device(generator["id"])
+        if int(generator.get("rapid_device_num") or 0) > 0:
+            raise ValueError(
+                "Deprovisionamento bloqueado: o cadastro ainda possui Rapid Device, mas o binding ativo está ausente. "
+                "Reconcilie o estado industrial antes da retirada para não deixar configuração órfã."
+            )
         return {"ok": True, "existing": False, "deprovisioned": False, "reason": "binding ativo inexistente"}
 
     line_num = int(binding.get("rapid_line_num") or 0)
@@ -107,13 +126,15 @@ def deprovision(generator_id: str, restart: bool = True) -> dict:
     retired_existed = RETIRED_BINDINGS.exists()
     runtime_existed = RUNTIME_BINDINGS.exists()
     backup = _backup([*required, RUNTIME_BINDINGS, RETIRED_BINDINGS])
-    services_stopped = False
+    service_state: dict[str, bool] | None = None
+    mutation_failed = False
     changes: list[str] = []
 
     try:
-        subprocess.run(["systemctl", "stop", "scadacomm6.service"], check=False)
-        subprocess.run(["systemctl", "stop", "scadaserver6.service"], check=False)
-        services_stopped = True
+        if restart:
+            service_state = stop_for_mutation()
+        else:
+            ensure_stopped_for_mutation()
 
         for key, cfg in _all_bound_channels(binding).items():
             cnl = int(cfg.get("cnl") or 0)
@@ -122,6 +143,11 @@ def deprovision(generator_id: str, restart: bool = True) -> dict:
             if row is None:
                 changes.append(f"channel.absent:{key}@{cnl}")
                 continue
+            if int(row.get("DeviceNum") or 0) not in {0, device_num}:
+                raise ValueError(
+                    f"CnlNum {cnl} de {key} pertence ao Device {row.get('DeviceNum')}, esperado {device_num}; "
+                    "deprovisionamento bloqueado para evitar afetar outro gerador"
+                )
             result = update_row(str(DAT / "cnl.dat"), "CnlNum", cnl, {"Active": False})
             if result["status"] == "updated":
                 changes.append(f"channel.disabled:{key}@{cnl}")
@@ -180,6 +206,7 @@ def deprovision(generator_id: str, restart: bool = True) -> dict:
             f"line={line_num};device={device_num};channels_preserved=true;backup={backup}",
         )
     except Exception:
+        mutation_failed = True
         _restore_backup(
             backup,
             [
@@ -198,10 +225,19 @@ def deprovision(generator_id: str, restart: bool = True) -> dict:
             RETIRED_BINDINGS.unlink(missing_ok=True)
         raise
     finally:
-        if restart and services_stopped:
-            subprocess.run(["systemctl", "start", "scadaserver6.service"], check=False)
-            time.sleep(2)
-            subprocess.run(["systemctl", "restart", "scadacomm6.service"], check=False)
+        if restart and service_state is not None:
+            try:
+                restore_after_mutation(service_state)
+            except Exception as restore_exc:
+                if not mutation_failed:
+                    raise
+                print(
+                    json.dumps(
+                        {"warning": "falha ao restaurar serviços após rollback", "error": str(restore_exc)},
+                        ensure_ascii=False,
+                    ),
+                    file=sys.stderr,
+                )
 
     return {
         "ok": True,

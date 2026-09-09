@@ -40,6 +40,9 @@
       <Elem type="short" readOnly="true" isBitMask="false" tagCode="battery_voltage_raw" name="Battery Volts" />
       <Elem type="short" readOnly="true" isBitMask="false" tagCode="alternator_voltage_raw" name="D+" />
     </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1280" name="Nominais">
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="nominal_power_kw" name="Nominal Power" />
+    </ElemGroup>
     <ElemGroup active="true" dataBlock="HoldingRegisters" address="1283" name="Estatisticas - energia">
       <Elem type="uint" readOnly="true" isBitMask="false" tagCode="genset_kwh" name="Genset kWh" />
     </ElemGroup>

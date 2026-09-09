@@ -1,0 +1,103 @@
+/* Final operator-requested spacing overrides for the vertical generator card. */
+
+/* GERADOR stays compact; spare card height belongs to the power-flow diagram. */
+.generator-six-card-grid .mains-generator-block {
+  display: block;
+  flex: 0 0 auto;
+  margin-bottom: 3px;
+  padding-bottom: 6px !important;
+}
+
+/* Engine Status: icon almost touches the label, while rows keep a tiny vertical breath. */
+.generator-six-card-grid .comap-engine {
+  grid-template-columns: 18px 86px minmax(46px, 1fr) 60px;
+  min-height: 21px;
+  column-gap: 2px;
+}
+
+.generator-six-card-grid .comap-engine + .comap-engine {
+  margin-top: 1px;
+}
+
+.generator-six-card-grid .comap-engine .engine-label {
+  padding-left: 0;
+}
+
+.generator-six-card-grid .comap-engine .engine-value {
+  padding-left: 2px;
+  padding-right: 2px;
+}
+
+/* START/STOP keep their horizontal clearance but sit higher, including fullscreen. */
+.generator-six-card-grid .generator-command-stack {
+  top: 75%;
+  left: calc(50% + 38px);
+}
+
+.generator-six-card-grid .generator-command-stack.with-mains {
+  top: 75%;
+  left: calc(35% + 38px);
+}
+
+/* Let the power-flow area absorb the remaining card height and scale the diagram up. */
+.generator-six-card-grid .comap-panel-v2 .comap-flow-v2 {
+  flex: 1 1 246px;
+  min-height: 246px;
+}
+
+.generator-six-card-grid .comap-panel-v2 .comap-sld {
+  height: auto;
+  min-height: 216px;
+  flex: 1 1 auto;
+}
+
+.generator-six-card-grid .comap-panel-v2 .comap-sld-stage {
+  width: min(100%, 244px);
+  height: 100%;
+  min-height: 216px;
+  max-height: none;
+}
+
+@container (max-width: 270px) {
+  .generator-six-card-grid .comap-engine {
+    grid-template-columns: 17px 74px minmax(36px, 1fr) 54px;
+    column-gap: 2px;
+  }
+
+  .generator-six-card-grid .comap-engine .engine-label {
+    padding-left: 0;
+  }
+
+  .generator-six-card-grid .comap-panel-v2 .comap-sld-stage {
+    width: min(100%, 238px);
+  }
+}
+
+/* v11: generator-only geometry matches its SVG viewBox in normal and fullscreen modes. */
+.generator-six-card-grid .comap-panel-v2 .comap-sld-stage.is-generator-only {
+  width: min(100%, 258px);
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  aspect-ratio: 230 / 215;
+}
+
+.generator-six-card-grid .comap-sld-stage.is-generator-only .generator-command-stack {
+  top: 84%;
+  left: calc(50% + 38px);
+  transform: translateY(-50%);
+  gap: 4px;
+}
+
+.generator-six-card-grid .comap-sld-stage.is-generator-only .generator-command-stack .comap-start,
+.generator-six-card-grid .comap-sld-stage.is-generator-only .generator-command-stack .comap-stop {
+  width: 36px;
+  height: 26px;
+  font-size: 8px;
+}
+
+@container (max-width: 270px) {
+  .generator-six-card-grid .comap-panel-v2 .comap-sld-stage.is-generator-only {
+    width: min(100%, 250px);
+  }
+}

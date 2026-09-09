@@ -83,8 +83,12 @@ export type GeneratorLifecycle = {
   tag: string;
   provisioned: boolean;
   binding?: unknown;
+  industrialStateConsistent?: boolean;
   canDeleteSafely: boolean;
 };
+
+export type LifecycleTransport =
+  "reverse_tcp" | "modbus_tcp_direct" | "rtu_over_tcp" | "modbus_rtu_serial";
 
 export const industrialApi = {
   alarms: {
@@ -203,10 +207,11 @@ export const industrialApi = {
       id: string,
       tag: string,
       payload: {
-        transport: "reverse_tcp" | "modbus_tcp_direct" | "rtu_over_tcp";
+        transport: LifecycleTransport;
         ip: string;
         listenPort: number;
         modbusUnit: number;
+        enabled?: boolean;
       },
     ) =>
       request<Record<string, unknown>>(`/api/generators/${encodeURIComponent(id)}/reconfigure`, {

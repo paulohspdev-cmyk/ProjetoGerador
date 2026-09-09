@@ -1,8 +1,10 @@
 .generator-power-instrument {
   position: relative;
-  display: grid;
-  min-height: 194px;
-  place-items: center;
+  display: flex;
+  min-height: 172px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
   overflow: visible;
   border: 0;
   border-radius: 0;
@@ -11,9 +13,9 @@
 
 .comap-panel-v2 .generator-power-gauge {
   display: block;
-  width: min(100%, 272px);
+  width: min(100%, 220px);
   height: auto;
-  margin: 18px auto 0;
+  margin: 0 auto;
   overflow: visible;
 }
 
@@ -94,27 +96,27 @@
 }
 
 .generator-power-meta {
-  position: absolute;
+  position: static;
   z-index: 6;
-  top: 2px;
-  right: 0;
   display: grid;
-  width: 84px;
-  gap: 3px;
+  width: min(100%, 164px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  margin: 0 auto -5px;
 }
 
 .generator-power-meta > span {
   display: grid;
-  min-height: 21px;
-  grid-template-columns: 31px 1fr;
+  min-height: 19px;
+  grid-template-columns: 28px 1fr;
   align-items: center;
-  padding: 2px 4px;
+  padding: 1px 4px;
   border: 1px solid color-mix(in oklab, var(--industrial-border) 88%, white 12%);
   border-radius: 1px;
   background: color-mix(in oklab, var(--industrial-bg) 96%, transparent);
   color: var(--industrial-foreground);
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 7.5px;
   line-height: 1;
 }
 
@@ -166,23 +168,19 @@
 .generator-battery-badge {
   position: absolute;
   z-index: 6;
-  right: 0;
-  bottom: 3px;
-  display: grid;
-  min-width: 88px;
-  min-height: 22px;
-  grid-template-columns: 18px 20px 1fr;
+  right: 4px;
+  bottom: 5px;
+  display: inline-flex;
   align-items: center;
-  gap: 3px;
-  padding: 2px 5px 2px 4px;
-  border: 1px solid color-mix(in oklab, var(--alert) 74%, var(--industrial-border));
-  border-radius: 1px;
-  background: var(--alert);
-  color: var(--industrial-bg);
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--industrial-foreground);
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 8.5px;
   font-weight: 900;
-  box-shadow: 0 0 4px color-mix(in oklab, var(--alert) 24%, transparent);
+  box-shadow: none;
 }
 
 .generator-battery-icon {
@@ -195,21 +193,13 @@
   stroke-width: 1.5;
 }
 
-.generator-battery-badge span {
-  font-size: 7px;
-  opacity: 0.8;
-}
-
 .generator-battery-badge b {
   text-align: right;
   white-space: nowrap;
 }
 
 .generator-battery-badge.is-unknown {
-  border-color: var(--industrial-border);
-  background: transparent;
   color: var(--industrial-muted);
-  box-shadow: none;
 }
 
 .comap-panel-v2 .comap-power-gauge-block {
@@ -281,16 +271,16 @@
 
 @media (max-width: 360px) {
   .generator-power-instrument {
-    min-height: 186px;
+    min-height: 164px;
   }
 
   .comap-panel-v2 .generator-power-gauge {
-    width: min(100%, 258px);
-    margin-top: 19px;
+    width: min(100%, 210px);
+    margin-top: 0;
   }
 
   .generator-power-meta {
-    width: 80px;
+    width: min(100%, 150px);
   }
 
   .generator-power-meta > span {
@@ -302,12 +292,6 @@
 
   .generator-power-readout strong {
     font-size: 31px;
-  }
-
-  .generator-battery-badge {
-    min-width: 83px;
-    grid-template-columns: 17px 18px 1fr;
-    padding-inline: 3px;
   }
 
   .generator-battery-icon {

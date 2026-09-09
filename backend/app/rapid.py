@@ -7,15 +7,16 @@ import threading
 import time
 from datetime import datetime, timedelta, timezone
 
+from .binding_store import load_runtime_bindings
 from .config import (
     BRIDGE_STATUS_FILE,
-    RAPID_BINDINGS_FILE,
     RAPID_CACHE_TTL,
     RAPID_COMM_CONFIG,
     RAPID_READER_DLL,
 )
 from .controller_library import pack_for_model
 from . import db
+from .dse_lab import is_target as is_dse_lab_target
 from .ig4_lab import is_target as is_ig4_lab_target
 
 _cache = {"at": 0.0, "channels": {}, "error": "", "requested": set()}
@@ -36,11 +37,8 @@ _CONTROLLER_HEALTH_KEYS = (
 
 
 def load_bindings():
-    try:
-        data = json.loads(RAPID_BINDINGS_FILE.read_text(encoding="utf-8"))
-        return data if isinstance(data, list) else []
-    except Exception:
-        return []
+    """Bindings ausentes significam VM ainda não provisionada; corrupção é erro real."""
+    return load_runtime_bindings()
 
 
 def _binding_identity_matches(generator, item):
@@ -384,17 +382,26 @@ def _metric_limits(generator) -> dict:
 def _effective_capabilities(generator, status: str, binding_present: bool) -> dict[str, bool]:
     pack = _pack(generator)
     declared = (pack or {}).get("capabilities") or {}
-    production = bool(
-        pack
-        and pack.get("lifecycle") == "production"
-        and pack.get("status") == "field_validated"
-    )
+    production_pack = bool(pack and pack.get("lifecycle") == "production")
+    field_validated = bool(production_pack and pack.get("status") == "field_validated")
     online = status == "online"
-    ig4_lab_start = bool(production and online and binding_present and is_ig4_lab_target(generator))
+    ig4_lab_start = bool(
+        field_validated and online and binding_present and is_ig4_lab_target(generator)
+    )
+    dse_lab_control = bool(
+        binding_present
+        and status in {"online", "partial", "connected"}
+        and is_dse_lab_target(generator)
+    )
     return {
-        "telemetry": bool(production and binding_present and declared.get("telemetry")),
-        "start": bool(production and online and declared.get("start")) or ig4_lab_start,
-        "stop": bool(production and online and declared.get("stop")),
+        # Telemetria read-only pode ser liberada por um pack production que a
+        # declara explicitamente, mesmo quando o contrato do pack não libera
+        # comandos de campo (caso DSE GenComm documentado).
+        "telemetry": bool(production_pack and binding_present and declared.get("telemetry")),
+        # Ações production continuam exigindo homologação física. O ensaio DSE
+        # é um caminho LAB separado, explicitamente habilitado e limitado por allowlist.
+        "start": bool(field_validated and online and declared.get("start")) or ig4_lab_start or dse_lab_control,
+        "stop": bool(field_validated and online and declared.get("stop")) or dse_lab_control,
         "auto": False,
         "manual": False,
         "test": False,
@@ -632,7 +639,7 @@ def _overlay_generators(generators):
         if read_error:
             health.update({"controller": "unknown", "telemetry": "error"})
             state = "offline" if health.get("transport") == "disconnected" else "fault"
-            stale_values, stale_defined, stale_at = last_known()
+            stale_values, _stale_defined, stale_at = last_known()
             result.append(
                 _frontend_generator(
                     generator,
@@ -705,7 +712,7 @@ def _overlay_generators(generators):
         else:
             health.update({"controller": "unknown", "telemetry": "no_data"})
             state = "offline" if health.get("transport") == "disconnected" else "connected"
-            stale_values, stale_defined, stale_at = last_known()
+            stale_values, _stale_defined, stale_at = last_known()
             result.append(
                 _frontend_generator(
                     generator,
