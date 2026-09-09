@@ -192,9 +192,10 @@ export function PowerGaugeKw({
     const angle = 180 + label.fraction * 180;
     const rad = (angle * Math.PI) / 180;
     const radius = 137;
+    const endLabelGap = label.fraction === 1 ? 6 : 0;
     return {
       ...label,
-      x: cx + Math.cos(rad) * radius,
+      x: cx + Math.cos(rad) * radius + endLabelGap,
       y: cy + Math.sin(rad) * radius + 3,
     };
   });
