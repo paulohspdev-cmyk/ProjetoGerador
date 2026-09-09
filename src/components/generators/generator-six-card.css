@@ -1041,3 +1041,69 @@
     font-size: 11.5px;
   }
 }
+
+/* vertical-card-layout-v9: final readability and bottom-fill refinement */
+/* Slightly larger header identity for fast reading across the full-screen fleet. */
+.generator-six-card-grid .comap-header {
+  min-height: 32px;
+}
+
+.generator-six-card-grid .comap-logo {
+  width: 25px;
+  height: 25px;
+  font-size: 13px;
+}
+
+.generator-six-card-grid .comap-name {
+  font-size: 15px;
+}
+
+.generator-six-card-grid .controller-model-line {
+  font-size: 10.5px;
+}
+
+/* Give the engine icon and label a small visual breath without changing row height. */
+.generator-six-card-grid .comap-engine .engine-label {
+  padding-left: 2px;
+}
+
+/* Gauge labels move only a little farther from the arc and gain a minimal size bump. */
+.generator-six-card-grid .generator-gauge-scale {
+  font-size: 20px;
+}
+
+/* Use the remaining card height for the generator voltage rows instead of dead space. */
+.generator-six-card-grid .mains-generator-block {
+  display: grid;
+  grid-template-rows: auto auto repeat(4, minmax(21px, 1fr));
+  min-height: 0;
+  flex: 1 1 auto;
+  margin-bottom: 5px;
+  padding-bottom: 7px !important;
+}
+
+.generator-six-card-grid .mains-generator-block .comap-table-row {
+  min-height: 21px;
+  align-items: center;
+}
+
+/* Keep a small safe margin for narrow cards while preserving readability. */
+@container (max-width: 270px) {
+  .generator-six-card-grid .comap-header {
+    min-height: 31px;
+  }
+
+  .generator-six-card-grid .comap-logo {
+    width: 24px;
+    height: 24px;
+    font-size: 12.5px;
+  }
+
+  .generator-six-card-grid .comap-name {
+    font-size: 14.5px;
+  }
+
+  .generator-six-card-grid .controller-model-line {
+    font-size: 10px;
+  }
+}
