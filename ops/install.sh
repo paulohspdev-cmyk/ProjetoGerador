@@ -204,6 +204,16 @@ test -f "$BASE/controllers/production/comap/inteligen-200/manifest.json"
 if ! id rcgeradores >/dev/null 2>&1; then
   useradd --system --home "$BASE" --shell /usr/sbin/nologin rcgeradores
 fi
+# O backup completo roda sem privilégio como rcgeradores. As tabelas BaseDAT
+# alteradas pelo provisionador permanecem root-owned, mas o grupo do serviço
+# recebe somente leitura; rapid_dat.py preserva esses metadados em cada replace.
+for file in \
+  /opt/scada/BaseDAT/commline.dat \
+  /opt/scada/BaseDAT/device.dat \
+  /opt/scada/BaseDAT/cnl.dat; do
+  chgrp rcgeradores "$file"
+  chmod 0640 "$file"
+done
 install -d -m 0750 -o rcgeradores -g rcgeradores \
   /var/lib/rc-geradores \
   /var/lib/rc-geradores/backups \

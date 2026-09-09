@@ -94,6 +94,24 @@ def _connection_diagnosis(session: dict, listeners: dict[int, dict], status_fres
     if not session.get("connected"):
         return {"code": "field_tcp_disconnected", "origin": "field", "label": "Modem ou enlace de campo desconectado"}
 
+    generators = session.get("generators") if isinstance(session.get("generators"), list) else []
+    provisioned = [item for item in generators if isinstance(item, dict) and item.get("rapidDeviceNum") is not None]
+    if generators and not provisioned:
+        return {
+            "code": "no_rapid_device",
+            "origin": "configuration",
+            "label": "TCP conectado, mas nenhum gerador desta porta está provisionado no Rapid SCADA",
+        }
+
+    connected_at = int(session.get("connectedAt") or 0)
+    no_traffic = int(session.get("bytesRx") or 0) == 0 and int(session.get("bytesTx") or 0) == 0
+    if provisioned and no_traffic and connected_at and int(time.time()) - connected_at >= 60:
+        return {
+            "code": "rapid_polling_absent",
+            "origin": "system",
+            "label": "Modem conectado e provisionado, mas sem tráfego de polling do Rapid SCADA",
+        }
+
     unit_health = session.get("unitHealth") if isinstance(session.get("unitHealth"), dict) else {}
     timed_out = [
         unit
@@ -129,8 +147,9 @@ def _memory():
 
 
 def version_info():
-    _, git_sha = _run(["git", "-C", str(PROJECT_ROOT), "rev-parse", "--short=12", "HEAD"])
-    _, git_branch = _run(["git", "-C", str(PROJECT_ROOT), "branch", "--show-current"])
+    git_base = ["git", "-c", f"safe.directory={PROJECT_ROOT}", "-C", str(PROJECT_ROOT)]
+    _, git_sha = _run([*git_base, "rev-parse", "--short=12", "HEAD"])
+    _, git_branch = _run([*git_base, "branch", "--show-current"])
     rc, rapid_pkg = _run(["dpkg-query", "-W", "-f=${Version}", "rapidscada"])
     return {
         "application": "RC Geradores",

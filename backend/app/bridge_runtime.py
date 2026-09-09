@@ -394,16 +394,22 @@ class HardenedBridgePort(bridge.BridgePort):
                 return bridge.exception_pdu(function, 11)
             except (ConnectionError, asyncio.IncompleteReadError) as exc:
                 self.errors += 1
+                # Quando o modem cai, o Rapid SCADA continua consultando a porta local.
+                # Sem backoff isso gerava centenas de erros por minuto e inundava o journal.
+                # Uma nova sessão remota limpa o backoff imediatamente em accept_remote().
+                self._unit_backoff_until[unit] = loop.time() + UNIT_BACKOFF_MAX
                 bridge.log(
                     f"porta {self.remote_port}: conexão perdida Unit {unit} FC{function:02d}: "
-                    f"{type(exc).__name__}"
+                    f"{type(exc).__name__}; backoff {UNIT_BACKOFF_MAX:.1f}s até nova sessão"
                 )
                 await self.clear_remote(only_writer=writer)
                 return bridge.exception_pdu(function, 11)
             except Exception as exc:
                 self.errors += 1
+                self._unit_backoff_until[unit] = loop.time() + UNIT_BACKOFF_MAX
                 bridge.log(
-                    f"porta {self.remote_port}: erro remoto Unit {unit} FC{function:02d}: {exc}"
+                    f"porta {self.remote_port}: erro remoto Unit {unit} FC{function:02d}: {exc}; "
+                    f"backoff {UNIT_BACKOFF_MAX:.1f}s até nova sessão"
                 )
                 await self.clear_remote(only_writer=writer)
                 return bridge.exception_pdu(function, 11)

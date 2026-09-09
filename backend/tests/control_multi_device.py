@@ -138,6 +138,27 @@ async def validate_unit_backoff():
     assert snapshot["unitHealth"]["16"]["lastResponseAt"] is not None
 
 
+async def validate_disconnect_backoff():
+    """Modem desconectado deve falhar rápido sem inundar logs/polls locais."""
+    port = bridge_runtime.HardenedBridgePort(15998)
+    calls: list[int] = []
+
+    async def disconnected(unit, _pdu):
+        calls.append(int(unit))
+        raise ConnectionError("modem desconectado")
+
+    port.request_locked = disconnected
+    pdu = bridge.read_holding_pdu(1000, 1)
+    first = await port.transact(1, 2, pdu)
+    second = await port.transact(2, 2, pdu)
+    assert first == bridge.exception_pdu(3, 11)
+    assert second == bridge.exception_pdu(3, 11)
+    assert calls == [2]
+    snapshot = port.snapshot()
+    assert snapshot["unitBackoffSkips"] == 1
+    assert snapshot["unitHealth"]["2"]["backoffRemainingSeconds"] > 0
+
+
 async def validate_ig4_lab_gate_and_payload():
     ig4 = db.create_generator(
         {
@@ -277,6 +298,7 @@ async def validate_ig4_lab_start_interlock():
 
 asyncio.run(validate_payload())
 asyncio.run(validate_unit_backoff())
+asyncio.run(validate_disconnect_backoff())
 asyncio.run(validate_ig4_lab_gate_and_payload())
 asyncio.run(validate_ig4_lab_start_interlock())
 print("RC Geradores multi-device control smoke: OK")

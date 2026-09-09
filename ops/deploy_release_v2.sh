@@ -59,6 +59,14 @@ for cmd in git tar npm node curl systemctl runuser ss python3 dotnet install cp 
   command -v "${cmd}" >/dev/null 2>&1 || fail "comando obrigatório não encontrado: ${cmd}"
 done
 id rcgeradores >/dev/null 2>&1 || fail "usuário de serviço rcgeradores não existe"
+for file in \
+  /opt/scada/BaseDAT/commline.dat \
+  /opt/scada/BaseDAT/device.dat \
+  /opt/scada/BaseDAT/cnl.dat; do
+  [[ -f "${file}" ]] || fail "Rapid SCADA incompleto: ${file}"
+  chgrp rcgeradores "${file}"
+  chmod 0640 "${file}"
+done
 python3 -m venv --help >/dev/null 2>&1 || fail "python3-venv não está disponível"
 dotnet --list-sdks 2>/dev/null | grep -q '^8\.' || fail ".NET SDK 8 é obrigatório para publicar o leitor Rapid"
 SCADA_COMMON="$(find /opt/scada -type f -name ScadaCommon.dll -print -quit 2>/dev/null || true)"

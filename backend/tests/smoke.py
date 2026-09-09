@@ -6,6 +6,7 @@ from pathlib import Path
 tmp = tempfile.TemporaryDirectory(prefix="rc-geradores-test-")
 os.environ["RC_DATA_DIR"] = tmp.name
 os.environ["RC_DB_FILE"] = str(Path(tmp.name) / "test.db")
+os.environ["RC_BRIDGE_STATUS_FILE"] = str(Path(tmp.name) / "bridge-status.json")
 os.environ["RC_ENABLE_IG200_CONTROL"] = "0"
 
 from fastapi.testclient import TestClient  # noqa: E402

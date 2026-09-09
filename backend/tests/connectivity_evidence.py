@@ -48,4 +48,12 @@ diagnosis = _connection_diagnosis(controller_timeout, listeners, True)
 assert diagnosis["origin"] == "controller"
 assert diagnosis["units"] == ["3"]
 
+unprovisioned = {
+    **session(True),
+    "generators": [{"tag": "GEN086", "rapidDeviceNum": None}],
+}
+diagnosis = _connection_diagnosis(unprovisioned, listeners, True)
+assert diagnosis["origin"] == "configuration"
+assert diagnosis["code"] == "no_rapid_device"
+
 print("RC Geradores evidência de conectividade: OK")

@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import stat
 import struct
 import sys
 import tempfile
@@ -162,12 +163,22 @@ def _row_spans(data: bytes, field_count: int) -> list[tuple[int, int]]:
 def _atomic_replace(path: str, data: bytes) -> None:
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        previous = target.stat()
+    except FileNotFoundError:
+        previous = None
     fd, tmp_name = tempfile.mkstemp(
         prefix=f".{target.name}.", suffix=".tmp", dir=str(target.parent)
     )
     try:
         with os.fdopen(fd, "wb") as fh:
             fh.write(data)
+            if previous is not None:
+                os.fchmod(fh.fileno(), stat.S_IMODE(previous.st_mode))
+                try:
+                    os.fchown(fh.fileno(), previous.st_uid, previous.st_gid)
+                except PermissionError:
+                    pass
             fh.flush()
             os.fsync(fh.fileno())
         os.replace(tmp_name, target)

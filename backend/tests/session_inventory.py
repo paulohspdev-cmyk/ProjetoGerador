@@ -10,6 +10,7 @@ bindings = data_dir / "bindings.json"
 bindings.write_text("[]", encoding="utf-8")
 os.environ["RC_DATA_DIR"] = str(data_dir)
 os.environ["RC_DB_FILE"] = str(data_dir / "test.db")
+os.environ["RC_BRIDGE_STATUS_FILE"] = str(data_dir / "bridge-status.json")
 os.environ["RC_RAPID_BINDINGS"] = str(bindings)
 os.environ["RC_ENABLE_IG200_CONTROL"] = "0"
 
@@ -77,7 +78,7 @@ with TestClient(app) as client:
     assert all(item["site"] == "Unidade Teste" for item in payload)
     # Sem binding real, o inventário continua visível e apenas a telemetria degrada.
     assert all(item["status"] == "offline" for item in payload)
-    assert all(item["lastError"] == "Sem binding Rapid SCADA" for item in payload)
+    assert all(item["lastError"] == "Controladora homologada sem binding Rapid SCADA" for item in payload)
 
     # Também cobre uma superfície global usada logo após o login.
     bootstrap = expect(client.get("/api/ops/bootstrap"), 200).json()

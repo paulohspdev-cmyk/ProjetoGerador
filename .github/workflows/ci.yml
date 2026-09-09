@@ -113,9 +113,7 @@ jobs:
           python-version: '3.12'
 
       - name: Backend dependencies
-        run: |
-          pip install -r backend/requirements.txt
-          pip install 'httpx2>=2,<3'
+        run: pip install -r backend/requirements-test.txt
 
       - name: Backend syntax
         run: |
@@ -127,71 +125,11 @@ jobs:
           RC_DATA_DIR: ${{ runner.temp }}/rc-geradores-import
         run: python -c "from app.main import app; print(app.title, app.version)"
 
-      - name: Backend auth RBAC smoke
-        working-directory: backend
+      - name: Backend smoke suite
         env:
-          PYTHONPATH: .
-        run: python tests/smoke.py
-
-      - name: Backend sessão e inventário pós-login
-        working-directory: backend
-        env:
-          PYTHONPATH: .
-        run: python tests/session_inventory.py
-
-      - name: Backend overlay Rapid resiliente
-        working-directory: backend
-        env:
-          PYTHONPATH: .
-        run: python tests/rapid_overlay_resilience.py
-
-      - name: Backend evidência de quedas de comunicação
-        working-directory: backend
-        env:
-          PYTHONPATH: .
-        run: python tests/connectivity_evidence.py
-
-      - name: Backend descoberta e reconfiguração segura
-        working-directory: backend
-        env:
-          PYTHONPATH: .
-        run: python tests/network_discovery.py
-
-      - name: Backend rollback de reconfiguração
-        working-directory: backend
-        env:
-          PYTHONPATH: .
-        run: python tests/reconfigure_transaction.py
-
-      - name: Backend domínio v3 e catálogo
-        working-directory: backend
-        env:
-          PYTHONPATH: .
-        run: python tests/domain_v3.py
-
-      - name: Backend operações industriais v3
-        working-directory: backend
-        env:
-          PYTHONPATH: .
-        run: python tests/industrial_v3.py
-
-      - name: Backend IG200 multi-device smoke
-        working-directory: backend
-        env:
-          PYTHONPATH: .
-        run: python tests/control_multi_device.py
-
-      - name: Backend hardening de produção
-        working-directory: backend
-        env:
-          PYTHONPATH: .
-        run: python tests/production_hardening.py
-
-      - name: Backend timeout de provisionamento privilegiado
-        working-directory: backend
-        env:
-          PYTHONPATH: .
-        run: python tests/provision_timeout.py
+          RC_PROJECT_ROOT: ${{ github.workspace }}
+          RC_TEST_PYTHON: python
+        run: bash ops/run_backend_tests.sh
 
       - name: Instaladores Bash
         run: |
@@ -203,6 +141,7 @@ jobs:
           bash -n ops/deploy_release.sh
           bash -n ops/deploy_release_v2.sh
           bash -n ops/configure_https.sh
+          bash -n ops/run_backend_tests.sh
           bash -n rapid/provisioning/provision_ig200.sh
           bash ops/preflight_vm.sh --help >/tmp/preflight-help.txt
           grep -q 'sha-esperado' /tmp/preflight-help.txt
