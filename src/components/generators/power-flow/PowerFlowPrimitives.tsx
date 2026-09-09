@@ -191,7 +191,7 @@ export function PowerGaugeKw({
   const positionedLabels = labels.map((label) => {
     const angle = 180 + label.fraction * 180;
     const rad = (angle * Math.PI) / 180;
-    const radius = 124;
+    const radius = 128;
     return {
       ...label,
       x: cx + Math.cos(rad) * radius,

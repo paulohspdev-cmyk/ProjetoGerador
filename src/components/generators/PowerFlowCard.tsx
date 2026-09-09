@@ -251,10 +251,10 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       </section>
 
       <section className="comap-block engine-status-block shrink-0 px-2 py-1.5">
-        <h2 className="comap-title mb-1">Estado do motor</h2>
+        <h2 className="comap-title mb-1">Engine Status</h2>
         <EngineRow
           icon={<IconClock />}
-          label="Autonomia"
+          label="Autonomy"
           value={autonomyKnown ? `${fmt(autonomyHours, 1)} h` : "N/D"}
           known={autonomyKnown}
           unknownLabel="N/D"
@@ -262,7 +262,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         />
         <EngineRow
           icon={<IconOilCan />}
-          label="Pressão óleo"
+          label="Oil Pressure"
           value={oil == null ? "N/D" : `${fmt(oil, 2)} ${oilUnit}`}
           pct={percents.oil}
           bar
@@ -295,7 +295,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         />
         <EngineRow
           icon={<IconBolt />}
-          label="Alternador"
+          label="Alternator"
           value={alt == null ? "N/D" : `${fmt(alt)} V`}
           pct={percents.alternator}
           bar
@@ -322,7 +322,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         />
         <EngineRow
           icon={<IconClock />}
-          label="Manutenção"
+          label="Maintenance"
           value={maintenance == null ? "N/D" : `${fmt(maintenance, 0)} h`}
           pct={percents.maintenance}
           bar
@@ -333,7 +333,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         />
         <EngineRow
           icon={<IconRunHours />}
-          label="Horímetro"
+          label="Run Hours"
           value={runHours == null ? "N/D" : `${fmt(runHours)} h`}
           pct={percents.runHours}
           bar
