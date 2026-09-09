@@ -662,3 +662,104 @@
   width: 18px;
   height: 13px;
 }
+
+/* vertical-card-layout-v6: operator spacing and larger engine readouts */
+.generator-six-card-grid .generator-gcb-control {
+  left: 12px;
+}
+
+.generator-six-card-grid .generator-command-stack {
+  top: 74%;
+  bottom: auto;
+  left: calc(50% + 22px);
+  transform: translateY(-50%);
+  gap: 2px;
+}
+
+.generator-six-card-grid .generator-command-stack.with-mains {
+  left: calc(35% + 22px);
+}
+
+.generator-six-card-grid .generator-command-stack .comap-start,
+.generator-six-card-grid .generator-command-stack .comap-stop {
+  width: 33px;
+  height: 24px;
+  border-radius: 4px;
+  font-size: 7.5px;
+  line-height: 1;
+}
+
+@media (min-width: 1540px) {
+  .generator-six-card-grid .generator-command-stack .comap-start,
+  .generator-six-card-grid .generator-command-stack .comap-stop {
+    width: 33px;
+    height: 24px;
+  }
+}
+
+.generator-six-card-grid .engine-status-block .comap-title {
+  font-size: 14px;
+}
+
+.generator-six-card-grid .comap-engine {
+  grid-template-columns: 18px minmax(76px, 1fr) minmax(50px, 1.1fr) minmax(56px, auto);
+  min-height: 20px;
+  column-gap: 4px;
+  font-size: 12.25px;
+}
+
+.generator-six-card-grid .comap-engine .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.generator-six-card-grid .comap-engine .engine-label,
+.generator-six-card-grid .comap-engine .engine-value {
+  font-size: 12.25px;
+}
+
+.generator-six-card-grid .comap-engine .engine-label {
+  font-weight: 800;
+}
+
+.generator-six-card-grid .comap-engine .engine-value {
+  min-width: 56px;
+  font-weight: 950;
+}
+
+.generator-six-card-grid .comap-meter {
+  height: 7px;
+}
+
+.generator-six-card-grid .generator-power-readout {
+  bottom: 0;
+}
+
+.generator-six-card-grid .generator-power-readout strong {
+  font-size: 35px;
+}
+
+.generator-six-card-grid .generator-battery-badge {
+  font-size: 10.5px;
+}
+
+.generator-six-card-grid .generator-battery-icon {
+  width: 19px;
+  height: 14px;
+}
+
+@media (max-height: 860px) and (min-width: 1024px) {
+  .generator-six-card-grid .generator-command-stack {
+    top: 73%;
+  }
+
+  .generator-six-card-grid .comap-engine {
+    min-height: 18px;
+    font-size: 11.5px;
+  }
+
+  .generator-six-card-grid .comap-engine .engine-label,
+  .generator-six-card-grid .comap-engine .engine-value {
+    font-size: 11.5px;
+  }
+}
