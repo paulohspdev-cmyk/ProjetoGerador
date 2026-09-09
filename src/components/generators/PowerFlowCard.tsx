@@ -188,7 +188,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         </div>
 
         <div className="comap-sld">
-          <div className="comap-sld-stage">
+          <div className={cn("comap-sld-stage", !mainsPresent && "is-generator-only")}>
             {mainsPresent && (
               <div className="absolute left-0 top-[23%] z-10">
                 <BreakerControl label="MCB" known={mcbKnown} closed={gen.mcb} />

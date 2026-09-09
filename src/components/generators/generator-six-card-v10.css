@@ -72,3 +72,32 @@
     width: min(100%, 238px);
   }
 }
+
+/* v11: generator-only geometry matches its SVG viewBox in normal and fullscreen modes. */
+.generator-six-card-grid .comap-panel-v2 .comap-sld-stage.is-generator-only {
+  width: min(100%, 258px);
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  aspect-ratio: 230 / 215;
+}
+
+.generator-six-card-grid .comap-sld-stage.is-generator-only .generator-command-stack {
+  top: 84%;
+  left: calc(50% + 38px);
+  transform: translateY(-50%);
+  gap: 4px;
+}
+
+.generator-six-card-grid .comap-sld-stage.is-generator-only .generator-command-stack .comap-start,
+.generator-six-card-grid .comap-sld-stage.is-generator-only .generator-command-stack .comap-stop {
+  width: 36px;
+  height: 26px;
+  font-size: 8px;
+}
+
+@container (max-width: 270px) {
+  .generator-six-card-grid .comap-panel-v2 .comap-sld-stage.is-generator-only {
+    width: min(100%, 250px);
+  }
+}
