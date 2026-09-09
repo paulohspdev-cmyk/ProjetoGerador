@@ -17,6 +17,7 @@ export function EngineRow({
   known = true,
   tone = "neutral",
   lastKnown = false,
+  unknownLabel = "N/D",
 }: {
   icon: ReactNode;
   label: string;
@@ -26,6 +27,7 @@ export function EngineRow({
   known?: boolean;
   tone?: MeterTone;
   lastKnown?: boolean;
+  unknownLabel?: string;
 }) {
   const showBar = bar || pct != null;
   const hasScale = known && pct != null;
@@ -50,7 +52,7 @@ export function EngineRow({
         <span />
       )}
       <span className="engine-value">
-        {known ? value : "N/D"}
+        {known ? value : unknownLabel}
         {known && lastKnown && <small>ÚLT.</small>}
       </span>
     </div>
@@ -75,24 +77,16 @@ export function ControllerModeBar({ gen, known }: { gen: Generator; known: boole
     );
   }
 
-  const buttons =
-    vendor === "comap"
-      ? [
-          { label: "OFF", active: gen.mode === "OFF" || gen.mode === "STOP" },
-          { label: "MAN", active: gen.mode === "MANUAL" },
-          { label: "AUTO", active: gen.mode === "AUTO" },
-          { label: "TEST", active: gen.mode === "TESTE" },
-        ]
-      : [
-          {
-            label: "STOP",
-            active: gen.mode === "OFF" || gen.mode === "STOP",
-            title: "STOP / RESET",
-          },
-          { label: "MAN", active: gen.mode === "MANUAL" },
-          { label: "AUTO", active: gen.mode === "AUTO" },
-          { label: "TEST", active: gen.mode === "TESTE" },
-        ];
+  const buttons = [
+    {
+      label: "OFF",
+      active: gen.mode === "OFF" || gen.mode === "STOP",
+      title: vendor === "dse" ? "OFF / STOP-RESET" : "OFF",
+    },
+    { label: "MAN", active: gen.mode === "MANUAL" },
+    { label: "AUTO", active: gen.mode === "AUTO" },
+    { label: "TEST", active: gen.mode === "TESTE" },
+  ];
 
   return (
     <div
@@ -122,27 +116,18 @@ function controllerGaugeMaximum(nominal: number | null) {
 }
 
 function gaugeLabelValues(maximum: number) {
-  const roughStep = maximum / 5;
-  const magnitude = 10 ** Math.floor(Math.log10(roughStep));
-  const normalized = roughStep / magnitude;
-  const niceStep = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
-  const step = niceStep * magnitude;
-  const values = [0];
-  for (let value = step; value < maximum && values.length < 6; value += step) values.push(value);
-  if (values.at(-1) !== maximum) values.push(maximum);
-  return values;
+  // Cinco referências grandes e uniformes preservam a escala nominal real da controladora
+  // sem amontoar valores próximos ao final do arco (ex.: 400 e 440 kW).
+  return [0, 0.25, 0.5, 0.75, 1].map((fraction) => Math.round(maximum * fraction));
 }
 
 export function PowerGaugeKw({
   value,
   nominal,
-  rpm,
   battery,
-  powerFactor = null,
 }: {
   value: number | null;
   nominal: number | null;
-  rpm: number | null;
   battery: number | null;
   powerFactor?: number | null;
 }) {
@@ -223,17 +208,6 @@ export function PowerGaugeKw({
 
   return (
     <div className="generator-power-instrument">
-      <div className="generator-power-meta" aria-label="Dados auxiliares do instrumento">
-        <span>
-          <b>RPM:</b>
-          <strong>{rpm == null ? "N/D" : fmt(rpm, 0)}</strong>
-        </span>
-        <span>
-          <b>PF:</b>
-          <strong>{powerFactor == null ? "N/D" : fmt(powerFactor, 2)}</strong>
-        </span>
-      </div>
-
       <svg
         viewBox="0 0 300 205"
         className="generator-power-gauge"
@@ -306,7 +280,6 @@ export function PowerGaugeKw({
 
       <div className="generator-power-readout">
         <strong>{value == null ? "N/D" : fmt(value, 0)}</strong>
-        <span>kW</span>
       </div>
 
       <div
