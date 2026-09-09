@@ -159,7 +159,7 @@ export function PowerFlowSld({
 
       <g transform="translate(80 360)">
         <circle
-          r="34"
+          r="29"
           className={cn(
             "flow-device-circle",
             "flow-generator-circle",
@@ -170,9 +170,9 @@ export function PowerFlowSld({
           G
         </text>
         <text
-          x="-42"
-          y="5"
-          fontSize="15"
+          x="-34"
+          y="4"
+          fontSize="13"
           fontWeight="bold"
           fill="var(--foreground)"
           textAnchor="end"

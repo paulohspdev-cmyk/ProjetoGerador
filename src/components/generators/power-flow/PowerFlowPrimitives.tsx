@@ -116,15 +116,9 @@ function controllerGaugeMaximum(nominal: number | null) {
 }
 
 function gaugeLabelValues(maximum: number) {
-  const roughStep = maximum / 5;
-  const magnitude = 10 ** Math.floor(Math.log10(roughStep));
-  const normalized = roughStep / magnitude;
-  const niceStep = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
-  const step = niceStep * magnitude;
-  const values = [0];
-  for (let value = step; value < maximum && values.length < 6; value += step) values.push(value);
-  if (values.at(-1) !== maximum) values.push(maximum);
-  return values;
+  // Cinco referências grandes e uniformes preservam a escala nominal real da controladora
+  // sem amontoar valores próximos ao final do arco (ex.: 400 e 440 kW).
+  return [0, 0.25, 0.5, 0.75, 1].map((fraction) => Math.round(maximum * fraction));
 }
 
 export function PowerGaugeKw({

@@ -48,13 +48,13 @@
 }
 
 .generator-six-card-grid .flow-generator-circle {
-  transform: scale(0.86);
+  transform: scale(0.78);
   transform-box: fill-box;
   transform-origin: center;
 }
 
 .generator-six-card-grid .flow-generator-letter {
-  font-size: 30px;
+  font-size: 24px;
 }
 
 .generator-six-card-grid .comap-title {
@@ -377,8 +377,11 @@
 }
 
 .generator-six-card-grid .generator-gauge-scale {
-  font-size: 11.5px;
+  font-size: 15.5px;
   font-weight: 900;
+  paint-order: stroke fill;
+  stroke: var(--industrial-bg);
+  stroke-width: 1.2px;
 }
 
 .generator-six-card-grid .generator-power-readout strong {

@@ -253,7 +253,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         <h2 className="comap-title mb-1">Estado do motor</h2>
         <EngineRow
           icon={<IconOilCan />}
-          label="Pressão do óleo"
+          label="Pressão óleo"
           value={oil == null ? "N/D" : `${fmt(oil, 2)} ${oilUnit}`}
           pct={percents.oil}
           bar
@@ -264,7 +264,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         />
         <EngineRow
           icon={<IconThermometer />}
-          label="Temp. do líquido"
+          label="Temp"
           value={temp == null ? "N/D" : `${fmt(temp, 0)} °C`}
           pct={percents.coolant}
           bar
@@ -275,7 +275,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         />
         <EngineRow
           icon={<IconFuelPump />}
-          label="Combustível"
+          label="Fuel"
           value={fuel == null ? "N/D" : `${fmt(fuel, 0)} ${fuelUnit}`}
           pct={percents.fuel}
           bar
@@ -286,7 +286,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         />
         <EngineRow
           icon={<IconBolt />}
-          label="Tensão alternador"
+          label="Alternador"
           value={alt == null ? "N/D" : `${fmt(alt)} V`}
           pct={percents.alternator}
           bar
