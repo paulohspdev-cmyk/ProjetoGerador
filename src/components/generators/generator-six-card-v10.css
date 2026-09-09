@@ -1,0 +1,44 @@
+/* Final operator-requested spacing overrides for the vertical generator card. */
+
+/* GERADOR stays compact; do not distribute spare card height into voltage rows. */
+.generator-six-card-grid .mains-generator-block {
+  display: block;
+  flex: 0 0 auto;
+  margin-bottom: 3px;
+  padding-bottom: 6px !important;
+}
+
+/* Engine Status: more breathing room between icon, label, bar and value. */
+.generator-six-card-grid .comap-engine {
+  grid-template-columns: 20px 84px minmax(46px, 1fr) 60px;
+  column-gap: 6px;
+}
+
+.generator-six-card-grid .comap-engine .engine-label {
+  padding-left: 3px;
+}
+
+.generator-six-card-grid .comap-engine .engine-value {
+  padding-left: 3px;
+  padding-right: 2px;
+}
+
+/* START/STOP get a little more clearance from the generator circle. */
+.generator-six-card-grid .generator-command-stack {
+  left: calc(50% + 34px);
+}
+
+.generator-six-card-grid .generator-command-stack.with-mains {
+  left: calc(35% + 34px);
+}
+
+@container (max-width: 270px) {
+  .generator-six-card-grid .comap-engine {
+    grid-template-columns: 18px 72px minmax(36px, 1fr) 54px;
+    column-gap: 5px;
+  }
+
+  .generator-six-card-grid .comap-engine .engine-label {
+    padding-left: 2px;
+  }
+}

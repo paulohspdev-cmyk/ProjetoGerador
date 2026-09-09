@@ -30,6 +30,7 @@ import { KpiStrip } from "./KpiStrip";
 import { PowerFlowCard } from "./PowerFlowCard";
 import { useGenerators } from "./GeneratorsProvider";
 import "./generator-six-card.css";
+import "./generator-six-card-v10.css";
 
 type View = "principal" | "compacto" | "lista";
 
