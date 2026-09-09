@@ -195,7 +195,12 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
               </div>
             )}
 
-            <div className={cn("absolute left-0 z-10", mainsPresent ? "top-[53%]" : "top-[38%]")}>
+            <div
+              className={cn(
+                "generator-gcb-control absolute z-10",
+                mainsPresent ? "top-[53%]" : "top-[38%]",
+              )}
+            >
               <BreakerControl label="GCB" known={gcbKnown} closed={gen.gcb} />
             </div>
 
@@ -247,6 +252,14 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       <section className="comap-block engine-status-block shrink-0 px-2 py-1.5">
         <h2 className="comap-title mb-1">Estado do motor</h2>
         <EngineRow
+          icon={<IconClock />}
+          label="Autonomia"
+          value={autonomyKnown ? `${fmt(autonomyHours, 1)} h` : "N/D"}
+          known={autonomyKnown}
+          unknownLabel="N/D"
+          lastKnown={false}
+        />
+        <EngineRow
           icon={<IconOilCan />}
           label="Pressão óleo"
           value={oil == null ? "N/D" : `${fmt(oil, 2)} ${oilUnit}`}
@@ -280,14 +293,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
           tone={hasFreshMetric(gen, "fuel_level") ? tones.fuel : "neutral"}
         />
         <EngineRow
-          icon={<IconClock />}
-          label="Autonomia"
-          value={autonomyKnown ? `${fmt(autonomyHours, 1)} h` : "N/D"}
-          known={autonomyKnown}
-          unknownLabel="N/D"
-          lastKnown={false}
-        />
-        <EngineRow
           icon={<IconBolt />}
           label="Alternador"
           value={alt == null ? "N/D" : `${fmt(alt)} V`}
@@ -301,7 +306,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         <EngineRow
           icon={<IconRunHours />}
           label="RPM"
-          value={rpm == null ? "N/D" : `${fmt(rpm, 0)} rpm`}
+          value={rpm == null ? "N/D" : fmt(rpm, 0)}
           known={rpm != null}
           unknownLabel={unavailableLabel("rpm")}
           lastKnown={false}

@@ -111,7 +111,7 @@ export function PowerFlowSld({
   // centro real do viewBox para que todos os cards generator-only fiquem simétricos.
   const busX = showMainsSource ? 80 : 115;
   const loadX = showMainsSource ? 178 : 184;
-  const loadHalfWidth = 32;
+  const loadHalfWidth = 24;
   const loadJoinX = loadX - loadHalfWidth;
 
   return (
@@ -142,8 +142,8 @@ export function PowerFlowSld({
       )}
 
       <g transform={`translate(${loadX} 200)`}>
-        <rect x="-32" y="-21" width="64" height="42" rx="5" className="flow-load-card" />
-        <g transform="translate(-13 0) scale(0.72)" className="flow-device-icon">
+        <rect x="-24" y="-19" width="48" height="38" rx="5" className="flow-load-card" />
+        <g transform="scale(0.9)" className="flow-device-icon">
           <path d="M-16 10 h32" strokeWidth="1.6" />
           <path
             d="M-12 10 V-2 l 7 2 V-12 l 8 2 V10 M 3 -1 l 7 2 V10"
@@ -156,9 +156,6 @@ export function PowerFlowSld({
             strokeLinecap="round"
           />
         </g>
-        <text x="10" y="5" textAnchor="middle" className="flow-load-card-title">
-          LOAD
-        </text>
       </g>
 
       <g transform={`translate(${busX} 360)`}>

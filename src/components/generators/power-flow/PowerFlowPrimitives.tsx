@@ -280,7 +280,6 @@ export function PowerGaugeKw({
 
       <div className="generator-power-readout">
         <strong>{value == null ? "N/D" : fmt(value, 0)}</strong>
-        <span>kW</span>
       </div>
 
       <div
