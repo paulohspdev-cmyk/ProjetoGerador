@@ -262,7 +262,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         />
         <EngineRow
           icon={<IconOilCan />}
-          label="Oil Pressure"
+          label="Oil Pres"
           value={oil == null ? "N/D" : `${fmt(oil, 2)} ${oilUnit}`}
           pct={percents.oil}
           bar
