@@ -48,6 +48,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     coolant: temp,
     fuel,
     fuelUnit,
+    autonomyHours,
     battery: batt,
     alternator: alt,
     maintenance,
@@ -114,14 +115,8 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
 
   const canStart = can("operate") && gen.capabilities?.start === true;
   const canStop = can("operate") && gen.capabilities?.stop === true;
-  const powerStateLabel =
-    load == null
-      ? "POTÊNCIA N/D"
-      : Math.abs(load) <= 0.1 && runningKnown && !running
-        ? "PARADO / SEM CARGA"
-        : Math.abs(load) <= 0.1
-          ? "SEM CARGA"
-          : "POTÊNCIA ATIVA";
+  const autonomyKnown =
+    autonomyHours != null && hasFreshMetric(gen, "fuel_level") && hasFreshMetric(gen, "fuel_rate");
 
   const runCommand = async (action: "start" | "stop") => {
     const label = action.toUpperCase();
@@ -222,7 +217,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
               showMainsSource={mainsPresent}
             />
 
-            <div className="absolute bottom-[3%] right-0 z-10 flex flex-col gap-2">
+            <div className={cn("generator-command-stack", mainsPresent && "with-mains")}>
               <button
                 type="button"
                 className="comap-start"
@@ -285,6 +280,14 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
           tone={hasFreshMetric(gen, "fuel_level") ? tones.fuel : "neutral"}
         />
         <EngineRow
+          icon={<IconClock />}
+          label="Autonomia"
+          value={autonomyKnown ? `${fmt(autonomyHours, 1)} h` : "N/D"}
+          known={autonomyKnown}
+          unknownLabel="N/D"
+          lastKnown={false}
+        />
+        <EngineRow
           icon={<IconBolt />}
           label="Alternador"
           value={alt == null ? "N/D" : `${fmt(alt)} V`}
@@ -337,8 +340,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
 
       <section className="comap-block comap-power-gauge-block">
         <div className="power-gauge-heading">
-          <h2 className="comap-title">Potência do gerador</h2>
-          <span>{powerStateLabel}</span>
+          <h2 className="comap-title">KW</h2>
         </div>
         <PowerGaugeKw
           value={load}

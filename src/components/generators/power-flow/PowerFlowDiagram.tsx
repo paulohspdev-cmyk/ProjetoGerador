@@ -107,6 +107,12 @@ export function PowerFlowSld({
   const genPost = genPre && gcbKnown && gcb;
   const loadLive = loadKnown && Math.abs(loadKw) > MIN_FLOW_LOAD_KW && (mainsPost || genPost);
 
+  // Com rede, preservamos o eixo da torre. Sem rede, o eixo do gerador usa o
+  // centro real do viewBox para que todos os cards generator-only fiquem simétricos.
+  const busX = showMainsSource ? 80 : 115;
+  const loadX = showMainsSource ? 178 : 184;
+  const loadJoinX = loadX - 38;
+
   return (
     <svg
       viewBox={showMainsSource ? "0 0 230 400" : "0 150 230 250"}
@@ -134,9 +140,9 @@ export function PowerFlowSld({
         </g>
       )}
 
-      <g transform="translate(178 200)">
-        <rect x="-46" y="-32" width="90" height="64" rx="6" className="flow-load-card" />
-        <g transform="translate(-22 0)" className="flow-device-icon">
+      <g transform={`translate(${loadX} 200)`}>
+        <rect x="-38" y="-25" width="76" height="50" rx="6" className="flow-load-card" />
+        <g transform="translate(-16 0) scale(0.82)" className="flow-device-icon">
           <path d="M-16 10 h32" strokeWidth="1.6" />
           <path
             d="M-12 10 V-2 l 7 2 V-12 l 8 2 V10 M 3 -1 l 7 2 V10"
@@ -149,15 +155,12 @@ export function PowerFlowSld({
             strokeLinecap="round"
           />
         </g>
-        <text x="16" y="-7" textAnchor="middle" className="flow-load-card-title">
+        <text x="13" y="5" textAnchor="middle" className="flow-load-card-title">
           LOAD
-        </text>
-        <text x="16" y="14" textAnchor="middle" className="flow-load-card-value">
-          {loadKnown ? `${fmt(loadKw, 0)} kW` : "N/D"}
         </text>
       </g>
 
-      <g transform="translate(80 360)">
+      <g transform={`translate(${busX} 360)`}>
         <circle
           r="29"
           className={cn(
@@ -166,11 +169,11 @@ export function PowerFlowSld({
             runningKnown && (running ? "generator-running" : "generator-stopped"),
           )}
         />
-        <text x="0" y="12" textAnchor="middle" className="flow-generator-letter">
+        <text x="0" y="10" textAnchor="middle" className="flow-generator-letter">
           G
         </text>
         <text
-          x="-34"
+          x="-38"
           y="4"
           fontSize="13"
           fontWeight="bold"
@@ -183,60 +186,60 @@ export function PowerFlowSld({
 
       {showMainsSource && (
         <>
-          <path d="M80 68 V110" className="flow-bus-base" />
-          <path d="M80 140 V200" className="flow-bus-base" />
-          <FlowWire d="M80 68 V110" live={mainsPre} />
-          <FlowWire d="M80 140 V200" live={mainsPost} />
+          <path d={`M${busX} 68 V110`} className="flow-bus-base" />
+          <path d={`M${busX} 140 V200`} className="flow-bus-base" />
+          <FlowWire d={`M${busX} 68 V110`} live={mainsPre} />
+          <FlowWire d={`M${busX} 140 V200`} live={mainsPost} />
           <circle
-            cx="80"
+            cx={busX}
             cy="110"
             r="4"
             className={cn("flow-switch-node", !mcbKnown && "is-unknown")}
           />
           <circle
-            cx="80"
+            cx={busX}
             cy="140"
             r="4"
             className={cn("flow-switch-node", !mcbKnown && "is-unknown")}
           />
           <line
-            x1="80"
+            x1={busX}
             y1="110"
-            x2={mcbKnown && mcb ? "80" : "100"}
-            y2={mcbKnown && mcb ? "140" : "130"}
+            x2={mcbKnown && mcb ? busX : busX + 20}
+            y2={mcbKnown && mcb ? 140 : 130}
             className={cn("flow-switch-blade", !mcbKnown && "is-unknown")}
           />
         </>
       )}
-      <path d="M80 200 V260" className="flow-bus-base" />
-      <path d="M80 290 V326" className="flow-bus-base" />
-      <path d="M80 200 H142" className="flow-bus-base" />
+      <path d={`M${busX} 200 V260`} className="flow-bus-base" />
+      <path d={`M${busX} 290 V326`} className="flow-bus-base" />
+      <path d={`M${busX} 200 H${loadJoinX}`} className="flow-bus-base" />
 
-      <FlowWire d="M80 200 V260" live={genPost} reverse />
-      <FlowWire d="M80 290 V326" live={genPre} reverse />
-      <FlowWire d="M80 200 H142" live={loadLive} />
+      <FlowWire d={`M${busX} 200 V260`} live={genPost} reverse />
+      <FlowWire d={`M${busX} 290 V326`} live={genPre} reverse />
+      <FlowWire d={`M${busX} 200 H${loadJoinX}`} live={loadLive} />
 
       <circle
-        cx="80"
+        cx={busX}
         cy="260"
         r="4"
         className={cn("flow-switch-node", !gcbKnown && "is-unknown")}
       />
       <circle
-        cx="80"
+        cx={busX}
         cy="290"
         r="4"
         className={cn("flow-switch-node", !gcbKnown && "is-unknown")}
       />
       <line
-        x1="80"
+        x1={busX}
         y1="290"
-        x2={gcbKnown && gcb ? "80" : "100"}
-        y2={gcbKnown && gcb ? "260" : "270"}
+        x2={gcbKnown && gcb ? busX : busX + 20}
+        y2={gcbKnown && gcb ? 260 : 270}
         className={cn("flow-switch-blade", !gcbKnown && "is-unknown")}
       />
 
-      <circle cx="80" cy="200" r="5" className="flow-junction" />
+      <circle cx={busX} cy="200" r="5" className="flow-junction" />
     </svg>
   );
 }

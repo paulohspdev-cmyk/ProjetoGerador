@@ -96,6 +96,7 @@ export function readGeneratorTelemetry(gen: Generator) {
   const oil = metricNumber(gen, "oil_pressure", gen.oilPressure);
   const coolant = metricNumber(gen, "coolant_temperature", gen.coolantTemp);
   const fuel = metricNumber(gen, "fuel_level", gen.fuelLevel);
+  const fuelRate = metricNumber(gen, "fuel_rate", undefined);
   const battery = metricNumber(gen, "battery_voltage", gen.battery);
   const alternator = metricNumber(gen, "alternator_voltage", gen.alternatorVoltage);
   const maintenance = metricNumber(gen, "maintenance_hours", gen.maintenance);
@@ -130,6 +131,10 @@ export function readGeneratorTelemetry(gen: Generator) {
   const coolantWarning = metricNumber(gen, "coolant_warning_c", undefined);
   const fuelWarning = metricNumber(gen, "fuel_warning_l", undefined);
   const fuelShutdown = metricNumber(gen, "fuel_shutdown_l", undefined);
+  const autonomyHours =
+    fuelUnit === "L" && fuel != null && fuel >= 0 && fuelRate != null && fuelRate > 0.1
+      ? fuel / fuelRate
+      : null;
   const fuelPercent =
     fuelUnit === "%"
       ? progressPercent(fuel, 100)
@@ -199,8 +204,10 @@ export function readGeneratorTelemetry(gen: Generator) {
     oilUnit,
     coolant,
     fuel,
+    fuelRate,
     fuelUnit,
     fuelPercent,
+    autonomyHours,
     battery,
     alternator,
     maintenance,
