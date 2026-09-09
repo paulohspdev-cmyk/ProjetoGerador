@@ -198,6 +198,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
             <div
               className={cn(
                 "generator-gcb-control absolute z-10",
+                mainsPresent && "with-mains",
                 mainsPresent ? "top-[53%]" : "top-[38%]",
               )}
             >
