@@ -55,9 +55,9 @@ export type NavGroup = {
 };
 
 /*
- * A navegação principal é orientada à tarefa do operador. Telas de engenharia,
- * biblioteca e integração continuam existentes e roteáveis, mas não ocupam o
- * menu diário. Assim o produto deixa de parecer uma console de desenvolvimento.
+ * A navegação principal expõe todas as superfícies implementadas. Módulos
+ * técnicos permanecem protegidos por permissão administrativa, mas não ficam
+ * escondidos do operador autorizado.
  */
 export const navGroups: NavGroup[] = [
   {
@@ -69,6 +69,7 @@ export const navGroups: NavGroup[] = [
       { label: "Alarmes", slug: "alarmes", icon: BellRing },
       { label: "Eventos", slug: "eventos", icon: Activity },
       { label: "Mapa", slug: "mapa", icon: Map },
+      { label: "Visão por unidade", slug: "sites", icon: MapPin },
     ],
   },
   {
@@ -120,6 +121,44 @@ export const navGroups: NavGroup[] = [
     ],
   },
   {
+    title: "Monitoramento",
+    adminOnly: true,
+    items: [{ label: "Tendências", slug: "tendencias", icon: Activity, adminOnly: true }],
+  },
+  {
+    title: "Engenharia",
+    adminOnly: true,
+    items: [
+      { label: "Canais", slug: "canais", icon: Activity, adminOnly: true },
+      { label: "Tags", slug: "tags", icon: Activity, adminOnly: true },
+      { label: "Templates", slug: "templates", icon: Activity, adminOnly: true },
+      { label: "Motor de telemetria", slug: "rapid-scada", icon: Activity, adminOnly: true },
+      { label: "Diagnóstico", slug: "diagnostico", icon: AlertTriangle, adminOnly: true },
+    ],
+  },
+  {
+    title: "Biblioteca",
+    adminOnly: true,
+    items: [
+      { label: "Fabricantes", slug: "fabricantes", icon: Cpu, adminOnly: true },
+      { label: "Controladoras", slug: "lib-controladoras", icon: Cpu, adminOnly: true },
+      { label: "Protocolos", slug: "protocolos", icon: Network, adminOnly: true },
+      { label: "Perfis homologados", slug: "controller-packs", icon: Cpu, adminOnly: true },
+      { label: "Laboratório", slug: "laboratorio", icon: Cpu, adminOnly: true },
+    ],
+  },
+  {
+    title: "Integrações",
+    adminOnly: true,
+    items: [
+      { label: "API", slug: "api", icon: Network, adminOnly: true },
+      { label: "Webhooks", slug: "webhooks", icon: Network, adminOnly: true },
+      { label: "E-mail", slug: "email", icon: Bell, adminOnly: true },
+      { label: "WhatsApp", slug: "whatsapp", icon: Bell, adminOnly: true },
+      { label: "ERP / BMS / outros", slug: "erp-bms", icon: Network, adminOnly: true },
+    ],
+  },
+  {
     title: "Administração",
     adminOnly: true,
     items: [
@@ -135,42 +174,10 @@ export const navGroups: NavGroup[] = [
   },
 ];
 
-/*
- * Rotas técnicas preservadas para administração/diagnóstico. Elas saem do menu
- * principal, mas findItem continua reconhecendo título e grupo quando abertas
- * por links internos ou por URL direta.
- */
-const hiddenTechnicalItems: Array<{ group: string; item: NavItem }> = [
-  { group: "Monitoramento", item: { label: "Tendências", slug: "tendencias", icon: Activity } },
-  { group: "Sistema", item: { label: "Canais", slug: "canais", icon: Activity } },
-  { group: "Sistema", item: { label: "Tags", slug: "tags", icon: Activity } },
-  { group: "Sistema", item: { label: "Templates", slug: "templates", icon: Activity } },
-  { group: "Sistema", item: { label: "Motor de telemetria", slug: "rapid-scada", icon: Activity } },
-  { group: "Sistema", item: { label: "Diagnóstico", slug: "diagnostico", icon: AlertTriangle } },
-  { group: "Biblioteca", item: { label: "Fabricantes", slug: "fabricantes", icon: Cpu } },
-  { group: "Biblioteca", item: { label: "Controladoras", slug: "lib-controladoras", icon: Cpu } },
-  { group: "Biblioteca", item: { label: "Protocolos", slug: "protocolos", icon: Network } },
-  {
-    group: "Biblioteca",
-    item: { label: "Perfis homologados", slug: "controller-packs", icon: Cpu },
-  },
-  { group: "Biblioteca", item: { label: "Laboratório", slug: "laboratorio", icon: Cpu } },
-  { group: "Integrações", item: { label: "API", slug: "api", icon: Network } },
-  { group: "Integrações", item: { label: "Webhooks", slug: "webhooks", icon: Network } },
-  { group: "Integrações", item: { label: "E-mail", slug: "email", icon: Bell } },
-  { group: "Integrações", item: { label: "WhatsApp", slug: "whatsapp", icon: Bell } },
-  { group: "Integrações", item: { label: "ERP / BMS / outros", slug: "erp-bms", icon: Network } },
-];
-
 export function findItem(slug: string) {
   for (const group of navGroups) {
     const found = group.items.find((item) => item.slug === slug);
     if (found) return { group, item: found };
   }
-  const hidden = hiddenTechnicalItems.find((entry) => entry.item.slug === slug);
-  if (!hidden) return null;
-  return {
-    group: { title: hidden.group, items: [hidden.item], adminOnly: true } satisfies NavGroup,
-    item: hidden.item,
-  };
+  return null;
 }

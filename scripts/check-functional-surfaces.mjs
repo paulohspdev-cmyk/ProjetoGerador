@@ -15,18 +15,36 @@ function walk(dir) {
 
 const nav = read("src/data/nav.ts");
 const registry = read("src/components/scada/registry.ts");
-const navGroupsSource = nav.split("const hiddenTechnicalItems", 1)[0] ?? nav;
+const navGroupsSource = nav;
 const visibleNavSlugs = [...navGroupsSource.matchAll(/slug:\s*"([^"]*)"/g)].map(
   (match) => match[1],
 );
-const navSlugs = [...nav.matchAll(/slug:\s*"([^"]*)"/g)].map((match) => match[1]);
-if (visibleNavSlugs.length < 20 || visibleNavSlugs.length > 40) {
+const navSlugs = visibleNavSlugs;
+if (visibleNavSlugs.length < 50) {
   failures.push(
-    `menu operacional deve permanecer enxuto (20–40 entradas visíveis); encontrou ${visibleNavSlugs.length}`,
+    `menu deve expor todas as superfícies implementadas; encontrou ${visibleNavSlugs.length}`,
   );
 }
-if (!nav.includes("const hiddenTechnicalItems")) {
-  failures.push("rotas técnicas deixaram de ser separadas do menu operacional");
+const requiredTechnicalMenus = [
+  "tendencias",
+  "canais",
+  "tags",
+  "templates",
+  "rapid-scada",
+  "diagnostico",
+  "fabricantes",
+  "lib-controladoras",
+  "protocolos",
+  "controller-packs",
+  "laboratorio",
+  "api",
+  "webhooks",
+  "email",
+  "whatsapp",
+  "erp-bms",
+];
+for (const slug of requiredTechnicalMenus) {
+  if (!visibleNavSlugs.includes(slug)) failures.push(`menu técnico continua oculto: ${slug}`);
 }
 if (new Set(navSlugs).size !== navSlugs.length) failures.push("menu contém slug duplicado");
 
@@ -40,6 +58,9 @@ for (const slug of navSlugs) {
   if (!specialRoutes.has(slug) && !registryKeys.has(slug)) {
     failures.push(`menu sem tela no registry: ${slug}`);
   }
+}
+for (const slug of registryKeys) {
+  if (!navSlugs.includes(slug)) failures.push(`tela implementada sem menu visível: ${slug}`);
 }
 if (!existsSync(join(root, "src/routes/index.tsx"))) {
   failures.push("rota própria da Visão Geral ausente");
@@ -69,6 +90,31 @@ if (
   appShell.indexOf("<GeneratorsProvider>") < appShell.indexOf("if (!user)")
 ) {
   failures.push("providers de dados precisam montar somente depois do guard `if (!user)`");
+}
+
+const generatorEdit = read("src/components/generators/GeneratorEditDialog.tsx");
+if (generatorEdit.includes("useEffect(() =>") || generatorEdit.includes("[generator, open]")) {
+  failures.push("edição de gerador voltou a ressincronizar campos durante polling");
+}
+for (const marker of ["handleOpenChange", "resetFieldsFromGenerator", "max-h-[90dvh]"]) {
+  if (!generatorEdit.includes(marker))
+    failures.push(`edição de gerador perdeu proteção: ${marker}`);
+}
+
+const rootShell = read("src/routes/__root.tsx");
+const screenKit = read("src/components/scada/kit.tsx");
+const generatorTable = read("src/components/generators/GeneratorTable.tsx");
+if (
+  !rootShell.includes("flex h-dvh w-full overflow-hidden") ||
+  !rootShell.includes("flex h-dvh min-w-0 flex-1 flex-col overflow-hidden")
+) {
+  failures.push("shell voltou a permitir scroll vertical concorrente");
+}
+if (!screenKit.includes("overflow-y-auto overscroll-contain")) {
+  failures.push("ScreenBody perdeu o scroll vertical único por tela");
+}
+if (generatorTable.includes("hidden h-full overflow-auto")) {
+  failures.push("lista de geradores voltou a criar scroll vertical aninhado");
 }
 
 const generatorBoard = read("src/components/generators/GeneratorsBoard.tsx");
@@ -265,5 +311,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `Functional surfaces check OK: ${visibleNavSlugs.length} menus operacionais visíveis, rotas técnicas preservadas, autenticação, lifecycles e guardrails críticos conferidos.`,
+  `Functional surfaces check OK: ${visibleNavSlugs.length} menus visíveis, superfícies técnicas reativadas, autenticação, lifecycles e guardrails críticos conferidos.`,
 );

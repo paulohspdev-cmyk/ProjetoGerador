@@ -1,4 +1,4 @@
-import { type FormEvent, type ReactNode, useEffect, useState } from "react";
+import { type FormEvent, type ReactNode, useState } from "react";
 import { Pencil } from "lucide-react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -48,8 +48,7 @@ export function GeneratorEditDialog({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!open) return;
+  const resetFieldsFromGenerator = () => {
     setName(generator.name?.trim() || generator.tag);
     setSite(generator.site);
     setEnabled(generator.enabled !== false);
@@ -60,7 +59,15 @@ export function GeneratorEditDialog({
     );
     setModbusUnit(String(generator.modbusUnit || 1));
     setError(null);
-  }, [generator, open]);
+  };
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    // O inventário recebe telemetria a cada segundo. Nunca ressincronize os
+    // campos enquanto o operador digita, senão o valor remoto repõe letras
+    // apagadas. Recarregue o formulário somente no momento em que ele abre.
+    if (nextOpen) resetFieldsFromGenerator();
+    setOpen(nextOpen);
+  };
 
   if (!can("edit")) return null;
 
@@ -135,7 +142,7 @@ export function GeneratorEditDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {trigger ?? (
           <button
@@ -146,7 +153,7 @@ export function GeneratorEditDialog({
           </button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-lg bg-card">
+      <DialogContent className="scroll-slim max-h-[90dvh] max-w-lg overflow-y-auto overscroll-contain bg-card">
         <DialogHeader>
           <DialogTitle>Editar gerador</DialogTitle>
           <DialogDescription>

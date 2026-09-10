@@ -15,7 +15,7 @@ import { useScadaOps } from "./ScadaOpsProvider";
 
 export function ScreenBody({ children }: { children: ReactNode }) {
   return (
-    <div className="min-w-0 space-y-4 overflow-x-hidden p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-4 lg:p-5 3xl:p-6">
+    <div className="scroll-slim min-h-0 min-w-0 flex-1 space-y-4 overflow-x-hidden overflow-y-auto overscroll-contain p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-4 lg:p-5 3xl:p-6">
       {children}
     </div>
   );

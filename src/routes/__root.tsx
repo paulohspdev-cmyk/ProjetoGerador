@@ -166,9 +166,9 @@ function AuthenticatedShell() {
   const hasError = Boolean(generatorsError || opsError || usersError);
 
   return (
-    <div className="flex min-h-dvh w-full overflow-x-clip bg-background">
+    <div className="flex h-dvh w-full overflow-hidden bg-background">
       <AppSidebar />
-      <main className="flex h-dvh min-w-0 flex-1 flex-col overflow-x-clip overflow-y-auto">
+      <main className="flex h-dvh min-w-0 flex-1 flex-col overflow-hidden">
         {hasError && (
           <div className="z-50 flex flex-wrap items-center justify-between gap-2 border-b border-offline/40 bg-offline/10 px-3 py-2 text-[12px] text-offline">
             <div className="min-w-0">

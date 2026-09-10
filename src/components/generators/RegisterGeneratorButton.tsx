@@ -324,7 +324,7 @@ export function RegisterGeneratorButton({
           if (!next) reset();
         }}
       >
-        <DialogContent className="max-w-2xl bg-card">
+        <DialogContent className="scroll-slim max-h-[90dvh] max-w-2xl overflow-y-auto overscroll-contain bg-card">
           <DialogHeader>
             <DialogTitle>Adicionar gerador</DialogTitle>
             <DialogDescription>

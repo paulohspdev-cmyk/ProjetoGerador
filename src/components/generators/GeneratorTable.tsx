@@ -196,7 +196,7 @@ export function GeneratorTable({ items }: { items: Generator[] }) {
   return (
     <>
       <MobileRow items={items} />
-      <div className="scroll-slim hidden h-full overflow-auto rounded-lg border border-border bg-card md:block">
+      <div className="hidden rounded-lg border border-border bg-card md:block">
         <table className="w-full min-w-[2080px] border-collapse text-[11px]">
           <thead className="sticky top-0 z-10 bg-card">
             <tr className="border-b border-border bg-secondary/60 text-[9px] uppercase tracking-wide text-muted-foreground">
