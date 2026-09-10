@@ -252,25 +252,82 @@ const catalogRows = load("controllers/catalog/catalog-v1.json").controllers ?? [
 const dseGensets = catalogRows.filter(
   (item) => item.manufacturer === "DSE" && item.application === "genset",
 );
-if (dseGensets.length !== 38) {
-  failures.push(`DSE: catálogo deve manter 38 modelos genset, encontrado ${dseGensets.length}`);
+if (dseGensets.length !== 46) {
+  failures.push(`DSE: catálogo deve manter 46 modelos genset, encontrado ${dseGensets.length}`);
 }
-const registrationOnlyDse = new Set(["DSE3110", "DSE5110", "DSE710", "DSE720", "DSE501"]);
+const registrationOnlyDse = new Set([
+  "DSE3110",
+  "DSE5110",
+  "DSE710",
+  "DSE720",
+  "DSE501",
+  "DSE7510",
+  "DSE7520",
+  "DSE5210",
+  "DSE5310",
+  "DSE5510",
+  "DSE5520",
+]);
+const newlyDocumentedDse = new Set([
+  "DSE4210",
+  "DSE4220",
+  "DSE4510",
+  "DSE4520",
+  "DSE7210",
+  "DSE7220",
+  "DSE7310",
+  "DSE7320",
+  "DSE7410",
+  "DSE7420",
+  "DSE8610",
+  "DSE8620",
+  "DSE8810",
+]);
 const dseAliases = new Set(dseProduction.aliases ?? []);
-for (const item of dseGensets) {
-  if (!registrationOnlyDse.has(item.model) && !dseAliases.has(item.model)) {
-    failures.push(`DSE: ${item.model} deveria estar coberta pelo pack GenComm read-only`);
-  }
+for (const model of newlyDocumentedDse) {
+  if (!dseAliases.has(model)) failures.push(`DSE: ${model} perdeu cobertura GenComm documental`);
 }
 for (const model of registrationOnlyDse) {
   if (dseAliases.has(model)) {
     failures.push(`DSE: ${model} não pode ser provisionada sem evidência GenComm suficiente`);
   }
 }
-if (dseAliases.size !== 33) {
+for (const item of dseGensets) {
+  if (!registrationOnlyDse.has(item.model) && !dseAliases.has(item.model)) {
+    failures.push(`DSE: ${item.model} deveria permanecer coberta pelo pack GenComm read-only`);
+  }
+}
+for (const model of dseAliases) {
+  if (!dseGensets.some((item) => item.model === model)) {
+    failures.push(`DSE: alias ${model} não corresponde a uma controladora primária de gerador`);
+  }
+}
+const excludedDse = new Map([
+  ["DSE7560", "ats"],
+  ["DSE7570", "sync_lock"],
+  ["DSE8660 MKII", "ats"],
+  ["DSE8680", "bus_tie"],
+]);
+for (const [model, application] of excludedDse) {
+  const item = catalogRows.find((row) => row.model === model);
+  if (!item || item.application !== application) {
+    failures.push(`DSE: ${model} precisa permanecer classificada como ${application}`);
+  }
+  if (dseAliases.has(model)) failures.push(`DSE: ${model} não pode usar pack de gerador`);
+}
+if (dseAliases.size !== 35) {
   failures.push(
-    `DSE GenComm: esperado cobertura documental de 33 modelos, encontrado ${dseAliases.size}`,
+    `DSE GenComm: esperado cobertura documental de 35 aliases, encontrado ${dseAliases.size}`,
   );
+}
+const dseEvidencePath = "controllers/production/dse/dse-gencomm-v1/MODEL_EVIDENCE.md";
+if (!existsSync(join(root, dseEvidencePath)))
+  failures.push("DSE GenComm: matriz de evidência ausente");
+else {
+  const evidence = read(dseEvidencePath);
+  for (const model of newlyDocumentedDse) {
+    if (!evidence.includes(model)) failures.push(`DSE: evidência documental ausente para ${model}`);
+  }
 }
 
 const template = read("rapid/templates/DrvModbus_RC_IG200.xml");

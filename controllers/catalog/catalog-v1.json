@@ -779,33 +779,33 @@
     },
     {
       "manufacturer": "DSE",
-      "family": "DSE 8xxx",
+      "family": "DSE 8xxx Mains",
       "model": "DSE8660 MKII",
-      "application": "genset",
-      "category": "paralleling_genset",
+      "application": "ats",
+      "category": "mains_utility_controller",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Controladora de rede/ATS; não é controladora primária de gerador."
     },
     {
       "manufacturer": "DSE",
-      "family": "DSE 8xxx",
+      "family": "DSE 8xxx Bus Tie",
       "model": "DSE8680",
-      "application": "genset",
-      "category": "paralleling_genset",
+      "application": "bus_tie",
+      "category": "bus_tie_controller",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Controladora de disjuntor de acoplamento de barras; não é controladora primária de gerador."
     },
     {
       "manufacturer": "DSE",
       "family": "DSE 8xxx",
-      "model": "DSE8810 MKII",
+      "model": "DSE8810",
       "application": "genset",
       "category": "paralleling_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Modelo oficial DSE8810; GenComm documentado. Telemetria somente leitura até validação física."
     },
     {
       "manufacturer": "DSE",
@@ -829,23 +829,23 @@
     },
     {
       "manufacturer": "DSE",
-      "family": "DSE 75xx",
+      "family": "DSE 75xx Mains",
       "model": "DSE7560",
-      "application": "genset",
-      "category": "paralleling_genset",
+      "application": "ats",
+      "category": "mains_utility_controller",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Controladora ATS/rede usada com DSE7510; não é controladora primária de gerador."
     },
     {
       "manufacturer": "DSE",
-      "family": "DSE 75xx",
+      "family": "DSE 75xx Sync",
       "model": "DSE7570",
-      "application": "genset",
-      "category": "paralleling_genset",
+      "application": "sync_lock",
+      "category": "sync_lock_controller",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Controladora remota Sync Lock; não é controladora primária de gerador."
     },
     {
       "manufacturer": "DSE",
@@ -1046,6 +1046,126 @@
       "status": "inventory_only",
       "provisionable": false,
       "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 4xxx",
+      "model": "DSE4210",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 4xxx",
+      "model": "DSE4220",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 4xxx",
+      "model": "DSE4510",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 4xxx",
+      "model": "DSE4520",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 7xxx",
+      "model": "DSE7210",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 7xxx",
+      "model": "DSE7220",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 7xxx",
+      "model": "DSE7310",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 7xxx",
+      "model": "DSE7320",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 7xxx",
+      "model": "DSE7410",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 7xxx",
+      "model": "DSE7420",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 8xxx",
+      "model": "DSE8610",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 8xxx",
+      "model": "DSE8620",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
     }
   ]
 }

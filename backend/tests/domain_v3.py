@@ -106,6 +106,72 @@ assert dse_pack["status"] == "production"
 assert dse_pack["mapping"]["readOnly"] is True
 assert dse_pack["rapid"]["channels"]
 
+# Expansão documental DSE: versões MKI/anteriores com GenComm publicado pela
+# própria DSE entram somente para telemetria read-only. Nenhuma herda comandos.
+for model in (
+    "DSE4210",
+    "DSE4220",
+    "DSE4510",
+    "DSE4520",
+    "DSE7210",
+    "DSE7220",
+    "DSE7310",
+    "DSE7320",
+    "DSE7410",
+    "DSE7420",
+    "DSE8610",
+    "DSE8620",
+    "DSE8810",
+):
+    item = catalog_for_model(model)
+    assert item and item["application"] == "genset", model
+    assert item["provisionable"] is True, model
+    assert item["onboardingMode"] == "production", model
+    assert item["capabilities"]["telemetry"] is True, model
+    assert item["validatedTelemetry"] == [], model
+    assert not any(
+        item["capabilities"].get(name)
+        for name in (
+            "start", "stop", "auto", "manual", "test",
+            "mcb_open", "mcb_close", "gcb_open", "gcb_close", "paralleling",
+        )
+    ), model
+
+# Equipamentos DSE com GenComm, mas que não são a controladora primária do
+# gerador, não podem aparecer como genset nem herdar o pack compartilhado.
+for model, application in (
+    ("DSE7560", "ats"),
+    ("DSE7570", "sync_lock"),
+    ("DSE8660 MKII", "ats"),
+    ("DSE8680", "bus_tie"),
+):
+    item = catalog_for_model(model)
+    assert item and item["application"] == application, model
+    assert item["provisionable"] is False, model
+    assert item["registerable"] is False, model
+    assert not item.get("packLifecycle"), model
+
+# Legados sem evidência GenComm específica não são promovidos por semelhança.
+for model in (
+    "DSE3110",
+    "DSE501",
+    "DSE5110",
+    "DSE710",
+    "DSE720",
+    "DSE7510",
+    "DSE7520",
+    "DSE5210",
+    "DSE5310",
+    "DSE5510",
+    "DSE5520",
+):
+    item = catalog_for_model(model)
+    assert item and item["application"] == "genset", model
+    assert item["registerable"] is True, model
+    assert item["provisionable"] is False, model
+    assert item["onboardingMode"] == "registration_open", model
+    assert not item.get("packLifecycle"), model
+
 # DSE antigas sem evidência suficiente de caminho GenComm continuam cadastráveis,
 # mas o sistema não inventa telemetria nem as promove para provisionamento.
 dse501 = catalog_for_model("DSE501")

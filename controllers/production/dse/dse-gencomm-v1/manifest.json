@@ -26,17 +26,19 @@
     "DSE8920",
     "DSE8610 MKII",
     "DSE8620 MKII",
-    "DSE8660 MKII",
-    "DSE8680",
-    "DSE8810 MKII",
-    "DSE7510",
-    "DSE7520",
-    "DSE7560",
-    "DSE7570",
-    "DSE5510",
-    "DSE5520",
-    "DSE5310",
-    "DSE5210"
+    "DSE4210",
+    "DSE4220",
+    "DSE4510",
+    "DSE4520",
+    "DSE7210",
+    "DSE7220",
+    "DSE7310",
+    "DSE7320",
+    "DSE7410",
+    "DSE7420",
+    "DSE8610",
+    "DSE8620",
+    "DSE8810"
   ],
   "status": "production",
   "application": "genset",
@@ -480,14 +482,14 @@
   },
   "validation": {
     "documentation": [
-      "DSE GenComm standard: stable page/offset addressing for generating set controllers",
-      "DSE GenComm rule: 32-bit values store the most-significant register at the lowest address",
-      "DSE8610 MKII register list supplied by the user",
-      "DSE product documentation for Modbus-capable controller families"
+      "DSE GenComm standard and Gencomm Control Keys training document 056-051",
+      "MODEL_EVIDENCE.md: model-by-model evidence from official Deep Sea Electronics product/download pages",
+      "DSE8610 MKII register list supplied by the user and retained as the register-map source",
+      "DSE GenComm rule: 32-bit values store the most-significant register at the lowest address"
     ],
     "lab": false,
     "field": false,
     "commandSafety": "Produção estritamente somente leitura. FC16/control keys are deliberately not materialized; START, STOP, modes and breaker commands remain blocked until model-specific physical validation."
   },
-  "notes": "Pack compartilhado para controladoras DSE genset com caminho GenComm/Modbus documentado. Status production significa produção de TELEMETRIA SOMENTE LEITURA por especificação, não field_validated. Modelos DSE sem evidência suficiente de GenComm/Modbus continuam cadastráveis, porém sem provisionamento automático."
+  "notes": "Pack compartilhado para controladoras DSE de GERADOR com GenComm/Modbus documentado. Produção significa TELEMETRIA SOMENTE LEITURA por especificação, não field_validated. Equipamentos DSE de rede/ATS, bus-tie, sync-lock e modelos sem evidência GenComm específica ficam fora deste pack. Comandos permanecem bloqueados até validação física por modelo."
 }
