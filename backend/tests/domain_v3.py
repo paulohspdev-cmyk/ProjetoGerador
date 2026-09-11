@@ -137,6 +137,38 @@ for model in (
         )
     ), model
 
+# DSE5210 possui pack legado específico porque seu protocolo GenComm v1.29
+# documenta um subconjunto diferente do pack DSE moderno compartilhado.
+dse5210 = catalog_for_model("DSE5210")
+assert dse5210 and dse5210["application"] == "genset"
+assert dse5210["provisionable"] is True
+assert dse5210["onboardingMode"] == "production"
+assert dse5210["packLifecycle"] == "production"
+assert dse5210["capabilities"]["telemetry"] is True
+assert dse5210["validatedTelemetry"] == []
+for unavailable in (
+    "oil_temperature",
+    "power_kw",
+    "power_factor",
+    "engine_load",
+    "maintenance_hours",
+    "genset_kwh",
+):
+    assert unavailable not in dse5210["documentedTelemetry"], unavailable
+dse5210_pack = pack_for_model("DSE5210")
+assert dse5210_pack and dse5210_pack["model"] == "DSE5210"
+assert dse5210_pack["mapping"]["readOnly"] is True
+assert dse5210_pack["mapping"]["registers"]["controller_mode_raw"]["address"] == 772
+assert dse5210_pack["mapping"]["registers"]["battery_voltage"]["address"] == 1029
+assert dse5210_pack["mapping"]["registers"]["run_hours"]["address"] == 1798
+assert not any(
+    dse5210_pack["capabilities"].get(name)
+    for name in (
+        "start", "stop", "auto", "manual", "test",
+        "mcb_open", "mcb_close", "gcb_open", "gcb_close", "paralleling",
+    )
+)
+
 # Equipamentos DSE com GenComm, mas que não são a controladora primária do
 # gerador, não podem aparecer como genset nem herdar o pack compartilhado.
 for model, application in (
@@ -160,7 +192,6 @@ for model in (
     "DSE720",
     "DSE7510",
     "DSE7520",
-    "DSE5210",
     "DSE5310",
     "DSE5510",
     "DSE5520",

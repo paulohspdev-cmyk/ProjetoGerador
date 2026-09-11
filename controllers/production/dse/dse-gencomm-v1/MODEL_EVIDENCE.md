@@ -38,7 +38,11 @@ The production manifest also contains newer models already admitted before this 
 - **DSE8680** — generator bus-tie controller; belongs in a future bus-tie pack.
 - **DSE334 / DSE335** — ATS products; remain outside generator onboarding.
 - **DSE3110, DSE501, DSE5110, DSE710, DSE720** — no sufficient model-specific GenComm evidence was accepted in this audit; registration may remain available where they are gensets, but automatic Rapid provisioning is blocked.
-- **DSE7510 / DSE7520 / DSE5210 / DSE5310 / DSE5510 / DSE5520** — legacy products removed from the shared GenComm pack until equivalent model-specific protocol evidence is recorded.
+- **DSE7510 / DSE7520 / DSE5310 / DSE5510 / DSE5520** — legacy products remain outside the shared GenComm pack until equivalent model-specific protocol evidence is recorded.
+
+## Model-specific legacy pack admitted
+
+- **DSE5210** — production read-only via `controllers/production/dse/dse5210-gencomm-v1`. The public GenComm v1.29 protocol explicitly names DSE5210/5220 and documents the common pages used by the dedicated template. Optional/reserved registers from newer controllers are deliberately not polled.
 
 ## Safety boundary
 

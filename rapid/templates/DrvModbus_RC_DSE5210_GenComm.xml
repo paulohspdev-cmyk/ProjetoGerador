@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DeviceTemplate>
+  <Options>
+    <ZeroAddr>true</ZeroAddr>
+    <DecAddr>true</DecAddr>
+    <DefByteOrder2 />
+    <DefByteOrder4 />
+    <DefByteOrder8 />
+  </Options>
+  <ElemGroups>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="772" name="DSE5210 GenComm - modo">
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="controller_mode_raw" name="Controller Mode" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="774" name="DSE5210 GenComm - alarmes">
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="alarm_class_raw" name="Alarm Class" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1024" name="DSE5210 GenComm - pressao de oleo">
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="oil_pressure" name="Oil Pressure" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1025" name="DSE5210 GenComm - temperatura">
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="coolant_temperature" name="Coolant Temperature" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1027" name="DSE5210 GenComm - instrumentacao basica">
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="fuel_level" name="Fuel Level" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="alternator_voltage" name="Charge Alternator Voltage" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="battery_voltage" name="Battery Voltage" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="rpm" name="Engine Speed" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="frequency" name="Generator Frequency" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1032" name="DSE5210 GenComm - tensoes">
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="voltage_l1" name="Generator Voltage L1-N" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="voltage_l2" name="Generator Voltage L2-N" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="voltage_l3" name="Generator Voltage L3-N" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="voltage_l1_l2" name="Generator Voltage L1-L2" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="voltage_l2_l3" name="Generator Voltage L2-L3" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="voltage_l3_l1" name="Generator Voltage L3-L1" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1044" name="DSE5210 GenComm - correntes">
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="current_l1" name="Generator Current L1" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="current_l2" name="Generator Current L2" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="current_l3" name="Generator Current L3" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1798" name="DSE5210 GenComm - horas">
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="run_hours" name="Engine Run Time" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1808" name="DSE5210 GenComm - partidas">
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="number_starts" name="Number of Starts" />
+    </ElemGroup>
+  </ElemGroups>
+  <Cmds />
+</DeviceTemplate>

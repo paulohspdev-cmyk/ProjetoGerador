@@ -1,0 +1,26 @@
+# DSE5210 GenComm v1 factual register map used by RC Geradores
+# Source basis: GenComm Communications Protocol v1.29 for DSE 550/555/5210/5220.
+# Public reference: https://manualzz.com/doc/66262772/deep-sea-electronics-plc-5210--5220--555-manual
+# Official product reference: https://www.deepseaelectronics.com/genset/manual-auto-start-control-modules/dse5210/downloads
+# Addressing rule: decimal address = page * 256 + offset. 32-bit values are high word first.
+# This file intentionally records factual addresses only; it is not a copy of the manual.
+772 controller_mode_raw uint16 scale=1 page=3 offset=4
+774 alarm_class_raw uint16 scale=1 page=3 offset=6
+1024 oil_pressure uint16 scale=1 unit=kPa page=4 offset=0
+1025 coolant_temperature int16 scale=1 unit=C page=4 offset=1
+1027 fuel_level uint16 scale=1 unit=percent page=4 offset=3
+1028 alternator_voltage uint16 scale=0.1 unit=V page=4 offset=4
+1029 battery_voltage uint16 scale=0.1 unit=V page=4 offset=5
+1030 rpm uint16 scale=1 unit=rpm page=4 offset=6
+1031 frequency uint16 scale=0.1 unit=Hz page=4 offset=7
+1032 voltage_l1 uint32 scale=0.1 unit=V page=4 offset=8
+1034 voltage_l2 uint32 scale=0.1 unit=V page=4 offset=10
+1036 voltage_l3 uint32 scale=0.1 unit=V page=4 offset=12
+1038 voltage_l1_l2 uint32 scale=0.1 unit=V page=4 offset=14
+1040 voltage_l2_l3 uint32 scale=0.1 unit=V page=4 offset=16
+1042 voltage_l3_l1 uint32 scale=0.1 unit=V page=4 offset=18
+1044 current_l1 uint32 scale=0.1 unit=A page=4 offset=20
+1046 current_l2 uint32 scale=0.1 unit=A page=4 offset=22
+1048 current_l3 uint32 scale=0.1 unit=A page=4 offset=24
+1798 run_hours uint32 scale=0.0002777777777777778 unit=h page=7 offset=6
+1808 number_starts uint32 scale=1 page=7 offset=16

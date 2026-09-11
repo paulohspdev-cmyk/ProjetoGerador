@@ -263,7 +263,6 @@ const registrationOnlyDse = new Set([
   "DSE501",
   "DSE7510",
   "DSE7520",
-  "DSE5210",
   "DSE5310",
   "DSE5510",
   "DSE5520",
@@ -284,6 +283,12 @@ const newlyDocumentedDse = new Set([
   "DSE8810",
 ]);
 const dseAliases = new Set(dseProduction.aliases ?? []);
+const dseProductionPacks = productionPaths
+  .map((path) => load(path))
+  .filter((profile) => profile.manufacturer === "DSE" && profile.application === "genset");
+const dseProductionNames = new Set(
+  dseProductionPacks.flatMap((profile) => [profile.model, ...(profile.aliases ?? [])]),
+);
 for (const model of newlyDocumentedDse) {
   if (!dseAliases.has(model)) failures.push(`DSE: ${model} perdeu cobertura GenComm documental`);
 }
@@ -293,8 +298,8 @@ for (const model of registrationOnlyDse) {
   }
 }
 for (const item of dseGensets) {
-  if (!registrationOnlyDse.has(item.model) && !dseAliases.has(item.model)) {
-    failures.push(`DSE: ${item.model} deveria permanecer coberta pelo pack GenComm read-only`);
+  if (!registrationOnlyDse.has(item.model) && !dseProductionNames.has(item.model)) {
+    failures.push(`DSE: ${item.model} deveria ter um Controller Pack de produção read-only`);
   }
 }
 for (const model of dseAliases) {
@@ -313,13 +318,81 @@ for (const [model, application] of excludedDse) {
   if (!item || item.application !== application) {
     failures.push(`DSE: ${model} precisa permanecer classificada como ${application}`);
   }
-  if (dseAliases.has(model)) failures.push(`DSE: ${model} não pode usar pack de gerador`);
+  if (dseProductionNames.has(model)) failures.push(`DSE: ${model} não pode usar pack de gerador`);
 }
 if (dseAliases.size !== 35) {
   failures.push(
     `DSE GenComm: esperado cobertura documental de 35 aliases, encontrado ${dseAliases.size}`,
   );
 }
+const dse5210Path = "controllers/production/dse/dse5210-gencomm-v1/manifest.json";
+if (!productionPaths.includes(dse5210Path)) failures.push("DSE5210: pack específico ausente");
+else {
+  const dse5210 = load(dse5210Path);
+  if (!documentedReadOnlyProduction(dse5210)) {
+    failures.push("DSE5210: contrato production read-only inválido");
+  }
+  const required5210 = {
+    controller_mode_raw: 772,
+    alarm_class_raw: 774,
+    oil_pressure: 1024,
+    coolant_temperature: 1025,
+    fuel_level: 1027,
+    battery_voltage: 1029,
+    rpm: 1030,
+    frequency: 1031,
+    voltage_l1: 1032,
+    voltage_l2: 1034,
+    voltage_l3: 1036,
+    current_l1: 1044,
+    current_l2: 1046,
+    current_l3: 1048,
+    run_hours: 1798,
+    number_starts: 1808,
+  };
+  for (const [metric, address] of Object.entries(required5210)) {
+    if (dse5210.mapping?.registers?.[metric]?.address !== address) {
+      failures.push(`DSE5210: ${metric} deve permanecer em ${address}`);
+    }
+  }
+  for (const unsupported of [
+    "oil_temperature",
+    "power_kw",
+    "power_factor",
+    "engine_load",
+    "maintenance_hours",
+    "genset_kwh",
+  ]) {
+    if (dse5210.mapping?.registers?.[unsupported]) {
+      failures.push(`DSE5210: ${unsupported} não pode ser presumida pelo pack legado`);
+    }
+  }
+  const dse5210Evidence = "controllers/production/dse/dse5210-gencomm-v1/MODEL_EVIDENCE.md";
+  if (!existsSync(join(root, dse5210Evidence))) {
+    failures.push("DSE5210: evidência model-specific ausente");
+  }
+  const dse5210Template = read("rapid/templates/DrvModbus_RC_DSE5210_GenComm.xml");
+  for (const marker of [
+    'address="772"',
+    'tagCode="controller_mode_raw"',
+    'address="1024"',
+    'tagCode="oil_pressure"',
+    'address="1027"',
+    'tagCode="fuel_level"',
+    'address="1798"',
+    'tagCode="run_hours"',
+    'readOnly="true"',
+    "<Cmds />",
+  ]) {
+    if (!dse5210Template.includes(marker)) failures.push(`DSE5210 template perdeu: ${marker}`);
+  }
+  if (/power_kw|oil_temperature|readOnly="false"|Cmd[^>]+address=/.test(dse5210Template)) {
+    failures.push(
+      "DSE5210 template contém registrador opcional/reservado ou superfície de escrita",
+    );
+  }
+}
+
 const dseEvidencePath = "controllers/production/dse/dse-gencomm-v1/MODEL_EVIDENCE.md";
 if (!existsSync(join(root, dseEvidencePath)))
   failures.push("DSE GenComm: matriz de evidência ausente");

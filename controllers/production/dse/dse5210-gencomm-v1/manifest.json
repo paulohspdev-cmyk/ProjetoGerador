@@ -1,0 +1,370 @@
+{
+  "schema": 3,
+  "manufacturer": "DSE",
+  "family": "DSE 52xx Legacy GenComm",
+  "model": "DSE5210",
+  "aliases": [],
+  "status": "production",
+  "application": "genset",
+  "category": "documented_read_only_gencomm_legacy_52xx",
+  "firmware": {
+    "tested": [],
+    "minimum": null,
+    "maximum": null,
+    "notes": "Produção documental read-only. Versões de firmware de campo serão registradas conforme unidades reais."
+  },
+  "protocols": [
+    "dse_gencomm_v1",
+    "modbus_rtu"
+  ],
+  "transports": [
+    "reverse_tcp",
+    "rtu_over_tcp",
+    "modbus_rtu_serial"
+  ],
+  "reverseTcpFraming": "modbus_rtu",
+  "defaults": {
+    "batteryNominalVoltage": null,
+    "modbusUnit": null,
+    "tcpPort": null
+  },
+  "capabilities": {
+    "telemetry": true,
+    "start": false,
+    "stop": false,
+    "auto": false,
+    "manual": false,
+    "test": false,
+    "mcb_open": false,
+    "mcb_close": false,
+    "gcb_open": false,
+    "gcb_close": false,
+    "paralleling": false
+  },
+  "validatedTelemetry": [],
+  "documentedTelemetry": [
+    "controller_mode_raw",
+    "alarm_class_raw",
+    "oil_pressure",
+    "coolant_temperature",
+    "fuel_level",
+    "alternator_voltage",
+    "battery_voltage",
+    "rpm",
+    "frequency",
+    "voltage_l1",
+    "voltage_l2",
+    "voltage_l3",
+    "voltage_l1_l2",
+    "voltage_l2_l3",
+    "voltage_l3_l1",
+    "current_l1",
+    "current_l2",
+    "current_l3",
+    "run_hours",
+    "number_starts"
+  ],
+  "metricUnits": {
+    "oil_pressure": "kPa",
+    "coolant_temperature": "°C",
+    "fuel_level": "%",
+    "alternator_voltage": "V",
+    "battery_voltage": "V",
+    "rpm": "rpm",
+    "frequency": "Hz",
+    "voltage_l1": "V",
+    "voltage_l2": "V",
+    "voltage_l3": "V",
+    "voltage_l1_l2": "V",
+    "voltage_l2_l3": "V",
+    "voltage_l3_l1": "V",
+    "current_l1": "A",
+    "current_l2": "A",
+    "current_l3": "A",
+    "run_hours": "h"
+  },
+  "mapping": {
+    "kind": "modbus_register_export",
+    "readOnly": true,
+    "sourceFile": "modbus/source-registers.txt",
+    "sourceSha256": "60e362ea944fbc074a6a46c2e01f341ffd21d0eaf7f8556a49c7045a090db7e6",
+    "addressFormula": "page * 256 + offset",
+    "readFunctions": [
+      3
+    ],
+    "wordOrder": "most_significant_register_first",
+    "registers": {
+      "controller_mode_raw": {
+        "address": 772,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1
+      },
+      "alarm_class_raw": {
+        "address": 774,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1
+      },
+      "oil_pressure": {
+        "address": 1024,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "kPa"
+      },
+      "coolant_temperature": {
+        "address": 1025,
+        "count": 1,
+        "type": "int16",
+        "scale": 1,
+        "unit": "°C"
+      },
+      "fuel_level": {
+        "address": 1027,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "%"
+      },
+      "alternator_voltage": {
+        "address": 1028,
+        "count": 1,
+        "type": "uint16",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "battery_voltage": {
+        "address": 1029,
+        "count": 1,
+        "type": "uint16",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "rpm": {
+        "address": 1030,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "rpm"
+      },
+      "frequency": {
+        "address": 1031,
+        "count": 1,
+        "type": "uint16",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      "voltage_l1": {
+        "address": 1032,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "voltage_l2": {
+        "address": 1034,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "voltage_l3": {
+        "address": 1036,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "voltage_l1_l2": {
+        "address": 1038,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "voltage_l2_l3": {
+        "address": 1040,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "voltage_l3_l1": {
+        "address": 1042,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "current_l1": {
+        "address": 1044,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "A"
+      },
+      "current_l2": {
+        "address": 1046,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "A"
+      },
+      "current_l3": {
+        "address": 1048,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "A"
+      },
+      "run_hours": {
+        "address": 1798,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.0002777777777777778,
+        "unit": "h"
+      },
+      "number_starts": {
+        "address": 1808,
+        "count": 2,
+        "type": "uint32",
+        "scale": 1
+      }
+    }
+  },
+  "rapid": {
+    "template": "rapid/templates/DrvModbus_RC_DSE5210_GenComm.xml",
+    "driver": "DrvModbus",
+    "channels": [
+      {
+        "key": "controller_mode_raw",
+        "tagCode": "controller_mode_raw",
+        "scale": 1
+      },
+      {
+        "key": "alarm_class_raw",
+        "tagCode": "alarm_class_raw",
+        "scale": 1
+      },
+      {
+        "key": "oil_pressure",
+        "tagCode": "oil_pressure",
+        "scale": 1,
+        "unit": "kPa"
+      },
+      {
+        "key": "coolant_temperature",
+        "tagCode": "coolant_temperature",
+        "scale": 1,
+        "unit": "°C"
+      },
+      {
+        "key": "fuel_level",
+        "tagCode": "fuel_level",
+        "scale": 1,
+        "unit": "%"
+      },
+      {
+        "key": "alternator_voltage",
+        "tagCode": "alternator_voltage",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "battery_voltage",
+        "tagCode": "battery_voltage",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "rpm",
+        "tagCode": "rpm",
+        "scale": 1,
+        "unit": "rpm"
+      },
+      {
+        "key": "frequency",
+        "tagCode": "frequency",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      {
+        "key": "voltage_l1",
+        "tagCode": "voltage_l1",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l2",
+        "tagCode": "voltage_l2",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l3",
+        "tagCode": "voltage_l3",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l1_l2",
+        "tagCode": "voltage_l1_l2",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l2_l3",
+        "tagCode": "voltage_l2_l3",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l3_l1",
+        "tagCode": "voltage_l3_l1",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "current_l1",
+        "tagCode": "current_l1",
+        "scale": 0.1,
+        "unit": "A"
+      },
+      {
+        "key": "current_l2",
+        "tagCode": "current_l2",
+        "scale": 0.1,
+        "unit": "A"
+      },
+      {
+        "key": "current_l3",
+        "tagCode": "current_l3",
+        "scale": 0.1,
+        "unit": "A"
+      },
+      {
+        "key": "run_hours",
+        "tagCode": "run_hours",
+        "scale": 0.0002777777777777778,
+        "unit": "h"
+      },
+      {
+        "key": "number_starts",
+        "tagCode": "number_starts",
+        "scale": 1
+      }
+    ]
+  },
+  "validation": {
+    "documentation": [
+      "GenComm Communications Protocol v1.29 explicitly covers DSE 5210/5220 and defines page/offset addressing",
+      "DSE5210 official product/download documentation confirms generator instrumentation and remote communications",
+      "source-registers.txt records only the documented common read-only addresses used by this pack"
+    ],
+    "lab": false,
+    "field": false,
+    "commandSafety": "Read-only production contract. No FC16 control keys, operating-mode writes, START/STOP, transfer or breaker commands are materialized."
+  },
+  "notes": "DSE5210-specific legacy GenComm pack. It intentionally omits reserved/optional registers from the newer shared DSE pack, including oil_temperature, total power/PF/load, maintenance and kWh, until model-specific evidence or field validation supports them."
+}
