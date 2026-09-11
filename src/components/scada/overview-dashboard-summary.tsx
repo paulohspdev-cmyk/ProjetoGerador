@@ -1,5 +1,14 @@
 import { Link } from "@tanstack/react-router";
-import { Activity, BellRing, ClipboardList, Fuel, Radio, RefreshCw, Router } from "lucide-react";
+import {
+  Activity,
+  BellRing,
+  ClipboardList,
+  Clock3,
+  Fuel,
+  Radio,
+  RefreshCw,
+  Router,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Panel, Pill, Stats } from "./kit";
@@ -51,28 +60,36 @@ export function DecisionHeader({
   onRefresh: () => void;
 }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-3">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Visão geral</p>
-        <h2 className="mt-1 text-xl font-extrabold">Painel de decisão</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Indicadores essenciais para identificar disponibilidade, consumo e pendências do parque.
-        </p>
+    <section className="rc-page-hero px-4 py-4 sm:px-5 sm:py-5">
+      <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
+        <div className="max-w-2xl">
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.13em] text-primary">
+            Visão geral
+          </p>
+          <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-white">
+            Painel de decisão
+          </h2>
+          <p className="mt-1.5 text-sm leading-6 text-slate-400">
+            Disponibilidade, comunicação, alarmes, manutenção e consumo em uma única visão
+            operacional.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-slate-400">
+          <span className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/8 bg-black/10 px-3">
+            <Clock3 className="size-4" />
+            {updatedAt ? `Atualizado ${updatedAt.toLocaleTimeString("pt-BR")}` : "Atualizando…"}
+          </span>
+          <button
+            type="button"
+            onClick={onRefresh}
+            className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/10 bg-black/10 px-3 font-semibold text-slate-300 transition-colors hover:border-primary/40 hover:text-white"
+            aria-label="Atualizar painel"
+          >
+            <RefreshCw className="size-4 text-primary" /> Atualizar
+          </button>
+        </div>
       </div>
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <span>
-          {updatedAt ? `Atualizado ${updatedAt.toLocaleTimeString("pt-BR")}` : "Atualizando…"}
-        </span>
-        <button
-          type="button"
-          onClick={onRefresh}
-          className="grid size-9 place-items-center rounded-lg border border-border bg-card transition-colors hover:bg-secondary"
-          aria-label="Atualizar painel"
-        >
-          <RefreshCw className="size-4" />
-        </button>
-      </div>
-    </div>
+    </section>
   );
 }
 
@@ -199,7 +216,7 @@ export function TrafficPanel({
   return (
     <Panel
       title="Consumo de dados dos modems"
-      className="xl:col-span-3"
+      className="xl:col-span-5"
       actions={
         <Link
           to="/p/$slug"
@@ -278,7 +295,7 @@ export function AvailabilityPanel({
   connectedModems: number;
 }) {
   return (
-    <Panel title="Disponibilidade" className="xl:col-span-2">
+    <Panel title="Disponibilidade" className="xl:col-span-3">
       <div className="space-y-6">
         <div>
           <div className="mb-2 flex items-end justify-between gap-3">

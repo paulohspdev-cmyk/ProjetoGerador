@@ -138,7 +138,7 @@ export function WorkPanel({ work }: { work: WorkSummary }) {
       actions={
         <Link
           to="/p/$slug"
-          params={{ slug: "ordens-servico" }}
+          params={{ slug: "manutencao" }}
           className="text-xs font-semibold text-primary hover:underline"
         >
           Abrir OS

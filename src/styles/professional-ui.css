@@ -1,0 +1,362 @@
+/* RC Geradores — experiência visual industrial profissional.
+ * Este arquivo estiliza shell, navegação e superfícies compartilhadas.
+ * Os cards vertical/compacto/lista de geradores NÃO são redefinidos aqui.
+ */
+
+:root {
+  --rc-navy-950: #04111c;
+  --rc-navy-925: #061621;
+  --rc-navy-900: #071a27;
+  --rc-navy-875: #09202e;
+  --rc-navy-850: #0b2534;
+  --rc-line: rgba(98, 143, 169, 0.2);
+  --rc-line-strong: rgba(117, 166, 194, 0.3);
+  --rc-orange: #ff6b00;
+  --rc-orange-soft: rgba(255, 107, 0, 0.14);
+  --rc-cyan: #1ea7ff;
+  --rc-green: #16e467;
+  --rc-red: #ff4848;
+  --rc-yellow: #ffc21c;
+  --rc-shadow: 0 16px 48px rgba(0, 0, 0, 0.24);
+}
+
+.dark body {
+  background:
+    radial-gradient(circle at 72% -12%, rgba(20, 106, 154, 0.16), transparent 32%),
+    linear-gradient(180deg, var(--rc-navy-950), #06131e 44%, #071722 100%);
+}
+
+.rc-app-shell {
+  background:
+    radial-gradient(circle at 70% 0%, rgba(20, 99, 145, 0.12), transparent 28%),
+    linear-gradient(180deg, #04121d 0%, #071824 48%, #06141f 100%);
+}
+
+.rc-screen-body {
+  position: relative;
+  isolation: isolate;
+  background:
+    linear-gradient(180deg, rgba(6, 22, 33, 0.36), rgba(5, 18, 28, 0.08)),
+    radial-gradient(circle at 75% 0%, rgba(15, 109, 163, 0.06), transparent 28%);
+}
+
+.rc-screen-body::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.28;
+  background-image:
+    linear-gradient(rgba(74, 125, 153, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(74, 125, 153, 0.025) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.dark .rc-panel,
+.dark .rc-stat-card {
+  border-color: var(--rc-line);
+  background: linear-gradient(180deg, rgba(10, 31, 44, 0.94), rgba(7, 24, 36, 0.94));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.025),
+    0 12px 34px rgba(0, 0, 0, 0.16);
+}
+
+.rc-panel {
+  backdrop-filter: blur(10px);
+}
+
+.rc-panel-header {
+  min-height: 48px;
+}
+
+.rc-panel-title {
+  letter-spacing: -0.015em;
+}
+
+.dark .rc-stat-icon {
+  border: 1px solid rgba(89, 142, 171, 0.16);
+  background: linear-gradient(180deg, rgba(16, 49, 68, 0.88), rgba(10, 36, 51, 0.88));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.rc-stat-card {
+  min-height: 86px;
+  transition:
+    border-color 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.rc-stat-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--rc-line-strong);
+  box-shadow: var(--rc-shadow);
+}
+
+.dark .rc-data-table thead {
+  background: rgba(3, 15, 24, 0.42);
+}
+
+.dark .rc-data-table tbody tr:hover {
+  background: rgba(33, 85, 111, 0.16);
+}
+
+.rc-data-table th {
+  white-space: nowrap;
+}
+
+.rc-data-table td {
+  vertical-align: middle;
+}
+
+/* Inputs de telas administrativas/operacionais; não altera controles dentro dos cards. */
+.rc-screen-body :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    background-color 0.16s ease;
+}
+
+.dark .rc-screen-body :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  border-color: rgba(92, 141, 166, 0.26);
+  background-color: rgba(3, 17, 27, 0.58);
+}
+
+.rc-screen-body :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea):focus {
+  border-color: color-mix(in oklab, var(--primary) 72%, var(--border));
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 12%, transparent);
+  outline: none;
+}
+
+/* Login */
+.rc-login {
+  min-height: 100dvh;
+  overflow: hidden;
+  background: #03101a;
+}
+
+.rc-login-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 72% 38%, rgba(255, 105, 0, 0.24), transparent 18%),
+    radial-gradient(circle at 54% 65%, rgba(0, 133, 214, 0.16), transparent 28%),
+    linear-gradient(122deg, #061724 0%, #071c29 42%, #091a23 100%);
+}
+
+.rc-login-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-image:
+    linear-gradient(90deg, transparent 49.6%, rgba(255, 109, 0, 0.07) 50%, transparent 50.4%),
+    linear-gradient(0deg, transparent 49.6%, rgba(26, 146, 210, 0.06) 50%, transparent 50.4%);
+  background-size: 84px 84px;
+  transform: perspective(600px) rotateX(64deg) scale(1.45) translateY(20%);
+  transform-origin: bottom;
+  opacity: 0.52;
+}
+
+.rc-login-hero::after {
+  content: "";
+  position: absolute;
+  left: -12%;
+  right: -12%;
+  bottom: 12%;
+  height: 24%;
+  z-index: -1;
+  opacity: 0.72;
+  background:
+    radial-gradient(ellipse at 20% 55%, rgba(13, 151, 240, 0.7) 0 1px, transparent 2px) 0 0/20px
+      12px,
+    linear-gradient(176deg, transparent 42%, rgba(0, 142, 230, 0.7) 43%, transparent 44%),
+    linear-gradient(184deg, transparent 48%, rgba(255, 105, 0, 0.52) 49%, transparent 50%);
+  filter: drop-shadow(0 0 12px rgba(0, 139, 224, 0.28));
+}
+
+.rc-login-plant {
+  position: absolute;
+  inset: auto 4% 22% 20%;
+  height: 40%;
+  z-index: -1;
+  opacity: 0.52;
+  filter: drop-shadow(0 0 22px rgba(255, 105, 0, 0.14));
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0 6%,
+      rgba(82, 112, 127, 0.35) 6% 9%,
+      transparent 9% 13%,
+      rgba(82, 112, 127, 0.45) 13% 16%,
+      transparent 16% 23%,
+      rgba(82, 112, 127, 0.28) 23% 26%,
+      transparent 26% 31%,
+      rgba(82, 112, 127, 0.38) 31% 34%,
+      transparent 34% 100%
+    ),
+    linear-gradient(
+      180deg,
+      transparent 0 22%,
+      rgba(72, 101, 116, 0.24) 22% 25%,
+      transparent 25% 46%,
+      rgba(72, 101, 116, 0.3) 46% 50%,
+      transparent 50% 72%,
+      rgba(72, 101, 116, 0.34) 72% 76%,
+      transparent 76%
+    ),
+    linear-gradient(180deg, transparent 0 64%, rgba(17, 37, 48, 0.78) 64% 100%);
+  clip-path: polygon(
+    0 100%,
+    0 62%,
+    8% 62%,
+    8% 43%,
+    12% 43%,
+    12% 75%,
+    19% 75%,
+    19% 54%,
+    27% 54%,
+    27% 27%,
+    31% 27%,
+    31% 75%,
+    39% 75%,
+    39% 46%,
+    46% 46%,
+    46% 67%,
+    56% 67%,
+    56% 36%,
+    63% 36%,
+    63% 74%,
+    72% 74%,
+    72% 51%,
+    78% 51%,
+    78% 74%,
+    88% 74%,
+    88% 58%,
+    94% 58%,
+    94% 100%
+  );
+}
+
+.rc-login-form-card {
+  border: 1px solid rgba(107, 153, 179, 0.28);
+  background: linear-gradient(180deg, rgba(11, 31, 44, 0.96), rgba(6, 22, 33, 0.96));
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.rc-login-feature {
+  border: 1px solid rgba(94, 145, 171, 0.22);
+  background: linear-gradient(180deg, rgba(9, 31, 45, 0.82), rgba(5, 22, 34, 0.82));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+.rc-login-input {
+  border: 1px solid rgba(112, 158, 184, 0.3);
+  background: rgba(5, 20, 31, 0.66);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.rc-login-input:focus-within {
+  border-color: rgba(255, 112, 16, 0.82);
+  box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.1);
+}
+
+/* Topbar */
+.rc-topbar {
+  border-color: rgba(86, 136, 164, 0.18);
+  background: linear-gradient(180deg, rgba(4, 17, 27, 0.96), rgba(5, 20, 31, 0.92));
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.13);
+}
+
+.rc-top-search {
+  border: 1px solid rgba(100, 150, 177, 0.26);
+  background: rgba(5, 19, 29, 0.72);
+}
+
+/* Sidebar */
+.rc-sidebar {
+  border-color: rgba(83, 130, 155, 0.2);
+  background:
+    radial-gradient(circle at 50% 100%, rgba(13, 89, 126, 0.11), transparent 28%),
+    linear-gradient(180deg, #03121d 0%, #051722 48%, #04131e 100%);
+  box-shadow: 10px 0 34px rgba(0, 0, 0, 0.12);
+}
+
+.rc-sidebar-logo-mark {
+  filter: drop-shadow(0 0 10px rgba(255, 105, 0, 0.34));
+}
+
+.rc-nav-active {
+  background: linear-gradient(90deg, rgba(255, 107, 0, 0.16), rgba(255, 107, 0, 0.04));
+  box-shadow: inset 2px 0 0 var(--rc-orange);
+}
+
+.rc-nav-active::after {
+  content: "";
+  position: absolute;
+  inset: 4px 0 4px auto;
+  width: 1px;
+  background: linear-gradient(transparent, rgba(255, 107, 0, 0.38), transparent);
+}
+
+/* Page-level hero accent shared by dashboard and major operational screens. */
+.rc-page-hero {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--rc-line);
+  border-radius: 14px;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(8, 28, 41, 0.97) 0%,
+      rgba(7, 26, 38, 0.92) 48%,
+      rgba(6, 22, 33, 0.82) 100%
+    ),
+    radial-gradient(circle at 82% 30%, rgba(255, 107, 0, 0.1), transparent 28%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+.rc-page-hero::after {
+  content: "";
+  position: absolute;
+  right: -4%;
+  top: -90%;
+  width: 42%;
+  height: 260%;
+  pointer-events: none;
+  opacity: 0.22;
+  background:
+    linear-gradient(90deg, transparent 0 47%, rgba(255, 107, 0, 0.28) 48% 49%, transparent 50%),
+    linear-gradient(0deg, transparent 0 47%, rgba(31, 139, 201, 0.25) 48% 49%, transparent 50%);
+  background-size: 44px 44px;
+  transform: rotate(-8deg);
+}
+
+/* Detail do gerador — somente a página de detalhe, não os cards da frota. */
+.gen-detail-professional {
+  background:
+    radial-gradient(circle at 72% 0%, rgba(20, 111, 162, 0.08), transparent 30%),
+    linear-gradient(180deg, #061722, #06131e);
+}
+
+.gen-detail-professional .gen-detail-section {
+  border: 1px solid var(--rc-line);
+  background: linear-gradient(180deg, rgba(9, 31, 45, 0.94), rgba(6, 23, 35, 0.94));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+@media (max-width: 1023px) {
+  .rc-login-hero {
+    min-height: 42vh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rc-stat-card {
+    transition: none;
+  }
+}

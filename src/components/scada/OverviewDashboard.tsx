@@ -41,7 +41,7 @@ export function OverviewDashboard() {
         fuel={model.fuel}
       />
 
-      <div className="grid gap-4 xl:grid-cols-5">
+      <div className="grid gap-3 xl:grid-cols-12">
         <TrafficPanel
           loading={model.communicationLoading}
           rows={model.modemRows}
@@ -56,19 +56,18 @@ export function OverviewDashboard() {
           modemCount={model.modemCount}
           connectedModems={model.connectedModems}
         />
+        <div className="min-w-0 xl:col-span-4 [&>section]:h-full">
+          <FuelPanel fuel={model.fuel} />
+        </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-2">
-        <FuelPanel fuel={model.fuel} />
+      <div className="grid gap-3 xl:grid-cols-4">
         <AlarmPriorityPanel
           error={model.alarmError}
           alarmsOpen={model.activeAlarms.length}
           severity={model.severity}
           severityMax={model.severityMax}
         />
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-3">
         <WorkPanel work={model.work} />
         <MaintenancePanel maintenance={model.maintenance} />
         <AttentionPanel error={model.alarmError} alarms={model.activeAlarms} />

@@ -101,6 +101,9 @@ for (const forbidden of [
 }
 
 const detail = read("src/components/generators/GeneratorDetailScreen.tsx");
+const detailTop = read("src/components/generators/detail/GeneratorDetailProfessionalTop.tsx");
+const detailControlSurface = `${detail}
+${detailTop}`;
 for (const marker of [
   "homologatedIg200",
   'normalizedController === "inteligen 200"',
@@ -108,10 +111,10 @@ for (const marker of [
   "Number(gen.rapidDeviceNum || 0) > 0",
   "gen.capabilities?.start === true || homologatedIg200",
   "gen.capabilities?.stop === true || homologatedIg200",
-  '<button type="button" disabled title="Função indisponível">\n            AUTO',
-  '<button type="button" disabled title="Função indisponível">\n            TEST',
+  'data-command="auto"',
+  'data-command="test"',
 ]) {
-  if (!detail.includes(marker)) {
+  if (!detailControlSurface.includes(marker)) {
     failures.push(`controle homologado perdeu guardrail de reconexão: ${marker}`);
   }
 }

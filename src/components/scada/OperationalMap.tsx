@@ -13,7 +13,7 @@ function esc(value: string) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
 }
 
-type SiteMapRow = OpsSite & {
+export type OperationalMapSite = OpsSite & {
   lat: number;
   lng: number;
   gens: Generator[];
@@ -23,7 +23,7 @@ type SiteMapRow = OpsSite & {
   load: number | null;
 };
 
-function siteColor(site: SiteMapRow) {
+function siteColor(site: OperationalMapSite) {
   if (site.gens.length === 0) return "var(--muted-foreground)";
   if (site.offline > 0) return "var(--offline)";
   if (site.alerta > 0) return "var(--alert)";
@@ -36,25 +36,26 @@ function tileUrl(theme: "dark" | "light") {
     : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
 }
 
-function popupHtml(site: SiteMapRow) {
+function popupHtml(site: OperationalMapSite) {
   const gens = site.gens
-    .map((g) => {
+    .slice(0, 8)
+    .map((generator) => {
       const status =
-        g.status === "online"
+        generator.status === "online"
           ? { label: "ONLINE", css: "text-online" }
-          : g.status === "alerta"
+          : generator.status === "alerta"
             ? { label: "ALERTA", css: "text-alert" }
-            : g.status === "offline"
+            : generator.status === "offline"
               ? { label: "OFFLINE", css: "text-offline" }
               : { label: "N/D", css: "text-muted-foreground" };
       return `<li class="flex items-center justify-between gap-2">
-          <a href="/p/geradores/${esc(g.id)}" class="font-semibold text-primary hover:underline">${esc(g.tag)}</a>
+          <a href="/p/geradores/${esc(generator.id)}" class="font-semibold text-primary hover:underline">${esc(generator.tag)}</a>
           <span class="${status.css}">${status.label}</span>
         </li>`;
     })
     .join("");
 
-  return `<div class="min-w-48 p-1">
+  return `<div class="min-w-52 p-1">
     <p class="text-[13px] font-bold">${esc(site.name)}</p>
     <p class="text-[11px] text-muted-foreground">${esc([site.city, site.state].filter(Boolean).join(" / ") || "Localização cadastrada")}</p>
     <p class="mt-2 text-[11px]">
@@ -74,23 +75,34 @@ type MapCtx = {
   L: typeof import("leaflet");
 };
 
-export function OperationalMap() {
+type Props = {
+  siteRows?: OpsSite[];
+  selectedSiteId?: string | null;
+  onSelectSite?: (site: OperationalMapSite) => void;
+};
+
+export function OperationalMap({
+  siteRows: suppliedRows,
+  selectedSiteId,
+  onSelectSite,
+}: Props = {}) {
   const { generators } = useGenerators();
   const { theme } = useTheme();
   const elRef = useRef<HTMLDivElement>(null);
   const ctxRef = useRef<MapCtx | null>(null);
   const fittedRef = useRef(false);
   const [ready, setReady] = useState(false);
-  const [siteRows, setSiteRows] = useState<OpsSite[]>([]);
+  const [internalRows, setInternalRows] = useState<OpsSite[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (suppliedRows) return;
     let active = true;
     void rcApi.sites
       .list()
       .then((rows) => {
         if (active) {
-          setSiteRows(rows);
+          setInternalRows(rows);
           setError(null);
         }
       })
@@ -100,37 +112,38 @@ export function OperationalMap() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [suppliedRows]);
 
-  const sites = useMemo<SiteMapRow[]>(
+  const sourceRows = suppliedRows ?? internalRows;
+  const sites = useMemo<OperationalMapSite[]>(
     () =>
-      siteRows
+      sourceRows
         .filter(
           (site): site is OpsSite & { lat: number; lng: number } =>
             site.lat != null && site.lng != null,
         )
         .map((site) => {
           const gens = generators.filter(
-            (g) => g.site.trim().toLowerCase() === site.name.trim().toLowerCase(),
+            (generator) => generator.site.trim().toLowerCase() === site.name.trim().toLowerCase(),
           );
           const measuredLoad = gens.filter(
-            (g) =>
-              (g.availableMetrics ?? []).includes("power_kw") &&
-              g.load != null &&
-              Number.isFinite(Number(g.load)),
+            (generator) =>
+              (generator.availableMetrics ?? []).includes("power_kw") &&
+              generator.load != null &&
+              Number.isFinite(Number(generator.load)),
           );
           return {
             ...site,
             gens,
-            online: gens.filter((g) => g.status === "online").length,
-            alerta: gens.filter((g) => g.status === "alerta").length,
-            offline: gens.filter((g) => g.status === "offline").length,
+            online: gens.filter((generator) => generator.status === "online").length,
+            alerta: gens.filter((generator) => generator.status === "alerta").length,
+            offline: gens.filter((generator) => generator.status === "offline").length,
             load: measuredLoad.length
-              ? measuredLoad.reduce((sum, g) => sum + Number(g.load), 0)
+              ? measuredLoad.reduce((sum, generator) => sum + Number(generator.load), 0)
               : null,
           };
         }),
-    [generators, siteRows],
+    [generators, sourceRows],
   );
 
   useEffect(() => {
@@ -179,40 +192,65 @@ export function OperationalMap() {
     const { L, map, markers } = ctx;
     markers.clearLayers();
     const points: Array<[number, number]> = [];
+
     for (const site of sites) {
-      L.circleMarker([site.lat, site.lng], {
-        radius: 12,
-        color: siteColor(site),
-        fillColor: siteColor(site),
-        fillOpacity: 0.85,
-        weight: 2,
+      const selected = selectedSiteId === site.id;
+      const color = siteColor(site);
+      if (selected) {
+        L.circleMarker([site.lat, site.lng], {
+          radius: 19,
+          color,
+          fillColor: color,
+          fillOpacity: 0.12,
+          weight: 2,
+          opacity: 0.55,
+        }).addTo(markers);
+      }
+      const marker = L.circleMarker([site.lat, site.lng], {
+        radius: selected ? 13 : 10,
+        color,
+        fillColor: color,
+        fillOpacity: 0.88,
+        weight: selected ? 3 : 2,
       })
-        .bindPopup(popupHtml(site), { maxWidth: 280 })
+        .bindPopup(popupHtml(site), { maxWidth: 300 })
         .addTo(markers);
+      marker.on("click", () => onSelectSite?.(site));
       points.push([site.lat, site.lng]);
     }
 
     if (!fittedRef.current && points.length > 0) {
-      if (points.length > 1) map.fitBounds(points, { padding: [56, 56], maxZoom: 13 });
-      else if (points[0]) map.setView(points[0], 13);
+      if (points.length > 1) map.fitBounds(points, { padding: [42, 42], maxZoom: 11 });
+      else if (points[0]) map.setView(points[0], 11);
       fittedRef.current = true;
     }
     map.invalidateSize();
-  }, [ready, sites]);
+  }, [onSelectSite, ready, selectedSiteId, sites]);
 
   return (
-    <div className="relative h-full min-h-0 w-full">
+    <div className="relative h-full min-h-0 w-full overflow-hidden rounded-xl bg-[#06131f]">
       {!ready && (
         <div className="absolute inset-0 z-[500] grid place-items-center bg-panel text-sm text-muted-foreground">
           Carregando mapa…
         </div>
       )}
       {ready && sites.length === 0 && (
-        <div className="pointer-events-none absolute left-1/2 top-4 z-[600] -translate-x-1/2 rounded-md border border-border bg-card/95 px-3 py-2 text-xs text-muted-foreground shadow">
-          {error || "Nenhum site possui latitude/longitude cadastradas."}
+        <div className="pointer-events-none absolute left-1/2 top-4 z-[600] -translate-x-1/2 rounded-lg border border-border bg-card/95 px-3 py-2 text-xs text-muted-foreground shadow">
+          {error || "Nenhuma unidade filtrada possui latitude/longitude cadastradas."}
         </div>
       )}
       <div ref={elRef} className="absolute inset-0" />
+      <div className="pointer-events-none absolute bottom-3 left-3 z-[600] rounded-lg border border-white/10 bg-[#071824]/90 px-3 py-2 text-[10px] text-slate-300 shadow-lg backdrop-blur">
+        <p className="flex items-center gap-1.5">
+          <span className="size-2 rounded-full bg-online" /> Online
+        </p>
+        <p className="mt-1 flex items-center gap-1.5">
+          <span className="size-2 rounded-full bg-alert" /> Em alerta
+        </p>
+        <p className="mt-1 flex items-center gap-1.5">
+          <span className="size-2 rounded-full bg-offline" /> Crítica / offline
+        </p>
+      </div>
     </div>
   );
 }
