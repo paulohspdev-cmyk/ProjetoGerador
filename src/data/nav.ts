@@ -159,7 +159,7 @@ export const navGroups: NavGroup[] = [
     ],
   },
   {
-    title: "Administração",
+    title: "Sistema",
     adminOnly: true,
     items: [
       { label: "Usuários", slug: "usuarios", icon: UserCog, adminOnly: true },

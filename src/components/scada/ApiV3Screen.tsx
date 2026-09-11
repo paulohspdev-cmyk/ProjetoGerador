@@ -211,6 +211,7 @@ export function ApiV3Screen() {
             </label>
             <div className="flex items-end">
               <button
+                type="submit"
                 disabled={busy}
                 className="h-9 w-full rounded-md bg-primary text-sm font-bold text-primary-foreground disabled:opacity-50"
               >

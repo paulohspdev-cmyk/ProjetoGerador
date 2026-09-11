@@ -29,6 +29,7 @@ export function ErpBmsLifecycleScreen() {
   const [event, setEvent] = useState("*");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
 
   const load = async () => {
     try {
@@ -59,6 +60,8 @@ export function ErpBmsLifecycleScreen() {
 
   const save = async (e: FormEvent) => {
     e.preventDefault();
+    if (busy) return;
+    setBusy(true);
     setError("");
     setMessage("");
     try {
@@ -73,6 +76,8 @@ export function ErpBmsLifecycleScreen() {
       await load();
     } catch (err) {
       setError(errorText(err));
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -160,8 +165,12 @@ export function ErpBmsLifecycleScreen() {
               className="h-9 rounded-md border border-input bg-background px-2 text-sm"
             />
             <div className="flex gap-1">
-              <button className="h-9 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground">
-                {editing ? "Salvar" : "Cadastrar"}
+              <button
+                type="submit"
+                disabled={busy}
+                className="h-9 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"
+              >
+                {busy ? "Salvando…" : editing ? "Salvar" : "Cadastrar"}
               </button>
               {editing && (
                 <button

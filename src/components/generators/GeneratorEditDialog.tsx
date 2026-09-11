@@ -274,7 +274,7 @@ export function GeneratorEditDialog({
               <b className="block text-sm">Cadastro ativo</b>
               <span className="text-xs text-muted-foreground">
                 Ao desativar um equipamento provisionado, a configuração ativa é retirada do Rapid
-                SCADA com histórico preservado.
+                motor de telemetria com histórico preservado.
               </span>
             </span>
             <input

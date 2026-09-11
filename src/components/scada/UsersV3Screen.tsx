@@ -16,6 +16,7 @@ export function UsersV3Screen() {
   const [role, setRole] = useState<UserRole>("visualizacao");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
 
   const activeAdmins = useMemo(
     () => users.filter((item) => item.active && item.role === "administrador").length,
@@ -44,30 +45,36 @@ export function UsersV3Screen() {
 
   const save = async (event: FormEvent) => {
     event.preventDefault();
+    if (busy) return;
+    setBusy(true);
     setError("");
     setMessage("");
-    if (editing) {
-      const patch: { name: string; role: UserRole; password?: string } = {
-        name: name.trim(),
-        role,
-      };
-      if (password) patch.password = password;
-      const result = await updateUser(editing.id, patch);
+    try {
+      if (editing) {
+        const patch: { name: string; role: UserRole; password?: string } = {
+          name: name.trim(),
+          role,
+        };
+        if (password) patch.password = password;
+        const result = await updateUser(editing.id, patch);
+        if (result) {
+          setError(result);
+          return;
+        }
+        setMessage("Usuário atualizado.");
+        reset();
+        return;
+      }
+      const result = await createUser({ name: name.trim(), email: email.trim(), password, role });
       if (result) {
         setError(result);
         return;
       }
-      setMessage("Usuário atualizado.");
+      setMessage("Usuário criado.");
       reset();
-      return;
+    } finally {
+      setBusy(false);
     }
-    const result = await createUser({ name: name.trim(), email: email.trim(), password, role });
-    if (result) {
-      setError(result);
-      return;
-    }
-    setMessage("Usuário criado.");
-    reset();
   };
 
   const toggle = async (item: AppUser) => {
@@ -138,6 +145,7 @@ export function UsersV3Screen() {
               <input
                 required
                 minLength={2}
+                autoComplete="name"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 className="mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
@@ -148,6 +156,7 @@ export function UsersV3Screen() {
               <input
                 required={!editing}
                 type="email"
+                autoComplete="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 disabled={Boolean(editing)}
@@ -161,6 +170,7 @@ export function UsersV3Screen() {
                 required={!editing}
                 minLength={editing && !password ? undefined : 8}
                 type="password"
+                autoComplete="new-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 placeholder={editing ? "Deixe vazio para manter" : "Mínimo de 8 caracteres"}
@@ -190,8 +200,12 @@ export function UsersV3Screen() {
           )}
 
           <div className="flex gap-2">
-            <button className="h-10 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground">
-              {editing ? "Salvar alterações" : "Criar usuário"}
+            <button
+              type="submit"
+              disabled={busy}
+              className="h-10 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"
+            >
+              {busy ? "Salvando…" : editing ? "Salvar alterações" : "Criar usuário"}
             </button>
             {editing && (
               <button

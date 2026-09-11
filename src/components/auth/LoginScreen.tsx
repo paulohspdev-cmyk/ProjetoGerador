@@ -85,11 +85,11 @@ export function LoginScreen() {
           )}
 
           <label className="block text-sm font-semibold">
-            Usuário
+            E-mail
             <span className="mt-2 flex h-11 items-center gap-2 rounded-lg border border-input bg-background px-3 focus-within:border-primary">
               <UserRound className="size-4 shrink-0 text-muted-foreground" />
               <input
-                type="text"
+                type="email"
                 autoComplete="username"
                 value={username}
                 onChange={(e) => {
@@ -98,7 +98,7 @@ export function LoginScreen() {
                   resetSecondFactor();
                 }}
                 className="min-w-0 flex-1 bg-transparent text-sm outline-none"
-                aria-label="Usuário"
+                aria-label="E-mail"
                 required
                 autoFocus
               />

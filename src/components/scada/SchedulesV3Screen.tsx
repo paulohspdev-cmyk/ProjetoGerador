@@ -139,7 +139,7 @@ export function SchedulesV3Screen() {
   };
 
   const remove = async (row: SchedulerJob) => {
-    if (!window.confirm(`Excluir o job administrativo ${row.name}?`)) return;
+    if (!window.confirm(`Excluir o agendamento do sistema ${row.name}?`)) return;
     try {
       await rcApi.scheduler.remove(row.id);
       if (editing?.id === row.id) reset();
@@ -188,7 +188,7 @@ export function SchedulesV3Screen() {
       )}
 
       {admin && (
-        <Panel title={editing ? "Editar job administrativo" : "Novo job administrativo"}>
+        <Panel title={editing ? "Editar agendamento do sistema" : "Novo agendamento do sistema"}>
           <form onSubmit={save} className="grid gap-2 md:grid-cols-4">
             <label className="text-[11px] font-semibold text-muted-foreground">
               Nome
@@ -268,6 +268,7 @@ export function SchedulesV3Screen() {
             )}
             <div className="flex items-end gap-1">
               <button
+                type="submit"
                 disabled={busy}
                 className="h-9 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"
               >
@@ -287,7 +288,7 @@ export function SchedulesV3Screen() {
         </Panel>
       )}
 
-      <Panel title="Scheduler administrativo">
+      <Panel title="Agendador do sistema">
         <ScadaTable
           rows={rows}
           min="940px"

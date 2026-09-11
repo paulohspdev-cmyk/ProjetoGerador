@@ -39,6 +39,7 @@ export function EmailV3Screen() {
   const [destination, setDestination] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   useEffect(() => {
     void getStatus()
       .then((s) => setStatus(s.email))
@@ -46,6 +47,8 @@ export function EmailV3Screen() {
   }, []);
   const test = async (e: FormEvent) => {
     e.preventDefault();
+    if (busy) return;
+    setBusy(true);
     setMessage("");
     try {
       const result = await rcApi.notifications.test("email", destination.trim());
@@ -55,6 +58,8 @@ export function EmailV3Screen() {
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha ao testar e-mail.");
+    } finally {
+      setBusy(false);
     }
   };
   return (
@@ -106,10 +111,11 @@ export function EmailV3Screen() {
               className="h-9 flex-1 rounded-md border border-input bg-background px-2 text-sm"
             />
             <button
-              disabled={!status?.configured}
+              type="submit"
+              disabled={!status?.configured || busy}
               className="h-9 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"
             >
-              Enfileirar teste
+              {busy ? "Enfileirando…" : "Enfileirar teste"}
             </button>
           </form>
           {message && <p className="mt-2 text-[11px] text-online">{message}</p>}
@@ -125,6 +131,7 @@ export function WhatsAppV3Screen() {
   const [destination, setDestination] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   useEffect(() => {
     void getStatus()
       .then((s) => setStatus(s.whatsapp))
@@ -132,6 +139,8 @@ export function WhatsAppV3Screen() {
   }, []);
   const test = async (e: FormEvent) => {
     e.preventDefault();
+    if (busy) return;
+    setBusy(true);
     setMessage("");
     try {
       const result = await rcApi.notifications.test("whatsapp", destination.trim());
@@ -139,6 +148,8 @@ export function WhatsAppV3Screen() {
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha ao testar WhatsApp.");
+    } finally {
+      setBusy(false);
     }
   };
   return (
@@ -175,10 +186,11 @@ export function WhatsAppV3Screen() {
               className="h-9 flex-1 rounded-md border border-input bg-background px-2 text-sm"
             />
             <button
-              disabled={!status?.configured}
+              type="submit"
+              disabled={!status?.configured || busy}
               className="h-9 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"
             >
-              Enfileirar teste
+              {busy ? "Enfileirando…" : "Enfileirar teste"}
             </button>
           </form>
           {message && <p className="mt-2 text-[11px] text-online">{message}</p>}

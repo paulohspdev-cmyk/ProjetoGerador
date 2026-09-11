@@ -11,7 +11,7 @@ function dt(epoch?: number | null) {
   return epoch ? new Date(epoch * 1000).toLocaleString("pt-BR") : "—";
 }
 
-export function MaintenanceV3Screen() {
+export function MaintenanceV3Screen({ embedded = false }: { embedded?: boolean } = {}) {
   const { generators } = useGenerators();
   const { workOrders, addWorkOrder } = useScadaOps();
   const { can, user } = useAuth();
@@ -22,6 +22,7 @@ export function MaintenanceV3Screen() {
   const [days, setDays] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
 
   const load = async () => {
     try {
@@ -58,6 +59,8 @@ export function MaintenanceV3Screen() {
       return;
     }
     const runKnown = (generator.availableMetrics ?? []).includes("run_hours");
+    if (busy) return;
+    setBusy(true);
     try {
       await industrialApi.maintenance.create({
         generatorId,
@@ -70,11 +73,13 @@ export function MaintenanceV3Screen() {
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha ao criar plano.");
+    } finally {
+      setBusy(false);
     }
   };
 
-  return (
-    <ScreenBody>
+  const content = (
+    <>
       <div>
         <h2 className="text-lg font-extrabold">Manutenção</h2>
         <p className="mt-0.5 text-sm text-muted-foreground">
@@ -169,9 +174,10 @@ export function MaintenanceV3Screen() {
             <div className="sm:col-span-2 xl:col-span-4">
               <button
                 type="submit"
-                className="h-10 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground"
+                disabled={busy}
+                className="h-10 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"
               >
-                Criar plano
+                {busy ? "Criando…" : "Criar plano"}
               </button>
             </div>
           </form>
@@ -297,6 +303,8 @@ export function MaintenanceV3Screen() {
           ]}
         />
       </Panel>
-    </ScreenBody>
+    </>
   );
+
+  return embedded ? content : <ScreenBody>{content}</ScreenBody>;
 }

@@ -21,7 +21,7 @@ export function CommunicationScreen() {
         <div className="space-y-3 text-[13px]">
           <p className="rounded-md border border-border p-3">
             Acompanhe aqui o estado de comunicação de cada gerador. Detalhes de integração ficam
-            restritos às telas administrativas.
+            restritos às telas de sistema.
           </p>
           <div className="grid gap-2 sm:grid-cols-2">
             {generators.map((g) => (
@@ -59,6 +59,7 @@ export function RulesScreen() {
   const [actionType, setActionType] = useState("notify");
   const [actionValue, setActionValue] = useState("panel");
   const [busy, setBusy] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -88,6 +89,7 @@ export function RulesScreen() {
 
   const save = async (event: FormEvent) => {
     event.preventDefault();
+    if (saving) return;
     setError("");
     if (!generator) {
       setError("Selecione um gerador.");
@@ -95,6 +97,7 @@ export function RulesScreen() {
     }
     const trigger = `${triggerType}:${generator}`;
     const action = `${actionType}:${actionValue.trim() || (actionType === "notify" ? "panel" : "Inspeção")}`;
+    setSaving(true);
     try {
       if (editing) {
         const current = rules.find((rule) => rule.id === editing);
@@ -107,6 +110,8 @@ export function RulesScreen() {
       await refresh();
     } catch (saveError) {
       setError(errText(saveError));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -206,8 +211,12 @@ export function RulesScreen() {
               />
             </div>
             <div className="flex gap-1">
-              <button className="h-9 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground">
-                {editing ? "Salvar" : "Criar"}
+              <button
+                type="submit"
+                disabled={saving}
+                className="h-9 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground disabled:opacity-50"
+              >
+                {saving ? "Salvando…" : editing ? "Salvar" : "Criar"}
               </button>
               {editing && (
                 <button
@@ -279,20 +288,31 @@ export function RulesScreen() {
 export function ExerciseScreen() {
   const { can } = useAuth();
   const admin = can("manageUsers");
-  const { agenda, addAgenda, refresh } = useScadaOps();
+  const { agenda, refresh } = useScadaOps();
   const [when, setWhen] = useState("");
   const [site, setSite] = useState("");
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const exercises = useMemo(
     () => agenda.filter((item) => (item.title || "").toLowerCase().includes("exercício")),
     [agenda],
   );
 
-  const onCreate = (event: FormEvent) => {
+  const onCreate = async (event: FormEvent) => {
     event.preventDefault();
-    addAgenda({ title: "Exercício de gerador (planejamento)", when, site });
-    setWhen("");
-    setSite("");
+    if (busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      await rcApi.agenda.create({ title: "Exercício de gerador (planejamento)", when, site });
+      setWhen("");
+      setSite("");
+      await refresh();
+    } catch (createError) {
+      setError(errText(createError));
+    } finally {
+      setBusy(false);
+    }
   };
 
   const toggle = async (id: string, enabled: boolean) => {
@@ -347,8 +367,12 @@ export function ExerciseScreen() {
               placeholder="Site"
               className="h-9 rounded-md border border-input bg-background px-2 text-sm"
             />
-            <button className="h-9 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground">
-              Planejar
+            <button
+              type="submit"
+              disabled={busy}
+              className="h-9 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"
+            >
+              {busy ? "Salvando…" : "Planejar"}
             </button>
           </form>
         </Panel>

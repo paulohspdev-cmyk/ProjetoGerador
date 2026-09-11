@@ -242,6 +242,7 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
 
             <div className="flex gap-2">
               <button
+                type="submit"
                 disabled={busy}
                 className="h-10 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"
               >

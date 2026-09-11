@@ -17,7 +17,7 @@ const emptyTopology: TopologyV3 = {
   counts: { assets: 0, controllers: 0, connections: 0, links: 0 },
 };
 
-export function ControllersV3Screen() {
+export function ControllersV3Screen({ embedded = false }: { embedded?: boolean } = {}) {
   const { can } = useAuth();
   const [topology, setTopology] = useState<TopologyV3>(emptyTopology);
   const [catalog, setCatalog] = useState<CatalogController[]>([]);
@@ -25,6 +25,7 @@ export function ControllersV3Screen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [linking, setLinking] = useState(false);
   const [linkFrom, setLinkFrom] = useState("");
   const [linkTo, setLinkTo] = useState("");
   const [relation, setRelation] = useState("feeds");
@@ -86,31 +87,37 @@ export function ControllersV3Screen() {
 
   const onCreateLink = async (e: FormEvent) => {
     e.preventDefault();
+    if (linking) return;
     setError("");
     setMessage("");
     if (!linkFrom || !linkTo || linkFrom === linkTo) {
       setError("Selecione dois assets diferentes para a relação.");
       return;
     }
+    setLinking(true);
     try {
       await domainApi.createLink(linkFrom, linkTo, relation);
       setMessage("Relação de topologia cadastrada.");
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha ao cadastrar relação.");
+    } finally {
+      setLinking(false);
     }
   };
 
-  return (
-    <ScreenBody>
-      <Stats
-        items={[
-          { icon: Layers, label: "Assets", value: topology.counts.assets },
-          { icon: Cpu, label: "Controladoras", value: topology.counts.controllers },
-          { icon: Cable, label: "Conexões", value: topology.counts.connections },
-          { icon: Network, label: "Topologias", value: topology.counts.links },
-        ]}
-      />
+  const content = (
+    <>
+      {!embedded && (
+        <Stats
+          items={[
+            { icon: Layers, label: "Assets", value: topology.counts.assets },
+            { icon: Cpu, label: "Controladoras", value: topology.counts.controllers },
+            { icon: Cable, label: "Conexões", value: topology.counts.connections },
+            { icon: Network, label: "Topologias", value: topology.counts.links },
+          ]}
+        />
+      )}
 
       {error && (
         <p className="rounded-md border border-offline/40 bg-offline/10 p-3 text-sm text-offline">
@@ -131,59 +138,65 @@ export function ControllersV3Screen() {
         onMessage={setMessage}
       />
 
-      <Panel title="Controladoras / assets cadastrados">
-        {loading ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">Carregando topologia…</p>
-        ) : !rows.length ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            Nenhuma controladora cadastrada.
-          </p>
-        ) : (
-          <ScadaTable
-            rows={rows}
-            columns={[
-              { label: "Asset", render: (r) => <b>{r.asset}</b> },
-              { label: "Tipo", render: (r) => r.kind },
-              { label: "Site", render: (r) => r.site || "—" },
-              {
-                label: "Controladora",
-                render: (r) => (
-                  <span>
-                    <b>
-                      {r.manufacturer} {r.model}
-                    </b>
-                    {r.family && (
-                      <span className="block text-[10px] text-muted-foreground">{r.family}</span>
-                    )}
-                  </span>
-                ),
-              },
-              { label: "Firmware", render: (r) => r.firmware || "—" },
-              {
-                label: "Pack",
-                render: (r) => (
-                  <Pill
-                    tone={
-                      r.lifecycle === "production" ? "ok" : r.lifecycle === "lab" ? "warn" : "muted"
-                    }
-                  >
-                    {r.lifecycle}
-                  </Pill>
-                ),
-              },
-              { label: "Conexões", render: (r) => <span className="num">{r.connections}</span> },
-              {
-                label: "Estado",
-                render: (r) => (
-                  <Tone tone={r.enabled ? "ok" : "muted"}>
-                    {r.enabled ? (r.legacy ? "LEGADO/V3" : "ATIVO") : "INATIVO"}
-                  </Tone>
-                ),
-              },
-            ]}
-          />
-        )}
-      </Panel>
+      {!embedded && (
+        <Panel title="Controladoras / assets cadastrados">
+          {loading ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">Carregando topologia…</p>
+          ) : !rows.length ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Nenhuma controladora cadastrada.
+            </p>
+          ) : (
+            <ScadaTable
+              rows={rows}
+              columns={[
+                { label: "Asset", render: (r) => <b>{r.asset}</b> },
+                { label: "Tipo", render: (r) => r.kind },
+                { label: "Site", render: (r) => r.site || "—" },
+                {
+                  label: "Controladora",
+                  render: (r) => (
+                    <span>
+                      <b>
+                        {r.manufacturer} {r.model}
+                      </b>
+                      {r.family && (
+                        <span className="block text-[10px] text-muted-foreground">{r.family}</span>
+                      )}
+                    </span>
+                  ),
+                },
+                { label: "Firmware", render: (r) => r.firmware || "—" },
+                {
+                  label: "Pack",
+                  render: (r) => (
+                    <Pill
+                      tone={
+                        r.lifecycle === "production"
+                          ? "ok"
+                          : r.lifecycle === "lab"
+                            ? "warn"
+                            : "muted"
+                      }
+                    >
+                      {r.lifecycle}
+                    </Pill>
+                  ),
+                },
+                { label: "Conexões", render: (r) => <span className="num">{r.connections}</span> },
+                {
+                  label: "Estado",
+                  render: (r) => (
+                    <Tone tone={r.enabled ? "ok" : "muted"}>
+                      {r.enabled ? (r.legacy ? "LEGADO/V3" : "ATIVO") : "INATIVO"}
+                    </Tone>
+                  ),
+                },
+              ]}
+            />
+          )}
+        </Panel>
+      )}
 
       <Panel title="Topologia elétrica / funcional">
         <p className="mb-3 text-[11px] text-muted-foreground">
@@ -238,30 +251,35 @@ export function ControllersV3Screen() {
             <div className="flex items-end">
               <button
                 type="submit"
-                className="h-9 w-full rounded-md bg-primary text-sm font-bold text-primary-foreground"
+                disabled={linking}
+                className="h-9 w-full rounded-md bg-primary text-sm font-bold text-primary-foreground disabled:opacity-50"
               >
-                Adicionar relação
+                {linking ? "Adicionando…" : "Adicionar relação"}
               </button>
             </div>
           </form>
         )}
-        <ScadaTable
-          rows={topology.links}
-          columns={[
-            {
-              label: "Origem",
-              render: (r) => <b>{assetById.get(r.from_asset_id)?.tag || r.from_asset_id}</b>,
-            },
-            { label: "Relação", render: (r) => <span className="num">{r.relation}</span> },
-            {
-              label: "Destino",
-              render: (r) => <b>{assetById.get(r.to_asset_id)?.tag || r.to_asset_id}</b>,
-            },
-            { label: "Site origem", render: (r) => assetById.get(r.from_asset_id)?.site || "—" },
-            { label: "Site destino", render: (r) => assetById.get(r.to_asset_id)?.site || "—" },
-          ]}
-        />
+        {!embedded && (
+          <ScadaTable
+            rows={topology.links}
+            columns={[
+              {
+                label: "Origem",
+                render: (r) => <b>{assetById.get(r.from_asset_id)?.tag || r.from_asset_id}</b>,
+              },
+              { label: "Relação", render: (r) => <span className="num">{r.relation}</span> },
+              {
+                label: "Destino",
+                render: (r) => <b>{assetById.get(r.to_asset_id)?.tag || r.to_asset_id}</b>,
+              },
+              { label: "Site origem", render: (r) => assetById.get(r.from_asset_id)?.site || "—" },
+              { label: "Site destino", render: (r) => assetById.get(r.to_asset_id)?.site || "—" },
+            ]}
+          />
+        )}
       </Panel>
-    </ScreenBody>
+    </>
   );
+
+  return embedded ? content : <ScreenBody>{content}</ScreenBody>;
 }

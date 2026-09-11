@@ -122,6 +122,7 @@ export function WebhooksScreen() {
             />
             <div className="flex gap-1">
               <button
+                type="submit"
                 disabled={busy}
                 className="h-9 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"
               >

@@ -31,6 +31,7 @@ export function EscalationV3Screen() {
   const [repeatMinutes, setRepeatMinutes] = useState("0");
   const [maxRepeats, setMaxRepeats] = useState("1");
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
   const load = async () => {
     try {
@@ -46,6 +47,8 @@ export function EscalationV3Screen() {
 
   const onCreate = async (e: FormEvent) => {
     e.preventDefault();
+    if (busy) return;
+    setBusy(true);
     try {
       await industrialApi.escalations.create({
         name,
@@ -59,6 +62,8 @@ export function EscalationV3Screen() {
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha ao criar política.");
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -166,9 +171,10 @@ export function EscalationV3Screen() {
             <div className="flex items-end">
               <button
                 type="submit"
-                className="h-9 w-full rounded-md bg-primary text-sm font-bold text-primary-foreground"
+                disabled={busy}
+                className="h-9 w-full rounded-md bg-primary text-sm font-bold text-primary-foreground disabled:opacity-50"
               >
-                Criar
+                {busy ? "Criando…" : "Criar"}
               </button>
             </div>
           </form>

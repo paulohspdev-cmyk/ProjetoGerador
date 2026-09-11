@@ -117,6 +117,80 @@ if (generatorTable.includes("hidden h-full overflow-auto")) {
   failures.push("lista de geradores voltou a criar scroll vertical aninhado");
 }
 
+// Auditoria de shell/navegação: uma única rolagem vertical por página composta,
+// retry global respeitando permissões e nomenclatura profissional da interface.
+if (!nav.includes('title: "Sistema"') || nav.includes('title: "Administração"')) {
+  failures.push('grupo administrativo visível deve permanecer nomeado como "Sistema"');
+}
+if (!rootShell.includes('if (can("manageUsers")) void refreshUsers()')) {
+  failures.push("retry global voltou a consultar usuários sem verificar permissão");
+}
+const controllersLifecycle = read("src/components/scada/ControllersLifecycleScreen.tsx");
+const controllersV3 = read("src/components/scada/ControllersV3Screen.tsx");
+if (
+  !controllersLifecycle.includes("<ControllersV3Screen embedded />") ||
+  (controllersLifecycle.match(/<ScreenBody/g) ?? []).length !== 1 ||
+  !controllersV3.includes("embedded = false") ||
+  !controllersV3.includes("return embedded ? content : <ScreenBody>{content}</ScreenBody>")
+) {
+  failures.push("Controladoras voltou a criar duas áreas verticais de rolagem");
+}
+const maintenanceHub = read("src/components/scada/MaintenanceHubScreen.tsx");
+const maintenanceV3 = read("src/components/scada/IndustrialMaintenanceScreen.tsx");
+if (
+  !maintenanceHub.includes("<MaintenanceV3Screen embedded />") ||
+  (maintenanceHub.match(/<ScreenBody/g) ?? []).length !== 1 ||
+  !maintenanceV3.includes("embedded = false") ||
+  !maintenanceV3.includes("return embedded ? content : <ScreenBody>{content}</ScreenBody>")
+) {
+  failures.push("Manutenção voltou a criar duas áreas verticais de rolagem");
+}
+
+const loginScreen = read("src/components/auth/LoginScreen.tsx");
+for (const marker of ["E-mail", 'type="email"', 'autoComplete="username"']) {
+  if (!loginScreen.includes(marker)) failures.push(`login perdeu semântica de e-mail: ${marker}`);
+}
+
+// Guardas contra envio duplicado e contra fechar formulários de edição após erro.
+for (const [file, markers] of [
+  [
+    "src/components/scada/ControllersLifecycleScreen.tsx",
+    [
+      "const [busy, setBusy]",
+      "if (busy) return false",
+      "if (saved) setEditingController(null)",
+      "if (saved) setEditingConnection(null)",
+      "disabled={busy}",
+    ],
+  ],
+  [
+    "src/components/scada/IndustrialMaintenanceScreen.tsx",
+    ["const [busy, setBusy]", "disabled={busy}"],
+  ],
+  ["src/components/scada/ErpBmsLifecycleScreen.tsx", ["const [busy, setBusy]", "disabled={busy}"]],
+  [
+    "src/components/scada/IndustrialEscalationScreen.tsx",
+    ["const [busy, setBusy]", "disabled={busy}"],
+  ],
+  [
+    "src/components/scada/ControllersV3Screen.tsx",
+    ["const [linking, setLinking]", "disabled={linking}"],
+  ],
+  [
+    "src/components/scada/UsersV3Screen.tsx",
+    ["const [busy, setBusy]", "disabled={busy}", 'autoComplete="new-password"'],
+  ],
+  [
+    "src/components/scada/IntegrationsV3Screens.tsx",
+    ["if (busy) return", "disabled={!status?.configured || busy}"],
+  ],
+]) {
+  const source = read(file);
+  for (const marker of markers) {
+    if (!source.includes(marker)) failures.push(`${file} perdeu proteção de mutação: ${marker}`);
+  }
+}
+
 const generatorBoard = read("src/components/generators/GeneratorsBoard.tsx");
 for (const marker of [
   "error",

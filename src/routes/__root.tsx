@@ -160,7 +160,7 @@ function AppShell() {
 }
 
 function AuthenticatedShell() {
-  const { usersError, refreshUsers } = useAuth();
+  const { usersError, refreshUsers, can } = useAuth();
   const { error: generatorsError, refresh: refreshGenerators } = useGenerators();
   const { error: opsError, refresh: refreshOps } = useScadaOps();
   const hasError = Boolean(generatorsError || opsError || usersError);
@@ -182,7 +182,7 @@ function AuthenticatedShell() {
               onClick={() => {
                 void refreshGenerators();
                 void refreshOps();
-                void refreshUsers().catch(() => undefined);
+                if (can("manageUsers")) void refreshUsers().catch(() => undefined);
               }}
               className="h-7 shrink-0 rounded-md border border-offline/40 px-2 font-semibold"
             >
