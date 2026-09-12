@@ -119,8 +119,10 @@ if (generatorTable.includes("hidden h-full overflow-auto")) {
 
 // Auditoria de shell/navegação: uma única rolagem vertical por página composta,
 // retry global respeitando permissões e nomenclatura profissional da interface.
-if (!nav.includes('title: "Sistema"') || nav.includes('title: "Administração"')) {
-  failures.push('grupo administrativo visível deve permanecer nomeado como "Sistema"');
+if (!nav.includes('title: "Sistema"') || !nav.includes('section: "Sistema"')) {
+  failures.push(
+    "navegação técnica deve permanecer consolidada em Sistema sem expor nomenclatura administrativa",
+  );
 }
 if (!rootShell.includes('if (can("manageUsers")) void refreshUsers()')) {
   failures.push("retry global voltou a consultar usuários sem verificar permissão");
@@ -149,6 +151,24 @@ if (
 const loginScreen = read("src/components/auth/LoginScreen.tsx");
 for (const marker of ["E-mail", 'type="email"', 'autoComplete="username"']) {
   if (!loginScreen.includes(marker)) failures.push(`login perdeu semântica de e-mail: ${marker}`);
+}
+const themeProvider = read("src/components/layout/ThemeProvider.tsx");
+const professionalUi = read("src/styles/professional-ui.css");
+for (const marker of ['root.dataset["theme"] = theme', "localStorage.setItem(STORAGE_KEY"]) {
+  if (!themeProvider.includes(marker)) failures.push(`tema perdeu estado persistente: ${marker}`);
+}
+for (const marker of [
+  ".rc-login-auth",
+  ".dark .rc-login-auth",
+  ".rc-login-form-card",
+  ".dark .rc-login-form-card",
+]) {
+  if (!professionalUi.includes(marker))
+    failures.push(`login perdeu variante light/dark real: ${marker}`);
+}
+for (const marker of ["rc-theme-toggle", 'theme === "dark" ? "translate-x-5" : "translate-x-0"']) {
+  if (!loginScreen.includes(marker))
+    failures.push(`toggle visual do login perdeu estado: ${marker}`);
 }
 
 // Guardas contra envio duplicado e contra fechar formulários de edição após erro.
@@ -241,7 +261,9 @@ if (!registerGenerator.includes("if (selectedController?.provisionable)")) {
   failures.push("cadastro LAB deixou de separar criação e provisionamento industrial");
 }
 
-const connectivity = read("src/components/scada/equip-connectivity.tsx");
+const connectivity =
+  read("src/components/scada/equip-connectivity.tsx") +
+  read("src/components/scada/connectivity-secondary-panels.tsx");
 for (const marker of [
   "statusFresh",
   "sessions",

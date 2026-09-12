@@ -427,7 +427,7 @@ def channel_catalog(bindings: list[dict]) -> list[dict]:
                     "cnl": cfg.get("cnl"),
                     "scale": cfg.get("scale", 1.0),
                     "access": "R",
-                    "source": "Rapid SCADA",
+                    "source": "Motor de telemetria",
                 }
             )
     return rows

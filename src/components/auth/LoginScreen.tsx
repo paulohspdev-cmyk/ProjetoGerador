@@ -39,14 +39,18 @@ export function LoginScreen() {
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
     if (busy) return;
-    if (needsOtp && !/^\d{6}$/.test(otp.trim())) {
+    if ((needsOtp || otp.trim()) && !/^\d{6}$/.test(otp.trim())) {
       setError("Informe o código de 6 dígitos.");
       return;
     }
 
     setBusy(true);
     setError(null);
-    const err = await login(username, password, needsOtp ? otp : undefined);
+    const err = await login(
+      username,
+      password,
+      /^\d{6}$/.test(otp.trim()) ? otp.trim() : undefined,
+    );
     setBusy(false);
     if (err) {
       if (!needsOtp && /2fa|totp|código.*obrigatório/i.test(err)) {
@@ -133,18 +137,20 @@ export function LoginScreen() {
         </div>
       </section>
 
-      <section className="relative flex min-h-dvh items-center justify-center bg-[linear-gradient(180deg,#061724_0%,#04111b_100%)] px-5 py-10 sm:px-8 lg:px-10">
+      <section className="rc-login-auth relative flex min-h-dvh items-center justify-center px-5 py-10 sm:px-8 lg:px-10">
         <button
           type="button"
           onClick={toggleTheme}
           aria-label={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
-          className="absolute right-5 top-5 flex h-10 items-center gap-2 rounded-full border border-white/10 bg-slate-950/35 px-3 text-slate-300 backdrop-blur transition-colors hover:text-white"
+          className="rc-theme-toggle absolute right-5 top-5 flex h-10 items-center gap-2 rounded-full px-3 backdrop-blur transition-colors"
         >
-          <Sun className="size-4" />
-          <span className="h-5 w-9 rounded-full bg-primary/90 p-0.5">
-            <span className="block size-4 translate-x-4 rounded-full bg-white transition-transform" />
+          <Sun className={theme === "light" ? "size-4 text-primary" : "size-4"} />
+          <span className="relative h-5 w-10 rounded-full bg-primary/90 p-0.5">
+            <span
+              className={`block size-4 rounded-full bg-white shadow transition-transform ${theme === "dark" ? "translate-x-5" : "translate-x-0"}`}
+            />
           </span>
-          <Moon className="size-4" />
+          <Moon className={theme === "dark" ? "size-4 text-primary" : "size-4"} />
         </button>
 
         <div className="w-full max-w-[560px]">
@@ -234,32 +240,34 @@ export function LoginScreen() {
                 </button>
               </label>
 
-              {needsOtp && (
-                <label className="rc-login-input flex min-h-15 items-center gap-3 rounded-xl px-4">
-                  <ShieldCheck className="size-5 shrink-0 text-slate-400" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
-                      Código do autenticador
-                    </span>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]{6}"
-                      autoComplete="one-time-code"
-                      value={otp}
-                      onChange={(event) => {
-                        setOtp(event.target.value.replace(/\D/g, "").slice(0, 6));
-                        setError(null);
-                      }}
-                      placeholder="000000"
-                      className="mt-0.5 w-full bg-transparent text-base tracking-[0.35em] text-white outline-none placeholder:text-slate-600"
-                      aria-label="Código 2FA de 6 dígitos"
-                      autoFocus
-                      required
-                    />
+              <label className="rc-login-input flex min-h-15 items-center gap-3 rounded-xl px-4">
+                <ShieldCheck className="size-5 shrink-0 text-slate-400" />
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center justify-between gap-2 text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+                    <span>Código do autenticador</span>
+                    {!needsOtp && (
+                      <span className="rounded-md border border-current/20 px-1.5 py-0.5 text-[9px] normal-case tracking-normal opacity-70">
+                        Opcional
+                      </span>
+                    )}
                   </span>
-                </label>
-              )}
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]{6}"
+                    autoComplete="one-time-code"
+                    value={otp}
+                    onChange={(event) => {
+                      setOtp(event.target.value.replace(/\D/g, "").slice(0, 6));
+                      setError(null);
+                    }}
+                    placeholder="— — — — — —"
+                    className="mt-0.5 w-full bg-transparent text-base tracking-[0.35em] text-white outline-none placeholder:text-slate-600"
+                    aria-label="Código 2FA de 6 dígitos"
+                    required={needsOtp}
+                  />
+                </span>
+              </label>
             </div>
 
             {error && (

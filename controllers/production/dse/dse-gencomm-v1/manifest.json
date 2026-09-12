@@ -49,16 +49,8 @@
     "maximum": null,
     "notes": "Pack de produção somente leitura por contrato GenComm. A matriz de firmware de campo será preenchida conforme unidades reais forem conectadas."
   },
-  "protocols": [
-    "dse_gencomm_v1",
-    "modbus"
-  ],
-  "transports": [
-    "reverse_tcp",
-    "modbus_tcp_direct",
-    "rtu_over_tcp",
-    "modbus_rtu_serial"
-  ],
+  "protocols": ["dse_gencomm_v1", "modbus"],
+  "transports": ["reverse_tcp", "modbus_tcp_direct", "rtu_over_tcp", "modbus_rtu_serial"],
   "reverseTcpFraming": "modbus_rtu",
   "defaults": {
     "batteryNominalVoltage": null,
@@ -81,7 +73,7 @@
   "validatedTelemetry": [],
   "documentedTelemetry": [
     "controller_mode_raw",
-    "alarm_class_raw",
+    "controller_status_flags_raw",
     "oil_pressure",
     "coolant_temperature",
     "oil_temperature",
@@ -105,7 +97,21 @@
     "maintenance_hours",
     "run_hours",
     "genset_kwh",
-    "number_starts"
+    "number_starts",
+    "mains_frequency",
+    "mains_voltage_l1",
+    "mains_voltage_l2",
+    "mains_voltage_l3",
+    "mains_voltage_l1_l2",
+    "mains_voltage_l2_l3",
+    "mains_voltage_l3_l1",
+    "bus_frequency",
+    "bus_voltage_l1",
+    "bus_voltage_l2",
+    "bus_voltage_l3",
+    "bus_voltage_l1_l2",
+    "bus_voltage_l2_l3",
+    "bus_voltage_l3_l1"
   ],
   "metricUnits": {
     "oil_pressure": "kPa",
@@ -129,27 +135,33 @@
     "engine_load": "%",
     "maintenance_hours": "h",
     "run_hours": "h",
-    "genset_kwh": "kWh"
+    "genset_kwh": "kWh",
+    "mains_frequency": "Hz",
+    "bus_frequency": "Hz",
+    "mains_voltage_l1": "V",
+    "mains_voltage_l2": "V",
+    "mains_voltage_l3": "V",
+    "mains_voltage_l1_l2": "V",
+    "mains_voltage_l2_l3": "V",
+    "mains_voltage_l3_l1": "V",
+    "bus_voltage_l1": "V",
+    "bus_voltage_l2": "V",
+    "bus_voltage_l3": "V",
+    "bus_voltage_l1_l2": "V",
+    "bus_voltage_l2_l3": "V",
+    "bus_voltage_l3_l1": "V"
   },
   "mapping": {
     "kind": "modbus_register_export",
     "readOnly": true,
     "sourceFile": "modbus/source-registers.txt",
-    "sourceSha256": "35fc5d2fcb382e900b5a4027f12e9ea4011fdc38cc4c86a97906caf9a305b302",
+    "sourceSha256": "0b35675aaf9f76bddf61e650f1153a42b3e7afda00c865540beffedf6a30b767",
     "addressFormula": "page * 256 + offset",
-    "readFunctions": [
-      3
-    ],
+    "readFunctions": [3],
     "wordOrder": "most_significant_register_first",
     "registers": {
       "controller_mode_raw": {
         "address": 772,
-        "count": 1,
-        "type": "uint16",
-        "scale": 1
-      },
-      "alarm_class_raw": {
-        "address": 774,
         "count": 1,
         "type": "uint16",
         "scale": 1
@@ -319,6 +331,110 @@
         "count": 2,
         "type": "uint32",
         "scale": 1
+      },
+      "controller_status_flags_raw": {
+        "address": 774,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1
+      },
+      "mains_frequency": {
+        "address": 1059,
+        "count": 1,
+        "type": "uint16",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      "mains_voltage_l1": {
+        "address": 1060,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "mains_voltage_l2": {
+        "address": 1062,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "mains_voltage_l3": {
+        "address": 1064,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "mains_voltage_l1_l2": {
+        "address": 1066,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "mains_voltage_l2_l3": {
+        "address": 1068,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "mains_voltage_l3_l1": {
+        "address": 1070,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "bus_frequency": {
+        "address": 1091,
+        "count": 1,
+        "type": "uint16",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      "bus_voltage_l1": {
+        "address": 1092,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "bus_voltage_l2": {
+        "address": 1094,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "bus_voltage_l3": {
+        "address": 1096,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "bus_voltage_l1_l2": {
+        "address": 1098,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "bus_voltage_l2_l3": {
+        "address": 1100,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "bus_voltage_l3_l1": {
+        "address": 1102,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
       }
     }
   },
@@ -332,8 +448,8 @@
         "scale": 1
       },
       {
-        "key": "alarm_class_raw",
-        "tagCode": "alarm_class_raw",
+        "key": "controller_status_flags_raw",
+        "tagCode": "controller_status_flags_raw",
         "scale": 1
       },
       {
@@ -477,6 +593,90 @@
         "key": "number_starts",
         "tagCode": "number_starts",
         "scale": 1
+      },
+      {
+        "key": "mains_frequency",
+        "tagCode": "mains_frequency",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      {
+        "key": "mains_voltage_l1",
+        "tagCode": "mains_voltage_l1",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "mains_voltage_l2",
+        "tagCode": "mains_voltage_l2",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "mains_voltage_l3",
+        "tagCode": "mains_voltage_l3",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "mains_voltage_l1_l2",
+        "tagCode": "mains_voltage_l1_l2",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "mains_voltage_l2_l3",
+        "tagCode": "mains_voltage_l2_l3",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "mains_voltage_l3_l1",
+        "tagCode": "mains_voltage_l3_l1",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "bus_frequency",
+        "tagCode": "bus_frequency",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      {
+        "key": "bus_voltage_l1",
+        "tagCode": "bus_voltage_l1",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "bus_voltage_l2",
+        "tagCode": "bus_voltage_l2",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "bus_voltage_l3",
+        "tagCode": "bus_voltage_l3",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "bus_voltage_l1_l2",
+        "tagCode": "bus_voltage_l1_l2",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "bus_voltage_l2_l3",
+        "tagCode": "bus_voltage_l2_l3",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "bus_voltage_l3_l1",
+        "tagCode": "bus_voltage_l3_l1",
+        "scale": 0.1,
+        "unit": "V"
       }
     ]
   },

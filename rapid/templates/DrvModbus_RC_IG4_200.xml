@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <DeviceTemplate>
   <Options>
     <ZeroAddr>true</ZeroAddr>
@@ -40,6 +40,9 @@
       <Elem type="short" readOnly="true" isBitMask="false" tagCode="battery_voltage_raw" name="Battery Volts" />
       <Elem type="short" readOnly="true" isBitMask="false" tagCode="alternator_voltage_raw" name="D+" />
     </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1055" name="Combustivel instantaneo">
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="fuel_level" name="Diesel" />
+    </ElemGroup>
     <ElemGroup active="true" dataBlock="HoldingRegisters" address="1280" name="Nominais">
       <Elem type="short" readOnly="true" isBitMask="false" tagCode="nominal_power_kw" name="Nominal Power" />
     </ElemGroup>
@@ -64,4 +67,4 @@
     </ElemGroup>
   </ElemGroups>
   <Cmds />
-</DeviceTemplate>
+</DeviceTemplate>"n"
