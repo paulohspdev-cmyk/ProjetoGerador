@@ -514,7 +514,9 @@ def get_telemetry_snapshot(generator_id):
     return {"values": values, "defined": defined, "updated_at": int(row["updated_at"])}
 
 
-def save_telemetry_snapshot(generator_id, values, defined=None, updated_at=None):
+def save_telemetry_snapshot(
+    generator_id, values, defined=None, updated_at=None, *, merge_existing=False
+):
     if not values:
         return
     timestamp = int(updated_at or time.time())
@@ -531,7 +533,7 @@ def save_telemetry_snapshot(generator_id, values, defined=None, updated_at=None)
             "SELECT values_json, defined_json FROM generator_telemetry_snapshots WHERE generator_id=?",
             (generator_id,),
         ).fetchone()
-        if current:
+        if current and merge_existing:
             try:
                 previous_values = json.loads(current["values_json"])
                 previous_defined = json.loads(current["defined_json"])

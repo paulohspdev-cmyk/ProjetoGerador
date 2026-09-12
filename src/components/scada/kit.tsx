@@ -37,7 +37,8 @@ export function Stats({ items }: { items: StatItem[] }) {
         items.length <= 2 && "grid-cols-1 min-[420px]:grid-cols-2",
         items.length === 3 && "grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-3",
         items.length === 4 && "grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-4",
-        items.length >= 5 && "grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-6",
+        items.length === 5 && "grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-5",
+        items.length >= 6 && "grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-6",
       )}
     >
       {items.map((item) => (

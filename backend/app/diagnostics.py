@@ -100,7 +100,7 @@ def _connection_diagnosis(session: dict, listeners: dict[int, dict], status_fres
         return {
             "code": "no_rapid_device",
             "origin": "configuration",
-            "label": "TCP conectado, mas nenhum gerador desta porta está provisionado no Rapid SCADA",
+            "label": "TCP conectado, mas nenhum gerador desta porta está provisionado no motor de telemetria",
         }
 
     connected_at = int(session.get("connectedAt") or 0)
@@ -109,7 +109,7 @@ def _connection_diagnosis(session: dict, listeners: dict[int, dict], status_fres
         return {
             "code": "rapid_polling_absent",
             "origin": "system",
-            "label": "Modem conectado e provisionado, mas sem tráfego de polling do Rapid SCADA",
+            "label": "Modem conectado e provisionado, mas sem tráfego de polling do motor de telemetria",
         }
 
     unit_health = session.get("unitHealth") if isinstance(session.get("unitHealth"), dict) else {}

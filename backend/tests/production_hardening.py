@@ -33,6 +33,7 @@ os.environ["RC_RETENTION_EVENT_DAYS"] = "1"
 os.environ["RC_RETENTION_PROCESS_DAYS"] = "1"
 os.environ["RC_RETENTION_NOTIFICATION_DAYS"] = "1"
 
+from app import rapid as rapid_module  # noqa: E402
 from app import (  # noqa: E402
     bridge,
     db,
@@ -56,8 +57,19 @@ from app.bridge_runtime import (  # noqa: E402
 )
 from app.data_maintenance import apply_data_retention  # noqa: E402
 from app.migrations import LATEST_SCHEMA_VERSION, run_migrations  # noqa: E402
+from app.rapid import _is_undefined_raw  # noqa: E402
 from app.secret_box import PREFIX, protect_secret, reveal_secret  # noqa: E402
 
+
+# DSE GenComm: sentinelas de instrumentação não podem virar valores físicos.
+dse = {"controller_type": "DSE"}
+assert _is_undefined_raw(dse, "rpm", 0xFFFB)
+assert _is_undefined_raw(dse, "coolant_temperature", 0x7FFB)
+assert _is_undefined_raw(dse, "voltage_l1", 0xFFFFFFFB)
+assert _is_undefined_raw(dse, "power_kw", 0x7FFFFFFB)
+assert not _is_undefined_raw(dse, "fuel_level", 100)
+assert not _is_undefined_raw(dse, "battery_voltage", 124)
+assert not _is_undefined_raw(dse, "controller_mode_raw", 0xFFFF)
 
 def init_all() -> None:
     db.init_db()
@@ -237,3 +249,10 @@ finally:
 
 print("RC Geradores production hardening smoke: OK")
 tmp.cleanup()
+
+# DSE GenComm and ComAp use different controller-mode enumerations.
+assert rapid_module._mode({"controller_type": "DSE"}, {"controller_mode_raw": 1}) == "AUTO"
+assert rapid_module._mode({"controller_type": "DSE"}, {"controller_mode_raw": 2}) == "MANUAL"
+assert rapid_module._mode({"controller_type": "DSE"}, {"controller_mode_raw": 3}) == "TESTE"
+assert rapid_module._mode({"controller_type": "COMAP"}, {"controller_mode_raw": 1}) == "MANUAL"
+assert rapid_module._mode({"controller_type": "COMAP"}, {"controller_mode_raw": 2}) == "AUTO"

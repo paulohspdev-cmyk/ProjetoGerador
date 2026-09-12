@@ -23,6 +23,14 @@ _cache = {"at": 0.0, "channels": {}, "error": "", "requested": set()}
 _cache_lock = threading.Lock()
 
 _COMAP_UNDEFINED = {-32768.0, 32768.0, -2147483648.0, 2147483648.0}
+_DSE_16_UNDEFINED = {float(value) for value in range(0xFFF8, 0x10000)} | {
+    float(value) for value in range(0x7FF8, 0x8000)
+}
+_DSE_32_UNDEFINED = {float(value) for value in range(0xFFFFFFF8, 0x100000000)} | {
+    float(value) for value in range(0x7FFFFFF8, 0x80000000)
+}
+_DSE_STATUS_KEYS = {"controller_mode_raw", "controller_status_flags_raw"}
+
 _COMAP_SENTINEL_KEYS = {
     "fuel_rate",
     "coolant_temperature",
@@ -110,27 +118,34 @@ def binding_for(generator, bindings):
 
 def _reader_ready():
     if not RAPID_READER_DLL.exists():
-        return f"Leitor Rapid SCADA não instalado: {RAPID_READER_DLL}"
+        return f"Leitor do motor de telemetria não instalado: {RAPID_READER_DLL}"
     if not RAPID_COMM_CONFIG.exists():
-        return f"Configuração Rapid SCADA não encontrada: {RAPID_COMM_CONFIG}"
+        return f"Configuração do motor de telemetria não encontrada: {RAPID_COMM_CONFIG}"
     return ""
 
 
 def _is_undefined_raw(generator, key, raw_value):
     """Filtra sentinelas Modbus sem transformar N/D em grandezas físicas.
 
-    Os exports ComAp usam -32768/32768 (e equivalentes 32-bit) para
-    valores analógicos indisponíveis. A filtragem é limitada a métricas
-    analógicas conhecidas para não confundir contadores unsigned legítimos.
+    ComAp usa sentinelas próprias. DSE GenComm reserva os oito valores no
+    topo das faixas signed/unsigned de 16 e 32 bits para estados especiais
+    de instrumentação (unimplemented, range, transducer fault, bad data,
+    entradas digitais e reserved). Campos de status da página 3 não usam
+    esse contrato e ficam fora do filtro.
     """
-    if str(generator.get("controller_type") or "").strip().upper() != "COMAP":
-        return False
-    if key not in _COMAP_SENTINEL_KEYS:
-        return False
+    controller_type = str(generator.get("controller_type") or "").strip().upper()
     try:
-        return float(raw_value) in _COMAP_UNDEFINED
+        value = float(raw_value)
     except (TypeError, ValueError, OverflowError):
         return False
+
+    if controller_type == "COMAP":
+        return key in _COMAP_SENTINEL_KEYS and value in _COMAP_UNDEFINED
+    if controller_type == "DSE":
+        return key not in _DSE_STATUS_KEYS and (
+            value in _DSE_16_UNDEFINED or value in _DSE_32_UNDEFINED
+        )
+    return False
 
 
 def _cache_hit(nums, now):
@@ -185,13 +200,13 @@ def read_channels(channel_nums):
                 check=False,
             )
         except Exception as exc:
-            error = f"Falha ao consultar Rapid SCADA: {exc}"
+            error = f"Falha ao consultar motor de telemetria: {exc}"
             _cache_result(nums, {}, error)
             return {}, error
 
         if proc.returncode != 0:
             detail = (proc.stderr or proc.stdout or "erro desconhecido").strip()
-            error = f"Rapid SCADA: {detail[:300]}"
+            error = f"Motor de telemetria: {detail[:300]}"
             _cache_result(nums, {}, error)
             return {}, error
 
@@ -206,7 +221,7 @@ def read_channels(channel_nums):
                 for item in payload.get("channels", [])
             }
         except Exception as exc:
-            error = f"Resposta inválida do Rapid SCADA: {exc}"
+            error = f"Resposta inválida do motor de telemetria: {exc}"
             _cache_result(nums, {}, error)
             return {}, error
 
@@ -280,7 +295,7 @@ def trend_for_generator(generator, metric, hours=24, archive_bit=1):
 
     binding = binding_for(generator, load_bindings())
     if not binding:
-        raise ValueError("Gerador sem binding Rapid SCADA")
+        raise ValueError("Gerador sem vínculo no motor de telemetria")
     channel_cfg = (binding.get("channels") or {}).get(metric)
     if not channel_cfg or "cnl" not in channel_cfg:
         available = ", ".join(sorted((binding.get("channels") or {}).keys()))
@@ -307,18 +322,18 @@ def trend_for_generator(generator, metric, hours=24, archive_bit=1):
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=15, check=False)
     except subprocess.TimeoutExpired as exc:
-        raise TimeoutError("Timeout ao consultar histórico do Rapid SCADA") from exc
+        raise TimeoutError("Timeout ao consultar histórico do motor de telemetria") from exc
     except Exception as exc:
-        raise ConnectionError(f"Falha ao consultar histórico Rapid SCADA: {exc}") from exc
+        raise ConnectionError(f"Falha ao consultar histórico do motor de telemetria: {exc}") from exc
 
     if proc.returncode != 0:
         detail = (proc.stderr or proc.stdout or "erro desconhecido").strip()
-        raise ConnectionError(f"Rapid SCADA: {detail[:500]}")
+        raise ConnectionError(f"Motor de telemetria: {detail[:500]}")
 
     try:
         payload = json.loads(proc.stdout)
     except Exception as exc:
-        raise ConnectionError(f"Resposta inválida do histórico Rapid SCADA: {exc}") from exc
+        raise ConnectionError(f"Resposta inválida do histórico do motor de telemetria: {exc}") from exc
 
     points = []
     for item in payload.get("points", []):
@@ -377,11 +392,25 @@ def available_metrics(generator):
     ]
 
 
-def _mode(values):
+def _mode(generator, values):
     if "controller_mode_raw" not in values:
         return "OFF"
     raw = values.get("controller_mode_raw")
-    return {0: "OFF", 1: "MANUAL", 2: "AUTO", 3: "TESTE"}.get(raw, "OFF")
+    vendor = str(generator.get("controller_type") or "").strip().upper()
+    if vendor == "DSE":
+        # GenComm control modes: 0 Stop, 1 Auto, 2 Manual, 3 Test on load,
+        # 4 Auto with manual restore, 5 User config, 6 Test off load, 7 Off.
+        return {
+            0: "OFF",
+            1: "AUTO",
+            2: "MANUAL",
+            3: "TESTE",
+            4: "AUTO",
+            5: "CONFIG",
+            6: "TESTE",
+            7: "OFF",
+        }.get(raw, "N/D")
+    return {0: "OFF", 1: "MANUAL", 2: "AUTO", 3: "TESTE"}.get(raw, "N/D")
 
 
 def _pack(generator):
@@ -462,6 +491,32 @@ def _derive_breaker_feedback(values):
     return ["mcb_closed", "gcb_closed"]
 
 
+def _derive_dse_status(generator, values):
+    """Deriva apenas estados DSE inequívocos do bitfield GenComm page 3/offset 6.
+
+    O bit de telemetry alarm (0x0200) não representa necessariamente um alarme
+    de processo. Warning, electrical trip, shutdown e control-unit failure são
+    tratados como condição ativa. A contagem exata exige page 154; portanto só
+    materializamos alarm_count=0 quando o bitfield garante ausência desses estados.
+    """
+    if str(generator.get("controller_type") or "").strip().upper() != "DSE":
+        return []
+    raw = values.get("controller_status_flags_raw")
+    if raw is None:
+        return []
+    try:
+        flags = int(raw)
+    except (TypeError, ValueError, OverflowError):
+        return []
+    active = bool(flags & 0x3C00)  # warning, electrical trip, shutdown, unit failure
+    values["alarm_active"] = 1 if active else 0
+    derived = ["alarm_active"]
+    if not active:
+        values["alarm_count"] = 0
+        derived.append("alarm_count")
+    return derived
+
+
 def _has_controller_health(values, configured):
     preferred = [key for key in _CONTROLLER_HEALTH_KEYS if key in set(configured)]
     if preferred:
@@ -519,7 +574,7 @@ def _frontend_generator(
         "site": generator.get("site") or "",
         "enabled": enabled,
         "status": ui_status,
-        "mode": _mode(values),
+        "mode": _mode(generator, values),
         "ip": generator.get("host")
         or (f"TCP {generator.get('listen_port')}" if generator.get("listen_port") else "—"),
         "transport": generator.get("transport") or "reverse_tcp",
@@ -538,7 +593,11 @@ def _frontend_generator(
         "maintenance": values.get("maintenance_hours"),
         "runHours": values.get("run_hours"),
         "latency": None,
-        "alarms": 1 if status == "fault" else int(values.get("alarm_count") or 0),
+        "alarms": int(values.get("alarm_count") or 0)
+        if "alarm_count" in values
+        else 1
+        if values.get("alarm_active")
+        else 0,
         "mcb": bool(values.get("mcb_closed", False)),
         "gcb": bool(values.get("gcb_closed", False)),
         "mains": {
@@ -604,12 +663,31 @@ def _overlay_generators(generators):
             # Regra operacional: somente combustível, manutenção e horímetro
             # permanecem no card quando a leitura atual deixa de existir.
             allowed = set(configured) & _LAST_KNOWN_CARD_METRICS
-            values = {
-                key: value
-                for key, value in snapshot["values"].items()
-                if key in allowed
-            }
-            defined = [key for key in snapshot["defined"] if key in allowed]
+            values = {}
+            for key, value in snapshot["values"].items():
+                if key not in allowed:
+                    continue
+                try:
+                    numeric = float(value)
+                    if not math.isfinite(numeric):
+                        continue
+                    cfg = (binding.get("channels") or {}).get(key) or {}
+                    scale = float(cfg.get("scale", 1.0))
+                    raw_value = numeric / scale if scale else numeric
+                except (TypeError, ValueError, ZeroDivisionError, OverflowError):
+                    continue
+                if _is_undefined_raw(generator, key, raw_value):
+                    continue
+                # Combustível é percentual físico; qualquer last-known fora da
+                # faixa é dado inválido, nunca deve reaparecer no card.
+                if (
+                    str(generator.get("controller_type") or "").strip().upper() == "DSE"
+                    and key == "fuel_level"
+                    and not 0.0 <= numeric <= 100.0
+                ):
+                    continue
+                values[key] = value
+            defined = [key for key in snapshot["defined"] if key in values]
             return values, defined, snapshot["updated_at"]
 
         if not generator.get("enabled"):
@@ -637,7 +715,7 @@ def _overlay_generators(generators):
             )
             if production_profile:
                 state = "connected" if health.get("transport") == "connected" else "offline"
-                detail = "Controladora homologada sem binding Rapid SCADA"
+                detail = "Controladora homologada sem vínculo no motor de telemetria"
             else:
                 state = "not_configured"
                 detail = "Sem perfil de telemetria de produção homologado"
@@ -681,11 +759,11 @@ def _overlay_generators(generators):
             values[key] = (
                 int(round(value))
                 if abs(value - round(value)) < 1e-9
-                and key not in {"frequency", "mains_frequency"}
+                and key not in {"frequency", "mains_frequency", "bus_frequency"}
                 else round(value, 3)
             )
 
-        derived = _derive_breaker_feedback(values)
+        derived = [*_derive_breaker_feedback(values), *_derive_dse_status(generator, values)]
         if derived:
             configured = sorted(set([*configured, *derived]))
         defined = sorted(values.keys())
@@ -713,7 +791,13 @@ def _overlay_generators(generators):
             display_values = {**previous_values, **values}
             stale_metrics = sorted(set(display_values) - set(defined))
             try:
-                db.save_telemetry_snapshot(generator["id"], values, defined)
+                # Snapshot do card = leitura atual + somente last-known válidos.
+                # Não persiste lixo histórico que deixou de ser definido.
+                snapshot_values = dict(display_values)
+                snapshot_defined = sorted(snapshot_values.keys())
+                db.save_telemetry_snapshot(
+                    generator["id"], snapshot_values, snapshot_defined
+                )
             except sqlite3.Error as exc:
                 print(f"[rapid] falha ao persistir snapshot de {generator['id']}: {exc}", flush=True)
             telemetry_at = int(time.time())
@@ -731,11 +815,12 @@ def _overlay_generators(generators):
                 detail_parts.append(
                     "Canais Rapid com valor inválido: " + ", ".join(sorted(invalid_values))
                 )
+            alarm_active = bool(values.get("alarm_active"))
             result.append(
                 _frontend_generator(
                     generator,
                     display_values,
-                    "online" if controller_ok else "partial",
+                    "fault" if alarm_active else "online" if controller_ok else "partial",
                     "; ".join(detail_parts),
                     defined=defined,
                     configured_metrics=configured,
@@ -753,7 +838,7 @@ def _overlay_generators(generators):
                     generator,
                     stale_values,
                     "fault",
-                    "Rapid SCADA retornou apenas valores inválidos: "
+                    "Motor de telemetria retornou apenas valores inválidos: "
                     + ", ".join(sorted(invalid_values)),
                     defined=[],
                     configured_metrics=configured,
@@ -774,7 +859,7 @@ def _overlay_generators(generators):
                     generator,
                     stale_values,
                     state,
-                    "Rapid SCADA sem dados definidos para esta controladora",
+                    "Motor de telemetria sem dados definidos para esta controladora",
                     defined=[],
                     configured_metrics=configured,
                     binding_present=True,

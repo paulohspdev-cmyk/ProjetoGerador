@@ -1,0 +1,21 @@
+# ComAp IGS/IG-NT fixed Modbus registers validated in field on 2026-09-11.
+# TESTE15004, reverse TCP port 15004, Modbus RTU transparent, Unit ID 1, 57600 8N1.
+# Read-only FC03. Values observed while genset stopped/not ready.
+12   battery_voltage        int16   scale=0.1 unit=V      observed=119
+162  engine_state_raw       uint16  scale=1              observed=2
+167  controller_mode_raw    uint16  scale=1              observed=1
+248  voltage_l1             uint16  scale=1   unit=V      observed=0
+249  voltage_l2             uint16  scale=1   unit=V      observed=0
+250  voltage_l3             uint16  scale=1   unit=V      observed=0
+255  frequency              uint16  scale=0.1 unit=Hz     observed=0
+260  power_factor           int16   scale=0.01            observed=0
+263  power_kw               int16   scale=1   unit=kW     observed=0
+287  mains_voltage_l1       uint16  scale=1   unit=V      observed=0
+288  mains_voltage_l2       uint16  scale=1   unit=V      observed=0
+289  mains_voltage_l3       uint16  scale=1   unit=V      observed=0
+295  mains_frequency        uint16  scale=0.1 unit=Hz     observed=0
+3586 run_hours              uint32  scale=1   unit=h      observed=0
+3588 number_starts          uint16  scale=1              observed=0
+3000 genset_name_ascii      uint16[8] read-only          observed=IGS-NT
+# Not materialized yet: oil_pressure addr 15, coolant_temperature addr 16,
+# fuel_level addr 17 returned 0x8000 sentinels during field validation.

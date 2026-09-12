@@ -347,7 +347,7 @@ async def generator_deprovision(
         "deprovision_requested",
         "generator",
         generator["id"],
-        "Rapid SCADA; histórico preservado",
+        "Motor de telemetria; histórico preservado",
     )
     return result
 

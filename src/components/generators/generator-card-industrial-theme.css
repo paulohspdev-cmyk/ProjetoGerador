@@ -285,3 +285,31 @@
 .generator-six-card-grid .comap-panel-v2 .comap-table-row .mains {
   color: #dce7ee;
 }
+
+/* Estado de alarme desconhecido não pode parecer alarme ativo. */
+.generator-six-card-grid .comap-panel-v2 .comap-alarm.is-unknown {
+  background: rgba(104, 128, 146, 0.1);
+}
+
+.generator-six-card-grid .comap-panel-v2 .comap-alarm.is-unknown svg {
+  stroke: #688092;
+}
+
+.generator-six-card-grid .comap-panel-v2 .comap-alarm.is-unknown .comap-alarm-count {
+  background: #38586b;
+  color: #d9e3ea;
+}
+
+/* Sem alarme confirmado, o badge fica neutro; vermelho é exclusivo de condição ativa. */
+.generator-six-card-grid .comap-panel-v2 .comap-alarm.is-clear {
+  background: rgba(67, 239, 0, 0.08);
+}
+
+.generator-six-card-grid .comap-panel-v2 .comap-alarm.is-clear svg {
+  stroke: #43ef00;
+}
+
+.generator-six-card-grid .comap-panel-v2 .comap-alarm.is-clear .comap-alarm-count {
+  background: #173d27;
+  color: #78f45c;
+}

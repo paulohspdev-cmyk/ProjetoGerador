@@ -1,10 +1,9 @@
 # Normalized register evidence for DSE GenComm genset controllers
-# Sources: DSE GenComm standard and supplied DSE8610 MKII register list.
-# Address = GenComm page * 256 + register offset. Reads use function 3.
-# 32-bit values use the most-significant 16-bit register at the lowest address.
+# Sources: DSE GenComm standard; Address = page * 256 + offset; reads use FC03.
+# Optional model/family registers may return GenComm sentinel values and must become N/D.
 # This file is evidence only. It does not authorize writes or field operation.
 772 controller_mode_raw page=3 offset=4 type=uint16 scale=1
-774 alarm_class_raw page=3 offset=6 type=uint16 scale=1
+774 controller_status_flags_raw page=3 offset=6 type=uint16 scale=1
 1024 oil_pressure page=4 offset=0 type=uint16 scale=1 unit=kPa
 1025 coolant_temperature page=4 offset=1 type=int16 scale=1 unit=C
 1026 oil_temperature page=4 offset=2 type=int16 scale=1 unit=C
@@ -22,6 +21,20 @@
 1044 current_l1 page=4 offset=20 type=uint32 scale=0.1 unit=A
 1046 current_l2 page=4 offset=22 type=uint32 scale=0.1 unit=A
 1048 current_l3 page=4 offset=24 type=uint32 scale=0.1 unit=A
+1059 mains_frequency page=4 offset=35 type=uint16 scale=0.1 unit=Hz OPTIONAL
+1060 mains_voltage_l1 page=4 offset=36 type=uint32 scale=0.1 unit=V OPTIONAL
+1062 mains_voltage_l2 page=4 offset=38 type=uint32 scale=0.1 unit=V OPTIONAL
+1064 mains_voltage_l3 page=4 offset=40 type=uint32 scale=0.1 unit=V OPTIONAL
+1066 mains_voltage_l1_l2 page=4 offset=42 type=uint32 scale=0.1 unit=V OPTIONAL
+1068 mains_voltage_l2_l3 page=4 offset=44 type=uint32 scale=0.1 unit=V OPTIONAL
+1070 mains_voltage_l3_l1 page=4 offset=46 type=uint32 scale=0.1 unit=V OPTIONAL
+1091 bus_frequency page=4 offset=67 type=uint16 scale=0.1 unit=Hz OPTIONAL
+1092 bus_voltage_l1 page=4 offset=68 type=uint32 scale=0.1 unit=V OPTIONAL
+1094 bus_voltage_l2 page=4 offset=70 type=uint32 scale=0.1 unit=V OPTIONAL
+1096 bus_voltage_l3 page=4 offset=72 type=uint32 scale=0.1 unit=V OPTIONAL
+1098 bus_voltage_l1_l2 page=4 offset=74 type=uint32 scale=0.1 unit=V OPTIONAL
+1100 bus_voltage_l2_l3 page=4 offset=76 type=uint32 scale=0.1 unit=V OPTIONAL
+1102 bus_voltage_l3_l1 page=4 offset=78 type=uint32 scale=0.1 unit=V OPTIONAL
 1536 power_kw page=6 offset=0 type=int32 scale=0.001 unit=kW
 1557 power_factor page=6 offset=21 type=int16 scale=0.01
 1558 engine_load page=6 offset=22 type=int16 scale=0.1 unit=percent

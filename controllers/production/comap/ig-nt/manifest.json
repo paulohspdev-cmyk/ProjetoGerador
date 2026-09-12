@@ -1,0 +1,309 @@
+{
+  "schema": 3,
+  "manufacturer": "ComAp",
+  "family": "InteliGen NT",
+  "model": "IG-NT",
+  "aliases": [
+    "InteliGen NT",
+    "IGS-NT",
+    "IG NT"
+  ],
+  "status": "field_validated",
+  "application": "genset",
+  "category": "paralleling_genset",
+  "firmware": {
+    "tested": [],
+    "minimum": null,
+    "maximum": null,
+    "notes": "Modelo identificado em campo por registrador ASCII como IGS-NT; firmware ainda não coletado."
+  },
+  "protocols": [
+    "modbus",
+    "modbus_rtu"
+  ],
+  "transports": [
+    "reverse_tcp",
+    "rtu_over_tcp",
+    "modbus_rtu_serial"
+  ],
+  "reverseTcpFraming": "modbus_rtu",
+  "capabilities": {
+    "telemetry": true,
+    "start": false,
+    "stop": false,
+    "auto": false,
+    "manual": false,
+    "test": false,
+    "mcb_open": false,
+    "mcb_close": false,
+    "gcb_open": false,
+    "gcb_close": false,
+    "paralleling": false
+  },
+  "validatedTelemetry": [
+    "battery_voltage",
+    "engine_state_raw",
+    "controller_mode_raw",
+    "voltage_l1",
+    "voltage_l2",
+    "voltage_l3",
+    "frequency",
+    "power_factor",
+    "power_kw",
+    "mains_voltage_l1",
+    "mains_voltage_l2",
+    "mains_voltage_l3",
+    "mains_frequency",
+    "run_hours",
+    "number_starts"
+  ],
+  "documentedTelemetry": [
+    "battery_voltage",
+    "engine_state_raw",
+    "controller_mode_raw",
+    "voltage_l1",
+    "voltage_l2",
+    "voltage_l3",
+    "frequency",
+    "power_factor",
+    "power_kw",
+    "mains_voltage_l1",
+    "mains_voltage_l2",
+    "mains_voltage_l3",
+    "mains_frequency",
+    "run_hours",
+    "number_starts"
+  ],
+  "metricUnits": {
+    "battery_voltage": "V",
+    "voltage_l1": "V",
+    "voltage_l2": "V",
+    "voltage_l3": "V",
+    "frequency": "Hz",
+    "power_kw": "kW",
+    "mains_voltage_l1": "V",
+    "mains_voltage_l2": "V",
+    "mains_voltage_l3": "V",
+    "mains_frequency": "Hz",
+    "run_hours": "h"
+  },
+  "mapping": {
+    "kind": "modbus_register_export",
+    "readOnly": true,
+    "sourceFile": "modbus/field-validated-registers.txt",
+    "sourceSha256": "fe11220a8fc92d823cf7cdc12a384be6d74e667dc985a666fc3d2c36fbe071a7",
+    "readFunctions": [
+      3
+    ],
+    "registers": {
+      "battery_voltage": {
+        "address": 12,
+        "count": 1,
+        "type": "int16",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "engine_state_raw": {
+        "address": 162,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1
+      },
+      "controller_mode_raw": {
+        "address": 167,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1
+      },
+      "voltage_l1": {
+        "address": 248,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "V"
+      },
+      "voltage_l2": {
+        "address": 249,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "V"
+      },
+      "voltage_l3": {
+        "address": 250,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "V"
+      },
+      "frequency": {
+        "address": 255,
+        "count": 1,
+        "type": "uint16",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      "power_factor": {
+        "address": 260,
+        "count": 1,
+        "type": "int16",
+        "scale": 0.01
+      },
+      "power_kw": {
+        "address": 263,
+        "count": 1,
+        "type": "int16",
+        "scale": 1,
+        "unit": "kW"
+      },
+      "mains_voltage_l1": {
+        "address": 287,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "V"
+      },
+      "mains_voltage_l2": {
+        "address": 288,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "V"
+      },
+      "mains_voltage_l3": {
+        "address": 289,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "V"
+      },
+      "mains_frequency": {
+        "address": 295,
+        "count": 1,
+        "type": "uint16",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      "run_hours": {
+        "address": 3586,
+        "count": 2,
+        "type": "uint32",
+        "scale": 1,
+        "unit": "h"
+      },
+      "number_starts": {
+        "address": 3588,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1
+      }
+    }
+  },
+  "rapid": {
+    "template": "rapid/templates/DrvModbus_RC_IGNT.xml",
+    "driver": "DrvModbus",
+    "channels": [
+      {
+        "key": "battery_voltage",
+        "tagCode": "battery_voltage_raw",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "engine_state_raw",
+        "tagCode": "engine_state_raw",
+        "scale": 1
+      },
+      {
+        "key": "controller_mode_raw",
+        "tagCode": "controller_mode_raw",
+        "scale": 1
+      },
+      {
+        "key": "voltage_l1",
+        "tagCode": "voltage_l1",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l2",
+        "tagCode": "voltage_l2",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l3",
+        "tagCode": "voltage_l3",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "frequency",
+        "tagCode": "frequency_raw",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      {
+        "key": "power_factor",
+        "tagCode": "power_factor_raw",
+        "scale": 0.01
+      },
+      {
+        "key": "power_kw",
+        "tagCode": "power_kw",
+        "scale": 1,
+        "unit": "kW"
+      },
+      {
+        "key": "mains_voltage_l1",
+        "tagCode": "mains_voltage_l1",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "mains_voltage_l2",
+        "tagCode": "mains_voltage_l2",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "mains_voltage_l3",
+        "tagCode": "mains_voltage_l3",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "mains_frequency",
+        "tagCode": "mains_frequency_raw",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      {
+        "key": "run_hours",
+        "tagCode": "run_hours_raw",
+        "scale": 1,
+        "unit": "h"
+      },
+      {
+        "key": "number_starts",
+        "tagCode": "number_starts",
+        "scale": 1
+      }
+    ],
+    "lineOptions": {
+      "CycleDelay": "5000",
+      "ReqRetries": "1"
+    }
+  },
+  "validation": {
+    "documentation": [
+      "controllers/lab/comap/ig-nt/modbus/source-export.txt",
+      "field validation 2026-09-11 TESTE15004"
+    ],
+    "lab": true,
+    "field": true,
+    "fieldReference": "TESTE15004 / Unit 1 / reverse TCP 15004 / RTU transparent / 57600 8N1; IGS-NT identity read; FC03 only.",
+    "commandSafety": "Somente leitura. Nenhum comando industrial foi homologado ou liberado."
+  },
+  "notes": "Pack mínimo de produção criado apenas com registradores validados em campo. Óleo, temperatura e combustível permanecem fora do Rapid porque retornaram 0x8000 no ensaio."
+}
