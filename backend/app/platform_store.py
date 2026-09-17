@@ -1,5 +1,6 @@
 import hashlib
 import json
+import os
 import secrets
 import time
 import uuid
@@ -190,10 +191,128 @@ def init_platform_db() -> None:
                 ON lifecycle_operations(status,created_at);
             CREATE INDEX IF NOT EXISTS idx_lifecycle_operations_generator
                 ON lifecycle_operations(generator_id,created_at DESC);
+
+            CREATE TABLE IF NOT EXISTS worker_heartbeats (
+                name TEXT PRIMARY KEY,
+                status TEXT NOT NULL DEFAULT 'starting',
+                pid INTEGER NOT NULL DEFAULT 0,
+                detail TEXT NOT NULL DEFAULT '',
+                updated_at INTEGER NOT NULL
+            );
             """
         )
         conn.execute("DELETE FROM password_reset_tokens WHERE expires_at < ? OR used_at IS NOT NULL", (_now() - 86400,))
         conn.execute("DELETE FROM api_rate WHERE minute_bucket < ?", ((_now() // 60) - 120,))
+
+
+EXPECTED_WORKERS = ("operational", "heavy", "notification", "lifecycle")
+WORKER_STALE_AFTER = {"operational": 45, "notification": 45, "heavy": 180, "lifecycle": 180}
+
+
+def touch_worker_heartbeat(name: str, status: str = "ok", detail: str = "") -> None:
+    """Persist a bounded liveness signal for one supervised worker process."""
+    now = _now()
+    safe_name = str(name).strip().lower()[:64]
+    safe_status = str(status or "ok").strip().lower()[:32]
+    safe_detail = str(detail or "")[:500]
+    if not safe_name:
+        return
+    with db.connect() as conn:
+        conn.execute(
+            """INSERT INTO worker_heartbeats(name,status,pid,detail,updated_at)
+               VALUES (?,?,?,?,?)
+               ON CONFLICT(name) DO UPDATE SET
+                 status=excluded.status,
+                 pid=excluded.pid,
+                 detail=excluded.detail,
+                 updated_at=excluded.updated_at""",
+            (safe_name, safe_status, int(os.getpid()), safe_detail, now),
+        )
+
+
+def worker_health(stale_after: int | None = None) -> list[dict]:
+    now = _now()
+    override = max(10, min(int(stale_after), 3600)) if stale_after is not None else None
+    with db.connect() as conn:
+        rows = conn.execute("SELECT * FROM worker_heartbeats").fetchall()
+    indexed = {str(row["name"]): dict(row) for row in rows}
+    result = []
+    for name in EXPECTED_WORKERS:
+        row = indexed.get(name)
+        if row is None:
+            result.append(
+                {
+                    "name": name,
+                    "status": "missing",
+                    "pid": 0,
+                    "detail": "heartbeat ainda não registrado",
+                    "updatedAt": None,
+                    "ageSeconds": None,
+                    "staleAfterSeconds": override if override is not None else WORKER_STALE_AFTER.get(name, 60),
+                    "healthy": False,
+                }
+            )
+            continue
+        age = max(0, now - int(row.get("updated_at") or 0))
+        status = str(row.get("status") or "unknown")
+        threshold = override if override is not None else WORKER_STALE_AFTER.get(name, 60)
+        result.append(
+            {
+                "name": name,
+                "status": status,
+                "pid": int(row.get("pid") or 0),
+                "detail": str(row.get("detail") or ""),
+                "updatedAt": int(row.get("updated_at") or 0),
+                "ageSeconds": age,
+                "healthy": status == "ok" and age <= threshold,
+                "staleAfterSeconds": threshold,
+            }
+        )
+    return result
+
+
+def queue_health() -> dict:
+    now = _now()
+    with db.connect() as conn:
+        notification = {
+            str(row["status"]): int(row["count"])
+            for row in conn.execute(
+                "SELECT status, COUNT(*) AS count FROM notification_queue GROUP BY status"
+            ).fetchall()
+        }
+        lifecycle = {
+            str(row["status"]): int(row["count"])
+            for row in conn.execute(
+                "SELECT status, COUNT(*) AS count FROM lifecycle_operations GROUP BY status"
+            ).fetchall()
+        }
+        stale_sending = int(
+            conn.execute(
+                "SELECT COUNT(*) FROM notification_queue WHERE status='sending' AND updated_at<=?",
+                (now - 180,),
+            ).fetchone()[0]
+        )
+        stale_lifecycle = int(
+            conn.execute(
+                "SELECT COUNT(*) FROM lifecycle_operations WHERE status='running' AND updated_at<=?",
+                (now - 300,),
+            ).fetchone()[0]
+        )
+        due_scheduler = int(
+            conn.execute(
+                "SELECT COUNT(*) FROM scheduler_jobs WHERE enabled=1 AND next_run<=?",
+                (now,),
+            ).fetchone()[0]
+        )
+    return {
+        "notifications": notification,
+        "lifecycle": lifecycle,
+        "staleNotificationClaims": stale_sending,
+        "staleLifecycleOperations": stale_lifecycle,
+        "dueSchedulerJobs": due_scheduler,
+        "healthy": stale_sending == 0 and stale_lifecycle == 0,
+        "generatedAt": now,
+    }
 
 
 # ----------------------------- inventory ----------------------------------

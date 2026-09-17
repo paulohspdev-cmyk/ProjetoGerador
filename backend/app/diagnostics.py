@@ -5,7 +5,7 @@ import subprocess
 import time
 from pathlib import Path
 
-from . import db, traffic_store
+from . import db, platform_store, traffic_store
 from .config import APP_VERSION, BRIDGE_STATUS_FILE, CONTROL_SOCKET, PROJECT_ROOT, RAPID_BINDINGS_FILE, RAPID_COMM_CONFIG, RAPID_READER_DLL
 from .rapid import overlay_generators
 
@@ -216,6 +216,13 @@ def system_diagnostics():
         runtime_bridge.get("sessions") or [],
         runtime_bridge.get("updatedAt") or int(time.time()),
     )
+    workers = platform_store.worker_health()
+    queues = platform_store.queue_health()
+    observability = {
+        "healthy": all(item.get("healthy") for item in workers) and bool(queues.get("healthy")),
+        "workers": workers,
+        "queues": queues,
+    }
     return {
         "ok": all(item["status"] == "OK" for item in services),
         "services": services,
@@ -253,5 +260,6 @@ def system_diagnostics():
             }
             for g in generators
         ],
+        "observability": observability,
         "version": version_info(),
     }

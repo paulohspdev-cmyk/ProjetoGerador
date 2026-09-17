@@ -1,15 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  Cable,
-  FlaskConical,
-  HeartPulse,
-  Info,
-  Layers,
-  Library,
-  Package,
-  Settings,
-  Tags,
-} from "lucide-react";
+import { Cable, FlaskConical, Info, Layers, Library, Package, Settings, Tags } from "lucide-react";
 
 import { useTheme } from "@/components/layout/ThemeProvider";
 import {
@@ -47,7 +37,7 @@ type LibraryV3 = ControllerLibrary & {
   };
 };
 
-function useRemote<T>(loader: () => Promise<T>, initial: T) {
+export function useRemote<T>(loader: () => Promise<T>, initial: T) {
   const [data, setData] = useState<T>(initial);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -74,7 +64,7 @@ function useRemote<T>(loader: () => Promise<T>, initial: T) {
   return { data, error, loading };
 }
 
-function RemoteState({
+export function RemoteState({
   loading,
   error,
   empty = false,
@@ -176,7 +166,7 @@ export function TemplatesScreen() {
   );
 }
 
-function DiagnosticsTable({ data }: { data: SystemDiagnostics }) {
+export function DiagnosticsTable({ data }: { data: SystemDiagnostics }) {
   return (
     <ScadaTable
       rows={data.services}
@@ -489,32 +479,6 @@ export function LabScreen() {
             </div>
           ))}
         </div>
-      </Panel>
-    </ScreenBody>
-  );
-}
-
-export function HealthScreen() {
-  const { data, error, loading } = useRemote<SystemDiagnostics | null>(
-    () => rcApi.system.diagnostics(),
-    null,
-  );
-  const ok = data?.services.filter((s) => s.status === "active" || s.status === "OK").length ?? 0;
-  return (
-    <ScreenBody>
-      <Stats
-        items={[
-          {
-            icon: HeartPulse,
-            label: "Serviços OK",
-            value: data ? `${ok}/${data.services.length}` : "N/D",
-            tone: data?.ok ? "text-online" : undefined,
-          },
-        ]}
-      />
-      <Panel title="Saúde do sistema">
-        <RemoteState loading={loading} error={error} empty={!data} />
-        {data && <DiagnosticsTable data={data} />}
       </Panel>
     </ScreenBody>
   );

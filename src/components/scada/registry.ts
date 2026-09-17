@@ -49,8 +49,8 @@ import {
   TagsScreen,
   TemplatesScreen,
   VersionScreen,
-  HealthScreen,
 } from "./scada-lib";
+import { HealthScreen } from "./SystemHealthScreen";
 import { ClientsScreen, UnitsScreen, WebhooksScreen } from "./mgmt";
 import { AuditScreen, RolesScreen } from "./security";
 

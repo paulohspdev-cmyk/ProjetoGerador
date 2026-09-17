@@ -1,0 +1,41 @@
+name: E2E
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Dependências
+        run: |
+          npm ci --include=dev
+          pip install -r backend/requirements-test.txt
+      - name: Chromium Playwright
+        run: npx playwright install --with-deps chromium
+      - name: E2E isolado
+        env:
+          CI: "1"
+          RC_PROJECT_ROOT: ${{ github.workspace }}
+          RC_TEST_PYTHON: python
+        run: npm run e2e:isolated
+      - name: Evidências em caso de falha
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore

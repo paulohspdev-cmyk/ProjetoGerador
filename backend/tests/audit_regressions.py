@@ -194,4 +194,14 @@ replayed = platform_store.enqueue_lifecycle_operation(
 )
 assert replayed["status"] == "succeeded"
 
+# Observability: each supervised worker is individually visible and queue health is bounded.
+for worker_name in platform_store.EXPECTED_WORKERS:
+    platform_store.touch_worker_heartbeat(worker_name, "ok", "regression")
+workers = platform_store.worker_health(stale_after=45)
+assert len(workers) == 4 and all(item["healthy"] for item in workers), workers
+queue_health = platform_store.queue_health()
+assert queue_health["staleNotificationClaims"] == 0, queue_health
+assert queue_health["staleLifecycleOperations"] == 0, queue_health
+assert queue_health["healthy"] is True, queue_health
+
 print("Audit regressions: OK")

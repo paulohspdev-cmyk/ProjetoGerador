@@ -24,12 +24,18 @@ def main():
     platform_store.init_platform_db()
     industrial_store.init_industrial_db()
     traffic_store.init_traffic_db()
+    platform_store.touch_worker_heartbeat("operational", "ok", "iniciado")
+    last_heartbeat = time.monotonic()
     print("[worker] RC Geradores operacional iniciado", flush=True)
     last_automation = 0.0
     last_industrial = 0.0
     last_traffic = 0.0
     last_retention = 0.0
     while running:
+        now = time.monotonic()
+        if now - last_heartbeat >= 15:
+            platform_store.touch_worker_heartbeat("operational", "ok")
+            last_heartbeat = now
         try:
             process_scheduler_jobs(OPERATIONAL_JOB_KINDS)
             now = time.monotonic()
@@ -49,8 +55,10 @@ def main():
                     print(f"[worker] retenção aplicada: {removed}", flush=True)
                 last_retention = now
         except Exception as exc:
+            platform_store.touch_worker_heartbeat("operational", "degraded", str(exc))
             print(f"[worker] erro: {exc}", flush=True)
         time.sleep(2)
+    platform_store.touch_worker_heartbeat("operational", "stopped", "encerrado")
     print("[worker] RC Geradores operacional finalizado", flush=True)
 
 
