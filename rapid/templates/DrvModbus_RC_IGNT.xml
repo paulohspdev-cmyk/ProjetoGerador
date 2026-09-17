@@ -1,0 +1,48 @@
+<?xml version='1.0' encoding='utf-8'?>
+<DeviceTemplate>
+  <Options>
+    <ZeroAddr>true</ZeroAddr>
+    <DecAddr>true</DecAddr>
+    <DefByteOrder2 />
+    <DefByteOrder4 />
+    <DefByteOrder8 />
+  </Options>
+  <ElemGroups>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="12" name="Controlador - bateria">
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="battery_voltage_raw" name="Battery Voltage" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="162" name="Controlador - estado">
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="engine_state_raw" name="Engine State" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="167" name="Controlador - modo">
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="controller_mode_raw" name="Controller Mode" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="248" name="Gerador - tensoes">
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="voltage_l1" name="Generator Voltage L1-N" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="voltage_l2" name="Generator Voltage L2-N" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="voltage_l3" name="Generator Voltage L3-N" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="255" name="Gerador - frequencia">
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="frequency_raw" name="Generator Frequency" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="260" name="Gerador - fator de potencia">
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="power_factor_raw" name="Power Factor" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="263" name="Gerador - potencia">
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="power_kw" name="Active Power" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="287" name="Rede barramento - tensoes">
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="mains_voltage_l1" name="Bus/Mains Voltage L1-N" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="mains_voltage_l2" name="Bus/Mains Voltage L2-N" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="mains_voltage_l3" name="Bus/Mains Voltage L3-N" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="295" name="Rede barramento - frequencia">
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="mains_frequency_raw" name="Bus/Mains Frequency" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="3586" name="Estatisticas">
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="run_hours_raw" name="Run Hours" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="number_starts" name="Number Starts" />
+    </ElemGroup>
+  </ElemGroups>
+  <Cmds />
+</DeviceTemplate>

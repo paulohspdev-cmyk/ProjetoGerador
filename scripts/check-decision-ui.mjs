@@ -105,21 +105,26 @@ const detailTop = read("src/components/generators/detail/GeneratorDetailProfessi
 const detailControlSurface = `${detail}
 ${detailTop}`;
 for (const marker of [
-  "homologatedIg200",
-  'normalizedController === "inteligen 200"',
-  'gen.transport === "reverse_tcp"',
-  "Number(gen.rapidDeviceNum || 0) > 0",
-  "gen.capabilities?.start === true || homologatedIg200",
-  "gen.capabilities?.stop === true || homologatedIg200",
+  "gen.capabilities?.start === true",
+  "gen.capabilities?.stop === true",
+  "!gen.telemetryStale",
+  'gen.status !== "offline"',
   'data-command="auto"',
   'data-command="test"',
 ]) {
   if (!detailControlSurface.includes(marker)) {
-    failures.push(`controle homologado perdeu guardrail de reconexão: ${marker}`);
+    failures.push(`controle perdeu decisão autoritativa/estado seguro: ${marker}`);
   }
 }
-if (detail.includes('normalizedController === "ig4 200" && homologatedIg200')) {
-  failures.push("exceção de reconexão IG200 não pode ser aplicada ao IG4");
+for (const forbidden of [
+  "homologatedIg200",
+  'normalizedController === "inteligen 200"',
+  "gen.capabilities?.start === true ||",
+  "gen.capabilities?.stop === true ||",
+]) {
+  if (detail.includes(forbidden)) {
+    failures.push(`detalhe voltou a deduzir autorização industrial localmente: ${forbidden}`);
+  }
 }
 
 const table = read("src/components/generators/GeneratorTable.tsx");

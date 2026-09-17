@@ -23,23 +23,44 @@ async function errorMessage(response: Response) {
   return message;
 }
 
-async function fetchWithTimeout(path: string, init: RequestInit, timeoutMs: number) {
+function notifyUnauthorized(path: string) {
+  if (path.startsWith("/api/auth/login") || path.startsWith("/api/auth/password/reset")) return;
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("rc:unauthorized"));
+  }
+}
+
+async function withResponse<T>(
+  path: string,
+  init: RequestInit,
+  timeoutMs: number,
+  consume: (response: Response) => Promise<T>,
+): Promise<T> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
   const externalSignal = init.signal;
+  if (externalSignal?.aborted) throw new HttpError(499, "Requisição cancelada");
+  let timedOut = false;
   const abortExternal = () => controller.abort();
   externalSignal?.addEventListener("abort", abortExternal, { once: true });
+  const timer = globalThis.setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
   try {
-    return await fetch(`${API_BASE}${path}`, {
+    const response = await fetch(`${API_BASE}${path}`, {
       ...init,
       signal: controller.signal,
       credentials: "include",
     });
+    return await consume(response);
   } catch (error) {
-    if (controller.signal.aborted) throw new HttpError(408, "Tempo limite da requisição excedido");
+    if (controller.signal.aborted) {
+      if (timedOut) throw new HttpError(408, "Tempo limite da requisição excedido");
+      throw new HttpError(499, "Requisição cancelada");
+    }
     throw error;
   } finally {
-    clearTimeout(timer);
+    globalThis.clearTimeout(timer);
     externalSignal?.removeEventListener("abort", abortExternal);
   }
 }
@@ -49,30 +70,40 @@ export async function httpRequest<T>(
   init: RequestInit = {},
   timeoutMs = 15_000,
 ): Promise<T> {
-  const response = await fetchWithTimeout(
+  return withResponse(
     path,
     {
       ...init,
       headers: { "Content-Type": "application/json", ...(init.headers ?? {}) },
     },
     timeoutMs,
+    async (response) => {
+      if (!response.ok) {
+        const message = await errorMessage(response);
+        if (response.status === 401) notifyUnauthorized(path);
+        throw new HttpError(response.status, message);
+      }
+      if (response.status === 204) return undefined as T;
+      return (await response.json()) as T;
+    },
   );
-  if (!response.ok) throw new HttpError(response.status, await errorMessage(response));
-  if (response.status === 204) return undefined as T;
-  return (await response.json()) as T;
 }
 
 export async function httpDownload(path: string, fallback: string, timeoutMs = 60_000) {
-  const response = await fetchWithTimeout(path, {}, timeoutMs);
-  if (!response.ok) throw new HttpError(response.status, await errorMessage(response));
-  const disposition = response.headers.get("content-disposition") ?? "";
-  const matched = /filename="?([^";]+)"?/i.exec(disposition);
-  const filename = matched?.[1] ?? fallback;
-  const blob = await response.blob();
-  const href = URL.createObjectURL(blob);
+  const result = await withResponse(path, {}, timeoutMs, async (response) => {
+    if (!response.ok) {
+      const message = await errorMessage(response);
+      if (response.status === 401) notifyUnauthorized(path);
+      throw new HttpError(response.status, message);
+    }
+    const disposition = response.headers.get("content-disposition") ?? "";
+    const matched = /filename="?([^";]+)"?/i.exec(disposition);
+    return { filename: matched?.[1] ?? fallback, blob: await response.blob() };
+  });
+  const href = URL.createObjectURL(result.blob);
   const anchor = document.createElement("a");
   anchor.href = href;
-  anchor.download = filename;
+  anchor.download = result.filename;
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();

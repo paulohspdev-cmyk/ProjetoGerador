@@ -5,6 +5,7 @@ import sqlite3
 import tarfile
 import tempfile
 import time
+import uuid
 from pathlib import Path
 
 from cryptography.fernet import Fernet, InvalidToken
@@ -18,7 +19,9 @@ from .config import (
     DATA_DIR,
     DB_FILE,
     PROJECT_ROOT,
+    RAPID_ARCHIVE_DIR,
     RAPID_BINDINGS_FILE,
+    RAPID_SCADA_ROOT,
     TOTP_KEY_FILE,
 )
 
@@ -157,11 +160,15 @@ def create_full_backup(actor: str = "system", retention: int | None = None) -> d
     except PermissionError:
         pass
     stamp = time.strftime("%Y%m%d-%H%M%S", time.localtime())
-    archive = BACKUP_DIR / f"rc-geradores-full-{stamp}.tar.gz"
+    nonce = f"{time.time_ns()}-{uuid.uuid4().hex[:8]}"
+    backup_id = f"bk-{stamp}-{nonce}"
+    archive = BACKUP_DIR / f"rc-geradores-full-{stamp}-{nonce}.tar.gz"
+    staged_archive = BACKUP_DIR / f".{archive.name}.{os.getpid()}.tmp"
     result = "OK"
     detail = ""
     offsite_path = None
     bindings_included = False
+    rapid_archive_included = False
 
     try:
         with tempfile.TemporaryDirectory(prefix="rc-backup-") as tmp:
@@ -177,7 +184,7 @@ def create_full_backup(actor: str = "system", retention: int | None = None) -> d
                     "mas rapid-bindings.json não existe"
                 )
 
-            with tarfile.open(archive, "w:gz") as tar:
+            with tarfile.open(staged_archive, "w:gz") as tar:
                 tar.add(db_copy, arcname="product/product-db.sqlite3")
                 _add_if_exists(tar, RUNTIME_BINDINGS, "product/rapid-bindings.json")
                 _add_if_exists(tar, RETIRED_BINDINGS, "product/rapid-retired-bindings.json")
@@ -186,9 +193,13 @@ def create_full_backup(actor: str = "system", retention: int | None = None) -> d
                     _add_if_exists(tar, Path(TOTP_KEY_FILE), "product/totp-fernet.key")
                 _add_if_exists(tar, PROJECT_ROOT / "rapid", "product/rapid")
                 _add_if_exists(tar, PROJECT_ROOT / "controllers", "product/controllers")
-                _add_if_exists(tar, Path("/opt/scada/BaseDAT"), "rapid-scada/BaseDAT")
-                _add_if_exists(tar, Path("/opt/scada/Config"), "rapid-scada/Config")
-                _add_if_exists(tar, Path("/opt/scada/ScadaComm/Config"), "rapid-scada/ScadaCommConfig")
+                _add_if_exists(tar, Path(RAPID_SCADA_ROOT) / "BaseDAT", "rapid-scada/BaseDAT")
+                _add_if_exists(tar, Path(RAPID_SCADA_ROOT) / "Config", "rapid-scada/Config")
+                _add_if_exists(tar, Path(RAPID_SCADA_ROOT) / "ScadaComm/Config", "rapid-scada/ScadaCommConfig")
+                if Path(RAPID_ARCHIVE_DIR).exists():
+                    _add_if_exists(tar, Path(RAPID_ARCHIVE_DIR), "rapid-scada/Archive")
+                    rapid_archive_included = True
+            os.replace(staged_archive, archive)
         try:
             os.chmod(archive, 0o640)
         except PermissionError:
@@ -198,10 +209,10 @@ def create_full_backup(actor: str = "system", retention: int | None = None) -> d
     except Exception as exc:
         result = "Falha"
         detail = str(exc)[:1000]
+        staged_archive.unlink(missing_ok=True)
         archive.unlink(missing_ok=True)
 
     size = archive.stat().st_size if archive.exists() else 0
-    backup_id = f"bk-{stamp}"
     with db.connect() as conn:
         conn.execute(
             "INSERT INTO backup_records(id,created_at,path,size_bytes,type,result,detail) VALUES (?,?,?,?,?,?,?)",
@@ -229,6 +240,7 @@ def create_full_backup(actor: str = "system", retention: int | None = None) -> d
         "secretsIncluded": INCLUDE_SECRETS,
         "totpSecretEncryptedInDatabase": True,
         "offsiteCarriesTotpRecoveryKey": bool(offsite_path and Path(TOTP_KEY_FILE).is_file()),
+        "rapidHistoricalArchiveIncluded": rapid_archive_included,
     }
 
 
@@ -468,9 +480,10 @@ def restore_archive(archive_path: str | Path, restore_rapid: bool = True) -> dic
 
             if restore_rapid:
                 pairs = [
-                    (root / "rapid-scada/BaseDAT", Path("/opt/scada/BaseDAT")),
-                    (root / "rapid-scada/Config", Path("/opt/scada/Config")),
-                    (root / "rapid-scada/ScadaCommConfig", Path("/opt/scada/ScadaComm/Config")),
+                    (root / "rapid-scada/BaseDAT", Path(RAPID_SCADA_ROOT) / "BaseDAT"),
+                    (root / "rapid-scada/Config", Path(RAPID_SCADA_ROOT) / "Config"),
+                    (root / "rapid-scada/ScadaCommConfig", Path(RAPID_SCADA_ROOT) / "ScadaComm/Config"),
+                    (root / "rapid-scada/Archive", Path(RAPID_ARCHIVE_DIR)),
                 ]
                 for src, dst in pairs:
                     if src.exists():

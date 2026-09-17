@@ -110,7 +110,29 @@ export function Topbar({ breadcrumb = [], title, tools, search, back }: Props) {
             onClick={toggleTheme}
             title={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
             aria-label={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
-            className="grid size-9 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-white/5 hover:text-white"
+            className="rc-top-theme-toggle hidden h-9 items-center gap-1.5 rounded-full px-2 sm:flex"
+          >
+            <Sun
+              className={cn("size-3.5", theme === "light" ? "text-primary" : "text-slate-500")}
+            />
+            <span className="relative h-4 w-8 rounded-full bg-primary/90 p-0.5">
+              <span
+                className={cn(
+                  "block size-3 rounded-full bg-white shadow transition-transform",
+                  theme === "dark" ? "translate-x-4" : "translate-x-0",
+                )}
+              />
+            </span>
+            <Moon
+              className={cn("size-3.5", theme === "dark" ? "text-primary" : "text-slate-500")}
+            />
+          </button>
+          <button
+            type="button"
+            onClick={toggleTheme}
+            title={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
+            aria-label={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
+            className="grid size-9 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-white/5 hover:text-white sm:hidden"
           >
             {theme === "dark" ? <Sun className="size-[18px]" /> : <Moon className="size-[18px]" />}
           </button>

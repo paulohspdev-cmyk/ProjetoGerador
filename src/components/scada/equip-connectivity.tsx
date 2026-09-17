@@ -3,6 +3,10 @@ import { useEffect, useMemo, useState } from "react";
 
 import { rcApi, type BridgeSession, type FieldDevice, type SystemDiagnostics } from "@/lib/api";
 import { Panel, Pill, ScreenBody, Stats } from "./kit";
+import {
+  ConnectivitySecondaryPanels,
+  type ConnectivityTraffic,
+} from "./connectivity-secondary-panels";
 
 export { GatewaysScreen, ModemsScreen } from "./field-device-inventory";
 
@@ -23,27 +27,9 @@ function formatBytes(value: number | null | undefined) {
   return `${(bytes / 1024 ** 3).toFixed(2)} GB`;
 }
 
-type TrafficPort = {
-  remotePort: number;
-  todayBytes: number;
-  monthBytes: number;
-};
-
-type ConnectionOutage = {
-  id: number;
-  remote_port: number;
-  started_at: number;
-  ended_at?: number | null;
-};
-
 type ProductDiagnostics = SystemDiagnostics & {
   bridge: SystemDiagnostics["bridge"] & {
-    traffic?: {
-      todayBytes: number;
-      monthBytes: number;
-      ports: TrafficPort[];
-      outages?: ConnectionOutage[];
-    };
+    traffic?: ConnectivityTraffic;
   };
 };
 
@@ -74,6 +60,9 @@ export function ConnectivityScreen() {
   const [health, setHealth] = useState<ProductDiagnostics | null>(null);
   const [devices, setDevices] = useState<FieldDevice[]>([]);
   const [error, setError] = useState("");
+  const [carrierFilter, setCarrierFilter] = useState("");
+  const [kindFilter, setKindFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -120,6 +109,27 @@ export function ConnectivityScreen() {
   const signalDevices = devices.filter(
     (device) => device.rssi != null && Number.isFinite(Number(device.rssi)),
   );
+  const carriers = [
+    ...new Set(devices.map((device) => device.carrier?.trim()).filter(Boolean)),
+  ].sort();
+  const visibleDevices = devices.filter((device) => {
+    if (carrierFilter && device.carrier !== carrierFilter) return false;
+    if (kindFilter && kindFilter !== device.kind) return false;
+    if (statusFilter) {
+      const normalized = (device.status || "").toLowerCase();
+      const key = !device.active || normalized.includes("offline") ? "offline" : "online";
+      if (key !== statusFilter) return false;
+    }
+    return true;
+  });
+  const visibleSessions = sessions.filter((session) => {
+    if (carrierFilter) return false;
+    if (kindFilter && kindFilter !== "bridge") return false;
+    if (!statusFilter) return true;
+    const state = sessionState(session, fresh);
+    const key = state.tone === "ok" ? "online" : session.connected ? "degraded" : "offline";
+    return key === statusFilter;
+  });
 
   return (
     <ScreenBody>
@@ -167,19 +177,69 @@ export function ConnectivityScreen() {
         </p>
       )}
 
-      <section className="rc-panel rounded-xl border border-border bg-card p-3 shadow-[var(--shadow-panel)]">
-        <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Signal className="size-4 text-primary" />
-            <span>Status da ponte de comunicação e inventário de campo</span>
+      <section className="rc-panel rounded-[10px] border border-border bg-card p-3 shadow-[var(--shadow-panel)]">
+        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-[minmax(160px,1fr)_minmax(160px,1fr)_minmax(180px,1.4fr)_auto]">
+          <label className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+            Operadora
+            <select
+              value={carrierFilter}
+              onChange={(event) => setCarrierFilter(event.target.value)}
+              className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-xs normal-case tracking-normal"
+            >
+              <option value="">Todas</option>
+              {carriers.map((carrier) => (
+                <option key={carrier} value={carrier}>
+                  {carrier}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+            Status
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+              className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-xs normal-case tracking-normal"
+            >
+              <option value="">Todos</option>
+              <option value="online">Online</option>
+              <option value="degraded">Atenção</option>
+              <option value="offline">Offline</option>
+            </select>
+          </label>
+          <label className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+            Tipo de dispositivo
+            <select
+              value={kindFilter}
+              onChange={(event) => setKindFilter(event.target.value)}
+              className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-xs normal-case tracking-normal"
+            >
+              <option value="">Todos</option>
+              <option value="modem">Modem</option>
+              <option value="gateway">Gateway</option>
+              <option value="bridge">Conexão / bridge</option>
+            </select>
+          </label>
+          <div className="flex items-end justify-between gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setCarrierFilter("");
+                setKindFilter("");
+                setStatusFilter("");
+              }}
+              className="h-10 rounded-lg border border-border px-3 text-xs font-semibold text-muted-foreground hover:bg-secondary"
+            >
+              Limpar filtros
+            </button>
+            <span className="num pb-2 text-[10px] text-muted-foreground">
+              {health?.bridge.updatedAt
+                ? `Atualizado ${new Date(health.bridge.updatedAt * 1000).toLocaleTimeString("pt-BR")}`
+                : fresh
+                  ? "Status atual"
+                  : "Aguardando atualização"}
+            </span>
           </div>
-          <span className="num text-muted-foreground">
-            {health?.bridge.updatedAt
-              ? `Atualizado ${new Date(health.bridge.updatedAt * 1000).toLocaleTimeString("pt-BR")}`
-              : fresh
-                ? "Status atual"
-                : "Aguardando atualização"}
-          </span>
         </div>
       </section>
 
@@ -209,7 +269,7 @@ export function ConnectivityScreen() {
                 </tr>
               </thead>
               <tbody>
-                {devices.map((device) => {
+                {visibleDevices.map((device) => {
                   const status = device.active ? device.status || "Ativo" : "Inativo";
                   const rssi = device.rssi == null ? null : Number(device.rssi);
                   return (
@@ -244,7 +304,7 @@ export function ConnectivityScreen() {
                     </tr>
                   );
                 })}
-                {sessions.map((session) => {
+                {visibleSessions.map((session) => {
                   const state = sessionState(session, fresh);
                   const portTraffic = trafficByPort.get(session.remotePort);
                   const lastActivity = Math.max(
@@ -283,7 +343,7 @@ export function ConnectivityScreen() {
                 })}
               </tbody>
             </table>
-            {!devices.length && !sessions.length && (
+            {!visibleDevices.length && !visibleSessions.length && (
               <p className="py-10 text-center text-sm text-muted-foreground">
                 Sem dispositivos ou conexões configuradas.
               </p>
@@ -341,119 +401,15 @@ export function ConnectivityScreen() {
         </Panel>
       </div>
 
-      <div className="grid min-w-0 gap-3 xl:grid-cols-12">
-        <Panel title="Consumo por conexão" className="xl:col-span-4">
-          <div className="space-y-3">
-            {(traffic?.ports ?? []).slice(0, 8).map((item) => (
-              <div
-                key={item.remotePort}
-                className="grid grid-cols-[80px_minmax(0,1fr)_72px] items-center gap-3 text-xs"
-              >
-                <span className="num">:{item.remotePort}</span>
-                <span className="h-2 overflow-hidden rounded-full bg-secondary">
-                  <i
-                    className="block h-full rounded-full bg-chart-2"
-                    style={{ width: `${Math.max(2, (item.monthBytes / maxTraffic) * 100)}%` }}
-                  />
-                </span>
-                <b className="num text-right">{formatBytes(item.monthBytes)}</b>
-              </div>
-            ))}
-            {!(traffic?.ports ?? []).length && (
-              <p className="py-7 text-center text-sm text-muted-foreground">
-                Tráfego por conexão indisponível.
-              </p>
-            )}
-          </div>
-        </Panel>
-
-        <Panel title="Disponibilidade da ponte de comunicação" className="xl:col-span-3">
-          <div className="flex min-h-44 items-center justify-center gap-5">
-            <div
-              className="grid size-32 place-items-center rounded-full"
-              style={{
-                background: `conic-gradient(var(--online) 0 ${sessions.length ? (healthy / sessions.length) * 100 : 0}%, var(--offline) 0)`,
-              }}
-            >
-              <div className="grid size-[94px] place-items-center rounded-full bg-card text-center">
-                <div>
-                  <b className="num block text-2xl">
-                    {fresh && sessions.length
-                      ? `${Math.round((healthy / sessions.length) * 100)}%`
-                      : "N/D"}
-                  </b>
-                  <span className="text-[10px] text-muted-foreground">Disponível</span>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-2 text-xs">
-              <p>
-                <span className="mr-2 inline-block size-2 rounded-full bg-online" />
-                Saudáveis <b className="num ml-2">{healthy}</b>
-              </p>
-              <p>
-                <span className="mr-2 inline-block size-2 rounded-full bg-offline" />
-                Degradadas <b className="num ml-2">{degraded}</b>
-              </p>
-            </div>
-          </div>
-        </Panel>
-
-        <Panel title="Incidentes de conectividade" className="xl:col-span-5">
-          <div className="divide-y divide-border/55">
-            {badSessions.slice(0, 6).map((session) => (
-              <div
-                key={session.remotePort}
-                className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 py-2.5"
-              >
-                <div className="min-w-0">
-                  <b className="block truncate text-xs">{sessionName(session)}</b>
-                  <p className="mt-0.5 truncate text-[10px] text-muted-foreground">
-                    {session.diagnosis?.label || "Conexão degradada"}
-                  </p>
-                  <p className="mt-0.5 text-[10px] text-muted-foreground">
-                    Reconexões: {session.reconnections} · Timeouts: {session.timeouts} · Erros:{" "}
-                    {session.errors}
-                  </p>
-                </div>
-                <Pill tone={diagnosisTone(session)}>
-                  {session.diagnosis?.origin === "field"
-                    ? "CAMPO/MODEM"
-                    : session.diagnosis?.origin === "controller"
-                      ? "CONTROLADORA"
-                      : session.diagnosis?.origin === "configuration"
-                        ? "CONFIG"
-                        : "SISTEMA"}
-                </Pill>
-              </div>
-            ))}
-            {(traffic?.outages ?? [])
-              .slice(0, Math.max(0, 6 - badSessions.length))
-              .map((outage) => (
-                <div
-                  key={`outage-${outage.id}`}
-                  className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 py-2.5"
-                >
-                  <div>
-                    <b className="text-xs">Porta {outage.remote_port}</b>
-                    <p className="mt-0.5 text-[10px] text-muted-foreground">
-                      Início {dt(outage.started_at)} ·{" "}
-                      {outage.ended_at ? `retorno ${dt(outage.ended_at)}` : "ainda offline"}
-                    </p>
-                  </div>
-                  <Pill tone={outage.ended_at ? "muted" : "err"}>
-                    {outage.ended_at ? "ENCERRADO" : "ABERTO"}
-                  </Pill>
-                </div>
-              ))}
-            {!badSessions.length && !(traffic?.outages ?? []).length && (
-              <p className="py-8 text-center text-sm text-online">
-                Nenhum incidente de conectividade ativo.
-              </p>
-            )}
-          </div>
-        </Panel>
-      </div>
+      <ConnectivitySecondaryPanels
+        traffic={traffic}
+        sessions={sessions}
+        healthy={healthy}
+        degraded={degraded}
+        fresh={fresh}
+        badSessions={badSessions}
+        maxTraffic={maxTraffic}
+      />
     </ScreenBody>
   );
 }

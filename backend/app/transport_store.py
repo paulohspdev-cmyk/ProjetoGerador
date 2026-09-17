@@ -66,7 +66,7 @@ def _assert_not_actively_bound(generator_id: str) -> None:
         ) from exc
     if any(str(item.get("generator_id") or "") == generator_id for item in bindings):
         raise ValueError(
-            "Gerador está provisionado no Rapid SCADA. Retire/reconfigure pelo ciclo de vida "
+            "Gerador está provisionado no motor de telemetria. Retire/reconfigure pelo ciclo de vida "
             "industrial antes de alterar parâmetros de transporte; gravação isolada foi recusada "
             "para evitar divergência entre SQLite e Rapid."
         )

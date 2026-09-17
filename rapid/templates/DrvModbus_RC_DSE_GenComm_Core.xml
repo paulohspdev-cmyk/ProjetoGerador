@@ -11,8 +11,8 @@
     <ElemGroup active="true" dataBlock="HoldingRegisters" address="772" name="DSE GenComm - modo">
       <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="controller_mode_raw" name="Controller Mode" />
     </ElemGroup>
-    <ElemGroup active="true" dataBlock="HoldingRegisters" address="774" name="DSE GenComm - alarmes">
-      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="alarm_class_raw" name="Alarm Class" />
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="774" name="DSE GenComm - status geral">
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="controller_status_flags_raw" name="Controller Status Flags" />
     </ElemGroup>
     <ElemGroup active="true" dataBlock="HoldingRegisters" address="1024" name="DSE GenComm - instrumentacao basica">
       <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="oil_pressure" name="Oil Pressure" />
@@ -32,6 +32,24 @@
       <Elem type="uint" readOnly="true" isBitMask="false" tagCode="current_l1" name="Generator Current L1" />
       <Elem type="uint" readOnly="true" isBitMask="false" tagCode="current_l2" name="Generator Current L2" />
       <Elem type="uint" readOnly="true" isBitMask="false" tagCode="current_l3" name="Generator Current L3" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1059" name="DSE GenComm - rede opcional">
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="mains_frequency" name="Mains Frequency" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="mains_voltage_l1" name="Mains Voltage L1-N" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="mains_voltage_l2" name="Mains Voltage L2-N" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="mains_voltage_l3" name="Mains Voltage L3-N" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="mains_voltage_l1_l2" name="Mains Voltage L1-L2" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="mains_voltage_l2_l3" name="Mains Voltage L2-L3" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="mains_voltage_l3_l1" name="Mains Voltage L3-L1" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1091" name="DSE GenComm - barramento opcional">
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="bus_frequency" name="Bus Frequency" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="bus_voltage_l1" name="Bus Voltage L1-N" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="bus_voltage_l2" name="Bus Voltage L2-N" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="bus_voltage_l3" name="Bus Voltage L3-N" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="bus_voltage_l1_l2" name="Bus Voltage L1-L2" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="bus_voltage_l2_l3" name="Bus Voltage L2-L3" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="bus_voltage_l3_l1" name="Bus Voltage L3-L1" />
     </ElemGroup>
     <ElemGroup active="true" dataBlock="HoldingRegisters" address="1536" name="DSE GenComm - potencia">
       <Elem type="int" readOnly="true" isBitMask="false" tagCode="power_kw" name="Generator Total Power" />

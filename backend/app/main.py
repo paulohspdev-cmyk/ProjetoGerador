@@ -381,8 +381,12 @@ def dashboard_get(user: dict = Depends(require_view)):
 
 
 @app.get("/api/events")
-def events_get(limit: int = 200, user: dict = Depends(require_view)):
-    return db.list_events(limit)
+def events_get(
+    limit: int = 200,
+    generator_id: str | None = None,
+    user: dict = Depends(require_view),
+):
+    return db.list_events(limit, generator_id=generator_id)
 
 
 @app.get("/api/audit")
@@ -504,12 +508,12 @@ def reports_download(report_id: str, user: dict = Depends(require_view)):
         raise HTTPException(status_code=404, detail="Relatório não encontrado")
     artifact = platform_store.get_report_artifact(report_id)
     if not artifact or not Path(artifact["path"]).exists():
-        generated = generate_report(report, live_generators())
-        path = Path(generated["path"])
-        media_type = generated["media_type"]
-    else:
-        path = Path(artifact["path"])
-        media_type = artifact["media_type"]
+        raise HTTPException(
+            status_code=410,
+            detail="Artefato do relatório não está mais disponível. Gere uma nova fotografia operacional.",
+        )
+    path = Path(artifact["path"])
+    media_type = artifact["media_type"]
     return FileResponse(path, media_type=media_type, filename=path.name)
 
 

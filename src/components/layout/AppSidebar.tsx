@@ -164,11 +164,18 @@ function SidebarNav({ collapsed, onNavigate, onToggle, onClose, touchFriendly }:
                 )}
               >
                 <ul className="space-y-0.5 overflow-hidden">
-                  {group.items.map((item) => {
+                  {group.items.map((item, itemIndex) => {
                     const active = isActive(item.slug);
                     const alarmItem = item.slug === "alarmes";
                     return (
                       <Fragment key={item.slug + item.label}>
+                        {!collapsed &&
+                          item.section &&
+                          item.section !== group.items[itemIndex - 1]?.section && (
+                            <li className="px-3 pb-1 pt-3 text-[9px] font-extrabold uppercase tracking-[0.16em] text-slate-600 first:pt-1">
+                              {item.section}
+                            </li>
+                          )}
                         <li>
                           <Link
                             to={hrefFor(item.slug)}

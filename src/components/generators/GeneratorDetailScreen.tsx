@@ -49,15 +49,11 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
   }, [gen.id, gen.tag]);
 
   const configured = gen.enabled !== false && gen.status !== "nao_configurado";
-  const normalizedController = gen.controller.trim().toLowerCase();
-  const homologatedIg200 =
-    normalizedController === "inteligen 200" &&
-    gen.transport === "reverse_tcp" &&
-    Number(gen.rapidDeviceNum || 0) > 0;
+  const operationallyReachable = !gen.telemetryStale && gen.status !== "offline";
   const canStart =
-    can("operate") && configured && (gen.capabilities?.start === true || homologatedIg200);
+    can("operate") && configured && operationallyReachable && gen.capabilities?.start === true;
   const canStop =
-    can("operate") && configured && (gen.capabilities?.stop === true || homologatedIg200);
+    can("operate") && configured && operationallyReachable && gen.capabilities?.stop === true;
 
   const command = async (action: "start" | "stop") => {
     const allowed = action === "start" ? canStart : canStop;

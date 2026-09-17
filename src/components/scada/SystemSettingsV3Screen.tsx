@@ -21,6 +21,7 @@ export function SystemSettingsV3Screen() {
   const [secret, setSecret] = useState("");
   const [uri, setUri] = useState("");
   const [otp, setOtp] = useState("");
+  const [twoFactorPassword, setTwoFactorPassword] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -96,8 +97,9 @@ export function SystemSettingsV3Screen() {
     setMessage("");
     setError("");
     try {
-      await rcApi.auth.disable2fa(otp.trim());
+      await rcApi.auth.disable2fa(otp.trim(), twoFactorPassword);
       setOtp("");
+      setTwoFactorPassword("");
       setMessage("2FA desabilitado.");
       await loadSecurity();
     } catch (err) {
@@ -256,7 +258,7 @@ export function SystemSettingsV3Screen() {
           {twoFactor && (
             <div className="space-y-2">
               <p className="text-online">2FA está habilitado nesta conta.</p>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <input
                   inputMode="numeric"
                   autoComplete="one-time-code"
@@ -265,9 +267,17 @@ export function SystemSettingsV3Screen() {
                   placeholder="código atual"
                   className="h-9 w-36 rounded-md border border-input bg-background px-2 text-sm"
                 />
+                <input
+                  type="password"
+                  autoComplete="current-password"
+                  value={twoFactorPassword}
+                  onChange={(e) => setTwoFactorPassword(e.target.value)}
+                  placeholder="senha atual"
+                  className="h-9 w-44 rounded-md border border-input bg-background px-2 text-sm"
+                />
                 <ActionBtn
                   tone="danger"
-                  disabled={otp.length < 6}
+                  disabled={otp.length < 6 || twoFactorPassword.length < 8}
                   onClick={() => void disable2fa()}
                 >
                   Desabilitar 2FA

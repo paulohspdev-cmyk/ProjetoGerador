@@ -21,6 +21,13 @@ SERVICES = [
 ]
 
 
+def _safe_exists(path) -> bool:
+    try:
+        return Path(path).exists()
+    except OSError:
+        return False
+
+
 def _run(args, timeout=2):
     try:
         proc = subprocess.run(args, capture_output=True, text=True, timeout=timeout, check=False)
@@ -100,7 +107,7 @@ def _connection_diagnosis(session: dict, listeners: dict[int, dict], status_fres
         return {
             "code": "no_rapid_device",
             "origin": "configuration",
-            "label": "TCP conectado, mas nenhum gerador desta porta está provisionado no Rapid SCADA",
+            "label": "TCP conectado, mas nenhum gerador desta porta está provisionado no motor de telemetria",
         }
 
     connected_at = int(session.get("connectedAt") or 0)
@@ -109,7 +116,7 @@ def _connection_diagnosis(session: dict, listeners: dict[int, dict], status_fres
         return {
             "code": "rapid_polling_absent",
             "origin": "system",
-            "label": "Modem conectado e provisionado, mas sem tráfego de polling do Rapid SCADA",
+            "label": "Modem conectado e provisionado, mas sem tráfego de polling do motor de telemetria",
         }
 
     unit_health = session.get("unitHealth") if isinstance(session.get("unitHealth"), dict) else {}
@@ -213,13 +220,13 @@ def system_diagnostics():
         "ok": all(item["status"] == "OK" for item in services),
         "services": services,
         "rapid": {
-            "bindingsExists": RAPID_BINDINGS_FILE.exists(),
-            "readerExists": RAPID_READER_DLL.exists(),
-            "commConfigExists": RAPID_COMM_CONFIG.exists(),
+            "bindingsExists": _safe_exists(RAPID_BINDINGS_FILE),
+            "readerExists": _safe_exists(RAPID_READER_DLL),
+            "commConfigExists": _safe_exists(RAPID_COMM_CONFIG),
         },
         "bridge": {
             "controlSocket": CONTROL_SOCKET,
-            "controlSocketExists": Path(CONTROL_SOCKET).exists(),
+            "controlSocketExists": _safe_exists(CONTROL_SOCKET),
             "listeners": reverse_listeners,
             **runtime_bridge,
             "traffic": traffic,

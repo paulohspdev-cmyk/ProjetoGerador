@@ -3,11 +3,12 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel, Field
 
-from . import db, domain_bundle, domain_store, network_discovery
+from . import db, domain_bundle, domain_store, network_discovery, platform_store
 from .auth import require_admin, require_create, require_edit, require_remove, require_view
 from .binding_store import BindingStoreError
 from .industrial_routes import router as industrial_router
@@ -119,17 +120,21 @@ class AssetLinkCreate(BaseModel):
 
 class ProvisionRequest(BaseModel):
     confirmation: str = Field(min_length=1, max_length=64)
+    operationId: str | None = Field(default=None, min_length=8, max_length=120)
 
 
 class DeprovisionRequest(BaseModel):
     confirmation: str = Field(min_length=1, max_length=64)
+    operationId: str | None = Field(default=None, min_length=8, max_length=120)
 
 
 class RetireRequest(BaseModel):
     confirmation: str = Field(min_length=1, max_length=160)
+    operationId: str | None = Field(default=None, min_length=8, max_length=120)
 
 
 class GeneratorReconfigureRequest(BaseModel):
+    operationId: str | None = Field(default=None, min_length=8, max_length=120)
     transport: str
     ip: str = Field(default="", max_length=255)
     listenPort: int = Field(default=0, ge=0, le=65535)
@@ -299,8 +304,7 @@ def generator_lifecycle(generator_id: str, user: dict = Depends(require_view)):
     }
 
 
-@router.post("/api/generators/{generator_id}/provision")
-async def generator_provision(
+async def _execute_generator_provision(
     generator_id: str,
     payload: ProvisionRequest,
     user: dict = Depends(require_create),
@@ -330,8 +334,7 @@ async def generator_provision(
     return result
 
 
-@router.post("/api/generators/{generator_id}/deprovision")
-async def generator_deprovision(
+async def _execute_generator_deprovision(
     generator_id: str,
     payload: DeprovisionRequest,
     user: dict = Depends(require_admin),
@@ -347,13 +350,12 @@ async def generator_deprovision(
         "deprovision_requested",
         "generator",
         generator["id"],
-        "Rapid SCADA; histórico preservado",
+        "Motor de telemetria; histórico preservado",
     )
     return result
 
 
-@router.post("/api/generators/{generator_id}/reconfigure")
-async def generator_reconfigure(
+async def _execute_generator_reconfigure(
     generator_id: str,
     payload: GeneratorReconfigureRequest,
     user: dict = Depends(require_admin),
@@ -504,8 +506,7 @@ async def network_discovery_modbus_tcp(
     return result
 
 
-@router.post("/api/generators/{generator_id}/retire")
-async def generator_retire(
+async def _execute_generator_retire(
     generator_id: str,
     payload: RetireRequest,
     user: dict = Depends(require_remove),
@@ -553,6 +554,138 @@ async def generator_retire(
         "deprovisioned": bool(deprovision_result),
         "historyPreserved": bool((deprovision_result or {}).get("historyPreserved", True)),
     }
+
+
+def _queue_lifecycle_operation(
+    generator_id: str,
+    kind: str,
+    payload: BaseModel,
+    user: dict,
+) -> dict:
+    generator = db.get_generator(generator_id)
+    if not generator:
+        raise HTTPException(status_code=404, detail="Gerador não encontrado")
+    operation_id = str(getattr(payload, "operationId", None) or uuid.uuid4())
+    payload_dict = payload.model_dump()
+    payload_dict["operationId"] = operation_id
+    try:
+        queued = platform_store.enqueue_lifecycle_operation(
+            operation_id,
+            generator["id"],
+            kind,
+            payload_dict,
+            actor(user),
+            str(user.get("role") or ""),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    db.add_audit(
+        actor(user),
+        f"{kind}_queued",
+        "generator",
+        generator["id"],
+        f"operation={operation_id}",
+    )
+    return queued
+
+
+@router.post(
+    "/api/generators/{generator_id}/provision",
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def generator_provision(
+    generator_id: str,
+    payload: ProvisionRequest,
+    user: dict = Depends(require_create),
+):
+    if payload.confirmation.strip().upper() != "PROVISION":
+        raise HTTPException(status_code=422, detail="Confirmação deve ser PROVISION")
+    return _queue_lifecycle_operation(generator_id, "provision", payload, user)
+
+
+@router.post(
+    "/api/generators/{generator_id}/deprovision",
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def generator_deprovision(
+    generator_id: str,
+    payload: DeprovisionRequest,
+    user: dict = Depends(require_admin),
+):
+    if payload.confirmation.strip().upper() != "DEPROVISION":
+        raise HTTPException(status_code=422, detail="Confirmação deve ser DEPROVISION")
+    return _queue_lifecycle_operation(generator_id, "deprovision", payload, user)
+
+
+@router.post(
+    "/api/generators/{generator_id}/reconfigure",
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def generator_reconfigure(
+    generator_id: str,
+    payload: GeneratorReconfigureRequest,
+    user: dict = Depends(require_admin),
+):
+    generator = db.get_generator(generator_id)
+    if not generator:
+        raise HTTPException(status_code=404, detail="Gerador não encontrado")
+    expected = f"RECONFIGURAR {generator['tag']}"
+    if payload.confirmation.strip().upper() != expected.upper():
+        raise HTTPException(status_code=422, detail=f"Confirmação deve ser {expected}")
+    return _queue_lifecycle_operation(generator_id, "reconfigure", payload, user)
+
+
+@router.post(
+    "/api/generators/{generator_id}/retire",
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def generator_retire(
+    generator_id: str,
+    payload: RetireRequest,
+    user: dict = Depends(require_remove),
+):
+    generator = db.get_generator(generator_id)
+    if not generator:
+        raise HTTPException(status_code=404, detail="Gerador não encontrado")
+    expected = f"RETIRAR {generator['tag']}"
+    if payload.confirmation.strip().upper() != expected.upper():
+        raise HTTPException(status_code=422, detail=f"Confirmação deve ser {expected}")
+    return _queue_lifecycle_operation(generator_id, "retire", payload, user)
+
+
+@router.get("/api/generators/{generator_id}/operations/{operation_id}")
+def generator_operation_status(
+    generator_id: str,
+    operation_id: str,
+    user: dict = Depends(require_view),
+):
+    operation = platform_store.get_lifecycle_operation(operation_id, generator_id)
+    if not operation:
+        raise HTTPException(status_code=404, detail="Operação não encontrada")
+    return operation
+
+
+async def execute_lifecycle_operation(item: dict) -> dict:
+    """Executed only by the dedicated lifecycle worker, never by an HTTP timeout window."""
+    kind = str(item.get("kind") or "")
+    payload = item.get("payload") or {}
+    user = {
+        "id": item.get("actor") or "system",
+        "email": item.get("actor") or "system",
+        "role": item.get("actorRole") or "",
+    }
+    generator_id = str(item.get("generatorId") or "")
+    if kind == "provision":
+        return await _execute_generator_provision(generator_id, ProvisionRequest(**payload), user)
+    if kind == "deprovision":
+        return await _execute_generator_deprovision(generator_id, DeprovisionRequest(**payload), user)
+    if kind == "reconfigure":
+        return await _execute_generator_reconfigure(
+            generator_id, GeneratorReconfigureRequest(**payload), user
+        )
+    if kind == "retire":
+        return await _execute_generator_retire(generator_id, RetireRequest(**payload), user)
+    raise ValueError(f"Operação desconhecida: {kind}")
 
 
 @router.get("/api/assets")

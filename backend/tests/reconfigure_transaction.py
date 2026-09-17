@@ -59,7 +59,7 @@ payload = domain_routes.GeneratorReconfigureRequest(
     modbusUnit=10,
     confirmation="RECONFIGURAR GEN901",
 )
-result = asyncio.run(domain_routes.generator_reconfigure(generator["id"], payload, user))
+result = asyncio.run(domain_routes._execute_generator_reconfigure(generator["id"], payload, user))
 assert result["ok"] is True and result["reprovisioned"] is True
 current = db.get_generator(generator["id"])
 assert current["listen_port"] == 15006 and current["modbus_unit"] == 10
@@ -82,7 +82,7 @@ payload = domain_routes.GeneratorReconfigureRequest(
     confirmation="RECONFIGURAR GEN901",
 )
 try:
-    asyncio.run(domain_routes.generator_reconfigure(generator["id"], payload, user))
+    asyncio.run(domain_routes._execute_generator_reconfigure(generator["id"], payload, user))
 except HTTPException as exc:
     assert exc.status_code == 502
     assert "anterior restaurada" in exc.detail

@@ -78,7 +78,7 @@ with TestClient(app) as client:
     assert all(item["site"] == "Unidade Teste" for item in payload)
     # Sem binding real, o inventário continua visível e apenas a telemetria degrada.
     assert all(item["status"] == "offline" for item in payload)
-    assert all(item["lastError"] == "Controladora homologada sem binding Rapid SCADA" for item in payload)
+    assert all(item["lastError"] == "Controladora homologada sem vínculo no motor de telemetria" for item in payload)
 
     # Também cobre uma superfície global usada logo após o login.
     bootstrap = expect(client.get("/api/ops/bootstrap"), 200).json()

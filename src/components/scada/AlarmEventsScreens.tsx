@@ -216,42 +216,6 @@ export function EventsScreen() {
 
       <div className="grid min-w-0 gap-3 xl:grid-cols-12">
         <Panel title="Linha do tempo de eventos" className="xl:col-span-9">
-          <div className="mb-3 grid gap-2 lg:grid-cols-[minmax(260px,1fr)_170px_190px]">
-            <label className="flex h-10 items-center gap-2 rounded-lg border border-input bg-background px-3">
-              <Search className="size-4 text-muted-foreground" />
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Buscar gerador, unidade ou evento..."
-                className="min-w-0 flex-1 bg-transparent text-xs outline-none"
-                aria-label="Buscar eventos"
-              />
-            </label>
-            <select
-              value={level}
-              onChange={(event) => setLevel(event.target.value)}
-              className="h-10 rounded-lg border border-input bg-background px-3 text-xs"
-            >
-              <option value="">Todos os níveis</option>
-              <option value="FAULT">FAULT</option>
-              <option value="ERROR">ERROR</option>
-              <option value="WARN">WARN</option>
-              <option value="INFO">INFO</option>
-            </select>
-            <select
-              value={site}
-              onChange={(event) => setSite(event.target.value)}
-              className="h-10 rounded-lg border border-input bg-background px-3 text-xs"
-            >
-              <option value="">Todas as unidades</option>
-              {sites.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          </div>
-
           {!filtered.length ? (
             <p className="py-10 text-center text-sm text-muted-foreground">
               Nenhum evento corresponde aos filtros.
@@ -295,20 +259,50 @@ export function EventsScreen() {
           )}
         </Panel>
 
-        <Panel title="Filtros ativos" className="xl:col-span-3">
+        <Panel title="Filtros" className="xl:col-span-3">
           <div className="space-y-3 text-xs">
-            <div className="rounded-lg border border-border/60 bg-background/25 p-3">
-              <span className="block text-[10px] text-muted-foreground">Texto</span>
-              <b className="mt-1 block break-words">{query || "Todos"}</b>
-            </div>
-            <div className="rounded-lg border border-border/60 bg-background/25 p-3">
-              <span className="block text-[10px] text-muted-foreground">Nível</span>
-              <b className="mt-1 block">{level || "Todos"}</b>
-            </div>
-            <div className="rounded-lg border border-border/60 bg-background/25 p-3">
-              <span className="block text-[10px] text-muted-foreground">Unidade</span>
-              <b className="mt-1 block">{site || "Todas"}</b>
-            </div>
+            <label className="block text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+              Busca
+              <span className="mt-1 flex h-10 items-center gap-2 rounded-lg border border-input bg-background px-3 normal-case tracking-normal">
+                <Search className="size-4 text-muted-foreground" />
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Gerador ou evento"
+                  className="min-w-0 flex-1 bg-transparent text-xs outline-none"
+                  aria-label="Buscar eventos"
+                />
+              </span>
+            </label>
+            <label className="block text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+              Tipo de evento
+              <select
+                value={level}
+                onChange={(event) => setLevel(event.target.value)}
+                className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-xs normal-case tracking-normal"
+              >
+                <option value="">Todos</option>
+                <option value="FAULT">Falha</option>
+                <option value="ERROR">Erro</option>
+                <option value="WARN">Aviso</option>
+                <option value="INFO">Informação</option>
+              </select>
+            </label>
+            <label className="block text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+              Unidade
+              <select
+                value={site}
+                onChange={(event) => setSite(event.target.value)}
+                className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-xs normal-case tracking-normal"
+              >
+                <option value="">Todas</option>
+                {sites.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </label>
             <div className="rounded-lg border border-border/60 bg-background/25 p-3">
               <span className="block text-[10px] text-muted-foreground">Resultados</span>
               <b className="num mt-1 block text-xl">{filtered.length}</b>

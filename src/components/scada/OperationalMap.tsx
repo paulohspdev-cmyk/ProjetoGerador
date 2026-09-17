@@ -77,16 +77,19 @@ type MapCtx = {
 
 type Props = {
   siteRows?: OpsSite[];
+  generators?: Generator[];
   selectedSiteId?: string | null;
   onSelectSite?: (site: OperationalMapSite) => void;
 };
 
 export function OperationalMap({
   siteRows: suppliedRows,
+  generators: suppliedGenerators,
   selectedSiteId,
   onSelectSite,
 }: Props = {}) {
-  const { generators } = useGenerators();
+  const { generators: providerGenerators } = useGenerators();
+  const generators = suppliedGenerators ?? providerGenerators;
   const { theme } = useTheme();
   const elRef = useRef<HTMLDivElement>(null);
   const ctxRef = useRef<MapCtx | null>(null);

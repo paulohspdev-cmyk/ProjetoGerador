@@ -314,7 +314,10 @@ def _line_channel_spec(transport: str, generator: dict, config: dict) -> tuple[s
                 "StayConnected": "true",
                 "DisconnectOnError": "false",
                 "Behavior": "Master",
-                "ConnectionMode": "Individual",
+                # The endpoint is configured on the communication line.
+                # Shared makes DrvCnlBasic use that line-level Host/TcpPort;
+                # Individual expects a per-device call sign/StrAddress.
+                "ConnectionMode": "Shared",
             },
             "TCP" if transport == "modbus_tcp_direct" else "RTU",
         )
@@ -352,6 +355,39 @@ def _ensure_line_safety(line) -> list[str]:
         if child.text != value:
             changes.append(f"xml.line.{tag}:{child.text!r}->{value!r}")
             child.text = value
+    return changes
+
+
+def _apply_pack_line_options(line, pack: dict) -> list[str]:
+    """Aplica overrides de polling declarados pelo Controller Pack.
+
+    Mantém os defaults seguros globais, mas permite controladores/caminhos seriais
+    mais lentos declararem um CycleDelay maior sem hardcode por modelo.
+    """
+    rapid = dict(pack.get("rapid") or {})
+    raw = dict(rapid.get("lineOptions") or {})
+    # Controller Packs may tune polling/logging, but must never override the
+    # global read-only command policy enforced by LINE_OPTION_DEFAULTS.
+    allowed = {"ReqRetries", "CycleDelay", "DetailedLog"}
+    changes: list[str] = []
+    if not raw:
+        return changes
+    opts = line.find("LineOptions")
+    if opts is None:
+        opts = __import__('xml.etree.ElementTree', fromlist=['ElementTree']).SubElement(line, "LineOptions")
+        changes.append("xml.line.options:add")
+    children = {child.tag: child for child in opts}
+    for tag, value in raw.items():
+        if tag not in allowed:
+            continue
+        text = str(value).lower() if isinstance(value, bool) else str(value)
+        child = children.get(tag)
+        if child is None:
+            child = __import__('xml.etree.ElementTree', fromlist=['ElementTree']).SubElement(opts, tag)
+            changes.append(f"xml.line.{tag}:add")
+        if child.text != text:
+            changes.append(f"xml.line.{tag}:{child.text!r}->{text!r}")
+            child.text = text
     return changes
 
 
@@ -671,6 +707,8 @@ def _reconcile_existing(
                 raise ValueError(f"Line {line_num} não existe no ScadaCommConfig.xml")
             changes.extend(_reconcile_line_transport(line, generator, config))
 
+        changes.extend(_apply_pack_line_options(line, pack))
+
         device_patch = {
             "Name": generator.get("name") or generator["tag"],
             "Code": generator["tag"],
@@ -963,6 +1001,8 @@ def provision(generator_id: str, restart: bool = True):
                 generator,
                 config,
             )
+
+        _apply_pack_line_options(line, pack)
 
         append_row(
             str(DAT / "device.dat"),

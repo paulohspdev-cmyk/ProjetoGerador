@@ -41,6 +41,9 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const [commandMessage, setCommandMessage] = useState<string | null>(null);
 
   const telemetry = readGeneratorTelemetry(gen);
+  const controllerText = `${gen.controllerType ?? ""} ${gen.controller ?? ""}`.toLowerCase();
+  const alternatorLabel =
+    controllerText.includes("comap") || controllerText.includes("inteli") ? "D+" : "Alternator";
   const {
     rpm,
     oil,
@@ -69,6 +72,9 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const gcbKnown = hasFreshMetric(gen, "gcb_closed");
   const modeKnown = hasFreshMetric(gen, "controller_mode_raw");
   const alarmCountKnown = hasFreshMetric(gen, "alarm_count");
+  const alarmActiveKnown = hasFreshMetric(gen, "alarm_active");
+  const alarmActive = metricNumber(gen, "alarm_active", undefined) === 1;
+  const alarmKnown = alarmCountKnown || alarmActiveKnown;
   const unavailableLabel = (_key: string) => "N/D";
   const statusClass =
     gen.status === "online"
@@ -84,6 +90,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     "mains_voltage_l3",
     "mains_voltage_l1_l2",
   ];
+  const busKeys = ["bus_voltage_l1", "bus_voltage_l2", "bus_voltage_l3", "bus_voltage_l1_l2"];
   const genKeys = ["voltage_l1", "voltage_l2", "voltage_l3", "voltage_l1_l2"];
   const mainsVoltageValues = [
     metricNumber(gen, "mains_voltage_l1", gen.mains.l1),
@@ -91,18 +98,54 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     metricNumber(gen, "mains_voltage_l3", gen.mains.l3),
     metricNumber(gen, "mains_voltage_l1_l2", gen.mains.l12),
   ];
+  const busVoltageValues = [
+    metricNumber(gen, "bus_voltage_l1", undefined),
+    metricNumber(gen, "bus_voltage_l2", undefined),
+    metricNumber(gen, "bus_voltage_l3", undefined),
+    metricNumber(gen, "bus_voltage_l1_l2", undefined),
+  ];
+  const busFrequency = metricNumber(gen, "bus_frequency", undefined);
+  const breakerState = metricNumber(gen, "breaker_state_raw", undefined);
+  const isComapController = controllerText.includes("comap") || controllerText.includes("inteli");
+  // ComAp chama estes registradores de "Mains/Bus". Em IslOper (2) e
+  // MultIslOp (10), eles representam o barramento ilhado energizado pelo
+  // gerador, não presença da concessionária.
+  const comapIslanded = isComapController && (breakerState === 2 || breakerState === 10);
   const mainsVoltageKnown = mainsKeys.some((key) => hasFreshMetric(gen, key));
   const mainsFrequencyKnown = hasFreshMetric(gen, "mains_frequency");
   const mainsKnown = mainsVoltageKnown || mainsFrequencyKnown;
-  const mainsPeakVoltage = Math.max(
+  const busVoltageKnown = busKeys.some((key) => hasFreshMetric(gen, key));
+  const busFrequencyKnown = hasFreshMetric(gen, "bus_frequency");
+  const busKnown = busVoltageKnown || busFrequencyKnown;
+  const useBusSource = comapIslanded || (!mainsKnown && busKnown);
+  const sourceKind: "mains" | "bus" | "none" = useBusSource ? "bus" : mainsKnown ? "mains" : "none";
+  const sourceKnown = sourceKind !== "none";
+  const sourceVoltageValues =
+    sourceKind === "bus"
+      ? comapIslanded
+        ? mainsVoltageValues
+        : busVoltageValues
+      : mainsVoltageValues;
+  const sourceFrequency =
+    sourceKind === "bus" ? (comapIslanded ? mainsFrequency : busFrequency) : mainsFrequency;
+  const sourceFrequencyKnown =
+    sourceKind === "bus"
+      ? comapIslanded
+        ? mainsFrequencyKnown
+        : busFrequencyKnown
+      : mainsFrequencyKnown;
+  const sourcePeakVoltage = Math.max(
     0,
-    ...mainsVoltageValues.filter((value): value is number => value != null),
+    ...sourceVoltageValues.filter((value): value is number => value != null),
   );
-  const mainsPresent =
-    mainsKnown &&
-    (mainsPeakVoltage >= 80 ||
-      (mainsFrequencyKnown && mainsFrequency != null && mainsFrequency >= 20) ||
-      (mcbKnown && gen.mcb));
+  const sourcePresent =
+    sourceKnown &&
+    (sourcePeakVoltage >= 80 ||
+      (sourceFrequencyKnown && sourceFrequency != null && sourceFrequency >= 20) ||
+      (sourceKind === "mains" && mcbKnown && gen.mcb));
+  // O SLD existente representa rede + MCB. Barramento DSE não deve ser desenhado
+  // como concessionária; seus valores continuam visíveis na tabela inferior.
+  const mainsPresent = sourceKind === "mains" && sourcePresent;
   const genVoltageKnown = genKeys.some((key) => hasFreshMetric(gen, key));
   const mainsOk = mainsPresent;
 
@@ -139,11 +182,19 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     }
   };
 
+  const sourcePrefix = sourceKind === "bus" && !comapIslanded ? "bus" : "mains";
+  const sourceLabel = sourceKind === "bus" ? "Barramento" : "Rede";
   const tableRows = [
-    ["Tensão L1-N", "mains_voltage_l1", gen.mains.l1, "voltage_l1", gen.gen.l1],
-    ["Tensão L2-N", "mains_voltage_l2", gen.mains.l2, "voltage_l2", gen.gen.l2],
-    ["Tensão L3-N", "mains_voltage_l3", gen.mains.l3, "voltage_l3", gen.gen.l3],
-    ["Tensão L1-L2", "mains_voltage_l1_l2", gen.mains.l12, "voltage_l1_l2", gen.gen.l12],
+    ["Tensão L1-N", `${sourcePrefix}_voltage_l1`, sourceVoltageValues[0], "voltage_l1", gen.gen.l1],
+    ["Tensão L2-N", `${sourcePrefix}_voltage_l2`, sourceVoltageValues[1], "voltage_l2", gen.gen.l2],
+    ["Tensão L3-N", `${sourcePrefix}_voltage_l3`, sourceVoltageValues[2], "voltage_l3", gen.gen.l3],
+    [
+      "Tensão L1-L2",
+      `${sourcePrefix}_voltage_l1_l2`,
+      sourceVoltageValues[3],
+      "voltage_l1_l2",
+      gen.gen.l12,
+    ],
   ] as const;
 
   return (
@@ -155,15 +206,34 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
           <p className="controller-model-line">{gen.controller}</p>
         </div>
         <span
-          className="comap-alarm"
-          title={alarmCountKnown ? "Contagem de alarmes" : "Alarmes N/D"}
+          className={cn(
+            "comap-alarm",
+            !alarmKnown && "is-unknown",
+            alarmKnown && !alarmActive && gen.alarms === 0 && "is-clear",
+            (alarmActive || gen.alarms > 0) && "has-alarm",
+          )}
+          title={
+            alarmCountKnown
+              ? "Contagem de alarmes"
+              : alarmActiveKnown
+                ? "Estado de alarme da controladora"
+                : "Alarmes N/D"
+          }
         >
           <svg viewBox="0 0 24 24">
             <path d="M12 3 2.8 20h18.4L12 3Z" />
             <path d="M12 8.5v5.8m0 2.7h.01" />
           </svg>
           <span className="comap-alarm-count">
-            {alarmCountKnown ? gen.alarms : gen.status === "alerta" ? "!" : "N/D"}
+            {alarmCountKnown
+              ? gen.alarms
+              : alarmActiveKnown
+                ? alarmActive
+                  ? "!"
+                  : "0"
+                : gen.status === "alerta"
+                  ? "!"
+                  : "N/D"}
           </span>
         </span>
         <Link
@@ -295,7 +365,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         />
         <EngineRow
           icon={<IconBolt />}
-          label="Alternator"
+          label={alternatorLabel}
           value={alt == null ? "N/D" : `${fmt(alt)} V`}
           pct={percents.alternator}
           bar
@@ -358,26 +428,38 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
 
       <section className="comap-block mains-generator-block mb-1.5 shrink-0 px-2 py-1.5">
         <div className="flex items-center justify-between gap-2">
-          <h2 className="comap-title">{mainsPresent ? "Rede / Gerador" : "Gerador"}</h2>
-          <span className={cn("mains-presence", mainsPresent ? "is-present" : "is-absent")}>
-            {mainsPresent ? "REDE PRESENTE" : mainsKnown ? "SEM REDE" : "REDE N/D"}
+          <h2 className="comap-title">{sourceKnown ? `${sourceLabel} / Gerador` : "Gerador"}</h2>
+          <span className={cn("mains-presence", sourcePresent ? "is-present" : "is-absent")}>
+            {sourceKind === "bus"
+              ? comapIslanded
+                ? sourcePresent
+                  ? "ILHADO · BARRAMENTO"
+                  : "ILHADO · SEM TENSÃO"
+                : sourcePresent
+                  ? "BARRAMENTO ENERGIZADO"
+                  : "BARRAMENTO SEM TENSÃO"
+              : sourceKind === "mains"
+                ? sourcePresent
+                  ? "REDE PRESENTE"
+                  : "SEM REDE"
+                : "FONTE N/D"}
           </span>
         </div>
-        <div className={cn("comap-table-head", !mainsPresent && "is-generator-only")}>
+        <div className={cn("comap-table-head", !sourceKnown && "is-generator-only")}>
           <span />
-          {mainsPresent && <span>Rede</span>}
+          {sourceKnown && <span>{sourceLabel}</span>}
           <span>Gerador</span>
         </div>
-        {tableRows.map(([label, mainsKey, mainsValue, genKey, genValue]) => (
-          <div key={label} className={cn("comap-table-row", !mainsPresent && "is-generator-only")}>
+        {tableRows.map(([label, sourceKey, sourceValue, genKey, genValue]) => (
+          <div key={label} className={cn("comap-table-row", !sourceKnown && "is-generator-only")}>
             <span className="label">{label}</span>
-            {mainsPresent && (
-              <span className="mains">{cardMetric(mainsKey, mainsValue, "V", 0)}</span>
+            {sourceKnown && (
+              <span className="mains">{cardMetric(sourceKey, sourceValue, "V", 0)}</span>
             )}
             <span className="gen">{cardMetric(genKey, genValue, "V", 0)}</span>
           </div>
         ))}
-        {!mainsPresent && !genVoltageKnown && (
+        {!sourceKnown && !genVoltageKnown && (
           <p className="py-1 text-[9px] text-muted-foreground">
             Tensões do gerador N/D para esta controladora.
           </p>

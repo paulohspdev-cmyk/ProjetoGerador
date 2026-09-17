@@ -268,7 +268,7 @@ def update_user(user_id, patch, actor="system"):
 
     with connect() as conn:
         conn.execute(f"UPDATE users SET {', '.join(fields)} WHERE id=?", values)
-        if patch.get("active") is False:
+        if patch.get("active") is False or "password_hash" in patch:
             conn.execute("DELETE FROM sessions WHERE user_id=?", (user_id,))
         conn.execute(
             "INSERT INTO audit_log(created_at,actor,action,entity_type,entity_id,detail) VALUES (?,?,?,?,?,?)",
@@ -514,7 +514,9 @@ def get_telemetry_snapshot(generator_id):
     return {"values": values, "defined": defined, "updated_at": int(row["updated_at"])}
 
 
-def save_telemetry_snapshot(generator_id, values, defined=None, updated_at=None):
+def save_telemetry_snapshot(
+    generator_id, values, defined=None, updated_at=None, *, merge_existing=False
+):
     if not values:
         return
     timestamp = int(updated_at or time.time())
@@ -531,7 +533,7 @@ def save_telemetry_snapshot(generator_id, values, defined=None, updated_at=None)
             "SELECT values_json, defined_json FROM generator_telemetry_snapshots WHERE generator_id=?",
             (generator_id,),
         ).fetchone()
-        if current:
+        if current and merge_existing:
             try:
                 previous_values = json.loads(current["values_json"])
                 previous_defined = json.loads(current["defined_json"])
@@ -569,18 +571,32 @@ def add_event(generator_id, level, message):
         return cur.lastrowid
 
 
-def list_events(limit=200):
+def list_events(limit=200, generator_id: str | None = None):
     limit = max(1, min(int(limit), 2000))
     with connect() as conn:
-        rows = conn.execute(
-            """
-            SELECT e.id, e.generator_id, e.level, e.message, e.created_at,
-                   g.tag, g.name, g.site
-            FROM events e
-            LEFT JOIN generators g ON g.id = e.generator_id
-            ORDER BY e.id DESC
-            LIMIT ?
-            """,
-            (limit,),
-        ).fetchall()
+        if generator_id:
+            rows = conn.execute(
+                """
+                SELECT e.id, e.generator_id, e.level, e.message, e.created_at,
+                       g.tag, g.name, g.site
+                FROM events e
+                LEFT JOIN generators g ON g.id = e.generator_id
+                WHERE e.generator_id=?
+                ORDER BY e.id DESC
+                LIMIT ?
+                """,
+                (generator_id, limit),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """
+                SELECT e.id, e.generator_id, e.level, e.message, e.created_at,
+                       g.tag, g.name, g.site
+                FROM events e
+                LEFT JOIN generators g ON g.id = e.generator_id
+                ORDER BY e.id DESC
+                LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
     return [_row(row) for row in rows]

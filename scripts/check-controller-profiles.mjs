@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 
 const root = process.cwd();
 const failures = [];
@@ -14,7 +14,7 @@ function manifestPaths(base) {
       const path = join(directory, entry.name);
       if (entry.isDirectory()) walk(path);
       else if (entry.isFile() && entry.name === "manifest.json") {
-        found.push(relative(root, join(root, path)));
+        found.push(relative(root, join(root, path)).split(sep).join("/"));
       }
     }
   };
@@ -44,9 +44,10 @@ function validateSource(path, profile) {
     failures.push(`${path}: SHA-256 da fonte ausente ou inválido`);
     return;
   }
-  const manifestDirectory = dirname(join(root, path));
+  const manifestDirectory = resolve(dirname(join(root, path)));
   const sourcePath = resolve(manifestDirectory, mapping.sourceFile);
-  if (!sourcePath.startsWith(resolve(manifestDirectory) + "/")) {
+  const sourceRelative = relative(manifestDirectory, sourcePath);
+  if (sourceRelative === ".." || sourceRelative.startsWith(`..${sep}`)) {
     failures.push(`${path}: fonte deve permanecer dentro do próprio Controller Pack`);
     return;
   }
@@ -88,12 +89,24 @@ function documentedReadOnlyProduction(profile) {
   );
 }
 
+function validateLineOptions(path, profile) {
+  const options = profile.rapid?.lineOptions ?? {};
+  for (const key of ["CmdEnabled", "PollAfterCmd"]) {
+    if (Object.hasOwn(options, key)) {
+      failures.push(
+        `${path}: ${key} pertence à política global de segurança e não pode ser sobrescrito pelo pack`,
+      );
+    }
+  }
+}
+
 if (labPaths.length === 0) failures.push("nenhum Controller Pack LAB encontrado");
 if (productionPaths.length === 0) failures.push("nenhum Controller Pack production encontrado");
 
 for (const path of labPaths) {
   const profile = load(path);
   validateSource(path, profile);
+  validateLineOptions(path, profile);
   if (profile.schema !== 3) failures.push(`${path}: schema deve ser 3`);
   if (!["investigation", "documented", "lab_validated"].includes(profile.status)) {
     failures.push(`${path}: lifecycle LAB não pode usar status ${profile.status}`);
@@ -114,6 +127,7 @@ for (const path of labPaths) {
 for (const path of productionPaths) {
   const profile = load(path);
   validateSource(path, profile);
+  validateLineOptions(path, profile);
   if (profile.schema !== 3) failures.push(`${path}: production exige schema 3`);
   if (profile.status !== "field_validated" && !documentedReadOnlyProduction(profile)) {
     failures.push(

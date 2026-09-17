@@ -127,6 +127,11 @@ def _post_json(url: str, payload: dict, headers=None, timeout=8):
         conn.close()
 
 
+def _delivery_headers(item: dict) -> dict[str, str]:
+    queue_id = item.get("id")
+    return {"Idempotency-Key": f"rc-notification-{queue_id}"} if queue_id is not None else {}
+
+
 def _deliver_webhooks(item: dict):
     hooks = [h for h in ops_store.list_webhooks() if h.get("status") == "Ativo" and h.get("event") in {item["event_type"], "*"}]
     if item.get("destination"):
@@ -144,6 +149,7 @@ def _deliver_webhooks(item: dict):
                     "body": item.get("body") or "",
                     "payload": item.get("payload") or {},
                 },
+                headers=_delivery_headers(item),
             )
         except Exception as exc:
             errors.append(f"{hook['url']}: {exc}")
@@ -181,7 +187,7 @@ def _deliver_whatsapp(item: dict):
             "event": item.get("event_type"),
             "payload": item.get("payload") or {},
         },
-        headers={"Authorization": f"Bearer {WHATSAPP_API_TOKEN}"},
+        headers={"Authorization": f"Bearer {WHATSAPP_API_TOKEN}", **_delivery_headers(item)},
     )
     return True, detail
 

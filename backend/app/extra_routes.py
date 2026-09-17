@@ -27,6 +27,7 @@ from .security_service import (
     request_password_reset,
     revoke_all_sessions,
     setup_totp,
+    remote_ip,
 )
 
 router = APIRouter()
@@ -106,6 +107,11 @@ class PasswordResetConfirm(BaseModel):
 
 class TotpCode(BaseModel):
     code: str = Field(min_length=6, max_length=8)
+
+
+class TotpDisable(BaseModel):
+    code: str = Field(min_length=6, max_length=8)
+    currentPassword: str = Field(min_length=8, max_length=256)
 
 
 class ApiTokenCreate(BaseModel):
@@ -274,8 +280,9 @@ def password_change(payload: PasswordChange, user: dict = Depends(current_user))
 
 
 @router.post("/api/auth/password/reset-request", status_code=202)
-def password_reset_request(payload: PasswordResetRequest):
-    request_password_reset(payload.email)
+def password_reset_request(payload: PasswordResetRequest, request: Request):
+    # Always return the same response; throttling and account existence stay private.
+    request_password_reset(payload.email, remote_ip(request))
     return {"accepted": True}
 
 
@@ -289,7 +296,10 @@ def password_reset_confirm(payload: PasswordResetConfirm):
 
 @router.post("/api/auth/2fa/setup")
 def twofa_setup(user: dict = Depends(current_user)):
-    return setup_totp(user)
+    try:
+        return setup_totp(user)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @router.post("/api/auth/2fa/enable", status_code=204)
@@ -301,9 +311,9 @@ def twofa_enable(payload: TotpCode, user: dict = Depends(current_user)):
 
 
 @router.post("/api/auth/2fa/disable", status_code=204)
-def twofa_disable(payload: TotpCode, user: dict = Depends(current_user)):
+def twofa_disable(payload: TotpDisable, user: dict = Depends(current_user)):
     try:
-        disable_totp(user, payload.code)
+        disable_totp(user, payload.code, payload.currentPassword)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 

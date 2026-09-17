@@ -90,6 +90,65 @@ export type GeneratorLifecycle = {
 export type LifecycleTransport =
   "reverse_tcp" | "modbus_tcp_direct" | "rtu_over_tcp" | "modbus_rtu_serial";
 
+type LifecycleOperation<T = Record<string, unknown>> = {
+  operationId: string;
+  generatorId: string;
+  kind: string;
+  status: "queued" | "running" | "succeeded" | "failed";
+  result: T;
+  error: string;
+  createdAt: number;
+  updatedAt: number;
+};
+
+const lifecycleDelay = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
+
+async function runLifecycle<T extends Record<string, unknown>>(
+  generatorId: string,
+  path: string,
+  payload: Record<string, unknown>,
+): Promise<T> {
+  const operationId = crypto.randomUUID();
+  const start = () =>
+    request<LifecycleOperation<T>>(
+      path,
+      {
+        method: "POST",
+        body: JSON.stringify({ ...payload, operationId }),
+      },
+      20_000,
+    );
+
+  let operation: LifecycleOperation<T>;
+  try {
+    operation = await start();
+  } catch {
+    // Retry is idempotent because the same operationId is reused.
+    operation = await start();
+  }
+
+  const deadline = Date.now() + 15 * 60_000;
+  while (operation.status === "queued" || operation.status === "running") {
+    if (Date.now() >= deadline) {
+      throw new Error(
+        `Operação ${operation.operationId} continua em andamento. Consulte novamente o estado antes de repetir.`,
+      );
+    }
+    await lifecycleDelay(1_000);
+    operation = await request<LifecycleOperation<T>>(
+      `/api/generators/${encodeURIComponent(generatorId)}/operations/${encodeURIComponent(operationId)}`,
+      {},
+      20_000,
+    );
+  }
+  if (operation.status === "failed") {
+    throw new Error(
+      operation.error || `Operação ${operation.operationId} falhou sem detalhe adicional.`,
+    );
+  }
+  return operation.result;
+}
+
 export const industrialApi = {
   alarms: {
     list: (activeOnly = true) =>
@@ -194,15 +253,17 @@ export const industrialApi = {
     get: (id: string) =>
       request<GeneratorLifecycle>(`/api/generators/${encodeURIComponent(id)}/lifecycle`),
     provision: (id: string) =>
-      request<Record<string, unknown>>(`/api/generators/${encodeURIComponent(id)}/provision`, {
-        method: "POST",
-        body: JSON.stringify({ confirmation: "PROVISION" }),
-      }),
+      runLifecycle<Record<string, unknown>>(
+        id,
+        `/api/generators/${encodeURIComponent(id)}/provision`,
+        { confirmation: "PROVISION" },
+      ),
     deprovision: (id: string) =>
-      request<Record<string, unknown>>(`/api/generators/${encodeURIComponent(id)}/deprovision`, {
-        method: "POST",
-        body: JSON.stringify({ confirmation: "DEPROVISION" }),
-      }),
+      runLifecycle<Record<string, unknown>>(
+        id,
+        `/api/generators/${encodeURIComponent(id)}/deprovision`,
+        { confirmation: "DEPROVISION" },
+      ),
     reconfigure: (
       id: string,
       tag: string,
@@ -214,23 +275,20 @@ export const industrialApi = {
         enabled?: boolean;
       },
     ) =>
-      request<Record<string, unknown>>(`/api/generators/${encodeURIComponent(id)}/reconfigure`, {
-        method: "POST",
-        body: JSON.stringify({
-          ...payload,
-          confirmation: `RECONFIGURAR ${tag}`,
-        }),
-      }),
+      runLifecycle<Record<string, unknown>>(
+        id,
+        `/api/generators/${encodeURIComponent(id)}/reconfigure`,
+        { ...payload, confirmation: `RECONFIGURAR ${tag}` },
+      ),
     retire: (id: string, tag: string) =>
-      request<{
+      runLifecycle<{
         ok: boolean;
         generatorId: string;
         tag: string;
         deprovisioned: boolean;
         historyPreserved: boolean;
-      }>(`/api/generators/${encodeURIComponent(id)}/retire`, {
-        method: "POST",
-        body: JSON.stringify({ confirmation: `RETIRAR ${tag}` }),
+      }>(id, `/api/generators/${encodeURIComponent(id)}/retire`, {
+        confirmation: `RETIRAR ${tag}`,
       }),
   },
   discovery: {

@@ -213,6 +213,7 @@ def refresh_observed_alarms(generators: list[dict]) -> int:
         for key, item in desired.items():
             previous = existing.get(key)
             if previous is None:
+                conn.execute("DELETE FROM escalation_runs WHERE alarm_key=?", (key,))
                 conn.execute(
                     """INSERT INTO industrial_alarms(alarm_key,generator_id,asset_id,source,code,severity,message,active,first_seen,last_seen,metadata_json)
                        VALUES (?,?,?,?,?,?,?,1,?,?,?)""",
@@ -222,6 +223,7 @@ def refresh_observed_alarms(generators: list[dict]) -> int:
                               item["severity"], item["code"], item["message"], item["metadata"])
                 changed += 1
             elif not bool(previous["active"]):
+                conn.execute("DELETE FROM escalation_runs WHERE alarm_key=?", (key,))
                 conn.execute(
                     "UPDATE industrial_alarms SET active=1,first_seen=?,last_seen=?,cleared_at=NULL,acked_by=NULL,acked_at=NULL,message=?,severity=?,metadata_json=? WHERE alarm_key=?",
                     (now, now, item["message"], item["severity"], _json(item["metadata"]), key),
