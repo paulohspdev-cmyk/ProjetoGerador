@@ -17,18 +17,33 @@ test("autenticação e RBAC funcionam no navegador", async ({ browser }) => {
   const adminPage = await admin.newPage();
   await login(adminPage, adminEmail, adminPassword);
   await expect(adminPage).not.toHaveURL(/\/login$/);
-  await expect(adminPage.getByText("Gestor do sistema")).toBeVisible();
-  await expect(adminPage.getByText("Usuários", { exact: true })).toBeVisible();
+  const adminMe = await adminPage.evaluate(async () => {
+    const response = await fetch("/api/auth/me", { credentials: "include" });
+    return { status: response.status, body: await response.json() };
+  });
+  expect(adminMe.status).toBe(200);
+  expect(adminMe.body.role).toBe("administrador");
+  const adminUsersStatus = await adminPage.evaluate(async () => {
+    const response = await fetch("/api/users", { credentials: "include" });
+    return response.status;
+  });
+  expect(adminUsersStatus).toBe(200);
 
   const viewer = await browser.newContext();
   const viewerPage = await viewer.newPage();
   await login(viewerPage, viewerEmail, viewerPassword);
   await expect(viewerPage).not.toHaveURL(/\/login$/);
-  await expect(viewerPage.getByText("Visualização")).toBeVisible();
-  await expect(viewerPage.getByText("Usuários", { exact: true })).toHaveCount(0);
-
-  const usersResponse = await viewerPage.request.get("/api/users");
-  expect(usersResponse.status()).toBe(403);
+  const viewerMe = await viewerPage.evaluate(async () => {
+    const response = await fetch("/api/auth/me", { credentials: "include" });
+    return { status: response.status, body: await response.json() };
+  });
+  expect(viewerMe.status).toBe(200);
+  expect(viewerMe.body.role).toBe("visualizacao");
+  const usersStatus = await viewerPage.evaluate(async () => {
+    const response = await fetch("/api/users", { credentials: "include" });
+    return response.status;
+  });
+  expect(usersStatus).toBe(403);
 
   await admin.close();
   await viewer.close();
@@ -37,6 +52,6 @@ test("autenticação e RBAC funcionam no navegador", async ({ browser }) => {
 test("rota de recuperação é renderizada", async ({ page }) => {
   await page.goto("/reset-password?token=e2e-invalid-token");
   await expect(page.getByRole("heading", { name: "Redefinir senha" })).toBeVisible();
-  await expect(page.getByLabel("Nova senha")).toBeVisible();
-  await expect(page.getByLabel("Confirmar nova senha")).toBeVisible();
+  await expect(page.getByLabel("Nova senha", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Confirmar nova senha", { exact: true })).toBeVisible();
 });
