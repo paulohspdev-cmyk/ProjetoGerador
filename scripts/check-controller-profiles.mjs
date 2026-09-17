@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 
 const root = process.cwd();
 const failures = [];
@@ -14,7 +14,7 @@ function manifestPaths(base) {
       const path = join(directory, entry.name);
       if (entry.isDirectory()) walk(path);
       else if (entry.isFile() && entry.name === "manifest.json") {
-        found.push(relative(root, join(root, path)));
+        found.push(relative(root, join(root, path)).split(sep).join("/"));
       }
     }
   };
@@ -44,9 +44,10 @@ function validateSource(path, profile) {
     failures.push(`${path}: SHA-256 da fonte ausente ou inválido`);
     return;
   }
-  const manifestDirectory = dirname(join(root, path));
+  const manifestDirectory = resolve(dirname(join(root, path)));
   const sourcePath = resolve(manifestDirectory, mapping.sourceFile);
-  if (!sourcePath.startsWith(resolve(manifestDirectory) + "/")) {
+  const sourceRelative = relative(manifestDirectory, sourcePath);
+  if (sourceRelative === ".." || sourceRelative.startsWith(`..${sep}`)) {
     failures.push(`${path}: fonte deve permanecer dentro do próprio Controller Pack`);
     return;
   }

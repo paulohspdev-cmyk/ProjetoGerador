@@ -39,8 +39,8 @@ def _stop_children() -> None:
 def main() -> int:
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGINT, stop)
-    children.extend([_start("app.worker"), _start("app.heavy_worker")])
-    print("[worker-supervisor] operacional + jobs pesados iniciados", flush=True)
+    children.extend([_start("app.worker"), _start("app.heavy_worker"), _start("app.notification_worker"), _start("app.lifecycle_worker")])
+    print("[worker-supervisor] operacional + jobs pesados + notificações + ciclo de vida iniciados", flush=True)
     exit_code = 0
     try:
         while running:

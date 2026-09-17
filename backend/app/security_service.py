@@ -53,6 +53,11 @@ def _totp_secret(user_id: str, item: dict) -> str:
 
 
 def setup_totp(user: dict):
+    current = platform_store.get_totp(user["id"])
+    if current and current.get("enabled"):
+        raise ValueError(
+            "2FA já está ativo. Desative-o com o código atual antes de configurar um novo fator."
+        )
     secret = new_totp_secret()
     platform_store.set_totp(user["id"], protect_secret(secret), False)
     issuer = quote("RC Geradores")
@@ -73,7 +78,10 @@ def enable_totp(user: dict, code: str):
     return True
 
 
-def disable_totp(user: dict, code: str):
+def disable_totp(user: dict, code: str, current_password: str):
+    auth_user = db.get_user_auth(user["email"])
+    if not auth_user or not verify_password(current_password, auth_user.get("password_hash") or ""):
+        raise ValueError("Senha atual inválida")
     item = platform_store.get_totp(user["id"])
     if not item or not item.get("enabled"):
         raise ValueError("2FA não está habilitado")
@@ -107,8 +115,11 @@ def change_password(user: dict, current_password: str, new_password: str):
     db.add_audit(user["email"], "change_password", "user", user["id"], "sessões revogadas")
 
 
-def request_password_reset(email: str):
-    user = db.get_user_auth(email.strip().lower())
+def request_password_reset(email: str, remote_ip: str = ""):
+    normalized = email.strip().lower()
+    if not platform_store.password_reset_allowed(normalized, remote_ip):
+        return None
+    user = db.get_user_auth(normalized)
     if not user or not user.get("active"):
         return None
     token = platform_store.create_password_reset(user["id"], PASSWORD_RESET_TTL)

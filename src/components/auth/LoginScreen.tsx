@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 import { useTheme } from "@/components/layout/ThemeProvider";
+import { rcApi } from "@/lib/api";
 import { useAuth } from "./AuthProvider";
 
 export function LoginScreen() {
@@ -30,10 +31,33 @@ export function LoginScreen() {
   const [show, setShow] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [resetBusy, setResetBusy] = useState(false);
+  const [resetMessage, setResetMessage] = useState<string | null>(null);
 
   const resetSecondFactor = () => {
     setNeedsOtp(false);
     setOtp("");
+  };
+
+  const requestReset = async () => {
+    const email = username.trim();
+    if (!email) {
+      setError("Informe seu e-mail para solicitar a recuperação.");
+      return;
+    }
+    setResetBusy(true);
+    setError(null);
+    setResetMessage(null);
+    try {
+      await rcApi.auth.requestReset(email);
+      setResetMessage(
+        "Se a conta existir e o e-mail estiver configurado, enviaremos um link de recuperação.",
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Não foi possível solicitar a recuperação.");
+    } finally {
+      setResetBusy(false);
+    }
   };
 
   const onSubmit = async (event: FormEvent) => {
@@ -275,6 +299,20 @@ export function LoginScreen() {
                 {error}
               </p>
             )}
+            {resetMessage && (
+              <p className="mt-4 rounded-xl border border-online/35 bg-online/10 px-4 py-3 text-sm text-online">
+                {resetMessage}
+              </p>
+            )}
+
+            <button
+              type="button"
+              disabled={resetBusy || busy}
+              onClick={() => void requestReset()}
+              className="mt-5 w-full text-center text-sm font-semibold text-primary hover:underline disabled:opacity-50"
+            >
+              {resetBusy ? "Solicitando…" : "Esqueci minha senha"}
+            </button>
 
             <button
               type="submit"

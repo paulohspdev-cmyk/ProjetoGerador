@@ -58,6 +58,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    const onUnauthorized = () => {
+      setUser(null);
+      setUsers([]);
+      setUsersError(null);
+      setSessionError("Sua sessão expirou. Entre novamente.");
+      setReady(true);
+    };
+    window.addEventListener("rc:unauthorized", onUnauthorized);
+    return () => window.removeEventListener("rc:unauthorized", onUnauthorized);
+  }, []);
+
+  useEffect(() => {
     let mounted = true;
     void (async () => {
       try {

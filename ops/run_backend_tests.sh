@@ -18,6 +18,7 @@ TESTS=(
   control_multi_device.py
   production_hardening.py
   provision_timeout.py
+  audit_regressions.py
 )
 
 for test_file in "${TESTS[@]}"; do

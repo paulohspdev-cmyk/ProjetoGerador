@@ -160,23 +160,6 @@ if [[ -d "${TLS_DIR}" ]]; then
   TLS_DIR_EXISTED=1
 fi
 
-if [[ -f "${DB_FILE}" ]]; then
-  DB_SNAPSHOT="${BACKUP}/product-db-before.sqlite3"
-  python3 - "${DB_FILE}" "${DB_SNAPSHOT}" <<'PY'
-import sqlite3, sys
-src, dst = sys.argv[1:3]
-a = sqlite3.connect(src); b = sqlite3.connect(dst)
-try: a.backup(b)
-finally: b.close(); a.close()
-c = sqlite3.connect(f"file:{dst}?mode=ro", uri=True)
-try: rows = [r[0] for r in c.execute("PRAGMA quick_check")]
-finally: c.close()
-if rows != ["ok"]: raise SystemExit("snapshot SQLite inválido: " + "; ".join(rows))
-print("Snapshot SQLite: OK")
-PY
-  chmod 0640 "${DB_SNAPSHOT}"
-fi
-
 tar --exclude='.git' --exclude='node_modules' --exclude='.output*' --exclude='backend/.venv*' --exclude='.rapid-reader*' -C "${BASE}" -czf "${BACKUP}/source-before.tgz" .
 
 echo "Backup: ${BACKUP}"
@@ -245,6 +228,24 @@ trap 'rc=$?; rollback; exit "$rc"' ERR
 
 log "PARANDO SERVIÇOS RC PARA TROCA DE RUNTIME"
 systemctl stop "${SERVICES[@]}" 2>/dev/null || true
+
+log "CRIANDO SNAPSHOT AUTORITATIVO APÓS INTERROMPER ESCRITAS"
+if [[ -f "${DB_FILE}" ]]; then
+  DB_SNAPSHOT="${BACKUP}/product-db-before.sqlite3"
+  python3 - "${DB_FILE}" "${DB_SNAPSHOT}" <<'PY'
+import sqlite3, sys
+src, dst = sys.argv[1:3]
+a = sqlite3.connect(src); b = sqlite3.connect(dst)
+try: a.backup(b)
+finally: b.close(); a.close()
+c = sqlite3.connect(f"file:{dst}?mode=ro", uri=True)
+try: rows = [r[0] for r in c.execute("PRAGMA quick_check")]
+finally: c.close()
+if rows != ["ok"]: raise SystemExit("snapshot SQLite inválido: " + "; ".join(rows))
+print("Snapshot SQLite pós-quiescência: OK")
+PY
+  chmod 0640 "${DB_SNAPSHOT}"
+fi
 
 log "ALINHANDO CHECKOUT AO COMMIT ${COMMIT}"
 git -c safe.directory="${BASE}" -C "${BASE}" checkout -B main "${COMMIT}"

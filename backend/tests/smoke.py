@@ -6,7 +6,17 @@ from pathlib import Path
 tmp = tempfile.TemporaryDirectory(prefix="rc-geradores-test-")
 os.environ["RC_DATA_DIR"] = tmp.name
 os.environ["RC_DB_FILE"] = str(Path(tmp.name) / "test.db")
+scada_root = Path(tmp.name) / "scada"
+for rel in ("BaseDAT", "Config", "ScadaComm/Config"):
+    target = scada_root / rel
+    target.mkdir(parents=True, exist_ok=True)
+    (target / "placeholder.txt").write_text("test")
+os.environ["RC_RAPID_SCADA_ROOT"] = str(scada_root)
 os.environ["RC_BRIDGE_STATUS_FILE"] = str(Path(tmp.name) / "bridge-status.json")
+rapid_archive = Path(tmp.name) / "rapid-archive"
+rapid_archive.mkdir(parents=True, exist_ok=True)
+(rapid_archive / "history.bin").write_bytes(b"history")
+os.environ["RC_RAPID_ARCHIVE_DIR"] = str(rapid_archive)
 os.environ["RC_ENABLE_IG200_CONTROL"] = "0"
 
 from fastapi.testclient import TestClient  # noqa: E402
@@ -81,6 +91,40 @@ with TestClient(app) as client:
     ).json()
     assert generator["tag"] == "GEN001"
     assert generator["rapidDeviceNum"] == 200
+
+    # F10: o contrato HTTP de ciclo de vida deve ser assíncrono e rastreável.
+    queued_generator = expect(
+        client.post(
+            "/api/generators",
+            json={
+                "tag": "GENASYNC",
+                "name": "Gerador Async",
+                "site": "Teste",
+                "controller": "ComAp InteliGen 200",
+                "transport": "reverse_tcp",
+                "listenPort": 15009,
+                "modbusUnit": 1,
+            },
+        ),
+        201,
+    ).json()
+    operation = expect(
+        client.post(
+            f"/api/generators/{queued_generator['id']}/provision",
+            json={"confirmation": "PROVISION", "operationId": "op-smoke-http-0001"},
+        ),
+        202,
+    ).json()
+    assert operation["operationId"] == "op-smoke-http-0001"
+    assert operation["status"] == "queued"
+    operation_status = expect(
+        client.get(
+            f"/api/generators/{queued_generator['id']}/operations/{operation['operationId']}"
+        ),
+        200,
+    ).json()
+    assert operation_status["operationId"] == operation["operationId"]
+    assert operation_status["status"] == "queued"
 
     # Módulos de produto não podem depender de localStorage.
     client_row = expect(

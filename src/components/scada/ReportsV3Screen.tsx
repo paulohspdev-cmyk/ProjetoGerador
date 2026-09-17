@@ -12,7 +12,6 @@ export function ReportsV3Screen() {
   const admin = can("manageUsers");
   const [rows, setRows] = useState<ReportApi[]>([]);
   const [name, setName] = useState("Parque — geradores");
-  const [period, setPeriod] = useState("Hoje");
   const [format, setFormat] = useState<ReportFormat>("PDF");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -39,7 +38,7 @@ export function ReportsV3Screen() {
     try {
       const created = await rcApi.reports.create({
         name: name.trim(),
-        period: period.trim(),
+        period: "Fotografia operacional",
         format,
       });
       setRows((current) => [created, ...current.filter((item) => item.id !== created.id)]);
@@ -95,19 +94,12 @@ export function ReportsV3Screen() {
               />
             </label>
             <label className="text-[11px] font-semibold text-muted-foreground">
-              Período / referência
-              <select
-                value={period}
-                onChange={(e) => setPeriod(e.target.value)}
-                className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-              >
-                <option>Hoje</option>
-                <option>Últimas 24 horas</option>
-                <option>Últimos 7 dias</option>
-                <option>Últimos 30 dias</option>
-                <option>Mensal</option>
-                <option>Operacional atual</option>
-              </select>
+              Tipo
+              <input
+                value="Fotografia operacional"
+                readOnly
+                className="mt-1 h-9 w-full rounded-md border border-input bg-muted px-2 text-sm text-muted-foreground"
+              />
             </label>
             <label className="text-[11px] font-semibold text-muted-foreground">
               Formato
@@ -132,8 +124,9 @@ export function ReportsV3Screen() {
             </div>
           </form>
           <p className="mt-2 text-[11px] text-muted-foreground">
-            O relatório usa somente dados realmente disponíveis. Informações ausentes permanecem N/D
-            e nenhum valor é estimado para completar o documento.
+            Este relatório é uma fotografia do estado disponível no instante da geração, não um
+            relatório histórico. Informações ausentes permanecem N/D e nenhum valor é estimado para
+            completar o documento.
           </p>
         </Panel>
       )}
@@ -153,7 +146,7 @@ export function ReportsV3Screen() {
             rows={rows}
             columns={[
               { label: "Relatório", render: (r) => <b>{r.name}</b> },
-              { label: "Período", render: (r) => r.period },
+              { label: "Tipo", render: (r) => r.period },
               {
                 label: "Formato",
                 render: (r) => (

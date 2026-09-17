@@ -21,6 +21,13 @@ SERVICES = [
 ]
 
 
+def _safe_exists(path) -> bool:
+    try:
+        return Path(path).exists()
+    except OSError:
+        return False
+
+
 def _run(args, timeout=2):
     try:
         proc = subprocess.run(args, capture_output=True, text=True, timeout=timeout, check=False)
@@ -213,13 +220,13 @@ def system_diagnostics():
         "ok": all(item["status"] == "OK" for item in services),
         "services": services,
         "rapid": {
-            "bindingsExists": RAPID_BINDINGS_FILE.exists(),
-            "readerExists": RAPID_READER_DLL.exists(),
-            "commConfigExists": RAPID_COMM_CONFIG.exists(),
+            "bindingsExists": _safe_exists(RAPID_BINDINGS_FILE),
+            "readerExists": _safe_exists(RAPID_READER_DLL),
+            "commConfigExists": _safe_exists(RAPID_COMM_CONFIG),
         },
         "bridge": {
             "controlSocket": CONTROL_SOCKET,
-            "controlSocketExists": Path(CONTROL_SOCKET).exists(),
+            "controlSocketExists": _safe_exists(CONTROL_SOCKET),
             "listeners": reverse_listeners,
             **runtime_bridge,
             "traffic": traffic,

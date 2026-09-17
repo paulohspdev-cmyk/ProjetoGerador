@@ -12,6 +12,7 @@ const TREND_PRIORITY = [
   "voltage_l3",
   "power_kw",
 ];
+const DETAIL_REFRESH_MS = 10_000;
 
 export function useGeneratorDetailData(gen: Generator) {
   const [events, setEvents] = useState<EventItemApi[]>([]);
@@ -28,30 +29,28 @@ export function useGeneratorDetailData(gen: Generator) {
 
   useEffect(() => {
     let active = true;
-    void rcApi.events
-      .list(300)
-      .then((rows) => {
+    let timer: number | undefined;
+    const load = async () => {
+      try {
+        const rows = await rcApi.events.list(300, gen.id);
         if (!active) return;
-        setEvents(
-          rows.filter(
-            (item) =>
-              item.generator_id === gen.id || item.tag?.toLowerCase() === gen.tag.toLowerCase(),
-          ),
-        );
+        setEvents(rows);
         setEventError("");
-      })
-      .catch((error) => {
-        if (active) {
+      } catch (error) {
+        if (active)
           setEventError(
             error instanceof Error ? error.message : "Falha ao carregar eventos reais.",
           );
-        }
-      });
-
+      } finally {
+        if (active) timer = window.setTimeout(load, DETAIL_REFRESH_MS);
+      }
+    };
+    void load();
     return () => {
       active = false;
+      if (timer) window.clearTimeout(timer);
     };
-  }, [gen.id, gen.tag]);
+  }, [gen.id]);
 
   useEffect(() => {
     if (!preferredTrend) {
@@ -59,36 +58,32 @@ export function useGeneratorDetailData(gen: Generator) {
       setTrendError("");
       return;
     }
-
     let active = true;
-    setTrendLoading(true);
-    void rcApi.generators
-      .trend(gen.id, preferredTrend, 24, 1)
-      .then((result) => {
+    let timer: number | undefined;
+    const load = async () => {
+      setTrendLoading(true);
+      try {
+        const result = await rcApi.generators.trend(gen.id, preferredTrend, 24, 1);
         if (!active) return;
         setTrend(result);
         setTrendError("");
-      })
-      .catch((error) => {
+      } catch (error) {
         if (!active) return;
         setTrend(null);
         setTrendError(error instanceof Error ? error.message : "Histórico indisponível.");
-      })
-      .finally(() => {
-        if (active) setTrendLoading(false);
-      });
-
+      } finally {
+        if (active) {
+          setTrendLoading(false);
+          timer = window.setTimeout(load, DETAIL_REFRESH_MS);
+        }
+      }
+    };
+    void load();
     return () => {
       active = false;
+      if (timer) window.clearTimeout(timer);
     };
   }, [gen.id, preferredTrend]);
 
-  return {
-    available,
-    events,
-    eventError,
-    trend,
-    trendError,
-    trendLoading,
-  };
+  return { available, events, eventError, trend, trendError, trendLoading };
 }

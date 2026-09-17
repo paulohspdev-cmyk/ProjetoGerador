@@ -22,7 +22,7 @@ def _row(row):
     for key in ("active", "enabled"):
         if key in item:
             item[key] = bool(item[key])
-    for key in ("metadata_json", "payload_json"):
+    for key in ("metadata_json", "payload_json", "result_json"):
         if key in item:
             raw = item.pop(key)
             try:
@@ -137,6 +137,13 @@ def init_platform_db() -> None:
                 locked_until INTEGER NOT NULL DEFAULT 0
             );
 
+            CREATE TABLE IF NOT EXISTS password_reset_requests (
+                request_key TEXT PRIMARY KEY,
+                window_started INTEGER NOT NULL,
+                requests INTEGER NOT NULL DEFAULT 0,
+                last_request INTEGER NOT NULL DEFAULT 0
+            );
+
             CREATE TABLE IF NOT EXISTS api_tokens (
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
@@ -165,6 +172,24 @@ def init_platform_db() -> None:
                 size_bytes INTEGER NOT NULL,
                 created_at INTEGER NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS lifecycle_operations (
+                id TEXT PRIMARY KEY,
+                generator_id TEXT NOT NULL,
+                kind TEXT NOT NULL,
+                actor TEXT NOT NULL DEFAULT 'system',
+                actor_role TEXT NOT NULL DEFAULT '',
+                payload_json TEXT NOT NULL DEFAULT '{}',
+                status TEXT NOT NULL DEFAULT 'queued',
+                result_json TEXT NOT NULL DEFAULT '{}',
+                error TEXT NOT NULL DEFAULT '',
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_lifecycle_operations_queue
+                ON lifecycle_operations(status,created_at);
+            CREATE INDEX IF NOT EXISTS idx_lifecycle_operations_generator
+                ON lifecycle_operations(generator_id,created_at DESC);
             """
         )
         conn.execute("DELETE FROM password_reset_tokens WHERE expires_at < ? OR used_at IS NOT NULL", (_now() - 86400,))
@@ -266,11 +291,26 @@ def enqueue_notification(event_type: str, channel: str, destination: str = "", s
         return cur.lastrowid
 
 
+_SENSITIVE_NOTIFICATION_TYPES = {"auth.password_reset"}
+
+
+def _public_notification(row) -> dict:
+    item = _row(row)
+    if item.get("event_type") in _SENSITIVE_NOTIFICATION_TYPES:
+        # Security delivery payloads may contain one-time credentials. They are
+        # intentionally never exposed through operational notification APIs.
+        item["destination"] = ""
+        item["subject"] = "Recuperação de conta"
+        item["body"] = "Mensagem de segurança protegida"
+        item["payload"] = {}
+    return item
+
+
 def list_notifications(limit: int = 200):
     limit = max(1, min(int(limit), 2000))
     with db.connect() as conn:
         rows = conn.execute("SELECT * FROM notification_queue ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
-    return [_row(r) for r in rows]
+    return [_public_notification(r) for r in rows]
 
 
 def list_deliveries(limit: int = 200):
@@ -280,9 +320,18 @@ def list_deliveries(limit: int = 200):
     return [_row(r) for r in rows]
 
 
-def claim_due_notifications(limit: int = 20):
+def claim_due_notifications(limit: int = 20, lease_seconds: int = 120):
     now = _now()
+    lease_seconds = max(30, min(int(lease_seconds), 3600))
     with db.connect() as conn:
+        # At-least-once delivery: recover claims abandoned by a crashed worker.
+        # Providers that support Idempotency-Key receive the queue id downstream.
+        conn.execute(
+            """UPDATE notification_queue
+               SET status='retry', next_attempt_at=?, last_error='claim expirado; reentrega segura', updated_at=?
+               WHERE status='sending' AND updated_at<=?""",
+            (now, now, now - lease_seconds),
+        )
         rows = conn.execute(
             "SELECT * FROM notification_queue WHERE status IN ('queued','retry') AND next_attempt_at<=? ORDER BY id LIMIT ?",
             (now, limit),
@@ -319,6 +368,135 @@ def finish_notification(item_id: int, channel: str, destination: str, ok: bool, 
         conn.execute(
             "INSERT INTO notification_deliveries(queue_id,channel,destination,status,detail,created_at) VALUES (?,?,?,?,?,?)",
             (item_id, channel, destination, "sent" if ok else "failed", detail[:2000], now),
+        )
+
+
+# ----------------------- lifecycle operation queue ------------------------
+
+def _operation_public(row) -> dict | None:
+    if row is None:
+        return None
+    item = _row(row)
+    return {
+        "operationId": item["id"],
+        "generatorId": item["generator_id"],
+        "kind": item["kind"],
+        "status": item["status"],
+        "result": item.get("result") or {},
+        "error": item.get("error") or "",
+        "createdAt": int(item["created_at"]),
+        "updatedAt": int(item["updated_at"]),
+    }
+
+
+def enqueue_lifecycle_operation(
+    operation_id: str,
+    generator_id: str,
+    kind: str,
+    payload: dict,
+    actor: str,
+    actor_role: str,
+) -> dict:
+    operation_id = str(operation_id or "").strip()
+    if not operation_id or len(operation_id) > 120:
+        raise ValueError("operationId inválido")
+    if kind not in {"provision", "deprovision", "reconfigure", "retire"}:
+        raise ValueError("Operação de ciclo de vida inválida")
+    now = _now()
+    payload_json = json.dumps(payload or {}, ensure_ascii=False, sort_keys=True)
+    with db.connect() as conn:
+        existing = conn.execute(
+            "SELECT * FROM lifecycle_operations WHERE id=?", (operation_id,)
+        ).fetchone()
+        if existing:
+            if (
+                existing["generator_id"] != generator_id
+                or existing["kind"] != kind
+                or existing["payload_json"] != payload_json
+            ):
+                raise ValueError("operationId já foi usado para outra solicitação")
+            return _operation_public(existing)
+        active = conn.execute(
+            """SELECT * FROM lifecycle_operations
+               WHERE generator_id=? AND status IN ('queued','running')
+               ORDER BY created_at LIMIT 1""",
+            (generator_id,),
+        ).fetchone()
+        if active:
+            raise ValueError(
+                f"Já existe operação {active['id']} em andamento para este gerador"
+            )
+        conn.execute(
+            """INSERT INTO lifecycle_operations(
+                   id,generator_id,kind,actor,actor_role,payload_json,status,result_json,error,created_at,updated_at
+               ) VALUES (?,?,?,?,?,?,'queued','{}','',?,?)""",
+            (operation_id, generator_id, kind, actor, actor_role, payload_json, now, now),
+        )
+        row = conn.execute("SELECT * FROM lifecycle_operations WHERE id=?", (operation_id,)).fetchone()
+    return _operation_public(row)
+
+
+def get_lifecycle_operation(operation_id: str, generator_id: str | None = None) -> dict | None:
+    with db.connect() as conn:
+        if generator_id:
+            row = conn.execute(
+                "SELECT * FROM lifecycle_operations WHERE id=? AND generator_id=?",
+                (operation_id, generator_id),
+            ).fetchone()
+        else:
+            row = conn.execute(
+                "SELECT * FROM lifecycle_operations WHERE id=?", (operation_id,)
+            ).fetchone()
+    return _operation_public(row)
+
+
+def claim_lifecycle_operation(lease_seconds: int = 900) -> dict | None:
+    now = _now()
+    lease_seconds = max(120, min(int(lease_seconds), 3600))
+    with db.connect() as conn:
+        conn.execute(
+            """UPDATE lifecycle_operations
+               SET status='failed',
+                   error='worker interrompido durante execução; estado industrial deve ser reconciliado antes de repetir',
+                   updated_at=?
+               WHERE status='running' AND updated_at<=?""",
+            (now, now - lease_seconds),
+        )
+        row = conn.execute(
+            "SELECT * FROM lifecycle_operations WHERE status='queued' ORDER BY created_at LIMIT 1"
+        ).fetchone()
+        if not row:
+            return None
+        conn.execute(
+            "UPDATE lifecycle_operations SET status='running',updated_at=? WHERE id=? AND status='queued'",
+            (now, row["id"]),
+        )
+        claimed = conn.execute(
+            "SELECT * FROM lifecycle_operations WHERE id=?", (row["id"],)
+        ).fetchone()
+    item = _row(claimed)
+    return {
+        **_operation_public(claimed),
+        "actor": item.get("actor") or "system",
+        "actorRole": item.get("actor_role") or "",
+        "payload": item.get("payload") or {},
+    }
+
+
+def finish_lifecycle_operation(operation_id: str, result: dict | None = None, error: str = "") -> None:
+    now = _now()
+    status = "failed" if error else "succeeded"
+    with db.connect() as conn:
+        conn.execute(
+            """UPDATE lifecycle_operations
+               SET status=?,result_json=?,error=?,updated_at=? WHERE id=?""",
+            (
+                status,
+                json.dumps(result or {}, ensure_ascii=False),
+                str(error or "")[:2000],
+                now,
+                operation_id,
+            ),
         )
 
 
@@ -399,6 +577,49 @@ def record_login_failure(key: str, max_failures: int = 5, lock_seconds: int = 90
 def clear_login_failures(key: str):
     with db.connect() as conn:
         conn.execute("DELETE FROM login_attempts WHERE attempt_key=?", (key,))
+
+
+def password_reset_allowed(
+    email: str,
+    remote_ip: str,
+    *,
+    max_per_window: int = 3,
+    account_max_per_window: int = 5,
+    window_seconds: int = 900,
+    cooldown_seconds: int = 60,
+) -> bool:
+    """Rate-limit reset by both account and origin without revealing account state."""
+    now = _now()
+    normalized = str(email or "").strip().lower()
+    keys = [
+        ("pair:" + hashlib.sha256(f"{normalized}|{remote_ip}".encode()).hexdigest(), max_per_window),
+        ("acct:" + hashlib.sha256(normalized.encode()).hexdigest(), account_max_per_window),
+    ]
+    with db.connect() as conn:
+        decisions = []
+        for key, limit in keys:
+            row = conn.execute(
+                "SELECT * FROM password_reset_requests WHERE request_key=?", (key,)
+            ).fetchone()
+            if not row or now - int(row["window_started"]) >= window_seconds:
+                conn.execute(
+                    """INSERT INTO password_reset_requests(request_key,window_started,requests,last_request)
+                       VALUES (?,?,1,?)
+                       ON CONFLICT(request_key) DO UPDATE SET window_started=excluded.window_started,requests=1,last_request=excluded.last_request""",
+                    (key, now, now),
+                )
+                decisions.append(True)
+                continue
+            allowed = (
+                int(row["requests"]) < int(limit)
+                and now - int(row["last_request"]) >= cooldown_seconds
+            )
+            conn.execute(
+                "UPDATE password_reset_requests SET requests=requests+1,last_request=? WHERE request_key=?",
+                (now, key),
+            )
+            decisions.append(allowed)
+    return all(decisions)
 
 
 def create_password_reset(user_id: str, ttl: int = 1800):

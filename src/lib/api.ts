@@ -354,8 +354,11 @@ export const rcApi = {
       request<{ secret: string; otpauthUri: string }>("/api/auth/2fa/setup", { method: "POST" }),
     enable2fa: (code: string) =>
       request<void>("/api/auth/2fa/enable", { method: "POST", body: JSON.stringify({ code }) }),
-    disable2fa: (code: string) =>
-      request<void>("/api/auth/2fa/disable", { method: "POST", body: JSON.stringify({ code }) }),
+    disable2fa: (code: string, currentPassword: string) =>
+      request<void>("/api/auth/2fa/disable", {
+        method: "POST",
+        body: JSON.stringify({ code, currentPassword }),
+      }),
     sessions: () =>
       request<
         Array<{
@@ -421,7 +424,12 @@ export const rcApi = {
       ),
   },
   audit: { list: (limit = 200) => request<AuditItem[]>(`/api/audit?limit=${limit}`) },
-  events: { list: (limit = 200) => request<EventItemApi[]>(`/api/events?limit=${limit}`) },
+  events: {
+    list: (limit = 200, generatorId?: string) =>
+      request<EventItemApi[]>(
+        `/api/events?limit=${limit}${generatorId ? `&generator_id=${encodeURIComponent(generatorId)}` : ""}`,
+      ),
+  },
   ops: { bootstrap: () => request<OpsBootstrap>("/api/ops/bootstrap") },
   clients: {
     list: () => request<OpsClient[]>("/api/clients"),

@@ -287,6 +287,15 @@ def _transport_health(generator, bridge_status):
     return base
 
 
+def _downsample_points(points: list[dict], max_points: int = 2000) -> list[dict]:
+    max_points = max(2, int(max_points))
+    if len(points) <= max_points:
+        return points
+    last = len(points) - 1
+    indexes = [round(i * last / (max_points - 1)) for i in range(max_points)]
+    return [points[index] for index in indexes]
+
+
 def trend_for_generator(generator, metric, hours=24, archive_bit=1):
     hours = max(1, min(int(hours), 24 * 31))
     archive_bit = int(archive_bit)
@@ -356,13 +365,9 @@ def trend_for_generator(generator, metric, hours=24, archive_bit=1):
             }
         )
 
-    max_points = 2000
-    if len(points) > max_points:
-        step = max(1, len(points) // max_points)
-        sampled = points[::step]
-        if sampled[-1] != points[-1]:
-            sampled.append(points[-1])
-        points = sampled[: max_points + 1]
+    # Evenly sample the complete time window and always preserve both ends.
+    # The old integer-step + truncation could discard hours from the tail.
+    points = _downsample_points(points, 2000)
 
     return {
         "generatorId": generator["id"],

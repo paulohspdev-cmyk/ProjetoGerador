@@ -21,11 +21,21 @@ offsite_key.write_bytes(Fernet.generate_key() + b"\n")
 
 os.environ["RC_DATA_DIR"] = str(data_dir)
 os.environ["RC_DB_FILE"] = str(data_dir / "rc-geradores.db")
+scada_root = root / "scada"
+for rel in ("BaseDAT", "Config", "ScadaComm/Config"):
+    target = scada_root / rel
+    target.mkdir(parents=True, exist_ok=True)
+    (target / "placeholder.txt").write_text("test")
+os.environ["RC_RAPID_SCADA_ROOT"] = str(scada_root)
 os.environ["RC_TOTP_KEY_FILE"] = str(key_file)
 os.environ["RC_BACKUP_OFFSITE_DIR"] = str(offsite_dir)
 os.environ["RC_BACKUP_OFFSITE_KEY_FILE"] = str(offsite_key)
 os.environ["RC_BACKUP_OFFSITE_REQUIRED"] = "1"
 os.environ["RC_BACKUP_INCLUDE_SECRETS"] = "0"
+rapid_archive_dir = root / "rapid-archive"
+rapid_archive_dir.mkdir(parents=True, exist_ok=True)
+(rapid_archive_dir / "history.bin").write_bytes(b"history")
+os.environ["RC_RAPID_ARCHIVE_DIR"] = str(rapid_archive_dir)
 os.environ["RC_RAPID_REMOTE_ALLOWED_CIDRS"] = "10.0.0.0/8,2001:db8::/32"
 os.environ["RC_RAPID_REQUIRE_ALLOWLIST"] = "1"
 os.environ["RC_RETENTION_AUDIT_DAYS"] = "1"
@@ -128,6 +138,15 @@ with tarfile.open(archive, "r:gz") as tar:
     assert "product/product-db.sqlite3" in names
     assert "product/rc-geradores.env" not in names
     assert "product/totp-fernet.key" not in names
+    assert "rapid-scada/Archive/history.bin" in names
+assert backup["rapidHistoricalArchiveIncluded"] is True
+
+# F19: dois backups no mesmo segundo não podem compartilhar ID nem caminho.
+backup2 = create_full_backup("hardening-test-2", retention=3)
+assert backup2["result"] == "OK", backup2
+assert backup2["id"] != backup["id"]
+assert backup2["path"] != backup["path"]
+assert Path(backup2["path"]).is_file() and archive.is_file()
 cipher = Fernet(offsite_key.read_bytes().strip())
 decrypted = cipher.decrypt(encrypted.read_bytes())
 assert decrypted[:2] == b"\x1f\x8b"

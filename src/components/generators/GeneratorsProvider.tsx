@@ -77,6 +77,28 @@ export function GeneratorsProvider({ children }: { children: ReactNode }) {
         if (generation !== refreshGeneration.current) return;
         if (err instanceof ApiError && err.status === 401) {
           setGenerators([]);
+        } else {
+          setGenerators((current) =>
+            current.map((generator) => ({
+              ...generator,
+              telemetryStale: true,
+              staleMetrics: generator.configuredMetrics ?? generator.availableMetrics ?? [],
+              lastError: "Navegador sem atualização da API; dados exibidos são obsoletos.",
+              capabilities: {
+                ...generator.capabilities,
+                start: false,
+                stop: false,
+                auto: false,
+                manual: false,
+                test: false,
+                mcb_open: false,
+                mcb_close: false,
+                gcb_open: false,
+                gcb_close: false,
+                paralleling: false,
+              },
+            })),
+          );
         }
         setError(err instanceof Error ? err.message : "Falha ao consultar o backend.");
       } finally {
