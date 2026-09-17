@@ -52,3 +52,5 @@ rapid/reader/bin/
 *.njsproj
 *.sln
 *.sw?
+test-results/
+playwright-report/

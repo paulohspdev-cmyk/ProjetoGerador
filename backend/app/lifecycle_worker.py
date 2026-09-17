@@ -21,8 +21,14 @@ def main():
     db.init_db()
     platform_store.init_platform_db()
     domain_store.init_domain_db()
+    platform_store.touch_worker_heartbeat("lifecycle", "ok", "iniciado")
+    last_heartbeat = time.monotonic()
     print("[lifecycle-worker] fila industrial rastreável iniciada", flush=True)
     while running:
+        now = time.monotonic()
+        if now - last_heartbeat >= 15:
+            platform_store.touch_worker_heartbeat("lifecycle", "ok")
+            last_heartbeat = now
         item = platform_store.claim_lifecycle_operation()
         if not item:
             time.sleep(1)
@@ -31,13 +37,16 @@ def main():
         try:
             result = asyncio.run(execute_lifecycle_operation(item))
         except HTTPException as exc:
+            platform_store.touch_worker_heartbeat("lifecycle", "degraded", str(exc.detail))
             platform_store.finish_lifecycle_operation(
                 operation_id, error=str(exc.detail or f"HTTP {exc.status_code}")
             )
         except Exception as exc:
+            platform_store.touch_worker_heartbeat("lifecycle", "degraded", str(exc))
             platform_store.finish_lifecycle_operation(operation_id, error=str(exc))
         else:
             platform_store.finish_lifecycle_operation(operation_id, result=result)
+    platform_store.touch_worker_heartbeat("lifecycle", "stopped", "encerrado")
     print("[lifecycle-worker] finalizado", flush=True)
 
 

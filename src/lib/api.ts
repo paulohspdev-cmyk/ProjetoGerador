@@ -289,6 +289,28 @@ export type SystemDiagnostics = {
     lastError?: string | undefined;
     availableMetrics?: string[] | undefined;
   }>;
+  observability?: {
+    healthy: boolean;
+    workers: Array<{
+      name: string;
+      status: string;
+      pid: number;
+      detail: string;
+      updatedAt: number | null;
+      ageSeconds: number | null;
+      staleAfterSeconds?: number;
+      healthy: boolean;
+    }>;
+    queues: {
+      notifications: Record<string, number>;
+      lifecycle: Record<string, number>;
+      staleNotificationClaims: number;
+      staleLifecycleOperations: number;
+      dueSchedulerJobs: number;
+      healthy: boolean;
+      generatedAt: number;
+    };
+  };
   version: {
     application: string;
     apiVersion: string;
