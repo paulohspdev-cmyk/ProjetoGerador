@@ -135,6 +135,10 @@ function AppShell() {
   const { user, ready } = useAuth();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
+  if (pathname === "/reset-password") {
+    return <Outlet />;
+  }
+
   if (pathname === "/login") {
     if (ready && user) return <Navigate to="/" />;
     return <Outlet />;
