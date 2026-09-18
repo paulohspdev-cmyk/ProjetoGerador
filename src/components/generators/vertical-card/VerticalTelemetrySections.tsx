@@ -5,7 +5,7 @@ import { Battery, Clock3, Fuel, Gauge, Thermometer, Zap } from "lucide-react";
 import { RpmGauge } from "../RpmGauge";
 
 function valueText(value: number | null, unit: string, digits = 0) {
-  if (value == null || !Number.isFinite(value)) return "N/D";
+  if (value == null || !Number.isFinite(value)) return "—";
   return (
     value.toLocaleString("pt-BR", {
       minimumFractionDigits: digits,
