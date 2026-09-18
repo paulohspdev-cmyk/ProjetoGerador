@@ -105,7 +105,7 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
     await expect(card.getByRole("button", { name: "STOP" })).toBeVisible();
     await expect(card.getByText("HORN RESET")).toHaveCount(0);
     await expect(card.getByText("FAULT RESET")).toHaveCount(0);
-    await expect(card.locator(".vref-breaker-panel")).toHaveCount(2);
+    await expect(card.locator(".vref-breaker-state")).toHaveCount(2);
   }
 });
 
