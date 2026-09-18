@@ -259,6 +259,19 @@ export type BridgeSession = {
     | undefined;
   generators: BridgeSessionGenerator[];
 };
+export type BridgePeerObservation = {
+  remotePort: number;
+  remoteIp: string;
+  firstSeenAt: number;
+  lastSeenAt: number;
+  acceptedCount: number;
+  rejectedCount: number;
+  lastAcceptedAt?: number | null | undefined;
+  lastRejectedAt?: number | null | undefined;
+  lastDecision: "accepted" | "rejected" | string;
+  lastReason: string;
+};
+
 export type BridgeDiagnostics = {
   controlSocket: string;
   controlSocketExists: boolean;
@@ -698,6 +711,11 @@ export const rcApi = {
   system: {
     health: () => request<SystemDiagnostics>("/api/system/health"),
     diagnostics: () => request<SystemDiagnostics>("/api/system/diagnostics"),
+    bridgePeers: (limit = 200, remotePort?: number) => {
+      const params = new URLSearchParams({ limit: String(limit) });
+      if (remotePort != null) params.set("remote_port", String(remotePort));
+      return request<BridgePeerObservation[]>("/api/system/bridge-peers?" + params.toString());
+    },
     version: () => request<SystemDiagnostics["version"]>("/api/system/version"),
   },
 };
