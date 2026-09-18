@@ -196,6 +196,7 @@ with TestClient(app) as client:
     # Biblioteca e diagnóstico são APIs reais e autenticadas.
     expect(client.get("/api/library"), 200)
     expect(client.get("/api/system/diagnostics"), 200)
+    expect(client.get("/api/system/bridge-peers"), 200)
     expect(client.get("/api/system/version"), 200)
 
     report = expect(
@@ -248,6 +249,7 @@ with TestClient(app) as viewer_client:
     )
     expect(viewer_client.get("/api/generators"), 200)
     expect(viewer_client.get("/api/ops/bootstrap"), 200)
+    expect(viewer_client.get("/api/system/bridge-peers"), 403)
     expect(
         viewer_client.post(
             "/api/generators",

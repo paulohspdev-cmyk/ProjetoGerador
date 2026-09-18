@@ -25,7 +25,7 @@ os.environ["RC_PUBLIC_BASE_URL"] = "https://example.invalid"
 os.environ["RC_SMTP_HOST"] = "smtp.invalid"
 os.environ["RC_SMTP_FROM"] = "noreply@example.invalid"
 
-from app import db, diagnostics, industrial_store, platform_store  # noqa: E402
+from app import db, diagnostics, industrial_store, platform_store, traffic_store  # noqa: E402
 from app.auth import hash_password  # noqa: E402
 from app.rapid import _downsample_points  # noqa: E402
 from app.reporting import generate_report  # noqa: E402
@@ -204,6 +204,40 @@ assert queue_health["staleNotificationClaims"] == 0, queue_health
 assert queue_health["staleLifecycleOperations"] == 0, queue_health
 assert queue_health["healthy"] is True, queue_health
 
+
+# Reverse TCP peer history must aggregate metadata without storing transport payloads.
+first_peer = traffic_store.record_bridge_peer(
+    15001,
+    "203.0.113.10",
+    accepted=True,
+    reason="conexão aceita",
+    now=1_700_000_000,
+)
+assert first_peer["acceptedCount"] == 1 and first_peer["rejectedCount"] == 0, first_peer
+second_peer = traffic_store.record_bridge_peer(
+    15001,
+    "203.0.113.10",
+    accepted=False,
+    reason="origem fora da allowlist",
+    now=1_700_000_060,
+)
+assert second_peer["acceptedCount"] == 1 and second_peer["rejectedCount"] == 1, second_peer
+assert second_peer["firstSeenAt"] == 1_700_000_000
+assert second_peer["lastSeenAt"] == 1_700_000_060
+assert second_peer["lastDecision"] == "rejected"
+peer_rows = traffic_store.list_bridge_peers(10, remote_port=15001)
+assert peer_rows and peer_rows[0]["remoteIp"] == "203.0.113.10", peer_rows
+assert "payload" not in peer_rows[0] and "frame" not in peer_rows[0], peer_rows[0]
+traffic_store.record_bridge_peer(
+    15002,
+    "203.0.113.11",
+    accepted=True,
+    reason="conexão aceita",
+    now=1_700_000_060 + 91 * 86400,
+)
+retained = traffic_store.list_bridge_peers(20)
+assert all(item["remoteIp"] != "203.0.113.10" for item in retained), retained
+assert any(item["remoteIp"] == "203.0.113.11" for item in retained), retained
 
 # Reverse TCP security posture must remain visible to diagnostics.
 bridge_status = root / "bridge-status.json"

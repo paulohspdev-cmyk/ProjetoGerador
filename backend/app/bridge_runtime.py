@@ -22,7 +22,7 @@ import time
 from collections import defaultdict, deque
 from pathlib import Path
 
-from . import bridge, db, ig4_lab
+from . import bridge, db, ig4_lab, traffic_store
 from .controller_library import pack_for_model
 
 STATUS_FILE = Path(os.environ.get("RC_BRIDGE_STATUS_FILE", "/run/rc-geradores/bridge-status.json"))
@@ -335,9 +335,26 @@ class HardenedBridgePort(bridge.BridgePort):
         )
         return activity > 0 and now_epoch - activity < REPLACE_ACTIVE_AFTER
 
+    def _record_peer(self, peer, accepted: bool, reason: str) -> None:
+        address = self._peer_ip(peer)
+        if address is None:
+            return
+        try:
+            traffic_store.record_bridge_peer(
+                self.remote_port,
+                str(address),
+                accepted=accepted,
+                reason=reason,
+            )
+        except Exception as exc:
+            bridge.log(
+                f"porta {self.remote_port}: falha ao registrar peer {address}: {type(exc).__name__}"
+            )
+
     async def _reject(self, writer, reason: str) -> None:
         self.rejected_connections += 1
         peer = writer.get_extra_info("peername")
+        self._record_peer(peer, accepted=False, reason=reason)
         bridge.log(f"porta {self.remote_port}: conexão rejeitada de {peer}: {reason}")
         try:
             writer.close()
@@ -384,6 +401,7 @@ class HardenedBridgePort(bridge.BridgePort):
         if self._active_peer_is_protected(address, now_epoch):
             await self._reject(writer, "sessão legítima de outro peer ainda está ativa")
             return
+        self._record_peer(peer, accepted=True, reason="conexão aceita")
         self._clear_unit_backoff()
         await super().accept_remote(reader, writer)
 

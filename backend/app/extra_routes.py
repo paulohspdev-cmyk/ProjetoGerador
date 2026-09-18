@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
-from . import db, ops_store, platform_store, transport_store
+from . import db, ops_store, platform_store, traffic_store, transport_store
 from .auth import current_user, hash_password, require_admin, require_operate, require_view
 from .automation_engine import approve_rule, set_rule_enabled
 from .backup_manager import safe_archive_path
@@ -143,6 +143,18 @@ def diagnostics(user: dict = Depends(require_view)):
 @router.get("/api/system/version")
 def version(user: dict = Depends(require_view)):
     return version_info()
+
+
+@router.get("/api/system/bridge-peers")
+def bridge_peers(
+    limit: int = 200,
+    remote_port: int | None = None,
+    user: dict = Depends(require_admin),
+):
+    try:
+        return traffic_store.list_bridge_peers(limit=limit, remote_port=remote_port)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/api/field-devices")

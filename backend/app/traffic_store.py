@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+import ipaddress
 import json
+import os
 import time
 from datetime import datetime
 from pathlib import Path
 
 from . import db
+
+PEER_RETENTION_DAYS = max(7, int(os.environ.get("RC_RETENTION_BRIDGE_PEER_DAYS", "90")))
+_TRAFFIC_DB_READY = False
 
 
 def _now() -> int:
@@ -18,6 +23,9 @@ def _day_key(timestamp: int | None = None) -> str:
 
 
 def init_traffic_db() -> None:
+    global _TRAFFIC_DB_READY
+    if _TRAFFIC_DB_READY:
+        return
     with db.connect() as conn:
         conn.executescript(
             """
@@ -55,8 +63,132 @@ def init_traffic_db() -> None:
             );
             CREATE INDEX IF NOT EXISTS idx_bridge_outages_port_time
               ON bridge_outages(remote_port, started_at DESC);
+
+            CREATE TABLE IF NOT EXISTS bridge_peer_observations (
+                remote_port INTEGER NOT NULL,
+                remote_ip TEXT NOT NULL,
+                first_seen_at INTEGER NOT NULL,
+                last_seen_at INTEGER NOT NULL,
+                accepted_count INTEGER NOT NULL DEFAULT 0,
+                rejected_count INTEGER NOT NULL DEFAULT 0,
+                last_accepted_at INTEGER,
+                last_rejected_at INTEGER,
+                last_decision TEXT NOT NULL,
+                last_reason TEXT NOT NULL DEFAULT '',
+                PRIMARY KEY(remote_port, remote_ip)
+            );
+            CREATE INDEX IF NOT EXISTS idx_bridge_peer_observations_last_seen
+              ON bridge_peer_observations(last_seen_at DESC);
             """
         )
+    _TRAFFIC_DB_READY = True
+
+
+def record_bridge_peer(
+    remote_port: int,
+    remote_ip: str,
+    accepted: bool,
+    reason: str = "",
+    now: int | None = None,
+) -> dict:
+    init_traffic_db()
+    port = int(remote_port)
+    if not 1 <= port <= 65535:
+        raise ValueError("porta reverse TCP inválida")
+    try:
+        address = str(ipaddress.ip_address(str(remote_ip).strip()))
+    except ValueError as exc:
+        raise ValueError("IP do peer inválido") from exc
+
+    timestamp = int(now or _now())
+    accepted_count = 1 if accepted else 0
+    rejected_count = 0 if accepted else 1
+    decision = "accepted" if accepted else "rejected"
+    clean_reason = str(reason or decision).strip()[:240]
+    cutoff = timestamp - PEER_RETENTION_DAYS * 86400
+
+    with db.connect() as conn:
+        conn.execute(
+            "DELETE FROM bridge_peer_observations WHERE last_seen_at < ?",
+            (cutoff,),
+        )
+        conn.execute(
+            """INSERT INTO bridge_peer_observations(
+                   remote_port,remote_ip,first_seen_at,last_seen_at,
+                   accepted_count,rejected_count,last_accepted_at,last_rejected_at,
+                   last_decision,last_reason
+               ) VALUES (?,?,?,?,?,?,?,?,?,?)
+               ON CONFLICT(remote_port,remote_ip) DO UPDATE SET
+                   last_seen_at=excluded.last_seen_at,
+                   accepted_count=bridge_peer_observations.accepted_count + excluded.accepted_count,
+                   rejected_count=bridge_peer_observations.rejected_count + excluded.rejected_count,
+                   last_accepted_at=COALESCE(excluded.last_accepted_at, bridge_peer_observations.last_accepted_at),
+                   last_rejected_at=COALESCE(excluded.last_rejected_at, bridge_peer_observations.last_rejected_at),
+                   last_decision=excluded.last_decision,
+                   last_reason=excluded.last_reason""",
+            (
+                port,
+                address,
+                timestamp,
+                timestamp,
+                accepted_count,
+                rejected_count,
+                timestamp if accepted else None,
+                None if accepted else timestamp,
+                decision,
+                clean_reason,
+            ),
+        )
+        row = conn.execute(
+            """SELECT remote_port,remote_ip,first_seen_at,last_seen_at,
+                      accepted_count,rejected_count,last_accepted_at,last_rejected_at,
+                      last_decision,last_reason
+               FROM bridge_peer_observations
+               WHERE remote_port=? AND remote_ip=?""",
+            (port, address),
+        ).fetchone()
+    return _peer_public(row)
+
+
+def _peer_public(row) -> dict:
+    return {
+        "remotePort": int(row["remote_port"]),
+        "remoteIp": row["remote_ip"],
+        "firstSeenAt": int(row["first_seen_at"]),
+        "lastSeenAt": int(row["last_seen_at"]),
+        "acceptedCount": int(row["accepted_count"] or 0),
+        "rejectedCount": int(row["rejected_count"] or 0),
+        "lastAcceptedAt": int(row["last_accepted_at"]) if row["last_accepted_at"] else None,
+        "lastRejectedAt": int(row["last_rejected_at"]) if row["last_rejected_at"] else None,
+        "lastDecision": row["last_decision"],
+        "lastReason": row["last_reason"] or "",
+    }
+
+
+def list_bridge_peers(limit: int = 200, remote_port: int | None = None) -> list[dict]:
+    init_traffic_db()
+    bounded = max(1, min(int(limit or 200), 500))
+    params: list[int] = []
+    where = ""
+    if remote_port is not None:
+        port = int(remote_port)
+        if not 1 <= port <= 65535:
+            raise ValueError("porta reverse TCP inválida")
+        where = "WHERE remote_port=?"
+        params.append(port)
+    params.append(bounded)
+    with db.connect() as conn:
+        rows = conn.execute(
+            f"""SELECT remote_port,remote_ip,first_seen_at,last_seen_at,
+                       accepted_count,rejected_count,last_accepted_at,last_rejected_at,
+                       last_decision,last_reason
+                FROM bridge_peer_observations
+                {where}
+                ORDER BY last_seen_at DESC, remote_port, remote_ip
+                LIMIT ?""",
+            tuple(params),
+        ).fetchall()
+    return [_peer_public(row) for row in rows]
 
 
 def _summary(conn, now: int) -> dict:
