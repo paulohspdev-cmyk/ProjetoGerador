@@ -4,7 +4,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = Path(os.environ.get("RC_DATA_DIR", "/var/lib/rc-geradores"))
 DB_FILE = Path(os.environ.get("RC_DB_FILE", DATA_DIR / "rc-geradores.db"))
-RAPID_BINDINGS_FILE = Path(os.environ.get("RC_RAPID_BINDINGS", PROJECT_ROOT / "rapid" / "bindings.json"))
+RAPID_BINDINGS_FILE = Path(os.environ.get("RC_RAPID_BINDINGS", DATA_DIR / "rapid-bindings.json"))
 RAPID_READER_DLL = Path(os.environ.get("RC_RAPID_READER", "/opt/rc-geradores/.rapid-reader/RcRapidReader.dll"))
 RAPID_SCADA_ROOT = Path(os.environ.get("RC_RAPID_SCADA_ROOT", "/opt/scada"))
 RAPID_COMM_CONFIG = Path(os.environ.get("RC_RAPID_COMM_CONFIG", RAPID_SCADA_ROOT / "ScadaComm/Config/ScadaCommConfig.xml"))

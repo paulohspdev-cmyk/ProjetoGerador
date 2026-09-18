@@ -1,3 +1,4 @@
+import json
 import os
 import tempfile
 from pathlib import Path
@@ -91,6 +92,26 @@ with TestClient(app) as client:
     ).json()
     assert generator["tag"] == "GEN001"
     assert generator["rapidDeviceNum"] == 200
+
+    # O smoke representa runtime provisionado; o binding vivo pertence ao DATA_DIR,
+    # nunca ao rapid/bindings.json canônico do repositório.
+    Path(tmp.name, "rapid-bindings.json").write_text(
+        json.dumps(
+            [
+                {
+                    "generator_id": generator["id"],
+                    "controller_type": "COMAP",
+                    "controller_model": "InteliGen 200",
+                    "transport": "reverse_tcp",
+                    "listen_port": 15001,
+                    "modbus_unit": 2,
+                    "rapid_line_num": 100,
+                    "rapid_device_num": 200,
+                    "channels": {},
+                }
+            ]
+        )
+    )
 
     # F10: o contrato HTTP de ciclo de vida deve ser assíncrono e rastreável.
     queued_generator = expect(
