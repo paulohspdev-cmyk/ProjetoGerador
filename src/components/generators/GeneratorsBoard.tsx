@@ -29,8 +29,6 @@ import { GeneratorTable } from "./GeneratorTable";
 import { KpiStrip } from "./KpiStrip";
 import { PowerFlowCard } from "./PowerFlowCard";
 import { useGenerators } from "./GeneratorsProvider";
-import "./generator-six-card.css";
-import "./generator-six-card-v10.css";
 
 type View = "principal" | "compacto" | "lista";
 
@@ -232,7 +230,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
 
         <div ref={viewportRef} className="min-h-0 min-w-0 flex-1 overflow-hidden">
           {view === "principal" && (
-            <div className="generator-vertical-grid generator-six-card-grid scroll-slim grid h-full min-h-0 min-w-0 gap-2 overflow-auto rounded-md bg-panel p-1.5">
+            <div className="generator-vertical-grid generator-reference-card-grid scroll-slim grid h-full min-h-0 min-w-0 gap-3 overflow-auto rounded-md bg-panel p-2">
               {visible.map((generator) => (
                 <PowerFlowCard key={generator.id} gen={generator} />
               ))}
