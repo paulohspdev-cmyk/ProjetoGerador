@@ -11,7 +11,7 @@ import { useGenerators } from "./GeneratorsProvider";
 import { readGeneratorTelemetry } from "./generator-health";
 import { displayGeneratorName, hasFreshMetric, metricNumber } from "./generator-metrics";
 import { isPositiveMeasurement } from "./generator-presence";
-import { headerMode } from "./vertical-card/VerticalControls";
+import { VerticalModeStrip } from "./vertical-card/VerticalControls";
 import {
   VerticalAlarmList,
   VerticalEngineAndRpm,
@@ -134,7 +134,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const mainsL1 = metricNumber(gen, "mains_voltage_l1", gen.mains.l1);
   const mainsL2 = metricNumber(gen, "mains_voltage_l2", gen.mains.l2);
   const mainsL3 = metricNumber(gen, "mains_voltage_l3", gen.mains.l3);
-  const mainsPower = metricNumber(gen, "mains_power_kw", undefined);
   const mainsPf = metricNumber(gen, "mains_power_factor", undefined);
   const mainsCurrent = metricNumber(gen, "mains_current_l1", undefined);
   const mainsVoltageKnown = ["mains_voltage_l1", "mains_voltage_l2", "mains_voltage_l3"].some(
@@ -187,12 +186,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         mains: formatUnit(mainsKnown ? mainsFrequency : null, "Hz", 1),
         generator: formatUnit(frequency, "Hz", 1),
       },
-      { label: "Phase Sequence", mains: "N/D", generator: "N/D" },
-      {
-        label: "Power (kW)",
-        mains: formatUnit(mainsPower, "kW", 0),
-        generator: formatUnit(powerKw, "kW", 0),
-      },
       {
         label: "Power Factor",
         mains: formatNumber(mainsPf, 2),
@@ -218,9 +211,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       mainsL2,
       mainsL3,
       mainsPf,
-      mainsPower,
       powerFactor,
-      powerKw,
     ],
   );
 
@@ -252,7 +243,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   };
 
   const online = gen.status === "online" || gen.status === "alerta";
-  const modeLabel = headerMode(gen.mode, modeKnown);
 
   return (
     <article
@@ -275,8 +265,9 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
             <i /> {gen.status === "alerta" ? "ALERT" : online ? "ONLINE" : "OFFLINE"}
           </span>
         </div>
-        <span className="vref-header-mode">MODE: {modeLabel}</span>
       </header>
+
+      <VerticalModeStrip gen={gen} dse={dse} modeKnown={modeKnown} />
 
       <VerticalPowerGauge powerKw={powerKw} nominalKw={nominalPower} />
 
