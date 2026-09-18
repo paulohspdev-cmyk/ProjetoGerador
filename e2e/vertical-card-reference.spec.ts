@@ -130,11 +130,11 @@ test("vertical cabe inteiro na área disponível sem rolagem interna", async ({ 
     }
 
     await page.goto("/p/geradores");
-    await expect(page.getByText("Carregando cadastro de geradores…")).toHaveCount(0, {
-      timeout: 15_000,
-    });
     await page.getByRole("button", { name: /online/i }).click();
     await page.getByRole("menuitemradio", { name: "Todos" }).click();
+    await expect(page.locator(".vref-card-frame").first()).toBeVisible({
+      timeout: 15_000,
+    });
 
     const metrics = await page.evaluate(() => {
       const grid = document.querySelector<HTMLElement>(".generator-reference-card-grid");
