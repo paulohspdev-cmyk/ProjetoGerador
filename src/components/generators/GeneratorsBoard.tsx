@@ -95,7 +95,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
       rows: 1,
       pageSize: columns,
       cardWidth: Math.max(1, cardWidth),
-      cardHeight: Math.min(810, usableHeight),
+      cardHeight: usableHeight,
     };
   }, [viewport]);
 
