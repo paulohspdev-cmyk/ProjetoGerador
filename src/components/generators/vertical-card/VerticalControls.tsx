@@ -42,12 +42,11 @@ export function VerticalModeStrip({
             aria-pressed={modeKnown && mode.active}
             className={cn(modeKnown && mode.active && "is-active", !modeKnown && "is-unknown")}
           >
-            {dse && mode.manual ? <Hand aria-hidden /> : null}
+            {dse && mode.manual ? <Hand aria-hidden className="vref-dse-hand-icon" /> : null}
             <span>{mode.label}</span>
           </button>
         ))}
       </div>
-      {!modeKnown && <span className="vref-mode-unknown">N/D</span>}
     </div>
   );
 }
