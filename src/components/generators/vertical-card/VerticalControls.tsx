@@ -1,4 +1,4 @@
-import { Hand } from "lucide-react";
+import { Hand, Play, Square } from "lucide-react";
 
 import type { Generator } from "@/data/generators";
 import { cn } from "@/lib/utils";
@@ -11,42 +11,88 @@ function modeShort(mode: Generator["mode"]) {
 }
 
 export function headerMode(mode: Generator["mode"], known: boolean) {
-  return known ? modeShort(mode) : "N/D";
+  return known ? modeShort(mode) : "—";
 }
 
-export function VerticalModeStrip({
+export function VerticalControls({
   gen,
   dse,
   modeKnown,
+  canStart,
+  canStop,
+  busy,
+  onStart,
+  onStop,
 }: {
   gen: Generator;
   dse: boolean;
   modeKnown: boolean;
+  canStart: boolean;
+  canStop: boolean;
+  busy: "start" | "stop" | null;
+  onStart: () => void;
+  onStop: () => void;
 }) {
-  const modes: Array<{ label: string; active: boolean; manual?: boolean }> = [
-    { label: "OFF", active: gen.mode === "OFF" || gen.mode === "STOP" },
-    { label: "MAN", active: gen.mode === "MANUAL", manual: true },
-    { label: "AUT", active: gen.mode === "AUTO" },
-    { label: "TEST", active: gen.mode === "TESTE" },
-  ];
+  const activeMode = modeKnown ? modeShort(gen.mode) : "";
 
   return (
-    <div className={cn("vref-mode-strip", dse && "is-dse")} aria-label="Modo do controlador">
-      <span className="vref-mode-strip-label">{dse ? "DSE MODE" : "MODE"}</span>
-      <div className="vref-mode-buttons">
-        {modes.map((mode) => (
+    <section className="vref-section vref-control">
+      <h4>{dse ? "CONTROL (DSE STYLE)" : "CONTROL"}</h4>
+
+      {dse ? (
+        <div className="vref-dse-control-row">
           <button
-            key={mode.label}
             type="button"
             disabled
-            aria-pressed={modeKnown && mode.active}
-            className={cn(modeKnown && mode.active && "is-active", !modeKnown && "is-unknown")}
+            aria-label="DSE manual mode"
+            className={cn("vref-dse-hand", modeKnown && gen.mode === "MANUAL" && "is-active")}
           >
-            {dse && mode.manual ? <Hand aria-hidden className="vref-dse-hand-icon" /> : null}
-            <span>{mode.label}</span>
+            <Hand aria-hidden />
           </button>
-        ))}
+          <button
+            type="button"
+            disabled
+            className={cn("vref-dse-auto", modeKnown && gen.mode === "AUTO" && "is-active")}
+          >
+            <span className="vref-auto-badge">A</span>
+            <span>AUTO</span>
+            <i />
+          </button>
+        </div>
+      ) : (
+        <div className="vref-mode-row">
+          {["OFF", "MAN", "AUT", "TEST"].map((label) => (
+            <button
+              key={label}
+              type="button"
+              disabled
+              aria-pressed={activeMode === label}
+              className={cn(activeMode === label && "is-active")}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="vref-start-stop-row">
+        <button
+          type="button"
+          className="start"
+          disabled={!canStart || busy !== null}
+          onClick={onStart}
+        >
+          <Play aria-hidden /> {busy === "start" ? "..." : "START"}
+        </button>
+        <button
+          type="button"
+          className="stop"
+          disabled={!canStop || busy !== null}
+          onClick={onStop}
+        >
+          <Square aria-hidden /> {busy === "stop" ? "..." : "STOP"}
+        </button>
       </div>
-    </div>
+    </section>
   );
 }
