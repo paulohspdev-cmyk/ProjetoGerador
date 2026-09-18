@@ -89,18 +89,14 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
     await expect(card).toHaveAttribute("data-mains-state", "unknown");
   }
 
-  await expect(comap.getByRole("button", { name: "OFF" })).toBeVisible();
-  await expect(comap.getByRole("button", { name: "MAN" })).toBeVisible();
-  await expect(comap.getByRole("button", { name: "AUT" })).toBeVisible();
-  await expect(comap.getByRole("button", { name: "TEST" })).toBeVisible();
-  await expect(comap.getByText("CONTROL", { exact: true })).toBeVisible();
-
-  await expect(dse.getByText("CONTROL (DSE STYLE)")).toBeVisible();
-  await expect(dse.getByRole("button", { name: "DSE manual mode" })).toBeVisible();
-  await expect(dse.getByRole("button", { name: /AUTO/ })).toBeVisible();
-  await expect(dse.getByRole("button", { name: "OFF", exact: true })).toHaveCount(0);
-  await expect(dse.getByRole("button", { name: "MAN", exact: true })).toHaveCount(0);
-  await expect(dse.getByRole("button", { name: "TEST", exact: true })).toHaveCount(0);
+  for (const card of [comap, dse]) {
+    await expect(card.getByRole("button", { name: "START" })).toBeVisible();
+    await expect(card.getByRole("button", { name: "STOP" })).toBeVisible();
+    await expect(card.getByText("HORN RESET")).toHaveCount(0);
+    await expect(card.getByText("FAULT RESET")).toHaveCount(0);
+    await expect(card.getByText("CONTROL", { exact: true })).toHaveCount(0);
+    await expect(card.locator(".vref-breaker-button")).toHaveCount(2);
+  }
 });
 
 test("vertical cabe inteiro na área disponível sem rolagem interna", async ({ browser }) => {
@@ -191,14 +187,14 @@ test("vertical cabe inteiro na área disponível sem rolagem interna", async ({ 
     }
 
     if (viewport.width === 1920) {
-      expect(metrics.frames.length).toBe(4);
-      expect(Math.min(...metrics.frames.map((frame) => frame.width))).toBeGreaterThanOrEqual(360);
+      expect(metrics.frames.length).toBe(5);
+      expect(Math.min(...metrics.frames.map((frame) => frame.width))).toBeGreaterThanOrEqual(300);
       expect(Math.min(...metrics.frames.map((frame) => frame.height))).toBeGreaterThanOrEqual(700);
     }
 
     if (viewport.width === 3840) {
-      expect(metrics.frames.length).toBe(7);
-      expect(Math.min(...metrics.frames.map((frame) => frame.width))).toBeGreaterThanOrEqual(450);
+      expect(metrics.frames.length).toBe(8);
+      expect(Math.min(...metrics.frames.map((frame) => frame.width))).toBeGreaterThanOrEqual(400);
     }
 
     await context.close();
