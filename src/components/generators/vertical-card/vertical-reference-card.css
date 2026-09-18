@@ -36,11 +36,11 @@
   display: grid;
   grid-template-rows:
     48px
-    126px
-    154px
+    118px
+    minmax(240px, 1.65fr)
     95px
     118px
-    minmax(214px, 1fr);
+    minmax(196px, 1.1fr);
   gap: 5px;
   width: 100%;
   height: 100%;
@@ -273,6 +273,11 @@
   overflow: visible;
 }
 
+.vref-flow-vertical > svg {
+  max-width: 270px;
+  margin: 0 auto;
+}
+
 .vref-status-dot {
   fill: #6f818c;
 }
@@ -383,14 +388,19 @@
   stroke-width: 1;
 }
 
-.vref-breaker.is-closed .state-box {
+.vref-breaker-panel.is-closed .state-box {
   fill: #20b900;
   stroke: #46f21d;
 }
 
-.vref-breaker.is-open .state-box {
+.vref-breaker-panel.is-open .state-box {
   fill: #d6251a;
   stroke: #ff544a;
+}
+
+.vref-breaker-panel.is-unknown .state-box {
+  fill: #344650;
+  stroke: #617683;
 }
 
 .vref-breaker-panel .state-glyph,
@@ -849,11 +859,11 @@
   .vref-card {
     grid-template-rows:
       44px
-      112px
-      138px
-      86px
-      106px
-      minmax(196px, 1fr);
+      105px
+      minmax(210px, 1.5fr)
+      84px
+      104px
+      minmax(180px, 1fr);
     gap: 4px;
     padding: 4px;
   }
