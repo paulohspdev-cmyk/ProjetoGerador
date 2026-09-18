@@ -45,15 +45,6 @@ function controllerVendor(gen: Generator) {
   return "generic";
 }
 
-function useCardClock() {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(new Date()), 1000);
-    return () => window.clearInterval(timer);
-  }, []);
-  return now;
-}
-
 function useAlarmEvents(gen: Generator, shouldLoad: boolean) {
   const [events, setEvents] = useState<EventItemApi[]>([]);
   const [loading, setLoading] = useState(shouldLoad);
@@ -100,7 +91,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const confirmCmd = useCommandGuard();
   const [commandBusy, setCommandBusy] = useState<"start" | "stop" | null>(null);
   const [commandMessage, setCommandMessage] = useState<string | null>(null);
-  const now = useCardClock();
 
   const telemetry = readGeneratorTelemetry(gen);
   const {
@@ -303,10 +293,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
           </span>
         </div>
         <span className="vref-header-mode">MODE: {modeLabel}</span>
-        <div className="vref-clock">
-          <b>{now.toLocaleTimeString("pt-BR")}</b>
-          <span>{now.toLocaleDateString("pt-BR")}</span>
-        </div>
       </header>
 
       <VerticalPowerGauge powerKw={powerKw} nominalKw={nominalPower} />
@@ -319,8 +305,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         gcb={gen.gcb}
         gcbKnown={gcbKnown}
         running={running}
-        loadKw={powerKw}
-        rpm={rpm}
       />
 
       <VerticalControls
