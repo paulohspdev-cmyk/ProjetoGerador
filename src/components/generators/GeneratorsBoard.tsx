@@ -38,10 +38,10 @@ const views: Array<{ id: View; label: string; icon: typeof List }> = [
   { id: "lista", label: "Lista", icon: List },
 ];
 
-const VERTICAL_GAP = 7;
+const VERTICAL_GAP = 8;
 const VERTICAL_PADDING = 4;
-const VERTICAL_MIN_CARD_WIDTH = 220;
-const VERTICAL_MAX_CARD_WIDTH = 285;
+const VERTICAL_MIN_CARD_WIDTH = 260;
+const VERTICAL_MAX_CARD_WIDTH = 305;
 const VERTICAL_MIN_CARD_HEIGHT = 720;
 
 function verticalColumnCount(width: number) {
