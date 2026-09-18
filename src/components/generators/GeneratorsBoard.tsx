@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
   ChevronDown,
   LayoutGrid,
@@ -38,6 +38,21 @@ const views: Array<{ id: View; label: string; icon: typeof List }> = [
   { id: "lista", label: "Lista", icon: List },
 ];
 
+const VERTICAL_DESIGN_WIDTH = 802;
+const VERTICAL_DESIGN_HEIGHT = 1792;
+const VERTICAL_HEIGHT_RATIO = VERTICAL_DESIGN_HEIGHT / VERTICAL_DESIGN_WIDTH;
+const VERTICAL_GAP = 8;
+const VERTICAL_PADDING = 8;
+
+function verticalMinimumCardWidth(width: number) {
+  if (width >= 3200) return 430;
+  if (width >= 2200) return 340;
+  if (width >= 1600) return 270;
+  if (width >= 1100) return 250;
+  if (width >= 700) return 230;
+  return 210;
+}
+
 const filters: Array<{ id: GenStatus | "todos"; label: string }> = [
   { id: "todos", label: "Todos" },
   { id: "online", label: statusLabel.online },
@@ -67,6 +82,51 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
     return () => observer.disconnect();
   }, []);
 
+  const verticalLayout = useMemo(() => {
+    const width = Math.max(1, viewport.width || 1200);
+    const height = Math.max(1, viewport.height || 720);
+    const usableWidth = Math.max(1, width - VERTICAL_PADDING * 2);
+    const usableHeight = Math.max(1, height - VERTICAL_PADDING * 2);
+    const minimumWidth = verticalMinimumCardWidth(width);
+
+    const columns = Math.max(
+      1,
+      Math.floor((usableWidth + VERTICAL_GAP) / (minimumWidth + VERTICAL_GAP)),
+    );
+    const minimumHeight = minimumWidth * VERTICAL_HEIGHT_RATIO;
+    const rows = Math.max(
+      1,
+      Math.floor((usableHeight + VERTICAL_GAP) / (minimumHeight + VERTICAL_GAP)),
+    );
+
+    const widthByColumns = (usableWidth - VERTICAL_GAP * Math.max(0, columns - 1)) / columns;
+    const heightByRows = (usableHeight - VERTICAL_GAP * Math.max(0, rows - 1)) / rows;
+    const widthByHeight = heightByRows / VERTICAL_HEIGHT_RATIO;
+    const cardWidth = Math.max(1, Math.min(widthByColumns, widthByHeight));
+    const cardHeight = cardWidth * VERTICAL_HEIGHT_RATIO;
+
+    return {
+      columns,
+      rows,
+      pageSize: Math.max(1, columns * rows),
+      cardWidth,
+      cardHeight,
+      scale: cardWidth / VERTICAL_DESIGN_WIDTH,
+    };
+  }, [viewport]);
+
+  const verticalGridStyle = useMemo(
+    () =>
+      ({
+        "--vref-columns": verticalLayout.columns,
+        "--vref-rows": verticalLayout.rows,
+        "--vref-card-width": verticalLayout.cardWidth + "px",
+        "--vref-card-height": verticalLayout.cardHeight + "px",
+        "--vref-scale": verticalLayout.scale,
+      }) as CSSProperties,
+    [verticalLayout],
+  );
+
   const items = useMemo(
     () =>
       generators.filter(
@@ -87,20 +147,14 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
     }
     if (view === "lista") return Math.max(1, Math.floor(viewport.height / 43));
 
-    if (view === "principal") {
-      // O cartão vertical precisa continuar legível. Ele nunca é dividido em
-      // duas linhas comprimidas: usamos uma fileira por página e deixamos a
-      // paginação absorver o restante da frota.
-      const readableCardWidth = viewport.width >= 2200 ? 270 : 258;
-      return Math.max(1, Math.min(8, Math.floor((viewport.width + 8) / (readableCardWidth + 8))));
-    }
+    if (view === "principal") return verticalLayout.pageSize;
 
     const minimumWidth = 250;
     const minimumHeight = 190;
     const columns = Math.max(1, Math.floor(viewport.width / minimumWidth));
     const rows = Math.max(1, Math.floor(viewport.height / minimumHeight));
     return columns * rows;
-  }, [view, viewport]);
+  }, [view, viewport, verticalLayout.pageSize]);
   const pages = Math.max(1, Math.ceil(items.length / pageSize));
   const page = Math.min(group, pages - 1);
   const visible = items.slice(page * pageSize, page * pageSize + pageSize);
@@ -230,9 +284,14 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
 
         <div ref={viewportRef} className="min-h-0 min-w-0 flex-1 overflow-hidden">
           {view === "principal" && (
-            <div className="generator-vertical-grid generator-reference-card-grid scroll-slim grid h-full min-h-0 min-w-0 gap-3 overflow-auto rounded-md bg-panel p-2">
+            <div
+              className="generator-vertical-grid generator-reference-card-grid grid h-full min-h-0 min-w-0 overflow-hidden rounded-md bg-panel"
+              style={verticalGridStyle}
+            >
               {visible.map((generator) => (
-                <PowerFlowCard key={generator.id} gen={generator} />
+                <div className="vref-card-frame" key={generator.id}>
+                  <PowerFlowCard gen={generator} />
+                </div>
               ))}
               {trulyEmpty && (
                 <p className="col-span-full p-6 text-sm text-muted-foreground">
