@@ -1,4 +1,3 @@
-import type { EventItemApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Battery, Clock3, Fuel, Gauge, Thermometer, Zap } from "lucide-react";
 
@@ -50,7 +49,7 @@ export function VerticalEngineAndRpm({
   rpm: number | null;
 }) {
   return (
-    <div className="vref-two-col">
+    <div className="vref-engine-rpm">
       <section className="vref-section vref-engine">
         <h4>ENGINE STATUS</h4>
         <div className="vref-engine-row">
@@ -115,90 +114,35 @@ export function VerticalTables({
   valueRows: ValueRow[];
 }) {
   return (
-    <div className="vref-two-col vref-tables">
-      <section className="vref-section">
-        <div className="vref-table-heading">
-          <h4>MAINS / GENERATOR</h4>
-          <span>MAINS</span>
-          <span>GENERATOR</span>
-        </div>
-        <div className="vref-data-table">
-          {electricalRows.map((row) => (
-            <div key={row.label} className="vref-data-row">
-              <span>{row.label}</span>
-              <b>{row.mains}</b>
-              <b className="generator">{row.generator}</b>
-            </div>
-          ))}
-        </div>
-      </section>
+    <section className="vref-section vref-measurements">
+      <div className="vref-table-heading">
+        <h4>MAINS / GENERATOR</h4>
+        <span>MAINS</span>
+        <span>GEN</span>
+      </div>
 
-      <section className="vref-section">
-        <h4>VALUES</h4>
-        <div className="vref-value-list">
-          {valueRows.map((row) => {
-            const Icon = valueIcons[row.icon];
-            return (
-              <div key={row.label} className="vref-value-row">
-                <Icon />
-                <span>{row.label}</span>
-                <b className={cn(row.active && "is-active")}>{row.value}</b>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-    </div>
-  );
-}
+      <div className="vref-data-table">
+        {electricalRows.map((row) => (
+          <div key={row.label} className="vref-data-row">
+            <span>{row.label}</span>
+            <b>{row.mains}</b>
+            <b className="generator">{row.generator}</b>
+          </div>
+        ))}
+      </div>
 
-export function VerticalAlarmList({
-  alarmCount,
-  events,
-  loading,
-  error,
-}: {
-  alarmCount: number | null;
-  events: EventItemApi[];
-  loading: boolean;
-  error: string;
-}) {
-  const alarmEvents = events
-    .filter((event) =>
-      ["FAULT", "ERROR", "WARN", "WARNING"].includes(String(event.level).toUpperCase()),
-    )
-    .slice(0, 2);
-
-  return (
-    <section className="vref-section vref-alarms">
-      <h4>ALARM LIST ({alarmCount == null ? "N/D" : alarmCount})</h4>
-      {loading && <p className="vref-alarm-empty">Loading alarms…</p>}
-      {!loading && error && <p className="vref-alarm-empty">Alarm history unavailable</p>}
-      {!loading &&
-        !error &&
-        alarmEvents.map((event) => {
-          const fault = ["FAULT", "ERROR"].includes(String(event.level).toUpperCase());
+      <div className="vref-summary-grid" aria-label="Generator values">
+        {valueRows.map((row) => {
+          const Icon = valueIcons[row.icon];
           return (
-            <div key={event.id} className={cn("vref-alarm-row", fault ? "fault" : "warning")}>
-              <time>
-                {new Date(event.created_at * 1000).toLocaleTimeString("pt-BR", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-                })}
-              </time>
-              <i />
-              <div>
-                <b>{event.message}</b>
-                <span>{String(event.level).toUpperCase()}</span>
-              </div>
-              <strong>{fault ? "ACTIVE" : "WARNING"}</strong>
+            <div key={row.label} className="vref-summary-item">
+              <Icon />
+              <span>{row.label}</span>
+              <b className={cn(row.active && "is-active")}>{row.value}</b>
             </div>
           );
         })}
-      {!loading && !error && alarmEvents.length === 0 && (
-        <p className="vref-alarm-empty">No active alarms ✓</p>
-      )}
+      </div>
     </section>
   );
 }
