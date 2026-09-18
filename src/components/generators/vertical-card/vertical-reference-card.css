@@ -2552,3 +2552,70 @@
     min-width: 78px;
   }
 }
+
+
+/* Operator refinement v6: content-aware card width, stacked telemetry tables and clearer breakers. */
+.generator-vertical-grid.generator-reference-card-grid {
+  justify-content: start;
+  align-content: stretch;
+}
+
+.vref-mode-buttons button svg.vref-dse-hand-icon {
+  color: #f4f8fb;
+  stroke: currentColor;
+  filter: drop-shadow(0 0 2px rgb(255 255 255 / 30%));
+}
+
+.vref-mode-buttons button.is-active svg.vref-dse-hand-icon {
+  color: #ffffff;
+}
+
+.vref-breaker-button .name {
+  font-size: 10px;
+}
+
+.vref-breaker-button .state-symbol {
+  font-size: 14px;
+}
+
+.vref-two-col.vref-tables {
+  grid-template-columns: 1fr;
+  grid-template-rows: 160px 75px;
+  gap: 5px;
+}
+
+.vref-two-col.vref-tables > .vref-section {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+}
+
+.vref-two-col.vref-tables .vref-table-heading,
+.vref-two-col.vref-tables .vref-data-row {
+  grid-template-columns: minmax(120px, 1.45fr) minmax(62px, 0.7fr) minmax(70px, 0.8fr);
+}
+
+.vref-two-col.vref-tables .vref-table-heading h4 {
+  white-space: nowrap;
+}
+
+.vref-two-col.vref-tables .vref-data-row > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vref-two-col.vref-tables .vref-value-row {
+  grid-template-columns: 14px minmax(110px, 1fr) auto;
+}
+
+.vref-alarms {
+  align-self: stretch;
+}
+
+@media (max-width: 1500px) {
+  .vref-two-col.vref-tables .vref-table-heading,
+  .vref-two-col.vref-tables .vref-data-row {
+    grid-template-columns: minmax(105px, 1.35fr) minmax(56px, 0.72fr) minmax(64px, 0.82fr);
+  }
+}
