@@ -153,44 +153,56 @@ export function ScadaTable<T extends { id: string | number }>({
   min?: string | undefined;
 }) {
   return (
-    <div className="scroll-slim min-w-0 max-w-full overflow-x-auto overscroll-x-contain">
-      <table
-        className="rc-data-table w-full border-separate border-spacing-0 text-[12px]"
-        style={{ minWidth: min }}
-      >
-        <thead>
-          <tr className="border-b border-border text-[10px] tracking-[0.035em] text-muted-foreground">
-            {columns.map((column) => (
-              <th
-                key={column.label}
-                className={cn(
-                  "border-b border-border/70 px-3 py-2.5 text-left font-bold",
-                  column.hide,
-                )}
-              >
-                {column.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.id} className="transition-colors hover:bg-secondary/30">
+    <div className="min-w-0 max-w-full">
+      {rows.length > 0 && (
+        <p className="mb-2 text-[11px] text-muted-foreground sm:hidden">
+          Deslize horizontalmente para ver mais colunas.
+        </p>
+      )}
+      <div className="scroll-slim min-w-0 max-w-full touch-pan-x overflow-x-auto overscroll-x-contain">
+        <table
+          className="rc-data-table w-full border-separate border-spacing-0 text-[12px]"
+          style={{ minWidth: min }}
+        >
+          <thead>
+            <tr className="border-b border-border text-[10px] tracking-[0.035em] text-muted-foreground">
               {columns.map((column) => (
-                <td
+                <th
                   key={column.label}
-                  className={cn("border-b border-border/45 px-3 py-2.5 align-middle", column.hide)}
+                  className={cn(
+                    "border-b border-border/70 px-3 py-2.5 text-left font-bold",
+                    column.hide,
+                  )}
                 >
-                  {column.render(row)}
-                </td>
+                  {column.label}
+                </th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
-      {rows.length === 0 && (
-        <p className="p-6 text-center text-sm text-muted-foreground">Nenhum registro encontrado.</p>
-      )}
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.id} className="transition-colors hover:bg-secondary/30">
+                {columns.map((column) => (
+                  <td
+                    key={column.label}
+                    className={cn(
+                      "border-b border-border/45 px-3 py-2.5 align-middle",
+                      column.hide,
+                    )}
+                  >
+                    {column.render(row)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {rows.length === 0 && (
+          <p className="p-6 text-center text-sm text-muted-foreground">
+            Nenhum registro encontrado.
+          </p>
+        )}
+      </div>
     </div>
   );
 }
@@ -209,13 +221,13 @@ export function Trend({
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
-          <XAxis dataKey="t" tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} />
-          <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} width={40} />
+          <XAxis dataKey="t" tick={{ fill: "var(--muted-foreground)", fontSize: "0.72rem" }} />
+          <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: "0.72rem" }} width={40} />
           <Tooltip
             contentStyle={{
               background: "var(--card)",
               border: "1px solid var(--border)",
-              fontSize: 13,
+              fontSize: "0.8125rem",
             }}
             formatter={(value: number) => [`${value}${unit ? ` ${unit}` : ""}`, "Valor"]}
           />
