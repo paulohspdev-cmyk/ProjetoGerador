@@ -60,29 +60,58 @@ IG4_RUNNING_STATES = {7, 8}
 ig4_lab_control_server = None
 
 
-def _allowed_networks():
-    raw = os.environ.get("RC_RAPID_REMOTE_ALLOWED_CIDRS", "").strip()
-    if not raw:
-        if REQUIRE_ALLOWLIST:
-            raise RuntimeError(
-                "RC_RAPID_REQUIRE_ALLOWLIST=1 exige RC_RAPID_REMOTE_ALLOWED_CIDRS"
-            )
-        return []
+def _parse_allowed_networks(raw: str, setting: str) -> list:
     networks = []
-    for item in raw.split(","):
+    for item in str(raw or "").split(","):
         text = item.strip()
         if not text:
             continue
         try:
             networks.append(ipaddress.ip_network(text, strict=False))
         except ValueError as exc:
-            raise RuntimeError(f"CIDR reverse TCP inválido: {text}") from exc
-    if REQUIRE_ALLOWLIST and not networks:
-        raise RuntimeError("Allowlist reverse TCP obrigatória, mas ficou vazia")
+            raise RuntimeError(f"CIDR reverse TCP inválido em {setting}: {text}") from exc
     return networks
 
 
+def _allowed_networks():
+    return _parse_allowed_networks(
+        os.environ.get("RC_RAPID_REMOTE_ALLOWED_CIDRS", ""),
+        "RC_RAPID_REMOTE_ALLOWED_CIDRS",
+    )
+
+
+def _port_allowed_networks() -> dict[int, list]:
+    prefix = "RC_RAPID_REMOTE_ALLOWED_CIDRS_"
+    configured: dict[int, list] = {}
+    for key, raw in os.environ.items():
+        if not key.startswith(prefix) or not str(raw).strip():
+            continue
+        suffix = key[len(prefix):]
+        if not suffix.isdigit():
+            raise RuntimeError(f"Porta inválida na configuração reverse TCP: {key}")
+        port = int(suffix)
+        if not 1 <= port <= 65535:
+            raise RuntimeError(f"Porta fora da faixa na configuração reverse TCP: {key}")
+        configured[port] = _parse_allowed_networks(raw, key)
+    return configured
+
+
 REMOTE_ALLOWED_NETWORKS = _allowed_networks()
+PORT_ALLOWED_NETWORKS = _port_allowed_networks()
+if REQUIRE_ALLOWLIST and not REMOTE_ALLOWED_NETWORKS and not PORT_ALLOWED_NETWORKS:
+    raise RuntimeError(
+        "RC_RAPID_REQUIRE_ALLOWLIST=1 exige RC_RAPID_REMOTE_ALLOWED_CIDRS "
+        "ou RC_RAPID_REMOTE_ALLOWED_CIDRS_<PORTA>"
+    )
+
+
+def _networks_for_port(remote_port: int) -> tuple[list, str]:
+    port = int(remote_port)
+    if port in PORT_ALLOWED_NETWORKS:
+        return PORT_ALLOWED_NETWORKS[port], f"port:{port}"
+    if REMOTE_ALLOWED_NETWORKS:
+        return REMOTE_ALLOWED_NETWORKS, "global"
+    return [], "none"
 
 
 def _remote_framing_for_generator(generator: dict) -> str:
@@ -249,6 +278,7 @@ class HardenedBridgePort(bridge.BridgePort):
 
     def __init__(self, remote_port):
         super().__init__(remote_port)
+        self.allowed_networks, self.allowlist_source = _networks_for_port(remote_port)
         self._attempts = defaultdict(deque)
         self.rejected_connections = 0
         self._unit_consecutive_timeouts: dict[int, int] = {}
@@ -269,9 +299,9 @@ class HardenedBridgePort(bridge.BridgePort):
     def _allowed(self, address) -> bool:
         if address is None:
             return False
-        if not REMOTE_ALLOWED_NETWORKS:
-            return True
-        return any(address in network for network in REMOTE_ALLOWED_NETWORKS)
+        if not self.allowed_networks:
+            return not REQUIRE_ALLOWLIST
+        return any(address in network for network in self.allowed_networks)
 
     def _rate_allowed(self, address, now: float) -> bool:
         key = str(address)
@@ -419,7 +449,10 @@ class HardenedBridgePort(bridge.BridgePort):
             **super().snapshot(),
             "remoteFraming": self.remote_framing,
             "rejectedConnections": self.rejected_connections,
-            "peerAllowlistEnabled": bool(REMOTE_ALLOWED_NETWORKS),
+            "peerAllowlistEnabled": bool(bridge.bridges)
+            and all(bool(getattr(item, "allowed_networks", [])) for item in bridge.bridges.values()),
+            "peerAllowlistGlobalEnabled": bool(REMOTE_ALLOWED_NETWORKS),
+            "peerAllowlistPortsConfigured": sorted(PORT_ALLOWED_NETWORKS),
             "peerAllowlistRequired": REQUIRE_ALLOWLIST,
             "connectRateLimitPerMinute": CONNECT_RATE_LIMIT,
             "activePeerProtectionSeconds": REPLACE_ACTIVE_AFTER,
@@ -812,6 +845,9 @@ def write_status(enabled: list[dict]) -> None:
         "ports": [
             {
                 **item.snapshot(),
+                "peerAllowlistEnabled": bool(getattr(item, "allowed_networks", [])),
+                "peerAllowlistSource": getattr(item, "allowlist_source", "none"),
+                "peerAllowedCidrs": [str(network) for network in getattr(item, "allowed_networks", [])],
                 "generators": sorted(by_port.get(port, []), key=lambda x: (x["unit"], x["tag"])),
             }
             for port, item in sorted(bridge.bridges.items())
@@ -840,6 +876,13 @@ async def reconcile_reverse_tcp():
 
         wanted: dict[int, str] = {}
         for port, generators in sorted(by_port.items()):
+            allowed_networks, allowlist_source = _networks_for_port(port)
+            if REQUIRE_ALLOWLIST and not allowed_networks:
+                bridge.log(
+                    f"porta {port}: listener bloqueado; RC_RAPID_REQUIRE_ALLOWLIST=1 "
+                    "e nenhuma allowlist global/por-porta foi configurada"
+                )
+                continue
             try:
                 framings = {_remote_framing_for_generator(g) for g in generators}
             except Exception as exc:
@@ -895,7 +938,9 @@ async def main():
     bridge.log(
         "iniciando ponte reverse TCP; caminho Rapid somente leitura FC03/FC04; "
         "framing remoto definido por Controller Pack; "
-        f"allowlist={'ativa' if REMOTE_ALLOWED_NETWORKS else 'não configurada'}; "
+        f"allowlist_global={'ativa' if REMOTE_ALLOWED_NETWORKS else 'não configurada'}; "
+        f"allowlists_por_porta={sorted(PORT_ALLOWED_NETWORKS)}; "
+        f"require_allowlist={'sim' if REQUIRE_ALLOWLIST else 'não'}; "
         f"IG4_LAB={'ativo' if ig4_lab.enabled() else 'desabilitado'}"
     )
     await bridge.start_control_server()
