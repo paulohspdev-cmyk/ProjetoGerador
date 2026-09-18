@@ -1700,3 +1700,309 @@
     font-size: 9px;
   }
 }
+
+
+/* Operator refinement v3: narrower cards, integrated START/STOP and more room for telemetry. */
+.vref-card {
+  grid-template-rows:
+    48px
+    minmax(120px, 0.95fr)
+    minmax(185px, 1.45fr)
+    minmax(125px, 1fr)
+    minmax(230px, 1.75fr)
+    minmax(70px, 0.55fr);
+  gap: 5px;
+  padding: 5px;
+}
+
+.vref-header {
+  grid-template-columns: 32px minmax(0, 1fr) 66px;
+  gap: 5px;
+  padding: 4px 6px;
+}
+
+.vref-header-title > a {
+  font-size: 14px;
+}
+
+.vref-header-title > span {
+  font-size: 9px;
+}
+
+.vref-header-mode {
+  font-size: 9px;
+  padding: 5px 3px;
+}
+
+.vref-power-gauge > svg {
+  width: min(300px, 94%);
+  height: 145px;
+  margin: -19px auto 0;
+}
+
+.vref-power-readout {
+  inset: 46px 0 auto;
+}
+
+.vref-power-readout b {
+  font-size: 17px;
+}
+
+.vref-power-readout span {
+  font-size: 9px;
+}
+
+.vref-flow {
+  display: flex;
+  flex-direction: column;
+  padding: 5px 6px;
+}
+
+.vref-flow-heading {
+  flex: 0 0 auto;
+  height: 16px;
+}
+
+.vref-flow-heading h4 {
+  margin: 0;
+  font-size: 12px;
+}
+
+.vref-flow-body {
+  display: grid;
+  min-height: 0;
+  flex: 1;
+  grid-template-rows: minmax(0, 1fr) 28px;
+  gap: 3px;
+}
+
+.vref-flow-body > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: visible;
+}
+
+.vref-flow-label {
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.vref-breaker-button rect {
+  fill: #031523;
+  stroke: #33546a;
+  stroke-width: 1.5;
+}
+
+.vref-breaker.is-closed .vref-breaker-button rect {
+  stroke: var(--vref-green);
+  fill: rgb(16 72 26 / 55%);
+}
+
+.vref-breaker.is-open .vref-breaker-button rect {
+  stroke: #667986;
+}
+
+.vref-breaker.is-unknown .vref-breaker-button rect {
+  stroke: #445865;
+}
+
+.vref-breaker-button .indicator {
+  fill: #687985;
+}
+
+.vref-breaker.is-closed .vref-breaker-button .indicator {
+  fill: var(--vref-green);
+  filter: drop-shadow(0 0 4px rgb(40 230 0 / 70%));
+}
+
+.vref-breaker.is-open .vref-breaker-button .indicator {
+  fill: var(--vref-red);
+}
+
+.vref-breaker-button .name,
+.vref-breaker-button .state-text {
+  fill: #f4f8fb;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.vref-breaker.is-closed .vref-breaker-button .state-text {
+  fill: var(--vref-green);
+}
+
+.vref-breaker.is-open .vref-breaker-button .state-text {
+  fill: #e8eef2;
+}
+
+.vref-flow-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.vref-flow-actions button {
+  display: inline-flex;
+  min-width: 72px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.vref-flow-actions button svg {
+  width: 11px;
+  height: 11px;
+}
+
+.vref-flow-actions .start {
+  border-color: #42f315;
+  background: linear-gradient(180deg, #25c900, #169c00);
+}
+
+.vref-flow-actions .stop {
+  border-color: #ff5146;
+  background: linear-gradient(180deg, #db271c, #a91710);
+}
+
+.vref-flow-actions button:disabled {
+  cursor: not-allowed;
+  filter: saturate(0.72);
+  opacity: 0.72;
+}
+
+.vref-command-message {
+  top: 405px;
+  left: 10px;
+  right: 10px;
+  height: 21px;
+  font-size: 10px;
+  line-height: 19px;
+}
+
+.vref-two-col {
+  gap: 5px;
+}
+
+.vref-engine,
+.vref-rpm {
+  padding: 6px 7px;
+}
+
+.vref-engine-row {
+  grid-template-columns: 12px minmax(74px, auto) minmax(28px, 1fr) auto;
+  gap: 4px;
+  min-height: 21px;
+  font-size: 11px;
+}
+
+.vref-engine-row svg {
+  width: 12px;
+  height: 12px;
+}
+
+.vref-engine-row > b {
+  min-width: 36px;
+  font-size: 11px;
+}
+
+.vref-rpm .rpm-svg {
+  height: calc(100% - 16px);
+}
+
+.vref-rpm .rpm-scale-label {
+  font-size: 10px;
+}
+
+.vref-rpm .rpm-percent {
+  font-size: 22px;
+}
+
+.vref-tables {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: minmax(0, 1fr) 82px;
+  gap: 5px;
+}
+
+.vref-tables .vref-section {
+  min-height: 0;
+  padding: 6px 7px;
+}
+
+.vref-table-heading {
+  grid-template-columns: minmax(0, 1.35fr) minmax(54px, 0.75fr) minmax(64px, 0.9fr);
+  gap: 4px;
+  min-height: 19px;
+  margin-bottom: 2px;
+}
+
+.vref-table-heading h4 {
+  font-size: 12px;
+}
+
+.vref-table-heading > span {
+  font-size: 9px;
+}
+
+.vref-data-row {
+  grid-template-columns: minmax(0, 1.35fr) minmax(54px, 0.75fr) minmax(64px, 0.9fr);
+  gap: 4px;
+  min-height: 20px;
+  font-size: 11px;
+}
+
+.vref-value-list {
+  margin-top: 3px;
+}
+
+.vref-value-row {
+  grid-template-columns: 14px minmax(0, 1fr) auto;
+  gap: 5px;
+  min-height: 18px;
+  font-size: 11px;
+}
+
+.vref-value-row svg {
+  width: 12px;
+  height: 12px;
+}
+
+.vref-alarms {
+  padding: 6px 7px 5px;
+}
+
+.vref-alarms > h4 {
+  margin-bottom: 5px;
+  font-size: 12px;
+}
+
+.vref-alarm-empty {
+  margin-top: 2px;
+  padding: 7px 6px;
+  font-size: 10px;
+}
+
+@media (max-width: 1600px) {
+  .vref-header-title > a {
+    font-size: 13px;
+  }
+
+  .vref-flow-actions button {
+    min-width: 64px;
+  }
+
+  .vref-engine-row,
+  .vref-data-row,
+  .vref-value-row {
+    font-size: 10px;
+  }
+}
