@@ -1030,3 +1030,383 @@
     font-size: 19px;
   }
 }
+
+/* Professional compact vertical layout v7 */
+.generator-vertical-grid.generator-reference-card-grid {
+  grid-template-columns: repeat(var(--vref-columns, 1), var(--vref-card-width, 330px));
+  justify-content: center;
+  align-content: start;
+  align-items: start;
+}
+
+.vref-card-frame {
+  width: var(--vref-card-width, 330px);
+  height: var(--vref-card-height, 810px);
+}
+
+.vref-card,
+.vref-card * {
+  box-sizing: border-box;
+}
+
+.vref-card {
+  grid-template-rows:
+    48px
+    126px
+    154px
+    95px
+    118px
+    minmax(214px, 1fr);
+  gap: 5px;
+  padding: 5px;
+  border-radius: 9px;
+}
+
+.vref-header {
+  grid-template-columns: 34px minmax(0, 1fr) 72px;
+  gap: 6px;
+  padding: 4px 6px;
+}
+
+.vref-generator-badge {
+  width: 32px;
+  height: 32px;
+  border-width: 1.5px;
+  font-size: 16px;
+}
+
+.vref-header-title > a {
+  font-size: 14px;
+}
+
+.vref-header-title > span {
+  gap: 4px;
+  margin-top: 3px;
+  font-size: 9px;
+}
+
+.vref-header-title > span i {
+  width: 6px;
+  height: 6px;
+}
+
+.vref-header-mode {
+  min-width: 68px;
+  padding: 5px 4px;
+  font-size: 9px;
+}
+
+/* kW gauge */
+.vref-section-heading {
+  height: 21px;
+  padding: 6px 7px 0;
+}
+
+.vref-section-heading h4 {
+  font-size: 11px;
+}
+
+.vref-power-gauge {
+  height: calc(100% - 21px);
+}
+
+.vref-power-gauge > svg {
+  width: min(300px, 96%);
+  height: 100%;
+}
+
+.vref-gauge-base,
+.vref-gauge-zone {
+  stroke-width: 15;
+}
+
+.vref-gauge-scale {
+  font-size: 12px;
+}
+
+.vref-kw-value {
+  font-size: 20px;
+  stroke-width: 3px;
+}
+
+.vref-kw-nominal {
+  font-size: 8px;
+}
+
+/* cleaner, larger flow diagram */
+.vref-flow {
+  padding: 6px 7px 3px;
+}
+
+.vref-flow > h4 {
+  margin-bottom: 1px;
+  font-size: 11px;
+}
+
+.vref-flow > svg {
+  height: calc(100% - 14px);
+}
+
+.vref-flow-label {
+  font-size: 13px;
+}
+
+.vref-device {
+  stroke-width: 2.6;
+}
+
+.vref-wire,
+.vref-wire-live {
+  stroke-width: 5;
+}
+
+.vref-breaker > line {
+  stroke-width: 5;
+}
+
+.vref-breaker-panel .label {
+  font-size: 12px;
+}
+
+.vref-breaker-panel .state-glyph,
+.vref-breaker-panel .state-text {
+  font-size: 12px;
+}
+
+.vref-load-title {
+  font-size: 13px;
+}
+
+/* compact control; no reset rows */
+.vref-control {
+  padding: 6px 7px;
+}
+
+.vref-control > h4 {
+  margin-bottom: 5px;
+  font-size: 11px;
+}
+
+.vref-mode-row {
+  gap: 4px;
+}
+
+.vref-mode-row button {
+  height: 24px;
+  font-size: 9px;
+}
+
+.vref-dse-control-row {
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 5px;
+  max-width: 220px;
+}
+
+.vref-dse-hand,
+.vref-dse-auto {
+  height: 25px;
+}
+
+.vref-dse-hand svg {
+  width: 17px;
+  height: 17px;
+}
+
+.vref-dse-auto {
+  grid-template-columns: 22px 1fr 8px;
+  gap: 5px;
+  padding-inline: 6px;
+  font-size: 10px;
+}
+
+.vref-auto-badge {
+  width: 21px;
+  height: 16px;
+  font-size: 9px;
+}
+
+.vref-start-stop-row {
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.vref-start-stop-row button {
+  height: 26px;
+  font-size: 10px;
+}
+
+/* engine status and RPM */
+.vref-engine-rpm {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 5px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.vref-engine-rpm > .vref-section {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.vref-engine,
+.vref-rpm {
+  padding: 5px 6px;
+}
+
+.vref-engine > h4,
+.vref-rpm > h4 {
+  margin-bottom: 3px;
+  font-size: 11px;
+}
+
+.vref-engine-row {
+  grid-template-columns: 12px minmax(62px, 1fr) minmax(28px, 0.72fr) 44px;
+  gap: 3px;
+  min-height: 20px;
+  font-size: 9px;
+}
+
+.vref-engine-row svg {
+  width: 11px;
+  height: 11px;
+}
+
+.vref-engine-row > b {
+  font-size: 9px;
+}
+
+.vref-mini-bar {
+  height: 5px;
+}
+
+.vref-rpm .rpm-svg {
+  width: 100%;
+  height: calc(100% - 14px);
+}
+
+.vref-rpm .rpm-scale-label {
+  font-size: 9px;
+}
+
+.vref-rpm .rpm-percent {
+  font-size: 20px;
+}
+
+.vref-rpm .rpm-unit {
+  font-size: 8px;
+}
+
+/* one coherent measurements panel instead of two cramped columns */
+.vref-measurements {
+  padding: 6px 7px;
+}
+
+.vref-table-heading {
+  grid-template-columns: minmax(0, 1.45fr) 58px 62px;
+  gap: 4px;
+  min-height: 18px;
+  margin-bottom: 2px;
+}
+
+.vref-table-heading h4 {
+  font-size: 11px;
+}
+
+.vref-table-heading > span {
+  font-size: 8px;
+}
+
+.vref-data-row {
+  grid-template-columns: minmax(0, 1.45fr) 58px 62px;
+  gap: 4px;
+  min-height: 20px;
+  font-size: 9px;
+}
+
+.vref-data-row > span {
+  text-overflow: clip;
+}
+
+.vref-summary-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  margin-top: 5px;
+  padding-top: 4px;
+  border-top: 1px solid rgb(22 67 93 / 70%);
+}
+
+.vref-summary-item {
+  display: grid;
+  grid-template-columns: 13px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px;
+  min-height: 18px;
+  color: #eaf2f6;
+  font-size: 9px;
+}
+
+.vref-summary-item svg {
+  width: 11px;
+  height: 11px;
+  stroke-width: 1.8;
+}
+
+.vref-summary-item > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vref-summary-item > b {
+  color: #fff;
+  font-size: 9px;
+  font-weight: 900;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.vref-summary-item > b.is-active {
+  color: var(--vref-green);
+}
+
+.vref-command-message {
+  top: 47%;
+  left: 8px;
+  right: 8px;
+  height: 21px;
+  font-size: 9px;
+  line-height: 19px;
+}
+
+@container vref (max-width: 315px) {
+  .vref-header {
+    grid-template-columns: 31px minmax(0, 1fr) 62px;
+  }
+
+  .vref-generator-badge {
+    width: 29px;
+    height: 29px;
+    font-size: 15px;
+  }
+
+  .vref-header-title > a {
+    font-size: 13px;
+  }
+
+  .vref-header-mode {
+    min-width: 58px;
+    font-size: 8px;
+  }
+
+  .vref-table-heading,
+  .vref-data-row {
+    grid-template-columns: minmax(0, 1.4fr) 50px 54px;
+  }
+
+  .vref-engine-row {
+    grid-template-columns: 11px minmax(55px, 1fr) minmax(24px, 0.65fr) 39px;
+  }
+}
