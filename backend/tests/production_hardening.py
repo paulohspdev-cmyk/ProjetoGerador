@@ -43,6 +43,7 @@ os.environ["RC_RETENTION_EVENT_DAYS"] = "1"
 os.environ["RC_RETENTION_PROCESS_DAYS"] = "1"
 os.environ["RC_RETENTION_NOTIFICATION_DAYS"] = "1"
 
+from app import config as app_config  # noqa: E402
 from app import rapid as rapid_module  # noqa: E402
 from app import (  # noqa: E402
     bridge,
@@ -55,6 +56,9 @@ from app import (  # noqa: E402
     transport_store,
 )
 from app.backup_manager import create_full_backup, materialize_offsite_backup  # noqa: E402
+
+# Sem override explicito, bindings runtime devem acompanhar RC_DATA_DIR.
+assert app_config.RAPID_BINDINGS_FILE == data_dir / "rapid-bindings.json", app_config.RAPID_BINDINGS_FILE
 from app.bridge_runtime import (  # noqa: E402
     FRAMING_MODBUS_RTU,
     FRAMING_MODBUS_TCP,
