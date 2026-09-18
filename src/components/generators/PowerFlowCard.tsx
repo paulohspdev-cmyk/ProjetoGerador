@@ -11,7 +11,7 @@ import { useGenerators } from "./GeneratorsProvider";
 import { readGeneratorTelemetry } from "./generator-health";
 import { displayGeneratorName, hasFreshMetric, metricNumber } from "./generator-metrics";
 import { isPositiveMeasurement } from "./generator-presence";
-import { VerticalControls, headerMode } from "./vertical-card/VerticalControls";
+import { headerMode } from "./vertical-card/VerticalControls";
 import {
   VerticalAlarmList,
   VerticalEngineAndRpm,
@@ -165,9 +165,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     Math.max(1, [currentL1, currentL2, currentL3].filter((value) => value != null).length);
   const currentKnown = [currentL1, currentL2, currentL3].some((value) => value != null);
 
-  const engineState = !runningKnown ? "N/D" : running ? "RUNNING" : "STOPPED";
-  const breakerLabel = !gcbKnown ? "N/D" : gen.gcb ? "GCB CLOSED" : "GCB OPEN";
-
   const electricalRows = useMemo(
     () => [
       {
@@ -229,22 +226,8 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
 
   const valueRows = [
     { icon: "clock" as const, label: "Run Hours", value: formatUnit(runHours, "h", 1) },
-    { icon: "zap" as const, label: "Energy (kWh)", value: formatUnit(energyKwh, "kWh", 0) },
+    { icon: "zap" as const, label: "Energy", value: formatUnit(energyKwh, "kWh", 0) },
     { icon: "gauge" as const, label: "Required Power", value: formatUnit(requiredPower, "kW", 0) },
-    { icon: "gauge" as const, label: "Generator RPM", value: formatUnit(rpm, "RPM", 0) },
-    { icon: "gauge" as const, label: "Engine State", value: engineState, active: running },
-    {
-      icon: "zap" as const,
-      label: "Breaker State",
-      value: breakerLabel,
-      active: gcbKnown && gen.gcb,
-    },
-    {
-      icon: "battery" as const,
-      label: "Battery Voltage",
-      value: formatUnit(batteryVoltage, "V", 1),
-    },
-    { icon: "gauge" as const, label: "PF (Generator)", value: formatNumber(powerFactor, 2) },
   ];
 
   const canStart = can("operate") && gen.capabilities?.start === true;
@@ -305,13 +288,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         gcb={gen.gcb}
         gcbKnown={gcbKnown}
         running={running}
-      />
-
-      <VerticalControls
-        gen={gen}
-        dse={dse}
-        modeKnown={modeKnown}
-        mainsPresent={mainsPresent}
         canStart={canStart}
         canStop={canStop}
         busy={commandBusy}
