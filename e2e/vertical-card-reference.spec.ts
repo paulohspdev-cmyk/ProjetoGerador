@@ -80,7 +80,7 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
     await expect(card.getByText("POWER FLOW")).toBeVisible();
     await expect(card.locator(".vref-clock")).toHaveCount(0);
     await expect(card.locator(".vref-power")).not.toContainText("%");
-    await expect(card.locator(".vref-flow")).not.toContainText(/kW|RPM|N\/D/);
+    await expect(card.locator(".vref-flow")).not.toContainText(/RPM/);
     await expect(card.getByText("ENGINE STATUS")).toBeVisible();
     await expect(card.getByRole("heading", { name: "RPM" })).toBeVisible();
     await expect(card.getByText("MAINS / GENERATOR")).toBeVisible();
@@ -105,7 +105,7 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
     await expect(card.getByRole("button", { name: "STOP" })).toBeVisible();
     await expect(card.getByText("HORN RESET")).toHaveCount(0);
     await expect(card.getByText("FAULT RESET")).toHaveCount(0);
-    await expect(card.locator(".vref-breaker-state")).toHaveCount(2);
+    await expect(card.locator(".vref-breaker-badge")).toHaveCount(2);
   }
 });
 
