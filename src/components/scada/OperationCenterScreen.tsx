@@ -228,7 +228,7 @@ export function OperationCenter() {
 
       <div className="grid min-w-0 gap-3 xl:grid-cols-12">
         <Panel title="Visão operacional" className="xl:col-span-5 [&>div:last-child]:p-0">
-          <div className="relative h-[390px] min-h-[320px] overflow-hidden rounded-b-[10px]">
+          <div className="relative h-[300px] min-h-[260px] overflow-hidden rounded-b-[10px] sm:h-[340px] sm:min-h-[300px] xl:h-[390px] xl:min-h-[320px]">
             <OperationalMap generators={visibleGenerators} />
           </div>
         </Panel>

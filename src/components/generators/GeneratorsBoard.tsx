@@ -122,7 +122,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border bg-card px-2.5 text-[11px] font-bold transition-colors hover:bg-secondary data-[state=open]:border-primary/50 data-[state=open]:bg-secondary"
+            className="inline-flex h-11 items-center gap-1.5 rounded-md border border-border bg-card px-3 text-[11px] font-bold transition-colors hover:bg-secondary sm:h-8 lg:h-7 lg:px-2.5 data-[state=open]:border-primary/50 data-[state=open]:bg-secondary"
           >
             <currentView.icon className="size-3.5 text-primary" />
             <span>{currentView.label}</span>
@@ -152,7 +152,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border bg-card px-2.5 text-[11px] font-bold transition-colors hover:bg-secondary data-[state=open]:border-primary/50 data-[state=open]:bg-secondary"
+            className="inline-flex h-11 items-center gap-1.5 rounded-md border border-border bg-card px-3 text-[11px] font-bold transition-colors hover:bg-secondary sm:h-8 lg:h-7 lg:px-2.5 data-[state=open]:border-primary/50 data-[state=open]:bg-secondary"
           >
             <SlidersHorizontal className="size-3.5 text-primary" />
             <span>{currentFilter.label}</span>
@@ -180,7 +180,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
         onClick={toggleTheme}
         title={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
         aria-label={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
-        className="grid size-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+        className="grid size-11 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:size-8 lg:size-7"
       >
         {theme === "dark" ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
       </button>
@@ -190,7 +190,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
         title={fullscreen ? "Sair da tela cheia" : "Tela cheia"}
         aria-label={fullscreen ? "Sair da tela cheia" : "Tela cheia"}
         aria-pressed={fullscreen}
-        className="grid size-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+        className="grid size-11 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:size-8 lg:size-7"
       >
         {fullscreen ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
       </button>
@@ -280,15 +280,17 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
           )}
         </div>
 
-        <div className="grid min-h-8 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5 border-t border-border/60 py-0.5 text-[11px] text-muted-foreground">
-          <div className="scroll-slim min-w-0 overflow-x-auto">{footerControls}</div>
+        <div className="flex shrink-0 flex-wrap items-center gap-2 border-t border-border/60 py-1.5 text-[11px] text-muted-foreground lg:flex-nowrap lg:gap-1.5 lg:py-0.5">
+          <div className="scroll-slim order-2 w-full min-w-0 overflow-x-auto sm:order-1 sm:w-auto sm:flex-1">
+            {footerControls}
+          </div>
 
-          <div className="flex items-center justify-center gap-3">
+          <div className="order-1 flex w-full items-center justify-center gap-2 sm:order-2 sm:w-auto sm:gap-3">
             <button
               type="button"
               disabled={page === 0}
               onClick={() => setGroup((current) => Math.max(0, current - 1))}
-              className="h-6 rounded-md border border-border px-2.5 text-[11px] font-semibold text-foreground disabled:opacity-40"
+              className="h-11 rounded-md border border-border px-3 text-[11px] font-semibold text-foreground disabled:opacity-40 sm:h-8 lg:h-6 lg:px-2.5"
             >
               Anterior
             </button>
@@ -299,13 +301,13 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
               type="button"
               disabled={page >= pages - 1}
               onClick={() => setGroup((current) => Math.min(pages - 1, current + 1))}
-              className="h-6 rounded-md border border-border px-2.5 text-[11px] font-semibold text-foreground disabled:opacity-40"
+              className="h-11 rounded-md border border-border px-3 text-[11px] font-semibold text-foreground disabled:opacity-40 sm:h-8 lg:h-6 lg:px-2.5"
             >
               Próxima
             </button>
           </div>
 
-          <label className="ml-auto flex h-7 min-w-0 max-w-48 items-center gap-1.5 rounded-md border border-input bg-background px-2 focus-within:border-primary">
+          <label className="order-3 flex h-11 w-full min-w-0 items-center gap-1.5 rounded-md border border-input bg-background px-3 focus-within:border-primary sm:ml-auto sm:w-48 sm:max-w-48 xl:h-7 xl:px-2">
             <Search className="size-3.5 shrink-0 text-muted-foreground" />
             <input
               value={query}

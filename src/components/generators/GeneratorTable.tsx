@@ -51,7 +51,7 @@ function BreakerValue({ known, closed }: { known: boolean; closed: boolean }) {
 
 function MobileRow({ items }: { items: Generator[] }) {
   return (
-    <div className="space-y-2 md:hidden">
+    <div className="space-y-2 xl:hidden">
       {items.map((gen) => {
         const telemetry = readGeneratorTelemetry(gen);
         const modeKnown = hasMetric(gen, "controller_mode_raw");
@@ -154,7 +154,7 @@ function MobileRow({ items }: { items: Generator[] }) {
               </div>
             </dl>
 
-            <OpenLink id={gen.id} className="mt-3 h-9 w-full text-[12px] font-semibold" />
+            <OpenLink id={gen.id} className="mt-3 h-11 w-full text-[12px] font-semibold sm:h-10" />
             <div className="mt-1 flex justify-end">
               <DeleteGeneratorButton id={gen.id} tag={gen.tag} />
             </div>
@@ -196,7 +196,7 @@ export function GeneratorTable({ items }: { items: Generator[] }) {
   return (
     <>
       <MobileRow items={items} />
-      <div className="hidden rounded-lg border border-border bg-card md:block">
+      <div className="hidden rounded-lg border border-border bg-card xl:block">
         <table className="w-full min-w-[2080px] border-collapse text-[11px]">
           <thead className="sticky top-0 z-10 bg-card">
             <tr className="border-b border-border bg-secondary/60 text-[9px] uppercase tracking-wide text-muted-foreground">
