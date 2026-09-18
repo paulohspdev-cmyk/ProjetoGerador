@@ -99,17 +99,6 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
     };
   }, [viewport]);
 
-  const verticalGridStyle = useMemo(
-    () =>
-      ({
-        "--vref-columns": verticalLayout.columns,
-        "--vref-rows": verticalLayout.rows,
-        "--vref-card-width": verticalLayout.cardWidth + "px",
-        "--vref-card-height": verticalLayout.cardHeight + "px",
-      }) as CSSProperties,
-    [verticalLayout],
-  );
-
   const items = useMemo(
     () =>
       generators.filter(
@@ -141,6 +130,22 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
   const pages = Math.max(1, Math.ceil(items.length / pageSize));
   const page = Math.min(group, pages - 1);
   const visible = items.slice(page * pageSize, page * pageSize + pageSize);
+
+  const verticalGridStyle = useMemo(() => {
+    const displayColumns = Math.max(1, Math.min(verticalLayout.columns, visible.length || 1));
+    const usableWidth = Math.max(1, (viewport.width || 1200) - VERTICAL_PADDING * 2);
+    const naturalWidth =
+      (usableWidth - VERTICAL_GAP * Math.max(0, displayColumns - 1)) / displayColumns;
+    const cardWidth = Math.min(400, naturalWidth);
+
+    return {
+      "--vref-columns": displayColumns,
+      "--vref-rows": verticalLayout.rows,
+      "--vref-card-width": Math.max(1, cardWidth) + "px",
+      "--vref-card-height": verticalLayout.cardHeight + "px",
+    } as CSSProperties;
+  }, [verticalLayout, viewport.width, visible.length]);
+
   const trulyEmpty = ready && !error && generators.length === 0;
   const filterEmpty = ready && !error && generators.length > 0 && visible.length === 0;
   const currentView = views.find((item) => item.id === view) ?? views[0]!;
