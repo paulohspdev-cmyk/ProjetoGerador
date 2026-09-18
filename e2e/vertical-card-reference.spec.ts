@@ -205,8 +205,8 @@ test("vertical cabe inteiro na área disponível sem rolagem interna", async ({ 
 
     if (viewport.width === 3840) {
       expect(metrics.frames.length).toBe(8);
-      expect(Math.min(...metrics.frames.map((frame) => frame.width))).toBeGreaterThanOrEqual(215);
-      expect(Math.max(...metrics.frames.map((frame) => frame.width))).toBeLessThanOrEqual(290);
+      expect(Math.min(...metrics.frames.map((frame) => frame.width))).toBeGreaterThanOrEqual(255);
+      expect(Math.max(...metrics.frames.map((frame) => frame.width))).toBeLessThanOrEqual(310);
     }
 
     await context.close();
