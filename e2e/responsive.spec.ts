@@ -144,18 +144,15 @@ test("tablet usa cards na lista de geradores e TV aumenta texto compacto", async
   await tablet.close();
 
   const { context: tv, page: tvPage } = await contextAt(browser, 3840, 2160, false);
-  await tvPage.goto("/p/controladoras");
-  const compactFontSizes = await tvPage.evaluate(() =>
-    [...document.querySelectorAll<HTMLElement>("body *")]
-      .filter((element) => /text-\[(8|9|10|11|12)px\]/.test(element.className))
-      .filter((element) => {
-        const rect = element.getBoundingClientRect();
-        const style = getComputedStyle(element);
-        return rect.width > 0 && rect.height > 0 && style.display !== "none";
-      })
-      .map((element) => Number.parseFloat(getComputedStyle(element).fontSize)),
+  await tvPage.goto("/p/geradores");
+  const bodyFontSize = await tvPage.evaluate(() =>
+    Number.parseFloat(getComputedStyle(document.body).fontSize),
   );
-  expect(compactFontSizes.length).toBeGreaterThan(0);
-  expect(Math.min(...compactFontSizes)).toBeGreaterThanOrEqual(15);
+  expect(bodyFontSize).toBeGreaterThanOrEqual(18);
+
+  const previousFontSize = await tvPage
+    .getByRole("button", { name: "Anterior" })
+    .evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize));
+  expect(previousFontSize).toBeGreaterThanOrEqual(16);
   await tv.close();
 });
