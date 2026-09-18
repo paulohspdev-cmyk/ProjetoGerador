@@ -1,28 +1,24 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCommandGuard } from "@/components/scada/ScadaOpsProvider";
 import type { Generator } from "@/data/generators";
-import { rcApi, type EventItemApi } from "@/lib/api";
+import { rcApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 import { useGenerators } from "./GeneratorsProvider";
 import { readGeneratorTelemetry } from "./generator-health";
 import { displayGeneratorName, hasFreshMetric, metricNumber } from "./generator-metrics";
 import { isPositiveMeasurement } from "./generator-presence";
-import { VerticalModeStrip } from "./vertical-card/VerticalControls";
-import {
-  VerticalAlarmList,
-  VerticalEngineAndRpm,
-  VerticalTables,
-} from "./vertical-card/VerticalTelemetrySections";
+import { VerticalControls, headerMode } from "./vertical-card/VerticalControls";
+import { VerticalEngineAndRpm, VerticalTables } from "./vertical-card/VerticalTelemetrySections";
 import { VerticalPowerFlow } from "./vertical-card/VerticalPowerFlow";
 import { VerticalPowerGauge } from "./vertical-card/VerticalPowerGauge";
 import "./vertical-card/vertical-reference-card.css";
 
 function formatNumber(value: number | null | undefined, digits = 0) {
-  if (value == null || !Number.isFinite(value)) return "N/D";
+  if (value == null || !Number.isFinite(value)) return "—";
   return value.toLocaleString("pt-BR", {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
@@ -31,7 +27,7 @@ function formatNumber(value: number | null | undefined, digits = 0) {
 
 function formatUnit(value: number | null | undefined, unit: string, digits = 0) {
   const text = formatNumber(value, digits);
-  return text === "N/D" ? text : text + " " + unit;
+  return text === "—" ? text : text + " " + unit;
 }
 
 function controllerVendor(gen: Generator) {
@@ -43,46 +39,6 @@ function controllerVendor(gen: Generator) {
   if (text.includes("dse") || text.includes("deep sea")) return "dse";
   if (text.includes("comap") || text.includes("inteli")) return "comap";
   return "generic";
-}
-
-function useAlarmEvents(gen: Generator, shouldLoad: boolean) {
-  const [events, setEvents] = useState<EventItemApi[]>([]);
-  const [loading, setLoading] = useState(shouldLoad);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    let active = true;
-    if (!shouldLoad) {
-      setEvents([]);
-      setLoading(false);
-      setError("");
-      return () => {
-        active = false;
-      };
-    }
-
-    setLoading(true);
-    rcApi.events
-      .list(12, gen.id)
-      .then((rows) => {
-        if (!active) return;
-        setEvents(rows);
-        setError("");
-      })
-      .catch((err) => {
-        if (!active) return;
-        setError(err instanceof Error ? err.message : "Falha ao consultar alarmes");
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [gen.id, shouldLoad]);
-
-  return { events, loading, error };
 }
 
 export function PowerFlowCard({ gen }: { gen: Generator }) {
@@ -119,22 +75,16 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const mcbKnown = hasFreshMetric(gen, "mcb_closed");
   const gcbKnown = hasFreshMetric(gen, "gcb_closed");
   const modeKnown = hasFreshMetric(gen, "controller_mode_raw");
-  const alarmCountKnown = hasFreshMetric(gen, "alarm_count");
-  const alarmActiveKnown = hasFreshMetric(gen, "alarm_active");
-  const alarmActive = metricNumber(gen, "alarm_active", undefined) === 1;
-  const alarmCount = alarmCountKnown ? gen.alarms : null;
-  const shouldLoadAlarms =
-    (alarmCount != null && alarmCount > 0) || (alarmActiveKnown && alarmActive);
-  const alarms = useAlarmEvents(gen, shouldLoadAlarms);
 
-  const breakerState = metricNumber(gen, "breaker_state_raw", undefined);
+  const breakerStateRaw = metricNumber(gen, "breaker_state_raw", undefined);
   const isComap = vendor === "comap";
-  const comapIslanded = isComap && (breakerState === 2 || breakerState === 10);
+  const comapIslanded = isComap && (breakerStateRaw === 2 || breakerStateRaw === 10);
 
   const mainsL1 = metricNumber(gen, "mains_voltage_l1", gen.mains.l1);
   const mainsL2 = metricNumber(gen, "mains_voltage_l2", gen.mains.l2);
   const mainsL3 = metricNumber(gen, "mains_voltage_l3", gen.mains.l3);
   const mainsPf = metricNumber(gen, "mains_power_factor", undefined);
+  const mainsPower = metricNumber(gen, "mains_power_kw", undefined);
   const mainsCurrent = metricNumber(gen, "mains_current_l1", undefined);
   const mainsVoltageKnown = ["mains_voltage_l1", "mains_voltage_l2", "mains_voltage_l3"].some(
     (key) => hasFreshMetric(gen, key),
@@ -187,6 +137,16 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         generator: formatUnit(frequency, "Hz", 1),
       },
       {
+        label: "Phase Sequence",
+        mains: "—",
+        generator: running ? "L1-L2-L3" : "—",
+      },
+      {
+        label: "Power (kW)",
+        mains: formatUnit(mainsPower, "kW", 0),
+        generator: formatUnit(powerKw, "kW", 0),
+      },
+      {
         label: "Power Factor",
         mains: formatNumber(mainsPf, 2),
         generator: formatNumber(powerFactor, 2),
@@ -211,14 +171,34 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       mainsL2,
       mainsL3,
       mainsPf,
+      mainsPower,
       powerFactor,
+      powerKw,
+      running,
     ],
   );
 
+  const engineState = !runningKnown ? "—" : running ? "RUNNING" : "STOPPED";
+  const breakerState = !gcbKnown ? "—" : gen.gcb ? "GCB CLOSED" : "GCB OPEN";
+
   const valueRows = [
     { icon: "clock" as const, label: "Run Hours", value: formatUnit(runHours, "h", 1) },
-    { icon: "zap" as const, label: "Energy", value: formatUnit(energyKwh, "kWh", 0) },
+    { icon: "zap" as const, label: "Energy (kWh)", value: formatUnit(energyKwh, "kWh", 0) },
     { icon: "gauge" as const, label: "Required Power", value: formatUnit(requiredPower, "kW", 0) },
+    { icon: "gauge" as const, label: "Generator RPM", value: formatUnit(rpm, "RPM", 0) },
+    { icon: "gauge" as const, label: "Engine State", value: engineState, active: running },
+    {
+      icon: "gauge" as const,
+      label: "Breaker State",
+      value: breakerState,
+      active: gcbKnown && gen.gcb,
+    },
+    {
+      icon: "battery" as const,
+      label: "Battery Voltage",
+      value: formatUnit(batteryVoltage, "V", 1),
+    },
+    { icon: "gauge" as const, label: "PF (Generator)", value: formatNumber(powerFactor, 2) },
   ];
 
   const canStart = can("operate") && gen.capabilities?.start === true;
@@ -243,6 +223,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   };
 
   const online = gen.status === "online" || gen.status === "alerta";
+  const modeLabel = headerMode(gen.mode, modeKnown);
 
   return (
     <article
@@ -265,9 +246,8 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
             <i /> {gen.status === "alerta" ? "ALERT" : online ? "ONLINE" : "OFFLINE"}
           </span>
         </div>
+        <span className={cn("vref-header-mode", modeKnown && "is-known")}>MODE: {modeLabel}</span>
       </header>
-
-      <VerticalModeStrip gen={gen} dse={dse} modeKnown={modeKnown} />
 
       <VerticalPowerGauge powerKw={powerKw} nominalKw={nominalPower} />
 
@@ -279,6 +259,12 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         gcb={gen.gcb}
         gcbKnown={gcbKnown}
         running={running}
+      />
+
+      <VerticalControls
+        gen={gen}
+        dse={dse}
+        modeKnown={modeKnown}
         canStart={canStart}
         canStop={canStop}
         busy={commandBusy}
@@ -298,13 +284,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       />
 
       <VerticalTables electricalRows={electricalRows} valueRows={valueRows} />
-
-      <VerticalAlarmList
-        alarmCount={alarmCount}
-        events={alarms.events}
-        loading={alarms.loading}
-        error={alarms.error}
-      />
     </article>
   );
 }
