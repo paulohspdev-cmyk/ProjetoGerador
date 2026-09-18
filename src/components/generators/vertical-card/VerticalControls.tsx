@@ -1,4 +1,4 @@
-import { Hand, Play, Square } from "lucide-react";
+import { Hand } from "lucide-react";
 
 import type { Generator } from "@/data/generators";
 import { cn } from "@/lib/utils";
@@ -11,27 +11,17 @@ function modeShort(mode: Generator["mode"]) {
 }
 
 export function headerMode(mode: Generator["mode"], known: boolean) {
-  return known ? modeShort(mode) : "—";
+  return known ? modeShort(mode) : "N/D";
 }
 
 export function VerticalControls({
   gen,
   dse,
   modeKnown,
-  canStart,
-  canStop,
-  busy,
-  onStart,
-  onStop,
 }: {
   gen: Generator;
   dse: boolean;
   modeKnown: boolean;
-  canStart: boolean;
-  canStop: boolean;
-  busy: "start" | "stop" | null;
-  onStart: () => void;
-  onStop: () => void;
 }) {
   const activeMode = modeKnown ? modeShort(gen.mode) : "";
 
@@ -74,25 +64,6 @@ export function VerticalControls({
           ))}
         </div>
       )}
-
-      <div className="vref-start-stop-row">
-        <button
-          type="button"
-          className="start"
-          disabled={!canStart || busy !== null}
-          onClick={onStart}
-        >
-          <Play aria-hidden /> {busy === "start" ? "..." : "START"}
-        </button>
-        <button
-          type="button"
-          className="stop"
-          disabled={!canStop || busy !== null}
-          onClick={onStop}
-        >
-          <Square aria-hidden /> {busy === "stop" ? "..." : "STOP"}
-        </button>
-      </div>
     </section>
   );
 }
