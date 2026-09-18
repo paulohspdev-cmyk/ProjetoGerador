@@ -231,7 +231,7 @@ export function MapScreen() {
           </div>
         </Panel>
 
-        <section className="rc-panel min-h-[460px] overflow-hidden rounded-xl border border-border bg-card p-1 shadow-[var(--shadow-panel)] xl:col-span-7">
+        <section className="rc-panel min-h-[320px] overflow-hidden rounded-xl border border-border bg-card p-1 shadow-[var(--shadow-panel)] sm:min-h-[420px] xl:min-h-[460px] xl:col-span-7">
           <OperationalMap
             siteRows={filteredSites}
             selectedSiteId={selected?.id ?? null}
