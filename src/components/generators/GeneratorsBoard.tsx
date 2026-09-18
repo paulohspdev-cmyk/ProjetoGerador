@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
   ChevronDown,
   LayoutGrid,
@@ -81,26 +81,43 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
     [generators, status, query],
   );
 
+  const verticalLayout = useMemo(() => {
+    const referenceWidth = 863;
+    const referenceHeight = 1792;
+    const ratio = referenceWidth / referenceHeight;
+    const gap = 8;
+    const padding = 8;
+
+    if (!viewport.width || !viewport.height) {
+      return { columns: 4, cardWidth: 360, cardHeight: 748 };
+    }
+
+    const usableWidth = Math.max(1, viewport.width - padding * 2);
+    const usableHeight = Math.max(1, viewport.height - padding * 2);
+    const widthAllowedByHeight = usableHeight * ratio;
+    const preferredWidth = viewport.width >= 3200 ? 500 : viewport.width >= 2200 ? 490 : 460;
+    const targetWidth = Math.max(160, Math.min(preferredWidth, widthAllowedByHeight));
+    const columns = Math.max(1, Math.min(8, Math.floor((usableWidth + gap) / (targetWidth + gap))));
+    const cellWidth = Math.max(1, (usableWidth - gap * (columns - 1)) / columns);
+    const cardWidth = Math.min(targetWidth, cellWidth);
+    const cardHeight = cardWidth / ratio;
+
+    return { columns, cardWidth, cardHeight };
+  }, [viewport]);
+
   const pageSize = useMemo(() => {
     if (!viewport.width || !viewport.height) {
-      return view === "principal" ? 4 : view === "lista" ? 12 : 8;
+      return view === "principal" ? verticalLayout.columns : view === "lista" ? 12 : 8;
     }
     if (view === "lista") return Math.max(1, Math.floor(viewport.height / 43));
-
-    if (view === "principal") {
-      // O cartão vertical precisa continuar legível. Ele nunca é dividido em
-      // duas linhas comprimidas: usamos uma fileira por página e deixamos a
-      // paginação absorver o restante da frota.
-      const readableCardWidth = viewport.width >= 2200 ? 270 : 258;
-      return Math.max(1, Math.min(8, Math.floor((viewport.width + 8) / (readableCardWidth + 8))));
-    }
+    if (view === "principal") return verticalLayout.columns;
 
     const minimumWidth = 250;
     const minimumHeight = 190;
     const columns = Math.max(1, Math.floor(viewport.width / minimumWidth));
     const rows = Math.max(1, Math.floor(viewport.height / minimumHeight));
     return columns * rows;
-  }, [view, viewport]);
+  }, [view, viewport, verticalLayout.columns]);
   const pages = Math.max(1, Math.ceil(items.length / pageSize));
   const page = Math.min(group, pages - 1);
   const visible = items.slice(page * pageSize, page * pageSize + pageSize);
@@ -230,7 +247,20 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
 
         <div ref={viewportRef} className="min-h-0 min-w-0 flex-1 overflow-hidden">
           {view === "principal" && (
-            <div className="generator-vertical-grid generator-reference-card-grid scroll-slim grid h-full min-h-0 min-w-0 gap-3 overflow-auto rounded-md bg-panel p-2">
+            <div
+              className="generator-vertical-grid generator-reference-card-grid grid h-full min-h-0 min-w-0 overflow-hidden rounded-md bg-panel"
+              data-vertical-columns={verticalLayout.columns}
+              style={
+                {
+                  "--vertical-cols": Math.min(
+                    verticalLayout.columns,
+                    Math.max(1, visible.length || 1),
+                  ),
+                  "--vertical-card-width": verticalLayout.cardWidth + "px",
+                  "--vertical-card-height": verticalLayout.cardHeight + "px",
+                } as CSSProperties
+              }
+            >
               {visible.map((generator) => (
                 <PowerFlowCard key={generator.id} gen={generator} />
               ))}

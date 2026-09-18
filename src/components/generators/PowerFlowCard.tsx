@@ -280,17 +280,22 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
 
   const online = gen.status === "online" || gen.status === "alerta";
   const modeLabel = headerMode(gen.mode, modeKnown);
+  const mainsState = !mainsKnown ? "unknown" : mainsPresent ? "present" : "absent";
 
   return (
     <article
       className={cn(
         "vref-card",
         dse ? "is-dse" : "is-comap",
-        mainsPresent ? "has-mains" : "no-mains",
+        mainsState === "present"
+          ? "has-mains"
+          : mainsState === "absent"
+            ? "no-mains"
+            : "mains-unknown",
         gen.status === "alerta" && "has-alert",
       )}
       data-controller-vendor={vendor}
-      data-mains-state={mainsPresent ? "present" : "absent"}
+      data-mains-state={mainsState}
     >
       <header className="vref-header">
         <span className={cn("vref-generator-badge", online ? "is-online" : "is-offline")}>G</span>

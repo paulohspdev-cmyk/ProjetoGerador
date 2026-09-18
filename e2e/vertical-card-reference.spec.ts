@@ -83,7 +83,7 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
     await expect(card.getByText("MAINS / GENERATOR")).toBeVisible();
     await expect(card.getByText("VALUES", { exact: true })).toBeVisible();
     await expect(card.getByText(/ALARM LIST/)).toBeVisible();
-    await expect(card).toHaveAttribute("data-mains-state", "absent");
+    await expect(card).toHaveAttribute("data-mains-state", "unknown");
   }
 
   await expect(comap.getByRole("button", { name: "OFF" })).toBeVisible();
@@ -118,6 +118,53 @@ test("vertical mantém largura da viewport em celular e desktop", async ({ brows
       () => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - innerWidth,
     );
     expect(overflow).toBeLessThanOrEqual(1);
+    await context.close();
+  }
+});
+
+test("vertical cabe inteiro e adapta 6/7 cards em telas largas", async ({ browser }) => {
+  const cases = [
+    { width: 3440, height: 1440, expectedColumns: 6 },
+    { width: 3840, height: 2160, expectedColumns: 7 },
+  ];
+
+  for (const viewport of cases) {
+    const context = await browser.newContext({
+      viewport: { width: viewport.width, height: viewport.height },
+    });
+    const page = await context.newPage();
+    await login(page);
+    await page.goto("/p/geradores");
+    await page.getByRole("button", { name: /online/i }).click();
+    await page.getByRole("menuitemradio", { name: "Todos" }).click();
+
+    const grid = page.locator(".generator-reference-card-grid");
+    await expect(grid).toBeVisible();
+    await expect(grid).toHaveAttribute("data-vertical-columns", String(viewport.expectedColumns));
+
+    const geometry = await grid.evaluate((element) => {
+      const firstCard = element.querySelector<HTMLElement>(".vref-card");
+      if (!firstCard) return null;
+      const gridRect = element.getBoundingClientRect();
+      const cardRect = firstCard.getBoundingClientRect();
+      return {
+        gridClientHeight: element.clientHeight,
+        gridScrollHeight: element.scrollHeight,
+        gridClientWidth: element.clientWidth,
+        gridScrollWidth: element.scrollWidth,
+        cardTop: cardRect.top,
+        cardBottom: cardRect.bottom,
+        gridTop: gridRect.top,
+        gridBottom: gridRect.bottom,
+      };
+    });
+
+    expect(geometry).not.toBeNull();
+    expect(geometry!.gridScrollHeight).toBeLessThanOrEqual(geometry!.gridClientHeight + 1);
+    expect(geometry!.gridScrollWidth).toBeLessThanOrEqual(geometry!.gridClientWidth + 1);
+    expect(geometry!.cardTop).toBeGreaterThanOrEqual(geometry!.gridTop - 1);
+    expect(geometry!.cardBottom).toBeLessThanOrEqual(geometry!.gridBottom + 1);
+
     await context.close();
   }
 });
