@@ -76,7 +76,7 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
   await expect(dse).toBeVisible();
 
   for (const card of [comap, dse]) {
-    await expect(card.getByText("GENERATOR POWER")).toBeVisible();
+    await expect(card.getByText("KW", { exact: true })).toBeVisible();
     await expect(card.getByText("POWER FLOW")).toBeVisible();
     await expect(card.locator(".vref-clock")).toHaveCount(0);
     await expect(card.locator(".vref-power")).not.toContainText("%");
