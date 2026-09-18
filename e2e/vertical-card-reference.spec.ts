@@ -83,7 +83,7 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
     await expect(card.getByText("MAINS / GENERATOR")).toBeVisible();
     await expect(card.getByText("VALUES", { exact: true })).toBeVisible();
     await expect(card.getByText(/ALARM LIST/)).toBeVisible();
-    await expect(card).toHaveAttribute("data-mains-state", "absent");
+    await expect(card).toHaveAttribute("data-mains-state", "unknown");
   }
 
   await expect(comap.getByRole("button", { name: "OFF" })).toBeVisible();
@@ -100,11 +100,15 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
   await expect(dse.getByRole("button", { name: "TEST", exact: true })).toHaveCount(0);
 });
 
-test("vertical mantém largura da viewport em celular e desktop", async ({ browser }) => {
+test("vertical cabe inteiro na área disponível sem rolagem interna", async ({ browser }) => {
+  test.setTimeout(180_000);
+
   for (const viewport of [
     { width: 390, height: 844 },
     { width: 1024, height: 768 },
+    { width: 1366, height: 768 },
     { width: 1920, height: 1080 },
+    { width: 3840, height: 2160 },
   ]) {
     const context = await browser.newContext({
       viewport: { width: viewport.width, height: viewport.height },
@@ -113,11 +117,80 @@ test("vertical mantém largura da viewport em celular e desktop", async ({ brows
     });
     const page = await context.newPage();
     await login(page);
+
+    for (let index = 1; index <= 8; index += 1) {
+      const response = await createGenerator(page, {
+        tag: "VFIT" + String(index).padStart(2, "0"),
+        controller: index % 2 === 0 ? "DSE DSE8620 MKII" : "ComAp InteliGen 200",
+        listenPort: 15200 + index,
+        modbusUnit: 80 + index,
+        rapidDeviceNum: 410 + index,
+      });
+      expect([201, 409]).toContain(response);
+    }
+
     await page.goto("/p/geradores");
-    const overflow = await page.evaluate(
-      () => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - innerWidth,
-    );
-    expect(overflow).toBeLessThanOrEqual(1);
+    await page.getByRole("button", { name: /online/i }).click();
+    await page.getByRole("menuitemradio", { name: "Todos" }).click();
+    await expect(page.locator(".vref-card-frame").first()).toBeVisible({
+      timeout: 15_000,
+    });
+
+    const metrics = await page.evaluate(() => {
+      const grid = document.querySelector<HTMLElement>(".generator-reference-card-grid");
+      if (!grid) throw new Error("grid vertical não encontrado");
+      const gridRect = grid.getBoundingClientRect();
+      const frames = [...grid.querySelectorAll<HTMLElement>(".vref-card-frame")]
+        .filter((element) => {
+          const rect = element.getBoundingClientRect();
+          return rect.width > 0 && rect.height > 0;
+        })
+        .map((element) => {
+          const rect = element.getBoundingClientRect();
+          return {
+            left: rect.left,
+            right: rect.right,
+            top: rect.top,
+            bottom: rect.bottom,
+            width: rect.width,
+            height: rect.height,
+          };
+        });
+      return {
+        globalOverflow:
+          Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - innerWidth,
+        gridClientHeight: grid.clientHeight,
+        gridScrollHeight: grid.scrollHeight,
+        gridClientWidth: grid.clientWidth,
+        gridScrollWidth: grid.scrollWidth,
+        gridRect: {
+          left: gridRect.left,
+          right: gridRect.right,
+          top: gridRect.top,
+          bottom: gridRect.bottom,
+        },
+        frames,
+      };
+    });
+
+    expect(metrics.globalOverflow).toBeLessThanOrEqual(1);
+    expect(metrics.gridScrollHeight).toBeLessThanOrEqual(metrics.gridClientHeight + 1);
+    expect(metrics.gridScrollWidth).toBeLessThanOrEqual(metrics.gridClientWidth + 1);
+    expect(metrics.frames.length).toBeGreaterThan(0);
+
+    for (const frame of metrics.frames) {
+      expect(frame.left).toBeGreaterThanOrEqual(metrics.gridRect.left - 1);
+      expect(frame.right).toBeLessThanOrEqual(metrics.gridRect.right + 1);
+      expect(frame.top).toBeGreaterThanOrEqual(metrics.gridRect.top - 1);
+      expect(frame.bottom).toBeLessThanOrEqual(metrics.gridRect.bottom + 1);
+      expect(frame.width).toBeGreaterThan(0);
+      expect(frame.height / frame.width).toBeCloseTo(1792 / 802, 2);
+    }
+
+    if (viewport.width === 1920) {
+      expect(metrics.frames.length).toBeGreaterThanOrEqual(6);
+    }
+
     await context.close();
   }
 });

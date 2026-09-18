@@ -23,13 +23,7 @@ function BreakerSymbol({
   const bladeX = known && closed ? x + 36 : x + 48;
   const bladeY = known && closed ? 76 : 64;
   return (
-    <g
-      className={cn(
-        "vref-breaker",
-        !known && "is-unknown",
-        known && closed ? "is-closed" : "is-open",
-      )}
-    >
+    <g className={cn("vref-breaker", !known ? "is-unknown" : closed ? "is-closed" : "is-open")}>
       <circle cx={x} cy="76" r="4" />
       <circle cx={x + 36} cy="76" r="4" />
       <line x1={x + 4} y1="75" x2={bladeX} y2={bladeY} />
@@ -44,7 +38,7 @@ function BreakerSymbol({
           width="20"
           height="13"
           rx="2"
-          className={known && closed ? "state on" : "state off"}
+          className={cn("state", !known ? "unknown" : closed ? "on" : "off")}
         />
         <text x="-12" y="12" textAnchor="middle" className="vref-breaker-io">
           I
@@ -93,9 +87,19 @@ export function VerticalPowerFlow({
           cx="14"
           cy="21"
           r="5"
-          className={cn("vref-status-dot", mainsPresent ? "is-live" : "is-dead")}
+          className={cn(
+            "vref-status-dot",
+            !mainsKnown ? "is-unknown" : mainsPresent ? "is-live" : "is-dead",
+          )}
         />
-        <text x="24" y="41" className={cn("vref-flow-sub", mainsPresent ? "is-live" : "is-dead")}>
+        <text
+          x="24"
+          y="41"
+          className={cn(
+            "vref-flow-sub",
+            !mainsKnown ? "is-unknown" : mainsPresent ? "is-live" : "is-dead",
+          )}
+        >
           {!mainsKnown ? "N/D" : mainsPresent ? "Available" : "Not Available"}
         </text>
 
@@ -115,7 +119,13 @@ export function VerticalPowerFlow({
         </text>
 
         <g transform="translate(45 76)">
-          <circle r="29" className={cn("vref-device", mainsPresent ? "is-live" : "is-dead")} />
+          <circle
+            r="29"
+            className={cn(
+              "vref-device",
+              !mainsKnown ? "is-unknown" : mainsPresent ? "is-live" : "is-dead",
+            )}
+          />
           <TowerIcon />
           {!mainsPresent && mainsKnown && (
             <g transform="translate(21 21)">
