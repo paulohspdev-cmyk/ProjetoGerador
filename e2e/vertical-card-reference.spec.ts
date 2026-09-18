@@ -49,9 +49,9 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
     await createGenerator(page, {
       tag: "VERTCOMAP",
       controller: "ComAp InteliGen 200",
-      listenPort: 15001,
-      modbusUnit: 2,
-      rapidDeviceNum: 291,
+      listenPort: 15101,
+      modbusUnit: 71,
+      rapidDeviceNum: 391,
     }),
   ).toBe(201);
 
@@ -59,9 +59,9 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
     await createGenerator(page, {
       tag: "VERTDSE",
       controller: "DSE DSE8620 MKII",
-      listenPort: 15002,
-      modbusUnit: 1,
-      rapidDeviceNum: 292,
+      listenPort: 15102,
+      modbusUnit: 72,
+      rapidDeviceNum: 392,
     }),
   ).toBe(201);
 
