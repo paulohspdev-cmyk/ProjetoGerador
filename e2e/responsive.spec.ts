@@ -134,9 +134,9 @@ test("tablet usa cards na lista de geradores e TV aumenta texto compacto", async
   expect([201, 409]).toContain(created);
 
   await page.goto("/p/geradores");
-  await page.getByRole("button", { name: /Vertical/ }).click();
+  await page.getByRole("button", { name: /vertical/i }).click();
   await page.getByRole("menuitemradio", { name: "Lista" }).click();
-  await page.getByRole("button", { name: /Online/ }).click();
+  await page.getByRole("button", { name: /online/i }).click();
   await page.getByRole("menuitemradio", { name: "Todos" }).click();
 
   await expect(page.locator("article").filter({ hasText: "RESP001" })).toBeVisible();
