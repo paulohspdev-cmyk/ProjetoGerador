@@ -223,23 +223,23 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       <VerticalPowerFlow
         mainsPresent={mainsPresent}
         mainsKnown={mainsKnown}
+        mainsFrequency={mainsFrequency}
+        generatorFrequency={frequency}
+        loadKw={powerKw}
+        modeLabel={modeLabel}
         mcb={gen.mcb}
         mcbKnown={mcbKnown}
         gcb={gen.gcb}
         gcbKnown={gcbKnown}
         running={running}
-      />
-
-      <VerticalControls
-        gen={gen}
-        dse={dse}
-        modeKnown={modeKnown}
         canStart={canStart}
         canStop={canStop}
         busy={commandBusy}
         onStart={() => void runCommand("start")}
         onStop={() => void runCommand("stop")}
       />
+
+      <VerticalControls gen={gen} dse={dse} modeKnown={modeKnown} />
       {commandMessage && <p className="vref-command-message">{commandMessage}</p>}
 
       <VerticalEngineAndRpm
