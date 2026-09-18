@@ -522,8 +522,8 @@
 }
 
 .vref-control {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 0.8cqw;
   padding: 1.2cqw 1.8cqw 1.25cqw;
 }
@@ -536,7 +536,7 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1.2cqw;
-  height: 31%;
+  flex: 0 0 28%;
 }
 
 .vref-comap-modes button,
@@ -570,7 +570,7 @@
   grid-template-columns: 20% 39% 1fr;
   gap: 1.3cqw;
   align-items: stretch;
-  height: 42%;
+  flex: 0 0 37%;
 }
 
 .vref-dse-hand {
@@ -650,14 +650,7 @@
   grid-auto-rows: 1fr;
   gap: 1.05cqw 1.35cqw;
   min-height: 0;
-}
-
-.vref-comap-modes + .vref-command-grid {
-  height: 64%;
-}
-
-.vref-dse-modes + .vref-command-grid {
-  height: 53%;
+  flex: 1 1 auto;
 }
 
 .vref-command-grid button {
