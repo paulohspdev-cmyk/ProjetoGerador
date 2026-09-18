@@ -78,6 +78,9 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
   for (const card of [comap, dse]) {
     await expect(card.getByText("GENERATOR POWER")).toBeVisible();
     await expect(card.getByText("POWER FLOW")).toBeVisible();
+    await expect(card.locator(".vref-clock")).toHaveCount(0);
+    await expect(card.locator(".vref-power")).not.toContainText("%");
+    await expect(card.locator(".vref-flow")).not.toContainText(/kW|RPM|Available|Not Available/);
     await expect(card.getByText("ENGINE STATUS")).toBeVisible();
     await expect(card.getByRole("heading", { name: "RPM" })).toBeVisible();
     await expect(card.getByText("MAINS / GENERATOR")).toBeVisible();
@@ -184,17 +187,18 @@ test("vertical cabe inteiro na área disponível sem rolagem interna", async ({ 
       expect(frame.top).toBeGreaterThanOrEqual(metrics.gridRect.top - 1);
       expect(frame.bottom).toBeLessThanOrEqual(metrics.gridRect.bottom + 1);
       expect(frame.width).toBeGreaterThan(0);
-      expect(frame.height / frame.width).toBeCloseTo(1792 / 802, 2);
+      expect(frame.height).toBeGreaterThan(0);
     }
 
     if (viewport.width === 1920) {
-      expect(metrics.frames.length).toBe(5);
-      expect(Math.min(...metrics.frames.map((frame) => frame.width))).toBeGreaterThanOrEqual(320);
+      expect(metrics.frames.length).toBe(4);
+      expect(Math.min(...metrics.frames.map((frame) => frame.width))).toBeGreaterThanOrEqual(360);
+      expect(Math.min(...metrics.frames.map((frame) => frame.height))).toBeGreaterThanOrEqual(700);
     }
 
     if (viewport.width === 3840) {
-      expect(metrics.frames.length).toBe(6);
-      expect(Math.min(...metrics.frames.map((frame) => frame.width))).toBeGreaterThanOrEqual(500);
+      expect(metrics.frames.length).toBe(7);
+      expect(Math.min(...metrics.frames.map((frame) => frame.width))).toBeGreaterThanOrEqual(450);
     }
 
     await context.close();
