@@ -35,7 +35,7 @@
 
   display: grid;
   grid-template-rows:
-    48px
+    44px
     124px
     minmax(220px, 1.5fr)
     95px
@@ -88,20 +88,21 @@
   align-items: center;
   gap: 6px;
   min-width: 0;
-  padding: 4px 6px;
+  padding: 3px 6px 2px;
   border-bottom: 1px solid rgb(23 67 91 / 65%);
 }
 
 .vref-generator-badge {
   display: grid;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   place-items: center;
   border: 1.5px solid #466a7e;
   border-radius: 50%;
   color: #fff;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 900;
+  transform: translateY(-2px);
 }
 
 .vref-header-title {
