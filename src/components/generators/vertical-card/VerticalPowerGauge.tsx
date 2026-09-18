@@ -47,14 +47,12 @@ export function VerticalPowerGauge({
           <text x="285" y="112" className="vref-gauge-scale" textAnchor="end">
             100%
           </text>
-          <line
-            x1="170"
-            y1="158"
-            x2={needle.x}
-            y2={needle.y}
-            className={known ? "vref-gauge-needle" : "vref-gauge-needle is-unknown"}
-          />
-          <circle cx="170" cy="158" r="6" className="vref-gauge-hub" />
+          {known && (
+            <>
+              <line x1="170" y1="158" x2={needle.x} y2={needle.y} className="vref-gauge-needle" />
+              <circle cx="170" cy="158" r="6" className="vref-gauge-hub" />
+            </>
+          )}
         </svg>
         <div className="vref-power-readout">
           <strong>{pct == null ? "N/D" : pct + "%"}</strong>
