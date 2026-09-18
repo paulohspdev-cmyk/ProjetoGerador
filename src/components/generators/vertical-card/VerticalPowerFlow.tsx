@@ -3,13 +3,13 @@ import { cn } from "@/lib/utils";
 function TowerIcon() {
   return (
     <g className="vref-flow-icon">
-      <path d="M0-21 0 18M-8 18 0-21 8 18M-13-8H13M-16 3H16M-19 13H19" />
-      <path d="m-12-8 12 10 12-10M-14 3 0 13 14 3" />
+      <path d="M0-24 0 20M-9 20 0-24 9 20M-15-9H15M-18 4H18M-21 15H21" />
+      <path d="m-13-9 13 11 13-11M-15 4 0 15 15 4" />
     </g>
   );
 }
 
-function BreakerSymbol({
+function BreakerContact({
   x,
   closed,
   known,
@@ -20,33 +20,21 @@ function BreakerSymbol({
   known: boolean;
   label: string;
 }) {
-  const bladeX = known && closed ? x + 36 : x + 48;
-  const bladeY = known && closed ? 76 : 64;
+  const bladeX = known && closed ? x + 34 : x + 47;
+  const bladeY = known && closed ? 73 : 58;
+
   return (
-    <g className={cn("vref-breaker", !known ? "is-unknown" : closed ? "is-closed" : "is-open")}>
-      <circle cx={x} cy="76" r="4" />
-      <circle cx={x + 36} cy="76" r="4" />
-      <line x1={x + 4} y1="75" x2={bladeX} y2={bladeY} />
-      <g transform={"translate(" + (x + 18) + " 112)"}>
-        <rect x="-29" y="-18" width="58" height="36" rx="5" />
-        <text x="0" y="-4" textAnchor="middle" className="vref-breaker-name">
-          {label}
-        </text>
-        <rect
-          x="-22"
-          y="2"
-          width="20"
-          height="13"
-          rx="2"
-          className={cn("state", !known ? "unknown" : closed ? "on" : "off")}
-        />
-        <text x="-12" y="12" textAnchor="middle" className="vref-breaker-io">
-          I
-        </text>
-        <text x="12" y="12" textAnchor="middle" className="vref-breaker-state">
-          {!known ? "N/D" : closed ? "ON" : "OFF"}
-        </text>
-      </g>
+    <g
+      className={cn("vref-breaker", !known ? "is-unknown" : closed ? "is-closed" : "is-open")}
+      aria-label={label + " " + (!known ? "N/D" : closed ? "fechado" : "aberto")}
+    >
+      <title>{label + " — " + (!known ? "N/D" : closed ? "FECHADO" : "ABERTO")}</title>
+      <circle cx={x} cy="73" r="4" />
+      <circle cx={x + 34} cy="73" r="4" />
+      <line x1={x + 4} y1="72" x2={bladeX} y2={bladeY} />
+      <text x={x + 17} y="98" textAnchor="middle" className="vref-breaker-name">
+        {label}
+      </text>
     </g>
   );
 }
@@ -59,8 +47,6 @@ export function VerticalPowerFlow({
   gcb,
   gcbKnown,
   running,
-  loadKw,
-  rpm,
 }: {
   mainsPresent: boolean;
   mainsKnown: boolean;
@@ -69,8 +55,6 @@ export function VerticalPowerFlow({
   gcb: boolean;
   gcbKnown: boolean;
   running: boolean;
-  loadKw: number | null;
-  rpm: number | null;
 }) {
   const mainsToBus = mainsKnown && mainsPresent && mcbKnown && mcb;
   const genToBus = running && gcbKnown && gcb;
@@ -79,48 +63,33 @@ export function VerticalPowerFlow({
   return (
     <section className="vref-section vref-flow">
       <h4>POWER FLOW</h4>
-      <svg viewBox="0 0 620 155" aria-label="Power flow">
-        <text x="24" y="25" className="vref-flow-label">
+      <svg viewBox="0 0 620 125" aria-label="Power flow">
+        <text x="34" y="18" className="vref-flow-label">
           MAINS
         </text>
         <circle
-          cx="14"
-          cy="21"
+          cx="22"
+          cy="14"
           r="5"
           className={cn(
             "vref-status-dot",
             !mainsKnown ? "is-unknown" : mainsPresent ? "is-live" : "is-dead",
           )}
         />
-        <text
-          x="24"
-          y="41"
-          className={cn(
-            "vref-flow-sub",
-            !mainsKnown ? "is-unknown" : mainsPresent ? "is-live" : "is-dead",
-          )}
-        >
-          {!mainsKnown ? "N/D" : mainsPresent ? "Available" : "Not Available"}
-        </text>
 
-        <text x="505" y="25" className="vref-flow-label">
+        <text x="515" y="18" className="vref-flow-label">
           GENERATOR
         </text>
         <circle
-          cx="494"
-          cy="21"
+          cx="503"
+          cy="14"
           r="5"
           className={cn("vref-status-dot", running ? "is-live" : "is-idle")}
         />
-        <text x="505" y="41" className="vref-flow-sub">
-          {(loadKw == null ? "N/D" : Math.round(loadKw) + " kW") +
-            " / " +
-            (rpm == null ? "N/D" : Math.round(rpm).toLocaleString("pt-BR") + " RPM")}
-        </text>
 
-        <g transform="translate(45 76)">
+        <g transform="translate(48 73)">
           <circle
-            r="29"
+            r="32"
             className={cn(
               "vref-device",
               !mainsKnown ? "is-unknown" : mainsPresent ? "is-live" : "is-dead",
@@ -128,44 +97,41 @@ export function VerticalPowerFlow({
           />
           <TowerIcon />
           {!mainsPresent && mainsKnown && (
-            <g transform="translate(21 21)">
+            <g transform="translate(23 23)">
               <circle r="10" className="vref-source-x-bg" />
               <path d="M-4-4 4 4M4-4-4 4" className="vref-source-x" />
             </g>
           )}
         </g>
 
-        <path d="M74 76 H280" className="vref-wire" />
-        <path d="M340 76 H546" className="vref-wire" />
-        <path d="M310 76 V42" className="vref-wire" />
-        <path d="M74 76 H280" className={cn("vref-wire-live", mainsToBus && "is-live")} />
-        <path d="M340 76 H546" className={cn("vref-wire-live", genToBus && "is-live")} />
-        <path d="M310 76 V42" className={cn("vref-wire-live", busLive && "is-live")} />
-        <circle cx="310" cy="76" r="5" className={cn("vref-junction", busLive && "is-live")} />
+        <path d="M80 73 H278" className="vref-wire" />
+        <path d="M342 73 H540" className="vref-wire" />
+        <path d="M310 73 V38" className="vref-wire" />
+        <path d="M80 73 H278" className={cn("vref-wire-live", mainsToBus && "is-live")} />
+        <path d="M342 73 H540" className={cn("vref-wire-live", genToBus && "is-live")} />
+        <path d="M310 73 V38" className={cn("vref-wire-live", busLive && "is-live")} />
+        <circle cx="310" cy="73" r="5" className={cn("vref-junction", busLive && "is-live")} />
 
-        <BreakerSymbol x={135} closed={mcb} known={mcbKnown} label="MCB" />
-        <BreakerSymbol x={431} closed={gcb} known={gcbKnown} label="GCB" />
+        <BreakerContact x={138} closed={mcb} known={mcbKnown} label="MCB" />
+        <BreakerContact x={448} closed={gcb} known={gcbKnown} label="GCB" />
 
         <g transform="translate(310 22)">
-          <rect x="-51" y="-20" width="102" height="40" rx="6" className="vref-load-card" />
-          <g transform="translate(-27 0)" className="vref-flow-icon">
+          <rect x="-47" y="-18" width="94" height="36" rx="6" className="vref-load-card" />
+          <g transform="translate(-20 0)" className="vref-flow-icon">
             <path d="M-11 11h22M-8 11V1l5 2V-8l6 2v17M3 1l6 2v8" />
             <path d="M-5 6v0M0-2v0M0 5v0M6 7v0" strokeWidth="2.4" strokeLinecap="round" />
           </g>
-          <text x="10" y="-3" className="vref-load-title">
+          <text x="13" y="5" className="vref-load-title">
             LOAD
-          </text>
-          <text x="10" y="13" className={cn("vref-load-value", busLive && "is-live")}>
-            {loadKw == null ? "N/D" : Math.round(loadKw) + " kW"}
           </text>
         </g>
 
-        <g transform="translate(575 76)">
+        <g transform="translate(572 73)">
           <circle
-            r="29"
+            r="32"
             className={cn("vref-device", "generator", running ? "is-live" : "is-idle")}
           />
-          <text x="0" y="8" textAnchor="middle" className="vref-generator-letter">
+          <text x="0" y="9" textAnchor="middle" className="vref-generator-letter">
             G
           </text>
         </g>
