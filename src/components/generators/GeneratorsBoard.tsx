@@ -45,11 +45,13 @@ const VERTICAL_GAP = 8;
 const VERTICAL_PADDING = 8;
 
 function verticalMinimumCardWidth(width: number) {
-  if (width >= 3200) return 360;
-  if (width >= 2200) return 300;
-  if (width >= 1600) return 235;
-  if (width >= 1100) return 225;
-  if (width >= 700) return 215;
+  // Priorizamos legibilidade. Aumentar a quantidade só é permitido enquanto
+  // o painel completo continua com texto e instrumentos confortáveis.
+  if (width >= 3200) return 540; // 4K / TV: 6 cards grandes por fileira.
+  if (width >= 2200) return 400;
+  if (width >= 1600) return 320; // Full HD: 5 cards, não 7 miniaturas.
+  if (width >= 1100) return 300;
+  if (width >= 700) return 290;
   return 205;
 }
 
