@@ -307,7 +307,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
             </button>
           </div>
 
-          <label className="order-3 flex h-11 w-full min-w-0 items-center gap-1.5 rounded-md border border-input bg-background px-3 focus-within:border-primary sm:ml-auto sm:h-8 sm:w-48 sm:max-w-48 lg:h-7 lg:px-2">
+          <label className="order-3 flex h-11 w-full min-w-0 items-center gap-1.5 rounded-md border border-input bg-background px-3 focus-within:border-primary sm:ml-auto sm:w-48 sm:max-w-48 xl:h-7 xl:px-2">
             <Search className="size-3.5 shrink-0 text-muted-foreground" />
             <input
               value={query}
