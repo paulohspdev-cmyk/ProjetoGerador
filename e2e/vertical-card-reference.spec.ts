@@ -84,7 +84,7 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
     await expect(card.getByText("ENGINE STATUS")).toBeVisible();
     await expect(card.getByRole("heading", { name: "RPM" })).toBeVisible();
     await expect(card.getByText("MAINS / GENERATOR")).toBeVisible();
-    await expect(card.getByText("VALUES", { exact: true })).toBeVisible();
+    await expect(card.locator(".vref-summary-grid")).toBeVisible();
     await expect(card.getByText(/ALARM LIST/)).toHaveCount(0);
     await expect(card).toHaveAttribute("data-mains-state", "unknown");
   }
@@ -197,14 +197,14 @@ test("vertical cabe inteiro na área disponível sem rolagem interna", async ({ 
     }
 
     if (viewport.width === 1920) {
-      expect(metrics.frames.length).toBe(4);
-      expect(Math.min(...metrics.frames.map((frame) => frame.width))).toBeGreaterThanOrEqual(380);
+      expect(metrics.frames.length).toBe(5);
+      expect(Math.min(...metrics.frames.map((frame) => frame.width))).toBeGreaterThanOrEqual(300);
       expect(Math.min(...metrics.frames.map((frame) => frame.height))).toBeGreaterThanOrEqual(700);
     }
 
     if (viewport.width === 3840) {
-      expect(metrics.frames.length).toBe(8);
-      expect(Math.min(...metrics.frames.map((frame) => frame.width))).toBeGreaterThanOrEqual(400);
+      expect(metrics.frames.length).toBe(9);
+      expect(Math.min(...metrics.frames.map((frame) => frame.width))).toBeGreaterThanOrEqual(300);
     }
 
     await context.close();
