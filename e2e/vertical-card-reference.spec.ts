@@ -130,6 +130,9 @@ test("vertical cabe inteiro na área disponível sem rolagem interna", async ({ 
     }
 
     await page.goto("/p/geradores");
+    await expect(page.getByText("Carregando cadastro de geradores…")).toHaveCount(0, {
+      timeout: 15_000,
+    });
     await page.getByRole("button", { name: /online/i }).click();
     await page.getByRole("menuitemradio", { name: "Todos" }).click();
 
