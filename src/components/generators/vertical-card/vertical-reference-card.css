@@ -36,11 +36,11 @@
   display: grid;
   grid-template-rows:
     48px
-    118px
-    minmax(240px, 1.65fr)
+    124px
+    minmax(220px, 1.5fr)
     95px
     118px
-    minmax(196px, 1.1fr);
+    minmax(205px, 1.08fr);
   gap: 5px;
   width: 100%;
   height: 100%;
@@ -274,7 +274,9 @@
 }
 
 .vref-flow-vertical > svg {
-  max-width: 270px;
+  width: min(286px, 100%);
+  max-width: none;
+  height: calc(100% - 14px);
   margin: 0 auto;
 }
 
@@ -370,44 +372,45 @@
   stroke: var(--vref-green);
 }
 
-.vref-breaker-panel .label {
-  fill: #fff;
-  font-size: 11px;
-  font-weight: 900;
-}
-
-.vref-breaker-panel .panel {
-  fill: #061722;
+.vref-breaker-state > rect {
+  fill: #071a27;
   stroke: #315269;
   stroke-width: 1.4;
 }
 
-.vref-breaker-panel .state-box {
-  fill: #364955;
-  stroke: #617683;
-  stroke-width: 1;
+.vref-breaker-state.is-closed > rect {
+  fill: #12391a;
+  stroke: #3ae615;
 }
 
-.vref-breaker-panel.is-closed .state-box {
-  fill: #20b900;
-  stroke: #46f21d;
+.vref-breaker-state.is-open > rect {
+  fill: #3a1515;
+  stroke: #e2453d;
 }
 
-.vref-breaker-panel.is-open .state-box {
-  fill: #d6251a;
-  stroke: #ff544a;
+.vref-breaker-state.is-unknown > rect {
+  fill: #101f29;
+  stroke: #536a78;
 }
 
-.vref-breaker-panel.is-unknown .state-box {
-  fill: #344650;
-  stroke: #617683;
-}
-
-.vref-breaker-panel .state-glyph,
-.vref-breaker-panel .state-text {
-  fill: #fff;
-  font-size: 11px;
+.vref-breaker-state .name {
+  fill: #ffffff;
+  font-size: 10px;
   font-weight: 900;
+}
+
+.vref-breaker-state .state {
+  fill: #9fb0bb;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.vref-breaker-state.is-closed .state {
+  fill: var(--vref-green);
+}
+
+.vref-breaker-state.is-open .state {
+  fill: #ff6b64;
 }
 
 .vref-load-card {
@@ -859,11 +862,11 @@
   .vref-card {
     grid-template-rows:
       44px
-      105px
-      minmax(210px, 1.5fr)
+      116px
+      minmax(198px, 1.42fr)
       84px
       104px
-      minmax(180px, 1fr);
+      minmax(186px, 1fr);
     gap: 4px;
     padding: 4px;
   }
