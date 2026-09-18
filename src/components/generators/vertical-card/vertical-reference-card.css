@@ -37,10 +37,10 @@
   grid-template-rows:
     44px
     124px
-    minmax(220px, 1.5fr)
-    95px
+    minmax(260px, 1.75fr)
+    58px
     118px
-    minmax(205px, 1.08fr);
+    minmax(190px, 1fr);
   gap: 5px;
   width: 100%;
   height: 100%;
@@ -274,11 +274,136 @@
   overflow: visible;
 }
 
-.vref-flow-vertical > svg {
-  width: min(286px, 100%);
-  max-width: none;
-  height: calc(100% - 14px);
-  margin: 0 auto;
+.vref-flow-controller {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 7px 5px;
+}
+
+.vref-flow-controller-heading {
+  display: flex;
+  flex: 0 0 18px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.vref-flow-controller-heading h4 {
+  margin: 0;
+  font-size: 11px;
+}
+
+.vref-flow-controller-heading > span {
+  color: var(--vref-green);
+  font-size: 8px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.vref-flow-controller-body {
+  display: grid;
+  flex: 1;
+  grid-template-columns: minmax(0, 1fr) 52px;
+  gap: 5px;
+  min-height: 0;
+}
+
+.vref-flow-controller-body > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: visible;
+}
+
+.vref-flow-reading,
+.vref-flow-frequency {
+  fill: #eaf2f7;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.vref-load-value {
+  fill: var(--vref-green);
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.vref-breaker-badge > rect {
+  fill: #edf2f5;
+  stroke: #8fa4b1;
+  stroke-width: 1;
+}
+
+.vref-breaker-badge .label {
+  fill: #a8bac6;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.vref-breaker-badge .state {
+  fill: #0d1e28;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.vref-breaker-badge.is-closed > rect {
+  fill: #30cf12;
+  stroke: #58f538;
+}
+
+.vref-breaker-badge.is-open > rect {
+  fill: #e9eef1;
+  stroke: #8297a4;
+}
+
+.vref-breaker-badge.is-unknown > rect {
+  fill: #dfe7eb;
+  stroke: #7b909d;
+}
+
+.vref-flow-command-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-end;
+  gap: 6px;
+  padding-bottom: 20px;
+}
+
+.vref-flow-command-stack button {
+  display: inline-flex;
+  width: 100%;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.vref-flow-command-stack button svg {
+  width: 9px;
+  height: 9px;
+}
+
+.vref-flow-command-stack .start {
+  border-color: #4bf12a;
+  background: linear-gradient(180deg, #36d315, #199403);
+}
+
+.vref-flow-command-stack .stop {
+  border-color: #ff5c52;
+  background: linear-gradient(180deg, #df372e, #a11d17);
+}
+
+.vref-flow-command-stack button:disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
 }
 
 .vref-status-dot {
@@ -445,11 +570,11 @@
 
 /* Control */
 .vref-control {
-  padding: 6px 7px;
+  padding: 5px 7px;
 }
 
 .vref-control > h4 {
-  margin-bottom: 5px;
+  margin-bottom: 4px;
 }
 
 .vref-mode-row {
@@ -474,7 +599,7 @@
 }
 
 .vref-mode-row button {
-  height: 24px;
+  height: 22px;
   font-size: 9px;
 }
 
@@ -863,11 +988,11 @@
   .vref-card {
     grid-template-rows:
       44px
-      116px
-      minmax(198px, 1.42fr)
-      84px
+      112px
+      minmax(230px, 1.65fr)
+      52px
       104px
-      minmax(186px, 1fr);
+      minmax(178px, 1fr);
     gap: 4px;
     padding: 4px;
   }
