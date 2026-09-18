@@ -38,18 +38,26 @@ const views: Array<{ id: View; label: string; icon: typeof List }> = [
   { id: "lista", label: "Lista", icon: List },
 ];
 
-const VERTICAL_GAP = 10;
-const VERTICAL_PADDING = 8;
+const VERTICAL_GAP = 7;
+const VERTICAL_PADDING = 4;
+const VERTICAL_MIN_CARD_WIDTH = 220;
+const VERTICAL_MAX_CARD_WIDTH = 285;
+const VERTICAL_MIN_CARD_HEIGHT = 720;
 
 function verticalColumnCount(width: number) {
-  // Largura nativa compacta: mais informação útil, sem miniaturizar o conteúdo.
-  if (width >= 3200) return 9; // 4K / TV
-  if (width >= 2200) return 6; // 2K / ultrawide
-  if (width >= 1600) return 5; // Full HD
-  if (width >= 1280) return 4;
-  if (width >= 960) return 3;
-  if (width >= 680) return 2;
-  return 1;
+  const usableWidth = Math.max(1, width - VERTICAL_PADDING * 2);
+  return Math.max(
+    1,
+    Math.floor((usableWidth + VERTICAL_GAP) / (VERTICAL_MIN_CARD_WIDTH + VERTICAL_GAP)),
+  );
+}
+
+function verticalRowCount(height: number) {
+  const usableHeight = Math.max(1, height - VERTICAL_PADDING * 2);
+  return Math.max(
+    1,
+    Math.floor((usableHeight + VERTICAL_GAP) / (VERTICAL_MIN_CARD_HEIGHT + VERTICAL_GAP)),
+  );
 }
 
 const filters: Array<{ id: GenStatus | "todos"; label: string }> = [
@@ -87,15 +95,17 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
     const usableWidth = Math.max(1, width - VERTICAL_PADDING * 2);
     const usableHeight = Math.max(1, height - VERTICAL_PADDING * 2);
     const columns = verticalColumnCount(width);
+    const rows = verticalRowCount(height);
     const cardWidth =
       (usableWidth - VERTICAL_GAP * Math.max(0, columns - 1)) / Math.max(1, columns);
+    const cardHeight = (usableHeight - VERTICAL_GAP * Math.max(0, rows - 1)) / Math.max(1, rows);
 
     return {
       columns,
-      rows: 1,
-      pageSize: columns,
+      rows,
+      pageSize: columns * rows,
       cardWidth: Math.max(1, cardWidth),
-      cardHeight: usableHeight,
+      cardHeight: Math.max(1, cardHeight),
     };
   }, [viewport]);
 
@@ -132,17 +142,22 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
   const visible = items.slice(page * pageSize, page * pageSize + pageSize);
 
   const verticalGridStyle = useMemo(() => {
-    const displayColumns = Math.max(1, Math.min(verticalLayout.columns, visible.length || 1));
+    const hasFullRow = visible.length >= verticalLayout.columns;
+    const displayColumns = hasFullRow
+      ? verticalLayout.columns
+      : Math.max(1, Math.min(verticalLayout.columns, visible.length || 1));
     const usableWidth = Math.max(1, (viewport.width || 1200) - VERTICAL_PADDING * 2);
     const naturalWidth =
       (usableWidth - VERTICAL_GAP * Math.max(0, displayColumns - 1)) / displayColumns;
-    const cardWidth = Math.min(318, naturalWidth);
+    const cardWidth = hasFullRow ? naturalWidth : Math.min(VERTICAL_MAX_CARD_WIDTH, naturalWidth);
 
     return {
       "--vref-columns": displayColumns,
       "--vref-rows": verticalLayout.rows,
-      "--vref-card-width": Math.max(1, cardWidth) + "px",
+      "--vref-card-width": Math.max(VERTICAL_MIN_CARD_WIDTH, cardWidth) + "px",
       "--vref-card-height": verticalLayout.cardHeight + "px",
+      "--vref-gap": VERTICAL_GAP + "px",
+      "--vref-padding": VERTICAL_PADDING + "px",
     } as CSSProperties;
   }, [verticalLayout, viewport.width, visible.length]);
 
