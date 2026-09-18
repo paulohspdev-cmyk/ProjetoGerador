@@ -42,12 +42,13 @@ const VERTICAL_GAP = 10;
 const VERTICAL_PADDING = 8;
 
 function verticalColumnCount(width: number) {
-  // O novo card segue a proporção visual de painel industrial das referências.
-  if (width >= 3200) return 8; // 4K / TV
-  if (width >= 2200) return 5; // 2K / ultrawide
-  if (width >= 1600) return 4; // Full HD com sidebar
-  if (width >= 1250) return 3;
-  if (width >= 900) return 2;
+  // Largura nativa compacta: mais informação útil, sem miniaturizar o conteúdo.
+  if (width >= 3200) return 9; // 4K / TV
+  if (width >= 2200) return 6; // 2K / ultrawide
+  if (width >= 1600) return 5; // Full HD
+  if (width >= 1280) return 4;
+  if (width >= 960) return 3;
+  if (width >= 680) return 2;
   return 1;
 }
 
@@ -94,7 +95,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
       rows: 1,
       pageSize: columns,
       cardWidth: Math.max(1, cardWidth),
-      cardHeight: usableHeight,
+      cardHeight: Math.min(810, usableHeight),
     };
   }, [viewport]);
 
@@ -135,7 +136,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
     const usableWidth = Math.max(1, (viewport.width || 1200) - VERTICAL_PADDING * 2);
     const naturalWidth =
       (usableWidth - VERTICAL_GAP * Math.max(0, displayColumns - 1)) / displayColumns;
-    const cardWidth = Math.min(420, naturalWidth);
+    const cardWidth = Math.min(330, naturalWidth);
 
     return {
       "--vref-columns": displayColumns,
