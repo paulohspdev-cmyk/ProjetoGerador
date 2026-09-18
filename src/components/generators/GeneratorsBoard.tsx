@@ -42,13 +42,12 @@ const VERTICAL_GAP = 10;
 const VERTICAL_PADDING = 8;
 
 function verticalColumnCount(width: number) {
-  // Mantém o card estreito e legível: reduz conteúdo redundante em vez de escalar o card.
+  // O novo card segue a proporção visual de painel industrial das referências.
   if (width >= 3200) return 8; // 4K / TV
-  if (width >= 2200) return 6; // 2K / ultrawide
-  if (width >= 1600) return 5; // Full HD com sidebar
-  if (width >= 1250) return 4; // notebooks largos
-  if (width >= 950) return 3;
-  if (width >= 650) return 2;
+  if (width >= 2200) return 5; // 2K / ultrawide
+  if (width >= 1600) return 4; // Full HD com sidebar
+  if (width >= 1250) return 3;
+  if (width >= 900) return 2;
   return 1;
 }
 
@@ -136,7 +135,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
     const usableWidth = Math.max(1, (viewport.width || 1200) - VERTICAL_PADDING * 2);
     const naturalWidth =
       (usableWidth - VERTICAL_GAP * Math.max(0, displayColumns - 1)) / displayColumns;
-    const cardWidth = Math.min(400, naturalWidth);
+    const cardWidth = Math.min(420, naturalWidth);
 
     return {
       "--vref-columns": displayColumns,
