@@ -1,0 +1,168 @@
+name: Gateway Umbrella
+
+on:
+  push:
+    branches:
+      - 'feat/gateway-umbrella-*'
+    paths:
+      - 'gateway-umbrella/**'
+      - '.github/workflows/gateway-umbrella.yml'
+  pull_request:
+    paths:
+      - 'gateway-umbrella/**'
+      - '.github/workflows/gateway-umbrella.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  handoff:
+    name: Canonical project state
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Require PROJECT_STATE update
+        run: bash gateway-umbrella/scripts/check-project-state-updated.sh
+
+  bridge:
+    name: Bridge Core Go
+    needs: handoff
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.1'
+          cache-dependency-path: gateway-umbrella/go.mod
+      - name: Format
+        working-directory: gateway-umbrella
+        run: test -z "$(gofmt -l .)"
+      - name: Vet
+        working-directory: gateway-umbrella
+        run: go vet ./...
+      - name: Unit and socket integration tests
+        working-directory: gateway-umbrella
+        run: go test ./... -count=1
+      - name: Kernel vcan integration when available
+        working-directory: gateway-umbrella
+        run: |
+          if sudo modprobe vcan 2>/dev/null && sudo ip link add dev vcan0 type vcan 2>/dev/null; then
+            sudo ip link set dev vcan0 mtu 72 || true
+            sudo ip link set dev vcan0 up
+            RC_GATEWAY_TEST_VCAN=1 go test ./internal/provider/canbridge -run TestVCANRoundTripClassicAndFD -count=1
+          else
+            echo "::notice::Hosted runner kernel has no vcan support; kernel CAN round-trip remains an explicit VM/HIL gate."
+          fi
+      - name: Race detector
+        working-directory: gateway-umbrella
+        run: go test -race ./... -count=1
+      - name: Build
+        working-directory: gateway-umbrella
+        run: go build ./cmd/rc-gateway
+      - name: Production config validation
+        working-directory: gateway-umbrella
+        run: |
+          ./rc-gateway --version
+          for cfg in configs/*.json; do
+            echo "checking $cfg"
+            ./rc-gateway --check-config --config "$cfg"
+          done
+
+  stress:
+    name: Stress and leak gate
+    needs: bridge
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.1'
+          cache-dependency-path: gateway-umbrella/go.mod
+      - name: 1000 concurrent pairs and 1000 TCP churn cycles
+        working-directory: gateway-umbrella
+        env:
+          RC_GATEWAY_STRESS: '1'
+          RC_GATEWAY_STRESS_PAIRS: '1000'
+          RC_GATEWAY_CHURN_CYCLES: '1000'
+        run: go test ./internal/bridge -run '^TestStress' -count=1 -timeout=12m
+
+  soak:
+    name: Impairment and mini-soak gate
+    needs: stress
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.1'
+          cache-dependency-path: gateway-umbrella/go.mod
+      - name: Repeated impaired reconnect soak
+        working-directory: gateway-umbrella
+        env:
+          RC_GATEWAY_SOAK: '1'
+          RC_GATEWAY_SOAK_SECONDS: '20'
+        run: go test ./internal/bridge -run '^TestSoakImpairedReconnect$' -count=1 -timeout=2m
+
+  release:
+    name: Release and supply-chain gate
+    needs: soak
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.1'
+          cache-dependency-path: gateway-umbrella/go.mod
+      - name: Install pinned supply-chain tools
+        working-directory: gateway-umbrella
+        run: |
+          mkdir -p "$RUNNER_TEMP/gobin"
+          # Pin a post-Go-1.27 x/vuln revision. v1.1.4 embeds x/tools v0.29.0 and panics on Go 1.27 syntax.
+          GOBIN="$RUNNER_TEMP/gobin" go install golang.org/x/vuln/cmd/govulncheck@8fcedea455d953a0f8470e1f41420bb6f2e72665
+          GOBIN="$RUNNER_TEMP/gobin" go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.12.0
+          echo "$RUNNER_TEMP/gobin" >> "$GITHUB_PATH"
+      - name: Vulnerability scan
+        working-directory: gateway-umbrella
+        run: |
+          "$RUNNER_TEMP/gobin/govulncheck" ./...
+      - name: Shell syntax
+        working-directory: gateway-umbrella
+        run: bash -n scripts/*.sh
+      - name: Reproducible release build
+        working-directory: gateway-umbrella
+        run: |
+          VERSION="ci-${GITHUB_SHA}"
+          REQUIRE_SBOM=1 ARCHES="amd64 arm64" DIST_DIR="$PWD/dist-a" bash scripts/build-release.sh "$VERSION"
+          REQUIRE_SBOM=1 ARCHES="amd64 arm64" DIST_DIR="$PWD/dist-b" bash scripts/build-release.sh "$VERSION"
+          for arch in amd64 arm64; do
+            a="dist-a/rc-gateway-umbrella_${VERSION}_linux_${arch}.tar.gz"
+            b="dist-b/rc-gateway-umbrella_${VERSION}_linux_${arch}.tar.gz"
+            cmp "$a" "$b"
+            cmp "$a.sha256" "$b.sha256"
+          done
+      - name: Validate real release archive and installer dry-run
+        working-directory: gateway-umbrella
+        run: |
+          VERSION="ci-${GITHUB_SHA}"
+          archive="dist-a/rc-gateway-umbrella_${VERSION}_linux_amd64.tar.gz"
+          bash scripts/install-release.sh --dry-run "$archive" "$archive.sha256" configs/gateway.example.json
+          tar -tzf "$archive" | grep -q '/sbom.cdx.json$'
+          tar -tzf "$archive" | grep -q '/systemd/rc-gateway-umbrella.service$'
+          tar -tzf "$archive" | grep -q '/scripts/rollback-release.sh$'
+      - name: Upload release candidates
+        uses: actions/upload-artifact@v4
+        with:
+          name: rc-gateway-umbrella-${{ github.sha }}
+          path: |
+            gateway-umbrella/dist-a/*.tar.gz
+            gateway-umbrella/dist-a/*.sha256
+          if-no-files-found: error
+          retention-days: 14
