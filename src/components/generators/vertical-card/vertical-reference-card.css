@@ -2006,3 +2006,338 @@
     font-size: 10px;
   }
 }
+
+
+/* Operator refinement v4: restore mode controls, remove clipping and normalize spacing. */
+.vref-card {
+  grid-template-rows:
+    44px
+    28px
+    110px
+    140px
+    115px
+    minmax(230px, 1fr)
+    60px;
+  gap: 5px;
+  padding: 5px;
+}
+
+.vref-header {
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 6px;
+  padding: 4px 6px;
+}
+
+.vref-generator-badge {
+  width: 30px;
+  height: 30px;
+  font-size: 15px;
+}
+
+.vref-header-title > a {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.vref-header-title > span {
+  margin-top: 3px;
+  font-size: 9px;
+}
+
+.vref-mode-strip {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  padding: 3px 5px;
+  border: 1px solid var(--vref-line);
+  border-radius: 5px;
+  background: linear-gradient(180deg, rgb(2 22 36 / 96%), rgb(0 14 24 / 96%));
+}
+
+.vref-mode-strip-label {
+  color: #aebdca;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.vref-mode-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 3px;
+  min-width: 0;
+}
+
+.vref-mode-buttons button {
+  display: inline-flex;
+  min-width: 0;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 4px;
+  border: 1px solid #28475b;
+  border-radius: 3px;
+  background: #061824;
+  color: #dbe7ee;
+  font-size: 8px;
+  font-weight: 900;
+  line-height: 1;
+  opacity: 1;
+}
+
+.vref-mode-buttons button svg {
+  width: 10px;
+  height: 10px;
+  stroke-width: 2.2;
+}
+
+.vref-mode-buttons button.is-active {
+  border-color: var(--vref-green);
+  background: linear-gradient(180deg, #21b900, #147f00);
+  color: #fff;
+  box-shadow: inset 0 0 8px rgb(51 255 15 / 18%);
+}
+
+.vref-mode-buttons button.is-unknown {
+  color: #8fa0ad;
+}
+
+.vref-mode-unknown {
+  min-width: 20px;
+  color: #8fa0ad;
+  font-size: 8px;
+  font-weight: 900;
+  text-align: right;
+}
+
+.vref-mode-strip.is-dse .vref-mode-strip-label {
+  color: #c9d8e2;
+}
+
+.vref-power {
+  padding: 0;
+}
+
+.vref-section-heading {
+  height: 20px;
+  padding: 6px 7px 0;
+}
+
+.vref-section-heading h4 {
+  font-size: 11px;
+}
+
+.vref-power-gauge {
+  height: calc(100% - 20px);
+}
+
+.vref-power-gauge > svg {
+  width: min(285px, 92%);
+  height: 125px;
+  margin: -22px auto 0;
+}
+
+.vref-power-readout {
+  inset: 38px 0 auto;
+}
+
+.vref-power-readout b {
+  font-size: 17px;
+}
+
+.vref-power-readout span {
+  margin-top: 2px;
+  font-size: 8px;
+}
+
+.vref-gauge-scale {
+  font-size: 13px;
+}
+
+.vref-flow {
+  padding: 4px 6px;
+}
+
+.vref-flow-heading {
+  height: 15px;
+}
+
+.vref-flow-heading h4 {
+  font-size: 11px;
+}
+
+.vref-flow-body {
+  grid-template-rows: minmax(0, 1fr) 27px;
+  gap: 2px;
+}
+
+.vref-flow-body > svg {
+  width: 100%;
+  height: 100%;
+}
+
+.vref-flow-label {
+  font-size: 13px;
+}
+
+.vref-breaker-button rect {
+  stroke-width: 1.4;
+}
+
+.vref-breaker-button .name,
+.vref-breaker-button .state-text {
+  font-size: 10px;
+}
+
+.vref-flow-actions {
+  gap: 5px;
+}
+
+.vref-flow-actions button {
+  min-width: 68px;
+  height: 25px;
+  font-size: 9px;
+}
+
+.vref-two-col {
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 5px;
+}
+
+.vref-engine,
+.vref-rpm {
+  padding: 5px 6px;
+}
+
+.vref-engine > h4,
+.vref-rpm > h4 {
+  margin-bottom: 3px;
+  font-size: 11px;
+}
+
+.vref-engine-row {
+  grid-template-columns: 12px minmax(70px, auto) minmax(30px, 1fr) auto;
+  gap: 4px;
+  min-height: 20px;
+  font-size: 10px;
+}
+
+.vref-engine-row > b {
+  min-width: 34px;
+  font-size: 10px;
+}
+
+.vref-mini-bar {
+  height: 5px;
+}
+
+.vref-rpm .rpm-svg {
+  height: calc(100% - 14px);
+  margin-top: 0;
+}
+
+.vref-rpm .rpm-scale-label {
+  font-size: 10px;
+}
+
+.vref-rpm .rpm-unit {
+  font-size: 9px;
+}
+
+.vref-rpm .rpm-percent {
+  font-size: 20px;
+}
+
+.vref-tables {
+  grid-template-columns: 1fr;
+  grid-template-rows: 160px minmax(62px, 1fr);
+  gap: 5px;
+}
+
+.vref-tables .vref-section {
+  padding: 5px 6px;
+}
+
+.vref-table-heading {
+  grid-template-columns: minmax(0, 1.35fr) minmax(52px, 0.72fr) minmax(60px, 0.88fr);
+  gap: 4px;
+  min-height: 18px;
+  margin-bottom: 1px;
+}
+
+.vref-table-heading h4 {
+  font-size: 11px;
+}
+
+.vref-table-heading > span {
+  font-size: 8px;
+}
+
+.vref-data-row {
+  grid-template-columns: minmax(0, 1.35fr) minmax(52px, 0.72fr) minmax(60px, 0.88fr);
+  gap: 4px;
+  min-height: 21px;
+  font-size: 10px;
+}
+
+.vref-value-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  margin-top: 2px;
+}
+
+.vref-value-row {
+  grid-template-columns: 13px minmax(0, 1fr) auto;
+  gap: 4px;
+  min-height: 17px;
+  font-size: 10px;
+}
+
+.vref-value-row svg {
+  width: 11px;
+  height: 11px;
+}
+
+.vref-alarms {
+  padding: 5px 6px;
+}
+
+.vref-alarms > h4 {
+  margin: 0 0 4px;
+  font-size: 11px;
+}
+
+.vref-alarm-empty {
+  margin: 0;
+  padding: 6px;
+  font-size: 9px;
+}
+
+.vref-command-message {
+  top: 338px;
+  left: 8px;
+  right: 8px;
+  height: 20px;
+  font-size: 9px;
+  line-height: 18px;
+}
+
+@media (max-width: 1600px) {
+  .vref-mode-strip {
+    grid-template-columns: 32px minmax(0, 1fr) auto;
+  }
+
+  .vref-mode-strip-label,
+  .vref-mode-buttons button,
+  .vref-mode-unknown {
+    font-size: 7px;
+  }
+
+  .vref-header-title > a {
+    font-size: 13px;
+  }
+}
