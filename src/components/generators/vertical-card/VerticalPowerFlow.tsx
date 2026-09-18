@@ -1,3 +1,5 @@
+import { Play, Square } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 
 function TowerIcon() {
@@ -14,27 +16,47 @@ function BreakerContact({
   closed,
   known,
   label,
+  direction,
 }: {
   x: number;
   closed: boolean;
   known: boolean;
   label: string;
+  direction: "ltr" | "rtl";
 }) {
-  const bladeX = known && closed ? x + 34 : x + 47;
-  const bladeY = known && closed ? 73 : 58;
+  const stateClass = !known ? "is-unknown" : closed ? "is-closed" : "is-open";
+  const stateText = !known ? "N/D" : closed ? "ON" : "OFF";
+  const blade =
+    direction === "ltr"
+      ? {
+          x1: x + 4,
+          y1: 80,
+          x2: closed ? x + 34 : x + 29,
+          y2: closed ? 80 : 61,
+        }
+      : {
+          x1: x + 34,
+          y1: 80,
+          x2: closed ? x + 4 : x + 9,
+          y2: closed ? 80 : 61,
+        };
 
   return (
-    <g
-      className={cn("vref-breaker", !known ? "is-unknown" : closed ? "is-closed" : "is-open")}
-      aria-label={label + " " + (!known ? "N/D" : closed ? "fechado" : "aberto")}
-    >
-      <title>{label + " — " + (!known ? "N/D" : closed ? "FECHADO" : "ABERTO")}</title>
-      <circle cx={x} cy="73" r="4" />
-      <circle cx={x + 34} cy="73" r="4" />
-      <line x1={x + 4} y1="72" x2={bladeX} y2={bladeY} />
-      <text x={x + 17} y="98" textAnchor="middle" className="vref-breaker-name">
-        {label}
-      </text>
+    <g className={cn("vref-breaker", stateClass)}>
+      <title>{label + " — " + stateText}</title>
+      <circle cx={x} cy="80" r="4" />
+      <circle cx={x + 38} cy="80" r="4" />
+      <line x1={blade.x1} y1={blade.y1} x2={blade.x2} y2={blade.y2} />
+      <g className="vref-breaker-button" transform={`translate(${x + 19} 112)`}>
+        <rect x="-37" y="-13" width="74" height="26" rx="5" />
+        <circle cx="-25" cy="0" r="4" className="indicator" />
+        <text x="-15" y="4" className="name">
+          {label}
+        </text>
+        <text x="30" y="4" textAnchor="end" className="state-text">
+          {stateText}
+        </text>
+      </g>
     </g>
   );
 }
@@ -47,6 +69,11 @@ export function VerticalPowerFlow({
   gcb,
   gcbKnown,
   running,
+  canStart,
+  canStop,
+  busy,
+  onStart,
+  onStop,
 }: {
   mainsPresent: boolean;
   mainsKnown: boolean;
@@ -55,6 +82,11 @@ export function VerticalPowerFlow({
   gcb: boolean;
   gcbKnown: boolean;
   running: boolean;
+  canStart: boolean;
+  canStop: boolean;
+  busy: "start" | "stop" | null;
+  onStart: () => void;
+  onStop: () => void;
 }) {
   const mainsToBus = mainsKnown && mainsPresent && mcbKnown && mcb;
   const genToBus = running && gcbKnown && gcb;
@@ -62,80 +94,99 @@ export function VerticalPowerFlow({
 
   return (
     <section className="vref-section vref-flow">
-      <h4>POWER FLOW</h4>
-      <svg viewBox="0 0 620 125" aria-label="Power flow">
-        <text x="34" y="18" className="vref-flow-label">
-          MAINS
-        </text>
-        <circle
-          cx="22"
-          cy="14"
-          r="5"
-          className={cn(
-            "vref-status-dot",
-            !mainsKnown ? "is-unknown" : mainsPresent ? "is-live" : "is-dead",
-          )}
-        />
+      <div className="vref-flow-heading">
+        <h4>POWER FLOW</h4>
+      </div>
 
-        <text x="515" y="18" className="vref-flow-label">
-          GENERATOR
-        </text>
-        <circle
-          cx="503"
-          cy="14"
-          r="5"
-          className={cn("vref-status-dot", running ? "is-live" : "is-idle")}
-        />
-
-        <g transform="translate(48 73)">
+      <div className="vref-flow-body">
+        <svg viewBox="0 0 640 145" aria-label="Power flow">
+          <text x="36" y="18" className="vref-flow-label">
+            MAINS
+          </text>
           <circle
-            r="32"
+            cx="23"
+            cy="14"
+            r="5"
             className={cn(
-              "vref-device",
+              "vref-status-dot",
               !mainsKnown ? "is-unknown" : mainsPresent ? "is-live" : "is-dead",
             )}
           />
-          <TowerIcon />
-          {!mainsPresent && mainsKnown && (
-            <g transform="translate(23 23)">
-              <circle r="10" className="vref-source-x-bg" />
-              <path d="M-4-4 4 4M4-4-4 4" className="vref-source-x" />
-            </g>
-          )}
-        </g>
 
-        <path d="M80 73 H278" className="vref-wire" />
-        <path d="M342 73 H540" className="vref-wire" />
-        <path d="M310 73 V38" className="vref-wire" />
-        <path d="M80 73 H278" className={cn("vref-wire-live", mainsToBus && "is-live")} />
-        <path d="M342 73 H540" className={cn("vref-wire-live", genToBus && "is-live")} />
-        <path d="M310 73 V38" className={cn("vref-wire-live", busLive && "is-live")} />
-        <circle cx="310" cy="73" r="5" className={cn("vref-junction", busLive && "is-live")} />
-
-        <BreakerContact x={138} closed={mcb} known={mcbKnown} label="MCB" />
-        <BreakerContact x={448} closed={gcb} known={gcbKnown} label="GCB" />
-
-        <g transform="translate(310 22)">
-          <rect x="-47" y="-18" width="94" height="36" rx="6" className="vref-load-card" />
-          <g transform="translate(-20 0)" className="vref-flow-icon">
-            <path d="M-11 11h22M-8 11V1l5 2V-8l6 2v17M3 1l6 2v8" />
-            <path d="M-5 6v0M0-2v0M0 5v0M6 7v0" strokeWidth="2.4" strokeLinecap="round" />
-          </g>
-          <text x="13" y="5" className="vref-load-title">
-            LOAD
+          <text x="520" y="18" className="vref-flow-label">
+            GENERATOR
           </text>
-        </g>
-
-        <g transform="translate(572 73)">
           <circle
-            r="32"
-            className={cn("vref-device", "generator", running ? "is-live" : "is-idle")}
+            cx="507"
+            cy="14"
+            r="5"
+            className={cn("vref-status-dot", running ? "is-live" : "is-idle")}
           />
-          <text x="0" y="9" textAnchor="middle" className="vref-generator-letter">
-            G
-          </text>
-        </g>
-      </svg>
+
+          <g transform="translate(52 80)">
+            <circle
+              r="34"
+              className={cn(
+                "vref-device",
+                !mainsKnown ? "is-unknown" : mainsPresent ? "is-live" : "is-dead",
+              )}
+            />
+            <TowerIcon />
+          </g>
+
+          <path d="M86 80 H284" className="vref-wire" />
+          <path d="M356 80 H554" className="vref-wire" />
+          <path d="M320 80 V42" className="vref-wire" />
+
+          <path d="M86 80 H284" className={cn("vref-wire-live", mainsToBus && "is-live")} />
+          <path d="M356 80 H554" className={cn("vref-wire-live", genToBus && "is-live")} />
+          <path d="M320 80 V42" className={cn("vref-wire-live", busLive && "is-live")} />
+          <circle cx="320" cy="80" r="5" className={cn("vref-junction", busLive && "is-live")} />
+
+          <BreakerContact x={145} closed={mcb} known={mcbKnown} label="MCB" direction="ltr" />
+          <BreakerContact x={457} closed={gcb} known={gcbKnown} label="GCB" direction="rtl" />
+
+          <g transform="translate(320 23)">
+            <rect x="-48" y="-18" width="96" height="36" rx="7" className="vref-load-card" />
+            <g transform="translate(-21 0)" className="vref-flow-icon">
+              <path d="M-11 11h22M-8 11V1l5 2V-8l6 2v17M3 1l6 2v8" />
+              <path d="M-5 6v0M0-2v0M0 5v0M6 7v0" strokeWidth="2.4" strokeLinecap="round" />
+            </g>
+            <text x="14" y="5" className="vref-load-title">
+              LOAD
+            </text>
+          </g>
+
+          <g transform="translate(588 80)">
+            <circle
+              r="34"
+              className={cn("vref-device", "generator", running ? "is-live" : "is-idle")}
+            />
+            <text x="0" y="10" textAnchor="middle" className="vref-generator-letter">
+              G
+            </text>
+          </g>
+        </svg>
+
+        <div className="vref-flow-actions">
+          <button
+            type="button"
+            className="start"
+            disabled={!canStart || busy !== null}
+            onClick={onStart}
+          >
+            <Play /> {busy === "start" ? "..." : "START"}
+          </button>
+          <button
+            type="button"
+            className="stop"
+            disabled={!canStop || busy !== null}
+            onClick={onStop}
+          >
+            <Square /> {busy === "stop" ? "..." : "STOP"}
+          </button>
+        </div>
+      </div>
     </section>
   );
 }
