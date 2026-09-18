@@ -481,7 +481,7 @@ for (const marker of [
   "readGeneratorTelemetry(gen)",
   "gen.capabilities?.start === true",
   "gen.capabilities?.stop === true",
-  "powerFactor={powerFactor}",
+  "formatNumber(powerFactor, 2)",
 ]) {
   if (!card.includes(marker)) failures.push(`card perdeu contrato seguro: ${marker}`);
 }
