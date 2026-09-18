@@ -25,7 +25,7 @@ function BreakerContact({
   direction: "ltr" | "rtl";
 }) {
   const stateClass = !known ? "is-unknown" : closed ? "is-closed" : "is-open";
-  const stateText = !known ? "N/D" : closed ? "ON" : "OFF";
+  const symbol = !known ? "—" : closed ? "●" : "○";
   const blade =
     direction === "ltr"
       ? {
@@ -43,18 +43,16 @@ function BreakerContact({
 
   return (
     <g className={cn("vref-breaker", stateClass)}>
-      <title>{label + " — " + stateText}</title>
       <circle cx={x} cy="80" r="4" />
       <circle cx={x + 38} cy="80" r="4" />
       <line x1={blade.x1} y1={blade.y1} x2={blade.x2} y2={blade.y2} />
-      <g className="vref-breaker-button" transform={`translate(${x + 19} 112)`}>
-        <rect x="-37" y="-13" width="74" height="26" rx="5" />
-        <circle cx="-25" cy="0" r="4" className="indicator" />
-        <text x="-15" y="4" className="name">
+      <g className="vref-breaker-button" transform={`translate(${x + 19} 118)`}>
+        <rect x="-18" y="-18" width="36" height="36" rx="5" />
+        <text x="0" y="-3" textAnchor="middle" className="name">
           {label}
         </text>
-        <text x="30" y="4" textAnchor="end" className="state-text">
-          {stateText}
+        <text x="0" y="12" textAnchor="middle" className="state-symbol">
+          {symbol}
         </text>
       </g>
     </g>
@@ -99,7 +97,7 @@ export function VerticalPowerFlow({
       </div>
 
       <div className="vref-flow-body">
-        <svg viewBox="0 0 640 145" aria-label="Power flow">
+        <svg viewBox="0 0 640 150" aria-label="Power flow">
           <text x="36" y="18" className="vref-flow-label">
             MAINS
           </text>
@@ -134,12 +132,19 @@ export function VerticalPowerFlow({
             <TowerIcon />
           </g>
 
-          <path d="M86 80 H284" className="vref-wire" />
-          <path d="M356 80 H554" className="vref-wire" />
+          <path d="M86 80 H145" className="vref-wire" />
+          <path d="M183 80 H320" className="vref-wire" />
+          <path d="M320 80 H457" className="vref-wire" />
+          <path d="M495 80 H554" className="vref-wire" />
           <path d="M320 80 V42" className="vref-wire" />
 
-          <path d="M86 80 H284" className={cn("vref-wire-live", mainsToBus && "is-live")} />
-          <path d="M356 80 H554" className={cn("vref-wire-live", genToBus && "is-live")} />
+          <path
+            d="M86 80 H145"
+            className={cn("vref-wire-live", mainsKnown && mainsPresent && "is-live")}
+          />
+          <path d="M183 80 H320" className={cn("vref-wire-live", mainsToBus && "is-live")} />
+          <path d="M320 80 H457" className={cn("vref-wire-live", genToBus && "is-live")} />
+          <path d="M495 80 H554" className={cn("vref-wire-live", running && "is-live")} />
           <path d="M320 80 V42" className={cn("vref-wire-live", busLive && "is-live")} />
           <circle cx="320" cy="80" r="5" className={cn("vref-junction", busLive && "is-live")} />
 
