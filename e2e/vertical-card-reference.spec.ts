@@ -90,6 +90,10 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
   }
 
   for (const card of [comap, dse]) {
+    await expect(card.getByRole("button", { name: "OFF" })).toBeVisible();
+    await expect(card.getByRole("button", { name: "MAN" })).toBeVisible();
+    await expect(card.getByRole("button", { name: "AUT" })).toBeVisible();
+    await expect(card.getByRole("button", { name: "TEST" })).toBeVisible();
     await expect(card.getByRole("button", { name: "START" })).toBeVisible();
     await expect(card.getByRole("button", { name: "STOP" })).toBeVisible();
     await expect(card.getByText("HORN RESET")).toHaveCount(0);
@@ -97,6 +101,8 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
     await expect(card.getByText("CONTROL", { exact: true })).toHaveCount(0);
     await expect(card.locator(".vref-breaker-button")).toHaveCount(2);
   }
+
+  await expect(dse.getByRole("button", { name: "MAN" }).locator("svg")).toHaveCount(1);
 });
 
 test("vertical cabe inteiro na área disponível sem rolagem interna", async ({ browser }) => {
