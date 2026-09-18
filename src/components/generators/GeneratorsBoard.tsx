@@ -42,12 +42,12 @@ const VERTICAL_GAP = 10;
 const VERTICAL_PADDING = 8;
 
 function verticalColumnCount(width: number) {
-  // O card vertical não é miniaturizado. A responsividade reduz a quantidade
-  // de cards antes de reduzir a legibilidade do conteúdo.
-  if (width >= 3100) return 6; // 4K / TV
-  if (width >= 2200) return 4; // 2K / ultrawide
-  if (width >= 1450) return 3; // Full HD com sidebar
-  if (width >= 1100) return 2; // notebook
+  // Mantém o card mais estreito sem voltar à miniaturização do conteúdo.
+  if (width >= 3100) return 7; // 4K / TV
+  if (width >= 2200) return 5; // 2K / ultrawide
+  if (width >= 1450) return 4; // Full HD com sidebar
+  if (width >= 1050) return 3; // notebook
+  if (width >= 720) return 2;
   return 1;
 }
 
