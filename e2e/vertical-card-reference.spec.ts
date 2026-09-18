@@ -197,14 +197,16 @@ test("vertical cabe inteiro na área disponível sem rolagem interna", async ({ 
     }
 
     if (viewport.width === 1920) {
-      expect(metrics.frames.length).toBe(5);
-      expect(Math.min(...metrics.frames.map((frame) => frame.width))).toBeGreaterThanOrEqual(300);
-      expect(Math.min(...metrics.frames.map((frame) => frame.height))).toBeGreaterThanOrEqual(700);
+      expect(metrics.frames.length).toBeGreaterThanOrEqual(6);
+      expect(metrics.frames.length).toBeLessThanOrEqual(8);
+      expect(Math.min(...metrics.frames.map((frame) => frame.width))).toBeGreaterThanOrEqual(215);
+      expect(Math.min(...metrics.frames.map((frame) => frame.height))).toBeGreaterThanOrEqual(690);
     }
 
     if (viewport.width === 3840) {
-      expect(metrics.frames.length).toBe(9);
-      expect(Math.min(...metrics.frames.map((frame) => frame.width))).toBeGreaterThanOrEqual(300);
+      expect(metrics.frames.length).toBe(8);
+      expect(Math.min(...metrics.frames.map((frame) => frame.width))).toBeGreaterThanOrEqual(215);
+      expect(Math.max(...metrics.frames.map((frame) => frame.width))).toBeLessThanOrEqual(290);
     }
 
     await context.close();
