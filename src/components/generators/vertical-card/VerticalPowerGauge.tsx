@@ -29,7 +29,7 @@ export function VerticalPowerGauge({
   return (
     <section className="vref-section vref-power">
       <div className="vref-section-heading">
-        <h4>GENERATOR POWER</h4>
+        <h4>KW</h4>
       </div>
       <div className="vref-power-gauge">
         <svg viewBox="0 0 320 170" aria-label="Generator power gauge">
