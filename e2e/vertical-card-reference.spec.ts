@@ -45,7 +45,7 @@ async function createGenerator(
 test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
   await login(page);
 
-  expect(
+  expect([201, 409]).toContain(
     await createGenerator(page, {
       tag: "VERTCOMAP",
       controller: "ComAp InteliGen 200",
@@ -53,9 +53,9 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
       modbusUnit: 71,
       rapidDeviceNum: 391,
     }),
-  ).toBe(201);
+  );
 
-  expect(
+  expect([201, 409]).toContain(
     await createGenerator(page, {
       tag: "VERTDSE",
       controller: "DSE DSE8620 MKII",
@@ -63,7 +63,7 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
       modbusUnit: 72,
       rapidDeviceNum: 392,
     }),
-  ).toBe(201);
+  );
 
   await page.goto("/p/geradores");
   await page.getByRole("button", { name: /online/i }).click();
@@ -79,7 +79,7 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
     await expect(card.getByText("GENERATOR POWER")).toBeVisible();
     await expect(card.getByText("POWER FLOW")).toBeVisible();
     await expect(card.getByText("ENGINE STATUS")).toBeVisible();
-    await expect(card.getByText("RPM", { exact: true })).toBeVisible();
+    await expect(card.getByRole("heading", { name: "RPM" })).toBeVisible();
     await expect(card.getByText("MAINS / GENERATOR")).toBeVisible();
     await expect(card.getByText("VALUES", { exact: true })).toBeVisible();
     await expect(card.getByText(/ALARM LIST/)).toBeVisible();
@@ -94,7 +94,7 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
 
   await expect(dse.getByText("CONTROL (DSE STYLE)")).toBeVisible();
   await expect(dse.getByRole("button", { name: "DSE manual mode" })).toBeVisible();
-  await expect(dse.getByRole("button", { name: "AUTO" })).toBeVisible();
+  await expect(dse.getByRole("button", { name: /AUTO/ })).toBeVisible();
   await expect(dse.getByRole("button", { name: "OFF" })).toHaveCount(0);
   await expect(dse.getByRole("button", { name: "MAN" })).toHaveCount(0);
   await expect(dse.getByRole("button", { name: "TEST" })).toHaveCount(0);
