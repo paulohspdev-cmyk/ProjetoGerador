@@ -6,7 +6,7 @@ function polar(cx: number, cy: number, radius: number, fraction: number) {
   };
 }
 
-function arcPath(start: number, end: number, cx = 170, cy = 140, radius = 118) {
+function arcPath(start: number, end: number, cx = 160, cy = 116, radius = 112) {
   const a = polar(cx, cy, radius, start);
   const b = polar(cx, cy, radius, end);
   return "M " + a.x + " " + a.y + " A " + radius + " " + radius + " 0 0 1 " + b.x + " " + b.y;
@@ -19,22 +19,12 @@ export function VerticalPowerGauge({
   powerKw: number | null;
   nominalKw: number | null;
 }) {
-  const known =
-    powerKw != null &&
-    Number.isFinite(powerKw) &&
-    nominalKw != null &&
-    Number.isFinite(nominalKw) &&
-    nominalKw > 0;
-  const fraction = known ? Math.min(1, Math.max(0, powerKw / nominalKw)) : 0;
+  const hasPower = powerKw != null && Number.isFinite(powerKw);
+  const hasNominal = nominalKw != null && Number.isFinite(nominalKw) && nominalKw > 0;
+  const fraction = hasPower && hasNominal ? Math.min(1, Math.max(0, powerKw / nominalKw)) : 0;
   const angle = fraction * 180 - 90;
-  const valueLabel =
-    powerKw == null || !Number.isFinite(powerKw)
-      ? "—"
-      : Math.round(powerKw).toLocaleString("pt-BR") + " kW";
-  const nominalLabel =
-    nominalKw != null && Number.isFinite(nominalKw)
-      ? Math.round(nominalKw).toLocaleString("pt-BR")
-      : "";
+  const valueLabel = hasPower ? Math.round(powerKw).toLocaleString("pt-BR") : "—";
+  const nominalLabel = hasNominal ? Math.round(nominalKw).toLocaleString("pt-BR") : "—";
 
   return (
     <section className="vref-section vref-power">
@@ -42,51 +32,45 @@ export function VerticalPowerGauge({
         <h4>GENERATOR POWER</h4>
       </div>
       <div className="vref-power-gauge">
-        <svg viewBox="0 0 340 205" aria-label="Generator power gauge">
+        <svg viewBox="0 0 320 165" aria-label="Generator power gauge">
           <path className="vref-gauge-base" d={arcPath(0, 1)} />
           <path className="vref-gauge-zone vref-zone-green" d={arcPath(0, 0.75)} />
           <path className="vref-gauge-zone vref-zone-amber" d={arcPath(0.75, 0.9)} />
           <path className="vref-gauge-zone vref-zone-red" d={arcPath(0.9, 1)} />
 
-          <text x="42" y="104" className="vref-gauge-scale">
+          <text x="35" y="101" className="vref-gauge-scale">
             0
           </text>
-          {known && (
-            <text x="278" y="104" className="vref-gauge-scale" textAnchor="end">
-              {nominalLabel}
-            </text>
-          )}
+          <text x="285" y="101" className="vref-gauge-scale" textAnchor="end">
+            {nominalLabel}
+          </text>
 
           <path
-            d="M142 140 A28 28 0 0 1 198 140"
+            d="M137 116 A23 23 0 0 1 183 116"
             fill="none"
             stroke="#ffffff"
             strokeWidth="2"
-            opacity="0.45"
+            opacity="0.38"
           />
 
-          {known && (
+          {hasPower && hasNominal && (
             <g
               className="vref-kw-needle"
               style={{
-                transformOrigin: "170px 140px",
+                transformOrigin: "160px 116px",
                 transform: `rotate(${angle}deg)`,
               }}
             >
-              <path className="vref-kw-needle-floating" d="M170 58 L175 109 A5 5 0 1 1 165 109 Z" />
+              <path className="vref-kw-needle-floating" d="M160 35 L165 88 A5 5 0 1 1 155 88 Z" />
             </g>
           )}
 
-          <g className="vref-kw-readout">
-            <text x="170" y="171" textAnchor="middle" className="vref-kw-value">
-              {valueLabel}
-            </text>
-            {known && (
-              <text x="170" y="190" textAnchor="middle" className="vref-kw-nominal">
-                {"NOMINAL " + nominalLabel + " kW"}
-              </text>
-            )}
-          </g>
+          <text x="160" y="142" textAnchor="middle" className="vref-kw-value">
+            {valueLabel} kW
+          </text>
+          <text x="160" y="158" textAnchor="middle" className="vref-kw-nominal">
+            NOMINAL {nominalLabel} kW
+          </text>
         </svg>
       </div>
     </section>
