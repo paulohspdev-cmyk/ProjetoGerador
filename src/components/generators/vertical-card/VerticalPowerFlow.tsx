@@ -99,17 +99,6 @@ export function VerticalPowerFlow({
         <text x="40" y="25" className="vref-flow-label">
           MAINS
         </text>
-        <text
-          x="40"
-          y="45"
-          className={cn(
-            "vref-flow-sub",
-            !mainsKnown ? "is-unknown" : mainsPresent ? "is-live" : "is-dead",
-          )}
-        >
-          {!mainsKnown ? "—" : mainsPresent ? "Available" : "Not Available"}
-        </text>
-
         <circle
           cx="528"
           cy="20"
