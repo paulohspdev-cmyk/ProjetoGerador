@@ -1,4 +1,4 @@
-import { HeartPulse, Settings } from "lucide-react";
+import { HeartPulse, Settings, ShieldAlert } from "lucide-react";
 
 import { rcApi, type SystemDiagnostics } from "@/lib/api";
 import { Panel, ScadaTable, ScreenBody, Stats, Tone } from "./kit";
@@ -25,6 +25,8 @@ export function HealthScreen() {
     ? (queues.lifecycle["queued"] ?? 0) + (queues.lifecycle["running"] ?? 0)
     : 0;
   const stale = queues ? queues.staleNotificationClaims + queues.staleLifecycleOperations : 0;
+  const bridgeSecurity = data?.bridge.security;
+  const reverseTcpRisk = bridgeSecurity?.risk === "high";
 
   return (
     <ScreenBody>
@@ -53,12 +55,35 @@ export function HealthScreen() {
             value: data?.observability ? stale : "N/D",
             tone: stale === 0 && data?.observability ? "text-online" : undefined,
           },
+          {
+            icon: ShieldAlert,
+            label: "Reverse TCP",
+            value: bridgeSecurity ? (reverseTcpRisk ? "SEM ALLOWLIST" : "PROTEGIDO") : "N/D",
+            sub: bridgeSecurity?.label,
+            tone: reverseTcpRisk ? "text-offline" : bridgeSecurity ? "text-online" : undefined,
+          },
         ]}
       />
       <Panel title="Saúde do sistema">
         <RemoteState loading={loading} error={error} empty={!data} />
         {data && <DiagnosticsTable data={data} />}
       </Panel>
+      {bridgeSecurity && (
+        <Panel title="Segurança reverse TCP">
+          <div className="flex flex-wrap items-center gap-2 text-[12px]">
+            <Tone tone={reverseTcpRisk ? "warn" : "ok"}>
+              {reverseTcpRisk ? "RISCO" : "PROTEGIDO"}
+            </Tone>
+            <span>{bridgeSecurity.label || "Postura de segurança da bridge indisponível."}</span>
+          </div>
+          {reverseTcpRisk && (
+            <p className="mt-2 text-[12px] text-muted-foreground">
+              Os listeners de campo aceitam peers sem allowlist. Confirme os IPs/CIDRs legítimos
+              antes de ativar o modo fail-closed para não interromper modems com endereço dinâmico.
+            </p>
+          )}
+        </Panel>
+      )}
       <Panel title="Workers internos">
         {workers.length ? (
           <ScadaTable

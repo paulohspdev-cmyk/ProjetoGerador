@@ -269,6 +269,17 @@ export type BridgeDiagnostics = {
   updatedAt?: number | null | undefined;
   ageSeconds?: number | null | undefined;
   sessions?: BridgeSession[] | undefined;
+  security?:
+    | {
+        peerAllowlistEnabled?: boolean | undefined;
+        peerAllowlistRequired?: boolean | undefined;
+        connectRateLimitPerMinute?: number | undefined;
+        activePeerProtectionSeconds?: number | undefined;
+        reverseTcpListenersExposed?: boolean | undefined;
+        risk?: "ok" | "high" | string | undefined;
+        label?: string | undefined;
+      }
+    | undefined;
 };
 export type SystemDiagnostics = {
   ok: boolean;

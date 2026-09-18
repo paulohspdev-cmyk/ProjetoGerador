@@ -69,6 +69,7 @@ def _bridge_runtime_status() -> dict:
         raw = json.loads(BRIDGE_STATUS_FILE.read_text(encoding="utf-8"))
         updated = int(raw.get("updatedAt") or 0)
         ports = raw.get("ports") if isinstance(raw.get("ports"), list) else []
+        security = raw.get("security") if isinstance(raw.get("security"), dict) else {}
         age = max(0, int(time.time()) - updated) if updated else None
         return {
             "statusFile": str(BRIDGE_STATUS_FILE),
@@ -77,6 +78,7 @@ def _bridge_runtime_status() -> dict:
             "updatedAt": updated or None,
             "ageSeconds": age,
             "sessions": ports,
+            "security": security,
         }
     except Exception:
         return {
@@ -86,6 +88,7 @@ def _bridge_runtime_status() -> dict:
             "updatedAt": None,
             "ageSeconds": None,
             "sessions": [],
+            "security": {},
         }
 
 
@@ -200,6 +203,22 @@ def system_diagnostics():
         )
 
     runtime_bridge = _bridge_runtime_status()
+    bridge_security = runtime_bridge.get("security") if isinstance(runtime_bridge.get("security"), dict) else {}
+    listeners_exposed = any(item.get("remoteListening") for item in reverse_listeners)
+    allowlist_enabled = bool(bridge_security.get("peerAllowlistEnabled"))
+    bridge_security = {
+        **bridge_security,
+        "reverseTcpListenersExposed": listeners_exposed,
+        "risk": "high" if listeners_exposed and not allowlist_enabled else "ok",
+        "label": (
+            "Listeners reverse TCP expostos sem allowlist de peers"
+            if listeners_exposed and not allowlist_enabled
+            else "Peers reverse TCP protegidos por allowlist"
+            if listeners_exposed
+            else "Nenhum listener reverse TCP exposto"
+        ),
+    }
+    runtime_bridge["security"] = bridge_security
     listeners_by_port = {int(item["remotePort"]): item for item in reverse_listeners}
     runtime_bridge["sessions"] = [
         {

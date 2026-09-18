@@ -25,7 +25,7 @@ os.environ["RC_PUBLIC_BASE_URL"] = "https://example.invalid"
 os.environ["RC_SMTP_HOST"] = "smtp.invalid"
 os.environ["RC_SMTP_FROM"] = "noreply@example.invalid"
 
-from app import db, industrial_store, platform_store  # noqa: E402
+from app import db, diagnostics, industrial_store, platform_store  # noqa: E402
 from app.auth import hash_password  # noqa: E402
 from app.rapid import _downsample_points  # noqa: E402
 from app.reporting import generate_report  # noqa: E402
@@ -203,5 +203,20 @@ queue_health = platform_store.queue_health()
 assert queue_health["staleNotificationClaims"] == 0, queue_health
 assert queue_health["staleLifecycleOperations"] == 0, queue_health
 assert queue_health["healthy"] is True, queue_health
+
+
+# Reverse TCP security posture must remain visible to diagnostics.
+bridge_status = root / "bridge-status.json"
+bridge_status.write_text(
+    '{"updatedAt": %d, "security": {"peerAllowlistEnabled": false, "peerAllowlistRequired": false}, "ports": []}'
+    % int(time.time())
+)
+previous_bridge_status = diagnostics.BRIDGE_STATUS_FILE
+try:
+    diagnostics.BRIDGE_STATUS_FILE = bridge_status
+    status = diagnostics._bridge_runtime_status()
+finally:
+    diagnostics.BRIDGE_STATUS_FILE = previous_bridge_status
+assert status["security"]["peerAllowlistEnabled"] is False, status
 
 print("Audit regressions: OK")
