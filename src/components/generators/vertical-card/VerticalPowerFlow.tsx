@@ -47,11 +47,11 @@ function BreakerContact({
       <circle cx={x + 38} cy="80" r="4" />
       <line x1={blade.x1} y1={blade.y1} x2={blade.x2} y2={blade.y2} />
       <g className="vref-breaker-button" transform={`translate(${x + 19} 118)`}>
-        <rect x="-18" y="-18" width="36" height="36" rx="5" />
-        <text x="0" y="-3" textAnchor="middle" className="name">
+        <rect x="-24" y="-24" width="48" height="48" rx="6" />
+        <text x="0" y="-4" textAnchor="middle" className="name">
           {label}
         </text>
-        <text x="0" y="12" textAnchor="middle" className="state-symbol">
+        <text x="0" y="14" textAnchor="middle" className="state-symbol">
           {symbol}
         </text>
       </g>
