@@ -59,6 +59,7 @@ from app.bridge_runtime import (  # noqa: E402
     FRAMING_MODBUS_RTU,
     FRAMING_MODBUS_TCP,
     HardenedBridgePort,
+    PORT_ALLOWED_NETWORKS,
     REMOTE_ALLOWED_NETWORKS,
     _modbus_crc16,
     _remote_framing_for_generator,
@@ -179,6 +180,36 @@ assert port._allowed(ipaddress.ip_address("10.20.30.40")) is True
 assert port._allowed(ipaddress.ip_address("192.168.1.50")) is False
 assert port._allowed(ipaddress.ip_address("2001:db8::10")) is True
 
+# Override por porta deve ter prioridade sobre a allowlist global.
+os.environ["RC_RAPID_REMOTE_ALLOWED_CIDRS_15051"] = "172.20.0.0/16"
+try:
+    # O mapa é resolvido no import; teste a função em subprocesso para garantir
+    # que a configuração de ambiente por porta seja materializada de forma limpa.
+    child_env = os.environ.copy()
+    per_port = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            (
+                "import ipaddress;"
+                "from app.bridge_runtime import HardenedBridgePort,PORT_ALLOWED_NETWORKS;"
+                "p=HardenedBridgePort(15051);"
+                "assert 15051 in PORT_ALLOWED_NETWORKS;"
+                "assert p._allowed(ipaddress.ip_address('172.20.1.10'));"
+                "assert not p._allowed(ipaddress.ip_address('10.20.30.40'))"
+            ),
+        ],
+        cwd=Path(__file__).resolve().parents[1],
+        env=child_env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        check=False,
+    )
+    assert per_port.returncode == 0, per_port.stdout
+finally:
+    os.environ.pop("RC_RAPID_REMOTE_ALLOWED_CIDRS_15051", None)
+
 # O framing reverse TCP é definido pelo Controller Pack: IG200 mantém MBAP e
 # IG4 200, quando usado atrás do modem RS485, usa RTU transparente com CRC16.
 assert _remote_framing_for_generator({"controller_model": "InteliGen 200"}) == FRAMING_MODBUS_TCP
@@ -210,6 +241,29 @@ failed = subprocess.run(
 )
 assert failed.returncode != 0
 assert "RC_RAPID_REQUIRE_ALLOWLIST=1 exige" in failed.stdout
+
+per_port_env = child_env.copy()
+per_port_env["RC_RAPID_REMOTE_ALLOWED_CIDRS_15001"] = "10.99.0.0/16"
+per_port_only = subprocess.run(
+    [
+        sys.executable,
+        "-c",
+        (
+            "import ipaddress;"
+            "from app.bridge_runtime import HardenedBridgePort;"
+            "p=HardenedBridgePort(15001);"
+            "assert p._allowed(ipaddress.ip_address('10.99.1.2'));"
+            "assert not p._allowed(ipaddress.ip_address('10.20.30.40'))"
+        ),
+    ],
+    cwd=Path(__file__).resolve().parents[1],
+    env=per_port_env,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.STDOUT,
+    text=True,
+    check=False,
+)
+assert per_port_only.returncode == 0, per_port_only.stdout
 
 # Scheduler precisa particionar jobs: o worker operacional não executa backup/
 # relatório e o heavy worker não consome notificações.
