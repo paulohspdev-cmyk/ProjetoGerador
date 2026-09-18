@@ -82,14 +82,22 @@ test("touchscreen recebe alvos mínimos de 44px", async ({ browser }) => {
     const { context, page } = await contextAt(browser, viewport.width, viewport.height, true);
     expect(await page.evaluate(() => matchMedia("(pointer: coarse)").matches)).toBe(true);
 
-    await page.goto("/p/geradores");
-    const menu = page.getByRole("button", { name: "Abrir menu" });
-    await expect(menu).toBeVisible();
-    expect((await menu.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
+    await page.goto("/p/central-de-operacao");
+    if (viewport.width < 1024) {
+      const menu = page.getByRole("button", { name: "Abrir menu" });
+      await expect(menu).toBeVisible();
+      expect((await menu.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
+    } else {
+      const overviewLink = page.getByRole("link", { name: "Visão Geral" }).first();
+      await expect(overviewLink).toBeVisible();
+      expect((await overviewLink.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
+    }
 
-    const theme = page.getByRole("button", { name: /Ativar tema/ }).first();
+    const theme = page.locator('button[aria-label^="Ativar tema"]:visible').first();
+    await expect(theme).toBeVisible();
     expect((await theme.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
 
+    await page.goto("/p/geradores");
     const previous = page.getByRole("button", { name: "Anterior" });
     expect((await previous.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
 
