@@ -29,7 +29,7 @@ export function VerticalPowerGauge({
   const angle = fraction * 180 - 90;
   const valueLabel =
     powerKw == null || !Number.isFinite(powerKw)
-      ? "N/D"
+      ? "—"
       : Math.round(powerKw).toLocaleString("pt-BR") + " kW";
   const nominalLabel =
     nominalKw != null && Number.isFinite(nominalKw)
