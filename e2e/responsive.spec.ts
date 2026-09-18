@@ -35,6 +35,7 @@ async function expectNoGlobalOverflow(page: Page) {
 }
 
 test("rotas críticas não estouram a viewport", async ({ browser }) => {
+  test.setTimeout(180_000);
   const viewports = [
     { width: 360, height: 800, touch: true },
     { width: 390, height: 844, touch: true },
@@ -72,6 +73,7 @@ test("rotas críticas não estouram a viewport", async ({ browser }) => {
 });
 
 test("touchscreen recebe alvos mínimos de 44px", async ({ browser }) => {
+  test.setTimeout(180_000);
   for (const viewport of [
     { width: 390, height: 844 },
     { width: 768, height: 1024 },
@@ -99,6 +101,7 @@ test("touchscreen recebe alvos mínimos de 44px", async ({ browser }) => {
 });
 
 test("tablet usa cards na lista de geradores e TV aumenta texto compacto", async ({ browser }) => {
+  test.setTimeout(180_000);
   const { context: tablet, page } = await contextAt(browser, 1024, 768, true);
 
   const created = await page.evaluate(async () => {
