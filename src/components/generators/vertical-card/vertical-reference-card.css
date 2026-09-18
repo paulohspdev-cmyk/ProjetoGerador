@@ -2341,3 +2341,214 @@
     font-size: 13px;
   }
 }
+
+
+/* Operator refinement v5: live-generator pass, electrical clarity and balanced proportions. */
+.vref-card {
+  grid-template-rows:
+    44px
+    28px
+    115px
+    170px
+    120px
+    240px
+    minmax(70px, 1fr);
+  gap: 5px;
+  padding: 5px;
+}
+
+.vref-mode-strip {
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 5px;
+}
+
+.vref-mode-buttons button {
+  height: 20px;
+  gap: 2px;
+}
+
+.vref-mode-buttons button svg.vref-dse-hand-icon {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  stroke-width: 2.8;
+}
+
+.vref-mode-unknown {
+  display: none;
+}
+
+.vref-power-gauge > svg {
+  width: min(295px, 94%);
+  height: 132px;
+  margin: -20px auto 0;
+  overflow: visible;
+}
+
+.vref-kw-needle-floating {
+  fill: #ffffff;
+  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 80%));
+}
+
+.vref-kw-value {
+  fill: #ffffff;
+  font-size: 22px;
+  font-weight: 900;
+  paint-order: stroke;
+  stroke: #00111e;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
+.vref-kw-nominal {
+  fill: #aebdca;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.vref-power-readout {
+  display: none;
+}
+
+.vref-flow {
+  padding: 4px 6px 5px;
+}
+
+.vref-flow-body {
+  grid-template-rows: minmax(0, 1fr) 54px;
+  gap: 3px;
+}
+
+.vref-flow-body > svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.vref-wire,
+.vref-wire-live {
+  stroke-width: 4;
+}
+
+.vref-breaker > line {
+  stroke-width: 4;
+}
+
+.vref-breaker-button rect {
+  fill: #263642;
+  stroke: #5c7180;
+  stroke-width: 1.5;
+}
+
+.vref-breaker.is-closed .vref-breaker-button rect {
+  fill: #159500;
+  stroke: #46f221;
+  filter: drop-shadow(0 0 5px rgb(46 242 18 / 28%));
+}
+
+.vref-breaker.is-open .vref-breaker-button rect {
+  fill: #9b1d18;
+  stroke: #ff5a4f;
+  filter: drop-shadow(0 0 4px rgb(255 60 48 / 20%));
+}
+
+.vref-breaker.is-unknown .vref-breaker-button rect {
+  fill: #24333d;
+  stroke: #536977;
+}
+
+.vref-breaker-button .name {
+  fill: #ffffff;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+}
+
+.vref-breaker-button .state-symbol {
+  fill: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.vref-breaker.is-unknown .vref-breaker-button .state-symbol {
+  fill: #a9b8c2;
+}
+
+.vref-flow-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+
+.vref-flow-actions button {
+  width: 86px;
+  min-width: 86px;
+  height: 24px;
+  font-size: 9px;
+}
+
+.vref-two-col {
+  grid-template-columns: 1.18fr 0.82fr;
+  gap: 5px;
+}
+
+.vref-engine-row {
+  grid-template-columns: 12px minmax(62px, 1fr) minmax(24px, 0.58fr) 44px;
+  gap: 3px;
+  min-height: 20px;
+  font-size: 10px;
+}
+
+.vref-engine-row > b {
+  min-width: 44px;
+  overflow: hidden;
+  font-size: 10px;
+  text-align: right;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+.vref-rpm .rpm-scale-label {
+  font-size: 9px;
+}
+
+.vref-rpm .rpm-percent {
+  font-size: 20px;
+}
+
+.vref-tables {
+  grid-template-rows: 160px 75px;
+  gap: 5px;
+}
+
+.vref-value-list {
+  margin-top: 1px;
+}
+
+.vref-value-row {
+  min-height: 17px;
+}
+
+.vref-alarms {
+  min-height: 0;
+}
+
+@media (max-width: 1600px) {
+  .vref-mode-strip {
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+
+  .vref-mode-buttons button svg.vref-dse-hand-icon {
+    width: 13px;
+    height: 13px;
+    flex-basis: 13px;
+  }
+
+  .vref-flow-actions button {
+    width: 78px;
+    min-width: 78px;
+  }
+}
