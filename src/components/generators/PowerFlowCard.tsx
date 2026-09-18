@@ -215,7 +215,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
             <i /> {gen.status === "alerta" ? "ALERT" : online ? "ONLINE" : "OFFLINE"}
           </span>
         </div>
-        <span className={cn("vref-header-mode", modeKnown && "is-known")}>MODE: {modeLabel}</span>
       </header>
 
       <VerticalPowerGauge powerKw={powerKw} nominalKw={nominalPower} />
