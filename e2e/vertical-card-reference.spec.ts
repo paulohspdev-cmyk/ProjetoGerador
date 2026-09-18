@@ -95,9 +95,9 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
   await expect(dse.getByText("CONTROL (DSE STYLE)")).toBeVisible();
   await expect(dse.getByRole("button", { name: "DSE manual mode" })).toBeVisible();
   await expect(dse.getByRole("button", { name: /AUTO/ })).toBeVisible();
-  await expect(dse.getByRole("button", { name: "OFF" })).toHaveCount(0);
-  await expect(dse.getByRole("button", { name: "MAN" })).toHaveCount(0);
-  await expect(dse.getByRole("button", { name: "TEST" })).toHaveCount(0);
+  await expect(dse.getByRole("button", { name: "OFF", exact: true })).toHaveCount(0);
+  await expect(dse.getByRole("button", { name: "MAN", exact: true })).toHaveCount(0);
+  await expect(dse.getByRole("button", { name: "TEST", exact: true })).toHaveCount(0);
 });
 
 test("vertical mantém largura da viewport em celular e desktop", async ({ browser }) => {
