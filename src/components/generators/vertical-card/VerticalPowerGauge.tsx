@@ -46,9 +46,11 @@ export function VerticalPowerGauge({
           <text x="38" y="116" className="vref-gauge-scale">
             0
           </text>
-          <text x="282" y="116" className="vref-gauge-scale" textAnchor="end">
-            {nominalLabel}
-          </text>
+          {known && (
+            <text x="282" y="116" className="vref-gauge-scale" textAnchor="end">
+              {nominalLabel}
+            </text>
+          )}
           {known && (
             <g
               className="vref-kw-needle"
@@ -63,7 +65,7 @@ export function VerticalPowerGauge({
         </svg>
         <div className="vref-power-readout">
           <b>{powerKw == null ? "N/D" : Math.round(powerKw).toLocaleString("pt-BR") + " kW"}</b>
-          <span>{nominalKw == null ? "NOMINAL N/D" : "NOMINAL " + nominalLabel + " kW"}</span>
+          {known && <span>{"NOMINAL " + nominalLabel + " kW"}</span>}
         </div>
       </div>
     </section>
