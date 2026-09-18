@@ -1,17 +1,17 @@
 .generator-vertical-grid.generator-reference-card-grid {
-  grid-template-columns: repeat(var(--vref-columns, 1), var(--vref-card-width, 300px));
-  grid-template-rows: repeat(var(--vref-rows, 1), var(--vref-card-height, 670px));
-  gap: 8px;
-  place-content: center;
-  place-items: start center;
+  grid-template-columns: repeat(var(--vref-columns, 1), minmax(0, var(--vref-card-width, 1fr)));
+  grid-template-rows: minmax(0, var(--vref-card-height, 100%));
+  gap: 10px;
+  place-content: stretch;
+  place-items: stretch;
   padding: 8px;
   overflow: hidden;
 }
 
 .vref-card-frame {
   position: relative;
-  width: var(--vref-card-width, 300px);
-  height: var(--vref-card-height, 670px);
+  width: 100%;
+  height: 100%;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
@@ -33,15 +33,25 @@
   --vref-amber: #ffba00;
 
   position: relative;
-  width: 802px;
-  height: 1792px;
-  min-width: 802px;
-  min-height: 1792px;
+  display: grid;
+  grid-template-rows:
+    58px
+    minmax(118px, 1.12fr)
+    minmax(112px, 1fr)
+    minmax(116px, 1.02fr)
+    minmax(102px, 0.9fr)
+    minmax(156px, 1.35fr)
+    minmax(70px, 0.72fr);
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: 6px;
   overflow: hidden;
-  transform: scale(var(--vref-scale, 1));
-  transform-origin: left top;
+  transform: none;
   border: 1px solid #1b526f;
-  border-radius: 13px;
+  border-radius: 10px;
   background:
     radial-gradient(circle at 50% -8%, rgb(7 48 72 / 31%), transparent 34%),
     linear-gradient(180deg, #00111e 0%, #000b13 100%);
@@ -1019,5 +1029,381 @@
   .vref-card * {
     animation: none !important;
     transition: none !important;
+  }
+}
+
+
+/* Native responsive vertical card: preserve legibility instead of scaling the 802x1792 mockup. */
+.vref-card > .vref-header,
+.vref-card > .vref-power,
+.vref-card > .vref-flow,
+.vref-card > .vref-control,
+.vref-card > .vref-two-col,
+.vref-card > .vref-alarms {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  margin: 0;
+}
+
+.vref-header {
+  grid-template-columns: 38px minmax(0, 1fr) 82px 74px;
+  gap: 8px;
+  padding: 6px 8px;
+}
+
+.vref-generator-badge {
+  width: 36px;
+  height: 36px;
+  border-width: 1px;
+  font-size: 18px;
+}
+
+.vref-header-title > a {
+  font-size: 17px;
+  line-height: 1.05;
+}
+
+.vref-header-title > span {
+  gap: 5px;
+  margin-top: 4px;
+  font-size: 11px;
+}
+
+.vref-header-title i {
+  width: 8px;
+  height: 8px;
+}
+
+.vref-header-mode {
+  min-width: 0;
+  padding: 6px 5px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.vref-clock {
+  min-width: 0;
+}
+
+.vref-clock b {
+  font-size: 12px;
+}
+
+.vref-clock span {
+  margin-top: 4px;
+  font-size: 10px;
+}
+
+.vref-section {
+  border-radius: 6px;
+}
+
+.vref-section > h4,
+.vref-section-heading h4,
+.vref-table-heading h4 {
+  font-size: 12px;
+}
+
+.vref-power {
+  overflow: hidden;
+}
+
+.vref-section-heading {
+  height: 24px;
+  padding: 7px 9px 0;
+}
+
+.vref-section-heading > span {
+  top: 7px;
+  font-size: 11px;
+}
+
+.vref-power-gauge {
+  height: calc(100% - 24px);
+}
+
+.vref-power-gauge > svg {
+  width: min(300px, 72%);
+  height: 145px;
+  margin: -16px auto 0;
+}
+
+.vref-gauge-base,
+.vref-gauge-zone {
+  stroke-width: 14;
+}
+
+.vref-gauge-scale {
+  font-size: 16px;
+}
+
+.vref-power-readout {
+  inset: 38px 0 auto;
+}
+
+.vref-power-readout strong {
+  font-size: 24px;
+}
+
+.vref-power-readout b {
+  margin-top: 4px;
+  font-size: 20px;
+}
+
+.vref-power-readout span {
+  margin-top: 4px;
+  font-size: 11px;
+}
+
+.vref-flow {
+  padding: 7px 8px 5px;
+}
+
+.vref-flow > h4 {
+  margin-bottom: 2px;
+}
+
+.vref-flow > svg {
+  height: calc(100% - 16px);
+}
+
+.vref-control {
+  padding: 7px 8px 6px;
+}
+
+.vref-control > h4 {
+  margin-bottom: 5px;
+}
+
+.vref-comap-modes {
+  gap: 5px;
+}
+
+.vref-comap-modes button,
+.vref-dse-hand,
+.vref-dse-auto {
+  min-height: 26px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.vref-dse-modes {
+  grid-template-columns: 58px 96px minmax(90px, 1fr);
+  gap: 6px;
+  max-width: none;
+}
+
+.vref-dse-hand,
+.vref-dse-auto {
+  min-height: 31px;
+}
+
+.vref-dse-hand svg {
+  width: 16px;
+  height: 16px;
+}
+
+.vref-dse-auto {
+  gap: 5px;
+  padding: 0 7px;
+}
+
+.vref-auto-badge {
+  width: 22px;
+  height: 18px;
+  border-width: 1px;
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+.vref-dse-mode-text {
+  padding-left: 7px;
+}
+
+.vref-dse-mode-text span,
+.vref-dse-mode-text small {
+  font-size: 9px;
+}
+
+.vref-dse-mode-text b {
+  font-size: 11px;
+}
+
+.vref-command-grid {
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.vref-command-grid button {
+  min-height: 30px;
+  gap: 5px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.vref-command-grid button svg {
+  width: 12px;
+  height: 12px;
+}
+
+.vref-command-message {
+  top: 50%;
+  left: 12px;
+  right: 12px;
+  height: 22px;
+  font-size: 11px;
+  line-height: 20px;
+}
+
+.vref-two-col {
+  grid-template-columns: 1.08fr 0.92fr;
+  gap: 6px;
+}
+
+.vref-engine,
+.vref-rpm {
+  padding: 6px 7px;
+}
+
+.vref-engine > h4,
+.vref-rpm > h4 {
+  margin-bottom: 4px;
+}
+
+.vref-engine-row {
+  grid-template-columns: 14px minmax(76px, auto) minmax(42px, 1fr) auto;
+  gap: 4px;
+  min-height: 18px;
+  font-size: 11px;
+}
+
+.vref-engine-row svg {
+  width: 12px;
+  height: 12px;
+}
+
+.vref-engine-row > b {
+  min-width: 38px;
+}
+
+.vref-mini-bar {
+  height: 6px;
+}
+
+.vref-rpm .rpm-svg {
+  height: calc(100% - 18px);
+  margin-top: 0;
+}
+
+.vref-rpm .rpm-scale-label {
+  font-size: 10px;
+}
+
+.vref-rpm .rpm-unit {
+  font-size: 10px;
+}
+
+.vref-rpm .rpm-percent {
+  font-size: 20px;
+}
+
+.vref-tables {
+  grid-template-columns: 1.1fr 0.9fr;
+}
+
+.vref-tables .vref-section {
+  padding: 5px 7px;
+}
+
+.vref-table-heading {
+  grid-template-columns: minmax(0, 1.45fr) minmax(48px, 0.7fr) minmax(58px, 0.9fr);
+  gap: 4px;
+  min-height: 16px;
+  margin-bottom: 2px;
+}
+
+.vref-table-heading > span {
+  font-size: 9px;
+}
+
+.vref-data-row {
+  grid-template-columns: minmax(0, 1.45fr) minmax(48px, 0.7fr) minmax(58px, 0.9fr);
+  gap: 4px;
+  min-height: 16px;
+  font-size: 11px;
+}
+
+.vref-value-list {
+  margin-top: 2px;
+}
+
+.vref-value-row {
+  grid-template-columns: 14px minmax(0, 1fr) auto;
+  gap: 4px;
+  min-height: 16px;
+  font-size: 11px;
+}
+
+.vref-value-row svg {
+  width: 12px;
+  height: 12px;
+}
+
+.vref-alarms {
+  padding: 6px 7px 5px;
+}
+
+.vref-alarms > h4 {
+  margin: 0 2px 4px;
+}
+
+.vref-alarm-row {
+  grid-template-columns: 56px 8px minmax(0, 1fr) auto;
+  gap: 6px;
+  min-height: 25px;
+  padding: 3px 6px;
+}
+
+.vref-alarm-row time {
+  font-size: 10px;
+}
+
+.vref-alarm-row > i {
+  width: 7px;
+  height: 7px;
+}
+
+.vref-alarm-row > div b {
+  font-size: 11px;
+}
+
+.vref-alarm-row > div span {
+  margin-top: 1px;
+  font-size: 9px;
+}
+
+.vref-alarm-row > strong {
+  font-size: 10px;
+}
+
+.vref-alarm-empty {
+  margin: 3px 0 0;
+  padding: 8px 7px;
+  font-size: 11px;
+}
+
+@media (max-width: 1500px) {
+  .vref-header {
+    grid-template-columns: 36px minmax(0, 1fr) 76px 68px;
+    gap: 6px;
+  }
+
+  .vref-header-title > a {
+    font-size: 16px;
+  }
+
+  .vref-table-heading > span {
+    font-size: 8px;
   }
 }
