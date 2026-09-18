@@ -45,12 +45,12 @@ const VERTICAL_GAP = 8;
 const VERTICAL_PADDING = 8;
 
 function verticalMinimumCardWidth(width: number) {
-  if (width >= 3200) return 430;
-  if (width >= 2200) return 340;
-  if (width >= 1600) return 270;
-  if (width >= 1100) return 250;
-  if (width >= 700) return 230;
-  return 210;
+  if (width >= 3200) return 360;
+  if (width >= 2200) return 300;
+  if (width >= 1600) return 235;
+  if (width >= 1100) return 225;
+  if (width >= 700) return 215;
+  return 205;
 }
 
 const filters: Array<{ id: GenStatus | "todos"; label: string }> = [
