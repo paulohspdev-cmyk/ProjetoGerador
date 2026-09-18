@@ -38,21 +38,17 @@ const views: Array<{ id: View; label: string; icon: typeof List }> = [
   { id: "lista", label: "Lista", icon: List },
 ];
 
-const VERTICAL_DESIGN_WIDTH = 802;
-const VERTICAL_DESIGN_HEIGHT = 1792;
-const VERTICAL_HEIGHT_RATIO = VERTICAL_DESIGN_HEIGHT / VERTICAL_DESIGN_WIDTH;
-const VERTICAL_GAP = 8;
+const VERTICAL_GAP = 10;
 const VERTICAL_PADDING = 8;
 
-function verticalMinimumCardWidth(width: number) {
-  // Priorizamos legibilidade. Aumentar a quantidade só é permitido enquanto
-  // o painel completo continua com texto e instrumentos confortáveis.
-  if (width >= 3200) return 540; // 4K / TV: 6 cards grandes por fileira.
-  if (width >= 2200) return 400;
-  if (width >= 1600) return 320; // Full HD: 5 cards, não 7 miniaturas.
-  if (width >= 1100) return 300;
-  if (width >= 700) return 290;
-  return 205;
+function verticalColumnCount(width: number) {
+  // O card vertical não é miniaturizado. A responsividade reduz a quantidade
+  // de cards antes de reduzir a legibilidade do conteúdo.
+  if (width >= 3100) return 6; // 4K / TV
+  if (width >= 2200) return 4; // 2K / ultrawide
+  if (width >= 1450) return 3; // Full HD com sidebar
+  if (width >= 1100) return 2; // notebook
+  return 1;
 }
 
 const filters: Array<{ id: GenStatus | "todos"; label: string }> = [
@@ -89,31 +85,16 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
     const height = Math.max(1, viewport.height || 720);
     const usableWidth = Math.max(1, width - VERTICAL_PADDING * 2);
     const usableHeight = Math.max(1, height - VERTICAL_PADDING * 2);
-    const minimumWidth = verticalMinimumCardWidth(width);
-
-    const columns = Math.max(
-      1,
-      Math.floor((usableWidth + VERTICAL_GAP) / (minimumWidth + VERTICAL_GAP)),
-    );
-    const minimumHeight = minimumWidth * VERTICAL_HEIGHT_RATIO;
-    const rows = Math.max(
-      1,
-      Math.floor((usableHeight + VERTICAL_GAP) / (minimumHeight + VERTICAL_GAP)),
-    );
-
-    const widthByColumns = (usableWidth - VERTICAL_GAP * Math.max(0, columns - 1)) / columns;
-    const heightByRows = (usableHeight - VERTICAL_GAP * Math.max(0, rows - 1)) / rows;
-    const widthByHeight = heightByRows / VERTICAL_HEIGHT_RATIO;
-    const cardWidth = Math.max(1, Math.min(widthByColumns, widthByHeight));
-    const cardHeight = cardWidth * VERTICAL_HEIGHT_RATIO;
+    const columns = verticalColumnCount(width);
+    const cardWidth =
+      (usableWidth - VERTICAL_GAP * Math.max(0, columns - 1)) / Math.max(1, columns);
 
     return {
       columns,
-      rows,
-      pageSize: Math.max(1, columns * rows),
-      cardWidth,
-      cardHeight,
-      scale: cardWidth / VERTICAL_DESIGN_WIDTH,
+      rows: 1,
+      pageSize: columns,
+      cardWidth: Math.max(1, cardWidth),
+      cardHeight: usableHeight,
     };
   }, [viewport]);
 
@@ -124,7 +105,6 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
         "--vref-rows": verticalLayout.rows,
         "--vref-card-width": verticalLayout.cardWidth + "px",
         "--vref-card-height": verticalLayout.cardHeight + "px",
-        "--vref-scale": verticalLayout.scale,
       }) as CSSProperties,
     [verticalLayout],
   );
