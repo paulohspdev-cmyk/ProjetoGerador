@@ -1,6 +1,6 @@
 import { HeartPulse, Settings, ShieldAlert } from "lucide-react";
 
-import { rcApi, type SystemDiagnostics } from "@/lib/api";
+import { rcApi, type BridgePeerObservation, type SystemDiagnostics } from "@/lib/api";
 import { Panel, ScadaTable, ScreenBody, Stats, Tone } from "./kit";
 import { DiagnosticsTable, RemoteState, useRemote } from "./scada-lib";
 
@@ -9,6 +9,11 @@ export function HealthScreen() {
     () => rcApi.system.diagnostics(),
     null,
   );
+  const {
+    data: peerHistory,
+    error: peerHistoryError,
+    loading: peerHistoryLoading,
+  } = useRemote<BridgePeerObservation[]>(() => rcApi.system.bridgePeers(200), []);
   const servicesOk =
     data?.services.filter((service) => service.status === "active" || service.status === "OK")
       .length ?? 0;
@@ -84,6 +89,54 @@ export function HealthScreen() {
           )}
         </Panel>
       )}
+      <Panel title="Peers reverse TCP observados">
+        <RemoteState
+          loading={peerHistoryLoading}
+          error={peerHistoryError}
+          empty={!peerHistoryLoading && peerHistory.length === 0}
+        />
+        {peerHistory.length > 0 && (
+          <ScadaTable
+            rows={peerHistory.map((peer) => ({
+              ...peer,
+              id: String(peer.remotePort) + "-" + peer.remoteIp,
+            }))}
+            columns={[
+              { label: "Porta", render: (row) => <b>{row.remotePort}</b> },
+              { label: "IP", render: (row) => <span className="num">{row.remoteIp}</span> },
+              {
+                label: "Aceitas",
+                render: (row) => <span className="num">{row.acceptedCount}</span>,
+              },
+              {
+                label: "Recusadas",
+                render: (row) => <span className="num">{row.rejectedCount}</span>,
+              },
+              {
+                label: "Primeira vez",
+                render: (row) => new Date(row.firstSeenAt * 1000).toLocaleString("pt-BR"),
+              },
+              {
+                label: "Última vez",
+                render: (row) => new Date(row.lastSeenAt * 1000).toLocaleString("pt-BR"),
+              },
+              {
+                label: "Última decisão",
+                render: (row) => (
+                  <Tone tone={row.lastDecision === "accepted" ? "ok" : "warn"}>
+                    {row.lastDecision === "accepted" ? "ACEITA" : "RECUSADA"}
+                  </Tone>
+                ),
+              },
+              { label: "Motivo", render: (row) => row.lastReason || "—" },
+            ]}
+          />
+        )}
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          Histórico agregado por porta e IP, com retenção padrão de 90 dias. Nenhum frame ou payload
+          Modbus é armazenado aqui.
+        </p>
+      </Panel>
       <Panel title="Workers internos">
         {workers.length ? (
           <ScadaTable
