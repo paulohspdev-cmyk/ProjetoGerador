@@ -84,7 +84,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const mainsL2 = metricNumber(gen, "mains_voltage_l2", gen.mains.l2);
   const mainsL3 = metricNumber(gen, "mains_voltage_l3", gen.mains.l3);
   const mainsPf = metricNumber(gen, "mains_power_factor", undefined);
-  const mainsPower = metricNumber(gen, "mains_power_kw", undefined);
   const mainsCurrent = metricNumber(gen, "mains_current_l1", undefined);
   const mainsVoltageKnown = ["mains_voltage_l1", "mains_voltage_l2", "mains_voltage_l3"].some(
     (key) => hasFreshMetric(gen, key),
@@ -137,16 +136,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         generator: formatUnit(frequency, "Hz", 1),
       },
       {
-        label: "Phase Sequence",
-        mains: "—",
-        generator: running ? "L1-L2-L3" : "—",
-      },
-      {
-        label: "Power (kW)",
-        mains: formatUnit(mainsPower, "kW", 0),
-        generator: formatUnit(powerKw, "kW", 0),
-      },
-      {
         label: "Power Factor",
         mains: formatNumber(mainsPf, 2),
         generator: formatNumber(powerFactor, 2),
@@ -171,34 +160,14 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       mainsL2,
       mainsL3,
       mainsPf,
-      mainsPower,
       powerFactor,
-      powerKw,
-      running,
     ],
   );
 
-  const engineState = !runningKnown ? "—" : running ? "RUNNING" : "STOPPED";
-  const breakerState = !gcbKnown ? "—" : gen.gcb ? "GCB CLOSED" : "GCB OPEN";
-
   const valueRows = [
     { icon: "clock" as const, label: "Run Hours", value: formatUnit(runHours, "h", 1) },
-    { icon: "zap" as const, label: "Energy (kWh)", value: formatUnit(energyKwh, "kWh", 0) },
+    { icon: "zap" as const, label: "Energy", value: formatUnit(energyKwh, "kWh", 0) },
     { icon: "gauge" as const, label: "Required Power", value: formatUnit(requiredPower, "kW", 0) },
-    { icon: "gauge" as const, label: "Generator RPM", value: formatUnit(rpm, "RPM", 0) },
-    { icon: "gauge" as const, label: "Engine State", value: engineState, active: running },
-    {
-      icon: "gauge" as const,
-      label: "Breaker State",
-      value: breakerState,
-      active: gcbKnown && gen.gcb,
-    },
-    {
-      icon: "battery" as const,
-      label: "Battery Voltage",
-      value: formatUnit(batteryVoltage, "V", 1),
-    },
-    { icon: "gauge" as const, label: "PF (Generator)", value: formatNumber(powerFactor, 2) },
   ];
 
   const canStart = can("operate") && gen.capabilities?.start === true;
