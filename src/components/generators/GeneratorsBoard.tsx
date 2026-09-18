@@ -136,7 +136,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
     const usableWidth = Math.max(1, (viewport.width || 1200) - VERTICAL_PADDING * 2);
     const naturalWidth =
       (usableWidth - VERTICAL_GAP * Math.max(0, displayColumns - 1)) / displayColumns;
-    const cardWidth = Math.min(330, naturalWidth);
+    const cardWidth = Math.min(318, naturalWidth);
 
     return {
       "--vref-columns": displayColumns,
