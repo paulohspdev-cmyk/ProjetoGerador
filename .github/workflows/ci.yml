@@ -83,10 +83,27 @@ jobs:
           test ! -f src/components/generators/detail-widgets.tsx
           test -f src/components/generators/detail/generator-detail-model.ts
           test -f src/components/generators/detail/useGeneratorDetailData.ts
-          test -f src/components/generators/power-flow/PowerFlowDiagram.tsx
+          test -f src/components/generators/vertical-card/VerticalPowerFlow.tsx
+          test -f src/components/generators/vertical-card/VerticalPowerGauge.tsx
           grep -q 'metricNumber' src/components/generators/detail/generator-detail-model.ts
-          grep -q 'const genPre' src/components/generators/power-flow/PowerFlowDiagram.tsx
-          grep -q 'const genPost' src/components/generators/power-flow/PowerFlowDiagram.tsx
+          grep -q 'const mainsToBus' src/components/generators/vertical-card/VerticalPowerFlow.tsx
+          grep -q 'const genToBus' src/components/generators/vertical-card/VerticalPowerFlow.tsx
+          for obsolete in \
+            src/components/generators/generator-six-card.css \
+            src/components/generators/generator-six-card-v10.css \
+            src/components/generators/operator-card-refinement.css \
+            src/components/generators/powerflow-card-v2.css \
+            src/components/generators/comap-panel.css \
+            src/components/generators/GeneratorDetailDialog.tsx \
+            src/components/generators/ControllerFace.tsx \
+            src/components/generators/detail/GeneratorDetailPowerFlow.tsx \
+            src/components/generators/detail/GeneratorDetailOverview.tsx \
+            src/components/generators/detail/GeneratorDetailBottom.tsx \
+            src/components/generators/detail/GeneratorDetailElectrical.tsx \
+            src/components/generators/power-flow/PowerFlowDiagram.tsx \
+            src/components/generators/power-flow/PowerFlowPrimitives.tsx; do
+            test ! -e "$obsolete" || { echo "ERRO: legado voltou ao frontend: $obsolete" >&2; exit 1; }
+          done
           grep -q 'industrialApi.lifecycle.retire' src/components/generators/DeleteGeneratorButton.tsx
           grep -q 'IndustrialAlarmsScreen' src/components/scada/registry.ts
           grep -q 'ProcessHistoryScreen' src/components/scada/registry.ts
