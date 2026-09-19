@@ -13,7 +13,6 @@ import {
   ShieldCheck,
   Sun,
   Wrench,
-  Zap,
 } from "lucide-react";
 
 import { useTheme } from "@/components/layout/ThemeProvider";
@@ -115,29 +114,31 @@ export function LoginScreen() {
         <div className="rc-login-plant" aria-hidden="true" />
         <div className="relative z-10 max-w-3xl">
           <div className="flex items-center gap-4">
-            <span className="rc-sidebar-logo-mark grid size-16 place-items-center text-primary">
-              <Zap className="size-14 fill-primary/15 stroke-[1.8]" />
+            <span className="rc-login-brand-mark grid size-14 place-items-center rounded-md border text-sm font-black tracking-[-0.04em]">
+              RC
             </span>
             <div>
               <p className="text-3xl font-black tracking-[0.025em] text-white xl:text-4xl">
                 RC GERADORES
               </p>
-              <p className="mt-1 text-base text-slate-300">Central de monitoramento</p>
+              <p className="mt-1 text-sm font-semibold uppercase tracking-[0.09em] text-slate-400">
+                Console SCADA industrial
+              </p>
             </div>
           </div>
 
           <div className="mt-14 max-w-2xl xl:mt-20">
-            <div className="mb-5 flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-300">
-              <span className="h-px w-12 bg-primary" />
-              Monitoramento · confiabilidade · continuidade
+            <div className="mb-5 flex items-center gap-3 text-[10px] font-extrabold uppercase tracking-[0.18em] text-slate-400">
+              <span className="h-px w-10 bg-primary" />
+              Supervisão · operação · manutenção
             </div>
-            <h1 className="text-4xl font-light leading-[1.05] tracking-tight text-white xl:text-6xl">
-              Mais que energia,
-              <span className="mt-1 block font-extrabold text-primary">é continuidade.</span>
+            <h1 className="max-w-3xl text-4xl font-semibold leading-[1.08] tracking-tight text-white xl:text-5xl">
+              Supervisão e operação
+              <span className="mt-1 block font-black text-primary">de grupos geradores.</span>
             </h1>
-            <p className="mt-5 max-w-xl text-base leading-7 text-slate-300 xl:text-lg">
-              Tecnologia, monitoramento e inteligência para manter grupos geradores disponíveis
-              quando a operação mais precisa.
+            <p className="mt-5 max-w-xl text-base leading-7 text-slate-400">
+              Telemetria, alarmes, eventos e comandos homologados em uma única plataforma
+              operacional auditável.
             </p>
           </div>
         </div>
@@ -179,10 +180,14 @@ export function LoginScreen() {
 
         <div className="w-full max-w-[560px]">
           <div className="mb-7 flex items-center gap-3 lg:hidden">
-            <Zap className="size-9 text-primary" />
+            <span className="rc-login-brand-mark grid size-10 place-items-center rounded-md border text-[11px] font-black tracking-[-0.04em]">
+              RC
+            </span>
             <div>
-              <p className="text-xl font-black tracking-wide text-white">RC GERADORES</p>
-              <p className="text-xs text-slate-400">Central de monitoramento</p>
+              <p className="text-lg font-black tracking-wide text-white">RC GERADORES</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.09em] text-slate-500">
+                Console SCADA industrial
+              </p>
             </div>
           </div>
 
@@ -195,10 +200,10 @@ export function LoginScreen() {
             </div>
             <div className="mt-6 text-center">
               <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
-                {needsOtp ? "Confirmar acesso" : "Entrar no sistema"}
+                {needsOtp ? "Confirmar acesso" : "Acesso ao centro de operação"}
               </h2>
               <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-400">
-                Acesse a central de monitoramento e operação dos geradores.
+                Autenticação para acesso à supervisão, alarmes e funções operacionais autorizadas.
               </p>
             </div>
 
@@ -334,7 +339,7 @@ export function LoginScreen() {
           <div className="mt-5 flex items-center justify-between px-1 text-[11px] text-slate-600">
             <span>RC Geradores</span>
             <span className="inline-flex items-center gap-1.5">
-              <Fuel className="size-3.5" /> Energia hoje. Negócios sempre.
+              <Fuel className="size-3.5" /> SCADA · Operação · Manutenção
             </span>
           </div>
         </div>

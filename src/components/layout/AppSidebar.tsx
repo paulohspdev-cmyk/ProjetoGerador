@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { ChevronDown, PanelLeftClose, PanelLeftOpen, X, Zap } from "lucide-react";
+import { ChevronDown, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { canManageGenerators } from "@/components/generators/DeleteGeneratorButton";
@@ -76,24 +76,27 @@ function SidebarNav({ collapsed, onNavigate, onToggle, onClose, touchFriendly }:
     <>
       <div
         className={cn(
-          "flex h-[86px] shrink-0 items-center border-b border-white/5 pt-[env(safe-area-inset-top)]",
+          "rc-sidebar-brand flex h-[72px] shrink-0 items-center border-b border-white/5 pt-[env(safe-area-inset-top)]",
           collapsed ? "justify-center px-1" : "gap-3 px-4",
         )}
       >
         <span
           className={cn(
-            "rc-sidebar-logo-mark grid shrink-0 place-items-center text-primary",
-            collapsed ? "size-10" : "size-11",
+            "rc-sidebar-logo-mark grid shrink-0 place-items-center rounded-md border font-black tracking-[-0.04em]",
+            collapsed ? "size-9 text-[11px]" : "size-10 text-[12px]",
           )}
+          aria-hidden
         >
-          <Zap className={cn("fill-primary/10", collapsed ? "size-7" : "size-9")} />
+          RC
         </span>
         {!collapsed && (
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[17px] font-black tracking-[0.025em] text-white">
+            <p className="rc-sidebar-brand-title truncate text-[15px] font-black tracking-[0.035em] text-white">
               RC GERADORES
             </p>
-            <p className="mt-0.5 truncate text-[11px] text-slate-400">Monitoramento e operação</p>
+            <p className="rc-sidebar-brand-sub mt-0.5 truncate text-[10px] font-bold uppercase tracking-[0.11em] text-slate-500">
+              SCADA industrial
+            </p>
           </div>
         )}
         {onToggle && (
@@ -122,7 +125,7 @@ function SidebarNav({ collapsed, onNavigate, onToggle, onClose, touchFriendly }:
         )}
       </div>
 
-      <nav className="scroll-slim flex-1 overflow-y-auto overscroll-contain px-2 py-3 pb-4">
+      <nav className="rc-sidebar-nav scroll-slim flex-1 overflow-y-auto overscroll-contain px-2 py-3 pb-4">
         {visibleGroups.map((group, groupIndex) => {
           const open = collapsed || !!openGroups[group.title];
           const sectionActive = groupHasActive(group.title);
@@ -137,7 +140,7 @@ function SidebarNav({ collapsed, onNavigate, onToggle, onClose, touchFriendly }:
                   onClick={() => toggleGroup(group.title)}
                   aria-expanded={open}
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-lg px-2.5 text-left transition-colors hover:bg-white/[0.035]",
+                    "rc-nav-group flex w-full items-center gap-2 rounded-md px-2.5 text-left transition-colors hover:bg-white/[0.035]",
                     touchFriendly ? "min-h-11" : "h-9",
                   )}
                 >
@@ -181,8 +184,9 @@ function SidebarNav({ collapsed, onNavigate, onToggle, onClose, touchFriendly }:
                             to={hrefFor(item.slug)}
                             title={collapsed ? item.label : undefined}
                             onClick={onNavigate}
+                            aria-current={active ? "page" : undefined}
                             className={cn(
-                              "group relative flex items-center gap-3 rounded-lg px-3 text-sm transition-all",
+                              "rc-nav-item group relative flex items-center gap-3 rounded-md px-3 text-sm transition-all",
                               touchFriendly ? "min-h-11 py-2" : "min-h-[42px] py-2",
                               collapsed && "justify-center px-0",
                               active
@@ -236,7 +240,7 @@ function SidebarNav({ collapsed, onNavigate, onToggle, onClose, touchFriendly }:
       <div className={cn("shrink-0 border-t border-white/[0.055]", collapsed ? "p-2" : "p-3")}>
         <div
           className={cn(
-            "rounded-xl border border-white/[0.055] bg-black/10",
+            "rc-sidebar-status rounded-md border border-white/[0.055] bg-black/10",
             collapsed ? "grid place-items-center p-2" : "px-3 py-3",
           )}
           title={
@@ -263,11 +267,11 @@ function SidebarNav({ collapsed, onNavigate, onToggle, onClose, touchFriendly }:
                 )}
               />
               <div className="min-w-0">
-                <p className="text-xs font-extrabold text-slate-200">Centro de Operações</p>
-                <p className="mt-1 text-[10px] leading-4 text-slate-500">
-                  {systemHealthy
-                    ? "Dados operacionais disponíveis"
-                    : "Atenção na atualização dos dados"}
+                <p className="text-[10px] font-extrabold uppercase tracking-[0.09em] text-slate-400">
+                  Plataforma
+                </p>
+                <p className="mt-0.5 text-[11px] font-bold text-slate-200">
+                  {systemHealthy ? "Serviços disponíveis" : "Atenção na atualização"}
                 </p>
               </div>
             </div>
