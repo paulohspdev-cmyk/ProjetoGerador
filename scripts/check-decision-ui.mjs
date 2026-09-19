@@ -11,7 +11,7 @@ const dashboard = [
   read("src/components/scada/overview-dashboard-actions.tsx"),
 ].join("\n");
 for (const marker of [
-  "Painel de decisão",
+  "Resumo operacional",
   "Modems online",
   "Geradores online",
   "Alarmes abertos",
