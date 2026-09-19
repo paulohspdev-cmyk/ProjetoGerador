@@ -213,6 +213,20 @@ if (
   failures.push("IG200: política de comandos homologados foi alterada");
 }
 
+const ig4Path = "controllers/production/comap/ig4-200/manifest.json";
+if (!productionPaths.includes(ig4Path)) failures.push("IG4 200 validado não está em production");
+else {
+  const ig4 = load(ig4Path);
+  if (ig4.metricUnits?.fuel_level !== "L") {
+    failures.push("IG4 200: unidade real do diesel deve permanecer em litros");
+  }
+  if (ig4.metricLimits?.fuel_level?.displayMax != null) {
+    failures.push(
+      "IG4 200: range documental do registro não pode ser tratado como capacidade do tanque",
+    );
+  }
+}
+
 const dse8610Path = "controllers/lab/dse/dse8610-mkii/manifest.json";
 if (!labPaths.includes(dse8610Path)) failures.push("DSE8610 MKII documental não está em LAB");
 const dse8610 = load(dse8610Path);
@@ -502,7 +516,12 @@ const health = read("src/components/generators/generator-health.ts");
 if (!health.includes("toneFromLimit") || !health.includes("gen.metricLimits")) {
   failures.push("saúde visual não está centralizada em limites homologáveis");
 }
-if (health.includes("value < 2") || health.includes("value > 105") || health.includes(": 1000")) {
+if (
+  health.includes("value < 2") ||
+  health.includes("value > 105") ||
+  health.includes(": 1000") ||
+  health.includes("displayMax: 682")
+) {
   failures.push("saúde visual voltou a conter limite industrial presumido");
 }
 
