@@ -25,6 +25,7 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 backend/.venv/
+backend/.venv-test/
 .venv/
 
 # Builds/runtime locais

@@ -144,6 +144,27 @@ if [[ -f "$ENV_FILE" ]]; then
   WA_URL="$(sed -n 's/^RC_WHATSAPP_API_URL=//p' "$ENV_FILE" | head -n1)"
   [[ -n "$SMTP_HOST_VALUE" ]] && echo "SMTP: configurado" || echo "SMTP: não configurado"
   [[ -n "$WA_URL" ]] && echo "WhatsApp: configurado" || echo "WhatsApp: não configurado"
+
+  if [[ "${RC_RAPID_REQUIRE_ALLOWLIST:-0}" == "1" ]]; then
+    echo "Reverse TCP allowlist: ATIVA"
+  else
+    echo "ATENÇÃO: Reverse TCP allowlist desativada; restrinja por RC_RAPID_REQUIRE_ALLOWLIST/CIDRs ou firewall de borda antes da exposição externa."
+  fi
+
+  if [[ "${RC_BACKUP_OFFSITE_REQUIRED:-0}" == "1" ]]; then
+    echo "Backup off-site obrigatório: ATIVO"
+  else
+    echo "ATENÇÃO: backup off-site não é obrigatório; uma falha da VM/disco pode afetar produção e cópias locais."
+  fi
+fi
+
+if command -v ufw >/dev/null 2>&1; then
+  UFW_STATUS="$(ufw status 2>/dev/null | head -n1 || true)"
+  if [[ "$UFW_STATUS" == *"inactive"* ]]; then
+    echo "ATENÇÃO: UFW local está inativo; confirme proteção equivalente no firewall/VLAN de borda."
+  else
+    echo "Firewall local: ${UFW_STATUS:-estado não identificado}"
+  fi
 fi
 
 echo

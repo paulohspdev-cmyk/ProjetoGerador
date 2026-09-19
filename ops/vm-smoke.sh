@@ -6,15 +6,30 @@ ENV_FILE="${RC_ENV_FILE:-/etc/rc-geradores.env}"
 CONTROL_SOCKET="/run/rc-geradores/control.sock"
 PROVISION_SOCKET="/run/rc-geradores/provision.sock"
 REQUIRE_GENERATOR=0
+REQUIRE_HEALTHY_DEVICES=0
 FAILURES=0
 SMOKE_SESSION_HASH=""
 
-if [[ "${1:-}" == "--require-generator" ]]; then
-  REQUIRE_GENERATOR=1
-elif [[ $# -gt 0 ]]; then
-  echo "Uso: sudo $0 [--require-generator]" >&2
-  exit 2
-fi
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --require-generator)
+      REQUIRE_GENERATOR=1
+      ;;
+    --require-healthy-devices)
+      REQUIRE_HEALTHY_DEVICES=1
+      ;;
+    --help|-h)
+      echo "Uso: sudo $0 [--require-generator] [--require-healthy-devices]"
+      exit 0
+      ;;
+    *)
+      echo "Argumento desconhecido: $1" >&2
+      echo "Uso: sudo $0 [--require-generator] [--require-healthy-devices]" >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
 
 if [[ $EUID -ne 0 ]]; then
   echo "Execute como root: sudo $0" >&2
@@ -233,6 +248,33 @@ PY
     check_port "$remote_port" "bridge reverse $tag"
     check_port "$local_port" "bridge local Rapid $tag"
   done < <(jq -r --argjson offset "$RAPID_LOCAL_OFFSET" '.[] | [.transport, (.listen_port|tostring), ((.listen_port + $offset)|tostring), (.tag // .generator_id // "gerador")] | @tsv' "$BINDINGS")
+
+  HEALTHY_DEVICES=0
+  UNHEALTHY_DEVICES=0
+  while IFS=$'\t' read -r line_num device_num tag; do
+    [[ "$line_num" =~ ^[0-9]+$ && "$device_num" =~ ^[0-9]+$ ]] || {
+      UNHEALTHY_DEVICES=$((UNHEALTHY_DEVICES + 1))
+      continue
+    }
+    printf -v log_file '/var/log/scada/ScadaComm/Log/line%03d.txt' "$line_num"
+    device_line=""
+    if [[ -f "$log_file" ]]; then
+      device_line="$(grep -a -m1 -E "^\\[${device_num}\\][[:space:]]" "$log_file" || true)"
+    fi
+    if [[ "$device_line" == *": Normal"* ]]; then
+      HEALTHY_DEVICES=$((HEALTHY_DEVICES + 1))
+    else
+      UNHEALTHY_DEVICES=$((UNHEALTHY_DEVICES + 1))
+    fi
+  done < <(jq -r '.[] | [(.rapid_line_num // 0), (.rapid_device_num // 0), (.tag // .generator_id // "gerador")] | @tsv' "$BINDINGS")
+
+  info "saúde industrial atual: ${HEALTHY_DEVICES}/${BINDING_COUNT} device(s) Rapid em estado Normal"
+  if (( UNHEALTHY_DEVICES > 0 )); then
+    info "${UNHEALTHY_DEVICES} device(s) sem resposta/Normal no momento; isso não reprova o smoke de infraestrutura (equipamentos podem estar desligados)"
+  fi
+  if (( REQUIRE_HEALTHY_DEVICES == 1 && UNHEALTHY_DEVICES > 0 )); then
+    fail "--require-healthy-devices informado, mas ${UNHEALTHY_DEVICES} device(s) não estão em estado Normal"
+  fi
 fi
 
 # Jornada que o navegador realmente usa: sessão autenticada -> HTTPS/Nginx -> API -> inventário.
@@ -321,5 +363,8 @@ if (( FAILURES > 0 )); then
 fi
 
 echo "============================================================"
-echo " APROVADO: VM pronta para teste de campo"
+echo " APROVADO: infraestrutura da VM íntegra"
 echo "============================================================"
+if (( REQUIRE_HEALTHY_DEVICES == 0 )); then
+  info "a saúde das controladoras é informativa neste modo; use --require-healthy-devices quando os equipamentos estiverem energizados"
+fi

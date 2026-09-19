@@ -59,20 +59,21 @@ Regras de arquitetura:
 - Comandos genéricos são proibidos. O Controller Pack determina capacidades liberadas.
 - Estar presente no catálogo não significa estar homologado: somente Controller Packs `production` podem provisionar operação industrial.
 
-## Controller Pack homologado
+## Controller Packs de produção
 
-O primeiro pack de produção é:
+O estado atual do repositório possui cinco packs em `controllers/production/`. O lifecycle de produção autoriza provisionamento, mas **não libera comandos automaticamente**: cada capacidade continua declarada no manifest do pack.
 
-```text
-ComAp InteliGen 200
-status: field_validated
-telemetria atual homologada: RPM, frequência e tensões do gerador
-comandos homologados: START e STOP
-```
+| Modelo              | Estado do pack    | Telemetria                                                      | START/STOP  | AUTO / MAN / TEST | MCB / GCB  |
+| ------------------- | ----------------- | --------------------------------------------------------------- | ----------- | ----------------- | ---------- |
+| ComAp InteliGen 200 | `field_validated` | validada em campo                                               | habilitados | bloqueados        | bloqueados |
+| ComAp IG-NT         | `field_validated` | validada em campo                                               | bloqueados  | bloqueados        | bloqueados |
+| ComAp IG4 200       | `field_validated` | validada em campo                                               | bloqueados  | bloqueados        | bloqueados |
+| DSE GenComm Genset  | `production`      | pack de leitura; canais ainda sem `validatedTelemetry` de campo | bloqueados  | bloqueados        | bloqueados |
+| DSE5210             | `production`      | pack de leitura; canais ainda sem `validatedTelemetry` de campo | bloqueados  | bloqueados        | bloqueados |
 
-AUTO, MANUAL, TEST, MCB, GCB e paralelismo permanecem bloqueados até homologação específica.
+No InteliGen 200, START/STOP são os únicos comandos atualmente homologados. AUTO, MANUAL, TEST, MCB, GCB e paralelismo permanecem bloqueados até homologação específica por modelo.
 
-A configuração de campo original utilizou:
+A configuração de campo original do primeiro InteliGen 200 utilizou:
 
 ```text
 Reverse TCP externo: 15001
@@ -82,7 +83,7 @@ Rapid Device:         200
 Rapid Channels:       2001..2008
 ```
 
-O runtime multi-device resolve a identidade pelo binding real do equipamento. Rapid Device não é usado como autorização de segurança. START/STOP exige simultaneamente Controller Pack de produção, modelo homologado, binding coerente com cadastro/porta/Unit/Device, controle explicitamente habilitado e retorno válido do controlador. AUTO, TEST, MCB, GCB e paralelismo continuam bloqueados.
+O runtime multi-device resolve a identidade pelo binding real do equipamento. Rapid Device não é usado como autorização de segurança. Qualquer comando exige simultaneamente Controller Pack de produção, capacidade explicitamente habilitada no manifest, binding coerente com cadastro/porta/Unit/Device, controle explicitamente habilitado e retorno válido do controlador.
 
 ## Catálogo de controladoras
 
@@ -248,6 +249,14 @@ Quando a VM deve obrigatoriamente ter pelo menos um gerador provisionado:
 ```bash
 sudo /opt/rc-geradores/ops/vm-smoke.sh --require-generator
 ```
+
+Quando os geradores/controladoras estiverem energizados e a validação também precisar exigir comunicação Rapid saudável:
+
+```bash
+sudo /opt/rc-geradores/ops/vm-smoke.sh --require-generator --require-healthy-devices
+```
+
+Sem `--require-healthy-devices`, o estado atual das controladoras é reportado como informação e não reprova a infraestrutura. Isso permite auditar a VM em janelas nas quais modem, gateway ou gerador estejam propositalmente desligados.
 
 O smoke verifica, entre outros pontos:
 

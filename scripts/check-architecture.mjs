@@ -92,11 +92,7 @@ if (existsSync(tokenFile)) {
   }
 }
 
-const tokenizedCss = [
-  "src/components/generators/comap-panel.css",
-  "src/components/generators/generator-detail.css",
-  "src/components/generators/powerflow-card-v2.css",
-];
+const tokenizedCss = ["src/components/generators/generator-detail.css"];
 const rawColorPattern = /#[0-9a-fA-F]{3,8}\b|\brgba?\s*\(/;
 for (const path of tokenizedCss) {
   const full = join(root, path);

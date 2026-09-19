@@ -165,6 +165,9 @@ test("vertical cabe inteiro na área disponível sem rolagem interna", async ({ 
             height: rect.height,
           };
         });
+      const style = getComputedStyle(grid);
+      const declaredColumns = Number.parseInt(style.getPropertyValue("--vref-columns").trim(), 10);
+      const declaredRows = Number.parseInt(style.getPropertyValue("--vref-rows").trim(), 10);
       return {
         globalOverflow:
           Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - innerWidth,
@@ -172,6 +175,8 @@ test("vertical cabe inteiro na área disponível sem rolagem interna", async ({ 
         gridScrollHeight: grid.scrollHeight,
         gridClientWidth: grid.clientWidth,
         gridScrollWidth: grid.scrollWidth,
+        declaredColumns: Number.isFinite(declaredColumns) ? declaredColumns : 0,
+        declaredRows: Number.isFinite(declaredRows) ? declaredRows : 0,
         gridRect: {
           left: gridRect.left,
           right: gridRect.right,
@@ -196,15 +201,22 @@ test("vertical cabe inteiro na área disponível sem rolagem interna", async ({ 
       expect(frame.height).toBeGreaterThan(0);
     }
 
+    expect(metrics.declaredColumns).toBeGreaterThan(0);
+    expect(metrics.declaredRows).toBeGreaterThan(0);
+    expect(metrics.frames.length).toBeLessThanOrEqual(
+      metrics.declaredColumns * metrics.declaredRows,
+    );
+
     if (viewport.width === 1920) {
-      expect(metrics.frames.length).toBeGreaterThanOrEqual(6);
-      expect(metrics.frames.length).toBeLessThanOrEqual(8);
-      expect(Math.min(...metrics.frames.map((frame) => frame.width))).toBeGreaterThanOrEqual(215);
+      expect(metrics.frames.length).toBeGreaterThanOrEqual(5);
+      expect(metrics.declaredColumns).toBeGreaterThanOrEqual(5);
+      expect(Math.min(...metrics.frames.map((frame) => frame.width))).toBeGreaterThanOrEqual(255);
       expect(Math.min(...metrics.frames.map((frame) => frame.height))).toBeGreaterThanOrEqual(690);
     }
 
     if (viewport.width === 3840) {
-      expect(metrics.frames.length).toBe(8);
+      expect(metrics.frames.length).toBeGreaterThanOrEqual(10);
+      expect(metrics.declaredColumns).toBeGreaterThanOrEqual(10);
       expect(Math.min(...metrics.frames.map((frame) => frame.width))).toBeGreaterThanOrEqual(255);
       expect(Math.max(...metrics.frames.map((frame) => frame.width))).toBeLessThanOrEqual(310);
     }
