@@ -15,7 +15,7 @@ jobs:
       - name: Node
         uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: "22"
           cache: npm
 
       - name: Frontend dependencies
@@ -36,7 +36,7 @@ jobs:
       - name: Python
         uses: actions/setup-python@v7
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Auditoria de dependências Python
         run: |
@@ -123,15 +123,24 @@ jobs:
       - name: Política industrial permanece restrita
         run: |
           set -euo pipefail
-          grep -q 'Somente START e STOP estão homologados' backend/app/control.py
+          grep -q 'command_contract' backend/app/control.py
+          grep -q 'pack.get("status") != "field_validated"' backend/app/control.py
+          if grep -q -E 'dse_lab|ig4_lab' backend/app/control.py; then
+            echo 'ERRO: caminho LAB voltou ao roteador de comandos de produção.' >&2
+            exit 1
+          fi
           python - <<'PY'
           import json
           data = json.load(open('controllers/production/comap/inteligen-200/manifest.json'))
+          assert data['schema'] == 4
           caps = data['capabilities']
+          contracts = data.get('commands') or {}
           assert caps['start'] and caps['stop']
+          assert set(contracts) == {'start', 'stop'}
           for key in ('auto','manual','test','mcb_open','mcb_close','gcb_open','gcb_close','paralleling'):
               assert caps[key] is False, key
-          print('Política industrial: OK')
+              assert key not in contracts, key
+          print('Política industrial v4: OK')
           PY
 
       - name: Scripts Bash

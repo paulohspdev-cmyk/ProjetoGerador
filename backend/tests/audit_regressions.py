@@ -254,3 +254,77 @@ finally:
 assert status["security"]["peerAllowlistEnabled"] is False, status
 
 print("Audit regressions: OK")
+
+
+# F12: production Controller Packs use schema v4 and every enabled command has a contract.
+from app.controller_library import list_controller_packs  # noqa: E402
+
+for pack in list_controller_packs():
+    if pack.get("lifecycle") != "production":
+        continue
+    assert pack.get("schema") == 4, pack.get("packId")
+    capabilities = pack.get("capabilities") or {}
+    contracts = pack.get("commands") or {}
+    for action in (
+        "start",
+        "stop",
+        "auto",
+        "manual",
+        "test",
+        "mcb_open",
+        "mcb_close",
+        "gcb_open",
+        "gcb_close",
+        "paralleling",
+    ):
+        if capabilities.get(action):
+            assert action in contracts, (pack.get("packId"), action)
+
+# F13: production refuses experimental control flags.
+from app.production_guard import validate_production_runtime  # noqa: E402
+
+previous_environment = os.environ.get("RC_ENVIRONMENT")
+previous_dse_lab = os.environ.get("RC_ENABLE_DSE_LAB_CONTROL")
+try:
+    os.environ["RC_ENVIRONMENT"] = "production"
+    os.environ["RC_ENABLE_DSE_LAB_CONTROL"] = "1"
+    try:
+        validate_production_runtime()
+    except RuntimeError:
+        pass
+    else:
+        raise AssertionError("production accepted RC_ENABLE_DSE_LAB_CONTROL=1")
+finally:
+    if previous_environment is None:
+        os.environ.pop("RC_ENVIRONMENT", None)
+    else:
+        os.environ["RC_ENVIRONMENT"] = previous_environment
+    if previous_dse_lab is None:
+        os.environ.pop("RC_ENABLE_DSE_LAB_CONTROL", None)
+    else:
+        os.environ["RC_ENABLE_DSE_LAB_CONTROL"] = previous_dse_lab
+
+# F14: the composed API must not expose duplicate method/path contracts.
+import re  # noqa: E402
+from collections import defaultdict  # noqa: E402
+from fastapi.routing import APIRoute  # noqa: E402
+from app.main import app  # noqa: E402
+
+
+def _walk_routes(routes):
+    for route in routes:
+        if isinstance(route, APIRoute):
+            yield route
+        elif type(route).__name__ == "_IncludedRouter":
+            yield from _walk_routes(route.original_router.routes)
+
+
+contracts = defaultdict(list)
+for route in _walk_routes(app.routes):
+    normalized = re.sub(r"\{[^}]+\}", "{}", route.path)
+    for method in route.methods or []:
+        contracts[(method, normalized)].append(route.name)
+duplicates = {key: names for key, names in contracts.items() if len(names) > 1}
+assert not duplicates, duplicates
+
+print("Production hardening regressions: OK")

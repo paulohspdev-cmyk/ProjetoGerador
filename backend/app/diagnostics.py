@@ -5,9 +5,25 @@ import subprocess
 import time
 from pathlib import Path
 
-from . import db, platform_store, traffic_store
-from .config import APP_VERSION, BRIDGE_STATUS_FILE, CONTROL_SOCKET, PROJECT_ROOT, RAPID_BINDINGS_FILE, RAPID_COMM_CONFIG, RAPID_READER_DLL
-from .rapid import overlay_generators
+from . import db, domain_store, platform_store, traffic_store
+from .config import (
+    API_DOCS_ENABLED,
+    APP_VERSION,
+    BACKUP_OFFSITE_DIR,
+    BACKUP_OFFSITE_KEY_FILE,
+    BACKUP_OFFSITE_REQUIRED,
+    BRIDGE_STATUS_FILE,
+    CONTROL_SOCKET,
+    ENVIRONMENT,
+    PROJECT_ROOT,
+    RAPID_BINDINGS_FILE,
+    RAPID_COMM_CONFIG,
+    RAPID_READER_DLL,
+    SMTP_HOST,
+    WHATSAPP_API_URL,
+)
+from .controller_library import pack_for_model, pack_is_production_ready
+from .rapid import load_bindings, overlay_generators
 
 SERVICES = [
     "rc-geradores-api.service",
@@ -170,6 +186,221 @@ def version_info():
     }
 
 
+def _production_readiness(
+    raw_generators: list[dict],
+    *,
+    reverse_tcp_exposed: bool,
+    reverse_tcp_allowlist: bool,
+) -> dict:
+    checks: list[dict] = []
+
+    def add(check_id: str, label: str, ok: bool, severity: str, detail: str) -> None:
+        checks.append(
+            {
+                "id": check_id,
+                "label": label,
+                "ok": bool(ok),
+                "severity": "ok" if ok else severity,
+                "detail": detail,
+            }
+        )
+
+    add(
+        "environment",
+        "Modo de execução",
+        ENVIRONMENT == "production",
+        "blocker",
+        f"RC_ENVIRONMENT={ENVIRONMENT}",
+    )
+
+    lab_flags = [
+        name
+        for name in ("RC_ENABLE_DSE_LAB_CONTROL", "RC_ENABLE_IG4_LAB_CONTROL")
+        if os.environ.get(name, "0").strip() == "1"
+    ]
+    add(
+        "lab_control",
+        "Controles LAB",
+        not lab_flags,
+        "blocker",
+        "Desabilitados" if not lab_flags else "Ativos: " + ", ".join(lab_flags),
+    )
+    add(
+        "api_docs",
+        "Documentação interativa da API",
+        not API_DOCS_ENABLED,
+        "warning",
+        "Desabilitada" if not API_DOCS_ENABLED else "RC_API_DOCS=1",
+    )
+    add(
+        "reverse_tcp_allowlist",
+        "Proteção das portas reverse TCP",
+        not reverse_tcp_exposed or reverse_tcp_allowlist,
+        "blocker",
+        (
+            "Sem listener reverse TCP exposto"
+            if not reverse_tcp_exposed
+            else "Allowlist ativa"
+            if reverse_tcp_allowlist
+            else "Listeners expostos sem allowlist de origem"
+        ),
+    )
+
+    offsite_ready = bool(
+        BACKUP_OFFSITE_REQUIRED
+        and BACKUP_OFFSITE_DIR
+        and BACKUP_OFFSITE_KEY_FILE
+        and Path(BACKUP_OFFSITE_KEY_FILE).is_file()
+    )
+    add(
+        "backup_offsite",
+        "Backup off-site",
+        offsite_ready,
+        "blocker",
+        (
+            "Obrigatório, destino e chave configurados"
+            if offsite_ready
+            else "Falta RC_BACKUP_OFFSITE_REQUIRED=1, destino off-site e/ou chave externa"
+        ),
+    )
+
+    users = [item for item in db.list_users() if item.get("active")]
+    privileged = [
+        item for item in users if item.get("role") in {"administrador", "operador"}
+    ]
+    missing_2fa = []
+    for user in privileged:
+        item = platform_store.get_totp(str(user.get("id") or ""))
+        if not item or not item.get("enabled"):
+            missing_2fa.append(str(user.get("email") or user.get("name") or user.get("id")))
+    add(
+        "privileged_2fa",
+        "2FA de contas privilegiadas",
+        not missing_2fa,
+        "blocker",
+        "Todas protegidas" if not missing_2fa else "Sem 2FA: " + ", ".join(missing_2fa),
+    )
+
+    bindings = {
+        str(item.get("generator_id") or ""): item
+        for item in load_bindings()
+        if item.get("generator_id")
+    }
+    no_pack: list[str] = []
+    no_binding: list[str] = []
+    missing_nominal: list[str] = []
+    missing_site: list[str] = []
+    missing_customer: list[str] = []
+    missing_firmware: list[str] = []
+    test_assets: list[str] = []
+
+    assets_by_generator = {
+        str(item.get("legacy_generator_id") or ""): item
+        for item in domain_store.list_assets()
+        if item.get("legacy_generator_id")
+    }
+    controllers_by_asset: dict[str, list[dict]] = {}
+    for controller in domain_store.list_controllers():
+        controllers_by_asset.setdefault(str(controller.get("asset_id") or ""), []).append(controller)
+
+    for generator in raw_generators:
+        if not generator.get("enabled"):
+            continue
+        tag = str(generator.get("tag") or generator.get("id") or "N/D")
+        pack = pack_for_model(generator.get("controller_model") or "")
+        if not pack_is_production_ready(pack):
+            no_pack.append(tag)
+        elif str(generator.get("id") or "") not in bindings:
+            no_binding.append(tag)
+        if generator.get("nominal_power") in (None, "", 0, 0.0):
+            missing_nominal.append(tag)
+        site = str(generator.get("site") or "").strip().lower()
+        if not site or site in {"sem unidade", "n/d"}:
+            missing_site.append(tag)
+        if not str(generator.get("customer") or "").strip():
+            missing_customer.append(tag)
+
+        asset = assets_by_generator.get(str(generator.get("id") or ""))
+        controllers = controllers_by_asset.get(str((asset or {}).get("id") or ""), [])
+        if not controllers or all(not str(item.get("firmware") or "").strip() for item in controllers):
+            missing_firmware.append(tag)
+
+        if tag.upper().startswith(("TESTE", "TEST-", "LAB-")):
+            test_assets.append(tag)
+
+    add(
+        "controller_packs",
+        "Controller Packs de produção",
+        not no_pack,
+        "blocker",
+        "Todos os ativos possuem pack production" if not no_pack else "Sem pack production: " + ", ".join(no_pack),
+    )
+    add(
+        "industrial_bindings",
+        "Bindings industriais",
+        not no_binding,
+        "blocker",
+        "Todos os equipamentos suportados estão provisionados" if not no_binding else "Sem binding: " + ", ".join(no_binding),
+    )
+    add(
+        "nominal_power",
+        "Potência nominal cadastrada",
+        not missing_nominal,
+        "blocker",
+        "Completa" if not missing_nominal else "Falta kW nominal: " + ", ".join(missing_nominal),
+    )
+    add(
+        "site_assignment",
+        "Unidade/site cadastrado",
+        not missing_site,
+        "warning",
+        "Completo" if not missing_site else "Sem unidade: " + ", ".join(missing_site),
+    )
+    add(
+        "customer_assignment",
+        "Cliente cadastrado",
+        not missing_customer,
+        "warning",
+        "Completo" if not missing_customer else "Sem cliente: " + ", ".join(missing_customer),
+    )
+    add(
+        "controller_firmware",
+        "Firmware das controladoras",
+        not missing_firmware,
+        "blocker",
+        "Firmware registrado para todos os ativos"
+        if not missing_firmware
+        else "Firmware não informado: " + ", ".join(missing_firmware),
+    )
+    notifications_ready = bool(SMTP_HOST or WHATSAPP_API_URL)
+    add(
+        "notification_channel",
+        "Canal de notificação",
+        notifications_ready,
+        "warning",
+        "Canal externo configurado"
+        if notifications_ready
+        else "SMTP e WhatsApp não configurados",
+    )
+    add(
+        "test_assets",
+        "Cadastros de teste",
+        not test_assets,
+        "warning",
+        "Nenhum cadastro de teste ativo" if not test_assets else "Ativos: " + ", ".join(test_assets),
+    )
+
+    blockers = [item for item in checks if not item["ok"] and item["severity"] == "blocker"]
+    warnings = [item for item in checks if not item["ok"] and item["severity"] == "warning"]
+    return {
+        "ready": not blockers,
+        "blockers": len(blockers),
+        "warnings": len(warnings),
+        "checks": checks,
+        "note": "Estado online das controladoras não é requisito deste checklist enquanto equipamentos estiverem desligados.",
+    }
+
+
 def system_diagnostics():
     services = [_service(name) for name in SERVICES]
     usage = shutil.disk_usage("/")
@@ -280,5 +511,10 @@ def system_diagnostics():
             for g in generators
         ],
         "observability": observability,
+        "productionReadiness": _production_readiness(
+            raw_generators,
+            reverse_tcp_exposed=listeners_exposed,
+            reverse_tcp_allowlist=allowlist_enabled,
+        ),
         "version": version_info(),
     }

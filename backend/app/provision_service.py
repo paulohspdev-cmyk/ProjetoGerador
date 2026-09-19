@@ -124,6 +124,9 @@ async def handle(reader, writer):
 
 
 async def main():
+    from .production_guard import validate_production_runtime
+
+    validate_production_runtime()
     path = Path(SOCKET)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.unlink(missing_ok=True)

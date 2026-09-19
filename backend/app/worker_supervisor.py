@@ -3,6 +3,8 @@ import subprocess
 import sys
 import time
 
+from .production_guard import validate_production_runtime
+
 running = True
 children: list[subprocess.Popen] = []
 
@@ -37,6 +39,7 @@ def _stop_children() -> None:
 
 
 def main() -> int:
+    validate_production_runtime()
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGINT, stop)
     children.extend([_start("app.worker"), _start("app.heavy_worker"), _start("app.notification_worker"), _start("app.lifecycle_worker")])

@@ -20,6 +20,7 @@ import {
 
 import { Pill } from "@/components/scada/kit";
 import type { Generator } from "@/data/generators";
+import type { IndustrialCommandAction } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 import { GeneratorEditDialog } from "../GeneratorEditDialog";
@@ -36,17 +37,15 @@ import {
 type Props = {
   gen: Generator;
   model: GeneratorDetailModel;
-  canStart: boolean;
-  canStop: boolean;
-  commandBusy: "start" | "stop" | null;
-  onCommand: (action: "start" | "stop") => void | Promise<void>;
+  canAction: (action: IndustrialCommandAction) => boolean;
+  commandBusy: IndustrialCommandAction | null;
+  onCommand: (action: IndustrialCommandAction) => void | Promise<void>;
 };
 
 export function GeneratorDetailProfessionalTop({
   gen,
   model,
-  canStart,
-  canStop,
+  canAction,
   commandBusy,
   onCommand,
 }: Props) {
@@ -131,37 +130,55 @@ export function GeneratorDetailProfessionalTop({
           />
           <button
             type="button"
-            disabled={!canStart || commandBusy !== null}
+            disabled={!canAction("start") || commandBusy !== null}
             onClick={() => void onCommand("start")}
             className="inline-flex h-9 items-center gap-2 rounded-lg border border-chart-2/45 px-3 text-xs font-semibold text-chart-2 hover:bg-chart-2/10 disabled:opacity-40"
-            title={canStart ? "Partida homologada" : "START indisponível para esta controladora"}
+            title={
+              canAction("start")
+                ? "Partida homologada"
+                : "START indisponível para esta controladora"
+            }
           >
             <Play className="size-4" /> {commandBusy === "start" ? "Enviando…" : "Ligar"}
           </button>
           <button
             type="button"
-            data-command="auto"
-            disabled
-            title="Função indisponível"
-            className="hidden h-9 items-center rounded-lg border border-border px-3 text-xs font-semibold text-muted-foreground opacity-45 2xl:inline-flex"
+            data-command="manual"
+            disabled={!canAction("manual") || commandBusy !== null}
+            title={canAction("manual") ? "MANUAL homologado" : "MANUAL ainda não homologado"}
+            onClick={() => void onCommand("manual")}
+            className="hidden h-9 items-center rounded-lg border border-border px-3 text-xs font-semibold text-muted-foreground disabled:opacity-40 2xl:inline-flex"
           >
-            AUTO
+            {commandBusy === "manual" ? "…" : "MAN"}
+          </button>
+          <button
+            type="button"
+            data-command="auto"
+            disabled={!canAction("auto") || commandBusy !== null}
+            title={canAction("auto") ? "AUTO homologado" : "AUTO ainda não homologado"}
+            onClick={() => void onCommand("auto")}
+            className="hidden h-9 items-center rounded-lg border border-border px-3 text-xs font-semibold text-muted-foreground disabled:opacity-40 2xl:inline-flex"
+          >
+            {commandBusy === "auto" ? "…" : "AUTO"}
           </button>
           <button
             type="button"
             data-command="test"
-            disabled
-            title="Função indisponível"
-            className="hidden h-9 items-center rounded-lg border border-border px-3 text-xs font-semibold text-muted-foreground opacity-45 2xl:inline-flex"
+            disabled={!canAction("test") || commandBusy !== null}
+            title={canAction("test") ? "TEST homologado" : "TEST ainda não homologado"}
+            onClick={() => void onCommand("test")}
+            className="hidden h-9 items-center rounded-lg border border-border px-3 text-xs font-semibold text-muted-foreground disabled:opacity-40 2xl:inline-flex"
           >
-            TEST
+            {commandBusy === "test" ? "…" : "TEST"}
           </button>
           <button
             type="button"
-            disabled={!canStop || commandBusy !== null}
+            disabled={!canAction("stop") || commandBusy !== null}
             onClick={() => void onCommand("stop")}
             className="inline-flex h-9 items-center gap-2 rounded-lg border border-offline/45 px-3 text-xs font-semibold text-offline hover:bg-offline/10 disabled:opacity-40"
-            title={canStop ? "Parada homologada" : "STOP indisponível para esta controladora"}
+            title={
+              canAction("stop") ? "Parada homologada" : "STOP indisponível para esta controladora"
+            }
           >
             <Power className="size-4" /> {commandBusy === "stop" ? "Enviando…" : "Desligar"}
           </button>
@@ -269,6 +286,42 @@ export function GeneratorDetailProfessionalTop({
               sub={loadPercent == null ? "Percentual N/D" : `${loadPercent.toFixed(0)}% da nominal`}
               active={model.running === true && (model.load ?? 0) > 0}
             />
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2 border-t border-border/55 pt-3">
+            {(
+              [
+                {
+                  label: model.mcbKnown ? (model.mcb ? "Abrir MCB" : "Fechar MCB") : "MCB N/D",
+                  action: model.mcb ? "mcb_open" : "mcb_close",
+                  known: model.mcbKnown,
+                },
+                {
+                  label: model.gcbKnown ? (model.gcb ? "Abrir GCB" : "Fechar GCB") : "GCB N/D",
+                  action: model.gcb ? "gcb_open" : "gcb_close",
+                  known: model.gcbKnown,
+                },
+                {
+                  label: "Paralelismo",
+                  action: "paralleling",
+                  known: true,
+                },
+              ] as const
+            ).map((item) => (
+              <button
+                key={item.action}
+                type="button"
+                disabled={!item.known || !canAction(item.action) || commandBusy !== null}
+                onClick={() => void onCommand(item.action)}
+                title={
+                  canAction(item.action)
+                    ? `${item.label} homologado`
+                    : "Comando ainda não homologado para esta controladora"
+                }
+                className="h-8 rounded-md border border-border px-3 text-[11px] font-semibold disabled:opacity-35"
+              >
+                {commandBusy === item.action ? "Enviando…" : item.label}
+              </button>
+            ))}
           </div>
         </section>
 

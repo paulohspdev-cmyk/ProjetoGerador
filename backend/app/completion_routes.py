@@ -6,7 +6,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel, Field
 
-from . import db, domain_store, ops_store
+from . import db, ops_store
 from .auth import require_admin, require_edit
 from .config import DATA_DIR
 
@@ -305,50 +305,4 @@ def backup_delete(item_id: str, user: dict = Depends(require_admin)):
             path.unlink()
         conn.execute("DELETE FROM backup_records WHERE id=?", (item_id,))
     db.add_audit(actor(user), "delete", "backup", item_id, path.name)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-# --------------------------- domínio v3 ------------------------------------
-@router.delete("/api/controllers/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
-def controller_delete(item_id: str, user: dict = Depends(require_admin)):
-    controller = domain_store.get_controller(item_id)
-    if not controller:
-        raise HTTPException(status_code=404, detail="Controladora não encontrada")
-    asset = domain_store.get_asset(str(controller.get("asset_id") or "")) if controller.get("asset_id") else None
-    if asset and asset.get("legacy_generator_id"):
-        raise HTTPException(status_code=409, detail="Controladora de gerador legado deve ser retirada pelo fluxo seguro do gerador")
-    connections = domain_store.list_connections(item_id)
-    if bool(controller.get("enabled")) or any(bool(item.get("enabled")) for item in connections):
-        raise HTTPException(status_code=409, detail="Desative a controladora e todas as conexões antes de excluir")
-    with db.connect() as conn:
-        conn.execute("DELETE FROM controller_instances WHERE id=?", (item_id,))
-    db.add_audit(actor(user), "delete", "controller", item_id, str(controller.get("model") or ""))
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-@router.delete("/api/connections/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
-def connection_delete(item_id: str, user: dict = Depends(require_admin)):
-    connection = domain_store.get_connection(item_id)
-    if not connection:
-        raise HTTPException(status_code=404, detail="Conexão não encontrada")
-    controller = domain_store.get_controller(str(connection.get("controller_id") or ""))
-    asset = domain_store.get_asset(str(controller.get("asset_id") or "")) if controller and controller.get("asset_id") else None
-    if asset and asset.get("legacy_generator_id"):
-        raise HTTPException(status_code=409, detail="Conexão de gerador legado deve ser retirada pelo fluxo seguro do gerador")
-    if bool(connection.get("enabled")):
-        raise HTTPException(status_code=409, detail="Desative a conexão antes de excluir")
-    with db.connect() as conn:
-        conn.execute("DELETE FROM controller_connections WHERE id=?", (item_id,))
-    db.add_audit(actor(user), "delete", "controller_connection", item_id, str(connection.get("transport") or ""))
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-@router.delete("/api/asset-links/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
-def asset_link_delete(item_id: str, user: dict = Depends(require_admin)):
-    with db.connect() as conn:
-        current = conn.execute("SELECT * FROM asset_links WHERE id=?", (item_id,)).fetchone()
-        if not current:
-            raise HTTPException(status_code=404, detail="Relação de topologia não encontrada")
-        conn.execute("DELETE FROM asset_links WHERE id=?", (item_id,))
-    db.add_audit(actor(user), "delete", "asset_link", item_id, f"{current['from_asset_id']}->{current['to_asset_id']}:{current['relation']}")
     return Response(status_code=status.HTTP_204_NO_CONTENT)

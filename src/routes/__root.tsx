@@ -174,7 +174,7 @@ function AuthenticatedShell() {
       <AppSidebar />
       <main className="flex h-dvh min-w-0 flex-1 flex-col overflow-hidden">
         {hasError && (
-          <div className="z-50 flex flex-wrap items-center justify-between gap-2 border-b border-offline/40 bg-offline/10 px-3 py-2 text-[12px] text-offline">
+          <div className="rc-system-banner z-50 flex flex-wrap items-center justify-between gap-2 border-b border-offline/40 bg-offline/10 px-3 py-2 text-[12px] text-offline">
             <div className="min-w-0">
               <b>Falha ao carregar dados do sistema.</b>
               {generatorsError && <span className="ml-1">Geradores: {generatorsError}.</span>}

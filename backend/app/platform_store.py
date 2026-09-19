@@ -151,6 +151,8 @@ def init_platform_db() -> None:
                 token_hash TEXT NOT NULL UNIQUE,
                 token_prefix TEXT NOT NULL,
                 scopes TEXT NOT NULL,
+                allowed_generators TEXT NOT NULL DEFAULT '',
+                allowed_cidrs TEXT NOT NULL DEFAULT '',
                 rate_limit INTEGER NOT NULL DEFAULT 120,
                 active INTEGER NOT NULL DEFAULT 1,
                 expires_at INTEGER,
@@ -201,6 +203,14 @@ def init_platform_db() -> None:
             );
             """
         )
+        api_token_columns = {
+            str(row["name"]) for row in conn.execute("PRAGMA table_info(api_tokens)").fetchall()
+        }
+        if "allowed_generators" not in api_token_columns:
+            conn.execute("ALTER TABLE api_tokens ADD COLUMN allowed_generators TEXT NOT NULL DEFAULT ''")
+        if "allowed_cidrs" not in api_token_columns:
+            conn.execute("ALTER TABLE api_tokens ADD COLUMN allowed_cidrs TEXT NOT NULL DEFAULT ''")
+
         conn.execute("DELETE FROM password_reset_tokens WHERE expires_at < ? OR used_at IS NOT NULL", (_now() - 86400,))
         conn.execute("DELETE FROM api_rate WHERE minute_bucket < ?", ((_now() // 60) - 120,))
 
@@ -778,16 +788,41 @@ def get_totp(user_id: str):
     return _row(row)
 
 
-def create_api_token(name: str, scopes: list[str], rate_limit: int = 120, expires_at: int | None = None):
+def create_api_token(
+    name: str,
+    scopes: list[str],
+    rate_limit: int = 120,
+    expires_at: int | None = None,
+    allowed_generators: list[str] | None = None,
+    allowed_cidrs: list[str] | None = None,
+):
     raw = "rcg_" + secrets.token_urlsafe(40)
     digest = hashlib.sha256(raw.encode()).hexdigest()
     now = _now()
     item_id = _id("tok")
     clean_scopes = sorted({str(s).strip() for s in scopes if str(s).strip()})
+    clean_generators = sorted(
+        {str(item).strip() for item in (allowed_generators or []) if str(item).strip()}
+    )
+    clean_cidrs = sorted({str(item).strip() for item in (allowed_cidrs or []) if str(item).strip()})
     with db.connect() as conn:
         conn.execute(
-            "INSERT INTO api_tokens(id,name,token_hash,token_prefix,scopes,rate_limit,active,expires_at,last_used,created_at) VALUES (?,?,?,?,?,?,1,?,NULL,?)",
-            (item_id, name.strip(), digest, raw[:12], " ".join(clean_scopes), max(10, min(int(rate_limit), 5000)), expires_at, now),
+            """INSERT INTO api_tokens(
+                   id,name,token_hash,token_prefix,scopes,allowed_generators,allowed_cidrs,
+                   rate_limit,active,expires_at,last_used,created_at
+               ) VALUES (?,?,?,?,?,?,?,?,1,?,NULL,?)""",
+            (
+                item_id,
+                name.strip(),
+                digest,
+                raw[:12],
+                " ".join(clean_scopes),
+                "\n".join(clean_generators),
+                "\n".join(clean_cidrs),
+                max(10, min(int(rate_limit), 5000)),
+                expires_at,
+                now,
+            ),
         )
     return raw, get_api_token(item_id)
 
@@ -799,6 +834,8 @@ def get_api_token(item_id: str):
     if item:
         item.pop("token_hash", None)
         item["scopes"] = str(item.get("scopes") or "").split()
+        item["allowed_generators"] = [x for x in str(item.get("allowed_generators") or "").splitlines() if x]
+        item["allowed_cidrs"] = [x for x in str(item.get("allowed_cidrs") or "").splitlines() if x]
     return item
 
 
@@ -810,6 +847,8 @@ def list_api_tokens():
         item = _row(row)
         item.pop("token_hash", None)
         item["scopes"] = str(item.get("scopes") or "").split()
+        item["allowed_generators"] = [x for x in str(item.get("allowed_generators") or "").splitlines() if x]
+        item["allowed_cidrs"] = [x for x in str(item.get("allowed_cidrs") or "").splitlines() if x]
         result.append(item)
     return result
 
@@ -832,6 +871,8 @@ def authenticate_api_token(raw: str):
         conn.execute("UPDATE api_tokens SET last_used=? WHERE id=?", (now, row["id"]))
         item = dict(row)
         item["scopes"] = str(item.get("scopes") or "").split()
+        item["allowed_generators"] = [x for x in str(item.get("allowed_generators") or "").splitlines() if x]
+        item["allowed_cidrs"] = [x for x in str(item.get("allowed_cidrs") or "").splitlines() if x]
         return item
 
 

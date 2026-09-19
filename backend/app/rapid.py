@@ -16,8 +16,6 @@ from .config import (
 )
 from .controller_library import pack_for_model
 from . import db
-from .dse_lab import is_target as is_dse_lab_target
-from .ig4_lab import is_target as is_ig4_lab_target
 
 _cache = {"at": 0.0, "channels": {}, "error": "", "requested": set()}
 _cache_lock = threading.Lock()
@@ -449,32 +447,31 @@ def _effective_capabilities(generator, status: str, binding_present: bool) -> di
     production_pack = bool(pack and pack.get("lifecycle") == "production")
     field_validated = bool(production_pack and pack.get("status") == "field_validated")
     online = status == "online"
-    ig4_lab_start = bool(
-        field_validated and online and binding_present and is_ig4_lab_target(generator)
-    )
-    dse_lab_control = bool(
-        binding_present
-        and status in {"online", "partial", "connected"}
-        and is_dse_lab_target(generator)
-    )
-    return {
-        # Telemetria read-only pode ser liberada por um pack production que a
-        # declara explicitamente, mesmo quando o contrato do pack não libera
-        # comandos de campo (caso DSE GenComm documentado).
+    commands = dict((pack or {}).get("commands") or {})
+
+    result = {
         "telemetry": bool(production_pack and binding_present and declared.get("telemetry")),
-        # Ações production continuam exigindo homologação física. O ensaio DSE
-        # é um caminho LAB separado, explicitamente habilitado e limitado por allowlist.
-        "start": bool(field_validated and online and declared.get("start")) or ig4_lab_start or dse_lab_control,
-        "stop": bool(field_validated and online and declared.get("stop")) or dse_lab_control,
-        "auto": False,
-        "manual": False,
-        "test": False,
-        "mcb_open": False,
-        "mcb_close": False,
-        "gcb_open": False,
-        "gcb_close": False,
-        "paralleling": False,
     }
+    for action in (
+        "start",
+        "stop",
+        "auto",
+        "manual",
+        "test",
+        "mcb_open",
+        "mcb_close",
+        "gcb_open",
+        "gcb_close",
+        "paralleling",
+    ):
+        result[action] = bool(
+            field_validated
+            and online
+            and binding_present
+            and declared.get(action)
+            and isinstance(commands.get(action), dict)
+        )
+    return result
 
 
 def _derive_breaker_feedback(values):

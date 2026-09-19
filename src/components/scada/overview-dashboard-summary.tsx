@@ -63,26 +63,26 @@ export function DecisionHeader({
     <section className="rc-page-hero px-4 py-4 sm:px-5 sm:py-5">
       <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
         <div className="max-w-2xl">
-          <p className="text-[11px] font-extrabold uppercase tracking-[0.13em] text-primary">
-            Visão geral
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-primary">
+            Centro de operação
           </p>
-          <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-white">
-            Painel de decisão
+          <h2 className="mt-1 text-xl font-extrabold tracking-tight text-white">
+            Resumo operacional
           </h2>
           <p className="mt-1.5 text-sm leading-6 text-slate-400">
-            Disponibilidade, comunicação, alarmes, manutenção e consumo em uma única visão
+            Estado do parque, comunicação, alarmes, manutenção e consumo consolidados para decisão
             operacional.
           </p>
         </div>
         <div className="flex items-center gap-2 text-xs text-slate-400">
-          <span className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/8 bg-black/10 px-3">
+          <span className="inline-flex h-8 items-center gap-2 rounded-md border border-white/8 bg-black/10 px-3">
             <Clock3 className="size-4" />
             {updatedAt ? `Atualizado ${updatedAt.toLocaleTimeString("pt-BR")}` : "Atualizando…"}
           </span>
           <button
             type="button"
             onClick={onRefresh}
-            className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/10 bg-black/10 px-3 font-semibold text-slate-300 transition-colors hover:border-primary/40 hover:text-white"
+            className="inline-flex h-8 items-center gap-2 rounded-md border border-white/10 bg-black/10 px-3 text-[10px] font-extrabold uppercase tracking-[0.06em] text-slate-300 transition-colors hover:border-primary/40 hover:text-white"
             aria-label="Atualizar painel"
           >
             <RefreshCw className="size-4 text-primary" /> Atualizar
@@ -95,7 +95,7 @@ export function DecisionHeader({
 
 export function DecisionErrorBanner({ onRetry }: { onRetry: () => void }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-offline/40 bg-offline/10 px-4 py-3 text-sm text-offline">
+    <div className="rc-system-banner flex flex-wrap items-center justify-between gap-2 rounded-md border border-offline/40 bg-offline/10 px-4 py-3 text-sm text-offline">
       <div>
         <b>Parte do painel está temporariamente indisponível.</b>
         <span className="ml-1 text-foreground/75">Os demais indicadores continuam válidos.</span>

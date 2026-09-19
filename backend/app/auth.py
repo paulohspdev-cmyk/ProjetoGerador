@@ -7,18 +7,23 @@ from typing import Callable
 
 from fastapi import Depends, HTTPException, Request, Response, status
 
-from . import db
+from . import db, platform_store
 from .config import (
     AUTH_COOKIE_NAME,
     AUTH_COOKIE_SECURE,
     AUTH_SESSION_TTL,
 )
+from .production_guard import production_mode
 
 ROLE_PERMISSIONS = {
     "administrador": {"view", "operate", "create", "edit", "remove", "manage_users", "audit", "admin"},
+    "operador": {"view", "operate"},
     "cadastro": {"view", "create", "edit"},
     "visualizacao": {"view"},
 }
+
+VALID_ROLES = frozenset(ROLE_PERMISSIONS)
+PRIVILEGED_ROLES = {"administrador", "operador"}
 
 TRUSTED_PROXY_PEERS = {"127.0.0.1", "::1"}
 
@@ -77,6 +82,14 @@ def token_hash(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
+def two_factor_enabled(user: dict) -> bool:
+    try:
+        item = platform_store.get_totp(str(user.get("id") or ""))
+    except Exception:
+        return False
+    return bool(item and item.get("enabled"))
+
+
 def public_user(user: dict) -> dict:
     last_access = user.get("last_access")
     return {
@@ -86,6 +99,7 @@ def public_user(user: dict) -> dict:
         "role": user["role"],
         "active": bool(user.get("active")),
         "lastAccess": time.strftime("%d/%m/%Y %H:%M:%S", time.localtime(last_access)) if last_access else None,
+        "twoFactorEnabled": two_factor_enabled(user),
     }
 
 
@@ -158,6 +172,16 @@ def require(permission: str) -> Callable:
     def dependency(user: dict = Depends(current_user)) -> dict:
         if not can(user, permission):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permissão insuficiente")
+        if (
+            production_mode()
+            and user.get("role") in PRIVILEGED_ROLES
+            and permission != "view"
+            and not two_factor_enabled(user)
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_428_PRECONDITION_REQUIRED,
+                detail="2FA obrigatório para executar ações privilegiadas. Configure TOTP em Configurações.",
+            )
         return user
 
     return dependency

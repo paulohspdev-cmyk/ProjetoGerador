@@ -159,7 +159,7 @@ async def validate_disconnect_backoff():
     assert snapshot["unitHealth"]["2"]["backoffRemainingSeconds"] > 0
 
 
-async def validate_ig4_lab_gate_and_payload():
+async def validate_ig4_production_gate():
     ig4 = db.create_generator(
         {
             "tag": "GEN204",
@@ -190,45 +190,23 @@ async def validate_ig4_lab_gate_and_payload():
     )
     bindings_path.write_text(json.dumps(bindings), encoding="utf-8")
 
-    assert rapid._effective_capabilities(ig4, "online", True)["start"] is False
+    caps = rapid._effective_capabilities(ig4, "online", True)
+    assert caps["start"] is False
+    assert caps["stop"] is False
 
+    # Variáveis LAB não podem mais promover capability no caminho de produção.
     os.environ["RC_ENABLE_IG4_LAB_CONTROL"] = "1"
     os.environ["RC_IG4_LAB_ALLOWLIST"] = "GEN204"
     try:
         caps = rapid._effective_capabilities(ig4, "online", True)
-        assert caps["start"] is True
+        assert caps["start"] is False
         assert caps["stop"] is False
-
-        resolved, port, unit = bridge_runtime.resolve_ig4_lab_bound_device(ig4["id"], 206)
-        assert resolved["tag"] == "GEN204"
-        assert port == 15003
-        assert unit == 4
-        assert bridge_runtime._remote_framing_for_generator(resolved) == bridge_runtime.FRAMING_MODBUS_RTU
-
-        writer = FakeWriter()
-
-        async def fake_open_unix_connection(_path):
-            return FakeReader(), writer
-
-        with patch.object(control.Path, "exists", return_value=True), patch.object(
-            control.asyncio,
-            "open_unix_connection",
-            side_effect=fake_open_unix_connection,
-        ):
-            result = await control.send_homologated_command(ig4, "start")
-        assert result["accepted"] is True
-        payload = json.loads(writer.payload.decode("utf-8").strip())
-        assert payload["generator_id"] == ig4["id"]
-        assert payload["device"] == 206
-        assert payload["action"] == "start"
-        assert payload["confirm"] == "IG4_LAB_START_CONFIRMED"
-
         try:
-            await control.send_homologated_command(ig4, "stop")
-        except ValueError:
-            pass
+            await control.send_homologated_command(ig4, "start")
+        except ValueError as exc:
+            assert "homologado" in str(exc) or "contrato" in str(exc) or "comando" in str(exc).lower()
         else:
-            raise AssertionError("STOP não pode ser promovido pelo gate START do IG4 LAB")
+            raise AssertionError("IG4 sem contrato production aceitou START")
     finally:
         os.environ.pop("RC_ENABLE_IG4_LAB_CONTROL", None)
         os.environ.pop("RC_IG4_LAB_ALLOWLIST", None)
@@ -299,7 +277,7 @@ async def validate_ig4_lab_start_interlock():
 asyncio.run(validate_payload())
 asyncio.run(validate_unit_backoff())
 asyncio.run(validate_disconnect_backoff())
-asyncio.run(validate_ig4_lab_gate_and_payload())
+asyncio.run(validate_ig4_production_gate())
 asyncio.run(validate_ig4_lab_start_interlock())
 print("RC Geradores multi-device control smoke: OK")
 tmp.cleanup()

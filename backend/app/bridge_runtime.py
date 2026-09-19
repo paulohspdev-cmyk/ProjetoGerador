@@ -24,6 +24,7 @@ from pathlib import Path
 
 from . import bridge, db, ig4_lab, traffic_store
 from .controller_library import pack_for_model
+from .production_guard import validate_production_runtime
 
 STATUS_FILE = Path(os.environ.get("RC_BRIDGE_STATUS_FILE", "/run/rc-geradores/bridge-status.json"))
 CONNECT_RATE_LIMIT = max(1, int(os.environ.get("RC_RAPID_CONNECT_RATE_LIMIT", "30")))
@@ -948,6 +949,7 @@ async def reconcile_reverse_tcp():
 
 
 async def main():
+    validate_production_runtime()
     db.init_db()
     try:
         STATUS_FILE.unlink(missing_ok=True)

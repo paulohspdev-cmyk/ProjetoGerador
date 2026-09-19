@@ -1,5 +1,6 @@
 import { Play, Square } from "lucide-react";
 
+import type { IndustrialCommandAction } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 function TowerIcon() {
@@ -40,24 +41,49 @@ function BreakerBadge({
   label,
   closed,
   known,
+  commandable,
+  busy,
+  onToggle,
 }: {
   x: number;
   y: number;
   label: string;
   closed: boolean;
   known: boolean;
+  commandable: boolean;
+  busy: boolean;
+  onToggle: () => void;
 }) {
   const stateClass = !known ? "is-unknown" : closed ? "is-closed" : "is-open";
   const stateText = !known ? "—" : closed ? "I" : "O";
 
+  const interactive = known && commandable && !busy;
+  const activate = () => {
+    if (interactive) onToggle();
+  };
+
   return (
-    <g className={cn("vref-breaker-badge", stateClass)} transform={`translate(${x} ${y})`}>
+    <g
+      className={cn("vref-breaker-badge", stateClass, interactive && "is-commandable")}
+      transform={`translate(${x} ${y})`}
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      aria-disabled={!interactive}
+      aria-label={`${label} ${known ? (closed ? "fechado" : "aberto") : "estado desconhecido"}`}
+      onClick={activate}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          activate();
+        }
+      }}
+    >
       <text x="0" y="-12" textAnchor="middle" className="label">
         {label}
       </text>
       <rect x="-17" y="-8" width="34" height="24" rx="4" />
       <text x="0" y="8" textAnchor="middle" className="state">
-        {stateText}
+        {busy ? "…" : stateText}
       </text>
     </g>
   );
@@ -92,9 +118,12 @@ export function VerticalPowerFlow({
   running,
   canStart,
   canStop,
+  canMcbOpen,
+  canMcbClose,
+  canGcbOpen,
+  canGcbClose,
   busy,
-  onStart,
-  onStop,
+  onCommand,
 }: {
   mainsPresent: boolean;
   mainsKnown: boolean;
@@ -109,9 +138,12 @@ export function VerticalPowerFlow({
   running: boolean;
   canStart: boolean;
   canStop: boolean;
-  busy: "start" | "stop" | null;
-  onStart: () => void;
-  onStop: () => void;
+  canMcbOpen: boolean;
+  canMcbClose: boolean;
+  canGcbOpen: boolean;
+  canGcbClose: boolean;
+  busy: IndustrialCommandAction | null;
+  onCommand: (action: IndustrialCommandAction) => void;
 }) {
   const mainsToBus = mainsKnown && mainsPresent && mcbKnown && mcb;
   const genToBus = running && gcbKnown && gcb;
@@ -146,7 +178,16 @@ export function VerticalPowerFlow({
             className={cn("vref-wire-live", mainsKnown && mainsPresent && "is-live")}
           />
 
-          <BreakerBadge x={50} y={84} label="MCB" closed={mcb} known={mcbKnown} />
+          <BreakerBadge
+            x={50}
+            y={84}
+            label="MCB"
+            closed={mcb}
+            known={mcbKnown}
+            commandable={mcb ? canMcbOpen : canMcbClose}
+            busy={busy === "mcb_open" || busy === "mcb_close"}
+            onToggle={() => onCommand(mcb ? "mcb_open" : "mcb_close")}
+          />
           <VerticalContact x={112} y1={73} y2={94} closed={mcb} known={mcbKnown} />
 
           <path d="M112 94 V126" className="vref-wire" />
@@ -171,7 +212,16 @@ export function VerticalPowerFlow({
           <path d="M112 126 V155" className="vref-wire" />
           <path d="M112 126 V155" className={cn("vref-wire-live", genToBus && "is-live")} />
 
-          <BreakerBadge x={50} y={166} label="GCB" closed={gcb} known={gcbKnown} />
+          <BreakerBadge
+            x={50}
+            y={166}
+            label="GCB"
+            closed={gcb}
+            known={gcbKnown}
+            commandable={gcb ? canGcbOpen : canGcbClose}
+            busy={busy === "gcb_open" || busy === "gcb_close"}
+            onToggle={() => onCommand(gcb ? "gcb_open" : "gcb_close")}
+          />
           <VerticalContact x={112} y1={155} y2={176} closed={gcb} known={gcbKnown} />
 
           <path d="M112 176 V205" className="vref-wire" />
@@ -197,7 +247,7 @@ export function VerticalPowerFlow({
             type="button"
             className="start"
             disabled={!canStart || busy !== null}
-            onClick={onStart}
+            onClick={() => onCommand("start")}
           >
             <Play aria-hidden />
             {busy === "start" ? "..." : "START"}
@@ -206,7 +256,7 @@ export function VerticalPowerFlow({
             type="button"
             className="stop"
             disabled={!canStop || busy !== null}
-            onClick={onStop}
+            onClick={() => onCommand("stop")}
           >
             <Square aria-hidden />
             {busy === "stop" ? "..." : "STOP"}

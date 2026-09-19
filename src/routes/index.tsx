@@ -24,7 +24,7 @@ export const Route = createFileRoute("/")({
 function Index() {
   return (
     <>
-      <Topbar breadcrumb={["RC Geradores", "Dashboards"]} title="Visão Geral" />
+      <Topbar breadcrumb={["Operação", "Resumo"]} title="Resumo Operacional" />
       <OverviewDashboard />
     </>
   );

@@ -14,6 +14,8 @@ for rel in ("BaseDAT", "Config", "ScadaComm/Config"):
     (target / "placeholder.txt").write_text("test")
 os.environ["RC_RAPID_SCADA_ROOT"] = str(scada_root)
 os.environ["RC_BRIDGE_STATUS_FILE"] = str(Path(tmp.name) / "bridge-status.json")
+os.environ["RC_RAPID_CONTROL_SOCKET"] = str(Path(tmp.name) / "control.sock")
+os.environ["RC_PROVISION_SOCKET"] = str(Path(tmp.name) / "provision.sock")
 rapid_archive = Path(tmp.name) / "rapid-archive"
 rapid_archive.mkdir(parents=True, exist_ok=True)
 (rapid_archive / "history.bin").write_bytes(b"history")

@@ -398,6 +398,20 @@
   stroke: #758b97;
 }
 
+.vref-breaker-badge.is-commandable {
+  cursor: pointer;
+  outline: none;
+}
+
+.vref-breaker-badge.is-commandable > rect {
+  stroke-width: 2;
+}
+
+.vref-breaker-badge.is-commandable:focus > rect,
+.vref-breaker-badge.is-commandable:hover > rect {
+  filter: brightness(1.12);
+}
+
 .vref-load-card {
   fill: #061824;
   stroke: #315a71;

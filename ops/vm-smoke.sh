@@ -5,6 +5,7 @@ BASE="${RC_PROJECT_ROOT:-/opt/rc-geradores}"
 ENV_FILE="${RC_ENV_FILE:-/etc/rc-geradores.env}"
 CONTROL_SOCKET="/run/rc-geradores/control.sock"
 PROVISION_SOCKET="/run/rc-geradores/provision.sock"
+WEB_TLS_MODE="${RC_WEB_TLS_MODE:-managed}"
 REQUIRE_GENERATOR=0
 REQUIRE_HEALTHY_DEVICES=0
 FAILURES=0
@@ -44,6 +45,7 @@ if [[ -f "$ENV_FILE" ]]; then
   BASE="${RC_PROJECT_ROOT:-$BASE}"
   CONTROL_SOCKET="${RC_RAPID_CONTROL_SOCKET:-$CONTROL_SOCKET}"
   PROVISION_SOCKET="${RC_PROVISION_SOCKET:-$PROVISION_SOCKET}"
+  WEB_TLS_MODE="${RC_WEB_TLS_MODE:-$WEB_TLS_MODE}"
 fi
 
 ok() { printf 'OK   %s\n' "$*"; }
@@ -103,7 +105,11 @@ echo "============================================================"
 echo " RC GERADORES - SMOKE TEST DA VM"
 echo "============================================================"
 
-for command in python3 node npm dotnet curl jq ss systemctl openssl nginx runuser; do
+REQUIRED_COMMANDS=(python3 node npm dotnet curl jq ss systemctl runuser)
+if [[ "$WEB_TLS_MODE" != "external_proxy" ]]; then
+  REQUIRED_COMMANDS+=(openssl nginx)
+fi
+for command in "${REQUIRED_COMMANDS[@]}"; do
   if command -v "$command" >/dev/null 2>&1; then ok "comando $command disponível"; else fail "comando $command ausente"; fi
 done
 
@@ -112,37 +118,50 @@ if [[ "$NODE_MAJOR" =~ ^[0-9]+$ ]] && (( NODE_MAJOR >= 22 )); then ok "Node >= 2
 
 if dotnet --list-sdks 2>/dev/null | grep -q '^8\.'; then ok ".NET SDK 8 instalado"; else fail ".NET SDK 8 ausente"; fi
 if dotnet --list-runtimes 2>/dev/null | grep -q '^Microsoft.NETCore.App 8\.'; then ok ".NET Runtime 8 instalado"; else fail ".NET Runtime 8 ausente"; fi
-if nginx -t >/dev/null 2>&1; then ok "configuração Nginx válida"; else fail "configuração Nginx inválida"; fi
+if [[ "$WEB_TLS_MODE" == "external_proxy" ]]; then
+  info "TLS/HTTPS delegado ao Nginx Proxy Manager; smoke não valida certificado local"
+else
+  if nginx -t >/dev/null 2>&1; then ok "configuração Nginx válida"; else fail "configuração Nginx inválida"; fi
+fi
 
-for file in \
-  "$BASE/package.json" \
-  "$BASE/backend/.venv/bin/python" \
-  "$BASE/.output/server/index.mjs" \
-  "$BASE/.rapid-reader/RcRapidReader.dll" \
-  /etc/ssl/rc-geradores/fullchain.pem \
-  /etc/ssl/rc-geradores/privkey.pem \
-  /opt/scada/ScadaComm/Config/ScadaCommConfig.xml \
-  /opt/scada/BaseDAT/commline.dat \
-  /opt/scada/BaseDAT/device.dat \
-  /opt/scada/BaseDAT/cnl.dat; do
+FILES=(
+  "$BASE/package.json"
+  "$BASE/backend/.venv/bin/python"
+  "$BASE/.output/server/index.mjs"
+  "$BASE/.rapid-reader/RcRapidReader.dll"
+  /opt/scada/ScadaComm/Config/ScadaCommConfig.xml
+  /opt/scada/BaseDAT/commline.dat
+  /opt/scada/BaseDAT/device.dat
+  /opt/scada/BaseDAT/cnl.dat
+)
+if [[ "$WEB_TLS_MODE" != "external_proxy" ]]; then
+  FILES+=(/etc/ssl/rc-geradores/fullchain.pem /etc/ssl/rc-geradores/privkey.pem)
+fi
+for file in "${FILES[@]}"; do
   if [[ -e "$file" ]]; then ok "arquivo $file"; else fail "arquivo ausente: $file"; fi
 done
 
-if openssl x509 -in /etc/ssl/rc-geradores/fullchain.pem -noout -checkend 86400 >/dev/null 2>&1; then
-  ok "certificado TLS válido por mais de 24h"
-else
-  fail "certificado TLS ausente, inválido ou próximo da expiração"
+if [[ "$WEB_TLS_MODE" != "external_proxy" ]]; then
+  if openssl x509 -in /etc/ssl/rc-geradores/fullchain.pem -noout -checkend 86400 >/dev/null 2>&1; then
+    ok "certificado TLS válido por mais de 24h"
+  else
+    fail "certificado TLS ausente, inválido ou próximo da expiração"
+  fi
 fi
 
-for svc in \
-  rc-geradores-bridge \
-  rc-geradores-provision \
-  rc-geradores-api \
-  rc-geradores-worker \
-  rc-geradores-frontend \
-  scadaserver6 \
-  scadacomm6 \
-  nginx; do
+SERVICES=(
+  rc-geradores-bridge
+  rc-geradores-provision
+  rc-geradores-api
+  rc-geradores-worker
+  rc-geradores-frontend
+  scadaserver6
+  scadacomm6
+)
+if [[ "$WEB_TLS_MODE" != "external_proxy" ]]; then
+  SERVICES+=(nginx)
+fi
+for svc in "${SERVICES[@]}"; do
   check_service "$svc"
 done
 
@@ -151,16 +170,20 @@ done
 
 check_url "API direta" "http://127.0.0.1:8090/api/health"
 check_url "frontend direto" "http://127.0.0.1:3000/"
-check_https_url "proxy Nginx HTTPS" "https://127.0.0.1/api/health"
-if curl -sSI --max-time 8 http://127.0.0.1/api/health | grep -qi '^Location: https://'; then
-  ok "Nginx redireciona HTTP para HTTPS"
-else
-  fail "Nginx não redirecionou HTTP para HTTPS"
-fi
 check_port 8090 "API"
 check_port 3000 "frontend"
-check_port 80 "Nginx redirect"
-check_port 443 "Nginx HTTPS"
+if [[ "$WEB_TLS_MODE" == "external_proxy" ]]; then
+  info "HTTPS e redirecionamento são responsabilidade do Nginx Proxy Manager externo"
+else
+  check_https_url "proxy Nginx HTTPS" "https://127.0.0.1/api/health"
+  if curl -sSI --max-time 8 http://127.0.0.1/api/health | grep -qi '^Location: https://'; then
+    ok "Nginx redireciona HTTP para HTTPS"
+  else
+    fail "Nginx não redirecionou HTTP para HTTPS"
+  fi
+  check_port 80 "Nginx redirect"
+  check_port 443 "Nginx HTTPS"
+fi
 
 if python3 "$BASE/rapid/provisioning/rapid_dat.py" check \
   /opt/scada/BaseDAT/commline.dat \
@@ -277,8 +300,15 @@ PY
   fi
 fi
 
-# Jornada que o navegador realmente usa: sessão autenticada -> HTTPS/Nginx -> API -> inventário.
-# A sessão é efêmera, criada no banco pelo próprio usuário de serviço e removida ao final.
+# Jornada autenticada da API. Em external_proxy validamos o upstream local;
+# HTTPS/certificado/redirecionamento pertencem ao Nginx Proxy Manager.
+if [[ "$WEB_TLS_MODE" == "external_proxy" ]]; then
+  SMOKE_API_BASE="http://127.0.0.1:8090"
+  SMOKE_CURL_TLS=()
+else
+  SMOKE_API_BASE="https://127.0.0.1"
+  SMOKE_CURL_TLS=(-k)
+fi
 SESSION_JSON=""
 if SESSION_JSON="$(python_as_service - <<'PY'
 import json
@@ -315,11 +345,11 @@ PY
     fail "sessão temporária do smoke retornou payload inválido"
   else
     GEN_RESPONSE=""
-    if GEN_RESPONSE="$(curl -kfsS --max-time 12 --cookie "${SMOKE_COOKIE}=${SMOKE_TOKEN}" https://127.0.0.1/api/generators 2>/tmp/rc-generators-api-smoke.err)"; then
+    if GEN_RESPONSE="$(curl "${SMOKE_CURL_TLS[@]}" -fsS --max-time 12 --cookie "${SMOKE_COOKIE}=${SMOKE_TOKEN}" "${SMOKE_API_BASE}/api/generators" 2>/tmp/rc-generators-api-smoke.err)"; then
       if jq -e 'type == "array"' >/dev/null 2>&1 <<<"$GEN_RESPONSE"; then
         API_GENERATORS="$(jq 'length' <<<"$GEN_RESPONSE")"
         if [[ "$API_GENERATORS" == "$EXPECTED_GENERATORS" ]]; then
-          ok "sessão HTTPS vê $API_GENERATORS/$EXPECTED_GENERATORS gerador(es) do banco ($SMOKE_USER)"
+          ok "sessão autenticada vê $API_GENERATORS/$EXPECTED_GENERATORS gerador(es) do banco ($SMOKE_USER)"
         else
           fail "API autenticada devolveu $API_GENERATORS gerador(es), banco possui $EXPECTED_GENERATORS"
         fi
@@ -335,19 +365,19 @@ PY
       fi
     else
       cat /tmp/rc-generators-api-smoke.err >&2 2>/dev/null || true
-      fail "jornada autenticada HTTPS /api/generators falhou"
+      fail "jornada autenticada /api/generators falhou"
     fi
 
     OPS_RESPONSE=""
-    if OPS_RESPONSE="$(curl -kfsS --max-time 12 --cookie "${SMOKE_COOKIE}=${SMOKE_TOKEN}" https://127.0.0.1/api/ops/bootstrap 2>/tmp/rc-ops-api-smoke.err)"; then
+    if OPS_RESPONSE="$(curl "${SMOKE_CURL_TLS[@]}" -fsS --max-time 12 --cookie "${SMOKE_COOKIE}=${SMOKE_TOKEN}" "${SMOKE_API_BASE}/api/ops/bootstrap" 2>/tmp/rc-ops-api-smoke.err)"; then
       if jq -e '(.clients | type == "array") and (.sites | type == "array") and (.workOrders | type == "array") and (.agenda | type == "array") and (.rules | type == "array") and (.reports | type == "array") and (.webhooks | type == "array")' >/dev/null 2>&1 <<<"$OPS_RESPONSE"; then
-        ok "bootstrap operacional autenticado responde pelo HTTPS"
+        ok "bootstrap operacional autenticado responde"
       else
         fail "bootstrap operacional autenticado retornou estrutura inválida"
       fi
     else
       cat /tmp/rc-ops-api-smoke.err >&2 2>/dev/null || true
-      fail "jornada autenticada HTTPS /api/ops/bootstrap falhou"
+      fail "jornada autenticada /api/ops/bootstrap falhou"
     fi
   fi
 else

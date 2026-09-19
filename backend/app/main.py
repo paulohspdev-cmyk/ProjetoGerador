@@ -15,6 +15,7 @@ from .auth import (
     destroy_login_session,
     hash_password,
     public_user,
+    VALID_ROLES,
     require_admin,
     require_audit,
     require_create,
@@ -38,7 +39,7 @@ from .config import (
     RAPID_COMM_CONFIG,
     RAPID_READER_DLL,
 )
-from .control import send_homologated_command
+from .control import COMMAND_ACTIONS, send_homologated_command
 from .diagnostics import system_diagnostics
 from .domain_routes import router as domain_router
 from .extra_routes import router as extra_router
@@ -57,6 +58,7 @@ from .ops_schemas import (
     WorkOrderUpdate,
 )
 from .rapid import available_metrics, dashboard, load_bindings, overlay_generators, trend_for_generator
+from .production_guard import validate_production_runtime
 from .reporting import generate_report
 from .schemas import CommandRequest, GeneratorCreate, GeneratorUpdate, LoginRequest, UserCreate, UserUpdate
 from .security_service import begin_login, totp_required, verify_user_totp
@@ -64,6 +66,7 @@ from .security_service import begin_login, totp_required, verify_user_totp
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    validate_production_runtime()
     db.init_db()
     ops_store.init_ops_db()
     platform_store.init_platform_db()
@@ -222,7 +225,7 @@ def users_list(user: dict = Depends(require_manage_users)):
 
 @app.post("/api/users", status_code=status.HTTP_201_CREATED)
 def users_create(payload: UserCreate, user: dict = Depends(require_manage_users)):
-    if payload.role not in {"administrador", "cadastro", "visualizacao"}:
+    if payload.role not in VALID_ROLES:
         raise HTTPException(status_code=422, detail="Perfil inválido")
     try:
         created = db.create_user({"name": payload.name, "email": payload.email, "password_hash": hash_password(payload.password), "role": payload.role, "active": True}, actor=actor(user))
@@ -241,7 +244,7 @@ def users_update(user_id: str, payload: UserUpdate, user: dict = Depends(require
     patch = payload.model_dump(exclude_unset=True)
     new_role = patch.get("role", target["role"])
     new_active = patch.get("active", target["active"])
-    if new_role not in {"administrador", "cadastro", "visualizacao"}:
+    if new_role not in VALID_ROLES:
         raise HTTPException(status_code=422, detail="Perfil inválido")
     if target["role"] == "administrador" and db.count_active_admins() <= 1 and (new_role != "administrador" or new_active is False):
         raise HTTPException(status_code=409, detail="Não é possível desativar ou rebaixar o último administrador")
@@ -328,8 +331,8 @@ def generator_delete(generator_id: str, user: dict = Depends(require_remove)):
 @app.post("/api/generators/{generator_id}/commands/{action}")
 async def generator_command(generator_id: str, action: str, payload: CommandRequest, user: dict = Depends(require_operate)):
     action = action.strip().lower()
-    if action not in {"start", "stop"}:
-        raise HTTPException(status_code=422, detail="Somente START e STOP estão homologados")
+    if action not in COMMAND_ACTIONS:
+        raise HTTPException(status_code=422, detail="Ação industrial desconhecida")
     if payload.confirmation.strip().upper() != action.upper():
         raise HTTPException(status_code=422, detail=f"Confirmação deve ser {action.upper()}")
     generator = db.get_generator(generator_id)

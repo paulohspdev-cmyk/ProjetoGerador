@@ -52,16 +52,20 @@ export function Stats({ items }: { items: StatItem[] }) {
             </span>
           )}
           <div className="min-w-0">
-            <p className="truncate text-[11px] font-semibold text-muted-foreground">{item.label}</p>
+            <p className="rc-stat-label truncate text-[11px] font-semibold text-muted-foreground">
+              {item.label}
+            </p>
             <p
               className={cn(
-                "num mt-0.5 break-words text-[22px] font-extrabold leading-tight tracking-tight",
+                "rc-stat-value num mt-0.5 break-words text-[22px] font-extrabold leading-tight tracking-tight",
                 item.tone,
               )}
             >
               {item.value}
             </p>
-            {item.sub && <p className="truncate text-[11px] text-muted-foreground">{item.sub}</p>}
+            {item.sub && (
+              <p className="rc-stat-sub truncate text-[11px] text-muted-foreground">{item.sub}</p>
+            )}
           </div>
         </div>
       ))}
@@ -93,7 +97,7 @@ export function Panel({
         </h2>
         {actions && <div className="scroll-slim max-w-full overflow-x-auto">{actions}</div>}
       </header>
-      <div className="min-w-0 p-3.5">{children}</div>
+      <div className="rc-panel-body min-w-0 p-3.5">{children}</div>
     </section>
   );
 }
@@ -132,7 +136,7 @@ export function Pill({
   return (
     <span
       className={cn(
-        "num inline-flex max-w-full items-center rounded-md border px-2 py-0.5 text-[10px] font-extrabold tracking-wide",
+        "rc-pill num inline-flex max-w-full items-center rounded-md border px-2 py-0.5 text-[10px] font-extrabold tracking-wide",
         map[tone],
       )}
     >
@@ -159,7 +163,7 @@ export function ScadaTable<T extends { id: string | number }>({
           Deslize horizontalmente para ver mais colunas.
         </p>
       )}
-      <div className="scroll-slim min-w-0 max-w-full touch-pan-x overflow-x-auto overscroll-x-contain">
+      <div className="rc-table-shell scroll-slim min-w-0 max-w-full touch-pan-x overflow-x-auto overscroll-x-contain">
         <table
           className="rc-data-table w-full border-separate border-spacing-0 text-[12px]"
           style={{ minWidth: min }}
@@ -170,7 +174,7 @@ export function ScadaTable<T extends { id: string | number }>({
                 <th
                   key={column.label}
                   className={cn(
-                    "border-b border-border/70 px-3 py-2.5 text-left font-bold",
+                    "sticky top-0 z-[1] border-b border-border/70 px-3 py-2.5 text-left font-bold",
                     column.hide,
                   )}
                 >
@@ -297,7 +301,7 @@ export function ActionBtn({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "max-w-full rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50",
+        "rc-action-btn max-w-full rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50",
         tone === "danger" && "border-offline/40 text-offline hover:bg-offline/10",
         tone === "ok" && "border-online/40 text-online hover:bg-online/10",
         tone === "default" && "border-border",

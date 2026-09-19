@@ -32,6 +32,7 @@ export function HealthScreen() {
   const stale = queues ? queues.staleNotificationClaims + queues.staleLifecycleOperations : 0;
   const bridgeSecurity = data?.bridge.security;
   const reverseTcpRisk = bridgeSecurity?.risk === "high";
+  const readiness = data?.productionReadiness;
 
   return (
     <ScreenBody>
@@ -67,12 +68,49 @@ export function HealthScreen() {
             sub: bridgeSecurity?.label,
             tone: reverseTcpRisk ? "text-offline" : bridgeSecurity ? "text-online" : undefined,
           },
+          {
+            icon: ShieldAlert,
+            label: "Produção",
+            value: readiness
+              ? readiness.ready
+                ? "PRONTO"
+                : `${readiness.blockers} BLOQUEIO(S)`
+              : "N/D",
+            sub: readiness ? `${readiness.warnings} aviso(s)` : undefined,
+            tone: readiness?.ready ? "text-online" : readiness ? "text-offline" : undefined,
+          },
         ]}
       />
       <Panel title="Saúde do sistema">
         <RemoteState loading={loading} error={error} empty={!data} />
         {data && <DiagnosticsTable data={data} />}
       </Panel>
+      {readiness && (
+        <Panel title="Checklist de produção">
+          <div className="mb-3 flex flex-wrap items-center gap-2 text-[12px]">
+            <Tone tone={readiness.ready ? "ok" : "warn"}>
+              {readiness.ready ? "PRONTO" : `${readiness.blockers} BLOQUEIO(S)`}
+            </Tone>
+            <span>{readiness.warnings} aviso(s)</span>
+            <span className="text-muted-foreground">{readiness.note}</span>
+          </div>
+          <ScadaTable
+            rows={readiness.checks.map((item) => ({ ...item, rowId: item.id }))}
+            columns={[
+              { label: "Verificação", render: (row) => <b>{row.label}</b> },
+              {
+                label: "Estado",
+                render: (row) => (
+                  <Tone tone={row.ok ? "ok" : "warn"}>
+                    {row.ok ? "OK" : row.severity === "blocker" ? "BLOQUEIO" : "AVISO"}
+                  </Tone>
+                ),
+              },
+              { label: "Detalhe", render: (row) => row.detail },
+            ]}
+          />
+        </Panel>
+      )}
       {bridgeSecurity && (
         <Panel title="Segurança reverse TCP">
           <div className="flex flex-wrap items-center gap-2 text-[12px]">

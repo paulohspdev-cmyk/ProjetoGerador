@@ -64,9 +64,9 @@ export const navGroups: NavGroup[] = [
   {
     title: "Operação",
     items: [
-      { label: "Visão Geral", slug: "", icon: LayoutDashboard },
+      { label: "Resumo Operacional", slug: "", icon: LayoutDashboard },
       { label: "Geradores", slug: "geradores", icon: Fan },
-      { label: "Central de Operação", slug: "central-de-operacao", icon: Gauge },
+      { label: "Centro de Operações", slug: "central-de-operacao", icon: Gauge },
       { label: "Alarmes", slug: "alarmes", icon: BellRing },
       { label: "Eventos", slug: "eventos", icon: Activity },
       { label: "Mapa", slug: "mapa", icon: Map },

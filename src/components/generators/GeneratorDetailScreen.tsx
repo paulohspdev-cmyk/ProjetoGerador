@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCommandGuard } from "@/components/scada/ScadaOpsProvider";
 import type { Generator } from "@/data/generators";
-import { rcApi } from "@/lib/api";
+import { rcApi, type IndustrialCommandAction } from "@/lib/api";
 import { industrialApi, type MaintenancePlan } from "@/lib/industrial-api";
 
 import { useGenerators } from "./GeneratorsProvider";
@@ -17,7 +17,7 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
   const { can } = useAuth();
   const { refresh } = useGenerators();
   const confirmCmd = useCommandGuard();
-  const [commandBusy, setCommandBusy] = useState<"start" | "stop" | null>(null);
+  const [commandBusy, setCommandBusy] = useState<IndustrialCommandAction | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [plans, setPlans] = useState<MaintenancePlan[]>([]);
   const [maintenanceError, setMaintenanceError] = useState("");
@@ -50,22 +50,22 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
 
   const configured = gen.enabled !== false && gen.status !== "nao_configurado";
   const operationallyReachable = !gen.telemetryStale && gen.status !== "offline";
-  const canStart =
-    can("operate") && configured && operationallyReachable && gen.capabilities?.start === true;
-  const canStop =
-    can("operate") && configured && operationallyReachable && gen.capabilities?.stop === true;
+  const canAction = (action: IndustrialCommandAction) =>
+    can("operate") && configured && operationallyReachable && gen.capabilities?.[action] === true;
+  const canStart = canAction("start");
+  const canStop = canAction("stop");
 
-  const command = async (action: "start" | "stop") => {
-    const allowed = action === "start" ? canStart : canStop;
+  const command = async (action: IndustrialCommandAction) => {
+    const label = action.toUpperCase().replaceAll("_", " ");
     if (!can("operate")) {
       setMessage("Seu perfil não possui permissão para operar o gerador.");
       return;
     }
-    if (!allowed) {
-      setMessage(`${action.toUpperCase()} não está homologado para esta controladora.`);
+    if (!canAction(action)) {
+      setMessage(`${label} não está homologado para esta controladora.`);
       return;
     }
-    if (!confirmCmd(action.toUpperCase())) return;
+    if (!confirmCmd(label)) return;
 
     setCommandBusy(action);
     setMessage(null);
@@ -76,7 +76,7 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
           ? ` · RPM após comando: ${Math.round(result.rpm_after)} · sincronizando telemetria`
           : " · aguardando sincronização da telemetria";
       setMessage(
-        `${result.reason || `Comando ${action.toUpperCase()} aceito pelo controlador`}${rpmConfirmation}`,
+        `${result.reason || `Comando ${label} aceito pelo controlador`}${rpmConfirmation}`,
       );
       await refresh();
     } catch (error) {
@@ -105,8 +105,7 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
       <GeneratorDetailProfessionalTop
         gen={gen}
         model={model}
-        canStart={canStart}
-        canStop={canStop}
+        canAction={canAction}
         commandBusy={commandBusy}
         onCommand={command}
       />

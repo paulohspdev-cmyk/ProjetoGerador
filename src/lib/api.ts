@@ -28,6 +28,18 @@ export type UserUpdatePayload = {
   role?: UserRole | undefined;
   active?: boolean | undefined;
 };
+export type IndustrialCommandAction =
+  | "start"
+  | "stop"
+  | "auto"
+  | "manual"
+  | "test"
+  | "mcb_open"
+  | "mcb_close"
+  | "gcb_open"
+  | "gcb_close"
+  | "paralleling";
+
 export type CommandResult = {
   ok: boolean;
   accepted: boolean;
@@ -313,6 +325,19 @@ export type SystemDiagnostics = {
     lastError?: string | undefined;
     availableMetrics?: string[] | undefined;
   }>;
+  productionReadiness?: {
+    ready: boolean;
+    blockers: number;
+    warnings: number;
+    note: string;
+    checks: Array<{
+      id: string;
+      label: string;
+      ok: boolean;
+      severity: "ok" | "warning" | "blocker";
+      detail: string;
+    }>;
+  };
   observability?: {
     healthy: boolean;
     workers: Array<{
@@ -349,6 +374,8 @@ export type ApiTokenItem = {
   name: string;
   token_prefix: string;
   scopes: string[];
+  allowed_generators: string[];
+  allowed_cidrs: string[];
   rate_limit: number;
   active: boolean;
   expires_at?: number | null | undefined;
@@ -443,7 +470,7 @@ export const rcApi = {
         method: "PATCH",
         body: JSON.stringify(payload),
       }),
-    command: (id: string, action: "start" | "stop") =>
+    command: (id: string, action: IndustrialCommandAction) =>
       request<CommandResult>(`/api/generators/${encodeURIComponent(id)}/commands/${action}`, {
         method: "POST",
         body: JSON.stringify({ confirmation: action.toUpperCase() }),
@@ -703,6 +730,8 @@ export const rcApi = {
       scopes: string[];
       rateLimit?: number | undefined;
       expiresAt?: number | undefined;
+      allowedGenerators?: string[] | undefined;
+      allowedCidrs?: string[] | undefined;
     }) =>
       request<ApiTokenItem>("/api/api-tokens", { method: "POST", body: JSON.stringify(payload) }),
     revoke: (id: string) =>

@@ -34,15 +34,16 @@ export function Topbar({ breadcrumb = [], title, tools, search, back }: Props) {
   const { toggleMobile, fullscreen, toggleFullscreen } = useLayout();
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
-  const { generators } = useGenerators();
-  const { isAcked } = useScadaOps();
+  const { generators, error: generatorsError } = useGenerators();
+  const { isAcked, error: opsError } = useScadaOps();
   const alarmCount = buildAlarms(generators).filter(
     (alarm) => !isAcked(alarm.id, alarm.ack),
   ).length;
+  const platformHealthy = !generatorsError && !opsError;
 
   return (
     <header className="rc-topbar sticky top-0 z-30 shrink-0 border-b pt-[env(safe-area-inset-top)] backdrop-blur-xl">
-      <div className="flex min-h-[72px] min-w-0 items-center gap-2 px-3 py-2 sm:px-4 lg:px-5">
+      <div className="rc-topbar-main flex min-h-[66px] min-w-0 items-center gap-2 px-3 py-2 sm:px-4 lg:px-5">
         <button
           type="button"
           onClick={toggleMobile}
@@ -105,6 +106,22 @@ export function Topbar({ breadcrumb = [], title, tools, search, back }: Props) {
         </div>
 
         <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
+          <div
+            className={cn(
+              "rc-platform-status hidden items-center gap-2 rounded-md border px-2.5 py-1.5 lg:flex",
+              platformHealthy ? "is-ok" : "is-warning",
+            )}
+            title={
+              platformHealthy
+                ? "Plataforma e dados operacionais carregando normalmente"
+                : "Há falha em uma das fontes da plataforma"
+            }
+          >
+            <span className="rc-platform-status-dot" />
+            <span className="text-[10px] font-extrabold uppercase tracking-[0.08em]">
+              {platformHealthy ? "Plataforma OK" : "Atenção"}
+            </span>
+          </div>
           <button
             type="button"
             onClick={toggleTheme}
@@ -154,9 +171,12 @@ export function Topbar({ breadcrumb = [], title, tools, search, back }: Props) {
             params={{ slug: "alarmes" }}
             title="Alarmes"
             aria-label={`${alarmCount} alarmes pendentes`}
-            className="relative grid size-9 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-white/5 hover:text-white"
+            className="rc-topbar-alarm relative flex h-9 items-center gap-2 rounded-md px-2.5 text-slate-400 transition-colors hover:bg-white/5 hover:text-white"
           >
             <Bell className="size-[18px]" />
+            <span className="hidden text-[10px] font-bold uppercase tracking-[0.08em] 2xl:inline">
+              Alarmes
+            </span>
             {alarmCount > 0 && (
               <span className="num absolute -right-0.5 -top-0.5 min-w-4 rounded-full border border-[#06131e] bg-offline px-1 text-center text-[9px] font-extrabold leading-4 text-white">
                 {alarmCount > 99 ? "99+" : alarmCount}
@@ -191,7 +211,7 @@ export function Topbar({ breadcrumb = [], title, tools, search, back }: Props) {
       </div>
 
       {tools && (
-        <div className="scroll-slim flex min-w-0 items-center overflow-x-auto border-t border-white/[0.055] px-3 py-2 sm:px-4 lg:px-5">
+        <div className="rc-topbar-tools scroll-slim flex min-w-0 items-center overflow-x-auto border-t border-white/[0.055] px-3 py-2 sm:px-4 lg:px-5">
           {tools}
         </div>
       )}
