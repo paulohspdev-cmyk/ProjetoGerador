@@ -5,7 +5,7 @@ export function fmt(n: number, d = 1) {
 }
 
 export function hasMetric(g: Generator, key: string) {
-  return (g.availableMetrics ?? []).includes(key);
+  return !g.telemetryStale && (g.definedMetrics ?? g.availableMetrics ?? []).includes(key);
 }
 
 export function dateTime(epoch: number) {

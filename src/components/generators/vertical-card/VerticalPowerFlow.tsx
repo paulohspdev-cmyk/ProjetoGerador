@@ -109,13 +109,14 @@ export function VerticalPowerFlow({
   mainsKnown,
   mainsFrequency,
   generatorFrequency,
-  loadKw,
+  generatorPowerKw,
+  generatorKnown,
+  generatorPresent,
   modeLabel,
   mcb,
   mcbKnown,
   gcb,
   gcbKnown,
-  running,
   canStart,
   canStop,
   canMcbOpen,
@@ -129,13 +130,14 @@ export function VerticalPowerFlow({
   mainsKnown: boolean;
   mainsFrequency: number | null;
   generatorFrequency: number | null;
-  loadKw: number | null;
+  generatorPowerKw: number | null;
+  generatorKnown: boolean;
+  generatorPresent: boolean;
   modeLabel: string;
   mcb: boolean;
   mcbKnown: boolean;
   gcb: boolean;
   gcbKnown: boolean;
-  running: boolean;
   canStart: boolean;
   canStop: boolean;
   canMcbOpen: boolean;
@@ -146,8 +148,9 @@ export function VerticalPowerFlow({
   onCommand: (action: IndustrialCommandAction) => void;
 }) {
   const mainsToBus = mainsKnown && mainsPresent && mcbKnown && mcb;
-  const genToBus = running && gcbKnown && gcb;
+  const genToBus = generatorKnown && generatorPresent && gcbKnown && gcb;
   const busLive = mainsToBus || genToBus;
+  const busLoadKw = genToBus && !mainsToBus ? generatorPowerKw : null;
 
   return (
     <section className="vref-section vref-flow vref-flow-controller">
@@ -205,7 +208,7 @@ export function VerticalPowerFlow({
               LOAD
             </text>
             <text x="13" y="11" textAnchor="middle" className="vref-load-value">
-              {formatLoad(loadKw)}
+              {formatLoad(busLoadKw)}
             </text>
           </g>
 
@@ -225,7 +228,7 @@ export function VerticalPowerFlow({
           <VerticalContact x={112} y1={155} y2={176} closed={gcb} known={gcbKnown} />
 
           <path d="M112 176 V205" className="vref-wire" />
-          <path d="M112 176 V205" className={cn("vref-wire-live", running && "is-live")} />
+          <path d="M112 176 V205" className={cn("vref-wire-live", generatorPresent && "is-live")} />
 
           <text x="14" y="217" className="vref-flow-frequency">
             {formatHz(generatorFrequency)}
@@ -234,7 +237,11 @@ export function VerticalPowerFlow({
           <g transform="translate(112 220)">
             <circle
               r="23"
-              className={cn("vref-device", "generator", running ? "is-live" : "is-idle")}
+              className={cn(
+                "vref-device",
+                "generator",
+                !generatorKnown ? "is-unknown" : generatorPresent ? "is-live" : "is-idle",
+              )}
             />
             <text x="0" y="9" textAnchor="middle" className="vref-generator-letter">
               G

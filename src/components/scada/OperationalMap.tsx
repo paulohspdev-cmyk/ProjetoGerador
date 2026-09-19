@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useGenerators } from "@/components/generators/GeneratorsProvider";
+import { metricNumber } from "@/components/generators/generator-metrics";
 import { useTheme } from "@/components/layout/ThemeProvider";
 import type { Generator } from "@/data/generators";
 import { rcApi, type OpsSite } from "@/lib/api";
@@ -129,21 +130,16 @@ export function OperationalMap({
           const gens = generators.filter(
             (generator) => generator.site.trim().toLowerCase() === site.name.trim().toLowerCase(),
           );
-          const measuredLoad = gens.filter(
-            (generator) =>
-              (generator.availableMetrics ?? []).includes("power_kw") &&
-              generator.load != null &&
-              Number.isFinite(Number(generator.load)),
-          );
+          const measuredLoad = gens
+            .map((generator) => metricNumber(generator, "power_kw", generator.load))
+            .filter((value): value is number => value != null);
           return {
             ...site,
             gens,
             online: gens.filter((generator) => generator.status === "online").length,
             alerta: gens.filter((generator) => generator.status === "alerta").length,
             offline: gens.filter((generator) => generator.status === "offline").length,
-            load: measuredLoad.length
-              ? measuredLoad.reduce((sum, generator) => sum + Number(generator.load), 0)
-              : null,
+            load: measuredLoad.length ? measuredLoad.reduce((sum, value) => sum + value, 0) : null,
           };
         }),
     [generators, sourceRows],

@@ -6,7 +6,7 @@ import { fmt } from "@/data/scada";
 import { Panel, Pill, ScadaTable, ScreenBody, Stats, Tone } from "./kit";
 
 function hasMetric(g: Generator, key: string) {
-  return (g.availableMetrics ?? []).includes(key);
+  return !g.telemetryStale && (g.definedMetrics ?? g.availableMetrics ?? []).includes(key);
 }
 
 function metricUnit(g: Generator, key: string, fallback = "") {

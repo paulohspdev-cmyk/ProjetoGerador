@@ -9,11 +9,9 @@ type VisualScale = MetricLimit & {
 };
 
 // Escalas sem setpoint de proteção são apenas geométricas e ficam neutras.
-// Verde/laranja/vermelho só é usado quando existe threshold real da controladora
-// ou uma regra de produto explícita (manutenção 300 h).
+// Verde/laranja/vermelho só é usado quando existe threshold real da controladora.
 const VISUAL_SCALES: Record<string, VisualScale> = {
   alternator_voltage: { displayMin: 0, displayMax: 30, direction: "neutral" },
-  maintenance_hours: { displayMin: 0, displayMax: 300, direction: "higher_worse" },
 };
 
 export function progressPercent(value: number | null, maximum: number) {
@@ -121,8 +119,8 @@ export function readGeneratorTelemetry(gen: Generator) {
   const currentL3 = metricNumber(gen, "current_l3", undefined);
   const running = rpm != null && rpm > 0;
 
-  const oilUnit = gen.metricUnits?.["oil_pressure"] || "bar";
-  const fuelUnit = gen.metricUnits?.["fuel_level"] || "%";
+  const oilUnit = gen.metricUnits?.["oil_pressure"] || "";
+  const fuelUnit = gen.metricUnits?.["fuel_level"] || "";
   const fuelCapacity =
     metricNumber(gen, "fuel_capacity_l", undefined) ??
     metricNumber(gen, "fuel_capacity", undefined);
@@ -185,10 +183,7 @@ export function readGeneratorTelemetry(gen: Generator) {
     alternator,
     mergedScale(VISUAL_SCALES["alternator_voltage"], limits["alternator_voltage"]),
   );
-  const maintenanceMeter = meterState(
-    maintenance,
-    mergedScale(VISUAL_SCALES["maintenance_hours"], limits["maintenance_hours"]),
-  );
+  const maintenanceMeter = meterState(maintenance, limits["maintenance_hours"]);
   const tones = {
     oil: oilMeter.tone,
     coolant: coolantMeter.tone,
@@ -226,7 +221,7 @@ export function readGeneratorTelemetry(gen: Generator) {
     percents: {
       oil: visibleMeterPercent(oilMeter.percent, tones.oil),
       coolant: visibleMeterPercent(coolantMeter.percent, tones.coolant),
-      fuel: visibleMeterPercent(fuelMeter.percent ?? fuelPercent, tones.fuel),
+      fuel: visibleMeterPercent(fuelPercent, tones.fuel),
       alternator: visibleMeterPercent(alternatorMeter.percent, tones.alternator),
       maintenance: visibleMeterPercent(maintenanceMeter.percent, tones.maintenance),
       runHours: percentFromLimit(runHours, limits["run_hours"]),

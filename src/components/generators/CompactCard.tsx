@@ -7,7 +7,7 @@ import type { Generator } from "@/data/generators";
 import { cn } from "@/lib/utils";
 import { DeleteGeneratorButton } from "./DeleteGeneratorButton";
 import { StatusPill } from "./StatusPill";
-import { displayGeneratorName, fmt, hasMetric } from "./generator-metrics";
+import { displayGeneratorName, fmt, hasFreshMetric, metricNumber } from "./generator-metrics";
 import { IconBattery, IconBolt, IconRunHours } from "./scada-icons";
 import "./compact-card.css";
 
@@ -34,11 +34,11 @@ function Metric({
 export function CompactCard({ gen }: { gen: Generator }) {
   const configured = gen.status !== "nao_configurado";
   const connected = gen.status === "online" || gen.status === "alerta";
-  const battKnown = hasMetric(gen, "battery_voltage") && gen.battery != null;
-  const freqKnown = hasMetric(gen, "frequency") && gen.frequency != null;
-  const hoursKnown = hasMetric(gen, "run_hours");
-  const maintKnown = hasMetric(gen, "maintenance_hours");
-  const modeKnown = hasMetric(gen, "controller_mode_raw");
+  const battery = metricNumber(gen, "battery_voltage", gen.battery);
+  const frequency = metricNumber(gen, "frequency", gen.frequency);
+  const runHours = metricNumber(gen, "run_hours", gen.runHours);
+  const maintenance = metricNumber(gen, "maintenance_hours", gen.maintenance);
+  const modeKnown = hasFreshMetric(gen, "controller_mode_raw");
   const src = controllerImageSrc(gen.controller);
   const lat = gen.latency != null ? `${gen.latency} ms` : "N/D";
 
@@ -89,23 +89,23 @@ export function CompactCard({ gen }: { gen: Generator }) {
             <Metric
               icon={<IconBattery size={12} />}
               label="Bateria"
-              value={battKnown ? `${fmt(gen.battery!)} V` : "N/D"}
+              value={battery != null ? `${fmt(battery)} V` : "N/D"}
             />
             <Metric
               icon={<IconBolt size={12} />}
               label="Frequência"
-              value={freqKnown ? `${fmt(gen.frequency!, 2)} Hz` : "N/D"}
-              tone={freqKnown && connected ? "text-online" : "text-muted-foreground"}
+              value={frequency != null ? `${fmt(frequency, 2)} Hz` : "N/D"}
+              tone={frequency != null && connected ? "text-online" : "text-muted-foreground"}
             />
             <Metric
               icon={<IconRunHours size={12} />}
               label="Tempo operação"
-              value={hoursKnown && gen.runHours != null ? `${fmt(gen.runHours)} h` : "N/D"}
+              value={runHours != null ? `${fmt(runHours)} h` : "N/D"}
             />
             <Metric
               icon={<Clock className="size-3" />}
               label="Manutenção"
-              value={maintKnown && gen.maintenance != null ? `${fmt(gen.maintenance, 0)} h` : "N/D"}
+              value={maintenance != null ? `${fmt(maintenance, 0)} h` : "N/D"}
             />
             <Metric icon={<Signal className="size-3" />} label="Latência" value={lat} />
           </div>
@@ -136,7 +136,7 @@ export function CompactCard({ gen }: { gen: Generator }) {
 
       {gen.telemetryStale && (
         <p className="mt-1 text-[10px] font-semibold text-alert">
-          Valores da última leitura conhecida
+          Telemetria expirada — valores ocultados
         </p>
       )}
 

@@ -3,6 +3,7 @@ import { AlertTriangle, CalendarClock, Wrench } from "lucide-react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useGenerators } from "@/components/generators/GeneratorsProvider";
+import { metricNumber } from "@/components/generators/generator-metrics";
 import { industrialApi, type MaintenancePlan } from "@/lib/industrial-api";
 import { useScadaOps } from "./ScadaOpsProvider";
 import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats } from "./kit";
@@ -58,7 +59,7 @@ export function MaintenanceV3Screen({ embedded = false }: { embedded?: boolean }
       setError("Informe o intervalo por horas e/ou dias.");
       return;
     }
-    const runKnown = (generator.availableMetrics ?? []).includes("run_hours");
+    const currentRunHours = metricNumber(generator, "run_hours", generator.runHours);
     if (busy) return;
     setBusy(true);
     try {
@@ -67,7 +68,7 @@ export function MaintenanceV3Screen({ embedded = false }: { embedded?: boolean }
         name,
         ...(intervalHours ? { intervalHours } : {}),
         ...(intervalDays ? { intervalDays } : {}),
-        ...(runKnown && generator.runHours != null ? { lastServiceHours: generator.runHours } : {}),
+        ...(currentRunHours != null ? { lastServiceHours: currentRunHours } : {}),
       });
       setMessage("Plano de manutenção criado.");
       await load();
