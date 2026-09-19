@@ -160,18 +160,18 @@ export function readGeneratorTelemetry(gen: Generator) {
     if (warning != null) coolantScale.warningHigh = warning;
   }
 
-  const fuelDisplay: VisualScale =
+  const fuelDisplay: VisualScale | undefined =
     fuelUnit === "%"
       ? { displayMin: 0, displayMax: 100, direction: "neutral" }
-      : {
-          displayMin: 0,
-          displayMax: fuelCapacity != null && fuelCapacity > 0 ? fuelCapacity : 682,
-          direction: "neutral",
-        };
-  const fuelScale = mergedScale(fuelDisplay, limits["fuel_level"]);
+      : fuelCapacity != null && fuelCapacity > 0
+        ? { displayMin: 0, displayMax: fuelCapacity, direction: "neutral" }
+        : undefined;
+  const warning = positiveThreshold(fuelWarning);
+  const shutdown = positiveThreshold(fuelShutdown);
+  const fuelScale =
+    mergedScale(fuelDisplay, limits["fuel_level"]) ??
+    (warning != null || shutdown != null ? { direction: "neutral" } : undefined);
   if (fuelScale && fuelUnit === "L") {
-    const warning = positiveThreshold(fuelWarning);
-    const shutdown = positiveThreshold(fuelShutdown);
     if (warning != null) fuelScale.warningLow = warning;
     if (shutdown != null) fuelScale.criticalLow = shutdown;
   }
