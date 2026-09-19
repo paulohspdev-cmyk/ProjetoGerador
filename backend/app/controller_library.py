@@ -8,8 +8,11 @@ from jsonschema import Draft202012Validator
 from .config import PROJECT_ROOT
 
 CATALOG_FILE = PROJECT_ROOT / "controllers" / "catalog" / "catalog-v1.json"
-PACK_SCHEMA_FILE = PROJECT_ROOT / "controllers" / "schema" / "controller-pack-v3.schema.json"
-SUPPORTED_PACK_SCHEMA = 3
+PACK_SCHEMA_FILES = {
+    3: PROJECT_ROOT / "controllers" / "schema" / "controller-pack-v3.schema.json",
+    4: PROJECT_ROOT / "controllers" / "schema" / "controller-pack-v4.schema.json",
+}
+SUPPORTED_PACK_SCHEMAS = frozenset(PACK_SCHEMA_FILES)
 COMMAND_CAPABILITIES = (
     "start",
     "stop",
@@ -28,18 +31,28 @@ def _norm(value: object) -> str:
     return " ".join(str(value or "").strip().lower().split())
 
 
-@lru_cache(maxsize=1)
-def _pack_validator() -> Draft202012Validator:
+@lru_cache(maxsize=None)
+def _pack_validator(schema_version: int) -> Draft202012Validator:
+    schema_file = PACK_SCHEMA_FILES.get(int(schema_version))
+    if not schema_file:
+        raise ValueError(
+            f"Schema de Controller Pack não suportado: {schema_version}; "
+            f"suportados={sorted(SUPPORTED_PACK_SCHEMAS)}"
+        )
     try:
-        schema = json.loads(PACK_SCHEMA_FILE.read_text(encoding="utf-8"))
+        schema = json.loads(schema_file.read_text(encoding="utf-8"))
     except Exception as exc:
-        raise ValueError(f"Schema de Controller Pack inválido em {PACK_SCHEMA_FILE}: {exc}") from exc
+        raise ValueError(f"Schema de Controller Pack inválido em {schema_file}: {exc}") from exc
     Draft202012Validator.check_schema(schema)
     return Draft202012Validator(schema)
 
 
 def _validate_pack_schema(data: dict, path: Path) -> None:
-    errors = sorted(_pack_validator().iter_errors(data), key=lambda error: list(error.absolute_path))
+    schema_version = int(data.get("schema") or 0)
+    errors = sorted(
+        _pack_validator(schema_version).iter_errors(data),
+        key=lambda error: list(error.absolute_path),
+    )
     if not errors:
         return
     parts = []
@@ -64,7 +77,7 @@ def _documented_read_only_production_contract(pack: dict | None) -> bool:
     validation = dict(pack.get("validation") or {})
     return (
         str(pack.get("status") or "") == "production"
-        and int(pack.get("schema") or 0) == SUPPORTED_PACK_SCHEMA
+        and int(pack.get("schema") or 0) in SUPPORTED_PACK_SCHEMAS
         and capabilities.get("telemetry") is True
         and mapping.get("readOnly") is True
         and bool(mapping.get("registers"))
@@ -81,7 +94,7 @@ def pack_is_production_ready(pack: dict | None) -> bool:
         return False
     field_validated = (
         str(pack.get("status") or "") == "field_validated"
-        and int(pack.get("schema") or 0) == SUPPORTED_PACK_SCHEMA
+        and int(pack.get("schema") or 0) in SUPPORTED_PACK_SCHEMAS
     )
     return field_validated or _documented_read_only_production_contract(pack)
 
@@ -94,7 +107,7 @@ def pack_is_lab_onboarding_ready(pack: dict | None) -> bool:
     mapping = dict(pack.get("mapping") or {})
     return (
         pack.get("lifecycle") == "lab"
-        and int(pack.get("schema") or 0) == SUPPORTED_PACK_SCHEMA
+        and int(pack.get("schema") or 0) in SUPPORTED_PACK_SCHEMAS
         and capabilities.get("telemetry") is True
         and mapping.get("readOnly") is True
         and bool(mapping.get("registers"))
@@ -131,7 +144,7 @@ def _read_manifest(path: Path, lifecycle: str) -> dict:
     if lifecycle == "production":
         field_validated = (
             str(data.get("status") or "") == "field_validated"
-            and int(data.get("schema") or 0) == SUPPORTED_PACK_SCHEMA
+            and int(data.get("schema") or 0) in SUPPORTED_PACK_SCHEMAS
         )
         if not field_validated and not _documented_read_only_production_contract(data):
             effective_lifecycle = "invalid_production"

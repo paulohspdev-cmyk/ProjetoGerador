@@ -2,10 +2,14 @@ import asyncio
 import json
 from pathlib import Path
 
-from . import dse_control, dse_lab, ig4_lab
 from .config import CONTROL_SOCKET
 from .controller_library import pack_for_model, pack_is_production_ready
 from .rapid import load_bindings
+
+COMMAND_ACTIONS = frozenset({
+    "start", "stop", "auto", "manual", "test",
+    "mcb_open", "mcb_close", "gcb_open", "gcb_close", "paralleling",
+})
 
 
 def _validated_binding(generator: dict) -> dict:
@@ -46,7 +50,7 @@ def _validated_binding(generator: dict) -> dict:
     return binding
 
 
-async def _send_socket_command(socket_path: Path, payload: dict) -> dict:
+async def _send_socket_command(socket_path: Path, payload: dict, timeout: float = 20.0) -> dict:
     if not socket_path.exists():
         raise ConnectionError(f"Socket de controle indisponível: {socket_path}")
 
@@ -58,7 +62,7 @@ async def _send_socket_command(socket_path: Path, payload: dict) -> dict:
         )
         writer.write((json.dumps(payload) + "\n").encode("utf-8"))
         await writer.drain()
-        raw = await asyncio.wait_for(reader.readline(), timeout=15)
+        raw = await asyncio.wait_for(reader.readline(), timeout=max(3.0, timeout))
         if not raw:
             raise ConnectionError("Bridge encerrou a conexão sem resposta")
         result = json.loads(raw.decode("utf-8"))
@@ -74,62 +78,78 @@ async def _send_socket_command(socket_path: Path, payload: dict) -> dict:
                 pass
 
 
-async def send_homologated_command(generator: dict, action: str) -> dict:
+def command_contract(generator: dict, action: str) -> tuple[dict, dict]:
     action = str(action or "").strip().lower()
-    if action not in {"start", "stop"}:
-        raise ValueError("Somente START e STOP estão homologados")
+    if action not in COMMAND_ACTIONS:
+        raise ValueError(f"Comando industrial desconhecido: {action or '-'}")
     if not generator.get("enabled"):
         raise ValueError("Controle bloqueado: gerador desabilitado")
 
-    controller_type = str(generator.get("controller_type") or "").upper()
-    controller_model = str(generator.get("controller_model") or "").strip().lower()
-    rapid_device = int(generator.get("rapid_device_num") or 0)
-    transport = str(generator.get("transport") or "")
-    lab_ig4 = ig4_lab.is_target(generator)
-    lab_dse = dse_lab.is_target(generator)
-
-    if lab_ig4:
-        if action != "start":
-            raise ValueError("Modo LAB do IG4 libera somente START; STOP de produção permanece bloqueado")
-        if transport != "reverse_tcp":
-            raise ValueError("START LAB do IG4 exige transporte reverse_tcp")
-    elif lab_dse:
-        if action not in {"start", "stop"}:
-            raise ValueError("Ensaio DSE LAB libera somente START e STOP")
-        if transport != "modbus_tcp_direct":
-            raise ValueError("Controle DSE LAB somente no transporte modbus_tcp_direct")
-    else:
-        if controller_type != "COMAP" or controller_model != "inteligen 200" or rapid_device <= 0:
-            raise ValueError("Controle remoto disponível somente para o ComAp InteliGen 200 homologado ou ensaio LAB explicitamente autorizado")
-        if transport != "reverse_tcp":
-            raise ValueError("Controle remoto IG200 homologado somente no transporte reverse_tcp")
-
     pack = pack_for_model(generator.get("controller_model") or "")
-    if not lab_dse and not pack_is_production_ready(pack):
-        raise ValueError("Controle bloqueado: Controller Pack não está field_validated em production")
+    if not pack or not pack_is_production_ready(pack):
+        raise ValueError("Controle bloqueado: Controller Pack não está pronto para produção")
+    if pack.get("status") != "field_validated":
+        raise ValueError("Controle bloqueado: comandos exigem Controller Pack validado fisicamente em campo")
 
-    if not lab_ig4 and not lab_dse:
-        capabilities = dict((pack or {}).get("capabilities") or {})
-        if not bool(capabilities.get(action)):
-            raise ValueError(f"Controle bloqueado: comando {action.upper()} não está homologado neste Controller Pack")
+    capabilities = dict(pack.get("capabilities") or {})
+    if not bool(capabilities.get(action)):
+        raise ValueError(
+            f"Controle bloqueado: comando {action.upper()} não está homologado neste Controller Pack"
+        )
+
+    commands = dict(pack.get("commands") or {})
+    contract = commands.get(action)
+    if not isinstance(contract, dict):
+        raise ValueError(
+            f"Controle bloqueado: capability {action.upper()} sem contrato de comando no Controller Pack"
+        )
+
+    expected_transport = str(contract.get("transport") or "")
+    actual_transport = str(generator.get("transport") or "")
+    if expected_transport and actual_transport != expected_transport:
+        raise ValueError(
+            f"Controle bloqueado: {action.upper()} exige transporte {expected_transport}, "
+            f"cadastro usa {actual_transport or 'N/D'}"
+        )
 
     _validated_binding(generator)
+    return pack, contract
 
-    if lab_dse:
-        return await dse_control.send_command(generator, action)
 
-    if lab_ig4:
-        payload = {
-            "generator_id": str(generator.get("id") or ""),
+async def send_homologated_command(generator: dict, action: str) -> dict:
+    action = str(action or "").strip().lower()
+    _pack, contract = command_contract(generator, action)
+    executor = str(contract.get("executor") or "")
+    rapid_device = int(generator.get("rapid_device_num") or 0)
+
+    if executor != "ig200_privileged":
+        raise ValueError(
+            f"Controle bloqueado: executor {executor or 'N/D'} ainda não possui implementação "
+            "de produção homologada"
+        )
+    if action not in {"start", "stop"}:
+        raise ValueError(
+            f"Controle bloqueado: executor IG200 atual não implementa {action.upper()} em produção"
+        )
+
+    timeout = float(contract.get("timeoutSeconds") or 20)
+    result = await _send_socket_command(
+        Path(CONTROL_SOCKET),
+        {
             "device": rapid_device,
-            "action": "start",
-            "confirm": ig4_lab.CONFIRMATION,
-        }
-        return await _send_socket_command(ig4_lab.control_socket_path(), payload)
-
-    payload = {
-        "device": rapid_device,
-        "action": action,
-        "confirm": "REMOTE_CONTROL_CONFIRMED",
+            "action": action,
+            "confirm": "REMOTE_CONTROL_CONFIRMED",
+        },
+        timeout=timeout,
+    )
+    return {
+        **result,
+        "contract": {
+            "schema": 4,
+            "executor": executor,
+            "action": action,
+            "timeoutSeconds": int(timeout),
+            "feedback": contract.get("feedback") or {},
+        },
+        "state": "controller_accepted" if result.get("accepted") else "rejected",
     }
-    return await _send_socket_command(Path(CONTROL_SOCKET), payload)

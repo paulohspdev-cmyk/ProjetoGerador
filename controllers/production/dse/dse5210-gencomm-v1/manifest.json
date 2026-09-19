@@ -1,5 +1,5 @@
 {
-  "schema": 3,
+  "schema": 4,
   "manufacturer": "DSE",
   "family": "DSE 52xx Legacy GenComm",
   "model": "DSE5210",
@@ -366,5 +366,6 @@
     "field": false,
     "commandSafety": "Read-only production contract. No FC16 control keys, operating-mode writes, START/STOP, transfer or breaker commands are materialized."
   },
-  "notes": "DSE5210-specific legacy GenComm pack. It intentionally omits reserved/optional registers from the newer shared DSE pack, including oil_temperature, total power/PF/load, maintenance and kWh, until model-specific evidence or field validation supports them."
+  "notes": "DSE5210-specific legacy GenComm pack. It intentionally omits reserved/optional registers from the newer shared DSE pack, including oil_temperature, total power/PF/load, maintenance and kWh, until model-specific evidence or field validation supports them.",
+  "commands": {}
 }

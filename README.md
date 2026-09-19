@@ -217,7 +217,7 @@ cd /opt/rc-geradores
 sudo bash ops/install.sh --enable-control
 ```
 
-Isso habilita somente o caminho START/STOP do **InteliGen 200 homologado**. O backend/bridge valida o modelo, o Controller Pack, o binding do Rapid Device, a porta, o Modbus Unit e o cadastro antes de aceitar o comando. AUTO, TEST, MCB, GCB e paralelismo continuam bloqueados.
+Isso habilita o executor privilegiado atualmente homologado para o **InteliGen 200**. A autorização não é inferida pela tela nem pelo modelo: cada ação exige simultaneamente `capabilities.<ação>=true`, contrato `commands.<ação>` no Controller Pack v4, pack `field_validated`, binding coerente, equipamento alcançável, RBAC e confirmação explícita. A infraestrutura reconhece START, STOP, AUTO, MANUAL, TEST, MCB OPEN/CLOSE, GCB OPEN/CLOSE e paralelismo, mas qualquer ação sem contrato físico homologado permanece fail-closed.
 
 ## Provisionamento e ciclo de vida
 
@@ -262,8 +262,9 @@ O smoke verifica, entre outros pontos:
 
 - Node 22+;
 - .NET SDK 8 e Runtime 8;
-- serviços RC, Rapid SCADA e Nginx;
-- API, frontend e proxy HTTP;
+- serviços RC e Rapid SCADA;
+- API e frontend locais;
+- Nginx/TLS local somente quando `RC_WEB_TLS_MODE` não for `external_proxy`;
 - sockets privilegiados;
 - integridade BaseDAT;
 - leitor oficial do Rapid;
@@ -298,18 +299,18 @@ O banco SQLite guarda cadastro, alarmes/estado e dados do produto; **não substi
 ## Segurança
 
 - login por sessão HTTP-only, RBAC e auditoria;
-- rate limiting de login e suporte a TOTP/2FA no backend;
-- API externa por token e escopos;
+- rate limiting de login e TOTP/2FA; em `RC_ENVIRONMENT=production` Administrador e Operador precisam de 2FA para ações privilegiadas;
+- API externa por token, escopos por ação, allowlist de geradores e CIDRs de origem;
 - provisionador Rapid isolado em socket Unix local;
 - bridge industrial de leitura bloqueia funções Modbus de escrita no caminho normal;
 - automação aceita somente ações não industriais (`notify` e `work_order`);
 - escalonamento de alarmes somente enfileira notificações;
-- START/STOP passam por confirmação explícita, Controller Pack homologado, binding real, socket local e retorno do controlador;
-- AUTO, TEST, MCB, GCB e paralelismo permanecem bloqueados no IG200 atual;
+- todo comando industrial passa por confirmação explícita, Controller Pack v4 homologado, contrato da ação, binding real, socket privilegiado e retorno do controlador;
+- capacidades não homologadas (incluindo modos, MCB/GCB e paralelismo) ficam visíveis como indisponíveis e não podem ser promovidas por variável LAB;
 - bindings divergentes não são reutilizados silenciosamente;
 - retirada de equipamento preserva canais/histórico antes de excluir cadastro;
 - SMTP, WhatsApp e acesso público devem receber credenciais/configuração reais antes do uso;
-- para exposição fora da rede confiável, configure HTTPS e `RC_AUTH_COOKIE_SECURE=1`.
+- quando HTTPS estiver no Nginx Proxy Manager, use `RC_WEB_TLS_MODE=external_proxy`; o deploy não altera certificado, redirect ou configuração TLS local. Mantenha `RC_AUTH_COOKIE_SECURE=1` no acesso público HTTPS.
 
 ## Desenvolvimento
 
@@ -348,7 +349,7 @@ O workflow valida, entre outros pontos:
 - sintaxe e contrato dos instaladores;
 - ausência de `node_modules`, bytecode Python e artefatos de runtime no Git;
 - ausência de séries/dados industriais demonstrativos conhecidos;
-- política de Controller Packs e comandos bloqueados;
+- Controller Packs v4, contratos de comando e fail-closed por capability;
 - bridge apenas para reverse TCP;
 - compartilhamento reverse TCP com Unit IDs distintos;
 - binding runtime materializado antes de ser reutilizado;

@@ -1,5 +1,5 @@
 {
-  "schema": 3,
+  "schema": 4,
   "manufacturer": "DSE",
   "family": "DSE GenComm",
   "model": "DSE GenComm Genset",
@@ -49,8 +49,16 @@
     "maximum": null,
     "notes": "Pack de produção somente leitura por contrato GenComm. A matriz de firmware de campo será preenchida conforme unidades reais forem conectadas."
   },
-  "protocols": ["dse_gencomm_v1", "modbus"],
-  "transports": ["reverse_tcp", "modbus_tcp_direct", "rtu_over_tcp", "modbus_rtu_serial"],
+  "protocols": [
+    "dse_gencomm_v1",
+    "modbus"
+  ],
+  "transports": [
+    "reverse_tcp",
+    "modbus_tcp_direct",
+    "rtu_over_tcp",
+    "modbus_rtu_serial"
+  ],
   "reverseTcpFraming": "modbus_rtu",
   "defaults": {
     "batteryNominalVoltage": null,
@@ -157,7 +165,9 @@
     "sourceFile": "modbus/source-registers.txt",
     "sourceSha256": "0b35675aaf9f76bddf61e650f1153a42b3e7afda00c865540beffedf6a30b767",
     "addressFormula": "page * 256 + offset",
-    "readFunctions": [3],
+    "readFunctions": [
+      3
+    ],
     "wordOrder": "most_significant_register_first",
     "registers": {
       "controller_mode_raw": {
@@ -691,5 +701,6 @@
     "field": false,
     "commandSafety": "Produção estritamente somente leitura. FC16/control keys are deliberately not materialized; START, STOP, modes and breaker commands remain blocked until model-specific physical validation."
   },
-  "notes": "Pack compartilhado para controladoras DSE de GERADOR com GenComm/Modbus documentado. Produção significa TELEMETRIA SOMENTE LEITURA por especificação, não field_validated. Equipamentos DSE de rede/ATS, bus-tie, sync-lock e modelos sem evidência GenComm específica ficam fora deste pack. Comandos permanecem bloqueados até validação física por modelo."
+  "notes": "Pack compartilhado para controladoras DSE de GERADOR com GenComm/Modbus documentado. Produção significa TELEMETRIA SOMENTE LEITURA por especificação, não field_validated. Equipamentos DSE de rede/ATS, bus-tie, sync-lock e modelos sem evidência GenComm específica ficam fora deste pack. Comandos permanecem bloqueados até validação física por modelo.",
+  "commands": {}
 }

@@ -1,3 +1,4 @@
+import ipaddress
 import json
 import time
 from pathlib import Path
@@ -7,7 +8,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from . import db, ops_store, platform_store, traffic_store, transport_store
-from .auth import current_user, hash_password, require_admin, require_operate, require_view
+from .auth import current_user, hash_password, request_remote_ip, require_admin, require_operate, require_view
 from .automation_engine import approve_rule, set_rule_enabled
 from .backup_manager import safe_archive_path
 from .completion_routes import router as completion_router
@@ -50,7 +51,7 @@ class FieldDeviceCreate(BaseModel):
     host: str = ""
     rssi: float | None = None
     status: str = "unknown"
-    metadata: dict = {}
+    metadata: dict = Field(default_factory=dict)
 
 
 class FieldDeviceUpdate(BaseModel):
@@ -86,7 +87,7 @@ class SchedulerPayload(BaseModel):
     name: str
     kind: str
     interval_seconds: int = Field(ge=60, le=31536000)
-    payload: dict = {}
+    payload: dict = Field(default_factory=dict)
     enabled: bool = True
     next_run: int | None = None
 
@@ -116,9 +117,11 @@ class TotpDisable(BaseModel):
 
 class ApiTokenCreate(BaseModel):
     name: str = Field(min_length=2, max_length=120)
-    scopes: list[str] = ["ops.read"]
+    scopes: list[str] = Field(default_factory=lambda: ["ops.read"])
     rateLimit: int = Field(default=120, ge=10, le=5000)
     expiresAt: int | None = None
+    allowedGenerators: list[str] = Field(default_factory=list)
+    allowedCidrs: list[str] = Field(default_factory=list)
 
 
 class RuleEnable(BaseModel):
@@ -340,7 +343,17 @@ def sessions_revoke(user: dict = Depends(current_user)):
     revoke_all_sessions(user["id"])
 
 
-def external_token(authorization: str | None = Header(default=None)):
+def _ip_allowed(remote_ip: str, cidrs: list[str]) -> bool:
+    if not cidrs:
+        return True
+    try:
+        address = ipaddress.ip_address(remote_ip)
+        return any(address in ipaddress.ip_network(item, strict=False) for item in cidrs)
+    except ValueError:
+        return False
+
+
+def external_token(request: Request, authorization: str | None = Header(default=None)):
     if not authorization or not authorization.lower().startswith("bearer "):
         raise HTTPException(status_code=401, detail="Bearer token obrigatório")
     raw = authorization.split(None, 1)[1].strip()
@@ -349,12 +362,30 @@ def external_token(authorization: str | None = Header(default=None)):
         raise HTTPException(status_code=401, detail="Token inválido ou expirado")
     if not platform_store.consume_api_rate(token["id"], token["rate_limit"]):
         raise HTTPException(status_code=429, detail="Rate limit excedido")
+    remote_ip = request_remote_ip(request)
+    if not _ip_allowed(remote_ip, token.get("allowed_cidrs") or []):
+        raise HTTPException(status_code=403, detail="Origem não autorizada para este token")
+    token["remote_ip"] = remote_ip
     return token
 
 
 def scope(token: dict, required: str):
     if required not in token.get("scopes", []):
         raise HTTPException(status_code=403, detail=f"Escopo obrigatório: {required}")
+
+
+COMMAND_SCOPE = {
+    "start": "generator.start",
+    "stop": "generator.stop",
+    "auto": "generator.mode",
+    "manual": "generator.mode",
+    "test": "generator.mode",
+    "mcb_open": "breaker.control",
+    "mcb_close": "breaker.control",
+    "gcb_open": "breaker.control",
+    "gcb_close": "breaker.control",
+    "paralleling": "paralleling.control",
+}
 
 
 @router.get("/api/api-tokens")
@@ -364,17 +395,67 @@ def token_list(user: dict = Depends(require_admin)):
 
 @router.post("/api/api-tokens", status_code=201)
 def token_create(payload: ApiTokenCreate, user: dict = Depends(require_admin)):
-    allowed = {"ops.read", "ops.command"}
+    allowed = {
+        "ops.read",
+        "generator.start",
+        "generator.stop",
+        "generator.mode",
+        "breaker.control",
+        "paralleling.control",
+    }
     requested = sorted(set(payload.scopes))
     if not requested or any(s not in allowed for s in requested):
-        raise HTTPException(status_code=422, detail="Escopos permitidos: ops.read, ops.command")
+        raise HTTPException(
+            status_code=422,
+            detail="Escopos inválidos. Use leitura e/ou escopos industriais explícitos.",
+        )
+
+    command_scopes = set(requested) - {"ops.read"}
+    generators = sorted({str(item).strip() for item in payload.allowedGenerators if str(item).strip()})
+    cidrs = sorted({str(item).strip() for item in payload.allowedCidrs if str(item).strip()})
+    if command_scopes and not generators:
+        raise HTTPException(
+            status_code=422,
+            detail="Token de comando exige allowedGenerators explícito.",
+        )
+    if command_scopes and not cidrs:
+        raise HTTPException(
+            status_code=422,
+            detail="Token de comando exige allowedCidrs explícito.",
+        )
+
+    known_generators = {
+        value.lower()
+        for item in db.list_generators()
+        for value in (str(item.get("id") or ""), str(item.get("tag") or ""))
+        if value
+    }
+    unknown_generators = [item for item in generators if item.lower() not in known_generators]
+    if unknown_generators:
+        raise HTTPException(
+            status_code=422,
+            detail="Geradores desconhecidos no allowlist: " + ", ".join(unknown_generators),
+        )
+    try:
+        cidrs = [str(ipaddress.ip_network(item, strict=False)) for item in cidrs]
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=f"CIDR inválido: {exc}") from exc
+
     raw, item = platform_store.create_api_token(
         payload.name,
         requested,
         payload.rateLimit,
         payload.expiresAt,
+        generators,
+        cidrs,
     )
-    db.add_audit(actor(user), "create", "api_token", item["id"], " ".join(requested))
+    db.add_audit(
+        actor(user),
+        "create",
+        "api_token",
+        item["id"],
+        f"scopes={' '.join(requested)}; generators={','.join(generators) or '-'}; cidrs={','.join(cidrs) or '-'}",
+    )
     return {**item, "token": raw, "warning": "O token é exibido somente nesta resposta."}
 
 
@@ -414,25 +495,42 @@ async def external_command(
     x_rc_confirm: str | None = Header(default=None),
     token: dict = Depends(external_token),
 ):
-    scope(token, "ops.command")
-    action = action.lower()
-    if action not in {"start", "stop"}:
-        raise HTTPException(status_code=422, detail="Somente START/STOP homologados")
+    action = action.strip().lower()
+    required_scope = COMMAND_SCOPE.get(action)
+    if not required_scope:
+        raise HTTPException(status_code=422, detail="Ação industrial desconhecida")
+    scope(token, required_scope)
     if (x_rc_confirm or "").upper() != action.upper():
         raise HTTPException(status_code=422, detail=f"X-RC-Confirm deve ser {action.upper()}")
+
     generator = db.get_generator(generator_id)
     if not generator or not generator.get("enabled"):
         raise HTTPException(status_code=404, detail="Gerador não encontrado ou desabilitado")
+
+    allowed_generators = {str(item).lower() for item in token.get("allowed_generators") or []}
+    if not allowed_generators or not (
+        str(generator.get("id") or "").lower() in allowed_generators
+        or str(generator.get("tag") or "").lower() in allowed_generators
+    ):
+        raise HTTPException(status_code=403, detail="Gerador fora do allowlist deste token")
+
     try:
         result = await send_homologated_command(generator, action)
     except Exception as exc:
+        db.add_audit(
+            f"api-token:{token['id']}",
+            f"command_{action}_failed",
+            "generator",
+            generator["id"],
+            f"ip={token.get('remote_ip')}; {exc}",
+        )
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     db.add_audit(
         f"api-token:{token['id']}",
         f"command_{action}",
         "generator",
         generator["id"],
-        f"accepted={result.get('accepted')}",
+        f"accepted={result.get('accepted')}; ip={token.get('remote_ip')}",
     )
     if not result.get("accepted"):
         raise HTTPException(status_code=409, detail=result.get("reason") or "Comando recusado")

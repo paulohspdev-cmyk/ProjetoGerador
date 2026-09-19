@@ -6,6 +6,7 @@ ENV_FILE="${RC_ENV_FILE:-/etc/rc-geradores.env}"
 REF="${1:-origin/main}"
 EXPECTED_SHA="${2:-${RC_EXPECTED_RELEASE_SHA:-}}"
 TEST_PORT="${RC_DEPLOY_TEST_PORT:-3101}"
+WEB_TLS_MODE="${RC_WEB_TLS_MODE:-managed}"
 DB_FILE="/var/lib/rc-geradores/rc-geradores.db"
 CONTROL_SOCKET="/run/rc-geradores/control.sock"
 PROVISION_SOCKET="/run/rc-geradores/provision.sock"
@@ -38,8 +39,13 @@ DB_FILE="${RC_DB_FILE:-${RC_DATA_DIR:-/var/lib/rc-geradores}/rc-geradores.db}"
 CONTROL_SOCKET="${RC_RAPID_CONTROL_SOCKET:-${CONTROL_SOCKET}}"
 PROVISION_SOCKET="${RC_PROVISION_SOCKET:-${PROVISION_SOCKET}}"
 TEST_PORT="${RC_DEPLOY_TEST_PORT:-${TEST_PORT}}"
+WEB_TLS_MODE="${RC_WEB_TLS_MODE:-${WEB_TLS_MODE}}"
 
-for cmd in git tar npm node curl systemctl runuser ss python3 dotnet nginx openssl hostname id find awk jq df; do
+REQUIRED_CMDS=(git tar npm node curl systemctl runuser ss python3 dotnet hostname id find awk jq df)
+if [[ "${WEB_TLS_MODE}" != "external_proxy" ]]; then
+  REQUIRED_CMDS+=(nginx openssl)
+fi
+for cmd in "${REQUIRED_CMDS[@]}"; do
   command -v "${cmd}" >/dev/null 2>&1 || fail "comando obrigatório não encontrado: ${cmd}"
 done
 ok "comandos obrigatórios disponíveis"
@@ -71,13 +77,18 @@ for file in \
 done
 ok "arquivos Rapid SCADA essenciais presentes"
 
-for svc in scadaserver6 scadacomm6 nginx; do
+for svc in scadaserver6 scadacomm6; do
   systemctl is-active --quiet "${svc}" || fail "serviço pré-requisito inativo: ${svc}"
 done
-ok "Rapid SCADA e Nginx ativos antes do deploy"
+ok "Rapid SCADA ativo antes do deploy"
 
-nginx -t >/dev/null 2>&1 || fail "configuração Nginx atual inválida"
-ok "configuração Nginx atual válida"
+if [[ "${WEB_TLS_MODE}" == "external_proxy" ]]; then
+  ok "TLS/HTTPS delegado ao proxy externo; preflight não altera nem valida certificados locais"
+else
+  systemctl is-active --quiet nginx || fail "serviço pré-requisito inativo: nginx"
+  nginx -t >/dev/null 2>&1 || fail "configuração Nginx atual inválida"
+  ok "configuração Nginx atual válida"
+fi
 
 if ss -ltn 2>/dev/null | awk '{print $4}' | grep -Eq "(^|[:.])${TEST_PORT}$"; then
   fail "porta de smoke ${TEST_PORT} já está ocupada; defina RC_DEPLOY_TEST_PORT para uma porta livre"
@@ -148,7 +159,7 @@ else
   ok "banco ainda não existe; deploy fará inicialização"
 fi
 
-if [[ -n "${RC_TLS_CERT_FILE:-}" || -n "${RC_TLS_KEY_FILE:-}" ]]; then
+if [[ "${WEB_TLS_MODE}" != "external_proxy" && ( -n "${RC_TLS_CERT_FILE:-}" || -n "${RC_TLS_KEY_FILE:-}" ) ]]; then
   [[ -n "${RC_TLS_CERT_FILE:-}" && -n "${RC_TLS_KEY_FILE:-}" ]] || fail "RC_TLS_CERT_FILE e RC_TLS_KEY_FILE devem ser configurados juntos"
   [[ -f "${RC_TLS_CERT_FILE}" && -f "${RC_TLS_KEY_FILE}" ]] || fail "certificado/chave TLS configurados não existem"
   openssl x509 -in "${RC_TLS_CERT_FILE}" -noout -checkend 86400 >/dev/null || fail "certificado TLS configurado inválido ou expira em menos de 24h"

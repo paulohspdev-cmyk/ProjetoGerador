@@ -128,7 +128,13 @@ for (const path of productionPaths) {
   const profile = load(path);
   validateSource(path, profile);
   validateLineOptions(path, profile);
-  if (profile.schema !== 3) failures.push(`${path}: production exige schema 3`);
+  if (profile.schema !== 4) failures.push(`${path}: production exige schema 4`);
+  const contracts = profile.commands ?? {};
+  for (const command of forbiddenCommands) {
+    if (profile.capabilities?.[command] === true && !contracts[command]) {
+      failures.push(`${path}: capability ${command} exige contrato commands.${command}`);
+    }
+  }
   if (profile.status !== "field_validated" && !documentedReadOnlyProduction(profile)) {
     failures.push(
       `${path}: production exige field_validated ou contrato documental estritamente read-only`,
@@ -479,8 +485,9 @@ for (const marker of [
 const card = read("src/components/generators/PowerFlowCard.tsx");
 for (const marker of [
   "readGeneratorTelemetry(gen)",
-  "gen.capabilities?.start === true",
-  "gen.capabilities?.stop === true",
+  "gen.capabilities?.[action] === true",
+  'canAction("mcb_open")',
+  'canAction("gcb_close")',
   "formatNumber(powerFactor, 2)",
 ]) {
   if (!card.includes(marker)) failures.push(`card perdeu contrato seguro: ${marker}`);

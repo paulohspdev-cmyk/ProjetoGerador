@@ -35,9 +35,12 @@ assert ig200 and ig200["provisionable"] is True
 assert ig200["registerable"] is True
 assert ig200["packLifecycle"] == "production"
 pack = pack_for_model("IG200")
-assert pack and pack["schema"] == 3
+assert pack and pack["schema"] == 4
 assert pack["capabilities"]["start"] is True
 assert pack["capabilities"]["stop"] is True
+assert set(pack.get("commands") or {}) == {"start", "stop"}
+assert pack["commands"]["start"]["executor"] == "ig200_privileged"
+assert pack["commands"]["stop"]["executor"] == "ig200_privileged"
 for forbidden in (
     "auto",
     "manual",

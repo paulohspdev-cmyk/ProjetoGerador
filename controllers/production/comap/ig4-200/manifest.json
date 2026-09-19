@@ -1,5 +1,5 @@
 {
-  "schema": 3,
+  "schema": 4,
   "manufacturer": "ComAp",
   "family": "InteliGen 4",
   "model": "IG4 200",
@@ -774,5 +774,6 @@
     "fieldReference": "GEN152 / Unit 15 / FW 2.0.3.1, IG4-U3 / Unit 3 / FW 2.1.4.1 e IG4-U4 / Unit 4 / FW 2.1.0.15; Nominal Power HR1280 validado em leitura FC03; reverse TCP; leituras sem escrita de comando.",
     "commandSafety": "Perfil de produção somente leitura. START/STOP/AUTO/MANUAL/TEST/MCB/GCB/paralelismo permanecem bloqueados. O mapa fornecido não contém setpoints de comando utilizáveis."
   },
-  "notes": "Telemetria read-only promovida após validação de campo nos Units 3 e 4. Óleo, temperatura e nível instantâneo de diesel permanecem documentados, mas não são materializados no Rapid porque retornaram sentinela/valor fora da faixa no ensaio. Estados GCB/MCB da interface são derivados de Breaker State até validação dedicada dos binaries FC01/02. Diesel instantâneo (registro 1055, unidade L) validado em campo em 2026-09-11 nos GEN203/GEN204 e materializado como fuel_level."
+  "notes": "Telemetria read-only promovida após validação de campo nos Units 3 e 4. Óleo, temperatura e nível instantâneo de diesel permanecem documentados, mas não são materializados no Rapid porque retornaram sentinela/valor fora da faixa no ensaio. Estados GCB/MCB da interface são derivados de Breaker State até validação dedicada dos binaries FC01/02. Diesel instantâneo (registro 1055, unidade L) validado em campo em 2026-09-11 nos GEN203/GEN204 e materializado como fuel_level.",
+  "commands": {}
 }

@@ -13,6 +13,7 @@ OLD_OUTPUT="${BASE}/.output.before-${STAMP}"
 OLD_VENV="${BASE}/backend/.venv.before-${STAMP}"
 OLD_READER="${BASE}/.rapid-reader.before-${STAMP}"
 TEST_PORT="${RC_DEPLOY_TEST_PORT:-3101}"
+WEB_TLS_MODE="${RC_WEB_TLS_MODE:-managed}"
 TEST_PID=""
 CONTROL_SOCKET="/run/rc-geradores/control.sock"
 DB_FILE="/var/lib/rc-geradores/rc-geradores.db"
@@ -54,8 +55,11 @@ trap cleanup EXIT
 source "${ENV_FILE}"
 CONTROL_SOCKET="${RC_RAPID_CONTROL_SOCKET:-${CONTROL_SOCKET}}"
 DB_FILE="${RC_DB_FILE:-${RC_DATA_DIR:-/var/lib/rc-geradores}/rc-geradores.db}"
+WEB_TLS_MODE="${RC_WEB_TLS_MODE:-${WEB_TLS_MODE}}"
 
-for cmd in git tar npm node curl systemctl runuser ss python3 dotnet install cp mv nginx openssl hostname id find awk; do
+REQUIRED_CMDS=(git tar npm node curl systemctl runuser ss python3 dotnet install cp mv hostname id find awk)
+if [[ "${WEB_TLS_MODE}" != "external_proxy" ]]; then REQUIRED_CMDS+=(nginx openssl); fi
+for cmd in "${REQUIRED_CMDS[@]}"; do
   command -v "${cmd}" >/dev/null 2>&1 || fail "comando obrigatório não encontrado: ${cmd}"
 done
 id rcgeradores >/dev/null 2>&1 || fail "usuário de serviço rcgeradores não existe"
@@ -71,7 +75,11 @@ python3 -m venv --help >/dev/null 2>&1 || fail "python3-venv não está disponí
 dotnet --list-sdks 2>/dev/null | grep -q '^8\.' || fail ".NET SDK 8 é obrigatório para publicar o leitor Rapid"
 SCADA_COMMON="$(find /opt/scada -type f -name ScadaCommon.dll -print -quit 2>/dev/null || true)"
 [[ -n "${SCADA_COMMON}" && -f "${SCADA_COMMON}" ]] || fail "ScadaCommon.dll não encontrado antes do deploy"
-nginx -t >/dev/null 2>&1 || fail "configuração Nginx atual é inválida; corrija antes do deploy"
+if [[ "${WEB_TLS_MODE}" != "external_proxy" ]]; then
+  nginx -t >/dev/null 2>&1 || fail "configuração Nginx atual é inválida; corrija antes do deploy"
+else
+  log "TLS/HTTPS delegado ao proxy externo; deploy não tocará em certificado ou configuração HTTPS"
+fi
 
 log "VALIDANDO CHECKOUT ATUAL"
 PREV_HEAD="$(git -c safe.directory="${BASE}" -C "${BASE}" rev-parse HEAD)"
@@ -95,8 +103,10 @@ test -f scripts/check-functional-surfaces.mjs || fail "release sem guardrail fun
 test -f backend/requirements.txt || fail "release sem requirements do backend"
 test -f rapid/reader/RcRapidReader.csproj || fail "release sem projeto do leitor Rapid"
 test -f ops/systemd/rc-geradores-api.service || fail "release sem unidades systemd"
-test -f ops/nginx/rc-geradores.conf || fail "release sem configuração Nginx"
-test -f ops/configure_https.sh || fail "release sem hardening HTTPS"
+if [[ "${WEB_TLS_MODE}" != "external_proxy" ]]; then
+  test -f ops/nginx/rc-geradores.conf || fail "release sem configuração Nginx"
+  test -f ops/configure_https.sh || fail "release sem hardening HTTPS"
+fi
 test -f ops/preflight_vm.sh || fail "release sem preflight seguro da VM"
 grep -q 'require_remove = require_remove_permission' backend/app/auth.py || fail "release sem bloqueio da exclusão direta de gerador"
 grep -q '"device": rapid_device' backend/app/control.py || fail "controle IG200 ainda está fixando Rapid Device"
@@ -147,17 +157,19 @@ for unit in "${STAGE}"/ops/systemd/*.service; do
   fi
 done
 
-if [[ -e "${NGINX_SITE}" || -L "${NGINX_SITE}" ]]; then
-  cp -a "${NGINX_SITE}" "${BACKUP}/web/nginx-site-before"
-  NGINX_SITE_EXISTED=1
-fi
-if [[ -d "${NGINX_ENABLED_DIR}" ]]; then
-  cp -a "${NGINX_ENABLED_DIR}" "${BACKUP}/web/sites-enabled-before"
-  NGINX_ENABLED_EXISTED=1
-fi
-if [[ -d "${TLS_DIR}" ]]; then
-  cp -a "${TLS_DIR}" "${BACKUP}/web/tls-before"
-  TLS_DIR_EXISTED=1
+if [[ "${WEB_TLS_MODE}" != "external_proxy" ]]; then
+  if [[ -e "${NGINX_SITE}" || -L "${NGINX_SITE}" ]]; then
+    cp -a "${NGINX_SITE}" "${BACKUP}/web/nginx-site-before"
+    NGINX_SITE_EXISTED=1
+  fi
+  if [[ -d "${NGINX_ENABLED_DIR}" ]]; then
+    cp -a "${NGINX_ENABLED_DIR}" "${BACKUP}/web/sites-enabled-before"
+    NGINX_ENABLED_EXISTED=1
+  fi
+  if [[ -d "${TLS_DIR}" ]]; then
+    cp -a "${TLS_DIR}" "${BACKUP}/web/tls-before"
+    TLS_DIR_EXISTED=1
+  fi
 fi
 
 tar --exclude='.git' --exclude='node_modules' --exclude='.output*' --exclude='backend/.venv*' --exclude='.rapid-reader*' -C "${BASE}" -czf "${BACKUP}/source-before.tgz" .
@@ -201,23 +213,25 @@ PY
   cp -a "${BACKUP}/rc-geradores.env" "${ENV_FILE}" 2>/dev/null || true
   if [[ ${MARKER_EXISTED} -eq 1 && -f "${BACKUP}/deployed-commit-before" ]]; then cp -a "${BACKUP}/deployed-commit-before" /var/lib/rc-geradores/deployed-commit; else rm -f /var/lib/rc-geradores/deployed-commit; fi
 
-  if [[ ${NGINX_SITE_EXISTED} -eq 1 && -e "${BACKUP}/web/nginx-site-before" ]]; then
-    rm -f "${NGINX_SITE}"
-    cp -a "${BACKUP}/web/nginx-site-before" "${NGINX_SITE}" 2>/dev/null || true
-  else
-    rm -f "${NGINX_SITE}"
+  if [[ "${WEB_TLS_MODE}" != "external_proxy" ]]; then
+    if [[ ${NGINX_SITE_EXISTED} -eq 1 && -e "${BACKUP}/web/nginx-site-before" ]]; then
+      rm -f "${NGINX_SITE}"
+      cp -a "${BACKUP}/web/nginx-site-before" "${NGINX_SITE}" 2>/dev/null || true
+    else
+      rm -f "${NGINX_SITE}"
+    fi
+    if [[ ${NGINX_ENABLED_EXISTED} -eq 1 && -d "${BACKUP}/web/sites-enabled-before" ]]; then
+      rm -rf "${NGINX_ENABLED_DIR}"
+      cp -a "${BACKUP}/web/sites-enabled-before" "${NGINX_ENABLED_DIR}" 2>/dev/null || true
+    fi
+    if [[ ${TLS_DIR_EXISTED} -eq 1 && -d "${BACKUP}/web/tls-before" ]]; then
+      rm -rf "${TLS_DIR}"
+      cp -a "${BACKUP}/web/tls-before" "${TLS_DIR}" 2>/dev/null || true
+    else
+      rm -rf "${TLS_DIR}"
+    fi
+    nginx -t >/dev/null 2>&1 && systemctl restart nginx >/dev/null 2>&1 || true
   fi
-  if [[ ${NGINX_ENABLED_EXISTED} -eq 1 && -d "${BACKUP}/web/sites-enabled-before" ]]; then
-    rm -rf "${NGINX_ENABLED_DIR}"
-    cp -a "${BACKUP}/web/sites-enabled-before" "${NGINX_ENABLED_DIR}" 2>/dev/null || true
-  fi
-  if [[ ${TLS_DIR_EXISTED} -eq 1 && -d "${BACKUP}/web/tls-before" ]]; then
-    rm -rf "${TLS_DIR}"
-    cp -a "${BACKUP}/web/tls-before" "${TLS_DIR}" 2>/dev/null || true
-  else
-    rm -rf "${TLS_DIR}"
-  fi
-  nginx -t >/dev/null 2>&1 && systemctl restart nginx >/dev/null 2>&1 || true
 
   systemctl start "${SERVICES[@]}" 2>/dev/null || true
   echo "Rollback concluído para ${PREV_HEAD}."
@@ -299,12 +313,18 @@ chown -R rcgeradores:rcgeradores "${NEW_OUTPUT}"
 mv "${NEW_OUTPUT}" "${BASE}/.output"
 OUTPUT_SWAPPED=1
 
-log "APLICANDO HARDENING WEB/HTTPS"
-chmod +x "${BASE}/ops/configure_https.sh"
-if ! RC_HTTPS_SKIP_APP_SMOKE=1 bash "${BASE}/ops/configure_https.sh"; then rollback; fail "não foi possível aplicar HTTPS"; fi
+if [[ "${WEB_TLS_MODE}" == "external_proxy" ]]; then
+  log "PROXY EXTERNO — HTTPS NÃO SERÁ ALTERADO"
+  echo "RC_WEB_TLS_MODE=external_proxy: certificados, redirect e proxy TLS permanecem sob responsabilidade do Nginx Proxy Manager."
+else
+  log "APLICANDO HARDENING WEB/HTTPS"
+  chmod +x "${BASE}/ops/configure_https.sh"
+  if ! RC_HTTPS_SKIP_APP_SMOKE=1 bash "${BASE}/ops/configure_https.sh"; then rollback; fail "não foi possível aplicar HTTPS"; fi
+fi
 # shellcheck disable=SC1090
 source "${ENV_FILE}"
 CONTROL_SOCKET="${RC_RAPID_CONTROL_SOCKET:-${CONTROL_SOCKET}}"
+WEB_TLS_MODE="${RC_WEB_TLS_MODE:-${WEB_TLS_MODE}}"
 
 log "REINICIANDO SERVIÇOS"
 for svc in "${SERVICES[@]}"; do systemctl restart "${svc}" 2>/dev/null || { rollback; fail "falha ao reiniciar ${svc}"; }; done
@@ -313,10 +333,15 @@ sleep 4
 log "VALIDAÇÃO DE PRODUÇÃO"
 FAIL=0
 for svc in "${SERVICES[@]}"; do if systemctl is-active --quiet "${svc}"; then echo "${svc}: OK"; else echo "${svc}: FALHOU"; FAIL=1; fi; done
-nginx -t >/dev/null 2>&1 && echo "Nginx: OK" || { echo "Nginx: FALHOU"; FAIL=1; }
 curl -fsS http://127.0.0.1:3000/ >/dev/null 2>&1 && echo "Frontend interno: OK" || { echo "Frontend interno: FALHOU"; FAIL=1; }
-curl -kfsS https://127.0.0.1/api/health >/dev/null 2>&1 && echo "API HTTPS: OK" || { echo "API HTTPS: FALHOU"; FAIL=1; }
-curl -sSI http://127.0.0.1/api/health 2>/dev/null | grep -qi '^Location: https://' && echo "Redirect HTTP->HTTPS: OK" || { echo "Redirect HTTP->HTTPS: FALHOU"; FAIL=1; }
+curl -fsS http://127.0.0.1:8090/api/health >/dev/null 2>&1 && echo "API interna: OK" || { echo "API interna: FALHOU"; FAIL=1; }
+if [[ "${WEB_TLS_MODE}" == "external_proxy" ]]; then
+  echo "HTTPS: delegado ao Nginx Proxy Manager; nenhuma validação/alteração TLS local executada."
+else
+  nginx -t >/dev/null 2>&1 && echo "Nginx: OK" || { echo "Nginx: FALHOU"; FAIL=1; }
+  curl -kfsS https://127.0.0.1/api/health >/dev/null 2>&1 && echo "API HTTPS: OK" || { echo "API HTTPS: FALHOU"; FAIL=1; }
+  curl -sSI http://127.0.0.1/api/health 2>/dev/null | grep -qi '^Location: https://' && echo "Redirect HTTP->HTTPS: OK" || { echo "Redirect HTTP->HTTPS: FALHOU"; FAIL=1; }
+fi
 test -S "${CONTROL_SOCKET}" && echo "Controle socket: OK" || { echo "Controle socket: FALHOU"; FAIL=1; }
 CURRENT_HEAD="$(git -c safe.directory="${BASE}" -C "${BASE}" rev-parse HEAD)"
 [[ "${CURRENT_HEAD}" == "${COMMIT}" ]] && echo "Git HEAD: OK (${CURRENT_HEAD})" || { echo "Git HEAD: FALHOU"; FAIL=1; }
@@ -337,5 +362,5 @@ rm -rf "${OLD_OUTPUT}" "${OLD_VENV}" "${OLD_READER}"
 log "RELEASE INSTALADA COM SUCESSO"
 echo "Commit: ${COMMIT}"
 echo "HEAD: ${CURRENT_HEAD}"
-echo "HTTPS: obrigatório"
+echo "HTTPS: $([[ "${WEB_TLS_MODE}" == "external_proxy" ]] && echo 'delegado ao Nginx Proxy Manager' || echo 'gerenciado localmente')"
 echo "Backup transacional: ${BACKUP}"

@@ -105,10 +105,10 @@ const detailTop = read("src/components/generators/detail/GeneratorDetailProfessi
 const detailControlSurface = `${detail}
 ${detailTop}`;
 for (const marker of [
-  "gen.capabilities?.start === true",
-  "gen.capabilities?.stop === true",
+  "gen.capabilities?.[action] === true",
   "!gen.telemetryStale",
   'gen.status !== "offline"',
+  'data-command="manual"',
   'data-command="auto"',
   'data-command="test"',
 ]) {

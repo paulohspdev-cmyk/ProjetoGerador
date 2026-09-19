@@ -1,5 +1,5 @@
 {
-  "schema": 3,
+  "schema": 4,
   "manufacturer": "ComAp",
   "family": "InteliGen NT",
   "model": "IG-NT",
@@ -305,5 +305,6 @@
     "fieldReference": "TESTE15004 / Unit 1 / reverse TCP 15004 / RTU transparent / 57600 8N1; IGS-NT identity read; FC03 only.",
     "commandSafety": "Somente leitura. Nenhum comando industrial foi homologado ou liberado."
   },
-  "notes": "Pack mínimo de produção criado apenas com registradores validados em campo. Óleo, temperatura e combustível permanecem fora do Rapid porque retornaram 0x8000 no ensaio."
+  "notes": "Pack mínimo de produção criado apenas com registradores validados em campo. Óleo, temperatura e combustível permanecem fora do Rapid porque retornaram 0x8000 no ensaio.",
+  "commands": {}
 }

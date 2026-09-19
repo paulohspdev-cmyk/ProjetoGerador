@@ -12,7 +12,13 @@ export function ApiV3Screen() {
   const [tokens, setTokens] = useState<ApiTokenItem[]>([]);
   const [name, setName] = useState("");
   const [read, setRead] = useState(true);
-  const [command, setCommand] = useState(false);
+  const [start, setStart] = useState(false);
+  const [stop, setStop] = useState(false);
+  const [mode, setMode] = useState(false);
+  const [breaker, setBreaker] = useState(false);
+  const [paralleling, setParalleling] = useState(false);
+  const [allowedGenerators, setAllowedGenerators] = useState("");
+  const [allowedCidrs, setAllowedCidrs] = useState("");
   const [rateLimit, setRateLimit] = useState("120");
   const [expiresDays, setExpiresDays] = useState("");
   const [issuedToken, setIssuedToken] = useState<string | null>(null);
@@ -35,15 +41,23 @@ export function ApiV3Screen() {
 
   const create = async (e: FormEvent) => {
     e.preventDefault();
-    const scopes = [read ? "ops.read" : "", command ? "ops.command" : ""].filter(Boolean);
+    const scopes = [
+      read ? "ops.read" : "",
+      start ? "generator.start" : "",
+      stop ? "generator.stop" : "",
+      mode ? "generator.mode" : "",
+      breaker ? "breaker.control" : "",
+      paralleling ? "paralleling.control" : "",
+    ].filter(Boolean);
     if (!scopes.length) {
       setError("Selecione pelo menos um escopo.");
       return;
     }
+    const hasCommand = scopes.some((scope) => scope !== "ops.read");
     if (
-      command &&
+      hasCommand &&
       !window.confirm(
-        "Criar token com escopo ops.command? Esse escopo continua limitado a START/STOP homologados e exige confirmação por requisição.",
+        "Criar token com permissão industrial? O backend ainda exige capability homologada, allowlist de geradores, CIDR de origem e confirmação por requisição.",
       )
     )
       return;
@@ -61,9 +75,19 @@ export function ApiV3Screen() {
         scopes,
         rateLimit: limit,
         ...(expiresAt ? { expiresAt } : {}),
+        allowedGenerators: allowedGenerators
+          .split(/[\s,;]+/)
+          .map((value) => value.trim())
+          .filter(Boolean),
+        allowedCidrs: allowedCidrs
+          .split(/[\s,;]+/)
+          .map((value) => value.trim())
+          .filter(Boolean),
       });
       setIssuedToken(item.token ?? null);
       setName("");
+      setAllowedGenerators("");
+      setAllowedCidrs("");
       setTokens(await rcApi.apiTokens.list());
       setError("");
     } catch (err) {
@@ -118,9 +142,9 @@ export function ApiV3Screen() {
           <div className="rounded-md border border-border p-3">
             <b>API externa v1</b>
             <p className="mt-1 text-muted-foreground">
-              Bearer token com rate limit e escopos explícitos.{" "}
-              <span className="num">ops.read</span> é leitura;{" "}
-              <span className="num">ops.command</span> continua limitado aos comandos homologados.
+              Bearer token com rate limit, allowlist de origem e escopos separados por ação. Mesmo
+              com escopo, o comando só executa quando o Controller Pack possui capability
+              fisicamente homologada.
             </p>
           </div>
         </div>
@@ -157,7 +181,7 @@ export function ApiV3Screen() {
 
       {admin && (
         <Panel title="Criar token externo">
-          <form onSubmit={create} className="grid gap-2 lg:grid-cols-5">
+          <form onSubmit={create} className="grid gap-3 lg:grid-cols-2">
             <label className="text-[11px] font-semibold text-muted-foreground">
               Nome
               <input
@@ -171,25 +195,44 @@ export function ApiV3Screen() {
             </label>
             <div className="text-[11px] font-semibold text-muted-foreground">
               <span>Escopos</span>
-              <div className="mt-1 flex h-9 items-center gap-3 rounded-md border border-input px-2">
-                <label className="flex items-center gap-1">
-                  <input
-                    type="checkbox"
-                    checked={read}
-                    onChange={(e) => setRead(e.target.checked)}
-                  />
-                  ops.read
-                </label>
-                <label className="flex items-center gap-1 text-alert">
-                  <input
-                    type="checkbox"
-                    checked={command}
-                    onChange={(e) => setCommand(e.target.checked)}
-                  />
-                  ops.command
-                </label>
+              <div className="mt-1 flex min-h-9 flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-input px-2 py-1">
+                {[
+                  ["ops.read", read, setRead],
+                  ["generator.start", start, setStart],
+                  ["generator.stop", stop, setStop],
+                  ["generator.mode", mode, setMode],
+                  ["breaker.control", breaker, setBreaker],
+                  ["paralleling.control", paralleling, setParalleling],
+                ].map(([label, checked, setter]) => (
+                  <label key={String(label)} className="flex items-center gap-1">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(checked)}
+                      onChange={(e) => (setter as (value: boolean) => void)(e.target.checked)}
+                    />
+                    {String(label)}
+                  </label>
+                ))}
               </div>
             </div>
+            <label className="text-[11px] font-semibold text-muted-foreground">
+              Geradores permitidos
+              <input
+                value={allowedGenerators}
+                onChange={(e) => setAllowedGenerators(e.target.value)}
+                placeholder="GEN157, GEN153"
+                className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+              />
+            </label>
+            <label className="text-[11px] font-semibold text-muted-foreground">
+              CIDRs/IPs permitidos
+              <input
+                value={allowedCidrs}
+                onChange={(e) => setAllowedCidrs(e.target.value)}
+                placeholder="10.10.10.0/24, 203.0.113.10/32"
+                className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+              />
+            </label>
             <label className="text-[11px] font-semibold text-muted-foreground">
               Rate limit
               <input
@@ -209,11 +252,14 @@ export function ApiV3Screen() {
                 className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
               />
             </label>
-            <div className="flex items-end">
+            <div className="lg:col-span-2 flex items-center justify-between gap-3">
+              <p className="text-[11px] text-muted-foreground">
+                Tokens com qualquer escopo de comando exigem geradores e CIDRs explícitos.
+              </p>
               <button
                 type="submit"
                 disabled={busy}
-                className="h-9 w-full rounded-md bg-primary text-sm font-bold text-primary-foreground disabled:opacity-50"
+                className="h-9 rounded-md bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50"
               >
                 {busy ? "Criando…" : "Criar token"}
               </button>
@@ -234,10 +280,27 @@ export function ApiV3Screen() {
                 render: (r) => (
                   <span className="flex flex-wrap gap-1">
                     {r.scopes.map((scope) => (
-                      <Pill key={scope} tone={scope === "ops.command" ? "warn" : "info"}>
+                      <Pill key={scope} tone={scope === "ops.read" ? "info" : "warn"}>
                         {scope}
                       </Pill>
                     ))}
+                  </span>
+                ),
+              },
+              {
+                label: "Allowlist",
+                render: (r) => (
+                  <span className="text-[10px]">
+                    <b>
+                      {r.allowed_generators.length
+                        ? r.allowed_generators.join(", ")
+                        : "todos (leitura)"}
+                    </b>
+                    <span className="block text-muted-foreground">
+                      {r.allowed_cidrs.length
+                        ? r.allowed_cidrs.join(", ")
+                        : "sem restrição adicional"}
+                    </span>
                   </span>
                 ),
               },

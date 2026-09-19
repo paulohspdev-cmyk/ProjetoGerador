@@ -1,4 +1,4 @@
-export type UserRole = "administrador" | "cadastro" | "visualizacao";
+export type UserRole = "administrador" | "operador" | "cadastro" | "visualizacao";
 
 export type Permission = "view" | "operate" | "create" | "edit" | "remove" | "manageUsers";
 
@@ -9,10 +9,12 @@ export type AppUser = {
   role: UserRole;
   active: boolean;
   lastAccess: string | null;
+  twoFactorEnabled: boolean;
 };
 
 export const ROLE_LABEL: Record<UserRole, string> = {
   administrador: "Gestor do sistema",
+  operador: "Operador",
   cadastro: "Cadastro",
   visualizacao: "Visualização",
 };
@@ -22,18 +24,24 @@ export const ROLE_META: Array<{ id: UserRole; name: string; perms: string }> = [
     id: "administrador",
     name: "Gestor do sistema",
     perms:
-      "Acesso total: visualização, cadastro, usuários, auditoria e START/STOP autorizados. Demais comandos industriais permanecem indisponíveis",
+      "Acesso administrativo completo. Ações privilegiadas exigem 2FA; comandos industriais continuam limitados às capacidades homologadas da controladora.",
+  },
+  {
+    id: "operador",
+    name: "Operador",
+    perms:
+      "Visualização, reconhecimento operacional e comandos industriais homologados. Não gerencia usuários, cadastros, comunicação ou infraestrutura. Ações de comando exigem 2FA.",
   },
   {
     id: "cadastro",
     name: "Cadastro",
     perms:
-      "Visualizar e cadastrar/editar equipamentos. Sem comandos industriais e sem gestão de usuários",
+      "Visualizar e cadastrar/editar equipamentos. Sem comandos industriais e sem gestão de usuários.",
   },
   {
     id: "visualizacao",
     name: "Visualização",
-    perms: "Somente leitura. Sem alterações e sem comandos industriais",
+    perms: "Somente leitura. Sem alterações e sem comandos industriais.",
   },
 ];
 
@@ -45,6 +53,14 @@ export const ROLE_PERMS: Record<UserRole, Record<Permission, boolean>> = {
     edit: true,
     remove: true,
     manageUsers: true,
+  },
+  operador: {
+    view: true,
+    operate: true,
+    create: false,
+    edit: false,
+    remove: false,
+    manageUsers: false,
   },
   cadastro: {
     view: true,

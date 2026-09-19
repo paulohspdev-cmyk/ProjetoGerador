@@ -5,7 +5,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { ROLE_LABEL, ROLE_META, type AppUser, type UserRole } from "@/lib/auth";
 import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats } from "./kit";
 
-const roles: UserRole[] = ["administrador", "cadastro", "visualizacao"];
+const roles: UserRole[] = ["administrador", "operador", "cadastro", "visualizacao"];
 
 export function UsersV3Screen() {
   const { can, user, users, createUser, updateUser, removeUser } = useAuth();
@@ -237,8 +237,32 @@ export function UsersV3Screen() {
             {
               label: "Perfil",
               render: (row) => (
-                <Pill tone={row.role === "administrador" ? "info" : "muted"}>
+                <Pill
+                  tone={
+                    row.role === "administrador"
+                      ? "info"
+                      : row.role === "operador"
+                        ? "warn"
+                        : "muted"
+                  }
+                >
                   {ROLE_LABEL[row.role]}
+                </Pill>
+              ),
+            },
+            {
+              label: "2FA",
+              render: (row) => (
+                <Pill
+                  tone={
+                    row.twoFactorEnabled
+                      ? "ok"
+                      : row.role === "administrador" || row.role === "operador"
+                        ? "warn"
+                        : "muted"
+                  }
+                >
+                  {row.twoFactorEnabled ? "ATIVO" : "NÃO CONFIGURADO"}
                 </Pill>
               ),
             },
