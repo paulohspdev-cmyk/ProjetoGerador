@@ -66,8 +66,7 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
   );
 
   await page.goto("/p/geradores");
-  await page.getByRole("button", { name: /online/i }).click();
-  await page.getByRole("menuitemradio", { name: "Todos" }).click();
+  await expect(page.getByRole("button", { name: /^Todos$/ })).toBeVisible();
 
   const comap = page.locator('[data-controller-vendor="comap"]').filter({ hasText: "VERTCOMAP" });
   const dse = page.locator('[data-controller-vendor="dse"]').filter({ hasText: "VERTDSE" });
@@ -139,8 +138,7 @@ test("vertical cabe inteiro na área disponível sem rolagem interna", async ({ 
     }
 
     await page.goto("/p/geradores");
-    await page.getByRole("button", { name: /online/i }).click();
-    await page.getByRole("menuitemradio", { name: "Todos" }).click();
+    await expect(page.getByRole("button", { name: /^Todos$/ })).toBeVisible();
     await expect(page.locator(".vref-card-frame").first()).toBeVisible({
       timeout: 15_000,
     });
@@ -156,6 +154,7 @@ test("vertical cabe inteiro na área disponível sem rolagem interna", async ({ 
         })
         .map((element) => {
           const rect = element.getBoundingClientRect();
+          const card = element.querySelector<HTMLElement>(".vref-card");
           return {
             left: rect.left,
             right: rect.right,
@@ -163,6 +162,8 @@ test("vertical cabe inteiro na área disponível sem rolagem interna", async ({ 
             bottom: rect.bottom,
             width: rect.width,
             height: rect.height,
+            cardOverflowHeight: card ? card.scrollHeight - card.clientHeight : 999,
+            cardOverflowWidth: card ? card.scrollWidth - card.clientWidth : 999,
           };
         });
       const style = getComputedStyle(grid);
@@ -199,6 +200,8 @@ test("vertical cabe inteiro na área disponível sem rolagem interna", async ({ 
       expect(frame.bottom).toBeLessThanOrEqual(metrics.gridRect.bottom + 1);
       expect(frame.width).toBeGreaterThan(0);
       expect(frame.height).toBeGreaterThan(0);
+      expect(frame.cardOverflowHeight).toBeLessThanOrEqual(1);
+      expect(frame.cardOverflowWidth).toBeLessThanOrEqual(1);
     }
 
     expect(metrics.declaredColumns).toBeGreaterThan(0);

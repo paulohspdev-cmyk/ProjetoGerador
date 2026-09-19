@@ -71,6 +71,9 @@ for (const forbidden of ["Cards verticais", "Cards compactos"]) {
   if (board.includes(forbidden))
     failures.push(`toolbar voltou ao grupo de botões antigo: ${forbidden}`);
 }
+if (!board.includes('useState<GenStatus | "todos">("todos")')) {
+  failures.push("board deixou de abrir mostrando toda a frota, inclusive equipamentos offline");
+}
 if (board.includes('import "./operator-card-refinement.css"')) {
   failures.push("board voltou a carregar CSS concorrente do card vertical");
 }
@@ -144,6 +147,16 @@ for (const marker of [
   if (!table.includes(marker)) failures.push(`lista perdeu telemetria operacional: ${marker}`);
 }
 
+const metrics = read("src/components/generators/generator-metrics.ts");
+for (const marker of [
+  "if (gen.telemetryStale) return null",
+  "gen.definedMetrics ?? gen.availableMetrics",
+]) {
+  if (!metrics.includes(marker)) {
+    failures.push(`telemetria perdeu proteção contra exibição de valor obsoleto: ${marker}`);
+  }
+}
+
 const health = read("src/components/generators/generator-health.ts");
 for (const marker of [
   "toneFromLimit",
@@ -177,9 +190,9 @@ for (const marker of [
   "grid-auto-rows: var(--vref-card-height",
   ".vref-card",
   "height: 100%",
-  "container-type: inline-size",
+  "container-type: size",
   "@container vref",
-  "@media (max-height: 760px)",
+  "@container vref (max-height: 780px)",
 ]) {
   if (!cardCss.includes(marker))
     failures.push(`layout vertical legível perdeu regra de encaixe: ${marker}`);

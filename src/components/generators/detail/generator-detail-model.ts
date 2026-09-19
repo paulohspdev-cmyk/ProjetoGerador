@@ -17,6 +17,7 @@ function statusText(gen: Generator, rotating: boolean | null) {
 export function buildGeneratorDetailModel(gen: Generator) {
   const rpm = metricNumber(gen, "rpm", gen.rpm);
   const frequency = metricNumber(gen, "frequency", gen.frequency);
+  const mainsFrequency = metricNumber(gen, "mains_frequency", gen.mainsFrequency);
   const genL1 = metricNumber(gen, "voltage_l1", gen.gen.l1);
   const genL2 = metricNumber(gen, "voltage_l2", gen.gen.l2);
   const genL3 = metricNumber(gen, "voltage_l3", gen.gen.l3);
@@ -26,6 +27,9 @@ export function buildGeneratorDetailModel(gen: Generator) {
   const mainsL3 = metricNumber(gen, "mains_voltage_l3", gen.mains.l3);
   const mainsL12 = metricNumber(gen, "mains_voltage_l1_l2", gen.mains.l12);
   const load = metricNumber(gen, "power_kw", gen.load);
+  const nominalPower =
+    metricNumber(gen, "nominal_power_kw", gen.nominalPower) ??
+    metricNumber(gen, "nominal_power", gen.nominalPower);
   const oil = metricNumber(gen, "oil_pressure", gen.oilPressure);
   const temp = metricNumber(gen, "coolant_temperature", gen.coolantTemp);
   const fuel = metricNumber(gen, "fuel_level", gen.fuelLevel);
@@ -53,13 +57,12 @@ export function buildGeneratorDetailModel(gen: Generator) {
   const mainsPresent =
     mainsKnown &&
     (mainsPeakVoltage >= 80 ||
-      (hasFreshMetric(gen, "mains_frequency") && (gen.mainsFrequency ?? 0) >= 20) ||
-      (mcbKnown && mcb));
+      (hasFreshMetric(gen, "mains_frequency") && mainsFrequency != null && mainsFrequency >= 20));
   const mainsOk = mainsPresent;
   const modeLabel = modeKnown ? gen.mode : "N/D";
 
   return {
-    available: new Set(gen.availableMetrics ?? []),
+    available: new Set(gen.definedMetrics ?? gen.availableMetrics ?? []),
     rpm,
     frequency,
     genL1,
@@ -71,6 +74,7 @@ export function buildGeneratorDetailModel(gen: Generator) {
     mainsL3,
     mainsL12,
     load,
+    nominalPower,
     oil,
     temp,
     fuel,

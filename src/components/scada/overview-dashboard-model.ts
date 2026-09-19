@@ -109,8 +109,18 @@ export function friendlyAlarmMessage(alarm: IndustrialAlarm) {
   return alarm.message || "Ocorrência ativa requer verificação.";
 }
 
-function metricAvailable(generator: { availableMetrics?: string[] }, key: string) {
-  return (generator.availableMetrics ?? []).includes(key);
+function metricAvailable(
+  generator: {
+    telemetryStale?: boolean;
+    definedMetrics?: string[];
+    availableMetrics?: string[];
+  },
+  key: string,
+) {
+  return (
+    !generator.telemetryStale &&
+    (generator.definedMetrics ?? generator.availableMetrics ?? []).includes(key)
+  );
 }
 
 function metricUnit(

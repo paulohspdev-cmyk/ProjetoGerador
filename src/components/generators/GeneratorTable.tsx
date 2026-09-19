@@ -5,7 +5,7 @@ import type { Generator } from "@/data/generators";
 import { cn } from "@/lib/utils";
 import { DeleteGeneratorButton } from "./DeleteGeneratorButton";
 import { readGeneratorTelemetry, toneTextClass } from "./generator-health";
-import { fmt, formatGeneratorMetric, hasMetric } from "./generator-metrics";
+import { fmt, formatGeneratorMetric, hasFreshMetric } from "./generator-metrics";
 import { StatusPill } from "./StatusPill";
 
 function modeClass(mode: Generator["mode"], known: boolean) {
@@ -54,9 +54,9 @@ function MobileRow({ items }: { items: Generator[] }) {
     <div className="space-y-2 xl:hidden">
       {items.map((gen) => {
         const telemetry = readGeneratorTelemetry(gen);
-        const modeKnown = hasMetric(gen, "controller_mode_raw");
-        const mcbKnown = hasMetric(gen, "mcb_closed");
-        const gcbKnown = hasMetric(gen, "gcb_closed");
+        const modeKnown = hasFreshMetric(gen, "controller_mode_raw");
+        const mcbKnown = hasFreshMetric(gen, "mcb_closed");
+        const gcbKnown = hasFreshMetric(gen, "gcb_closed");
 
         const details = [
           ["Modo", modeKnown ? gen.mode : "N/D", modeClass(gen.mode, modeKnown)],
@@ -71,7 +71,7 @@ function MobileRow({ items }: { items: Generator[] }) {
           ["Bateria", telemetry.battery == null ? "N/D" : `${fmt(telemetry.battery)} V`, ""],
           [
             "Pressão óleo",
-            telemetry.oil == null ? "N/D" : `${fmt(telemetry.oil, 2)} bar`,
+            telemetry.oil == null ? "N/D" : `${fmt(telemetry.oil, 2)} ${telemetry.oilUnit}`,
             toneTextClass(telemetry.tones.oil),
           ],
           [
@@ -210,9 +210,9 @@ export function GeneratorTable({ items }: { items: Generator[] }) {
           <tbody>
             {items.map((gen) => {
               const telemetry = readGeneratorTelemetry(gen);
-              const modeKnown = hasMetric(gen, "controller_mode_raw");
-              const mcbKnown = hasMetric(gen, "mcb_closed");
-              const gcbKnown = hasMetric(gen, "gcb_closed");
+              const modeKnown = hasFreshMetric(gen, "controller_mode_raw");
+              const mcbKnown = hasFreshMetric(gen, "mcb_closed");
+              const gcbKnown = hasFreshMetric(gen, "gcb_closed");
 
               return (
                 <tr
@@ -247,7 +247,9 @@ export function GeneratorTable({ items }: { items: Generator[] }) {
                     {telemetry.battery == null ? "N/D" : `${fmt(telemetry.battery)} V`}
                   </td>
                   <td className={cn("num px-2 py-2", toneTextClass(telemetry.tones.oil))}>
-                    {telemetry.oil == null ? "N/D" : `${fmt(telemetry.oil, 2)} bar`}
+                    {telemetry.oil == null
+                      ? "N/D"
+                      : `${fmt(telemetry.oil, 2)} ${telemetry.oilUnit}`}
                   </td>
                   <td className={cn("num px-2 py-2", toneTextClass(telemetry.tones.coolant))}>
                     {telemetry.coolant == null ? "N/D" : `${fmt(telemetry.coolant, 0)} °C`}

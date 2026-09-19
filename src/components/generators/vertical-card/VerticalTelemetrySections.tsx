@@ -13,20 +13,12 @@ function valueText(value: number | null, unit: string, digits = 0) {
   );
 }
 
-function MiniBar({
-  value,
-  max,
-  className,
-}: {
-  value: number | null;
-  max: number;
-  className?: string;
-}) {
+function MiniBar({ percent, className }: { percent: number | null; className?: string }) {
   const pct =
-    value == null || !Number.isFinite(value) ? 0 : Math.min(100, Math.max(0, (value / max) * 100));
+    percent == null || !Number.isFinite(percent) ? null : Math.min(100, Math.max(0, percent));
   return (
-    <span className={cn("vref-mini-bar", className, value == null && "is-unknown")}>
-      <i style={{ width: pct + "%" }} />
+    <span className={cn("vref-mini-bar", className, pct == null && "is-unknown")}>
+      {pct != null && <i style={{ width: pct + "%" }} />}
     </span>
   );
 }
@@ -39,6 +31,11 @@ export function VerticalEngineAndRpm({
   fuelUnit,
   battery,
   rpm,
+  oilPercent,
+  coolantPercent,
+  fuelPercent,
+  runningKnown,
+  running,
 }: {
   oil: number | null;
   oilUnit: string;
@@ -47,40 +44,52 @@ export function VerticalEngineAndRpm({
   fuelUnit: string;
   battery: number | null;
   rpm: number | null;
+  oilPercent: number | null;
+  coolantPercent: number | null;
+  fuelPercent: number | null;
+  runningKnown: boolean;
+  running: boolean;
 }) {
   return (
     <div className="vref-engine-rpm">
       <section className="vref-section vref-engine">
-        <h4>ENGINE STATUS</h4>
+        <div className="vref-engine-heading">
+          <h4>ENGINE STATUS</h4>
+          <span
+            className={cn(!runningKnown ? "is-unknown" : running ? "is-running" : "is-stopped")}
+          >
+            {!runningKnown ? "N/D" : running ? "RUNNING" : "STOPPED"}
+          </span>
+        </div>
         <div className="vref-engine-row">
           <Gauge />
           <span>Oil Pressure</span>
-          <MiniBar value={oil} max={10} />
+          <MiniBar percent={oilPercent} />
           <b>{valueText(oil, oilUnit, 1)}</b>
         </div>
         <div className="vref-engine-row">
           <Thermometer />
           <span>Coolant Temp.</span>
-          <MiniBar value={coolant} max={120} />
+          <MiniBar percent={coolantPercent} />
           <b>{valueText(coolant, "°C", 0)}</b>
         </div>
         <div className="vref-engine-row">
           <Fuel />
           <span>Fuel Level</span>
-          <MiniBar value={fuel} max={fuelUnit === "%" ? 100 : 700} />
+          <MiniBar percent={fuelPercent} />
           <b>{valueText(fuel, fuelUnit, 0)}</b>
         </div>
         <div className="vref-engine-row">
           <Battery />
           <span>Battery Voltage</span>
-          <MiniBar value={battery} max={30} />
+          <MiniBar percent={null} />
           <b>{valueText(battery, "V", 1)}</b>
         </div>
       </section>
 
       <section className="vref-section vref-rpm">
         <h4>RPM</h4>
-        <RpmGauge value={rpm ?? 0} max={4000} />
+        <RpmGauge value={rpm} max={4000} />
       </section>
     </div>
   );

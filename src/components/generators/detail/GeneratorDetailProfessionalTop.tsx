@@ -51,8 +51,8 @@ export function GeneratorDetailProfessionalTop({
 }: Props) {
   const voltage = model.genL12 ?? model.genL1;
   const loadPercent =
-    model.load != null && gen.nominalPower != null && gen.nominalPower > 0
-      ? Math.max(0, Math.min(100, (model.load / gen.nominalPower) * 100))
+    model.load != null && model.nominalPower != null && model.nominalPower > 0
+      ? Math.max(0, Math.min(100, (model.load / model.nominalPower) * 100))
       : null;
   const lastTelemetry = gen.lastTelemetryAt
     ? new Date(gen.lastTelemetryAt * 1000).toLocaleString("pt-BR")

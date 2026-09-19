@@ -42,7 +42,8 @@ const VERTICAL_GAP = 8;
 const VERTICAL_PADDING = 4;
 const VERTICAL_MIN_CARD_WIDTH = 260;
 const VERTICAL_MAX_CARD_WIDTH = 305;
-const VERTICAL_MIN_CARD_HEIGHT = 720;
+const VERTICAL_MIN_CARD_HEIGHT = 650;
+const VERTICAL_MAX_CARD_HEIGHT = 900;
 
 function verticalColumnCount(width: number) {
   const usableWidth = Math.max(1, width - VERTICAL_PADDING * 2);
@@ -73,7 +74,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
   const { fullscreen, toggleFullscreen } = useLayout();
   const { theme, toggleTheme } = useTheme();
   const [view, setView] = useState<View>("principal");
-  const [status, setStatus] = useState<GenStatus | "todos">("online");
+  const [status, setStatus] = useState<GenStatus | "todos">("todos");
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState(0);
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -155,7 +156,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
       "--vref-columns": displayColumns,
       "--vref-rows": verticalLayout.rows,
       "--vref-card-width": Math.max(VERTICAL_MIN_CARD_WIDTH, cardWidth) + "px",
-      "--vref-card-height": verticalLayout.cardHeight + "px",
+      "--vref-card-height": Math.min(VERTICAL_MAX_CARD_HEIGHT, verticalLayout.cardHeight) + "px",
       "--vref-gap": VERTICAL_GAP + "px",
       "--vref-padding": VERTICAL_PADDING + "px",
     } as CSSProperties;

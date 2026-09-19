@@ -34,9 +34,7 @@ export function VerticalPowerGauge({
       <div className="vref-power-gauge">
         <svg viewBox="0 0 320 170" aria-label="Generator power gauge">
           <path className="vref-gauge-base" d={arcPath(0, 1)} />
-          <path className="vref-gauge-zone vref-zone-green" d={arcPath(0, 0.75)} />
-          <path className="vref-gauge-zone vref-zone-amber" d={arcPath(0.75, 0.9)} />
-          <path className="vref-gauge-zone vref-zone-red" d={arcPath(0.9, 1)} />
+          <path className="vref-gauge-range" d={arcPath(0, 1)} />
 
           {[0, 0.25, 0.5, 0.75, 1].map((tick) => {
             const outer = polar(160, 112, 110, tick);

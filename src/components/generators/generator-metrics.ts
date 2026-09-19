@@ -24,6 +24,11 @@ export function hasFreshMetric(gen: Generator, key: string) {
 }
 
 export function metricNumber(gen: Generator, key: string, value: number | null | undefined) {
+  if (gen.telemetryStale) return null;
+
+  const defined = gen.definedMetrics ?? gen.availableMetrics;
+  if (defined && !defined.includes(key)) return null;
+
   if (gen.metrics) {
     const metric = gen.metrics[key];
     return metric != null && Number.isFinite(Number(metric)) ? Number(metric) : null;

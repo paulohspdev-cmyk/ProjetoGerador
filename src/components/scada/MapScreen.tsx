@@ -3,6 +3,7 @@ import { AlertTriangle, Building2, CircleOff, MapPin, MapPinned } from "lucide-r
 
 import { StatusPill } from "@/components/generators/StatusPill";
 import { useGenerators } from "@/components/generators/GeneratorsProvider";
+import { metricNumber } from "@/components/generators/generator-metrics";
 import { rcApi, type OpsSite } from "@/lib/api";
 import { OperationalMap, type OperationalMapSite } from "./OperationalMap";
 import { Panel, Pill, ScadaTable, ScreenBody, Stats } from "./kit";
@@ -54,12 +55,9 @@ export function MapScreen() {
         const gens = generators.filter(
           (generator) => generator.site.trim().toLowerCase() === site.name.trim().toLowerCase(),
         );
-        const measured = gens.filter(
-          (generator) =>
-            (generator.availableMetrics ?? []).includes("power_kw") &&
-            generator.load != null &&
-            Number.isFinite(Number(generator.load)),
-        );
+        const measured = gens
+          .map((generator) => metricNumber(generator, "power_kw", generator.load))
+          .filter((value): value is number => value != null);
         const online = gens.filter((generator) => generator.status === "online").length;
         const alert = gens.filter((generator) => generator.status === "alerta").length;
         const offline = gens.filter((generator) => generator.status === "offline").length;
@@ -70,9 +68,7 @@ export function MapScreen() {
           online,
           alert,
           offline,
-          load: measured.length
-            ? measured.reduce((sum, generator) => sum + Number(generator.load), 0)
-            : null,
+          load: measured.length ? measured.reduce((sum, value) => sum + value, 0) : null,
         };
       }),
     [generators, sites],
@@ -321,10 +317,10 @@ export function MapScreen() {
                       <b className="truncate">{generator.tag}</b>
                       <StatusPill status={generator.status} />
                       <span className="num min-w-16 text-right text-muted-foreground">
-                        {(generator.availableMetrics ?? []).includes("power_kw") &&
-                        generator.load != null
-                          ? `${Number(generator.load).toFixed(0)} kW`
-                          : "N/D"}
+                        {(() => {
+                          const load = metricNumber(generator, "power_kw", generator.load);
+                          return load == null ? "N/D" : `${load.toFixed(0)} kW`;
+                        })()}
                       </span>
                     </div>
                   ))}

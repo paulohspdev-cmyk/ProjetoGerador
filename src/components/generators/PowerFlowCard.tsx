@@ -56,6 +56,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     coolant,
     fuel,
     fuelUnit,
+    fuelPercent,
     battery,
     runHours,
     frequency,
@@ -66,6 +67,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     currentL1,
     currentL2,
     currentL3,
+    percents,
   } = telemetry;
 
   const vendor = controllerVendor(gen);
@@ -76,10 +78,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const gcbKnown = hasFreshMetric(gen, "gcb_closed");
   const modeKnown = hasFreshMetric(gen, "controller_mode_raw");
 
-  const breakerStateRaw = metricNumber(gen, "breaker_state_raw", undefined);
-  const isComap = vendor === "comap";
-  const comapIslanded = isComap && (breakerStateRaw === 2 || breakerStateRaw === 10);
-
   const mainsL1 = metricNumber(gen, "mains_voltage_l1", gen.mains.l1);
   const mainsL2 = metricNumber(gen, "mains_voltage_l2", gen.mains.l2);
   const mainsL3 = metricNumber(gen, "mains_voltage_l3", gen.mains.l3);
@@ -89,20 +87,32 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     (key) => hasFreshMetric(gen, key),
   );
   const mainsFrequencyKnown = hasFreshMetric(gen, "mains_frequency");
-  const mainsKnown = !comapIslanded && (mainsVoltageKnown || mainsFrequencyKnown || mcbKnown);
+  const mainsKnown = mainsVoltageKnown || mainsFrequencyKnown;
   const mainsPeak = Math.max(
     0,
     ...[mainsL1, mainsL2, mainsL3].filter((value): value is number => value != null),
   );
   const mainsPresent =
     mainsKnown &&
-    (mainsPeak >= 80 ||
-      (mainsFrequencyKnown && mainsFrequency != null && mainsFrequency >= 20) ||
-      (mcbKnown && gen.mcb));
+    (mainsPeak >= 80 || (mainsFrequencyKnown && mainsFrequency != null && mainsFrequency >= 20));
 
   const genL1 = metricNumber(gen, "voltage_l1", gen.gen.l1);
   const genL2 = metricNumber(gen, "voltage_l2", gen.gen.l2);
   const genL3 = metricNumber(gen, "voltage_l3", gen.gen.l3);
+  const generatorVoltageKnown = ["voltage_l1", "voltage_l2", "voltage_l3"].some((key) =>
+    hasFreshMetric(gen, key),
+  );
+  const generatorFrequencyKnown = hasFreshMetric(gen, "frequency");
+  const generatorKnown = runningKnown || generatorVoltageKnown || generatorFrequencyKnown;
+  const generatorPeak = Math.max(
+    0,
+    ...[genL1, genL2, genL3].filter((value): value is number => value != null),
+  );
+  const generatorPresent =
+    generatorKnown &&
+    ((runningKnown && running) ||
+      generatorPeak >= 80 ||
+      (generatorFrequencyKnown && frequency != null && frequency >= 20));
   const energyKwh = metricNumber(gen, "genset_kwh", undefined);
   const requiredPower = metricNumber(gen, "required_power_kw", undefined);
   const batteryVoltage = metricNumber(gen, "battery_voltage", battery);
@@ -170,11 +180,12 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     { icon: "gauge" as const, label: "Required Power", value: formatUnit(requiredPower, "kW", 0) },
   ];
 
-  const canOperate = can("operate");
+  const canOperate =
+    can("operate") && !gen.telemetryStale && (gen.status === "online" || gen.status === "alerta");
   const canAction = (action: IndustrialCommandAction) =>
     canOperate && gen.capabilities?.[action] === true;
-  const canStart = canAction("start");
-  const canStop = canAction("stop");
+  const canStart = canAction("start") && runningKnown && !running;
+  const canStop = canAction("stop") && runningKnown && running;
 
   const runCommand = async (action: IndustrialCommandAction) => {
     const label = action.toUpperCase().replaceAll("_", " ");
@@ -194,6 +205,24 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   };
 
   const online = gen.status === "online" || gen.status === "alerta";
+  const statusText =
+    gen.status === "alerta"
+      ? "ALARM"
+      : gen.status === "online"
+        ? "COMM OK"
+        : gen.status === "nao_configurado"
+          ? "NOT CONFIG"
+          : gen.telemetryStale
+            ? "COMM LOST"
+            : "OFFLINE";
+  const statusClass =
+    gen.status === "alerta"
+      ? "is-alert"
+      : online
+        ? "is-online"
+        : gen.status === "nao_configurado"
+          ? "is-unconfigured"
+          : "is-offline";
   const modeLabel = headerMode(gen.mode, modeKnown);
 
   return (
@@ -203,18 +232,20 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         dse ? "is-dse" : "is-comap",
         mainsPresent ? "has-mains" : "no-mains",
         gen.status === "alerta" && "has-alert",
+        gen.telemetryStale && "has-stale-telemetry",
       )}
       data-controller-vendor={vendor}
       data-mains-state={!mainsKnown ? "unknown" : mainsPresent ? "present" : "absent"}
+      data-telemetry-state={gen.telemetryStale ? "stale" : online ? "live" : "unavailable"}
     >
       <header className="vref-header">
-        <span className={cn("vref-generator-badge", online ? "is-online" : "is-offline")}>G</span>
+        <span className={cn("vref-generator-badge", statusClass)}>G</span>
         <div className="vref-header-title">
           <Link to="/p/geradores/$id" params={{ id: gen.id }} title={gen.controller}>
             {displayGeneratorName(gen)}
           </Link>
-          <span className={cn(online ? "is-online" : "is-offline")}>
-            <i /> {gen.status === "alerta" ? "ALERT" : online ? "ONLINE" : "OFFLINE"}
+          <span className={statusClass}>
+            <i /> {statusText}
           </span>
         </div>
       </header>
@@ -226,13 +257,14 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         mainsKnown={mainsKnown}
         mainsFrequency={mainsFrequency}
         generatorFrequency={frequency}
-        loadKw={powerKw}
+        generatorPowerKw={powerKw}
+        generatorKnown={generatorKnown}
+        generatorPresent={generatorPresent}
         modeLabel={modeLabel}
         mcb={gen.mcb}
         mcbKnown={mcbKnown}
         gcb={gen.gcb}
         gcbKnown={gcbKnown}
-        running={running}
         canStart={canStart}
         canStop={canStop}
         canMcbOpen={canAction("mcb_open")}
@@ -261,6 +293,11 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         fuelUnit={fuelUnit}
         battery={batteryVoltage}
         rpm={rpm}
+        oilPercent={percents.oil}
+        coolantPercent={percents.coolant}
+        fuelPercent={fuelPercent}
+        runningKnown={runningKnown}
+        running={running}
       />
 
       <VerticalTables electricalRows={electricalRows} valueRows={valueRows} />
