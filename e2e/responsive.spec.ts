@@ -88,7 +88,7 @@ test("touchscreen recebe alvos mínimos de 44px", async ({ browser }) => {
       await expect(menu).toBeVisible();
       expect((await menu.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
     } else {
-      const overviewLink = page.getByRole("link", { name: "Visão Geral" }).first();
+      const overviewLink = page.getByRole("link", { name: "Resumo Operacional" }).first();
       await expect(overviewLink).toBeVisible();
       expect((await overviewLink.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
     }
