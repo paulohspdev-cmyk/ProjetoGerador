@@ -99,8 +99,12 @@ generator = {
     "site": "=2+2",
     "status": "online",
     "controller": "ComAp",
-    "availableMetrics": ["rpm"],
+    "availableMetrics": ["rpm", "fuel_level"],
+    "definedMetrics": ["rpm", "fuel_level"],
+    "telemetryStale": False,
+    "metricUnits": {"fuel_level": "L"},
     "rpm": 1500,
+    "fuelLevel": 1091,
 }
 artifact = generate_report(report, [generator])
 wb = load_workbook(artifact["path"], data_only=False)
@@ -108,7 +112,23 @@ ws = wb.active
 assert ws["A1"].data_type != "f" and str(ws["A1"].value).startswith("'")
 assert ws["B6"].data_type != "f" and str(ws["B6"].value).startswith("'")
 assert ws["E6"].value == 1500 and ws["E6"].data_type == "n"
+assert ws["I6"].value == 1091 and ws["J6"].value == "L"
 assert ws["A2"].value == "Tipo" and ws["B2"].value == "Fotografia operacional"
+
+stale_report = {"id": "rep-stale", "name": "Stale", "period": "Agora", "format": "XLSX"}
+stale_generator = {
+    **generator,
+    "definedMetrics": [],
+    "telemetryStale": True,
+    "rpm": 1800,
+    "fuelLevel": 1200,
+}
+stale_artifact = generate_report(stale_report, [stale_generator])
+stale_wb = load_workbook(stale_artifact["path"], data_only=False)
+stale_ws = stale_wb.active
+assert stale_ws["E6"].value is None
+assert stale_ws["I6"].value is None
+assert stale_ws["J6"].value is None
 
 # F06: clearing and reopening the same alarm starts a fresh escalation occurrence.
 policy = industrial_store.create_escalation_policy(

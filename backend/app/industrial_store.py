@@ -163,6 +163,15 @@ def _desired_alarm(key: str, generator: dict, source: str, code: str, severity: 
     }
 
 
+def _current_metric_keys(generator: dict | None) -> set[str]:
+    if not generator or generator.get("telemetryStale"):
+        return set()
+    metrics = generator.get("definedMetrics")
+    if metrics is None:
+        metrics = generator.get("availableMetrics") or []
+    return set(metrics)
+
+
 def refresh_observed_alarms(generators: list[dict]) -> int:
     """Persiste somente condições que a API/Rapid consegue comprovar.
 
@@ -189,7 +198,7 @@ def refresh_observed_alarms(generators: list[dict]) -> int:
             )
             desired[key] = item
 
-        available = set(generator.get("availableMetrics") or [])
+        available = _current_metric_keys(generator)
         if "alarm_count" in available:
             count = int(generator.get("alarms") or 0)
             if count > 0:
@@ -416,8 +425,12 @@ def maintenance_status(generators: list[dict]) -> list[dict]:
     result = []
     for plan in list_maintenance_plans():
         generator = by_id.get(str(plan.get("generator_id") or ""))
-        hours_known = bool(generator and "run_hours" in set(generator.get("availableMetrics") or []))
-        current_hours = float(generator.get("runHours") or 0) if hours_known else None
+        hours_known = "run_hours" in _current_metric_keys(generator)
+        current_hours = (
+            float(generator.get("runHours"))
+            if hours_known and generator and generator.get("runHours") is not None
+            else None
+        )
         hour_remaining = None
         day_remaining = None
         states: list[str] = []

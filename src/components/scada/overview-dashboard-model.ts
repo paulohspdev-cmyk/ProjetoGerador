@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useGenerators } from "@/components/generators/GeneratorsProvider";
+import { metricNumber } from "@/components/generators/generator-metrics";
 import { industrialApi, type IndustrialAlarm, type MaintenancePlan } from "@/lib/industrial-api";
 import { rcApi, type SystemDiagnostics } from "@/lib/api";
 import { useScadaOps } from "./ScadaOpsProvider";
@@ -45,6 +46,8 @@ export type FuelSummary = {
   average: number | null;
   min: number | null;
   max: number | null;
+  unit: string | null;
+  mixedUnits: boolean;
 };
 
 export type ModemDecisionRow = {
@@ -107,20 +110,6 @@ export function friendlyAlarmMessage(alarm: IndustrialAlarm) {
     return "Ocorrência de comunicação requer verificação.";
   }
   return alarm.message || "Ocorrência ativa requer verificação.";
-}
-
-function metricAvailable(
-  generator: {
-    telemetryStale?: boolean;
-    definedMetrics?: string[];
-    availableMetrics?: string[];
-  },
-  key: string,
-) {
-  return (
-    !generator.telemetryStale &&
-    (generator.definedMetrics ?? generator.availableMetrics ?? []).includes(key)
-  );
 }
 
 function metricUnit(
@@ -218,24 +207,29 @@ export function useOverviewDecisionModel() {
   );
 
   const fuel = useMemo<FuelSummary>(() => {
-    const readings = generators
-      .filter(
-        (generator) =>
-          metricAvailable(generator, "fuel_level") &&
-          metricUnit(generator, "fuel_level", "%") === "%" &&
-          Number.isFinite(Number(generator.fuelLevel)) &&
-          Number(generator.fuelLevel) >= 0 &&
-          Number(generator.fuelLevel) <= 100,
-      )
-      .map((generator) => Number(generator.fuelLevel));
+    const measured = generators
+      .map((generator) => {
+        const value = metricNumber(generator, "fuel_level", generator.fuelLevel);
+        const unit = metricUnit(generator, "fuel_level", "");
+        return value == null || !unit ? null : { value, unit };
+      })
+      .filter((row): row is { value: number; unit: string } => row != null);
+    const units = new Set(measured.map((row) => row.unit));
+    const mixedUnits = units.size > 1;
+    const unit = units.size === 1 ? ([...units][0] ?? null) : null;
+    const readings =
+      unit == null ? [] : measured.filter((row) => row.unit === unit).map((row) => row.value);
     return {
-      count: readings.length,
+      count: measured.length,
       totalGenerators: generators.length,
-      average: readings.length
-        ? readings.reduce((sum, value) => sum + value, 0) / readings.length
-        : null,
-      min: readings.length ? Math.min(...readings) : null,
-      max: readings.length ? Math.max(...readings) : null,
+      average:
+        readings.length && !mixedUnits
+          ? readings.reduce((sum, value) => sum + value, 0) / readings.length
+          : null,
+      min: readings.length && !mixedUnits ? Math.min(...readings) : null,
+      max: readings.length && !mixedUnits ? Math.max(...readings) : null,
+      unit,
+      mixedUnits,
     };
   }, [generators]);
 

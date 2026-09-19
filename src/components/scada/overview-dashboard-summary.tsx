@@ -192,7 +192,12 @@ export function DecisionStats({
         {
           icon: Fuel,
           label: "Combustível médio",
-          value: fuel.average == null ? "N/D" : `${fuel.average.toFixed(0)}%`,
+          value:
+            fuel.average == null
+              ? fuel.mixedUnits
+                ? "Unidades mistas"
+                : "N/D"
+              : `${fuel.average.toFixed(0)} ${fuel.unit ?? ""}`.trim(),
           sub: `${fuel.count}/${fuel.totalGenerators} com leitura`,
         },
       ]}

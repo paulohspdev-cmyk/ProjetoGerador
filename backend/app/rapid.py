@@ -441,6 +441,26 @@ def _metric_limits(generator) -> dict:
     return dict(limits) if isinstance(limits, dict) else {}
 
 
+def _metric_value_in_documented_range(generator, key: str, value: float) -> bool:
+    """Reject values outside explicit physical bounds from the controller export.
+
+    These are validity bounds for the mapped register, not tank capacity or
+    protection setpoints.
+    """
+    pack = _pack(generator)
+    registers = ((pack or {}).get("mapping") or {}).get("registers") or {}
+    spec = registers.get(key) if isinstance(registers, dict) else None
+    if not isinstance(spec, dict):
+        return True
+    minimum = spec.get("validMin")
+    maximum = spec.get("validMax")
+    if minimum is not None and value < float(minimum):
+        return False
+    if maximum is not None and value > float(maximum):
+        return False
+    return True
+
+
 def _effective_capabilities(generator, status: str, binding_present: bool) -> dict[str, bool]:
     pack = _pack(generator)
     declared = (pack or {}).get("capabilities") or {}
@@ -680,6 +700,8 @@ def _overlay_generators(generators):
                     continue
                 if _is_undefined_raw(generator, key, raw_value):
                     continue
+                if not _metric_value_in_documented_range(generator, key, numeric):
+                    continue
                 # Combustível é percentual físico; qualquer last-known fora da
                 # faixa é dado inválido, nunca deve reaparecer no card.
                 if (
@@ -751,6 +773,9 @@ def _overlay_generators(generators):
                 invalid_values.append(key)
                 continue
             if not math.isfinite(value):
+                invalid_values.append(key)
+                continue
+            if not _metric_value_in_documented_range(generator, key, value):
                 invalid_values.append(key)
                 continue
             # PF físico é adimensional e deve permanecer no intervalo [-1, 1].
@@ -901,6 +926,15 @@ def overlay_generators(generators):
         ]
 
 
+def _current_metric_keys(generator: dict) -> set[str]:
+    if generator.get("telemetryStale"):
+        return set()
+    metrics = generator.get("definedMetrics")
+    if metrics is None:
+        metrics = generator.get("availableMetrics") or []
+    return set(metrics)
+
+
 def dashboard(generators):
     return {
         "total": len(generators),
@@ -909,15 +943,16 @@ def dashboard(generators):
         "offline": sum(g["status"] == "offline" for g in generators),
         "notConfigured": sum(g["status"] == "nao_configurado" for g in generators),
         "running": sum(
-            "rpm" in (g.get("definedMetrics") or g.get("availableMetrics") or [])
-            and (g.get("rpm") or 0) > 300
+            "rpm" in _current_metric_keys(g)
+            and g.get("rpm") is not None
+            and float(g.get("rpm")) > 0
             for g in generators
         ),
         "loadKw": round(
             sum(
                 float(g.get("load") or 0)
                 for g in generators
-                if "power_kw" in (g.get("definedMetrics") or g.get("availableMetrics") or [])
+                if "power_kw" in _current_metric_keys(g) and g.get("load") is not None
             ),
             3,
         ),

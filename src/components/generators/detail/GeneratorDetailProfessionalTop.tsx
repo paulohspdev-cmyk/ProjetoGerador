@@ -50,6 +50,9 @@ export function GeneratorDetailProfessionalTop({
   onCommand,
 }: Props) {
   const voltage = model.genL12 ?? model.genL1;
+  const fuelUnit = gen.metricUnits?.["fuel_level"]?.trim() || "";
+  const oilUnit = gen.metricUnits?.["oil_pressure"]?.trim() || "";
+  const coolantUnit = gen.metricUnits?.["coolant_temperature"]?.trim() || "";
   const loadPercent =
     model.load != null && model.nominalPower != null && model.nominalPower > 0
       ? Math.max(0, Math.min(100, (model.load / model.nominalPower) * 100))
@@ -104,7 +107,13 @@ export function GeneratorDetailProfessionalTop({
                       : "Não configurado"}
               </Pill>
               <Pill tone="info">{model.modeLabel}</Pill>
-              {model.running === true && <Pill tone="ok">Em carga / rotação</Pill>}
+              {model.mainsToBus && model.generatorToBus ? (
+                <Pill tone="ok">Em paralelo</Pill>
+              ) : model.generatorToBus ? (
+                <Pill tone="ok">Alimentando barramento</Pill>
+              ) : model.running === true ? (
+                <Pill tone="info">Em rotação</Pill>
+              ) : null}
             </div>
             <p className="mt-0.5 truncate text-xs text-muted-foreground">
               {model.name} · {gen.site || "Sem unidade"} · {gen.controller}
@@ -221,7 +230,7 @@ export function GeneratorDetailProfessionalTop({
         <KpiCard
           icon={<Fuel className="size-5" />}
           label="Combustível"
-          value={formatMetric(model.fuel, "%", 0)}
+          value={formatMetric(model.fuel, fuelUnit, 0)}
           sub={model.fuel == null ? "Sem leitura" : "Nível medido"}
           tone={metricTone(model.fuel, gen.metricLimits?.["fuel_level"])}
         />
@@ -253,7 +262,7 @@ export function GeneratorDetailProfessionalTop({
             <ArrowRight
               className={cn(
                 "size-5 shrink-0",
-                model.mainsPresent ? "text-online" : "text-muted-foreground",
+                model.mainsToBus ? "text-online" : "text-muted-foreground",
               )}
             />
             <FlowNode
@@ -264,27 +273,36 @@ export function GeneratorDetailProfessionalTop({
               active={model.mcb || model.gcb}
             />
             <ArrowRight
-              className={cn("size-5 shrink-0", model.gcb ? "text-online" : "text-muted-foreground")}
+              className={cn(
+                "size-5 shrink-0",
+                model.generatorToBus ? "text-online" : "text-muted-foreground",
+              )}
             />
             <FlowNode
               icon={<Cog className="size-6" />}
               label="GERADOR"
               value={formatMetric(model.load, "kW", 0)}
               sub={`${formatMetric(model.rpm, "rpm", 0)} · ${formatMetric(model.frequency, "Hz", 1)}`}
-              active={model.running === true}
+              active={model.generatorPresent}
             />
             <ArrowRight
               className={cn(
                 "size-5 shrink-0",
-                model.running ? "text-online" : "text-muted-foreground",
+                model.busLive ? "text-online" : "text-muted-foreground",
               )}
             />
             <FlowNode
               icon={<Building2 className="size-6" />}
               label="CARGA"
-              value={formatMetric(model.load, "kW", 0)}
-              sub={loadPercent == null ? "Percentual N/D" : `${loadPercent.toFixed(0)}% da nominal`}
-              active={model.running === true && (model.load ?? 0) > 0}
+              value={formatMetric(model.busLoadKw, "kW", 0)}
+              sub={
+                model.busLoadKw == null
+                  ? model.busLive
+                    ? "Carga total não medida"
+                    : "Barramento sem fonte confirmada"
+                  : "Potência entregue pelo gerador"
+              }
+              active={model.busLive}
             />
           </div>
           <div className="mt-3 flex flex-wrap gap-2 border-t border-border/55 pt-3">
@@ -367,13 +385,13 @@ export function GeneratorDetailProfessionalTop({
                 {
                   icon: Thermometer,
                   label: "Temperatura do motor",
-                  value: formatMetric(model.temp, "°C", 0),
+                  value: formatMetric(model.temp, coolantUnit, 0),
                   tone: metricTone(model.temp, gen.metricLimits?.["coolant_temperature"]),
                 },
                 {
                   icon: Droplets,
                   label: "Pressão do óleo",
-                  value: formatMetric(model.oil, "bar", 1),
+                  value: formatMetric(model.oil, oilUnit, 1),
                   tone: metricTone(model.oil, gen.metricLimits?.["oil_pressure"]),
                 },
                 {
@@ -385,7 +403,7 @@ export function GeneratorDetailProfessionalTop({
                 {
                   icon: Fuel,
                   label: "Nível de combustível",
-                  value: formatMetric(model.fuel, "%", 0),
+                  value: formatMetric(model.fuel, fuelUnit, 0),
                   tone: metricTone(model.fuel, gen.metricLimits?.["fuel_level"]),
                 },
                 {

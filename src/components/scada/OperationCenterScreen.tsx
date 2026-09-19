@@ -4,10 +4,11 @@ import { BellRing, ClipboardList, FileText, Gauge, MapPin, RefreshCw, Wrench } f
 
 import { StatusPill } from "@/components/generators/StatusPill";
 import { useGenerators } from "@/components/generators/GeneratorsProvider";
+import { metricNumber } from "@/components/generators/generator-metrics";
 import { OperationalMap } from "./OperationalMap";
 import { useScadaOps } from "./ScadaOpsProvider";
 import { Panel, Pill, ScreenBody, Stats } from "./kit";
-import { fmt, hasMetric, realAlarms } from "./operation-helpers";
+import { fmt, realAlarms } from "./operation-helpers";
 
 export function OperationCenter() {
   const {
@@ -40,10 +41,10 @@ export function OperationCenter() {
     [clientFilter, generators, siteFilter, statusFilter],
   );
 
-  const loadRows = visibleGenerators.filter((generator) => hasMetric(generator, "power_kw"));
-  const measuredLoad = loadRows.length
-    ? loadRows.reduce((sum, generator) => sum + Number(generator.load), 0)
-    : null;
+  const loadRows = visibleGenerators
+    .map((generator) => metricNumber(generator, "power_kw", generator.load))
+    .filter((value): value is number => value != null);
+  const measuredLoad = loadRows.length ? loadRows.reduce((sum, value) => sum + value, 0) : null;
   const allAlarmRows = useMemo(() => realAlarms(generators, isAcked), [generators, isAcked]);
   const visibleTags = useMemo(
     () => new Set(visibleGenerators.map((generator) => generator.tag)),
@@ -83,8 +84,9 @@ export function OperationCenter() {
       if (generator.status === "online") current.online += 1;
       else if (generator.status === "alerta") current.alert += 1;
       else if (generator.status === "offline") current.offline += 1;
-      if (hasMetric(generator, "power_kw") && generator.load != null) {
-        current.load = (current.load ?? 0) + Number(generator.load);
+      const powerKw = metricNumber(generator, "power_kw", generator.load);
+      if (powerKw != null) {
+        current.load = (current.load ?? 0) + powerKw;
       }
       grouped.set(name, current);
     }

@@ -27,6 +27,7 @@ export function VerticalEngineAndRpm({
   oil,
   oilUnit,
   coolant,
+  coolantUnit,
   fuel,
   fuelUnit,
   battery,
@@ -40,6 +41,7 @@ export function VerticalEngineAndRpm({
   oil: number | null;
   oilUnit: string;
   coolant: number | null;
+  coolantUnit: string;
   fuel: number | null;
   fuelUnit: string;
   battery: number | null;
@@ -71,7 +73,7 @@ export function VerticalEngineAndRpm({
           <Thermometer />
           <span>Coolant Temp.</span>
           <MiniBar percent={coolantPercent} />
-          <b>{valueText(coolant, "°C", 0)}</b>
+          <b>{valueText(coolant, coolantUnit, 0)}</b>
         </div>
         <div className="vref-engine-row">
           <Fuel />

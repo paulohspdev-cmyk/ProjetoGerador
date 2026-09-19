@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { useGenerators } from "./GeneratorsProvider";
 import { readGeneratorTelemetry } from "./generator-health";
 import { displayGeneratorName, hasFreshMetric, metricNumber } from "./generator-metrics";
-import { isPositiveMeasurement } from "./generator-presence";
+import { hasPositiveMeasurement, isPositiveMeasurement } from "./generator-presence";
 import { VerticalControls, headerMode } from "./vertical-card/VerticalControls";
 import { VerticalEngineAndRpm, VerticalTables } from "./vertical-card/VerticalTelemetrySections";
 import { VerticalPowerFlow } from "./vertical-card/VerticalPowerFlow";
@@ -54,6 +54,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     oil,
     oilUnit,
     coolant,
+    coolantUnit,
     fuel,
     fuelUnit,
     fuelPercent,
@@ -88,13 +89,14 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   );
   const mainsFrequencyKnown = hasFreshMetric(gen, "mains_frequency");
   const mainsKnown = mainsVoltageKnown || mainsFrequencyKnown;
-  const mainsPeak = Math.max(
-    0,
-    ...[mainsL1, mainsL2, mainsL3].filter((value): value is number => value != null),
-  );
   const mainsPresent =
     mainsKnown &&
-    (mainsPeak >= 80 || (mainsFrequencyKnown && mainsFrequency != null && mainsFrequency >= 20));
+    hasPositiveMeasurement([
+      mainsL1,
+      mainsL2,
+      mainsL3,
+      mainsFrequencyKnown ? mainsFrequency : null,
+    ]);
 
   const genL1 = metricNumber(gen, "voltage_l1", gen.gen.l1);
   const genL2 = metricNumber(gen, "voltage_l2", gen.gen.l2);
@@ -104,15 +106,10 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   );
   const generatorFrequencyKnown = hasFreshMetric(gen, "frequency");
   const generatorKnown = runningKnown || generatorVoltageKnown || generatorFrequencyKnown;
-  const generatorPeak = Math.max(
-    0,
-    ...[genL1, genL2, genL3].filter((value): value is number => value != null),
-  );
   const generatorPresent =
     generatorKnown &&
     ((runningKnown && running) ||
-      generatorPeak >= 80 ||
-      (generatorFrequencyKnown && frequency != null && frequency >= 20));
+      hasPositiveMeasurement([genL1, genL2, genL3, generatorFrequencyKnown ? frequency : null]));
   const energyKwh = metricNumber(gen, "genset_kwh", undefined);
   const requiredPower = metricNumber(gen, "required_power_kw", undefined);
   const batteryVoltage = metricNumber(gen, "battery_voltage", battery);
@@ -289,6 +286,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         oil={oil}
         oilUnit={oilUnit}
         coolant={coolant}
+        coolantUnit={coolantUnit}
         fuel={fuel}
         fuelUnit={fuelUnit}
         battery={batteryVoltage}

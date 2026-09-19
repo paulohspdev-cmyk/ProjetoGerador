@@ -13,10 +13,10 @@ export function displayGeneratorName(generator: Generator | string) {
 }
 
 export function hasMetric(gen: Generator, key: string) {
-  return (
-    Object.prototype.hasOwnProperty.call(gen.metrics ?? {}, key) ||
-    (gen.availableMetrics ?? []).includes(key)
-  );
+  if (gen.telemetryStale) return false;
+  const defined = gen.definedMetrics ?? gen.availableMetrics;
+  if (defined) return defined.includes(key);
+  return Object.prototype.hasOwnProperty.call(gen.metrics ?? {}, key);
 }
 
 export function hasFreshMetric(gen: Generator, key: string) {

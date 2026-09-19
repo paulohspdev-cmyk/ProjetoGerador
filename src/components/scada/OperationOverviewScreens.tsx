@@ -2,9 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Gauge, MapPin, RefreshCw, Server } from "lucide-react";
 
 import { useGenerators } from "@/components/generators/GeneratorsProvider";
+import { metricNumber } from "@/components/generators/generator-metrics";
 import { rcApi, type OpsSite } from "@/lib/api";
 import { Panel, ScreenBody, Stats } from "./kit";
-import { fmt, hasMetric } from "./operation-helpers";
+import { fmt } from "./operation-helpers";
 
 export function SitesScreen() {
   const { generators, error: generatorsError, refresh: refreshGenerators } = useGenerators();
@@ -34,9 +35,11 @@ export function SitesScreen() {
         const gens = generators.filter(
           (generator) => generator.site.trim().toLowerCase() === site.name.trim().toLowerCase(),
         );
-        const measuredRows = gens.filter((generator) => hasMetric(generator, "power_kw"));
+        const measuredRows = gens
+          .map((generator) => metricNumber(generator, "power_kw", generator.load))
+          .filter((value): value is number => value != null);
         const siteLoad = measuredRows.length
-          ? measuredRows.reduce((sum, generator) => sum + Number(generator.load), 0)
+          ? measuredRows.reduce((sum, value) => sum + value, 0)
           : null;
         return {
           ...site,

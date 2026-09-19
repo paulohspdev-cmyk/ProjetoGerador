@@ -105,8 +105,12 @@ for (const forbidden of [
 
 const detail = read("src/components/generators/GeneratorDetailScreen.tsx");
 const detailTop = read("src/components/generators/detail/GeneratorDetailProfessionalTop.tsx");
+const detailLower = read("src/components/generators/detail/GeneratorDetailProfessionalLower.tsx");
+const detailModel = read("src/components/generators/detail/generator-detail-model.ts");
 const detailControlSurface = `${detail}
-${detailTop}`;
+${detailTop}
+${detailLower}
+${detailModel}`;
 for (const marker of [
   "gen.capabilities?.[action] === true",
   "!gen.telemetryStale",
@@ -124,9 +128,15 @@ for (const forbidden of [
   'normalizedController === "inteligen 200"',
   "gen.capabilities?.start === true ||",
   "gen.capabilities?.stop === true ||",
+  'formatMetric(model.fuel, "%"',
+  'unit="bar"',
+  '"Off - Ready"',
+  "Em carga / rotação",
+  ">= 80",
+  ">= 20",
 ]) {
-  if (detail.includes(forbidden)) {
-    failures.push(`detalhe voltou a deduzir autorização industrial localmente: ${forbidden}`);
+  if (detailControlSurface.includes(forbidden)) {
+    failures.push(`detalhe voltou a inferir estado/unidade industrial localmente: ${forbidden}`);
   }
 }
 
@@ -163,6 +173,8 @@ for (const marker of [
   "percentFromLimit",
   "gen.metricLimits",
   "visibleMeterPercent",
+  "fuelCapacity",
+  "coolantUnit",
 ]) {
   if (!health.includes(marker)) {
     failures.push(`semáforo compartilhado perdeu regra segura: ${marker}`);
@@ -177,9 +189,36 @@ for (const forbidden of [
   "value < 2",
   "value > 105",
   ": 1000",
+  "displayMax: 10,",
+  "displayMin: -40,",
+  "displayMax: 30,",
+  "visualTone(",
 ]) {
   if (health.includes(forbidden)) {
     failures.push(`semáforo compartilhado voltou a inferir limite industrial: ${forbidden}`);
+  }
+}
+
+const reporting = read("backend/app/reporting.py");
+for (const forbidden of ['"Combustível %"']) {
+  if (reporting.includes(forbidden)) {
+    failures.push(`relatório voltou a presumir unidade de combustível: ${forbidden}`);
+  }
+}
+for (const marker of ['"Unidade combustível"', "telemetryStale", "definedMetrics"]) {
+  if (!reporting.includes(marker)) {
+    failures.push(`relatório perdeu verdade operacional: ${marker}`);
+  }
+}
+
+const rapidBackend = read("backend/app/rapid.py");
+const industrialStore = read("backend/app/industrial_store.py");
+for (const source of [
+  ["dashboard Rapid", rapidBackend],
+  ["industrial store", industrialStore],
+]) {
+  if (!source[1].includes("_current_metric_keys")) {
+    failures.push(`${source[0]} perdeu proteção de métrica atual`);
   }
 }
 

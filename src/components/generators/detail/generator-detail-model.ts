@@ -1,7 +1,7 @@
 import type { Generator } from "@/data/generators";
 
 import { displayGeneratorName, hasFreshMetric, metricNumber } from "../generator-metrics";
-import { isPositiveMeasurement } from "../generator-presence";
+import { hasPositiveMeasurement, isPositiveMeasurement } from "../generator-presence";
 
 export type GeneratorDetailModel = ReturnType<typeof buildGeneratorDetailModel>;
 
@@ -10,7 +10,7 @@ function statusText(gen: Generator, rotating: boolean | null) {
   if (gen.status === "offline") return "Offline";
   if (gen.status === "alerta") return "Alerta";
   if (rotating === true) return "Running";
-  if (rotating === false) return "Off - Ready";
+  if (rotating === false) return "Parado";
   return "Online";
 }
 
@@ -22,6 +22,10 @@ export function buildGeneratorDetailModel(gen: Generator) {
   const genL2 = metricNumber(gen, "voltage_l2", gen.gen.l2);
   const genL3 = metricNumber(gen, "voltage_l3", gen.gen.l3);
   const genL12 = metricNumber(gen, "voltage_l1_l2", gen.gen.l12);
+  const generatorVoltageKnown = ["voltage_l1", "voltage_l2", "voltage_l3", "voltage_l1_l2"].some(
+    (key) => hasFreshMetric(gen, key),
+  );
+  const generatorFrequencyKnown = hasFreshMetric(gen, "frequency");
   const mainsL1 = metricNumber(gen, "mains_voltage_l1", gen.mains.l1);
   const mainsL2 = metricNumber(gen, "mains_voltage_l2", gen.mains.l2);
   const mainsL3 = metricNumber(gen, "mains_voltage_l3", gen.mains.l3);
@@ -50,14 +54,30 @@ export function buildGeneratorDetailModel(gen: Generator) {
     ["mains_voltage_l1", "mains_voltage_l2", "mains_voltage_l3", "mains_voltage_l1_l2"].some(
       (key) => hasFreshMetric(gen, key),
     ) || hasFreshMetric(gen, "mains_frequency");
-  const mainsPeakVoltage = Math.max(
-    0,
-    ...[mainsL1, mainsL2, mainsL3, mainsL12].filter((value): value is number => value != null),
-  );
   const mainsPresent =
     mainsKnown &&
-    (mainsPeakVoltage >= 80 ||
-      (hasFreshMetric(gen, "mains_frequency") && mainsFrequency != null && mainsFrequency >= 20));
+    hasPositiveMeasurement([
+      mainsL1,
+      mainsL2,
+      mainsL3,
+      mainsL12,
+      hasFreshMetric(gen, "mains_frequency") ? mainsFrequency : null,
+    ]);
+  const generatorKnown = runningKnown || generatorVoltageKnown || generatorFrequencyKnown;
+  const generatorPresent =
+    generatorKnown &&
+    ((runningKnown && running === true) ||
+      hasPositiveMeasurement([
+        genL1,
+        genL2,
+        genL3,
+        genL12,
+        generatorFrequencyKnown ? frequency : null,
+      ]));
+  const mainsToBus = mainsKnown && mainsPresent && mcbKnown && mcb;
+  const generatorToBus = generatorKnown && generatorPresent && gcbKnown && gcb;
+  const busLive = mainsToBus || generatorToBus;
+  const busLoadKw = generatorToBus && !mainsToBus ? load : null;
   const mainsOk = mainsPresent;
   const modeLabel = modeKnown ? gen.mode : "N/D";
 
@@ -92,10 +112,19 @@ export function buildGeneratorDetailModel(gen: Generator) {
     gcb,
     mainsKnown,
     mainsPresent,
+    mainsToBus,
+    generatorKnown,
+    generatorPresent,
+    generatorToBus,
+    busLive,
+    busLoadKw,
     mainsOk,
     modeLabel,
     ready: statusText(gen, running),
     name: displayGeneratorName(gen),
-    comm: gen.telemetrySource === "rapid_scada" && gen.status !== "offline",
+    comm:
+      gen.telemetrySource === "rapid_scada" &&
+      !gen.telemetryStale &&
+      (gen.status === "online" || gen.status === "alerta"),
   };
 }

@@ -1,6 +1,7 @@
 import { BatteryCharging, Fuel, Timer } from "lucide-react";
 
 import { useGenerators } from "@/components/generators/GeneratorsProvider";
+import { metricNumber } from "@/components/generators/generator-metrics";
 import type { Generator } from "@/data/generators";
 import { fmt } from "@/data/scada";
 import { Panel, Pill, ScadaTable, ScreenBody, Stats, Tone } from "./kit";
@@ -21,9 +22,10 @@ function valueOrDash(
   unit = "",
   digits = 1,
 ) {
-  if (!hasMetric(g, key) || value == null) return "—";
+  const numeric = metricNumber(g, key, value);
+  if (numeric == null) return "—";
   const resolvedUnit = metricUnit(g, key, unit);
-  return `${fmt(value, digits)}${resolvedUnit ? ` ${resolvedUnit}` : ""}`;
+  return `${fmt(numeric, digits)}${resolvedUnit ? ` ${resolvedUnit}` : ""}`;
 }
 
 function InfoNotice({ children }: { children: React.ReactNode }) {
@@ -36,12 +38,13 @@ function InfoNotice({ children }: { children: React.ReactNode }) {
 
 export function FuelScreen() {
   const { generators } = useGenerators();
-  const measured = generators.filter((g) => hasMetric(g, "fuel_level"));
+  const measured = generators.filter((g) => metricNumber(g, "fuel_level", g.fuelLevel) != null);
   const units = [...new Set(measured.map((g) => metricUnit(g, "fuel_level")).filter(Boolean))];
   const commonUnit = units.length === 1 ? (units[0] ?? "") : "";
   const mean =
     measured.length && commonUnit
-      ? measured.reduce((s, g) => s + (g.fuelLevel ?? 0), 0) / measured.length
+      ? measured.reduce((s, g) => s + (metricNumber(g, "fuel_level", g.fuelLevel) ?? 0), 0) /
+        measured.length
       : null;
   return (
     <ScreenBody>
@@ -97,9 +100,10 @@ export function FuelScreen() {
 
 export function BatteriesScreen() {
   const { generators } = useGenerators();
-  const measured = generators.filter((g) => hasMetric(g, "battery_voltage") && g.battery != null);
+  const measured = generators.filter((g) => metricNumber(g, "battery_voltage", g.battery) != null);
   const mean = measured.length
-    ? measured.reduce((s, g) => s + Number(g.battery), 0) / measured.length
+    ? measured.reduce((s, g) => s + (metricNumber(g, "battery_voltage", g.battery) ?? 0), 0) /
+      measured.length
     : null;
   return (
     <ScreenBody>
@@ -148,8 +152,8 @@ export function BatteriesScreen() {
 
 export function HourmetersScreen() {
   const { generators } = useGenerators();
-  const measured = generators.filter((g) => hasMetric(g, "run_hours"));
-  const total = measured.reduce((s, g) => s + (g.runHours ?? 0), 0);
+  const measured = generators.filter((g) => metricNumber(g, "run_hours", g.runHours) != null);
+  const total = measured.reduce((s, g) => s + (metricNumber(g, "run_hours", g.runHours) ?? 0), 0);
   return (
     <ScreenBody>
       <Stats

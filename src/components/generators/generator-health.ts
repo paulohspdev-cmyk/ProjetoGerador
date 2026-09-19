@@ -4,15 +4,7 @@ import { metricNumber } from "./generator-metrics";
 
 export type MeterTone = "good" | "warning" | "critical" | "neutral";
 
-type VisualScale = MetricLimit & {
-  direction?: "higher_worse" | "lower_worse" | "neutral";
-};
-
-// Escalas sem setpoint de proteção são apenas geométricas e ficam neutras.
-// Verde/laranja/vermelho só é usado quando existe threshold real da controladora.
-const VISUAL_SCALES: Record<string, VisualScale> = {
-  alternator_voltage: { displayMin: 0, displayMax: 30, direction: "neutral" },
-};
+type VisualScale = MetricLimit;
 
 export function progressPercent(value: number | null, maximum: number) {
   if (value == null || !Number.isFinite(value) || maximum <= 0) return null;
@@ -65,20 +57,10 @@ function positiveThreshold(value: number | null) {
   return value != null && Number.isFinite(value) && value > 0 ? value : undefined;
 }
 
-function visualTone(percent: number | null, scale?: VisualScale): MeterTone {
-  if (percent == null || !scale || scale.direction === "neutral") return "neutral";
-  const risk = scale.direction === "lower_worse" ? 100 - percent : percent;
-  if (risk >= 90) return "critical";
-  if (risk >= 70) return "warning";
-  return "good";
-}
-
 function meterState(value: number | null, scale?: VisualScale) {
-  const percent = percentFromLimit(value, scale);
-  const thresholdTone = toneFromLimit(value, scale);
   return {
-    percent,
-    tone: thresholdTone === "neutral" ? visualTone(percent, scale) : thresholdTone,
+    percent: percentFromLimit(value, scale),
+    tone: toneFromLimit(value, scale),
   };
 }
 
@@ -107,7 +89,7 @@ export function readGeneratorTelemetry(gen: Generator) {
     rawPowerFactor != null &&
     Math.abs(rawPowerFactor) <= 1.001 &&
     powerKw != null &&
-    Math.abs(powerKw) > 0.1
+    Math.abs(powerKw) > 0
       ? rawPowerFactor
       : null;
   const nominalPower =
@@ -120,6 +102,7 @@ export function readGeneratorTelemetry(gen: Generator) {
   const running = rpm != null && rpm > 0;
 
   const oilUnit = gen.metricUnits?.["oil_pressure"] || "";
+  const coolantUnit = gen.metricUnits?.["coolant_temperature"] || "";
   const fuelUnit = gen.metricUnits?.["fuel_level"] || "";
   const fuelCapacity =
     metricNumber(gen, "fuel_capacity_l", undefined) ??
@@ -130,7 +113,7 @@ export function readGeneratorTelemetry(gen: Generator) {
   const fuelWarning = metricNumber(gen, "fuel_warning_l", undefined);
   const fuelShutdown = metricNumber(gen, "fuel_shutdown_l", undefined);
   const autonomyHours =
-    fuelUnit === "L" && fuel != null && fuel >= 0 && fuelRate != null && fuelRate > 0.1
+    fuelUnit === "L" && fuel != null && fuel >= 0 && fuelRate != null && fuelRate > 0
       ? fuel / fuelRate
       : null;
   const fuelPercent =
@@ -141,36 +124,35 @@ export function readGeneratorTelemetry(gen: Generator) {
         : null;
 
   const limits = gen.metricLimits ?? {};
-  const oilDisplay: VisualScale | undefined =
-    oilUnit === "bar" ? { displayMin: 0, displayMax: 10, direction: "neutral" } : undefined;
-  const oilScale = mergedScale(oilDisplay, limits["oil_pressure"]);
+  const oilWarningThreshold = oilUnit === "bar" ? positiveThreshold(oilWarning) : undefined;
+  const oilShutdownThreshold = oilUnit === "bar" ? positiveThreshold(oilShutdown) : undefined;
+  const oilScale =
+    mergedScale(undefined, limits["oil_pressure"]) ??
+    (oilWarningThreshold != null || oilShutdownThreshold != null ? {} : undefined);
   if (oilScale) {
-    const warning = positiveThreshold(oilWarning);
-    const shutdown = positiveThreshold(oilShutdown);
-    if (warning != null) oilScale.warningLow = warning;
-    if (shutdown != null) oilScale.criticalLow = shutdown;
+    if (oilWarningThreshold != null) oilScale.warningLow = oilWarningThreshold;
+    if (oilShutdownThreshold != null) oilScale.criticalLow = oilShutdownThreshold;
   }
 
-  const coolantScale = mergedScale(
-    { displayMin: -40, displayMax: 120, direction: "neutral" },
-    limits["coolant_temperature"],
-  );
-  if (coolantScale) {
-    const warning = positiveThreshold(coolantWarning);
-    if (warning != null) coolantScale.warningHigh = warning;
+  const coolantWarningThreshold = positiveThreshold(coolantWarning);
+  const coolantScale =
+    mergedScale(undefined, limits["coolant_temperature"]) ??
+    (coolantWarningThreshold != null ? {} : undefined);
+  if (coolantScale && coolantWarningThreshold != null) {
+    coolantScale.warningHigh = coolantWarningThreshold;
   }
 
   const fuelDisplay: VisualScale | undefined =
     fuelUnit === "%"
-      ? { displayMin: 0, displayMax: 100, direction: "neutral" }
+      ? { displayMin: 0, displayMax: 100 }
       : fuelCapacity != null && fuelCapacity > 0
-        ? { displayMin: 0, displayMax: fuelCapacity, direction: "neutral" }
+        ? { displayMin: 0, displayMax: fuelCapacity }
         : undefined;
   const warning = positiveThreshold(fuelWarning);
   const shutdown = positiveThreshold(fuelShutdown);
   const fuelScale =
     mergedScale(fuelDisplay, limits["fuel_level"]) ??
-    (warning != null || shutdown != null ? { direction: "neutral" } : undefined);
+    (warning != null || shutdown != null ? {} : undefined);
   if (fuelScale && fuelUnit === "L") {
     if (warning != null) fuelScale.warningLow = warning;
     if (shutdown != null) fuelScale.criticalLow = shutdown;
@@ -181,7 +163,7 @@ export function readGeneratorTelemetry(gen: Generator) {
   const fuelMeter = meterState(fuel, fuelScale);
   const alternatorMeter = meterState(
     alternator,
-    mergedScale(VISUAL_SCALES["alternator_voltage"], limits["alternator_voltage"]),
+    mergedScale(undefined, limits["alternator_voltage"]),
   );
   const maintenanceMeter = meterState(maintenance, limits["maintenance_hours"]);
   const tones = {
@@ -198,6 +180,7 @@ export function readGeneratorTelemetry(gen: Generator) {
     oil,
     oilUnit,
     coolant,
+    coolantUnit,
     fuel,
     fuelRate,
     fuelUnit,

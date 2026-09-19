@@ -51,27 +51,27 @@ export function GeneratorDetailProfessionalLower({
             <MetricGauge
               label="Temp. motor"
               value={model.temp}
-              unit="°C"
+              unit={gen.metricUnits?.["coolant_temperature"]?.trim() || ""}
               limit={gen.metricLimits?.["coolant_temperature"]}
             />
             <MetricGauge
               label="Pressão do óleo"
               value={model.oil}
-              unit="bar"
+              unit={gen.metricUnits?.["oil_pressure"]?.trim() || ""}
               digits={1}
               limit={gen.metricLimits?.["oil_pressure"]}
             />
             <MetricGauge
               label="Alternador"
               value={model.alt}
-              unit="V"
+              unit={gen.metricUnits?.["alternator_voltage"]?.trim() || ""}
               digits={1}
               limit={gen.metricLimits?.["alternator_voltage"]}
             />
             <MetricGauge
-              label="Carga"
+              label="Potência gerador"
               value={model.load}
-              unit="kW"
+              unit={gen.metricUnits?.["power_kw"]?.trim() || "kW"}
               limit={gen.metricLimits?.["power_kw"]}
             />
           </div>
@@ -226,10 +226,18 @@ export function GeneratorDetailProfessionalLower({
               ],
               [
                 "Fonte de telemetria",
-                gen.telemetrySource === "rapid_scada" ? "Telemetria industrial" : "N/D",
+                gen.telemetrySource !== "rapid_scada"
+                  ? "N/D"
+                  : model.comm
+                    ? "Telemetria industrial ativa"
+                    : gen.telemetryStale
+                      ? "Telemetria expirada"
+                      : "Fonte configurada / indisponível",
               ],
-              ["START homologado", canStart ? "Sim" : "Não"],
-              ["STOP homologado", canStop ? "Sim" : "Não"],
+              ["START homologado", gen.capabilities?.start === true ? "Sim" : "Não"],
+              ["START disponível agora", canStart ? "Sim" : "Não"],
+              ["STOP homologado", gen.capabilities?.stop === true ? "Sim" : "Não"],
+              ["STOP disponível agora", canStop ? "Sim" : "Não"],
             ].map(([label, value]) => (
               <div
                 key={label}

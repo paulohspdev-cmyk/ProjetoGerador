@@ -117,6 +117,32 @@ try:
     assert rows[0]["definedMetrics"] == []
     assert rows[0]["telemetrySource"] == "last_known"
 
+    # Dashboard jamais pode repromover availableMetrics/última leitura quando
+    # definedMetrics está explicitamente vazio ou a telemetria está expirada.
+    stale_dashboard = rapid.dashboard(
+        [
+            {
+                "status": "offline",
+                "telemetryStale": True,
+                "definedMetrics": [],
+                "availableMetrics": ["rpm", "power_kw"],
+                "rpm": 1500,
+                "load": 50,
+            }
+        ]
+    )
+    assert stale_dashboard["running"] == 0
+    assert stale_dashboard["loadKw"] == 0
+
+    ig4_generator = {
+        **generator,
+        "controller_model": "IG4 200",
+        "controller_type": "COMAP",
+    }
+    assert rapid._metric_value_in_documented_range(ig4_generator, "fuel_level", 682)
+    assert not rapid._metric_value_in_documented_range(ig4_generator, "fuel_level", 683)
+    assert not rapid._metric_value_in_documented_range(ig4_generator, "fuel_level", 1041)
+
     # Um binding pertencente a outro generator_id jamais pode ser adotado só por
     # coincidir porta, Unit e Rapid Device.
     foreign = {**binding, "generator_id": "gen-other"}

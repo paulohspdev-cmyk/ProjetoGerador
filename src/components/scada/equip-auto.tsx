@@ -24,19 +24,36 @@ export function CommunicationScreen() {
             restritos às telas de sistema.
           </p>
           <div className="grid gap-2 sm:grid-cols-2">
-            {generators.map((g) => (
-              <div key={g.id} className="rounded-md border border-border p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <b>{g.tag}</b>
-                  <Pill tone={g.telemetrySource === "rapid_scada" ? "ok" : "muted"}>
-                    {g.telemetrySource === "rapid_scada" ? "DISPONÍVEL" : "N/D"}
-                  </Pill>
+            {generators.map((g) => {
+              const rapidSource = g.telemetrySource === "rapid_scada";
+              const live =
+                rapidSource &&
+                !g.telemetryStale &&
+                (g.status === "online" || g.status === "alerta");
+              const endpoint =
+                g.transport === "reverse_tcp" && g.listenPort != null
+                  ? `Porta reversa ${g.listenPort}`
+                  : g.ip || "Endpoint não informado";
+              return (
+                <div key={g.id} className="rounded-md border border-border p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <b>{g.tag}</b>
+                    <Pill tone={live ? "ok" : rapidSource && g.telemetryStale ? "warn" : "muted"}>
+                      {live
+                        ? "ATIVA"
+                        : rapidSource && g.telemetryStale
+                          ? "EXPIRADA"
+                          : rapidSource
+                            ? "INDISPONÍVEL"
+                            : "N/D"}
+                    </Pill>
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted-foreground">{g.controller}</p>
+                  <p className="num mt-1 text-[11px]">{endpoint}</p>
+                  {g.lastError && <p className="mt-1 text-[11px] text-offline">{g.lastError}</p>}
                 </div>
-                <p className="mt-1 text-[11px] text-muted-foreground">{g.controller}</p>
-                <p className="num mt-1 text-[11px]">{g.ip || "Endpoint não informado"}</p>
-                {g.lastError && <p className="mt-1 text-[11px] text-offline">{g.lastError}</p>}
-              </div>
-            ))}
+              );
+            })}
           </div>
           {!generators.length && (
             <p className="py-8 text-center text-muted-foreground">Nenhum gerador cadastrado.</p>

@@ -17,6 +17,8 @@ import {
 import type { Generator } from "@/data/generators";
 import { fmt } from "@/data/scada";
 import { useGenerators } from "@/components/generators/GeneratorsProvider";
+import { metricNumber } from "@/components/generators/generator-metrics";
+import { isPositiveMeasurement } from "@/components/generators/generator-presence";
 import { useScadaOps } from "./ScadaOpsProvider";
 import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats } from "./kit";
 
@@ -36,9 +38,10 @@ function valueOrDash(
   unit = "",
   digits = 1,
 ) {
-  if (!hasMetric(g, key) || value == null) return "—";
+  const numeric = metricNumber(g, key, value);
+  if (numeric == null) return "—";
   const resolvedUnit = metricUnit(g, key, unit);
-  return `${fmt(value, digits)}${resolvedUnit ? ` ${resolvedUnit}` : ""}`;
+  return `${fmt(numeric, digits)}${resolvedUnit ? ` ${resolvedUnit}` : ""}`;
 }
 
 function supportedCount(generators: Generator[], metric: string) {
@@ -114,14 +117,15 @@ export function EnergyRede() {
 
 export function EnergyGens() {
   const { generators } = useGenerators();
-  const running = generators.filter(
-    (g) => hasMetric(g, "rpm") && g.rpm != null && g.rpm > 300,
+  const running = generators.filter((g) =>
+    isPositiveMeasurement(metricNumber(g, "rpm", g.rpm)),
   ).length;
   const powerSupported = supportedCount(generators, "power_kw");
   const freqSupported = supportedCount(generators, "frequency");
-  const totalKw = generators
-    .filter((g) => hasMetric(g, "power_kw"))
-    .reduce((sum, g) => sum + (g.load ?? 0), 0);
+  const totalKw = generators.reduce(
+    (sum, g) => sum + (metricNumber(g, "power_kw", g.load) ?? 0),
+    0,
+  );
 
   return (
     <ScreenBody>
@@ -171,8 +175,8 @@ export function EnergyLoad() {
     b: g.site || "—",
     c: hasMetric(g, "power_kw") ? "Medido" : "Sem canal de potência",
   }));
-  const measured = generators.filter((g) => hasMetric(g, "power_kw"));
-  const total = measured.reduce((s, g) => s + (g.load ?? 0), 0);
+  const measured = generators.filter((g) => metricNumber(g, "power_kw", g.load) != null);
+  const total = measured.reduce((s, g) => s + (metricNumber(g, "power_kw", g.load) ?? 0), 0);
   return (
     <ScreenBody>
       <Stats

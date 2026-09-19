@@ -50,8 +50,14 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
 
   const configured = gen.enabled !== false && gen.status !== "nao_configurado";
   const operationallyReachable = !gen.telemetryStale && gen.status !== "offline";
-  const canAction = (action: IndustrialCommandAction) =>
-    can("operate") && configured && operationallyReachable && gen.capabilities?.[action] === true;
+  const canAction = (action: IndustrialCommandAction) => {
+    const base =
+      can("operate") && configured && operationallyReachable && gen.capabilities?.[action] === true;
+    if (!base) return false;
+    if (action === "start") return model.runningKnown && model.running === false;
+    if (action === "stop") return model.runningKnown && model.running === true;
+    return true;
+  };
   const canStart = canAction("start");
   const canStop = canAction("stop");
 

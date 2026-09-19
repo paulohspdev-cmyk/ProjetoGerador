@@ -408,6 +408,8 @@
         "scale": 0.1,
         "sourceName": "Battery Volts",
         "unit": "V",
+        "validMin": 0,
+        "validMax": 36,
         "object": 8213
       },
       "alternator_voltage": {
@@ -420,6 +422,8 @@
         "scale": 0.1,
         "sourceName": "D+",
         "unit": "V",
+        "validMin": 0,
+        "validMax": 36,
         "object": 10603
       },
       "oil_pressure": {
@@ -432,6 +436,8 @@
         "scale": 0.1,
         "sourceName": "Analog oil-pressure channel",
         "unit": "bar",
+        "validMin": 0,
+        "validMax": 10,
         "object": 9151
       },
       "coolant_temperature": {
@@ -444,6 +450,8 @@
         "scale": 1.0,
         "sourceName": "Analog coolant-temperature channel",
         "unit": "°C",
+        "validMin": -16,
+        "validMax": 120,
         "object": 9152
       },
       "fuel_level": {
@@ -456,6 +464,8 @@
         "scale": 1.0,
         "sourceName": "Diesel",
         "unit": "L",
+        "validMin": 0,
+        "validMax": 682,
         "object": 9153
       },
       "nominal_power_kw": {

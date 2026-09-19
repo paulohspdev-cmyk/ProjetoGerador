@@ -76,7 +76,9 @@ function MobileRow({ items }: { items: Generator[] }) {
           ],
           [
             "Coolant",
-            telemetry.coolant == null ? "N/D" : `${fmt(telemetry.coolant, 0)} °C`,
+            telemetry.coolant == null
+              ? "N/D"
+              : `${fmt(telemetry.coolant, 0)} ${telemetry.coolantUnit}`,
             toneTextClass(telemetry.tones.coolant),
           ],
           [
@@ -252,7 +254,9 @@ export function GeneratorTable({ items }: { items: Generator[] }) {
                       : `${fmt(telemetry.oil, 2)} ${telemetry.oilUnit}`}
                   </td>
                   <td className={cn("num px-2 py-2", toneTextClass(telemetry.tones.coolant))}>
-                    {telemetry.coolant == null ? "N/D" : `${fmt(telemetry.coolant, 0)} °C`}
+                    {telemetry.coolant == null
+                      ? "N/D"
+                      : `${fmt(telemetry.coolant, 0)} ${telemetry.coolantUnit}`}
                   </td>
                   <td className={cn("num px-2 py-2", toneTextClass(telemetry.tones.fuel))}>
                     {telemetry.fuel == null

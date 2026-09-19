@@ -48,9 +48,15 @@ export function FuelPanel({ fuel }: { fuel: FuelSummary }) {
       {fuel.average == null ? (
         <div className="py-8 text-center">
           <Fuel className="mx-auto size-8 text-muted-foreground" />
-          <p className="mt-2 text-sm font-semibold">Nível de combustível indisponível</p>
+          <p className="mt-2 text-sm font-semibold">
+            {fuel.mixedUnits
+              ? "Unidades de combustível diferentes"
+              : "Nível de combustível indisponível"}
+          </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            O indicador aparecerá quando houver medição disponível nos equipamentos.
+            {fuel.mixedUnits
+              ? "O parque possui leituras em unidades diferentes; elas não são combinadas."
+              : "O indicador aparece quando há medição fresca e unidade conhecida."}
           </p>
         </div>
       ) : (
@@ -58,28 +64,42 @@ export function FuelPanel({ fuel }: { fuel: FuelSummary }) {
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="rounded-xl bg-secondary/35 p-3">
               <p className="text-xs text-muted-foreground">Média medida</p>
-              <p className="num mt-1 text-2xl font-extrabold">{fuel.average.toFixed(0)}%</p>
+              <p className="num mt-1 text-2xl font-extrabold">
+                {fuel.average.toFixed(0)} {fuel.unit}
+              </p>
             </div>
             <div className="rounded-xl bg-secondary/35 p-3">
               <p className="text-xs text-muted-foreground">Menor leitura</p>
-              <p className="num mt-1 text-2xl font-extrabold">{fuel.min?.toFixed(0)}%</p>
+              <p className="num mt-1 text-2xl font-extrabold">
+                {fuel.min?.toFixed(0)} {fuel.unit}
+              </p>
             </div>
             <div className="rounded-xl bg-secondary/35 p-3">
               <p className="text-xs text-muted-foreground">Maior leitura</p>
-              <p className="num mt-1 text-2xl font-extrabold">{fuel.max?.toFixed(0)}%</p>
+              <p className="num mt-1 text-2xl font-extrabold">
+                {fuel.max?.toFixed(0)} {fuel.unit}
+              </p>
             </div>
           </div>
           <div className="mt-4">
             <div className="mb-1.5 flex justify-between text-xs text-muted-foreground">
-              <span>Nível médio do parque</span>
+              <span>
+                {fuel.unit === "%" ? "Nível médio do parque" : "Média das leituras compatíveis"}
+              </span>
               <span>{fuel.count} medição(ões)</span>
             </div>
-            <span className="block h-3 overflow-hidden rounded-full bg-secondary">
-              <i
-                className="block h-full rounded-full bg-primary"
-                style={{ width: `${fuel.average}%` }}
-              />
-            </span>
+            {fuel.unit === "%" ? (
+              <span className="block h-3 overflow-hidden rounded-full bg-secondary">
+                <i
+                  className="block h-full rounded-full bg-primary"
+                  style={{ width: `${Math.min(100, Math.max(0, fuel.average))}%` }}
+                />
+              </span>
+            ) : (
+              <p className="text-[11px] text-muted-foreground">
+                Percentual não é calculado sem capacidade de tanque configurada.
+              </p>
+            )}
           </div>
         </div>
       )}

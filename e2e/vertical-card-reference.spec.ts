@@ -108,7 +108,9 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
   }
 });
 
-test("vertical cabe inteiro na área disponível sem rolagem interna", async ({ browser }) => {
+test("vertical preserva todo o conteúdo e rola a grade quando a altura é curta", async ({
+  browser,
+}) => {
   test.setTimeout(180_000);
 
   for (const viewport of [
@@ -189,15 +191,14 @@ test("vertical cabe inteiro na área disponível sem rolagem interna", async ({ 
     });
 
     expect(metrics.globalOverflow).toBeLessThanOrEqual(1);
-    expect(metrics.gridScrollHeight).toBeLessThanOrEqual(metrics.gridClientHeight + 1);
     expect(metrics.gridScrollWidth).toBeLessThanOrEqual(metrics.gridClientWidth + 1);
+    expect(metrics.gridScrollHeight).toBeGreaterThanOrEqual(metrics.gridClientHeight - 1);
     expect(metrics.frames.length).toBeGreaterThan(0);
 
     for (const frame of metrics.frames) {
       expect(frame.left).toBeGreaterThanOrEqual(metrics.gridRect.left - 1);
       expect(frame.right).toBeLessThanOrEqual(metrics.gridRect.right + 1);
       expect(frame.top).toBeGreaterThanOrEqual(metrics.gridRect.top - 1);
-      expect(frame.bottom).toBeLessThanOrEqual(metrics.gridRect.bottom + 1);
       expect(frame.width).toBeGreaterThan(0);
       expect(frame.height).toBeGreaterThan(0);
       expect(frame.cardOverflowHeight).toBeLessThanOrEqual(1);
@@ -213,15 +214,15 @@ test("vertical cabe inteiro na área disponível sem rolagem interna", async ({ 
     if (viewport.width === 1920) {
       expect(metrics.frames.length).toBeGreaterThanOrEqual(5);
       expect(metrics.declaredColumns).toBeGreaterThanOrEqual(5);
-      expect(Math.min(...metrics.frames.map((frame) => frame.width))).toBeGreaterThanOrEqual(255);
-      expect(Math.min(...metrics.frames.map((frame) => frame.height))).toBeGreaterThanOrEqual(690);
+      expect(Math.min(...metrics.frames.map((frame) => frame.width))).toBeGreaterThanOrEqual(280);
+      expect(Math.min(...metrics.frames.map((frame) => frame.height))).toBeGreaterThanOrEqual(795);
     }
 
     if (viewport.width === 3840) {
       expect(metrics.frames.length).toBeGreaterThanOrEqual(10);
       expect(metrics.declaredColumns).toBeGreaterThanOrEqual(10);
-      expect(Math.min(...metrics.frames.map((frame) => frame.width))).toBeGreaterThanOrEqual(255);
-      expect(Math.max(...metrics.frames.map((frame) => frame.width))).toBeLessThanOrEqual(310);
+      expect(Math.min(...metrics.frames.map((frame) => frame.width))).toBeGreaterThanOrEqual(280);
+      expect(Math.max(...metrics.frames.map((frame) => frame.width))).toBeLessThanOrEqual(345);
     }
 
     await context.close();

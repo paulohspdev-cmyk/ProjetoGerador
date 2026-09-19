@@ -7,7 +7,12 @@ from . import platform_store
 
 
 def _supported(g: dict, metric: str) -> bool:
-    return metric in (g.get("availableMetrics") or [])
+    if g.get("telemetryStale"):
+        return False
+    metrics = g.get("definedMetrics")
+    if metrics is None:
+        metrics = g.get("availableMetrics") or []
+    return metric in metrics
 
 
 def _safe_text(value) -> str:
@@ -30,6 +35,7 @@ def _rows(generators: list[dict]):
             g.get("load") if _supported(g, "power_kw") else None,
             g.get("battery") if _supported(g, "battery_voltage") else None,
             g.get("fuelLevel") if _supported(g, "fuel_level") else None,
+            (g.get("metricUnits") or {}).get("fuel_level") if _supported(g, "fuel_level") else None,
             g.get("runHours") if _supported(g, "run_hours") else None,
         ]
 
@@ -43,7 +49,8 @@ HEADERS = [
     "Frequência Hz",
     "Potência kW",
     "Bateria V",
-    "Combustível %",
+    "Combustível",
+    "Unidade combustível",
     "Horímetro h",
 ]
 

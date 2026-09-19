@@ -40,10 +40,10 @@ const views: Array<{ id: View; label: string; icon: typeof List }> = [
 
 const VERTICAL_GAP = 8;
 const VERTICAL_PADDING = 4;
-const VERTICAL_MIN_CARD_WIDTH = 260;
-const VERTICAL_MAX_CARD_WIDTH = 305;
-const VERTICAL_MIN_CARD_HEIGHT = 650;
-const VERTICAL_MAX_CARD_HEIGHT = 900;
+const VERTICAL_MIN_CARD_WIDTH = 285;
+const VERTICAL_MAX_CARD_WIDTH = 340;
+const VERTICAL_MIN_CARD_HEIGHT = 800;
+const VERTICAL_MAX_CARD_HEIGHT = 960;
 
 function verticalColumnCount(width: number) {
   const usableWidth = Math.max(1, width - VERTICAL_PADDING * 2);
@@ -156,7 +156,11 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
       "--vref-columns": displayColumns,
       "--vref-rows": verticalLayout.rows,
       "--vref-card-width": Math.max(VERTICAL_MIN_CARD_WIDTH, cardWidth) + "px",
-      "--vref-card-height": Math.min(VERTICAL_MAX_CARD_HEIGHT, verticalLayout.cardHeight) + "px",
+      "--vref-card-height":
+        Math.max(
+          VERTICAL_MIN_CARD_HEIGHT,
+          Math.min(VERTICAL_MAX_CARD_HEIGHT, verticalLayout.cardHeight),
+        ) + "px",
       "--vref-gap": VERTICAL_GAP + "px",
       "--vref-padding": VERTICAL_PADDING + "px",
     } as CSSProperties;
@@ -289,7 +293,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
         <div ref={viewportRef} className="min-h-0 min-w-0 flex-1 overflow-hidden">
           {view === "principal" && (
             <div
-              className="generator-vertical-grid generator-reference-card-grid grid h-full min-h-0 min-w-0 overflow-hidden rounded-md bg-panel"
+              className="generator-vertical-grid generator-reference-card-grid scroll-slim grid h-full min-h-0 min-w-0 overflow-auto rounded-md bg-panel"
               style={verticalGridStyle}
             >
               {visible.map((generator) => (
