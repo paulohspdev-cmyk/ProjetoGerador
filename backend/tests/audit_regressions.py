@@ -27,7 +27,15 @@ os.environ["RC_PUBLIC_BASE_URL"] = "https://example.invalid"
 os.environ["RC_SMTP_HOST"] = "smtp.invalid"
 os.environ["RC_SMTP_FROM"] = "noreply@example.invalid"
 
-from app import db, diagnostics, industrial_store, platform_store, traffic_store  # noqa: E402
+from app import (  # noqa: E402
+    automation_engine,
+    db,
+    diagnostics,
+    industrial_store,
+    ops_store,
+    platform_store,
+    traffic_store,
+)
 from app.auth import hash_password  # noqa: E402
 from app.rapid import _downsample_points, dashboard  # noqa: E402
 from app.migrations import _operator_role_v2  # noqa: E402
@@ -38,6 +46,7 @@ from app.security_service import disable_totp, setup_totp, totp_code  # noqa: E4
 
 def init_all():
     db.init_db()
+    ops_store.init_ops_db()
     platform_store.init_platform_db()
     industrial_store.init_industrial_db()
 
@@ -179,7 +188,128 @@ except db.LastAdminError:
 else:
     raise AssertionError("último administrador ativo pôde ser excluído")
 
-# F05: reset flow is throttled independently from login.
+# F05: lifecycle industrial queue must allow only one active operation/executor.
+life_generator = db.create_generator(
+    {
+        "tag": "GEN-LIFE",
+        "name": "Lifecycle test",
+        "site": "Lab DB",
+        "controller_type": "COMAP",
+        "controller_model": "InteliGen 200",
+        "transport": "reverse_tcp",
+        "host": "",
+        "listen_port": 15050,
+        "modbus_unit": 1,
+        "enabled": True,
+    },
+    actor="test",
+)
+enqueue_results = []
+enqueue_lock = threading.Lock()
+
+
+def enqueue_lifecycle(operation_id: str) -> None:
+    try:
+        item = platform_store.enqueue_lifecycle_operation(
+            operation_id,
+            life_generator["id"],
+            "provision",
+            {"confirmation": "PROVISIONAR"},
+            "test",
+            "administrador",
+        )
+        result = ("queued", item["operationId"])
+    except ValueError:
+        result = ("blocked", operation_id)
+    with enqueue_lock:
+        enqueue_results.append(result)
+
+
+enqueue_threads = [
+    threading.Thread(target=enqueue_lifecycle, args=("life-op-a",)),
+    threading.Thread(target=enqueue_lifecycle, args=("life-op-b",)),
+]
+for thread in enqueue_threads:
+    thread.start()
+for thread in enqueue_threads:
+    thread.join()
+assert sorted(item[0] for item in enqueue_results) == ["blocked", "queued"], enqueue_results
+
+claim_results = []
+claim_lock = threading.Lock()
+
+
+def claim_lifecycle() -> None:
+    item = platform_store.claim_lifecycle_operation()
+    with claim_lock:
+        claim_results.append(item)
+
+
+claim_threads = [threading.Thread(target=claim_lifecycle) for _ in range(2)]
+for thread in claim_threads:
+    thread.start()
+for thread in claim_threads:
+    thread.join()
+claimed = [item for item in claim_results if item]
+assert len(claimed) == 1, claim_results
+claimed_id = claimed[0]["operationId"]
+with db.connect() as conn:
+    conn.execute(
+        "UPDATE lifecycle_operations SET status='failed',error='synthetic timeout' WHERE id=?",
+        (claimed_id,),
+    )
+assert platform_store.finish_lifecycle_operation(claimed_id, result={"late": True}) is False
+assert platform_store.get_lifecycle_operation(claimed_id)["status"] == "failed"
+
+# F06: automation uses effective stale status and retries a failed edge.
+stale = {"id": "g", "tag": "GEN-AUTO", "status": "alerta", "telemetryStale": True}
+assert automation_engine._condition({"type": "generator_offline", "value": "GEN-AUTO"}, [stale])[0]
+assert not automation_engine._condition({"type": "generator_online", "value": "GEN-AUTO"}, [stale])[0]
+assert not automation_engine._condition({"type": "generator_alert", "value": "GEN-AUTO"}, [stale])[0]
+
+rule = ops_store.create_rule(
+    {
+        "name": "Retry edge",
+        "trigger": "generator_online:GEN-AUTO",
+        "action": "notify:panel",
+    },
+    "test",
+)
+automation_engine.approve_rule(rule["id"], "test")
+automation_engine.set_rule_enabled(rule["id"], True, "test")
+original_overlay = automation_engine.overlay_generators
+original_execute = automation_engine._execute
+attempts = {"count": 0}
+
+
+def synthetic_overlay(_generators):
+    return [{"id": "g", "tag": "GEN-AUTO", "status": "online", "telemetryStale": False}]
+
+
+def flaky_execute(_action, _rule, _generator):
+    attempts["count"] += 1
+    if attempts["count"] == 1:
+        raise RuntimeError("synthetic delivery failure")
+    return "notify:panel"
+
+
+automation_engine.overlay_generators = synthetic_overlay
+automation_engine._execute = flaky_execute
+try:
+    assert automation_engine.process_rules() == 0
+    with db.connect() as conn:
+        state = conn.execute(
+            "SELECT last_value FROM automation_state WHERE rule_id=?", (rule["id"],)
+        ).fetchone()
+    assert state is None or state["last_value"] != "1"
+    assert automation_engine.process_rules() == 1
+    assert automation_engine.process_rules() == 0
+    assert attempts["count"] == 2
+finally:
+    automation_engine.overlay_generators = original_overlay
+    automation_engine._execute = original_execute
+
+# F07: reset flow is throttled independently from login.
 assert platform_store.password_reset_allowed("target@example.invalid", "192.0.2.10") is True
 assert platform_store.password_reset_allowed("target@example.invalid", "192.0.2.10") is False
 
