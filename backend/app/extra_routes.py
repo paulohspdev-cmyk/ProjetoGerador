@@ -12,7 +12,7 @@ from .auth import current_user, hash_password, request_remote_ip, require_admin,
 from .automation_engine import approve_rule, set_rule_enabled
 from .backup_manager import safe_archive_path
 from .completion_routes import router as completion_router
-from .config import LOGIN_LOCK_SECONDS, LOGIN_MAX_FAILURES
+from .config import DATA_DIR, LOGIN_LOCK_SECONDS, LOGIN_MAX_FAILURES
 from .controller_library import channel_catalog, library_summary
 from .control import send_homologated_command
 from .diagnostics import system_diagnostics, version_info
@@ -36,6 +36,16 @@ router = APIRouter()
 
 def actor(user: dict):
     return user.get("email") or user.get("id") or "unknown"
+
+
+def _safe_report_artifact_path(value: str | Path) -> Path:
+    reports_dir = (DATA_DIR / "reports").resolve()
+    path = Path(value).resolve()
+    try:
+        path.relative_to(reports_dir)
+    except ValueError as exc:
+        raise ValueError("Artefato de relatório fora do diretório protegido") from exc
+    return path
 
 
 class FieldDeviceCreate(BaseModel):
@@ -571,14 +581,26 @@ def report_artifact(report_id: str, user: dict = Depends(require_view)):
     report = next((x for x in ops_store.list_reports() if x["id"] == report_id), None)
     if not report:
         raise HTTPException(status_code=404, detail="Relatório não encontrado")
+
     artifact = platform_store.get_report_artifact(report_id)
-    if not artifact or not Path(artifact["path"]).exists():
-        artifact = generate_report(report, overlay_generators(db.list_generators()))
-        path = Path(artifact["path"])
-        media_type = artifact["media_type"]
+    if artifact:
+        try:
+            path = _safe_report_artifact_path(artifact["path"])
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        if path.exists() and not path.is_file():
+            raise HTTPException(status_code=409, detail="Artefato de relatório não é um arquivo")
     else:
-        path = Path(artifact["path"])
-        media_type = artifact["media_type"]
+        path = DATA_DIR / "reports" / "__missing__"
+
+    if not artifact or not path.exists():
+        artifact = generate_report(report, overlay_generators(db.list_generators()))
+        try:
+            path = _safe_report_artifact_path(artifact["path"])
+        except ValueError as exc:
+            raise HTTPException(status_code=500, detail="Falha de integridade do relatório") from exc
+
+    media_type = artifact["media_type"]
     return FileResponse(path, media_type=media_type, filename=path.name)
 
 
