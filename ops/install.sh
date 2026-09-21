@@ -513,3 +513,40 @@ echo "[15/15] Instalação concluída."
 IP="${VM_IP:-$(hostname -I | awk '{print $1}')}"
 echo
 echo "============================================================"
+echo " RC GERADORES INSTALADO"
+echo "============================================================"
+if [[ "$WEB_TLS_MODE" == "external_proxy" ]]; then
+  echo " Interface local: http://127.0.0.1:3000/ (publique via proxy externo)"
+  echo " API local:       http://127.0.0.1:8090/api/health"
+else
+  echo " Interface:       https://${IP:-IP_DA_VM}/"
+  echo " API health:      https://${IP:-IP_DA_VM}/api/health"
+fi
+echo " Usuário inicial: $ADMIN_EMAIL"
+echo " Banco:           /var/lib/rc-geradores/rc-geradores.db"
+echo " Rapid SCADA:     /opt/scada"
+if (( SKIP_INITIAL_GENERATOR == 0 )); then
+  echo " IG200 inicial:   ${IG200_TAG} / TCP ${IG200_PORT} / Unit ${IG200_UNIT} / Device ${IG200_DEVICE}"
+  echo " Bridge Rapid:    127.0.0.1:${INITIAL_LOCAL_PORT}"
+else
+  echo " Gerador inicial: não criado (--skip-initial-generator)"
+fi
+echo " Worker:          ativo"
+echo " Provisionador:   ativo (socket local privilegiado)"
+echo " SMTP/WhatsApp:   desabilitados até configurar credenciais reais"
+if [[ "$WEB_TLS_MODE" == "external_proxy" ]]; then
+  echo " HTTPS:           DELEGADO AO PROXY EXTERNO"
+elif (( TLS_SELF_SIGNED == 1 )); then
+  echo " HTTPS:           ATIVO com certificado autoassinado; substitua por certificado confiável antes de Internet pública"
+else
+  echo " HTTPS:           ATIVO"
+fi
+if (( ENABLE_CONTROL == 1 )); then
+  echo " START/STOP:      HABILITADO somente para IG200 homologado"
+else
+  echo " START/STOP:      DESABILITADO por padrão"
+fi
+echo
+echo " Diagnóstico: sudo $BASE/ops/status.sh"
+echo " Smoke test:  sudo $BASE/ops/vm-smoke.sh"
+echo "============================================================"
