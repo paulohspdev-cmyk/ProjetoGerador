@@ -1,4 +1,5 @@
 import json
+import os
 import sqlite3
 import time
 import uuid
@@ -262,6 +263,11 @@ def update_user(user_id, patch, actor="system"):
 
     if not fields:
         return current
+    prospective = dict(current)
+    for key, value in patch.items():
+        if key in allowed and value is not None:
+            prospective[key] = _normalized_generator_value(key, value)
+    _validate_generator_network_identity(prospective)
     fields.append("updated_at=?")
     values.append(int(time.time()))
     values.append(user_id)
@@ -352,6 +358,22 @@ def get_generator(generator_id):
     return _row(row)
 
 
+def _validate_generator_network_identity(record: dict) -> None:
+    transport = str(record.get("transport") or "reverse_tcp")
+    if transport != "reverse_tcp":
+        return
+    port = int(record.get("listen_port") or 0)
+    offset = int(os.environ.get("RC_RAPID_LOCAL_OFFSET", "10000"))
+    local_port = port + offset
+    if not 1 <= port <= 65535:
+        raise ValueError("TCP reverso exige porta de escuta válida")
+    if offset <= 0 or not 1 <= local_port <= 65535:
+        raise ValueError(
+            "Porta reverse TCP incompatível com RC_RAPID_LOCAL_OFFSET: "
+            f"remote={port} offset={offset} local={local_port}"
+        )
+
+
 def create_generator(data, actor="system"):
     now = int(time.time())
     generator_id = data.get("id") or f"gen-{uuid.uuid4().hex[:12]}"
@@ -372,6 +394,7 @@ def create_generator(data, actor="system"):
         "created_at": now,
         "updated_at": now,
     }
+    _validate_generator_network_identity(record)
     with connect() as conn:
         conn.execute(
             """
