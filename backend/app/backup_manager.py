@@ -30,6 +30,7 @@ RUNTIME_BINDINGS = Path(RAPID_BINDINGS_FILE)
 RETIRED_BINDINGS = DATA_DIR / "rapid-retired-bindings.json"
 DEFAULT_RETENTION = int(os.environ.get("RC_BACKUP_RETENTION", "14"))
 INCLUDE_SECRETS = os.environ.get("RC_BACKUP_INCLUDE_SECRETS", "0").strip() == "1"
+ENV_FILE = Path(os.environ.get("RC_ENV_FILE", "/etc/rc-geradores.env"))
 
 
 def _quick_check(path: Path) -> None:
@@ -43,6 +44,22 @@ def _quick_check(path: Path) -> None:
     messages = [str(row[0]) for row in rows]
     if messages != ["ok"]:
         raise ValueError("SQLite quick_check falhou: " + "; ".join(messages[:20]))
+
+
+def _integrity_check(path: Path) -> None:
+    """Valida páginas, integridade e chaves estrangeiras."""
+    _quick_check(path)
+    connection = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+    try:
+        integrity = [str(row[0]) for row in connection.execute("PRAGMA integrity_check").fetchall()]
+        foreign_keys = connection.execute("PRAGMA foreign_key_check").fetchall()
+    finally:
+        connection.close()
+    if integrity != ["ok"]:
+        raise ValueError("SQLite integrity_check falhou: " + "; ".join(integrity[:20]))
+    if foreign_keys:
+        preview = "; ".join(str(tuple(row)) for row in foreign_keys[:20])
+        raise ValueError("SQLite foreign_key_check falhou: " + preview)
 
 
 def _snapshot_database(target: Path) -> None:
@@ -189,7 +206,7 @@ def create_full_backup(actor: str = "system", retention: int | None = None) -> d
                 _add_if_exists(tar, RUNTIME_BINDINGS, "product/rapid-bindings.json")
                 _add_if_exists(tar, RETIRED_BINDINGS, "product/rapid-retired-bindings.json")
                 if INCLUDE_SECRETS:
-                    _add_if_exists(tar, Path("/etc/rc-geradores.env"), "product/rc-geradores.env")
+                    _add_if_exists(tar, ENV_FILE, "product/rc-geradores.env")
                     _add_if_exists(tar, Path(TOTP_KEY_FILE), "product/totp-fernet.key")
                 _add_if_exists(tar, PROJECT_ROOT / "rapid", "product/rapid")
                 _add_if_exists(tar, PROJECT_ROOT / "controllers", "product/controllers")
@@ -382,16 +399,22 @@ def _pre_restore_snapshot() -> Path | None:
     return target
 
 
+def _remove_database_sidecars() -> None:
+    for suffix in ("-wal", "-shm"):
+        Path(str(DB_FILE) + suffix).unlink(missing_ok=True)
+
+
 def _install_database(source: Path) -> None:
-    _quick_check(source)
+    _integrity_check(source)
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     staged = DATA_DIR / f".{DB_FILE.name}.restore-{os.getpid()}.tmp"
     shutil.copy2(source, staged)
-    _quick_check(staged)
+    _integrity_check(staged)
     _restore_product_ownership(staged)
+    _remove_database_sidecars()
     os.replace(staged, DB_FILE)
     _restore_product_ownership(DB_FILE)
-    _quick_check(DB_FILE)
+    _integrity_check(DB_FILE)
 
 
 def _rollback_database(snapshot: Path | None) -> None:
@@ -399,11 +422,91 @@ def _rollback_database(snapshot: Path | None) -> None:
         return
     staged = DATA_DIR / f".{DB_FILE.name}.rollback-{os.getpid()}.tmp"
     shutil.copy2(snapshot, staged)
-    _quick_check(staged)
+    _integrity_check(staged)
     _restore_product_ownership(staged)
+    _remove_database_sidecars()
     os.replace(staged, DB_FILE)
     _restore_product_ownership(DB_FILE)
-    _quick_check(DB_FILE)
+    _integrity_check(DB_FILE)
+
+
+def _restore_env_file(source: Path) -> None:
+    ENV_FILE.parent.mkdir(parents=True, exist_ok=True)
+    staged = ENV_FILE.parent / f".{ENV_FILE.name}.restore-{os.getpid()}.tmp"
+    shutil.copy2(source, staged)
+    os.chmod(staged, 0o640)
+    try:
+        shutil.chown(staged, user="root", group="rcgeradores")
+    except (LookupError, PermissionError):
+        pass
+    os.replace(staged, ENV_FILE)
+
+
+def _rollback_env_file(snapshot: tuple[bool, bytes | None]) -> None:
+    existed, content = snapshot
+    if not existed:
+        ENV_FILE.unlink(missing_ok=True)
+        return
+    ENV_FILE.parent.mkdir(parents=True, exist_ok=True)
+    staged = ENV_FILE.parent / f".{ENV_FILE.name}.rollback-{os.getpid()}.tmp"
+    staged.write_bytes(content or b"")
+    os.chmod(staged, 0o640)
+    try:
+        shutil.chown(staged, user="root", group="rcgeradores")
+    except (LookupError, PermissionError):
+        pass
+    os.replace(staged, ENV_FILE)
+
+
+def _rollback_totp_key(snapshot: tuple[bool, bytes | None]) -> None:
+    target = Path(TOTP_KEY_FILE)
+    existed, content = snapshot
+    if not existed:
+        target.unlink(missing_ok=True)
+        return
+    target.parent.mkdir(parents=True, exist_ok=True)
+    staged = target.parent / f".{target.name}.rollback-{os.getpid()}.tmp"
+    staged.write_bytes(content or b"")
+    os.chmod(staged, 0o600)
+    try:
+        shutil.chown(staged, user="rcgeradores", group="rcgeradores")
+    except (LookupError, PermissionError):
+        pass
+    os.replace(staged, target)
+
+
+def _install_directory_tree(source: Path, target: Path) -> tuple[Path, bool]:
+    target.parent.mkdir(parents=True, exist_ok=True)
+    token = f"{os.getpid()}-{uuid.uuid4().hex[:8]}"
+    staged = target.parent / f".{target.name}.restore-new-{token}"
+    previous = target.parent / f".{target.name}.restore-before-{token}"
+    shutil.copytree(source, staged)
+    existed = target.exists()
+    try:
+        if existed:
+            os.replace(target, previous)
+        os.replace(staged, target)
+    except Exception:
+        if staged.exists():
+            shutil.rmtree(staged, ignore_errors=True)
+        if existed and previous.exists() and not target.exists():
+            os.replace(previous, target)
+        raise
+    return previous, existed
+
+
+def _rollback_directory_tree(target: Path, previous: Path, existed: bool) -> None:
+    if target.exists():
+        shutil.rmtree(target)
+    if existed and previous.exists():
+        os.replace(previous, target)
+    elif previous.exists():
+        shutil.rmtree(previous, ignore_errors=True)
+
+
+def _commit_directory_tree(previous: Path) -> None:
+    if previous.exists():
+        shutil.rmtree(previous, ignore_errors=True)
 
 
 def _restore_totp_key(source: Path) -> None:
@@ -418,12 +521,13 @@ def _restore_totp_key(source: Path) -> None:
 
 
 def restore_archive(archive_path: str | Path, restore_rapid: bool = True) -> dict:
-    """Restaura backup local por CLI administrativo, nunca por uma sessão HTTP."""
+    """Restaura backup administrativo com rollback de todos os artefatos tocados."""
     archive = safe_archive_path(archive_path)
     pre_restore: Path | None = None
     secrets_restored = False
     bindings_restored = False
     retired_bindings_restored = False
+    directory_swaps: list[tuple[Path, Path, bool]] = []
 
     with tempfile.TemporaryDirectory(prefix="rc-restore-") as tmp:
         root = Path(tmp)
@@ -434,7 +538,7 @@ def restore_archive(archive_path: str | Path, restore_rapid: bool = True) -> dic
         db_src = root / "product/product-db.sqlite3"
         if not db_src.exists():
             raise ValueError("Backup sem banco do produto")
-        _quick_check(db_src)
+        _integrity_check(db_src)
 
         binding_src = root / "product/rapid-bindings.json"
         retired_src = root / "product/rapid-retired-bindings.json"
@@ -449,6 +553,8 @@ def restore_archive(archive_path: str | Path, restore_rapid: bool = True) -> dic
         pre_restore = _pre_restore_snapshot()
         bindings_before = _capture_state_file(RUNTIME_BINDINGS)
         retired_before = _capture_state_file(RETIRED_BINDINGS)
+        env_before = _capture_state_file(ENV_FILE)
+        totp_key_before = _capture_state_file(Path(TOTP_KEY_FILE))
 
         try:
             _install_database(db_src)
@@ -465,12 +571,7 @@ def restore_archive(archive_path: str | Path, restore_rapid: bool = True) -> dic
 
             env_src = root / "product/rc-geradores.env"
             if env_src.exists():
-                shutil.copy2(env_src, "/etc/rc-geradores.env")
-                os.chmod("/etc/rc-geradores.env", 0o640)
-                try:
-                    shutil.chown("/etc/rc-geradores.env", user="root", group="rcgeradores")
-                except (LookupError, PermissionError):
-                    pass
+                _restore_env_file(env_src)
                 secrets_restored = True
 
             totp_key_src = root / "product/totp-fernet.key"
@@ -487,14 +588,25 @@ def restore_archive(archive_path: str | Path, restore_rapid: bool = True) -> dic
                 ]
                 for src, dst in pairs:
                     if src.exists():
-                        if dst.exists():
-                            shutil.rmtree(dst)
-                        shutil.copytree(src, dst)
+                        previous, existed = _install_directory_tree(src, dst)
+                        directory_swaps.append((dst, previous, existed))
+
+            _integrity_check(DB_FILE)
         except Exception:
+            for target, previous, existed in reversed(directory_swaps):
+                try:
+                    _rollback_directory_tree(target, previous, existed)
+                except Exception:
+                    pass
+            _rollback_totp_key(totp_key_before)
+            _rollback_env_file(env_before)
             _rollback_database(pre_restore)
             _rollback_state_file(RUNTIME_BINDINGS, bindings_before)
             _rollback_state_file(RETIRED_BINDINGS, retired_before)
             raise
+        else:
+            for _target, previous, _existed in directory_swaps:
+                _commit_directory_tree(previous)
 
     return {
         "ok": True,
@@ -505,4 +617,6 @@ def restore_archive(archive_path: str | Path, restore_rapid: bool = True) -> dic
         "secretsRestored": secrets_restored,
         "preRestoreSnapshot": str(pre_restore) if pre_restore else None,
         "databaseQuickCheck": "ok",
+        "databaseIntegrityCheck": "ok",
+        "databaseForeignKeyCheck": "ok",
     }

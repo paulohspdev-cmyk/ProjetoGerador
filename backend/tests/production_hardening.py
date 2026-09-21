@@ -22,6 +22,7 @@ offsite_key.write_bytes(Fernet.generate_key() + b"\n")
 
 os.environ["RC_DATA_DIR"] = str(data_dir)
 os.environ["RC_DB_FILE"] = str(data_dir / "rc-geradores.db")
+os.environ["RC_ENV_FILE"] = str(root / "rc-geradores.env")
 scada_root = root / "scada"
 for rel in ("BaseDAT", "Config", "ScadaComm/Config"):
     target = scada_root / rel
@@ -56,7 +57,8 @@ from app import (  # noqa: E402
     scheduler_jobs,
     transport_store,
 )
-from app.backup_manager import create_full_backup, materialize_offsite_backup  # noqa: E402
+from app import backup_manager  # noqa: E402
+from app.backup_manager import create_full_backup, materialize_offsite_backup, restore_archive  # noqa: E402
 
 # Sem override explicito, bindings runtime devem acompanhar RC_DATA_DIR.
 assert app_config.RAPID_BINDINGS_FILE == data_dir / "rapid-bindings.json", app_config.RAPID_BINDINGS_FILE
@@ -218,6 +220,65 @@ with tarfile.open(materialized, "r:gz") as tar:
     assert "product/product-db.sqlite3" in recovered_names
     assert "product/totp-fernet.key" in recovered_names
     assert "product/rc-geradores.env" not in recovered_names
+
+# Restore real: banco, segredo e Rapid devem voltar ao snapshot do archive.
+env_file = Path(os.environ["RC_ENV_FILE"])
+env_file.write_text("RC_TEST_VALUE=before\n", encoding="utf-8")
+original_totp_key = key_file.read_bytes()
+original_base = (scada_root / "BaseDAT" / "placeholder.txt").read_text(encoding="utf-8")
+
+previous_include_secrets = backup_manager.INCLUDE_SECRETS
+backup_manager.INCLUDE_SECRETS = True
+try:
+    restore_source = create_full_backup("restore-roundtrip", retention=5)
+finally:
+    backup_manager.INCLUDE_SECRETS = previous_include_secrets
+assert restore_source["result"] == "OK", restore_source
+
+db.add_audit("hardening-test", "after-backup", "system", "after-backup", "must disappear")
+env_file.write_text("RC_TEST_VALUE=mutated\n", encoding="utf-8")
+key_file.write_bytes(Fernet.generate_key() + b"\n")
+(scada_root / "BaseDAT" / "placeholder.txt").write_text("mutated", encoding="utf-8")
+
+restored = restore_archive(restore_source["path"], restore_rapid=True)
+assert restored["databaseIntegrityCheck"] == "ok"
+assert env_file.read_text(encoding="utf-8") == "RC_TEST_VALUE=before\n"
+assert key_file.read_bytes() == original_totp_key
+assert (scada_root / "BaseDAT" / "placeholder.txt").read_text(encoding="utf-8") == original_base
+with db.connect() as conn:
+    assert conn.execute(
+        "SELECT 1 FROM audit_log WHERE entity_id='after-backup'"
+    ).fetchone() is None
+
+# Falha parcial no Rapid precisa restaurar também env/chave/diretórios anteriores.
+env_file.write_text("RC_TEST_VALUE=state-before-failure\n", encoding="utf-8")
+pre_failure_env = env_file.read_bytes()
+pre_failure_key = key_file.read_bytes()
+pre_failure_base = (scada_root / "BaseDAT" / "placeholder.txt").read_bytes()
+original_install_tree = backup_manager._install_directory_tree
+calls = {"count": 0}
+
+
+def fail_during_directory_restore(source, target):
+    calls["count"] += 1
+    if calls["count"] == 2:
+        raise RuntimeError("falha sintética durante restore Rapid")
+    return original_install_tree(source, target)
+
+
+backup_manager._install_directory_tree = fail_during_directory_restore
+try:
+    restore_archive(restore_source["path"], restore_rapid=True)
+except RuntimeError as exc:
+    assert "falha sintética" in str(exc)
+else:
+    raise AssertionError("restore deveria ter falhado para exercitar rollback")
+finally:
+    backup_manager._install_directory_tree = original_install_tree
+
+assert env_file.read_bytes() == pre_failure_env
+assert key_file.read_bytes() == pre_failure_key
+assert (scada_root / "BaseDAT" / "placeholder.txt").read_bytes() == pre_failure_base
 
 # Chave off-site errada deve falhar antes de materializar qualquer backup.
 wrong_key = root / "wrong-offsite.key"
