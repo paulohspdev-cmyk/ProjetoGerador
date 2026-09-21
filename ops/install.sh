@@ -21,6 +21,7 @@ IG200_DEVICE=200
 INITIAL_GENERATOR_ID=""
 INITIAL_LOCAL_PORT=""
 TLS_SELF_SIGNED=0
+WEB_TLS_MODE_OVERRIDE=""
 
 usage() {
   cat <<'EOF'
@@ -31,6 +32,7 @@ Opções:
   --admin-email EMAIL           e-mail do primeiro administrador
   --admin-name NOME             nome do primeiro administrador
   --admin-password-file ARQ     arquivo chmod 600 com a senha inicial (automação segura)
+  --web-tls-mode MODO           managed ou external_proxy
   --skip-initial-generator      instala a plataforma sem cadastrar/provisionar gerador
   --ig200-tag TAG               tag do primeiro IG200 (padrão GEN001)
   --ig200-name NOME             nome do primeiro IG200
@@ -66,6 +68,7 @@ while [[ $# -gt 0 ]]; do
     --admin-email) ADMIN_EMAIL="${2:?Informe o e-mail}"; shift 2 ;;
     --admin-name) ADMIN_NAME="${2:?Informe o nome}"; shift 2 ;;
     --admin-password-file) ADMIN_PASSWORD_FILE="${2:?Informe o arquivo}"; shift 2 ;;
+    --web-tls-mode) WEB_TLS_MODE_OVERRIDE="${2:?Informe managed ou external_proxy}"; shift 2 ;;
     --skip-initial-generator) SKIP_INITIAL_GENERATOR=1; shift ;;
     --ig200-tag) IG200_TAG="${2:?Informe a tag}"; shift 2 ;;
     --ig200-name) IG200_NAME="${2:?Informe o nome}"; shift 2 ;;
@@ -83,13 +86,24 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
-# Respeita um modo external_proxy já configurado antes de instalar pacotes:
-# instalar nginx pode iniciar/ocupar 80/443 e interferir no proxy externo.
-WEB_TLS_MODE="managed"
+# Resolve o modo web ANTES de instalar pacotes. Em instalação limpa, o
+# operador pode declarar external_proxy na própria linha de comando e evitar
+# que nginx seja sequer instalado/iniciado por engano.
+WEB_TLS_MODE="${RC_WEB_TLS_MODE:-managed}"
 if [[ -f "$ENV_FILE" ]]; then
   configured_tls_mode="$(sed -n 's/^RC_WEB_TLS_MODE=//p' "$ENV_FILE" | tail -n1 | tr -d '\r' | xargs)"
   [[ -n "$configured_tls_mode" ]] && WEB_TLS_MODE="$configured_tls_mode"
 fi
+if [[ -n "$WEB_TLS_MODE_OVERRIDE" ]]; then
+  WEB_TLS_MODE="$WEB_TLS_MODE_OVERRIDE"
+fi
+case "$WEB_TLS_MODE" in
+  managed|external_proxy) ;;
+  *)
+    echo "ERRO: --web-tls-mode/RC_WEB_TLS_MODE deve ser managed ou external_proxy" >&2
+    exit 2
+    ;;
+esac
 
 validate_range() {
   local label="$1" value="$2" min="$3" max="$4"
@@ -265,6 +279,7 @@ set_env RC_ENABLE_IG200_CONTROL "$ENABLE_CONTROL"
 set_env RC_RAPID_BINDINGS "/var/lib/rc-geradores/rapid-bindings.json"
 set_env RC_PROVISION_SOCKET "/run/rc-geradores/provision.sock"
 set_env RC_AUTH_COOKIE_SECURE "1"
+set_env RC_WEB_TLS_MODE "$WEB_TLS_MODE"
 if [[ -n "$VM_IP" ]]; then
   if ! grep -Eq '^RC_CORS_ORIGINS=.+$' "$ENV_FILE"; then
     set_env RC_CORS_ORIGINS "https://localhost,https://127.0.0.1,https://${VM_IP}"
