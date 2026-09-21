@@ -945,12 +945,20 @@ def _current_metric_keys(generator: dict) -> set[str]:
 
 
 def dashboard(generators):
+    def effective_status(generator):
+        status = generator.get("status")
+        if status == "nao_configurado":
+            return status
+        if generator.get("telemetryStale"):
+            return "offline"
+        return status
+
     return {
         "total": len(generators),
-        "online": sum(g["status"] == "online" for g in generators),
-        "alerts": sum(g["status"] == "alerta" for g in generators),
-        "offline": sum(g["status"] == "offline" for g in generators),
-        "notConfigured": sum(g["status"] == "nao_configurado" for g in generators),
+        "online": sum(effective_status(g) == "online" for g in generators),
+        "alerts": sum(effective_status(g) == "alerta" for g in generators),
+        "offline": sum(effective_status(g) == "offline" for g in generators),
+        "notConfigured": sum(effective_status(g) == "nao_configurado" for g in generators),
         "running": sum(
             "rpm" in _current_metric_keys(g)
             and g.get("rpm") is not None
