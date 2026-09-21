@@ -201,9 +201,18 @@ src, dst = sys.argv[1:3]
 tmp = dst + ".rollback.tmp"
 shutil.copy2(src, tmp)
 c = sqlite3.connect(f"file:{tmp}?mode=ro", uri=True)
-try: rows=[r[0] for r in c.execute("PRAGMA quick_check")]
-finally: c.close()
-if rows != ["ok"]: raise SystemExit("snapshot de rollback inválido")
+try:
+    rows=[r[0] for r in c.execute("PRAGMA quick_check")]
+    integrity=[r[0] for r in c.execute("PRAGMA integrity_check")]
+finally:
+    c.close()
+if rows != ["ok"] or integrity != ["ok"]:
+    raise SystemExit("snapshot de rollback SQLite inválido")
+for suffix in ("-wal", "-shm"):
+    try:
+        os.unlink(dst + suffix)
+    except FileNotFoundError:
+        pass
 os.replace(tmp, dst)
 PY
     chown rcgeradores:rcgeradores "${DB_FILE}" 2>/dev/null || true
@@ -262,7 +271,7 @@ PY
 fi
 
 log "ALINHANDO CHECKOUT AO COMMIT ${COMMIT}"
-git -c safe.directory="${BASE}" -C "${BASE}" checkout -B main "${COMMIT}"
+git -c safe.directory="${BASE}" -C "${BASE}" checkout --detach "${COMMIT}"
 git -c safe.directory="${BASE}" -C "${BASE}" reset --hard "${COMMIT}"
 [[ "$(git -c safe.directory="${BASE}" -C "${BASE}" rev-parse HEAD)" == "${COMMIT}" ]] || { rollback; fail "HEAD não ficou no commit solicitado"; }
 
@@ -294,16 +303,24 @@ set -a
 source "${ENV_FILE}"
 set +a
 export PYTHONPATH="${BASE}/backend"
+if ! "${BASE}/backend/.venv/bin/python" "${BASE}/ops/migrate_db.py"; then
+  rollback
+  fail "migrações versionadas falharam"
+fi
 if ! "${BASE}/backend/.venv/bin/python" - <<'PY'
-from app import db, domain_store, ops_store, platform_store, transport_store
-db.init_db(); ops_store.init_ops_db(); platform_store.init_platform_db(); transport_store.init_transport_db(); domain_store.init_domain_db(); domain_store.sync_legacy_generators()
+from app import db, domain_store
+domain_store.sync_legacy_generators()
 with db.connect() as conn:
-    rows=[r[0] for r in conn.execute("PRAGMA quick_check")]
-if rows != ["ok"]: raise SystemExit("SQLite quick_check pós-migração falhou: " + "; ".join(rows))
+    quick=[r[0] for r in conn.execute("PRAGMA quick_check")]
+    integrity=[r[0] for r in conn.execute("PRAGMA integrity_check")]
+    foreign_keys=conn.execute("PRAGMA foreign_key_check").fetchall()
+if quick != ["ok"]: raise SystemExit("SQLite quick_check pós-migração falhou: " + "; ".join(quick))
+if integrity != ["ok"]: raise SystemExit("SQLite integrity_check pós-migração falhou: " + "; ".join(integrity))
+if foreign_keys: raise SystemExit("SQLite foreign_key_check pós-migração falhou: " + repr(foreign_keys[:20]))
 from app.main import app
 print(app.title, app.version, "backend preflight OK")
 PY
-then rollback; fail "backend/migração falhou"; fi
+then rollback; fail "backend pós-migração falhou"; fi
 
 log "TROCA ATÔMICA DO FRONTEND"
 rm -rf "${NEW_OUTPUT}" "${OLD_OUTPUT}"
@@ -327,7 +344,10 @@ CONTROL_SOCKET="${RC_RAPID_CONTROL_SOCKET:-${CONTROL_SOCKET}}"
 WEB_TLS_MODE="${RC_WEB_TLS_MODE:-${WEB_TLS_MODE}}"
 
 log "REINICIANDO SERVIÇOS"
-for svc in "${SERVICES[@]}"; do systemctl restart "${svc}" 2>/dev/null || { rollback; fail "falha ao reiniciar ${svc}"; }; done
+START_SERVICES=(rc-geradores-api rc-geradores-provision rc-geradores-bridge rc-geradores-worker rc-geradores-frontend)
+for svc in "${START_SERVICES[@]}"; do
+  systemctl restart "${svc}" 2>/dev/null || { rollback; fail "falha ao reiniciar ${svc}"; }
+done
 sleep 4
 
 log "VALIDAÇÃO DE PRODUÇÃO"
