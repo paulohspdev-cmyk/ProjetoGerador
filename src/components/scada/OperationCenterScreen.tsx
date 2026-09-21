@@ -36,7 +36,14 @@ export function OperationCenter() {
       generators.filter((generator) => {
         if (siteFilter && generator.site !== siteFilter) return false;
         if (clientFilter && generator.customer !== clientFilter) return false;
-        if (statusFilter && generatorDisplayStatus(generator) !== statusFilter) return false;
+        if (statusFilter) {
+          const displayStatus = generatorDisplayStatus(generator);
+          const statusMatches =
+            statusFilter === "offline"
+              ? displayStatus === "offline" || displayStatus === "stale"
+              : displayStatus === statusFilter;
+          if (!statusMatches) return false;
+        }
         return true;
       }),
     [clientFilter, generators, siteFilter, statusFilter],
