@@ -112,12 +112,18 @@ def actor(user: dict) -> str:
 
 def _generator_integrity_detail(exc: sqlite3.IntegrityError) -> str:
     detail = str(exc).lower()
-    if "idx_generators_reverse_identity_unique" in detail or (
-        "generators.listen_port" in detail and "generators.modbus_unit" in detail
+    if (
+        "idx_generators_reverse_identity_unique" in detail
+        or "domain controller_connections reverse identity conflict" in detail
+        or ("generators.listen_port" in detail and "generators.modbus_unit" in detail)
     ):
-        return "Porta TCP reversa e Modbus Unit já estão em uso por outro gerador"
-    if "idx_generators_rapid_device_unique" in detail or "generators.rapid_device_num" in detail:
-        return "Rapid Device já está associado a outro gerador"
+        return "Porta TCP reversa e Modbus Unit já estão em uso por outro gerador/controladora"
+    if (
+        "idx_generators_rapid_device_unique" in detail
+        or "generators.rapid_device_num" in detail
+        or "domain controller_connections rapid_device_num conflict" in detail
+    ):
+        return "Rapid Device já está associado a outro gerador/controladora"
     if "generators.tag" in detail:
         return "Tag de gerador já cadastrada"
     return "Conflito de integridade no cadastro do gerador"
