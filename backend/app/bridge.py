@@ -20,6 +20,7 @@ import time
 from pathlib import Path
 
 from . import db
+from .binding_store import load_runtime_bindings
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 REMOTE_BIND = os.environ.get("RC_RAPID_REMOTE_BIND", os.environ.get("RC_GATEWAY_BIND", "0.0.0.0"))
@@ -93,24 +94,12 @@ def ensure_write_ok(pdu, expected_function):
 
 
 def load_bindings():
-    candidates = []
-    env_path = os.environ.get("RC_RAPID_BINDINGS")
-    if env_path:
-        candidates.append(Path(env_path))
-    candidates.extend([
-        Path("/var/lib/rc-geradores/rapid-bindings.json"),
-        PROJECT_ROOT / "rapid" / "bindings.json",
-    ])
-    for path in candidates:
-        try:
-            if not path.exists():
-                continue
-            data = json.loads(path.read_text(encoding="utf-8"))
-            if isinstance(data, list):
-                return data
-        except Exception as exc:
-            log(f"bindings inválidos em {path}: {exc}")
-    return []
+    """Carrega exclusivamente o binding store canônico e falha em corrupção.
+
+    O caminho privilegiado de comando não pode cair silenciosamente para um
+    arquivo alternativo nem converter estado inválido em lista vazia.
+    """
+    return load_runtime_bindings()
 
 
 def resolve_ig200(device_num):

@@ -2,9 +2,9 @@ import asyncio
 import json
 from pathlib import Path
 
+from .binding_store import load_runtime_bindings
 from .config import CONTROL_SOCKET
 from .controller_library import pack_for_model, pack_is_production_ready
-from .rapid import load_bindings
 
 COMMAND_ACTIONS = frozenset({
     "start", "stop", "auto", "manual", "test",
@@ -21,7 +21,7 @@ def _validated_binding(generator: dict) -> dict:
     binding = next(
         (
             item
-            for item in load_bindings()
+            for item in load_runtime_bindings()
             if str(item.get("generator_id") or "") == generator_id
         ),
         None,

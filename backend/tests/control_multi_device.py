@@ -42,6 +42,7 @@ Path(os.environ["RC_RAPID_BINDINGS"]).write_text(
                 "modbus_unit": 16,
                 "rapid_line_num": 102,
                 "rapid_device_num": 204,
+                "status": "field_validated",
             }
         ]
     ),
@@ -61,6 +62,18 @@ except ValueError:
     pass
 else:
     raise AssertionError("Device sem binding não pode ser resolvido para controle")
+
+bindings_path = Path(os.environ["RC_RAPID_BINDINGS"])
+owned_bindings = json.loads(bindings_path.read_text(encoding="utf-8"))
+foreign_binding = {**owned_bindings[0], "generator_id": "gen-other"}
+bindings_path.write_text(json.dumps([foreign_binding]), encoding="utf-8")
+try:
+    bridge_runtime.resolve_ig200_bound_device(204)
+except ValueError:
+    pass
+else:
+    raise AssertionError("binding de outro generator_id não pode controlar este equipamento")
+bindings_path.write_text(json.dumps(owned_bindings), encoding="utf-8")
 
 
 class FakeReader:
