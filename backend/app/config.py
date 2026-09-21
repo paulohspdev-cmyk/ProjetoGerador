@@ -52,3 +52,11 @@ CORS_ORIGINS = [
     for item in os.environ.get("RC_CORS_ORIGINS", "http://localhost,http://127.0.0.1").split(",")
     if item.strip()
 ]
+TRUSTED_PROXY_CIDRS = [
+    item.strip()
+    for item in os.environ.get(
+        "RC_TRUSTED_PROXY_CIDRS",
+        "127.0.0.1/32,::1/128",
+    ).split(",")
+    if item.strip()
+]
