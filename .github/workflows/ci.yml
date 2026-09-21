@@ -158,6 +158,8 @@ jobs:
           bash -n ops/preflight_vm.sh
           bash -n ops/deploy_release.sh
           bash -n ops/deploy_release_v2.sh
+          bash -n ops/test_frontend_asset_retention.sh
+          bash ops/test_frontend_asset_retention.sh
           bash -n ops/configure_https.sh
           bash -n ops/run_backend_tests.sh
           bash -n ops/run_e2e_isolated.sh
