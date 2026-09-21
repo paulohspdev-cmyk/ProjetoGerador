@@ -456,6 +456,7 @@ def claim_due_notifications(limit: int = 20, lease_seconds: int = 120):
     now = _now()
     lease_seconds = max(30, min(int(lease_seconds), 3600))
     with db.connect() as conn:
+        conn.execute("BEGIN IMMEDIATE")
         # At-least-once delivery: recover claims abandoned by a crashed worker.
         # Providers that support Idempotency-Key receive the queue id downstream.
         conn.execute(
@@ -537,6 +538,8 @@ def enqueue_lifecycle_operation(
     now = _now()
     payload_json = json.dumps(payload or {}, ensure_ascii=False, sort_keys=True)
     with db.connect() as conn:
+        # Serializa a checagem "uma operação ativa por gerador" com o INSERT.
+        conn.execute("BEGIN IMMEDIATE")
         existing = conn.execute(
             "SELECT * FROM lifecycle_operations WHERE id=?", (operation_id,)
         ).fetchone()
@@ -586,6 +589,8 @@ def claim_lifecycle_operation(lease_seconds: int = 900) -> dict | None:
     now = _now()
     lease_seconds = max(120, min(int(lease_seconds), 3600))
     with db.connect() as conn:
+        # Um lifecycle industrial só pode ter um executor, mesmo com dois workers.
+        conn.execute("BEGIN IMMEDIATE")
         conn.execute(
             """UPDATE lifecycle_operations
                SET status='failed',
@@ -599,10 +604,12 @@ def claim_lifecycle_operation(lease_seconds: int = 900) -> dict | None:
         ).fetchone()
         if not row:
             return None
-        conn.execute(
+        claimed_update = conn.execute(
             "UPDATE lifecycle_operations SET status='running',updated_at=? WHERE id=? AND status='queued'",
             (now, row["id"]),
         )
+        if claimed_update.rowcount != 1:
+            return None
         claimed = conn.execute(
             "SELECT * FROM lifecycle_operations WHERE id=?", (row["id"],)
         ).fetchone()
@@ -615,13 +622,14 @@ def claim_lifecycle_operation(lease_seconds: int = 900) -> dict | None:
     }
 
 
-def finish_lifecycle_operation(operation_id: str, result: dict | None = None, error: str = "") -> None:
+def finish_lifecycle_operation(operation_id: str, result: dict | None = None, error: str = "") -> bool:
     now = _now()
     status = "failed" if error else "succeeded"
     with db.connect() as conn:
-        conn.execute(
+        updated = conn.execute(
             """UPDATE lifecycle_operations
-               SET status=?,result_json=?,error=?,updated_at=? WHERE id=?""",
+               SET status=?,result_json=?,error=?,updated_at=?
+               WHERE id=? AND status='running'""",
             (
                 status,
                 json.dumps(result or {}, ensure_ascii=False),
@@ -630,6 +638,7 @@ def finish_lifecycle_operation(operation_id: str, result: dict | None = None, er
                 operation_id,
             ),
         )
+        return updated.rowcount == 1
 
 
 # ------------------------------- scheduler --------------------------------
