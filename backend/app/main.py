@@ -532,8 +532,14 @@ def reports_create(payload: ReportCreate, user: dict = Depends(require_create)):
     if payload.format.upper() not in {"CSV", "XLSX", "PDF"}:
         raise HTTPException(status_code=422, detail="Formato inválido")
     report = ops_store.create_report(payload.model_dump(), actor(user))
-    generate_report(report, live_generators())
-    return report
+    try:
+        generate_report(report, live_generators())
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="Falha ao gerar relatório") from exc
+    return next(
+        (item for item in ops_store.list_reports() if item["id"] == report["id"]),
+        report,
+    )
 
 
 @app.get("/api/reports/{report_id}/download")
