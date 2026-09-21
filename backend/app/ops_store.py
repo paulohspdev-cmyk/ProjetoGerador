@@ -369,7 +369,7 @@ def create_report(data: dict, actor: str):
         "name": str(data["name"]).strip(),
         "period": str(data["period"]).strip(),
         "format": str(data.get("format") or "CSV").upper(),
-        "status": "Pronto",
+        "status": "Gerando",
         "created_by": actor,
         "created_at": now,
         "updated_at": now,
@@ -381,6 +381,18 @@ def create_report(data: dict, actor: str):
         )
     _audit(actor, "create", "report", item["id"], item["name"])
     return next(x for x in list_reports() if x["id"] == item["id"])
+
+
+def set_report_status(item_id: str, status: str) -> bool:
+    status = str(status or "").strip()
+    if status not in {"Gerando", "Pronto", "Falha"}:
+        raise ValueError("Status de relatório inválido")
+    with db.connect() as conn:
+        updated = conn.execute(
+            "UPDATE reports SET status=?,updated_at=? WHERE id=?",
+            (status, _now(), item_id),
+        )
+        return updated.rowcount == 1
 
 
 def list_webhooks():
