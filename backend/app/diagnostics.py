@@ -33,8 +33,14 @@ SERVICES = [
     "rc-geradores-provision.service",
     "scadaserver6.service",
     "scadacomm6.service",
-    "nginx.service",
 ]
+
+
+def _service_names() -> list[str]:
+    services = list(SERVICES)
+    if os.environ.get("RC_WEB_TLS_MODE", "managed").strip() != "external_proxy":
+        services.append("nginx.service")
+    return services
 
 
 def _safe_exists(path) -> bool:
@@ -402,7 +408,7 @@ def _production_readiness(
 
 
 def system_diagnostics():
-    services = [_service(name) for name in SERVICES]
+    services = [_service(name) for name in _service_names()]
     usage = shutil.disk_usage("/")
     try:
         load = os.getloadavg()
