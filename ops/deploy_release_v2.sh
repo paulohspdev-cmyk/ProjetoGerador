@@ -51,8 +51,10 @@ trap cleanup EXIT
 [[ -f "${BASE}/package.json" ]] || fail "package.json não encontrado em ${BASE}"
 [[ -f "${ENV_FILE}" ]] || fail "arquivo de ambiente não encontrado: ${ENV_FILE}"
 
+set -a
 # shellcheck disable=SC1090
 source "${ENV_FILE}"
+set +a
 CONTROL_SOCKET="${RC_RAPID_CONTROL_SOCKET:-${CONTROL_SOCKET}}"
 DB_FILE="${RC_DB_FILE:-${RC_DATA_DIR:-/var/lib/rc-geradores}/rc-geradores.db}"
 WEB_TLS_MODE="${RC_WEB_TLS_MODE:-${WEB_TLS_MODE}}"
