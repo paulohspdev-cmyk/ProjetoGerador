@@ -400,19 +400,42 @@ def get_generator(generator_id):
 
 
 def _validate_generator_network_identity(record: dict) -> None:
-    transport = str(record.get("transport") or "reverse_tcp")
-    if transport != "reverse_tcp":
-        return
+    transport = str(record.get("transport") or "reverse_tcp").strip()
+    allowed = {"reverse_tcp", "modbus_tcp_direct", "rtu_over_tcp", "modbus_rtu_serial"}
+    if transport not in allowed:
+        raise ValueError("Transporte inválido")
+
+    host = str(record.get("host") or "").strip()
     port = int(record.get("listen_port") or 0)
-    offset = int(os.environ.get("RC_RAPID_LOCAL_OFFSET", "10000"))
-    local_port = port + offset
-    if not 1 <= port <= 65535:
-        raise ValueError("TCP reverso exige porta de escuta válida")
-    if offset <= 0 or not 1 <= local_port <= 65535:
-        raise ValueError(
-            "Porta reverse TCP incompatível com RC_RAPID_LOCAL_OFFSET: "
-            f"remote={port} offset={offset} local={local_port}"
-        )
+    unit = int(record.get("modbus_unit") or 1)
+    rapid_device = record.get("rapid_device_num")
+
+    if not 1 <= unit <= 247:
+        raise ValueError("Modbus Unit ID deve ficar entre 1 e 247")
+    if rapid_device is not None and int(rapid_device) <= 0:
+        raise ValueError("Rapid Device deve ser positivo")
+
+    if transport == "reverse_tcp":
+        if not 1 <= port <= 65535:
+            raise ValueError("TCP reverso exige porta de escuta válida")
+        offset = int(os.environ.get("RC_RAPID_LOCAL_OFFSET", "10000"))
+        local_port = port + offset
+        if offset <= 0 or not 1 <= local_port <= 65535:
+            raise ValueError(
+                "Porta reverse TCP incompatível com RC_RAPID_LOCAL_OFFSET: "
+                f"remote={port} offset={offset} local={local_port}"
+            )
+        return
+
+    if transport in {"modbus_tcp_direct", "rtu_over_tcp"}:
+        if not host:
+            raise ValueError("Transporte TCP direto exige host/IP")
+        if not 1 <= port <= 65535:
+            raise ValueError("Transporte TCP direto exige porta válida")
+        return
+
+    if not host:
+        raise ValueError("Transporte serial exige dispositivo, por exemplo /dev/ttyUSB0")
 
 
 def create_generator(data, actor="system"):
@@ -502,6 +525,7 @@ def update_generator(
     }
     provisioned = int(current.get("rapid_device_num") or 0) > 0
     fields, values, detail = [], [], []
+    normalized_patch = {}
     for key, value in patch.items():
         if key not in allowed or value is None:
             continue
@@ -528,9 +552,14 @@ def update_generator(
             continue
         fields.append(f"{key}=?")
         values.append(value)
+        normalized_patch[key] = value
         detail.append(f"{key}={value}")
     if not fields:
         return current
+
+    prospective = {**current, **normalized_patch}
+    _validate_generator_network_identity(prospective)
+
     fields.append("updated_at=?")
     values.append(int(time.time()))
     values.append(current["id"])
