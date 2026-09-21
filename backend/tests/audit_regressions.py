@@ -1,4 +1,5 @@
 import os
+import sqlite3
 import tempfile
 import time
 from pathlib import Path
@@ -28,6 +29,7 @@ os.environ["RC_SMTP_FROM"] = "noreply@example.invalid"
 from app import db, diagnostics, industrial_store, platform_store, traffic_store  # noqa: E402
 from app.auth import hash_password  # noqa: E402
 from app.rapid import _downsample_points, dashboard  # noqa: E402
+from app.migrations import _operator_role_v2  # noqa: E402
 from app.reporting import generate_report  # noqa: E402
 from app.secret_box import protect_secret  # noqa: E402
 from app.security_service import disable_totp, setup_totp, totp_code  # noqa: E402
@@ -49,6 +51,43 @@ with db.connect() as conn:
         ).fetchone()[0]
     )
 assert "'operador'" in users_sql, users_sql
+
+# F00b: migration v2 rebuilds the legacy CHECK atomically and preserves child FKs.
+legacy_path = root / "legacy-role.sqlite3"
+legacy = sqlite3.connect(legacy_path)
+legacy.row_factory = sqlite3.Row
+legacy.execute("PRAGMA foreign_keys=ON")
+legacy.executescript(
+    """
+    CREATE TABLE users(
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+        password_hash TEXT NOT NULL,
+        role TEXT NOT NULL CHECK(role IN ('administrador','cadastro','visualizacao')),
+        active INTEGER NOT NULL DEFAULT 1,
+        last_access INTEGER,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+    );
+    CREATE TABLE sessions(
+        token_hash TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    INSERT INTO users(id,name,email,password_hash,role,active,last_access,created_at,updated_at)
+    VALUES ('u1','Admin','admin-legacy@example.invalid','hash','administrador',1,NULL,1,1);
+    INSERT INTO sessions(token_hash,user_id) VALUES ('s1','u1');
+    """
+)
+_operator_role_v2(legacy)
+legacy.execute(
+    """INSERT INTO users(id,name,email,password_hash,role,active,last_access,created_at,updated_at)
+       VALUES ('u2','Operador','operator-legacy@example.invalid','hash','operador',1,NULL,1,1)"""
+)
+assert legacy.execute("SELECT user_id FROM sessions WHERE token_hash='s1'").fetchone()[0] == "u1"
+assert legacy.execute("PRAGMA foreign_key_check").fetchall() == []
+legacy.close()
 
 # F01: reset token must never escape through operational notification listings.
 token = "super-secret-reset-token"
