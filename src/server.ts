@@ -44,18 +44,42 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+function withDeploymentSafeCacheHeaders(response: Response): Response {
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.toLowerCase().includes("text/html")) return response;
+
+  // HTML aponta para chunks com hash de uma release específica. Ele não pode
+  // ficar cacheado enquanto um deploy substitui os assets; senão o navegador
+  // tenta carregar chunks que já não existem e cai na tela de erro.
+  const headers = new Headers(response.headers);
+  headers.set("Cache-Control", "no-store, no-cache, must-revalidate");
+  headers.set("Pragma", "no-cache");
+  headers.set("Expires", "0");
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
+function catastrophicErrorResponse() {
+  return withDeploymentSafeCacheHeaders(
+    new Response(renderErrorPage(), {
+      status: 500,
+      headers: { "content-type": "text/html; charset=utf-8" },
+    }),
+  );
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      return withDeploymentSafeCacheHeaders(await normalizeCatastrophicSsrResponse(response));
     } catch (error) {
       console.error(error);
-      return new Response(renderErrorPage(), {
-        status: 500,
-        headers: { "content-type": "text/html; charset=utf-8" },
-      });
+      return catastrophicErrorResponse();
     }
   },
 };
