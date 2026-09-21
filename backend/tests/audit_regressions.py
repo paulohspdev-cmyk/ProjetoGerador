@@ -41,6 +41,15 @@ def init_all():
 
 init_all()
 
+# F00: the persistent users schema must accept the RBAC operator role.
+with db.connect() as conn:
+    users_sql = str(
+        conn.execute(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='users'"
+        ).fetchone()[0]
+    )
+assert "'operador'" in users_sql, users_sql
+
 # F01: reset token must never escape through operational notification listings.
 token = "super-secret-reset-token"
 platform_store.enqueue_notification(
