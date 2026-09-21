@@ -110,13 +110,39 @@ ok "release resolvida: ${REF} -> ${COMMIT}"
 
 if [[ -f "${DB_FILE}" ]]; then
   python3 - "${DB_FILE}" <<'PY'
-import sqlite3, sys
+import os, sqlite3, sys
 path = sys.argv[1]
 conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
 try:
     rows = [r[0] for r in conn.execute("PRAGMA quick_check")]
     if rows != ["ok"]:
         raise SystemExit("SQLite quick_check falhou: " + "; ".join(rows))
+    integrity = [r[0] for r in conn.execute("PRAGMA integrity_check")]
+    if integrity != ["ok"]:
+        raise SystemExit("SQLite integrity_check falhou: " + "; ".join(integrity))
+    foreign_keys = conn.execute("PRAGMA foreign_key_check").fetchall()
+    if foreign_keys:
+        raise SystemExit("SQLite foreign_key_check falhou: " + repr(foreign_keys[:20]))
+
+    local_offset = int(os.environ.get("RC_RAPID_LOCAL_OFFSET", "10000"))
+    if local_offset <= 0:
+        raise SystemExit("RC_RAPID_LOCAL_OFFSET deve ser positivo")
+    invalid_reverse_ports = conn.execute(
+        """
+        SELECT tag, listen_port
+        FROM generators
+        WHERE transport='reverse_tcp'
+          AND (listen_port < 1 OR listen_port > 65535 OR listen_port + ? > 65535)
+        ORDER BY tag
+        """,
+        (local_offset,),
+    ).fetchall()
+    if invalid_reverse_ports:
+        detail = "; ".join(
+            f"{tag}: remote={port}, local={int(port) + local_offset}"
+            for tag, port in invalid_reverse_ports
+        )
+        raise SystemExit("Portas reverse TCP incompatíveis com offset local: " + detail)
 
     reverse_conflicts = conn.execute(
         """
@@ -154,7 +180,7 @@ try:
 finally:
     conn.close()
 PY
-  ok "SQLite atual íntegro e sem identidades industriais duplicadas: ${DB_FILE}"
+  ok "SQLite atual íntegro, FKs válidas e identidades industriais coerentes: ${DB_FILE}"
 else
   ok "banco ainda não existe; deploy fará inicialização"
 fi
