@@ -2,7 +2,6 @@ import json
 import time
 
 from . import db, ops_store, platform_store
-from .notifications import enqueue_event
 from .rapid import overlay_generators
 
 ALLOWED_ACTIONS = {"notify", "work_order"}
@@ -69,18 +68,35 @@ def set_rule_enabled(rule_id: str, enabled: bool, actor: str):
     return next((r for r in ops_store.list_rules() if r["id"] == rule_id), None)
 
 
+def _effective_status(generator: dict) -> str:
+    status = str(generator.get("status") or "")
+    if status == "nao_configurado":
+        return status
+    if generator.get("telemetryStale"):
+        return "offline"
+    return status
+
+
 def _condition(trigger: dict, generators: list[dict]):
     tag = str(trigger.get("tag") or trigger.get("value") or "").strip().lower()
-    generator = next((g for g in generators if g.get("tag", "").lower() == tag or g.get("id", "").lower() == tag), None)
+    generator = next(
+        (
+            g
+            for g in generators
+            if str(g.get("tag") or "").lower() == tag or str(g.get("id") or "").lower() == tag
+        ),
+        None,
+    )
     if not generator:
         return False, None
+    status = _effective_status(generator)
     trigger_type = trigger.get("type")
     if trigger_type == "generator_offline":
-        return generator.get("status") == "offline", generator
+        return status == "offline", generator
     if trigger_type == "generator_online":
-        return generator.get("status") == "online", generator
+        return status == "online", generator
     if trigger_type == "generator_alert":
-        return generator.get("status") == "alerta", generator
+        return status == "alerta", generator
     return False, generator
 
 
@@ -114,19 +130,39 @@ def process_rules():
         try:
             trigger, action = validate_rule(rule.get("trigger_text") or "", rule.get("action_text") or "")
             active, generator = _condition(trigger, generators)
-            current = "1" if active else "0"
             with db.connect() as conn:
-                row = conn.execute("SELECT last_value FROM automation_state WHERE rule_id=?", (rule["id"],)).fetchone()
+                row = conn.execute(
+                    "SELECT last_value FROM automation_state WHERE rule_id=?",
+                    (rule["id"],),
+                ).fetchone()
                 previous = row["last_value"] if row else ""
-                conn.execute(
-                    "INSERT INTO automation_state(rule_id,last_value,updated_at) VALUES (?,?,?) ON CONFLICT(rule_id) DO UPDATE SET last_value=excluded.last_value,updated_at=excluded.updated_at",
-                    (rule["id"], current, now),
-                )
-            if active and previous != "1":
-                detail = _execute(action, rule, generator)
+
+            if not active:
                 with db.connect() as conn:
-                    conn.execute("INSERT INTO automation_runs(rule_id,result,detail,created_at) VALUES (?,?,?,?)", (rule["id"], "OK", detail, now))
-                processed += 1
+                    conn.execute(
+                        "INSERT INTO automation_state(rule_id,last_value,updated_at) VALUES (?,?,?) "
+                        "ON CONFLICT(rule_id) DO UPDATE SET last_value=excluded.last_value,updated_at=excluded.updated_at",
+                        (rule["id"], "0", now),
+                    )
+                continue
+
+            if previous == "1":
+                continue
+
+            # Só arma a borda depois de a ação terminar. Se a entrega falhar, o
+            # estado anterior permanece e o próximo ciclo tenta novamente.
+            detail = _execute(action, rule, generator)
+            with db.connect() as conn:
+                conn.execute(
+                    "INSERT INTO automation_state(rule_id,last_value,updated_at) VALUES (?,?,?) "
+                    "ON CONFLICT(rule_id) DO UPDATE SET last_value=excluded.last_value,updated_at=excluded.updated_at",
+                    (rule["id"], "1", now),
+                )
+                conn.execute(
+                    "INSERT INTO automation_runs(rule_id,result,detail,created_at) VALUES (?,?,?,?)",
+                    (rule["id"], "OK", detail, now),
+                )
+            processed += 1
         except Exception as exc:
             with db.connect() as conn:
                 conn.execute("INSERT INTO automation_runs(rule_id,result,detail,created_at) VALUES (?,?,?,?)", (rule["id"], "ERROR", str(exc)[:1000], now))
