@@ -18,7 +18,7 @@ from .control import send_homologated_command
 from .diagnostics import system_diagnostics, version_info
 from .notifications import process_due_notifications
 from .rapid import load_bindings, overlay_generators
-from .reporting import generate_report
+from .reporting import generate_report, safe_report_artifact_path
 from .security_service import (
     change_password,
     confirm_password_reset,
@@ -36,16 +36,6 @@ router = APIRouter()
 
 def actor(user: dict):
     return user.get("email") or user.get("id") or "unknown"
-
-
-def _safe_report_artifact_path(value: str | Path) -> Path:
-    reports_dir = (DATA_DIR / "reports").resolve()
-    path = Path(value).resolve()
-    try:
-        path.relative_to(reports_dir)
-    except ValueError as exc:
-        raise ValueError("Artefato de relatório fora do diretório protegido") from exc
-    return path
 
 
 class FieldDeviceCreate(BaseModel):
@@ -585,7 +575,7 @@ def report_artifact(report_id: str, user: dict = Depends(require_view)):
     artifact = platform_store.get_report_artifact(report_id)
     if artifact:
         try:
-            path = _safe_report_artifact_path(artifact["path"])
+            path = safe_report_artifact_path(artifact["path"])
         except ValueError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
         if path.exists() and not path.is_file():
@@ -596,7 +586,7 @@ def report_artifact(report_id: str, user: dict = Depends(require_view)):
     if not artifact or not path.exists():
         artifact = generate_report(report, overlay_generators(db.list_generators()))
         try:
-            path = _safe_report_artifact_path(artifact["path"])
+            path = safe_report_artifact_path(artifact["path"])
         except ValueError as exc:
             raise HTTPException(status_code=500, detail="Falha de integridade do relatório") from exc
 
