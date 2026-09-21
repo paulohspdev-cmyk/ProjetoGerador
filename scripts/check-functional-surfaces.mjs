@@ -397,6 +397,11 @@ if (restoreEnvLoad < 0 || restoreAppImport < 0 || restoreEnvLoad > restoreAppImp
   failures.push("restore CLI deve carregar o EnvironmentFile antes de importar app/config");
 }
 
+const deployRelease = read("ops/deploy_release_v2.sh");
+if (!/set -a\s*[\s\S]*?source "\$\{ENV_FILE\}"\s*[\s\S]*?set \+a/.test(deployRelease)) {
+  failures.push("deploy deve exportar EnvironmentFile para subprocessos/migrações");
+}
+
 const opsStore = read("backend/app/ops_store.py");
 if (opsStore.includes('data.get("tech") or "Equipe campo"')) {
   failures.push("ordem de serviço voltou a inventar responsável padrão");
