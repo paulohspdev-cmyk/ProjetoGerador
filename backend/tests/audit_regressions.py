@@ -39,6 +39,11 @@ from app import (  # noqa: E402
     traffic_store,
 )
 from app.auth import hash_password  # noqa: E402
+from app.completion_routes import (  # noqa: E402
+    _finish_staged_file,
+    _restore_staged_file,
+    _stage_file_delete,
+)
 from app.extra_routes import _token_allows_generator  # noqa: E402
 from app.rapid import _downsample_points, dashboard  # noqa: E402
 from app.migrations import _operator_role_v2  # noqa: E402
@@ -430,6 +435,26 @@ except ValueError:
     pass
 else:
     raise AssertionError("artefato de relatório fora de DATA_DIR/reports foi aceito")
+
+delete_probe = reports_dir / "delete-probe.csv"
+delete_probe.write_text("keep-until-commit", encoding="utf-8")
+staged_probe = _stage_file_delete(delete_probe, reports_dir)
+assert staged_probe is not None
+assert not delete_probe.exists() and staged_probe[1].exists()
+_restore_staged_file(staged_probe)
+assert delete_probe.read_text(encoding="utf-8") == "keep-until-commit"
+
+staged_probe = _stage_file_delete(delete_probe, reports_dir)
+assert staged_probe is not None
+_finish_staged_file(staged_probe)
+assert not delete_probe.exists() and not staged_probe[1].exists()
+
+try:
+    _stage_file_delete(outside_report, reports_dir)
+except ValueError:
+    pass
+else:
+    raise AssertionError("deleção protegida aceitou arquivo fora do diretório")
 
 # F09: operational records must reject dangling generator references before SQLite.
 for create_invalid_reference in (
