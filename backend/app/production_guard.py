@@ -8,6 +8,7 @@ by diagnostics and do not crash the service.
 
 from __future__ import annotations
 
+import ipaddress
 import os
 
 
@@ -42,3 +43,23 @@ def validate_production_runtime() -> None:
         raise RuntimeError(
             "Production runtime refused because RC_AUTH_COOKIE_SECURE must be 1"
         )
+
+    proxy_cidrs = [
+        item.strip()
+        for item in os.environ.get(
+            "RC_TRUSTED_PROXY_CIDRS",
+            "127.0.0.1/32,::1/128",
+        ).split(",")
+        if item.strip()
+    ]
+    for item in proxy_cidrs:
+        try:
+            network = ipaddress.ip_network(item, strict=False)
+        except ValueError as exc:
+            raise RuntimeError(
+                f"Production runtime refused because RC_TRUSTED_PROXY_CIDRS contains invalid CIDR: {item}"
+            ) from exc
+        if network.prefixlen == 0:
+            raise RuntimeError(
+                "Production runtime refused because RC_TRUSTED_PROXY_CIDRS must not trust the whole Internet"
+            )
