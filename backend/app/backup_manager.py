@@ -417,17 +417,20 @@ def _install_database(source: Path) -> None:
     _integrity_check(DB_FILE)
 
 
-def _rollback_database(snapshot: Path | None) -> None:
-    if not snapshot or not snapshot.exists():
+def _rollback_database(snapshot: Path | None, existed_before: bool = True) -> None:
+    if snapshot and snapshot.exists():
+        staged = DATA_DIR / f".{DB_FILE.name}.rollback-{os.getpid()}.tmp"
+        shutil.copy2(snapshot, staged)
+        _integrity_check(staged)
+        _restore_product_ownership(staged)
+        _remove_database_sidecars()
+        os.replace(staged, DB_FILE)
+        _restore_product_ownership(DB_FILE)
+        _integrity_check(DB_FILE)
         return
-    staged = DATA_DIR / f".{DB_FILE.name}.rollback-{os.getpid()}.tmp"
-    shutil.copy2(snapshot, staged)
-    _integrity_check(staged)
-    _restore_product_ownership(staged)
-    _remove_database_sidecars()
-    os.replace(staged, DB_FILE)
-    _restore_product_ownership(DB_FILE)
-    _integrity_check(DB_FILE)
+    if not existed_before:
+        _remove_database_sidecars()
+        DB_FILE.unlink(missing_ok=True)
 
 
 def _restore_env_file(source: Path) -> None:
@@ -512,12 +515,14 @@ def _commit_directory_tree(previous: Path) -> None:
 def _restore_totp_key(source: Path) -> None:
     target = Path(TOTP_KEY_FILE)
     target.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(source, target)
-    os.chmod(target, 0o600)
+    staged = target.parent / f".{target.name}.restore-{os.getpid()}.tmp"
+    shutil.copy2(source, staged)
+    os.chmod(staged, 0o600)
     try:
-        shutil.chown(target, user="rcgeradores", group="rcgeradores")
+        shutil.chown(staged, user="rcgeradores", group="rcgeradores")
     except (LookupError, PermissionError):
         pass
+    os.replace(staged, target)
 
 
 def restore_archive(archive_path: str | Path, restore_rapid: bool = True) -> dict:
@@ -550,6 +555,7 @@ def restore_archive(archive_path: str | Path, restore_rapid: bool = True) -> dic
                 "mas o archive não contém product/rapid-bindings.json"
             )
 
+        database_existed_before = DB_FILE.exists()
         pre_restore = _pre_restore_snapshot()
         bindings_before = _capture_state_file(RUNTIME_BINDINGS)
         retired_before = _capture_state_file(RETIRED_BINDINGS)
@@ -568,6 +574,8 @@ def restore_archive(archive_path: str | Path, restore_rapid: bool = True) -> dic
             if retired_src.exists():
                 _install_state_file(retired_src, RETIRED_BINDINGS)
                 retired_bindings_restored = True
+            else:
+                RETIRED_BINDINGS.unlink(missing_ok=True)
 
             env_src = root / "product/rc-geradores.env"
             if env_src.exists():
@@ -600,7 +608,7 @@ def restore_archive(archive_path: str | Path, restore_rapid: bool = True) -> dic
                     pass
             _rollback_totp_key(totp_key_before)
             _rollback_env_file(env_before)
-            _rollback_database(pre_restore)
+            _rollback_database(pre_restore, database_existed_before)
             _rollback_state_file(RUNTIME_BINDINGS, bindings_before)
             _rollback_state_file(RETIRED_BINDINGS, retired_before)
             raise
