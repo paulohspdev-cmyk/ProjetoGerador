@@ -219,6 +219,29 @@ life_generator = db.create_generator(
     },
     actor="test",
 )
+
+# Partial PATCHes must validate the final transport tuple, not just the changed field.
+try:
+    db.update_generator(life_generator["id"], {"listen_port": 60000}, actor="test")
+except ValueError as exc:
+    assert "RC_RAPID_LOCAL_OFFSET" in str(exc)
+else:
+    raise AssertionError("PATCH aceitou reverse TCP cujo listener local excede 65535")
+
+try:
+    db.update_generator(
+        life_generator["id"],
+        {"transport": "modbus_tcp_direct"},
+        actor="test",
+    )
+except ValueError as exc:
+    assert "host/IP" in str(exc)
+else:
+    raise AssertionError("PATCH aceitou transporte TCP direto sem host")
+
+assert db.get_generator(life_generator["id"])["transport"] == "reverse_tcp"
+assert db.get_generator(life_generator["id"])["listen_port"] == 15050
+
 enqueue_results = []
 enqueue_lock = threading.Lock()
 
