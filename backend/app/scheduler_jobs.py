@@ -46,11 +46,9 @@ def process_scheduler_jobs(allowed_kinds: set[str], limit: int = 20) -> int:
         raise ValueError("tipos de agendamento inválidos: " + ", ".join(sorted(unexpected)))
 
     count = 0
-    for job in platform_store.due_scheduler_jobs(limit=limit):
+    for job in platform_store.claim_scheduler_jobs(allowed_kinds, limit=limit):
         job_id = str(job["id"])
         kind = str(job.get("kind") or "")
-        if kind not in allowed_kinds:
-            continue
         try:
             result = run_scheduler_job(job)
         except Exception as exc:
