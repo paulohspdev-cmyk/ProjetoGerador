@@ -581,6 +581,8 @@ def webhooks_create(payload: WebhookCreate, user: dict = Depends(require_admin))
 @app.patch("/api/webhooks/{item_id}")
 def webhooks_update(item_id: str, payload: WebhookUpdate, user: dict = Depends(require_admin)):
     patch = payload.model_dump(exclude_unset=True)
+    if "url" in patch and not str(patch["url"]).lower().startswith(("https://", "http://")):
+        raise HTTPException(status_code=422, detail="URL de webhook inválida")
     if "status" in patch and patch["status"] not in {"Ativo", "Pausado"}:
         raise HTTPException(status_code=422, detail="Status de webhook inválido")
     updated = ops_store.update_webhook(item_id, patch, actor(user))
