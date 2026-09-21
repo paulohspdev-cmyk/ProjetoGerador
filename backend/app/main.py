@@ -464,7 +464,10 @@ def work_orders_list(user: dict = Depends(require_view)):
 
 @app.post("/api/work-orders", status_code=status.HTTP_201_CREATED)
 def work_orders_create(payload: WorkOrderCreate, user: dict = Depends(require_create)):
-    return ops_store.create_work_order(payload.to_db(), actor(user))
+    try:
+        return ops_store.create_work_order(payload.to_db(), actor(user))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @app.patch("/api/work-orders/{item_id}")
@@ -482,7 +485,10 @@ def agenda_list(user: dict = Depends(require_view)):
 
 @app.post("/api/agenda", status_code=status.HTTP_201_CREATED)
 def agenda_create(payload: AgendaCreate, user: dict = Depends(require_create)):
-    return _agenda_public(ops_store.create_agenda(payload.to_db(), actor(user)))
+    try:
+        return _agenda_public(ops_store.create_agenda(payload.to_db(), actor(user)))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @app.get("/api/automation/rules")
