@@ -252,7 +252,14 @@ set_env RC_RAPID_BINDINGS "/var/lib/rc-geradores/rapid-bindings.json"
 set_env RC_PROVISION_SOCKET "/run/rc-geradores/provision.sock"
 set_env RC_AUTH_COOKIE_SECURE "1"
 if [[ -n "$VM_IP" ]]; then
-  if ! grep -Eq '^RC_CORS_ORIGINS=.+chmod 640 "$ENV_FILE"
+  if ! grep -Eq '^RC_CORS_ORIGINS=.+$' "$ENV_FILE"; then
+    set_env RC_CORS_ORIGINS "https://localhost,https://127.0.0.1,https://${VM_IP}"
+  fi
+  if ! grep -Eq '^RC_PUBLIC_BASE_URL=.+$' "$ENV_FILE"; then
+    set_env RC_PUBLIC_BASE_URL "https://${VM_IP}"
+  fi
+fi
+chmod 640 "$ENV_FILE"
 chown root:rcgeradores "$ENV_FILE"
 
 set -a
