@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import tempfile
+import threading
 import time
 from pathlib import Path
 
@@ -136,7 +137,49 @@ assert db.get_session_user("old-session-hash") is not None
 db.update_user(user["id"], {"password_hash": hash_password("AnotherPass123!")}, actor="test")
 assert db.get_session_user("old-session-hash") is None
 
-# F04: reset flow is throttled independently from login.
+# F04: concurrent demotions cannot remove every active administrator.
+second_admin = db.create_user(
+    {
+        "name": "Admin Secundário",
+        "email": "admin2@example.invalid",
+        "password_hash": hash_password("SecondAdmin123!"),
+        "role": "administrador",
+        "active": True,
+    },
+    actor="test",
+)
+admin_ids = [user["id"], second_admin["id"]]
+admin_results = []
+admin_lock = threading.Lock()
+
+
+def demote_admin(user_id: str) -> None:
+    try:
+        db.update_user(user_id, {"role": "visualizacao"}, actor="race-test")
+        outcome = "updated"
+    except db.LastAdminError:
+        outcome = "blocked"
+    with admin_lock:
+        admin_results.append(outcome)
+
+
+admin_threads = [threading.Thread(target=demote_admin, args=(admin_id,)) for admin_id in admin_ids]
+for thread in admin_threads:
+    thread.start()
+for thread in admin_threads:
+    thread.join()
+assert sorted(admin_results) == ["blocked", "updated"], admin_results
+assert db.count_active_admins() == 1
+
+remaining_admin = next(item for item in db.list_users() if item["role"] == "administrador" and item["active"])
+try:
+    db.delete_user(remaining_admin["id"], actor="race-test")
+except db.LastAdminError:
+    pass
+else:
+    raise AssertionError("último administrador ativo pôde ser excluído")
+
+# F05: reset flow is throttled independently from login.
 assert platform_store.password_reset_allowed("target@example.invalid", "192.0.2.10") is True
 assert platform_store.password_reset_allowed("target@example.invalid", "192.0.2.10") is False
 
