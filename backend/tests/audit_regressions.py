@@ -603,6 +603,33 @@ assert stale_ws["E6"].value is None
 assert stale_ws["I6"].value is None
 assert stale_ws["J6"].value is None
 
+tracked_report = ops_store.create_report(
+    {"name": "Atomic", "period": "Agora", "format": "CSV"},
+    "test",
+)
+assert tracked_report["status"] == "Gerando"
+tracked_artifact = generate_report(tracked_report, [generator])
+tracked_after = next(
+    item for item in ops_store.list_reports() if item["id"] == tracked_report["id"]
+)
+assert tracked_after["status"] == "Pronto"
+assert tracked_artifact["path"].is_file()
+assert not list((data / "reports").glob(f".{tracked_report['id']}.*.tmp"))
+
+bad_report = ops_store.create_report(
+    {"name": "Bad", "period": "Agora", "format": "INVALID"},
+    "test",
+)
+try:
+    generate_report(bad_report, [generator])
+except ValueError:
+    pass
+else:
+    raise AssertionError("gerador de relatório aceitou formato inválido")
+bad_after = next(item for item in ops_store.list_reports() if item["id"] == bad_report["id"])
+assert bad_after["status"] == "Falha"
+assert platform_store.get_report_artifact(bad_report["id"]) is None
+
 # F06: clearing and reopening the same alarm starts a fresh escalation occurrence.
 policy = industrial_store.create_escalation_policy(
     {
