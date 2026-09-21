@@ -78,6 +78,7 @@ def init_platform_db() -> None:
                 updated_at INTEGER NOT NULL
             );
             CREATE INDEX IF NOT EXISTS idx_notification_due ON notification_queue(status,next_attempt_at);
+            CREATE INDEX IF NOT EXISTS idx_notification_retention ON notification_queue(status,created_at);
 
             CREATE TABLE IF NOT EXISTS notification_deliveries (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -89,6 +90,8 @@ def init_platform_db() -> None:
                 created_at INTEGER NOT NULL,
                 FOREIGN KEY(queue_id) REFERENCES notification_queue(id) ON DELETE SET NULL
             );
+            CREATE INDEX IF NOT EXISTS idx_notification_deliveries_created_at
+                ON notification_deliveries(created_at);
 
             CREATE TABLE IF NOT EXISTS scheduler_jobs (
                 id TEXT PRIMARY KEY,
