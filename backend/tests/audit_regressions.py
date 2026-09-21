@@ -412,7 +412,19 @@ for create_invalid_reference in (
     else:
         raise AssertionError("referência a gerador inexistente foi aceita")
 
-# F10: authentication throttles must not lose concurrent increments.
+# F10: field-device inventory must reject dangling site/generator references.
+for payload in (
+    {"kind": "modem", "name": "Bad generator", "generator_id": "missing-generator"},
+    {"kind": "gateway", "name": "Bad site", "site_id": "missing-site"},
+):
+    try:
+        platform_store.create_field_device(payload, "test")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("field-device com referência inexistente foi aceito")
+
+# F11: authentication throttles must not lose concurrent increments.
 race_key = platform_store.login_key("race@example.invalid", "192.0.2.44")
 login_threads = [
     threading.Thread(
