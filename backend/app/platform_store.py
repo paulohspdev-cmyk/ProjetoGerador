@@ -339,6 +339,16 @@ def list_field_devices(kind: str | None = None):
     return [_row(r) for r in rows]
 
 
+def _validate_field_device_refs(*, site_id=None, generator_id=None) -> None:
+    if generator_id and not db.get_generator(str(generator_id)):
+        raise ValueError("Gerador vinculado ao equipamento não existe")
+    if site_id:
+        with db.connect() as conn:
+            exists = conn.execute("SELECT 1 FROM sites WHERE id=?", (str(site_id),)).fetchone()
+        if not exists:
+            raise ValueError("Unidade/site vinculada ao equipamento não existe")
+
+
 def create_field_device(data: dict, actor: str):
     kind = str(data.get("kind") or "").strip().lower()
     if kind not in {"modem", "gateway"}:
@@ -366,6 +376,10 @@ def create_field_device(data: dict, actor: str):
     }
     if not item["name"]:
         raise ValueError("Nome obrigatório")
+    _validate_field_device_refs(
+        site_id=item.get("site_id"),
+        generator_id=item.get("generator_id"),
+    )
     with db.connect() as conn:
         conn.execute(
             """INSERT INTO field_devices(id,kind,name,site_id,generator_id,model,serial,imei,sim_iccid,carrier,host,rssi,status,last_seen,metadata_json,active,created_at,updated_at)
@@ -378,6 +392,15 @@ def create_field_device(data: dict, actor: str):
 
 def update_field_device(item_id: str, patch: dict, actor: str):
     allowed = {"name", "site_id", "generator_id", "model", "serial", "imei", "sim_iccid", "carrier", "host", "rssi", "status", "last_seen", "metadata", "active"}
+    current = next((x for x in list_field_devices() if x["id"] == item_id), None)
+    if not current:
+        return None
+    prospective_site = patch.get("site_id", current.get("site_id"))
+    prospective_generator = patch.get("generator_id", current.get("generator_id"))
+    _validate_field_device_refs(
+        site_id=prospective_site,
+        generator_id=prospective_generator,
+    )
     fields, values = [], []
     for key, value in patch.items():
         if key not in allowed or value is None:
