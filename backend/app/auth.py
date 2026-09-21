@@ -12,6 +12,7 @@ from .config import (
     AUTH_COOKIE_NAME,
     AUTH_COOKIE_SECURE,
     AUTH_SESSION_TTL,
+    TRUSTED_PROXY_CIDRS,
 )
 from .production_guard import production_mode
 
@@ -25,7 +26,25 @@ ROLE_PERMISSIONS = {
 VALID_ROLES = frozenset(ROLE_PERMISSIONS)
 PRIVILEGED_ROLES = {"administrador", "operador"}
 
-TRUSTED_PROXY_PEERS = {"127.0.0.1", "::1"}
+def _trusted_proxy_networks():
+    networks = []
+    for item in TRUSTED_PROXY_CIDRS:
+        try:
+            networks.append(ipaddress.ip_network(item, strict=False))
+        except ValueError:
+            continue
+    return tuple(networks)
+
+
+TRUSTED_PROXY_NETWORKS = _trusted_proxy_networks()
+
+
+def _peer_is_trusted_proxy(peer: str) -> bool:
+    try:
+        address = ipaddress.ip_address(peer)
+    except ValueError:
+        return False
+    return any(address in network for network in TRUSTED_PROXY_NETWORKS)
 
 
 def normalize_email(email: str) -> str:
@@ -40,7 +59,7 @@ def request_remote_ip(request: Request) -> str:
     usamos diretamente o endereço do socket.
     """
     peer = request.client.host if request.client else ""
-    if peer not in TRUSTED_PROXY_PEERS:
+    if not _peer_is_trusted_proxy(peer):
         return peer
     candidate = request.headers.get("x-real-ip", "").split(",", 1)[0].strip()
     if not candidate:
