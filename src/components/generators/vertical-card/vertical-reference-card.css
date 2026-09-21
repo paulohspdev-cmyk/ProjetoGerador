@@ -80,6 +80,7 @@
   color: var(--vref-text);
   font-size: 11px;
   font-weight: 900;
+  line-height: 1.1;
   letter-spacing: 0.015em;
 }
 
@@ -299,14 +300,14 @@
 
 .vref-flow-controller-body > svg {
   position: absolute;
-  top: -24px;
+  top: 0;
   left: 50%;
   display: block;
   width: auto;
   max-width: calc(100% - 16px);
-  height: calc(100% + 44px);
+  height: 100%;
   min-height: 0;
-  overflow: visible;
+  overflow: hidden;
   transform: translateX(-50%);
 }
 
@@ -721,9 +722,9 @@
 .vref-rpm .rpm-svg {
   display: block;
   width: 100%;
-  height: calc(100% - 12px);
+  height: calc(100% - 20px);
   margin: 0 auto;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .vref-rpm .gauge-bg {
