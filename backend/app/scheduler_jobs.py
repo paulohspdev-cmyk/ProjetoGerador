@@ -53,10 +53,10 @@ def process_scheduler_jobs(allowed_kinds: set[str], limit: int = 20) -> int:
             result = run_scheduler_job(job)
         except Exception as exc:
             result = f"ERROR {exc}"
-        platform_store.complete_scheduler_job(
+        if platform_store.complete_scheduler_job(
             job_id,
             result,
             str(job.get("claim_token") or ""),
-        )
-        count += 1
+        ):
+            count += 1
     return count
