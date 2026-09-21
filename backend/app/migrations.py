@@ -105,11 +105,22 @@ def run_migrations() -> int:
             migration = _MIGRATIONS.get(version)
             if migration is None:
                 raise RuntimeError(f"Migração {version} não implementada")
-            migration(conn)
-            conn.execute(
-                "INSERT INTO schema_migrations(version,applied_at,description) VALUES (?,?,?)",
-                (version, int(time.time()), f"RC Geradores schema v{version}"),
-            )
+
+            # Algumas migrações estruturais precisam alterar PRAGMA foreign_keys.
+            # O SQLite ignora essa alteração dentro de uma transação aberta; por
+            # isso nunca carregamos uma transação da versão anterior para a próxima.
+            conn.commit()
+            try:
+                migration(conn)
+                conn.execute(
+                    "INSERT INTO schema_migrations(version,applied_at,description) VALUES (?,?,?)",
+                    (version, int(time.time()), f"RC Geradores schema v{version}"),
+                )
+                conn.commit()
+            except Exception:
+                if conn.in_transaction:
+                    conn.rollback()
+                raise
         conn.execute(f"PRAGMA user_version={LATEST_SCHEMA_VERSION}")
     return LATEST_SCHEMA_VERSION
 
