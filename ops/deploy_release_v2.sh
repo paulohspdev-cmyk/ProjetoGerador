@@ -37,6 +37,59 @@ SERVICES=(rc-geradores-provision rc-geradores-worker rc-geradores-bridge rc-gera
 log() { printf '\n=== %s ===\n' "$*"; }
 fail() { echo "ERRO: $*" >&2; exit 1; }
 
+preserve_previous_frontend_assets() {
+  local previous_output="$1"
+  local next_output="$2"
+  local previous_assets="${previous_output}/public/assets"
+  local next_assets="${next_output}/public/assets"
+  local previous_manifest="${previous_output}/.rc-current-assets"
+  local next_manifest="${next_output}/.rc-current-assets"
+  local rel src dest
+  local preserved=0
+
+  [[ -d "${next_assets}" ]] || {
+    echo "build novo sem diretório public/assets: ${next_assets}" >&2
+    return 1
+  }
+
+  # Registra somente os assets nativos desta release ANTES de adicionar o fallback.
+  # Assim o próximo deploy preserva apenas uma geração anterior e não acumula
+  # chunks antigos indefinidamente.
+  find "${next_assets}" -type f -printf '%P\\n' | sort >"${next_manifest}"
+
+  if [[ ! -d "${previous_assets}" ]]; then
+    echo "Assets anteriores: nenhum"
+    return 0
+  fi
+
+  copy_previous_asset() {
+    rel="$1"
+    [[ -n "${rel}" ]] || return 0
+    [[ "${rel}" != /* && "${rel}" != ".." && "${rel}" != ../* && "${rel}" != */../* && "${rel}" != */.. ]] || return 0
+    src="${previous_assets}/${rel}"
+    dest="${next_assets}/${rel}"
+    [[ -f "${src}" ]] || return 0
+    [[ -e "${dest}" ]] && return 0
+    mkdir -p "$(dirname "${dest}")"
+    cp -a "${src}" "${dest}"
+    preserved=$((preserved + 1))
+  }
+
+  if [[ -f "${previous_manifest}" ]]; then
+    while IFS= read -r rel; do
+      copy_previous_asset "${rel}"
+    done <"${previous_manifest}"
+  else
+    # Primeira implantação deste mecanismo: a release antiga ainda não possui
+    # manifesto, então preservamos somente os assets que ela contém agora.
+    while IFS= read -r -d '' src; do
+      copy_previous_asset "${src#${previous_assets}/}"
+    done < <(find "${previous_assets}" -type f -print0)
+  fi
+
+  echo "Assets anteriores preservados para clientes com release aberta: ${preserved}"
+}
+
 cleanup() {
   if [[ -n "${TEST_PID}" ]]; then
     kill "${TEST_PID}" 2>/dev/null || true
@@ -327,6 +380,10 @@ then rollback; fail "backend pós-migração falhou"; fi
 log "TROCA ATÔMICA DO FRONTEND"
 rm -rf "${NEW_OUTPUT}" "${OLD_OUTPUT}"
 cp -a "${STAGE}/.output" "${NEW_OUTPUT}"
+if ! preserve_previous_frontend_assets "${BASE}/.output" "${NEW_OUTPUT}"; then
+  rollback
+  fail "falha ao preservar assets da release anterior"
+fi
 chown -R rcgeradores:rcgeradores "${NEW_OUTPUT}"
 [[ -d "${BASE}/.output" ]] && mv "${BASE}/.output" "${OLD_OUTPUT}"
 mv "${NEW_OUTPUT}" "${BASE}/.output"
