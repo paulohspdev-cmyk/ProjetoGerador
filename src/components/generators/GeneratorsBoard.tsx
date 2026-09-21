@@ -42,7 +42,7 @@ const VERTICAL_GAP = 8;
 const VERTICAL_PADDING = 4;
 const VERTICAL_MIN_CARD_WIDTH = 285;
 const VERTICAL_MAX_CARD_WIDTH = 340;
-const VERTICAL_MIN_CARD_HEIGHT = 820;
+const VERTICAL_MIN_CARD_HEIGHT = 860;
 const VERTICAL_MAX_CARD_HEIGHT = 960;
 
 function verticalColumnCount(width: number) {
