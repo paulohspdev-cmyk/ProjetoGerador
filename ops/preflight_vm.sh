@@ -14,6 +14,44 @@ PROVISION_SOCKET="/run/rc-geradores/provision.sock"
 fail() { echo "ERRO: $*" >&2; exit 1; }
 ok() { echo "OK: $*"; }
 
+resolve_release_commit() {
+  local ref="$1"
+  local branch=""
+  local remote_match=""
+
+  case "${ref}" in
+    origin/*) branch="${ref#origin/}" ;;
+    refs/heads/*) branch="${ref#refs/heads/}" ;;
+    refs/remotes/origin/*) branch="${ref#refs/remotes/origin/}" ;;
+  esac
+
+  if [[ -n "${branch}" ]]; then
+    git check-ref-format --branch "${branch}" >/dev/null 2>&1 || return 1
+    git -c safe.directory="${BASE}" -C "${BASE}" fetch --quiet --no-tags origin "refs/heads/${branch}"
+    git -c safe.directory="${BASE}" -C "${BASE}" rev-parse 'FETCH_HEAD^{commit}'
+    return
+  fi
+
+  if [[ "${ref}" =~ ^[0-9a-fA-F]{40}$ ]]; then
+    if ! git -c safe.directory="${BASE}" -C "${BASE}" cat-file -e "${ref}^{commit}" 2>/dev/null; then
+      git -c safe.directory="${BASE}" -C "${BASE}" fetch --quiet --no-tags origin "${ref}"
+    fi
+    git -c safe.directory="${BASE}" -C "${BASE}" rev-parse "${ref}^{commit}"
+    return
+  fi
+
+  if git check-ref-format --branch "${ref}" >/dev/null 2>&1; then
+    remote_match="$(git -c safe.directory="${BASE}" -C "${BASE}" ls-remote --exit-code origin "refs/heads/${ref}" 2>/dev/null | awk 'NR == 1 { print $1 }' || true)"
+    if [[ -n "${remote_match}" ]]; then
+      git -c safe.directory="${BASE}" -C "${BASE}" fetch --quiet --no-tags origin "refs/heads/${ref}"
+      git -c safe.directory="${BASE}" -C "${BASE}" rev-parse 'FETCH_HEAD^{commit}'
+      return
+    fi
+  fi
+
+  git -c safe.directory="${BASE}" -C "${BASE}" rev-parse "${ref}^{commit}"
+}
+
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
   cat <<'EOF'
 Uso: sudo bash ops/preflight_vm.sh [ref] [sha-esperado]
@@ -99,9 +137,7 @@ DIRTY="$(git -c safe.directory="${BASE}" -C "${BASE}" status --porcelain --untra
 [[ -z "${DIRTY}" ]] || { echo "${DIRTY}" >&2; fail "há alterações locais rastreadas em ${BASE}"; }
 ok "checkout sem alterações rastreadas"
 
-git -c safe.directory="${BASE}" -C "${BASE}" fetch --prune origin
-git -c safe.directory="${BASE}" -C "${BASE}" fetch origin main
-COMMIT="$(git -c safe.directory="${BASE}" -C "${BASE}" rev-parse "${REF}^{commit}")"
+COMMIT="$(resolve_release_commit "${REF}")" || fail "não foi possível resolver/fazer fetch da release ${REF}"
 [[ -n "${COMMIT}" ]] || fail "não foi possível resolver ref ${REF}"
 if [[ -n "${EXPECTED_SHA}" && "${COMMIT}" != "${EXPECTED_SHA}" ]]; then
   fail "ref ${REF} resolveu ${COMMIT}, mas o commit validado esperado é ${EXPECTED_SHA}"
