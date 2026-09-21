@@ -104,6 +104,7 @@ def init_platform_db() -> None:
                 next_run INTEGER NOT NULL,
                 last_run INTEGER,
                 last_result TEXT NOT NULL DEFAULT '',
+                claim_token TEXT NOT NULL DEFAULT '',
                 created_at INTEGER NOT NULL,
                 updated_at INTEGER NOT NULL
             );
@@ -222,6 +223,15 @@ def init_platform_db() -> None:
         if "claim_token" not in notification_columns:
             conn.execute(
                 "ALTER TABLE notification_queue ADD COLUMN claim_token TEXT NOT NULL DEFAULT ''"
+            )
+
+        scheduler_columns = {
+            str(row["name"])
+            for row in conn.execute("PRAGMA table_info(scheduler_jobs)").fetchall()
+        }
+        if "claim_token" not in scheduler_columns:
+            conn.execute(
+                "ALTER TABLE scheduler_jobs ADD COLUMN claim_token TEXT NOT NULL DEFAULT ''"
             )
 
         conn.execute("DELETE FROM password_reset_tokens WHERE expires_at < ? OR used_at IS NOT NULL", (_now() - 86400,))
@@ -730,10 +740,16 @@ def finish_lifecycle_operation(operation_id: str, result: dict | None = None, er
 
 # ------------------------------- scheduler --------------------------------
 
+def _public_scheduler_job(row) -> dict:
+    item = _row(row)
+    item.pop("claim_token", None)
+    return item
+
+
 def list_scheduler_jobs():
     with db.connect() as conn:
         rows = conn.execute("SELECT * FROM scheduler_jobs ORDER BY name").fetchall()
-    return [_row(r) for r in rows]
+    return [_public_scheduler_job(r) for r in rows]
 
 
 def upsert_scheduler_job(data: dict, actor: str):
@@ -761,7 +777,7 @@ def due_scheduler_jobs(limit: int = 20):
             "SELECT * FROM scheduler_jobs WHERE enabled=1 AND next_run<=? ORDER BY next_run LIMIT ?",
             (now, limit),
         ).fetchall()
-    return [_row(r) for r in rows]
+    return [_public_scheduler_job(r) for r in rows]
 
 
 def claim_scheduler_jobs(
@@ -775,33 +791,62 @@ def claim_scheduler_jobs(
     now = _now()
     lease_seconds = max(60, min(int(lease_seconds), 21600))
     placeholders = ",".join("?" for _ in kinds)
+    claimed = []
     with db.connect() as conn:
         conn.execute("BEGIN IMMEDIATE")
         rows = conn.execute(
-            f"SELECT * FROM scheduler_jobs "
+            f"SELECT id FROM scheduler_jobs "
             f"WHERE enabled=1 AND next_run<=? AND kind IN ({placeholders}) "
             "ORDER BY next_run LIMIT ?",
             (now, *kinds, max(1, min(int(limit), 200))),
         ).fetchall()
         for row in rows:
-            conn.execute(
-                "UPDATE scheduler_jobs SET next_run=?,last_result='RUNNING',updated_at=? "
-                "WHERE id=? AND enabled=1 AND next_run<=?",
-                (now + lease_seconds, now, row["id"], now),
+            claim_token = secrets.token_hex(16)
+            updated = conn.execute(
+                """UPDATE scheduler_jobs
+                   SET next_run=?,last_result='RUNNING',claim_token=?,updated_at=?
+                   WHERE id=? AND enabled=1 AND next_run<=?""",
+                (now + lease_seconds, claim_token, now, row["id"], now),
             )
-    return [_row(r) for r in rows]
+            if updated.rowcount != 1:
+                continue
+            claimed_row = conn.execute(
+                "SELECT * FROM scheduler_jobs WHERE id=? AND claim_token=?",
+                (row["id"], claim_token),
+            ).fetchone()
+            if claimed_row is not None:
+                claimed.append(claimed_row)
+    return [_row(row) for row in claimed]
 
 
-def complete_scheduler_job(item_id: str, result: str):
+def complete_scheduler_job(item_id: str, result: str, claim_token: str = "") -> bool:
     now = _now()
+    claim_token = str(claim_token or "")
+    if not claim_token:
+        return False
     with db.connect() as conn:
-        row = conn.execute("SELECT interval_seconds FROM scheduler_jobs WHERE id=?", (item_id,)).fetchone()
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            """SELECT interval_seconds FROM scheduler_jobs
+               WHERE id=? AND last_result='RUNNING' AND claim_token=?""",
+            (item_id, claim_token),
+        ).fetchone()
         if not row:
-            return
-        conn.execute(
-            "UPDATE scheduler_jobs SET last_run=?,last_result=?,next_run=?,updated_at=? WHERE id=?",
-            (now, result[:1000], now + int(row["interval_seconds"]), now, item_id),
+            return False
+        updated = conn.execute(
+            """UPDATE scheduler_jobs
+               SET last_run=?,last_result=?,next_run=?,claim_token='',updated_at=?
+               WHERE id=? AND last_result='RUNNING' AND claim_token=?""",
+            (
+                now,
+                result[:1000],
+                now + int(row["interval_seconds"]),
+                now,
+                item_id,
+                claim_token,
+            ),
         )
+        return updated.rowcount == 1
 
 
 # ------------------------------- security ---------------------------------
