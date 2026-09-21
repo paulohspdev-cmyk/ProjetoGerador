@@ -510,11 +510,12 @@
 
 /* Mode controls */
 .vref-control {
-  padding: 4px 6px;
+  padding: 3px 5px;
 }
 
 .vref-control > h4 {
-  margin-bottom: 3px;
+  margin-bottom: 2px;
+  line-height: 1;
 }
 
 .vref-mode-row {
@@ -540,7 +541,7 @@
 }
 
 .vref-mode-row button {
-  height: 22px;
+  height: 21px;
   font-size: 8.5px;
 }
 
@@ -559,7 +560,7 @@
 
 .vref-dse-hand,
 .vref-dse-auto {
-  height: 23px;
+  height: 21px;
 }
 
 .vref-dse-hand {
