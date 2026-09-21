@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -u
 
-BASE="/opt/rc-geradores"
-ENV_FILE="/etc/rc-geradores.env"
+BASE="${RC_PROJECT_ROOT:-/opt/rc-geradores}"
+ENV_FILE="${RC_ENV_FILE:-/etc/rc-geradores.env}"
 
 if [[ -f "$ENV_FILE" ]]; then
   set -a
