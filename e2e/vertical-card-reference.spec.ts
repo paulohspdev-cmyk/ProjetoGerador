@@ -166,6 +166,15 @@ test("vertical preserva todo o conteúdo e rola a grade quando a altura é curta
             height: rect.height,
             cardOverflowHeight: card ? card.scrollHeight - card.clientHeight : 999,
             cardOverflowWidth: card ? card.scrollWidth - card.clientWidth : 999,
+            clippedSections: card
+              ? [...card.querySelectorAll<HTMLElement>(".vref-section")]
+                  .filter(
+                    (section) =>
+                      section.scrollHeight - section.clientHeight > 1 ||
+                      section.scrollWidth - section.clientWidth > 1,
+                  )
+                  .map((section) => section.className)
+              : ["missing-card"],
           };
         });
       const style = getComputedStyle(grid);
@@ -203,6 +212,7 @@ test("vertical preserva todo o conteúdo e rola a grade quando a altura é curta
       expect(frame.height).toBeGreaterThan(0);
       expect(frame.cardOverflowHeight).toBeLessThanOrEqual(1);
       expect(frame.cardOverflowWidth).toBeLessThanOrEqual(1);
+      expect(frame.clippedSections).toEqual([]);
     }
 
     expect(metrics.declaredColumns).toBeGreaterThan(0);
