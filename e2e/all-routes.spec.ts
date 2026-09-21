@@ -21,6 +21,23 @@ test("HTML da aplicação não fica preso em cache entre releases", async ({ pag
   expect(response!.headers()["cache-control"] ?? "").toContain("no-store");
 });
 
+
+test("asset retido fora do manifesto Nitro continua disponível após troca de release", async ({
+  request,
+}) => {
+  const response = await request.get("/assets/__retained-release-e2e.js");
+  expect(response.status()).toBe(200);
+  expect(response.headers()["x-rc-retained-asset"]).toBe("1");
+  expect(response.headers()["cache-control"] ?? "").toContain("immutable");
+  expect(await response.text()).toContain("__RC_RETAINED_E2E__");
+});
+
+test("fallback de asset retido rejeita path traversal", async ({ request }) => {
+  const response = await request.get("/assets/%2e%2e%2fpackage.json");
+  expect(response.status()).toBe(404);
+  expect(response.headers()["x-rc-retained-asset"]).toBeUndefined();
+});
+
 test("todas as superfícies de navegação renderizam sem rota quebrada", async ({ page }) => {
   test.setTimeout(180_000);
   await login(page);
