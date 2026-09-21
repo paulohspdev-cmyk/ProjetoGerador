@@ -329,8 +329,36 @@ for thread in scheduler_threads:
     thread.join()
 claimed_jobs = [row for batch in scheduler_claims for row in batch]
 assert len(claimed_jobs) == 1, scheduler_claims
-assert claimed_jobs[0]["id"] == scheduled["id"]
-platform_store.complete_scheduler_job(scheduled["id"], "OK synthetic")
+first_scheduler_claim = claimed_jobs[0]
+assert first_scheduler_claim["id"] == scheduled["id"]
+assert first_scheduler_claim["claim_token"]
+public_scheduler = next(item for item in platform_store.list_scheduler_jobs() if item["id"] == scheduled["id"])
+assert "claim_token" not in public_scheduler
+
+# Simulate an expired lease being reclaimed while the original worker is late.
+with db.connect() as conn:
+    conn.execute("UPDATE scheduler_jobs SET next_run=1 WHERE id=?", (scheduled["id"],))
+second_scheduler_claims = platform_store.claim_scheduler_jobs({"notification"}, limit=1)
+assert len(second_scheduler_claims) == 1
+second_scheduler_claim = second_scheduler_claims[0]
+assert second_scheduler_claim["claim_token"] != first_scheduler_claim["claim_token"]
+
+assert (
+    platform_store.complete_scheduler_job(
+        scheduled["id"],
+        "late stale worker",
+        first_scheduler_claim["claim_token"],
+    )
+    is False
+)
+assert (
+    platform_store.complete_scheduler_job(
+        scheduled["id"],
+        "OK synthetic",
+        second_scheduler_claim["claim_token"],
+    )
+    is True
+)
 
 # F07: automation uses effective stale status and retries a failed edge.
 stale = {"id": "g", "tag": "GEN-AUTO", "status": "alerta", "telemetryStale": True}
