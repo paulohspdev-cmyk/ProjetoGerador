@@ -227,9 +227,10 @@ def create_work_order(data: dict, actor: str):
     site = str(data.get("site") or "").strip()
     if generator_id:
         generator = db.get_generator(generator_id)
-        if generator:
-            gen = generator["tag"]
-            site = generator["site"]
+        if not generator:
+            raise ValueError("Gerador vinculado à ordem de serviço não existe")
+        gen = generator["tag"]
+        site = generator["site"]
     item = {
         "id": _id("os"),
         "generator_id": generator_id,
@@ -283,12 +284,15 @@ def list_agenda():
 
 def create_agenda(data: dict, actor: str):
     now = _now()
+    generator_id = data.get("generator_id") or None
+    if generator_id and not db.get_generator(generator_id):
+        raise ValueError("Gerador vinculado ao compromisso não existe")
     item = {
         "id": _id("ag"),
         "title": str(data["title"]).strip(),
         "when_text": str(data["when"]).strip(),
         "site": str(data.get("site") or "").strip(),
-        "generator_id": data.get("generator_id") or None,
+        "generator_id": generator_id,
         "kind": str(data.get("kind") or "manual").strip(),
         "enabled": 1,
         "created_at": now,
