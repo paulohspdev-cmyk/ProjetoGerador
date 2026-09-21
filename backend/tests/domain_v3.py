@@ -1,4 +1,5 @@
 import os
+import sqlite3
 import tempfile
 from pathlib import Path
 
@@ -404,29 +405,29 @@ domain_store.create_connection(
     },
     actor="test",
 )
-db.create_generator(
-    {
-        "tag": "CONFLICT-LEGACY",
-        "name": "Conflict Legacy",
-        "customer": "",
-        "site": "Lab",
-        "controller_type": "COMAP",
-        "controller_model": "InteliGen 200",
-        "transport": "reverse_tcp",
-        "host": "",
-        "listen_port": 15040,
-        "modbus_unit": 7,
-        "rapid_device_num": 450,
-        "enabled": True,
-    },
-    actor="test",
-)
 try:
-    domain_store.sync_legacy_generators()
-except ValueError as exc:
-    assert "já usada" in str(exc) or "já usado" in str(exc)
+    db.create_generator(
+        {
+            "tag": "CONFLICT-LEGACY",
+            "name": "Conflict Legacy",
+            "customer": "",
+            "site": "Lab",
+            "controller_type": "COMAP",
+            "controller_model": "InteliGen 200",
+            "transport": "reverse_tcp",
+            "host": "",
+            "listen_port": 15040,
+            "modbus_unit": 7,
+            "rapid_device_num": 450,
+            "enabled": True,
+        },
+        actor="test",
+    )
+except sqlite3.IntegrityError:
+    pass
 else:
-    raise AssertionError("sync legacy aceitou identidade industrial duplicada no domínio v3")
+    raise AssertionError("cadastro legacy aceitou identidade industrial já usada no domínio v3")
+assert db.get_generator("CONFLICT-LEGACY") is None
 
 print("RC Geradores domain v3 smoke: OK")
 tmp.cleanup()
