@@ -86,6 +86,7 @@ _previous_cookie_secure = os.environ.get("RC_AUTH_COOKIE_SECURE")
 _previous_api_docs = os.environ.get("RC_API_DOCS")
 _previous_dse_lab = os.environ.get("RC_ENABLE_DSE_LAB_CONTROL")
 _previous_ig4_lab = os.environ.get("RC_ENABLE_IG4_LAB_CONTROL")
+_previous_trusted_proxy_cidrs = os.environ.get("RC_TRUSTED_PROXY_CIDRS")
 try:
     os.environ["RC_ENVIRONMENT"] = "production"
     os.environ["RC_API_DOCS"] = "0"
@@ -99,7 +100,24 @@ try:
     else:
         raise AssertionError("produção aceitou cookie de sessão sem Secure")
     os.environ["RC_AUTH_COOKIE_SECURE"] = "1"
+    os.environ["RC_TRUSTED_PROXY_CIDRS"] = "127.0.0.1/32,::1/128"
     validate_production_runtime()
+
+    os.environ["RC_TRUSTED_PROXY_CIDRS"] = "0.0.0.0/0"
+    try:
+        validate_production_runtime()
+    except RuntimeError as exc:
+        assert "RC_TRUSTED_PROXY_CIDRS" in str(exc)
+    else:
+        raise AssertionError("produção aceitou confiar X-Real-IP de toda a Internet")
+
+    os.environ["RC_TRUSTED_PROXY_CIDRS"] = "not-a-cidr"
+    try:
+        validate_production_runtime()
+    except RuntimeError as exc:
+        assert "RC_TRUSTED_PROXY_CIDRS" in str(exc)
+    else:
+        raise AssertionError("produção aceitou CIDR inválido para proxy confiável")
 finally:
     for key, value in (
         ("RC_ENVIRONMENT", _previous_environment),
@@ -107,6 +125,7 @@ finally:
         ("RC_API_DOCS", _previous_api_docs),
         ("RC_ENABLE_DSE_LAB_CONTROL", _previous_dse_lab),
         ("RC_ENABLE_IG4_LAB_CONTROL", _previous_ig4_lab),
+        ("RC_TRUSTED_PROXY_CIDRS", _previous_trusted_proxy_cidrs),
     ):
         if value is None:
             os.environ.pop(key, None)
