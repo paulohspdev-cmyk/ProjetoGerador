@@ -1,11 +1,48 @@
 #!/usr/bin/env python3
 import argparse
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
 
-BASE = Path("/opt/rc-geradores")
+ENV_FILE = Path(os.environ.get("RC_ENV_FILE", "/etc/rc-geradores.env"))
+_ENV_KEY = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+def _load_env_file(path: Path) -> None:
+    """Carrega EnvironmentFile de produção sem executar shell.
+
+    Variáveis fornecidas explicitamente ao processo têm precedência sobre o
+    arquivo, igual ao uso administrativo esperado para overrides pontuais.
+    """
+    if not path.exists():
+        return
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        raise SystemExit(f"Não foi possível ler o arquivo de ambiente {path}: {exc}") from exc
+
+    for number, source in enumerate(lines, 1):
+        line = source.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[7:].lstrip()
+        if "=" not in line:
+            raise SystemExit(f"Linha inválida em {path}:{number}")
+        key, raw = line.split("=", 1)
+        key = key.strip()
+        if not _ENV_KEY.fullmatch(key):
+            raise SystemExit(f"Nome de variável inválido em {path}:{number}")
+        value = raw.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+            value = value[1:-1]
+        os.environ.setdefault(key, value)
+
+
+_load_env_file(ENV_FILE)
+BASE = Path(os.environ.get("RC_PROJECT_ROOT", "/opt/rc-geradores"))
 sys.path.insert(0, str(BASE / "backend"))
 
 from app.backup_manager import (  # noqa: E402
