@@ -223,11 +223,7 @@ for (const marker of [
     failures.push(`estado efetivo de comunicação perdeu regra central: ${marker}`);
   }
 }
-for (const marker of [
-  'displayStatus === "stale"',
-  '"COMM LOST"',
-  "currentValues.length > 0",
-]) {
+for (const marker of ['displayStatus === "stale"', '"COMM LOST"', "currentValues.length > 0"]) {
   if (!powerFlowCard.includes(marker)) {
     failures.push(`card principal perdeu precedência de stale/N-D: ${marker}`);
   }

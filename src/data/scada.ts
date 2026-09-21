@@ -1,4 +1,10 @@
-import { generatorDisplayStatus, isGeneratorAlert, isGeneratorConnected, isGeneratorOnline, type Generator } from "@/data/generators";
+import {
+  generatorDisplayStatus,
+  isGeneratorAlert,
+  isGeneratorConnected,
+  isGeneratorOnline,
+  type Generator,
+} from "@/data/generators";
 
 export function fmt(n: number | null | undefined, d = 1) {
   return n == null || !Number.isFinite(n) ? "—" : n.toFixed(d).replace(".", ",");
@@ -69,7 +75,9 @@ export function gensBySite(list: Generator[] = []): SiteAggregate[] {
       total: gens.length,
       online: gens.filter(isGeneratorOnline).length,
       alerta: gens.filter(isGeneratorAlert).length,
-      offline: gens.filter((g) => generatorDisplayStatus(g) === "offline" || generatorDisplayStatus(g) === "stale").length,
+      offline: gens.filter(
+        (g) => generatorDisplayStatus(g) === "offline" || generatorDisplayStatus(g) === "stale",
+      ).length,
       // Compatibilidade com telas legadas. Zero aqui significa ausência de soma
       // exibível; measuredLoad/measuredFuel preservam a distinção N/D.
       load: measuredLoad ?? 0,

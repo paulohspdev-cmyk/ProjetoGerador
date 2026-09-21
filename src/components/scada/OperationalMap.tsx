@@ -3,7 +3,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useGenerators } from "@/components/generators/GeneratorsProvider";
 import { metricNumber } from "@/components/generators/generator-metrics";
 import { useTheme } from "@/components/layout/ThemeProvider";
-import { generatorDisplayStatus, isGeneratorAlert, isGeneratorOnline, type Generator } from "@/data/generators";
+import {
+  generatorDisplayStatus,
+  isGeneratorAlert,
+  isGeneratorOnline,
+  type Generator,
+} from "@/data/generators";
 import { rcApi, type OpsSite } from "@/lib/api";
 
 import "leaflet/dist/leaflet.css";
@@ -141,7 +146,9 @@ export function OperationalMap({
             gens,
             online: gens.filter(isGeneratorOnline).length,
             alerta: gens.filter(isGeneratorAlert).length,
-            offline: gens.filter((generator) => ["offline", "stale"].includes(generatorDisplayStatus(generator))).length,
+            offline: gens.filter((generator) =>
+              ["offline", "stale"].includes(generatorDisplayStatus(generator)),
+            ).length,
             load: measuredLoad.length ? measuredLoad.reduce((sum, value) => sum + value, 0) : null,
           };
         }),

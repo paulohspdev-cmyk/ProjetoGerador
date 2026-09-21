@@ -46,7 +46,9 @@ export function SitesScreen() {
           ...site,
           online: gens.filter(isGeneratorOnline).length,
           alerta: gens.filter(isGeneratorAlert).length,
-          offline: gens.filter((generator) => ["offline", "stale"].includes(generatorDisplayStatus(generator))).length,
+          offline: gens.filter((generator) =>
+            ["offline", "stale"].includes(generatorDisplayStatus(generator)),
+          ).length,
           total: gens.length,
           measuredLoad: siteLoad,
           loadSources: measuredRows.length,

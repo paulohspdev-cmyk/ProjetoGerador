@@ -201,7 +201,9 @@ export function useOverviewDecisionModel() {
     () => ({
       online: generators.filter(isGeneratorOnline).length,
       alert: generators.filter(isGeneratorAlert).length,
-      offline: generators.filter((generator) => ["offline", "stale"].includes(generatorDisplayStatus(generator))).length,
+      offline: generators.filter((generator) =>
+        ["offline", "stale"].includes(generatorDisplayStatus(generator)),
+      ).length,
       unconfigured: generators.filter((generator) => generator.status === "nao_configurado").length,
     }),
     [generators],

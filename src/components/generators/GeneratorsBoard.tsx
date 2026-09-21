@@ -112,24 +112,22 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
 
   const items = useMemo(
     () =>
-      generators.filter(
-        (generator) => {
-          const displayStatus = generatorDisplayStatus(generator);
-          const statusMatches =
-            status === "todos" ||
-            (status === "offline"
-              ? displayStatus === "offline" || displayStatus === "stale"
-              : displayStatus === status);
-          return (
-            statusMatches &&
-            (generator.tag.toLowerCase().includes(query.toLowerCase()) ||
-              (generator.name ?? "").toLowerCase().includes(query.toLowerCase()) ||
-              (generator.customer ?? "").toLowerCase().includes(query.toLowerCase()) ||
-              generator.controller.toLowerCase().includes(query.toLowerCase()) ||
-              generator.site.toLowerCase().includes(query.toLowerCase()))
-          );
-        },
-      ),
+      generators.filter((generator) => {
+        const displayStatus = generatorDisplayStatus(generator);
+        const statusMatches =
+          status === "todos" ||
+          (status === "offline"
+            ? displayStatus === "offline" || displayStatus === "stale"
+            : displayStatus === status);
+        return (
+          statusMatches &&
+          (generator.tag.toLowerCase().includes(query.toLowerCase()) ||
+            (generator.name ?? "").toLowerCase().includes(query.toLowerCase()) ||
+            (generator.customer ?? "").toLowerCase().includes(query.toLowerCase()) ||
+            generator.controller.toLowerCase().includes(query.toLowerCase()) ||
+            generator.site.toLowerCase().includes(query.toLowerCase()))
+        );
+      }),
     [generators, status, query],
   );
 
