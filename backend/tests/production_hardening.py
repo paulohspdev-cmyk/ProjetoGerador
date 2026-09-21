@@ -227,6 +227,8 @@ env_file.write_text("RC_TEST_VALUE=before\n", encoding="utf-8")
 original_totp_key = key_file.read_bytes()
 original_base = (scada_root / "BaseDAT" / "placeholder.txt").read_text(encoding="utf-8")
 
+# O snapshot não contém retired bindings quando o arquivo não existia.
+backup_manager.RETIRED_BINDINGS.unlink(missing_ok=True)
 previous_include_secrets = backup_manager.INCLUDE_SECRETS
 backup_manager.INCLUDE_SECRETS = True
 try:
@@ -235,6 +237,9 @@ finally:
     backup_manager.INCLUDE_SECRETS = previous_include_secrets
 assert restore_source["result"] == "OK", restore_source
 
+# Estado criado depois do backup precisa desaparecer num restore completo.
+backup_manager.RETIRED_BINDINGS.parent.mkdir(parents=True, exist_ok=True)
+backup_manager.RETIRED_BINDINGS.write_text('[{"stale": true}]', encoding="utf-8")
 db.add_audit("hardening-test", "after-backup", "system", "after-backup", "must disappear")
 env_file.write_text("RC_TEST_VALUE=mutated\n", encoding="utf-8")
 key_file.write_bytes(Fernet.generate_key() + b"\n")
@@ -244,6 +249,8 @@ restored = restore_archive(restore_source["path"], restore_rapid=True)
 assert restored["databaseIntegrityCheck"] == "ok"
 assert env_file.read_text(encoding="utf-8") == "RC_TEST_VALUE=before\n"
 assert key_file.read_bytes() == original_totp_key
+assert not backup_manager.RETIRED_BINDINGS.exists()
+assert not list(key_file.parent.glob(f".{key_file.name}.restore-*.tmp"))
 assert (scada_root / "BaseDAT" / "placeholder.txt").read_text(encoding="utf-8") == original_base
 with db.connect() as conn:
     assert conn.execute(
@@ -279,6 +286,26 @@ finally:
 assert env_file.read_bytes() == pre_failure_env
 assert key_file.read_bytes() == pre_failure_key
 assert (scada_root / "BaseDAT" / "placeholder.txt").read_bytes() == pre_failure_base
+
+# Se o restore começou sem banco prévio e falha depois de instalar um, rollback
+# precisa voltar ao estado "sem banco", inclusive removendo sidecars.
+previous_db_file = backup_manager.DB_FILE
+previous_data_dir = backup_manager.DATA_DIR
+empty_restore_dir = root / "empty-restore"
+empty_restore_dir.mkdir()
+try:
+    backup_manager.DATA_DIR = empty_restore_dir
+    backup_manager.DB_FILE = empty_restore_dir / "new.db"
+    backup_manager.DB_FILE.write_bytes(b"candidate")
+    Path(str(backup_manager.DB_FILE) + "-wal").write_bytes(b"wal")
+    Path(str(backup_manager.DB_FILE) + "-shm").write_bytes(b"shm")
+    backup_manager._rollback_database(None, existed_before=False)
+    assert not backup_manager.DB_FILE.exists()
+    assert not Path(str(backup_manager.DB_FILE) + "-wal").exists()
+    assert not Path(str(backup_manager.DB_FILE) + "-shm").exists()
+finally:
+    backup_manager.DB_FILE = previous_db_file
+    backup_manager.DATA_DIR = previous_data_dir
 
 # Chave off-site errada deve falhar antes de materializar qualquer backup.
 wrong_key = root / "wrong-offsite.key"
