@@ -382,6 +382,12 @@ const backup = read("backend/app/backup_manager.py");
 for (const marker of ["PRAGMA quick_check", "_pre_restore_snapshot", "_rollback_database"]) {
   if (!backup.includes(marker)) failures.push(`restore sem proteção obrigatória: ${marker}`);
 }
+const restoreCli = read("ops/restore_backup.py");
+const restoreEnvLoad = restoreCli.indexOf("_load_env_file(ENV_FILE)");
+const restoreAppImport = restoreCli.indexOf("from app.backup_manager import");
+if (restoreEnvLoad < 0 || restoreAppImport < 0 || restoreEnvLoad > restoreAppImport) {
+  failures.push("restore CLI deve carregar o EnvironmentFile antes de importar app/config");
+}
 
 const opsStore = read("backend/app/ops_store.py");
 if (opsStore.includes('data.get("tech") or "Equipe campo"')) {
