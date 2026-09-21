@@ -309,6 +309,15 @@ if (!equipmentBarrel.includes('from "./equip-connectivity"')) {
   failures.push("equip-auto deixou de exportar as telas de conectividade física");
 }
 
+const rootRoute = read("src/routes/__root.tsx");
+if (
+  !rootRoute.includes("DEPLOY_CHUNK_ERROR") ||
+  !rootRoute.includes("window.location.reload()") ||
+  !rootRoute.includes("window.sessionStorage")
+) {
+  failures.push("error boundary perdeu recuperação controlada de chunk obsoleto após deploy");
+}
+
 const verticalTelemetry = read(
   "src/components/generators/vertical-card/VerticalTelemetrySections.tsx",
 );
