@@ -114,6 +114,13 @@ class BridgePort:
     def __init__(self, remote_port):
         self.remote_port = int(remote_port)
         self.local_port = self.remote_port + LOCAL_OFFSET
+        if not 1 <= self.remote_port <= 65535:
+            raise ValueError(f"porta reverse TCP inválida: {self.remote_port}")
+        if LOCAL_OFFSET <= 0 or not 1 <= self.local_port <= 65535:
+            raise ValueError(
+                "RC_RAPID_LOCAL_OFFSET/porta reverse TCP geram porta local inválida: "
+                f"remote={self.remote_port} offset={LOCAL_OFFSET} local={self.local_port}"
+            )
         self.remote_server = None
         self.local_server = None
         self.remote_reader = None
