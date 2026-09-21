@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useLayout } from "@/components/layout/LayoutContext";
 import { useTheme } from "@/components/layout/ThemeProvider";
-import { statusLabel, type GenStatus } from "@/data/generators";
+import { generatorDisplayStatus, statusLabel, type GenStatus } from "@/data/generators";
 import { cn } from "@/lib/utils";
 import { CompactCard } from "./CompactCard";
 import { GeneratorTable } from "./GeneratorTable";
@@ -42,7 +42,7 @@ const VERTICAL_GAP = 8;
 const VERTICAL_PADDING = 4;
 const VERTICAL_MIN_CARD_WIDTH = 285;
 const VERTICAL_MAX_CARD_WIDTH = 340;
-const VERTICAL_MIN_CARD_HEIGHT = 800;
+const VERTICAL_MIN_CARD_HEIGHT = 700;
 const VERTICAL_MAX_CARD_HEIGHT = 960;
 
 function verticalColumnCount(width: number) {
@@ -113,13 +113,22 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
   const items = useMemo(
     () =>
       generators.filter(
-        (generator) =>
-          (status === "todos" || generator.status === status) &&
-          (generator.tag.toLowerCase().includes(query.toLowerCase()) ||
-            (generator.name ?? "").toLowerCase().includes(query.toLowerCase()) ||
-            (generator.customer ?? "").toLowerCase().includes(query.toLowerCase()) ||
-            generator.controller.toLowerCase().includes(query.toLowerCase()) ||
-            generator.site.toLowerCase().includes(query.toLowerCase())),
+        (generator) => {
+          const displayStatus = generatorDisplayStatus(generator);
+          const statusMatches =
+            status === "todos" ||
+            (status === "offline"
+              ? displayStatus === "offline" || displayStatus === "stale"
+              : displayStatus === status);
+          return (
+            statusMatches &&
+            (generator.tag.toLowerCase().includes(query.toLowerCase()) ||
+              (generator.name ?? "").toLowerCase().includes(query.toLowerCase()) ||
+              (generator.customer ?? "").toLowerCase().includes(query.toLowerCase()) ||
+              generator.controller.toLowerCase().includes(query.toLowerCase()) ||
+              generator.site.toLowerCase().includes(query.toLowerCase()))
+          );
+        },
       ),
     [generators, status, query],
   );

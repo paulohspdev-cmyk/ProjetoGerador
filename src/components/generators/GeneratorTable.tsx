@@ -108,7 +108,7 @@ function MobileRow({ items }: { items: Generator[] }) {
                   {gen.tag} · {gen.controller} · {gen.site}
                 </p>
               </div>
-              <StatusPill status={gen.status} />
+              <StatusPill status={gen.status} telemetryStale={gen.telemetryStale} />
             </div>
 
             <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11px]">
@@ -198,7 +198,7 @@ export function GeneratorTable({ items }: { items: Generator[] }) {
   return (
     <>
       <MobileRow items={items} />
-      <div className="hidden rounded-lg border border-border bg-card xl:block">
+      <div className="hidden overflow-x-auto rounded-lg border border-border bg-card xl:block">
         <table className="w-full min-w-[2080px] border-collapse text-[11px]">
           <thead className="sticky top-0 z-10 bg-card">
             <tr className="border-b border-border bg-secondary/60 text-[9px] uppercase tracking-wide text-muted-foreground">
@@ -228,7 +228,7 @@ export function GeneratorTable({ items }: { items: Generator[] }) {
                     </div>
                   </td>
                   <td className="px-2 py-2">
-                    <StatusPill status={gen.status} />
+                    <StatusPill status={gen.status} telemetryStale={gen.telemetryStale} />
                   </td>
                   <td className={cn("num px-2 py-2 font-bold", modeClass(gen.mode, modeKnown))}>
                     {modeKnown ? gen.mode : "N/D"}

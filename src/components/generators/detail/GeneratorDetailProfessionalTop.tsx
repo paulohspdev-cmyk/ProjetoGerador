@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 
 import { Pill } from "@/components/scada/kit";
-import type { Generator } from "@/data/generators";
+import { generatorDisplayStatus, type Generator } from "@/data/generators";
 import type { IndustrialCommandAction } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -60,22 +60,25 @@ export function GeneratorDetailProfessionalTop({
   const lastTelemetry = gen.lastTelemetryAt
     ? new Date(gen.lastTelemetryAt * 1000).toLocaleString("pt-BR")
     : "N/D";
+  const displayStatus = generatorDisplayStatus(gen);
   const healthTone: MetricTone =
-    gen.status === "offline"
+    displayStatus === "stale" || displayStatus === "offline"
       ? "err"
-      : gen.status === "alerta" || (model.alarms ?? 0) > 0
+      : displayStatus === "alerta" || (model.alarms ?? 0) > 0
         ? "warn"
         : model.comm
           ? "ok"
           : "info";
   const healthLabel =
-    gen.status === "offline"
-      ? "Sem comunicação"
-      : gen.status === "alerta" || (model.alarms ?? 0) > 0
-        ? "Atenção"
-        : model.comm
-          ? "Operacional"
-          : "N/D";
+    displayStatus === "stale"
+      ? "Comunicação perdida"
+      : displayStatus === "offline"
+        ? "Sem comunicação"
+        : displayStatus === "alerta" || (model.alarms ?? 0) > 0
+          ? "Atenção"
+          : model.comm
+            ? "Operacional"
+            : "N/D";
 
   return (
     <>
@@ -89,22 +92,24 @@ export function GeneratorDetailProfessionalTop({
               <h1 className="truncate text-2xl font-black tracking-tight">{gen.tag}</h1>
               <Pill
                 tone={
-                  gen.status === "online"
+                  displayStatus === "online"
                     ? "ok"
-                    : gen.status === "alerta"
+                    : displayStatus === "alerta"
                       ? "warn"
-                      : gen.status === "offline"
+                      : displayStatus === "offline" || displayStatus === "stale"
                         ? "err"
                         : "muted"
                 }
               >
-                {gen.status === "online"
-                  ? "Online"
-                  : gen.status === "alerta"
-                    ? "Em alerta"
-                    : gen.status === "offline"
-                      ? "Offline"
-                      : "Não configurado"}
+                {displayStatus === "stale"
+                  ? "Comunicação perdida"
+                  : displayStatus === "online"
+                    ? "Online"
+                    : displayStatus === "alerta"
+                      ? "Em alerta"
+                      : displayStatus === "offline"
+                        ? "Offline"
+                        : "Não configurado"}
               </Pill>
               <Pill tone="info">{model.modeLabel}</Pill>
               {model.mainsToBus && model.generatorToBus ? (

@@ -122,6 +122,29 @@ export const statusLabel: Record<GenStatus, string> = {
   nao_configurado: "NÃO CONFIGURADO",
 };
 
+export type GeneratorDisplayStatus = GenStatus | "stale";
+
+export function generatorDisplayStatus(
+  generator: Pick<Generator, "status" | "telemetryStale">,
+): GeneratorDisplayStatus {
+  if (generator.status === "nao_configurado") return "nao_configurado";
+  if (generator.telemetryStale) return "stale";
+  return generator.status;
+}
+
+export function isGeneratorOnline(generator: Pick<Generator, "status" | "telemetryStale">) {
+  return generatorDisplayStatus(generator) === "online";
+}
+
+export function isGeneratorAlert(generator: Pick<Generator, "status" | "telemetryStale">) {
+  return generatorDisplayStatus(generator) === "alerta";
+}
+
+export function isGeneratorConnected(generator: Pick<Generator, "status" | "telemetryStale">) {
+  const status = generatorDisplayStatus(generator);
+  return status === "online" || status === "alerta";
+}
+
 export type EventItem = {
   gen: string;
   message: string;

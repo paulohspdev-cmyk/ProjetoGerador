@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCommandGuard } from "@/components/scada/ScadaOpsProvider";
-import type { Generator } from "@/data/generators";
+import { generatorDisplayStatus, isGeneratorConnected, type Generator } from "@/data/generators";
 import { rcApi, type IndustrialCommandAction } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -113,12 +113,13 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const energyKwh = metricNumber(gen, "genset_kwh", undefined);
   const requiredPower = metricNumber(gen, "required_power_kw", undefined);
   const batteryVoltage = metricNumber(gen, "battery_voltage", battery);
-  const genCurrent =
-    [currentL1, currentL2, currentL3]
-      .filter((value): value is number => value != null)
-      .reduce((sum, value) => sum + value, 0) /
-    Math.max(1, [currentL1, currentL2, currentL3].filter((value) => value != null).length);
-  const currentKnown = [currentL1, currentL2, currentL3].some((value) => value != null);
+  const currentValues = [currentL1, currentL2, currentL3].filter(
+    (value): value is number => value != null,
+  );
+  const currentKnown = currentValues.length > 0;
+  const genCurrent = currentKnown
+    ? currentValues.reduce((sum, value) => sum + value, 0) / currentValues.length
+    : null;
 
   const electricalRows = useMemo(
     () => [
@@ -201,23 +202,24 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     }
   };
 
-  const online = gen.status === "online" || gen.status === "alerta";
+  const displayStatus = generatorDisplayStatus(gen);
+  const online = isGeneratorConnected(gen);
   const statusText =
-    gen.status === "alerta"
-      ? "ALARM"
-      : gen.status === "online"
-        ? "COMM OK"
-        : gen.status === "nao_configurado"
-          ? "NOT CONFIG"
-          : gen.telemetryStale
-            ? "COMM LOST"
+    displayStatus === "stale"
+      ? "COMM LOST"
+      : displayStatus === "alerta"
+        ? "ALARM"
+        : displayStatus === "online"
+          ? "COMM OK"
+          : displayStatus === "nao_configurado"
+            ? "NOT CONFIG"
             : "OFFLINE";
   const statusClass =
-    gen.status === "alerta"
+    displayStatus === "alerta"
       ? "is-alert"
-      : online
+      : displayStatus === "online"
         ? "is-online"
-        : gen.status === "nao_configurado"
+        : displayStatus === "nao_configurado"
           ? "is-unconfigured"
           : "is-offline";
   const modeLabel = headerMode(gen.mode, modeKnown);
