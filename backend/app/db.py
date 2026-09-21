@@ -438,6 +438,74 @@ def _validate_generator_network_identity(record: dict) -> None:
         raise ValueError("Transporte serial exige dispositivo, por exemplo /dev/ttyUSB0")
 
 
+def _validate_domain_connection_conflicts(conn, record: dict) -> None:
+    """Evita gravar no legado uma identidade que o domínio v3 recusaria.
+
+    As duas representações compartilham o mesmo SQLite. Validar dentro da
+    transação de escrita evita que a API persista um gerador e só descubra o
+    conflito ao tentar espelhá-lo no domínio v3 depois do commit.
+    """
+    required_tables = {"assets", "controller_instances", "controller_connections"}
+    present = {
+        str(row[0])
+        for row in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' "
+            "AND name IN ('assets','controller_instances','controller_connections')"
+        ).fetchall()
+    }
+    if present != required_tables:
+        return
+
+    generator_id = str(record.get("id") or "")
+    mirror_id = f"conn-{generator_id}" if generator_id else ""
+    exclude_mirror = False
+    if mirror_id:
+        mirror = conn.execute(
+            """
+            SELECT cc.id
+            FROM controller_connections cc
+            JOIN controller_instances ci ON ci.id=cc.controller_id
+            JOIN assets a ON a.id=ci.asset_id
+            WHERE cc.id=? AND a.legacy_generator_id=?
+            """,
+            (mirror_id, generator_id),
+        ).fetchone()
+        exclude_mirror = mirror is not None
+
+    suffix = " AND id<>?" if exclude_mirror else ""
+    transport = str(record.get("transport") or "reverse_tcp").strip()
+    if transport == "reverse_tcp":
+        params = [
+            int(record.get("listen_port") or 0),
+            int(record.get("modbus_unit") or 1),
+        ]
+        if exclude_mirror:
+            params.append(mirror_id)
+        conflict = conn.execute(
+            "SELECT id FROM controller_connections "
+            "WHERE transport='reverse_tcp' AND listen_port=? AND modbus_unit=?" + suffix,
+            params,
+        ).fetchone()
+        if conflict:
+            raise sqlite3.IntegrityError(
+                "domain controller_connections reverse identity conflict"
+            )
+
+    rapid_device = record.get("rapid_device_num")
+    if rapid_device is not None:
+        params = [int(rapid_device)]
+        if exclude_mirror:
+            params.append(mirror_id)
+        conflict = conn.execute(
+            "SELECT id FROM controller_connections WHERE rapid_device_num=?" + suffix,
+            params,
+        ).fetchone()
+        if conflict:
+            raise sqlite3.IntegrityError(
+                "domain controller_connections rapid_device_num conflict"
+            )
+
+
 def create_generator(data, actor="system"):
     now = int(time.time())
     generator_id = data.get("id") or f"gen-{uuid.uuid4().hex[:12]}"
@@ -460,6 +528,8 @@ def create_generator(data, actor="system"):
     }
     _validate_generator_network_identity(record)
     with connect() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        _validate_domain_connection_conflicts(conn, record)
         conn.execute(
             """
             INSERT INTO generators (
@@ -564,6 +634,8 @@ def update_generator(
     values.append(int(time.time()))
     values.append(current["id"])
     with connect() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        _validate_domain_connection_conflicts(conn, prospective)
         conn.execute(f"UPDATE generators SET {', '.join(fields)} WHERE id=?", values)
         conn.execute(
             "INSERT INTO audit_log(created_at,actor,action,entity_type,entity_id,detail) VALUES (?,?,?,?,?,?)",
