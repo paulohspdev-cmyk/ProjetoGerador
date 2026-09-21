@@ -461,15 +461,58 @@ def delete_field_device(item_id: str, actor: str) -> bool:
 
 # ---------------------------- notifications -------------------------------
 
-def enqueue_notification(event_type: str, channel: str, destination: str = "", subject: str = "", body: str = "", payload=None, max_attempts: int = 5):
+def enqueue_notification_in_connection(
+    conn,
+    event_type: str,
+    channel: str,
+    destination: str = "",
+    subject: str = "",
+    body: str = "",
+    payload=None,
+    max_attempts: int = 5,
+):
     now = _now()
+    cur = conn.execute(
+        """INSERT INTO notification_queue(
+               event_type,channel,destination,subject,body,payload_json,
+               status,attempts,max_attempts,next_attempt_at,last_error,created_at,updated_at
+           ) VALUES (?,?,?,?,?,?,'queued',0,?,?, '',?,?)""",
+        (
+            event_type,
+            channel,
+            destination,
+            subject,
+            body,
+            json.dumps(payload or {}, ensure_ascii=False),
+            max(1, min(int(max_attempts), 10)),
+            now,
+            now,
+            now,
+        ),
+    )
+    return cur.lastrowid
+
+
+def enqueue_notification(
+    event_type: str,
+    channel: str,
+    destination: str = "",
+    subject: str = "",
+    body: str = "",
+    payload=None,
+    max_attempts: int = 5,
+):
     with db.connect() as conn:
-        cur = conn.execute(
-            """INSERT INTO notification_queue(event_type,channel,destination,subject,body,payload_json,status,attempts,max_attempts,next_attempt_at,last_error,created_at,updated_at)
-               VALUES (?,?,?,?,?,?,'queued',0,?,?, '',?,?)""",
-            (event_type, channel, destination, subject, body, json.dumps(payload or {}, ensure_ascii=False), max(1, min(int(max_attempts), 10)), now, now, now),
+        return enqueue_notification_in_connection(
+            conn,
+            event_type,
+            channel,
+            destination,
+            subject,
+            body,
+            payload,
+            max_attempts,
         )
-        return cur.lastrowid
 
 
 _SENSITIVE_NOTIFICATION_TYPES = {"auth.password_reset"}
