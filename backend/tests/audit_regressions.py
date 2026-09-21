@@ -27,7 +27,7 @@ os.environ["RC_SMTP_FROM"] = "noreply@example.invalid"
 
 from app import db, diagnostics, industrial_store, platform_store, traffic_store  # noqa: E402
 from app.auth import hash_password  # noqa: E402
-from app.rapid import _downsample_points  # noqa: E402
+from app.rapid import _downsample_points, dashboard  # noqa: E402
 from app.reporting import generate_report  # noqa: E402
 from app.secret_box import protect_secret  # noqa: E402
 from app.security_service import disable_totp, setup_totp, totp_code  # noqa: E402
@@ -174,7 +174,42 @@ with db.connect() as conn:
 reclaimed = platform_store.claim_due_notifications(20, lease_seconds=30)
 assert any(item["id"] == queue_id for item in reclaimed)
 
-# F08: downsampling preserves the complete window and a strict bound.
+# F08: stale telemetry must be fail-closed in backend summaries and alarms.
+summary = dashboard(
+    [
+        {"status": "online", "telemetryStale": False},
+        {"status": "alerta", "telemetryStale": True},
+        {"status": "nao_configurado", "telemetryStale": True},
+    ]
+)
+assert summary["online"] == 1, summary
+assert summary["alerts"] == 0, summary
+assert summary["offline"] == 1, summary
+assert summary["notConfigured"] == 1, summary
+
+industrial_store.refresh_observed_alarms(
+    [
+        {
+            "id": "g-stale",
+            "tag": "GEN-STALE",
+            "status": "alerta",
+            "telemetryStale": True,
+            "lastError": "reader timeout",
+            "definedMetrics": [],
+        }
+    ]
+)
+with db.connect() as conn:
+    stale_alarm = conn.execute(
+        "SELECT code,source,active FROM industrial_alarms WHERE alarm_key=?",
+        ("comm:g-stale",),
+    ).fetchone()
+assert stale_alarm is not None
+assert stale_alarm["code"] == "COMM_LOSS"
+assert stale_alarm["source"] == "derived.communication"
+assert int(stale_alarm["active"]) == 1
+
+# F09: downsampling preserves the complete window and a strict bound.
 for size in (2001, 2880, 3999, 10000):
     points = [{"timestamp": str(i), "value": i, "stat": 1} for i in range(size)]
     sampled = _downsample_points(points, 2000)
