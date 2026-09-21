@@ -9,7 +9,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { AppSidebar } from "@/components/layout/AppSidebar";
@@ -41,9 +41,22 @@ function NotFoundComponent() {
   );
 }
 
+const DEPLOY_CHUNK_ERROR = /(?:ChunkLoadError|dynamically imported module|module script failed|failed to fetch.*module)/i;
+
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+
+  useEffect(() => {
+    if (!DEPLOY_CHUNK_ERROR.test(String(error?.message || error))) return;
+    const key = `rc:chunk-reload:${window.location.pathname}`;
+    const now = Date.now();
+    const previous = Number(window.sessionStorage.getItem(key) || 0);
+    if (Number.isFinite(previous) && now - previous < 60_000) return;
+    window.sessionStorage.setItem(key, String(now));
+    window.location.reload();
+  }, [error]);
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
