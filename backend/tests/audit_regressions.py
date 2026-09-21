@@ -572,17 +572,62 @@ with db.connect() as conn:
     ).fetchone()[0]
 assert count == 2, count
 
-# F07: an abandoned sending lease is reclaimed for retry.
+# F07: an abandoned notification lease is reclaimed, and a late worker is fenced out.
 queue_id = platform_store.enqueue_notification("test.lease", "panel", body="lease")
 claimed = platform_store.claim_due_notifications(20, lease_seconds=30)
-assert any(item["id"] == queue_id for item in claimed)
+first_claim = next(item for item in claimed if item["id"] == queue_id)
+assert first_claim["claim_token"]
+assert "claim_token" not in platform_store.list_notifications(50)[0]
+
 with db.connect() as conn:
     conn.execute(
         "UPDATE notification_queue SET status='sending',updated_at=? WHERE id=?",
         (int(time.time()) - 120, queue_id),
     )
 reclaimed = platform_store.claim_due_notifications(20, lease_seconds=30)
-assert any(item["id"] == queue_id for item in reclaimed)
+second_claim = next(item for item in reclaimed if item["id"] == queue_id)
+assert second_claim["claim_token"]
+assert second_claim["claim_token"] != first_claim["claim_token"]
+
+assert (
+    platform_store.finish_notification(
+        queue_id,
+        "panel",
+        "",
+        True,
+        "late stale worker",
+        first_claim["claim_token"],
+    )
+    is False
+)
+with db.connect() as conn:
+    still_sending = conn.execute(
+        "SELECT status,claim_token,attempts FROM notification_queue WHERE id=?",
+        (queue_id,),
+    ).fetchone()
+assert still_sending["status"] == "sending"
+assert still_sending["claim_token"] == second_claim["claim_token"]
+assert int(still_sending["attempts"]) == 0
+
+assert (
+    platform_store.finish_notification(
+        queue_id,
+        "panel",
+        "",
+        True,
+        "active worker",
+        second_claim["claim_token"],
+    )
+    is True
+)
+with db.connect() as conn:
+    finished = conn.execute(
+        "SELECT status,claim_token,attempts FROM notification_queue WHERE id=?",
+        (queue_id,),
+    ).fetchone()
+assert finished["status"] == "sent"
+assert finished["claim_token"] == ""
+assert int(finished["attempts"]) == 1
 
 # F08: stale telemetry must be fail-closed in backend summaries and alarms.
 summary = dashboard(
