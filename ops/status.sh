@@ -11,6 +11,7 @@ if [[ -f "$ENV_FILE" ]]; then
   set +a
   BASE="${RC_PROJECT_ROOT:-$BASE}"
 fi
+WEB_TLS_MODE="${RC_WEB_TLS_MODE:-managed}"
 BINDINGS="${RC_RAPID_BINDINGS:-/var/lib/rc-geradores/rapid-bindings.json}"
 LOCAL_OFFSET="${RC_RAPID_LOCAL_OFFSET:-10000}"
 
@@ -23,9 +24,14 @@ echo "IP:   $(hostname -I 2>/dev/null | awk '{print $1}')"
 echo
 
 echo "-- Serviços RC --"
-for svc in \
-  rc-geradores-frontend rc-geradores-api rc-geradores-worker \
-  rc-geradores-provision rc-geradores-bridge nginx; do
+STATUS_SERVICES=(
+  rc-geradores-frontend rc-geradores-api rc-geradores-worker
+  rc-geradores-provision rc-geradores-bridge
+)
+if [[ "$WEB_TLS_MODE" != "external_proxy" ]]; then
+  STATUS_SERVICES+=(nginx)
+fi
+for svc in "${STATUS_SERVICES[@]}"; do
   printf '%-28s ' "$svc"
   systemctl is-active "$svc" 2>/dev/null || true
 done
@@ -39,7 +45,11 @@ done
 
 echo
 echo "-- Portas TCP base --"
-ss -lntp 2>/dev/null | grep -E ':(80|443|3000|8090)\b' || true
+if [[ "$WEB_TLS_MODE" == "external_proxy" ]]; then
+  ss -lntp 2>/dev/null | grep -E ':(3000|8090)\b' || true
+else
+  ss -lntp 2>/dev/null | grep -E ':(80|443|3000|8090)\b' || true
+fi
 
 if [[ -s "$BINDINGS" ]]; then
   echo
@@ -72,29 +82,33 @@ if curl -fsS http://127.0.0.1:8090/api/health >/tmp/rc-geradores-health.json 2>/
 else
   echo "API direta não respondeu em 127.0.0.1:8090"
 fi
-if curl -kfsS https://127.0.0.1/api/health >/tmp/rc-geradores-proxy-health.json 2>/dev/null; then
-  echo "Proxy HTTPS: OK"
-  jq . /tmp/rc-geradores-proxy-health.json 2>/dev/null || cat /tmp/rc-geradores-proxy-health.json
+if [[ "$WEB_TLS_MODE" == "external_proxy" ]]; then
+  echo "Proxy HTTPS/TLS: delegado ao Nginx Proxy Manager externo; não testado localmente"
 else
-  echo "Proxy HTTPS não respondeu em 127.0.0.1:443"
-fi
-if curl -sSI http://127.0.0.1/api/health 2>/dev/null | grep -qi '^Location: https://'; then
-  echo "Redirect HTTP -> HTTPS: OK"
-else
-  echo "Redirect HTTP -> HTTPS: FALHOU"
-fi
-
-echo
-echo "-- TLS --"
-if [[ -s /etc/ssl/rc-geradores/fullchain.pem && -s /etc/ssl/rc-geradores/privkey.pem ]]; then
-  openssl x509 -in /etc/ssl/rc-geradores/fullchain.pem -noout -subject -issuer -dates 2>/dev/null || true
-  if openssl x509 -in /etc/ssl/rc-geradores/fullchain.pem -noout -checkend 86400 >/dev/null 2>&1; then
-    echo "TLS: certificado válido por mais de 24h"
+  if curl -kfsS https://127.0.0.1/api/health >/tmp/rc-geradores-proxy-health.json 2>/dev/null; then
+    echo "Proxy HTTPS: OK"
+    jq . /tmp/rc-geradores-proxy-health.json 2>/dev/null || cat /tmp/rc-geradores-proxy-health.json
   else
-    echo "TLS: certificado inválido ou próximo da expiração"
+    echo "Proxy HTTPS não respondeu em 127.0.0.1:443"
   fi
-else
-  echo "TLS: certificado/chave ausentes"
+  if curl -sSI http://127.0.0.1/api/health 2>/dev/null | grep -qi '^Location: https://'; then
+    echo "Redirect HTTP -> HTTPS: OK"
+  else
+    echo "Redirect HTTP -> HTTPS: FALHOU"
+  fi
+
+  echo
+  echo "-- TLS --"
+  if [[ -s /etc/ssl/rc-geradores/fullchain.pem && -s /etc/ssl/rc-geradores/privkey.pem ]]; then
+    openssl x509 -in /etc/ssl/rc-geradores/fullchain.pem -noout -subject -issuer -dates 2>/dev/null || true
+    if openssl x509 -in /etc/ssl/rc-geradores/fullchain.pem -noout -checkend 86400 >/dev/null 2>&1; then
+      echo "TLS: certificado válido por mais de 24h"
+    else
+      echo "TLS: certificado inválido ou próximo da expiração"
+    fi
+  else
+    echo "TLS: certificado/chave ausentes"
+  fi
 fi
 
 echo
