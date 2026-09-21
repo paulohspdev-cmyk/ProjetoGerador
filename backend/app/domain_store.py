@@ -236,6 +236,17 @@ def sync_legacy_generators() -> int:
                     now,
                 ),
             )
+            connection_record = _validate_connection_identity(
+                conn,
+                {
+                    "transport": generator.get("transport") or "reverse_tcp",
+                    "host": generator.get("host") or "",
+                    "listen_port": int(generator.get("listen_port") or 0),
+                    "modbus_unit": int(generator.get("modbus_unit") or 1),
+                    "rapid_device_num": generator.get("rapid_device_num"),
+                },
+                exclude_id=connection_id,
+            )
             conn.execute(
                 """
                 INSERT INTO controller_connections(id,controller_id,name,transport,host,listen_port,modbus_unit,rapid_device_num,enabled,config_json,created_at,updated_at)
@@ -253,11 +264,11 @@ def sync_legacy_generators() -> int:
                 (
                     connection_id,
                     controller_id,
-                    generator.get("transport") or "reverse_tcp",
-                    generator.get("host") or "",
-                    int(generator.get("listen_port") or 0),
-                    int(generator.get("modbus_unit") or 1),
-                    generator.get("rapid_device_num"),
+                    connection_record["transport"],
+                    connection_record["host"],
+                    connection_record["listen_port"],
+                    connection_record["modbus_unit"],
+                    connection_record["rapid_device_num"],
                     1 if generator.get("enabled", True) else 0,
                     now,
                     now,
