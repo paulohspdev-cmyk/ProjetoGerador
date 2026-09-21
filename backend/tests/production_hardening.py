@@ -237,6 +237,41 @@ with db.connect() as conn:
     assert conn.execute("SELECT 1 FROM audit_log WHERE entity_id='old'").fetchone() is None
     assert conn.execute("SELECT 1 FROM audit_log WHERE entity_id='new'").fetchone() is not None
 
+# Retenção precisa manter filesystem e catálogo SQLite coerentes. Um backup
+# expirado não pode continuar aparecendo na UI para depois falhar no download.
+previous_backup_dir = backup_manager.BACKUP_DIR
+retention_dir = data_dir / "retention-regression"
+retention_dir.mkdir(parents=True, exist_ok=True)
+old_retained = retention_dir / "rc-geradores-full-20000101-000000-old.tar.gz"
+new_retained = retention_dir / "rc-geradores-full-20000102-000000-new.tar.gz"
+old_retained.write_bytes(b"old")
+new_retained.write_bytes(b"new")
+os.utime(old_retained, (now - 20, now - 20))
+os.utime(new_retained, (now - 10, now - 10))
+with db.connect() as conn:
+    conn.execute(
+        "INSERT INTO backup_records(id,created_at,path,size_bytes,type,result,detail) VALUES (?,?,?,?,?,?,?)",
+        ("retention-old", now - 20, str(old_retained), 3, "Completo", "OK", ""),
+    )
+    conn.execute(
+        "INSERT INTO backup_records(id,created_at,path,size_bytes,type,result,detail) VALUES (?,?,?,?,?,?,?)",
+        ("retention-new", now - 10, str(new_retained), 3, "Completo", "OK", ""),
+    )
+backup_manager.BACKUP_DIR = retention_dir
+try:
+    assert backup_manager.apply_retention(1) == 1
+finally:
+    backup_manager.BACKUP_DIR = previous_backup_dir
+assert not old_retained.exists()
+assert new_retained.exists()
+with db.connect() as conn:
+    assert conn.execute(
+        "SELECT 1 FROM backup_records WHERE id='retention-old'"
+    ).fetchone() is None
+    assert conn.execute(
+        "SELECT 1 FROM backup_records WHERE id='retention-new'"
+    ).fetchone() is not None
+
 # O backup local continua sem segredos por padrão. O envelope off-site, por ser
 # autenticado/criptografado, carrega a chave TOTP necessária para DR total.
 backup = create_full_backup("hardening-test", retention=2)
