@@ -232,6 +232,21 @@ if (!statusPill.includes("telemetryStale") || !statusPill.includes('"COMM LOST"'
   failures.push("StatusPill voltou a ignorar telemetria expirada");
 }
 
+const kpiStrip = read("src/components/generators/KpiStrip.tsx");
+const compactCard = read("src/components/generators/CompactCard.tsx");
+if (!kpiStrip.includes("generatorDisplayStatus") || !kpiStrip.includes('displayStatus === "stale"')) {
+  failures.push("KPIs voltaram a contar telemetria stale como online/alerta");
+}
+if (
+  !compactCard.includes("generatorDisplayStatus") ||
+  !compactCard.includes('displayStatus === "stale"')
+) {
+  failures.push("card compacto voltou a estilizar telemetria stale pelo status bruto");
+}
+if (!powerFlowCard.includes('displayStatus === "alerta" && "has-alert"')) {
+  failures.push("card principal voltou a aplicar alerta bruto sobre COMM LOST");
+}
+
 const generatorBoard = read("src/components/generators/GeneratorsBoard.tsx");
 for (const marker of [
   "error",
