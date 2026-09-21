@@ -41,7 +41,8 @@ function NotFoundComponent() {
   );
 }
 
-const DEPLOY_CHUNK_ERROR = /(?:ChunkLoadError|dynamically imported module|module script failed|failed to fetch.*module)/i;
+const DEPLOY_CHUNK_ERROR =
+  /(?:ChunkLoadError|dynamically imported module|module script failed|failed to fetch.*module)/i;
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
