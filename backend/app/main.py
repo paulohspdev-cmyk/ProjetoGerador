@@ -59,7 +59,7 @@ from .ops_schemas import (
 )
 from .rapid import available_metrics, dashboard, load_bindings, overlay_generators, trend_for_generator
 from .production_guard import validate_production_runtime
-from .reporting import generate_report
+from .reporting import generate_report, safe_report_artifact_path
 from .schemas import CommandRequest, GeneratorCreate, GeneratorUpdate, LoginRequest, UserCreate, UserUpdate
 from .security_service import begin_login, totp_required, verify_user_totp
 
@@ -515,12 +515,20 @@ def reports_download(report_id: str, user: dict = Depends(require_view)):
     if not report:
         raise HTTPException(status_code=404, detail="Relatório não encontrado")
     artifact = platform_store.get_report_artifact(report_id)
-    if not artifact or not Path(artifact["path"]).exists():
+    if not artifact:
         raise HTTPException(
             status_code=410,
             detail="Artefato do relatório não está mais disponível. Gere uma nova fotografia operacional.",
         )
-    path = Path(artifact["path"])
+    try:
+        path = safe_report_artifact_path(artifact["path"])
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    if not path.exists() or not path.is_file():
+        raise HTTPException(
+            status_code=410,
+            detail="Artefato do relatório não está mais disponível. Gere uma nova fotografia operacional.",
+        )
     media_type = artifact["media_type"]
     return FileResponse(path, media_type=media_type, filename=path.name)
 
