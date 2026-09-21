@@ -1,11 +1,18 @@
 import { Activity, AlertTriangle, Gauge, PowerOff, Server, XCircle } from "lucide-react";
 
+import { generatorDisplayStatus } from "@/data/generators";
 import { useGenerators } from "./GeneratorsProvider";
 
 export function KpiStrip() {
   const { generators } = useGenerators();
   const total = generators.length;
-  const count = (s: string) => generators.filter((g) => g.status === s).length;
+  const count = (s: "online" | "alerta" | "offline" | "nao_configurado") =>
+    generators.filter((generator) => {
+      const displayStatus = generatorDisplayStatus(generator);
+      return s === "offline"
+        ? displayStatus === "offline" || displayStatus === "stale"
+        : displayStatus === s;
+    }).length;
   const pct = (n: number) =>
     `${total ? ((n / total) * 100).toFixed(1).replace(".", ",") : "0,0"}% do total`;
   const latencyRows = generators.filter((g) => g.latency != null && Number.isFinite(g.latency));
