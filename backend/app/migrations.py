@@ -48,6 +48,7 @@ def _operator_role_v2(conn) -> None:
     try:
         conn.executescript(
             """
+            BEGIN IMMEDIATE;
             CREATE TABLE users_v2 (
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
@@ -66,8 +67,13 @@ def _operator_role_v2(conn) -> None:
             FROM users;
             DROP TABLE users;
             ALTER TABLE users_v2 RENAME TO users;
+            COMMIT;
             """
         )
+    except Exception:
+        if conn.in_transaction:
+            conn.rollback()
+        raise
     finally:
         conn.execute("PRAGMA foreign_keys=ON")
 
