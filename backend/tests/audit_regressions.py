@@ -1,4 +1,5 @@
 import hashlib
+import json
 import os
 import sqlite3
 import tempfile
@@ -599,6 +600,49 @@ with db.connect() as conn:
         "SELECT COUNT(*) FROM notification_queue WHERE event_type='industrial.alarm.escalation'"
     ).fetchone()[0]
 assert count == 2, count
+
+# A mesma ocorrência de alarme não pode ser escalada duas vezes por workers concorrentes.
+race_policy = industrial_store.create_escalation_policy(
+    {
+        "name": "comm-race",
+        "severity": "fault",
+        "after_seconds": 0,
+        "channel": "panel",
+        "repeat_seconds": 0,
+        "max_repeats": 1,
+    },
+    "test",
+)
+race_offline = [
+    {"id": "g-race", "tag": "GEN-RACE", "status": "offline", "lastError": "race-loss"}
+]
+race_results = []
+race_lock = threading.Lock()
+
+
+def escalate_race() -> None:
+    result = industrial_store.process_escalations(race_offline)
+    with race_lock:
+        race_results.append(result)
+
+
+race_threads = [threading.Thread(target=escalate_race) for _ in range(2)]
+for thread in race_threads:
+    thread.start()
+for thread in race_threads:
+    thread.join()
+with db.connect() as conn:
+    race_rows = conn.execute(
+        "SELECT payload_json FROM notification_queue "
+        "WHERE event_type='industrial.alarm.escalation'"
+    ).fetchall()
+race_matches = [
+    row
+    for row in race_rows
+    if json.loads(row["payload_json"] or "{}").get("policyId") == race_policy["id"]
+    and json.loads(row["payload_json"] or "{}").get("generatorId") == "g-race"
+]
+assert len(race_matches) == 1, (race_results, race_matches)
 
 # F07: an abandoned notification lease is reclaimed, and a late worker is fenced out.
 queue_id = platform_store.enqueue_notification("test.lease", "panel", body="lease")
