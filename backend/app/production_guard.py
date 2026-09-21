@@ -37,3 +37,8 @@ def validate_production_runtime() -> None:
 
     if os.environ.get("RC_API_DOCS", "0").strip() == "1":
         raise RuntimeError("Production runtime refused because RC_API_DOCS=1")
+
+    if os.environ.get("RC_AUTH_COOKIE_SECURE", "0").strip() != "1":
+        raise RuntimeError(
+            "Production runtime refused because RC_AUTH_COOKIE_SECURE must be 1"
+        )
