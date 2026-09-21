@@ -55,7 +55,20 @@ def init_all():
 
 init_all()
 
-# F00: the persistent users schema must accept the RBAC operator role.
+# F00: external TLS proxy mode must not report local nginx as a failed product service.
+previous_web_tls_mode = os.environ.get("RC_WEB_TLS_MODE")
+try:
+    os.environ["RC_WEB_TLS_MODE"] = "external_proxy"
+    assert "nginx.service" not in diagnostics._service_names()
+    os.environ["RC_WEB_TLS_MODE"] = "managed"
+    assert "nginx.service" in diagnostics._service_names()
+finally:
+    if previous_web_tls_mode is None:
+        os.environ.pop("RC_WEB_TLS_MODE", None)
+    else:
+        os.environ["RC_WEB_TLS_MODE"] = previous_web_tls_mode
+
+# F01: the persistent users schema must accept the RBAC operator role.
 with db.connect() as conn:
     users_sql = str(
         conn.execute(
