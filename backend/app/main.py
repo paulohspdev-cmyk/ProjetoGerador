@@ -110,6 +110,19 @@ def actor(user: dict) -> str:
     return user.get("email") or user.get("name") or user.get("id") or "unknown"
 
 
+def _generator_integrity_detail(exc: sqlite3.IntegrityError) -> str:
+    detail = str(exc).lower()
+    if "idx_generators_reverse_identity_unique" in detail or (
+        "generators.listen_port" in detail and "generators.modbus_unit" in detail
+    ):
+        return "Porta TCP reversa e Modbus Unit já estão em uso por outro gerador"
+    if "idx_generators_rapid_device_unique" in detail or "generators.rapid_device_num" in detail:
+        return "Rapid Device já está associado a outro gerador"
+    if "generators.tag" in detail:
+        return "Tag de gerador já cadastrada"
+    return "Conflito de integridade no cadastro do gerador"
+
+
 def _agenda_public(item: dict) -> dict:
     return {**item, "when": item.get("when_text") or "", "generatorId": item.get("generator_id")}
 
@@ -295,7 +308,9 @@ def generator_create(payload: GeneratorCreate, user: dict = Depends(require_crea
     try:
         created = db.create_generator(payload.to_db(), actor=actor(user))
     except sqlite3.IntegrityError as exc:
-        raise HTTPException(status_code=409, detail="Tag de gerador já cadastrada") from exc
+        raise HTTPException(status_code=409, detail=_generator_integrity_detail(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     domain_store.sync_legacy_generators()
     return overlay_generators([created])[0]
 
@@ -305,7 +320,9 @@ def generator_update(generator_id: str, payload: GeneratorUpdate, user: dict = D
     try:
         updated = db.update_generator(generator_id, payload.to_db(), actor=actor(user))
     except sqlite3.IntegrityError as exc:
-        raise HTTPException(status_code=409, detail="Conflito no cadastro do gerador") from exc
+        raise HTTPException(status_code=409, detail=_generator_integrity_detail(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     if not updated:
         raise HTTPException(status_code=404, detail="Gerador não encontrado")
     domain_store.sync_legacy_generators()
