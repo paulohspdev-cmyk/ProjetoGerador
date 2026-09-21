@@ -38,10 +38,10 @@ from app import (  # noqa: E402
     traffic_store,
 )
 from app.auth import hash_password  # noqa: E402
-from app.extra_routes import _safe_report_artifact_path, _token_allows_generator  # noqa: E402
+from app.extra_routes import _token_allows_generator  # noqa: E402
 from app.rapid import _downsample_points, dashboard  # noqa: E402
 from app.migrations import _operator_role_v2  # noqa: E402
-from app.reporting import generate_report  # noqa: E402
+from app.reporting import generate_report, safe_report_artifact_path  # noqa: E402
 from app.secret_box import protect_secret  # noqa: E402
 from app.security_service import disable_totp, setup_totp, totp_code  # noqa: E402
 
@@ -369,11 +369,11 @@ reports_dir = data / "reports"
 reports_dir.mkdir(parents=True, exist_ok=True)
 inside_report = reports_dir / "safe.csv"
 inside_report.write_text("ok", encoding="utf-8")
-assert _safe_report_artifact_path(inside_report) == inside_report.resolve()
+assert safe_report_artifact_path(inside_report) == inside_report.resolve()
 outside_report = root / "outside.csv"
 outside_report.write_text("secret", encoding="utf-8")
 try:
-    _safe_report_artifact_path(outside_report)
+    safe_report_artifact_path(outside_report)
 except ValueError:
     pass
 else:
