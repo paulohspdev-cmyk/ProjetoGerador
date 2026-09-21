@@ -370,11 +370,11 @@ def external_token(request: Request, authorization: str | None = Header(default=
     token = platform_store.authenticate_api_token(raw)
     if not token:
         raise HTTPException(status_code=401, detail="Token inválido ou expirado")
-    if not platform_store.consume_api_rate(token["id"], token["rate_limit"]):
-        raise HTTPException(status_code=429, detail="Rate limit excedido")
     remote_ip = request_remote_ip(request)
     if not _ip_allowed(remote_ip, token.get("allowed_cidrs") or []):
         raise HTTPException(status_code=403, detail="Origem não autorizada para este token")
+    if not platform_store.consume_api_rate(token["id"], token["rate_limit"]):
+        raise HTTPException(status_code=429, detail="Rate limit excedido")
     token["remote_ip"] = remote_ip
     return token
 
