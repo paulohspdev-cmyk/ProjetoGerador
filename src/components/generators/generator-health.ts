@@ -119,7 +119,11 @@ export function readGeneratorTelemetry(gen: Generator) {
   const fuelPercent =
     fuelUnit === "%"
       ? progressPercent(fuel, 100)
-      : fuelCapacity != null && fuelCapacity > 0
+      : fuelCapacity != null &&
+          fuelCapacity > 0 &&
+          fuel != null &&
+          fuel >= 0 &&
+          fuel <= fuelCapacity
         ? progressPercent(fuel, fuelCapacity)
         : null;
 
