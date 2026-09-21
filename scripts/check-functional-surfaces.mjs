@@ -457,6 +457,11 @@ if (!operationalMap.includes("load: measuredLoad.length")) {
   failures.push("mapa perdeu distinção entre potência medida e N/D");
 }
 
+const generatorHealth = read("src/components/generators/generator-health.ts");
+if (!generatorHealth.includes("fuel <= fuelCapacity")) {
+  failures.push("barra de combustível voltou a aceitar percentual derivado acima da capacidade configurada");
+}
+
 const verticalCard = read("src/components/generators/PowerFlowCard.tsx");
 if (!verticalCard.includes('label: "Run Hours"')) {
   failures.push("card vertical perdeu o horímetro operacional");
