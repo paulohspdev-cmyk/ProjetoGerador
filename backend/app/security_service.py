@@ -137,16 +137,10 @@ def request_password_reset(email: str, remote_ip: str = ""):
 
 
 def confirm_password_reset(token: str, new_password: str):
-    user_id = platform_store.consume_password_reset(token)
-    if not user_id:
+    password_hash = hash_password(new_password)
+    result = platform_store.complete_password_reset(token, password_hash)
+    if not result:
         raise ValueError("Token inválido ou expirado")
-    user = db.get_user(user_id)
-    if not user:
-        raise ValueError("Usuário não encontrado")
-    db.update_user(user_id, {"password_hash": hash_password(new_password)}, actor="password-reset")
-    with db.connect() as conn:
-        conn.execute("DELETE FROM sessions WHERE user_id=?", (user_id,))
-    db.add_audit(user.get("email") or user_id, "password_reset", "user", user_id, "sessões revogadas")
 
 
 def list_sessions(user_id: str):

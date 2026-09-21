@@ -762,14 +762,68 @@ def create_password_reset(user_id: str, ttl: int = 1800):
 
 
 def consume_password_reset(token: str):
+    """Compatibilidade: consome um token de forma atômica, sem alterar a senha."""
     digest = hashlib.sha256(token.encode()).hexdigest()
     now = _now()
     with db.connect() as conn:
-        row = conn.execute("SELECT * FROM password_reset_tokens WHERE token_hash=? AND used_at IS NULL AND expires_at>?", (digest, now)).fetchone()
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT user_id FROM password_reset_tokens "
+            "WHERE token_hash=? AND used_at IS NULL AND expires_at>?",
+            (digest, now),
+        ).fetchone()
         if not row:
             return None
-        conn.execute("UPDATE password_reset_tokens SET used_at=? WHERE token_hash=?", (now, digest))
+        updated = conn.execute(
+            "UPDATE password_reset_tokens SET used_at=? "
+            "WHERE token_hash=? AND used_at IS NULL AND expires_at>?",
+            (now, digest, now),
+        )
+        if updated.rowcount != 1:
+            return None
         return row["user_id"]
+
+
+def complete_password_reset(token: str, password_hash: str):
+    """Troca senha, revoga sessões e consome o token em uma única transação."""
+    digest = hashlib.sha256(token.encode()).hexdigest()
+    now = _now()
+    with db.connect() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            """SELECT t.user_id,u.email
+               FROM password_reset_tokens t
+               JOIN users u ON u.id=t.user_id
+               WHERE t.token_hash=? AND t.used_at IS NULL AND t.expires_at>?""",
+            (digest, now),
+        ).fetchone()
+        if not row:
+            return None
+
+        updated = conn.execute(
+            """UPDATE password_reset_tokens
+               SET used_at=?
+               WHERE token_hash=? AND used_at IS NULL AND expires_at>?""",
+            (now, digest, now),
+        )
+        if updated.rowcount != 1:
+            return None
+
+        user_id = str(row["user_id"])
+        changed = conn.execute(
+            "UPDATE users SET password_hash=?,updated_at=? WHERE id=?",
+            (password_hash, now, user_id),
+        )
+        if changed.rowcount != 1:
+            raise RuntimeError("Usuário do token de reset não existe")
+
+        conn.execute("DELETE FROM sessions WHERE user_id=?", (user_id,))
+        conn.execute(
+            "INSERT INTO audit_log(created_at,actor,action,entity_type,entity_id,detail) "
+            "VALUES (?,?,?,?,?,?)",
+            (now, str(row["email"] or user_id), "password_reset", "user", user_id, "sessões revogadas"),
+        )
+        return {"id": user_id, "email": str(row["email"] or "")}
 
 
 def set_totp(user_id: str, secret_base32: str, enabled: bool):

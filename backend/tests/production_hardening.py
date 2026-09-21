@@ -5,6 +5,7 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import threading
 import time
 from pathlib import Path
 
@@ -105,6 +106,57 @@ with db.connect() as conn:
     recorded = conn.execute("SELECT MAX(version) FROM schema_migrations").fetchone()[0]
 assert int(version) == LATEST_SCHEMA_VERSION
 assert int(recorded) == LATEST_SCHEMA_VERSION
+
+# Reset de senha one-time deve ser atômico mesmo sob duas confirmações concorrentes.
+reset_user = db.create_user(
+    {
+        "name": "Reset Concorrente",
+        "email": "reset-race@example.test",
+        "password_hash": "old-hash",
+        "role": "visualizacao",
+        "active": True,
+    },
+    actor="hardening-test",
+)
+reset_token = platform_store.create_password_reset(reset_user["id"], ttl=300)
+with db.connect() as conn:
+    conn.execute(
+        "INSERT INTO sessions(token_hash,user_id,expires_at,created_at,last_seen,remote_ip,user_agent) "
+        "VALUES (?,?,?,?,?,?,?)",
+        ("reset-session", reset_user["id"], int(time.time()) + 300, int(time.time()), int(time.time()), "", "test"),
+    )
+
+reset_results = []
+reset_lock = threading.Lock()
+
+
+def run_reset(candidate_hash: str) -> None:
+    result = platform_store.complete_password_reset(reset_token, candidate_hash)
+    with reset_lock:
+        reset_results.append((candidate_hash, result))
+
+
+threads = [
+    threading.Thread(target=run_reset, args=("new-hash-a",)),
+    threading.Thread(target=run_reset, args=("new-hash-b",)),
+]
+for thread in threads:
+    thread.start()
+for thread in threads:
+    thread.join()
+
+winners = [(candidate, result) for candidate, result in reset_results if result]
+assert len(winners) == 1, reset_results
+with db.connect() as conn:
+    stored = conn.execute(
+        "SELECT password_hash FROM users WHERE id=?", (reset_user["id"],)
+    ).fetchone()[0]
+    active_sessions = conn.execute(
+        "SELECT COUNT(*) FROM sessions WHERE user_id=?", (reset_user["id"],)
+    ).fetchone()[0]
+assert stored == winners[0][0]
+assert active_sessions == 0
+assert platform_store.complete_password_reset(reset_token, "third-hash") is None
 
 # O segredo TOTP não pode ficar em texto claro no armazenamento.
 plain_totp = "JBSWY3DPEHPK3PXP"
