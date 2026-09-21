@@ -253,6 +253,8 @@ def users_update(user_id: str, payload: UserUpdate, user: dict = Depends(require
         db_patch["password_hash"] = hash_password(patch["password"])
     try:
         updated = db.update_user(user_id, db_patch, actor=actor(user))
+    except db.LastAdminError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     return public_user(updated)
@@ -267,7 +269,10 @@ def users_delete(user_id: str, user: dict = Depends(require_manage_users)):
         raise HTTPException(status_code=409, detail="Você não pode excluir o próprio usuário")
     if target["role"] == "administrador" and target["active"] and db.count_active_admins() <= 1:
         raise HTTPException(status_code=409, detail="Não é possível excluir o último administrador")
-    db.delete_user(user_id, actor=actor(user))
+    try:
+        db.delete_user(user_id, actor=actor(user))
+    except db.LastAdminError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
