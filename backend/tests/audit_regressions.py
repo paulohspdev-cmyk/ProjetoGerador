@@ -379,7 +379,40 @@ except ValueError:
 else:
     raise AssertionError("artefato de relatório fora de DATA_DIR/reports foi aceito")
 
-# F09: authentication throttles must not lose concurrent increments.
+# F09: operational records must reject dangling generator references before SQLite.
+for create_invalid_reference in (
+    lambda: ops_store.create_work_order(
+        {
+            "generator_id": "missing-generator",
+            "gen": "",
+            "site": "",
+            "type": "Preventiva",
+            "due": 0,
+            "tech": "",
+            "status": "Planejada",
+            "description": "",
+        },
+        "test",
+    ),
+    lambda: ops_store.create_agenda(
+        {
+            "title": "Inspeção",
+            "when": "amanhã",
+            "site": "",
+            "generator_id": "missing-generator",
+            "kind": "manual",
+        },
+        "test",
+    ),
+):
+    try:
+        create_invalid_reference()
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("referência a gerador inexistente foi aceita")
+
+# F10: authentication throttles must not lose concurrent increments.
 race_key = platform_store.login_key("race@example.invalid", "192.0.2.44")
 login_threads = [
     threading.Thread(
