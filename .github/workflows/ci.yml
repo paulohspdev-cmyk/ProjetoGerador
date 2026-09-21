@@ -175,6 +175,7 @@ jobs:
           grep -q -- '--ig200-device' /tmp/install-help.txt
           grep -q -- '--admin-password-file' /tmp/install-help.txt
           grep -q -- '--web-tls-mode' /tmp/install-help.txt
+          grep -q 'RC_WEB_TLS_MODE:-external_proxy' ops/install.sh
           grep -q 'dotnet --list-sdks' ops/install.sh
           grep -q 'dotnet --list-runtimes' ops/install.sh
           grep -q 'provision_generator.py' ops/install.sh
