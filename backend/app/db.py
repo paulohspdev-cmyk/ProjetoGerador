@@ -84,6 +84,7 @@ def init_db():
                 created_at INTEGER NOT NULL,
                 FOREIGN KEY(generator_id) REFERENCES generators(id) ON DELETE SET NULL
             );
+            CREATE INDEX IF NOT EXISTS idx_events_created_at ON events(created_at);
 
             CREATE TABLE IF NOT EXISTS audit_log (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -94,6 +95,7 @@ def init_db():
                 entity_id TEXT NOT NULL,
                 detail TEXT NOT NULL DEFAULT ''
             );
+            CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at);
 
             CREATE TABLE IF NOT EXISTS generator_telemetry_snapshots (
                 generator_id TEXT PRIMARY KEY,
