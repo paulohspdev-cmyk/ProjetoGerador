@@ -37,6 +37,7 @@ from app import (  # noqa: E402
     traffic_store,
 )
 from app.auth import hash_password  # noqa: E402
+from app.extra_routes import _safe_report_artifact_path, _token_allows_generator  # noqa: E402
 from app.rapid import _downsample_points, dashboard  # noqa: E402
 from app.migrations import _operator_role_v2  # noqa: E402
 from app.reporting import generate_report  # noqa: E402
@@ -309,7 +310,29 @@ finally:
     automation_engine.overlay_generators = original_overlay
     automation_engine._execute = original_execute
 
-# F07: reset flow is throttled independently from login.
+# F07: external API read allowlist is least-privilege when configured.
+api_generator = {"id": "gen-api-1", "tag": "GEN-API-1"}
+assert _token_allows_generator({"allowed_generators": []}, api_generator)
+assert _token_allows_generator({"allowed_generators": ["gen-api-1"]}, api_generator)
+assert _token_allows_generator({"allowed_generators": ["GEN-API-1"]}, api_generator)
+assert not _token_allows_generator({"allowed_generators": ["GEN-OTHER"]}, api_generator)
+
+# F08: report artifacts may never escape DATA_DIR/reports.
+reports_dir = data / "reports"
+reports_dir.mkdir(parents=True, exist_ok=True)
+inside_report = reports_dir / "safe.csv"
+inside_report.write_text("ok", encoding="utf-8")
+assert _safe_report_artifact_path(inside_report) == inside_report.resolve()
+outside_report = root / "outside.csv"
+outside_report.write_text("secret", encoding="utf-8")
+try:
+    _safe_report_artifact_path(outside_report)
+except ValueError:
+    pass
+else:
+    raise AssertionError("artefato de relatório fora de DATA_DIR/reports foi aceito")
+
+# F09: reset flow is throttled independently from login.
 assert platform_store.password_reset_allowed("target@example.invalid", "192.0.2.10") is True
 assert platform_store.password_reset_allowed("target@example.invalid", "192.0.2.10") is False
 
