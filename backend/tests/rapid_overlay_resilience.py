@@ -117,6 +117,25 @@ try:
     assert rows[0]["definedMetrics"] == []
     assert rows[0]["telemetrySource"] == "last_known"
 
+    # Ausência de `val` nunca pode virar zero físico na normalização do reader.
+    parsed = rapid._parse_reader_channels(
+        {"channels": [{"cnl": 1001, "defined": True, "stat": 1}]}
+    )
+    assert parsed[1001]["defined"] is False
+    assert parsed[1001]["val"] is None
+
+    # Um pack sem métrica de health explícita permanece parcial, ainda que
+    # algum canal periférico esteja definido.
+    assert rapid._has_controller_health({"fuel_level": 50}, ["fuel_level"]) is False
+
+    # Cold start sem snapshot não pode parecer telemetria atual nem last-known.
+    snapshots.clear()
+    rapid.read_channels = lambda _nums: ({}, "falha de comunicação sintética")
+    rows = rapid.overlay_generators([generator])
+    assert rows[0]["telemetryStale"] is True
+    assert rows[0]["telemetrySource"] == "none"
+    assert rows[0]["definedMetrics"] == []
+
     # Dashboard jamais pode repromover availableMetrics/última leitura quando
     # definedMetrics está explicitamente vazio ou a telemetria está expirada.
     stale_dashboard = rapid.dashboard(

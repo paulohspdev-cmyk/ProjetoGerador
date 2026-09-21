@@ -211,6 +211,31 @@ for (const [file, markers] of [
   }
 }
 
+const generatorData = read("src/data/generators.ts");
+const powerFlowCard = read("src/components/generators/PowerFlowCard.tsx");
+const statusPill = read("src/components/generators/StatusPill.tsx");
+for (const marker of [
+  "generatorDisplayStatus",
+  'if (generator.telemetryStale) return "stale"',
+  "isGeneratorOnline",
+]) {
+  if (!generatorData.includes(marker)) {
+    failures.push(`estado efetivo de comunicação perdeu regra central: ${marker}`);
+  }
+}
+for (const marker of [
+  'displayStatus === "stale"',
+  '"COMM LOST"',
+  "currentValues.length > 0",
+]) {
+  if (!powerFlowCard.includes(marker)) {
+    failures.push(`card principal perdeu precedência de stale/N-D: ${marker}`);
+  }
+}
+if (!statusPill.includes("telemetryStale") || !statusPill.includes('"COMM LOST"')) {
+  failures.push("StatusPill voltou a ignorar telemetria expirada");
+}
+
 const generatorBoard = read("src/components/generators/GeneratorsBoard.tsx");
 for (const marker of [
   "error",

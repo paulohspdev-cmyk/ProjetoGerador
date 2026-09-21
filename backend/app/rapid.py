@@ -162,6 +162,20 @@ def _cache_result(nums, channels, error=""):
     _cache["requested"] = set(nums)
 
 
+def _parse_reader_channels(payload):
+    """Normaliza a resposta do reader sem transformar ausência de valor em zero físico."""
+    channels = {}
+    for item in payload.get("channels", []):
+        defined = bool(item.get("defined", False))
+        has_value = "val" in item and item.get("val") is not None
+        channels[int(item["cnl"])] = {
+            "val": item.get("val"),
+            "stat": int(item.get("stat", 0)),
+            "defined": bool(defined and has_value),
+        }
+    return channels
+
+
 def read_channels(channel_nums):
     """Lê canais em lote, com cache positivo e negativo contra stampede .NET."""
     nums = sorted({int(n) for n in channel_nums})
@@ -210,14 +224,7 @@ def read_channels(channel_nums):
 
         try:
             payload = json.loads(proc.stdout)
-            channels = {
-                int(item["cnl"]): {
-                    "val": item.get("val", 0),
-                    "stat": int(item.get("stat", 0)),
-                    "defined": bool(item.get("defined", False)),
-                }
-                for item in payload.get("channels", [])
-            }
+            channels = _parse_reader_channels(payload)
         except Exception as exc:
             error = f"Resposta inválida do motor de telemetria: {exc}"
             _cache_result(nums, {}, error)
@@ -543,7 +550,9 @@ def _has_controller_health(values, configured):
     preferred = [key for key in _CONTROLLER_HEALTH_KEYS if key in set(configured)]
     if preferred:
         return any(key in values for key in preferred)
-    return bool(values)
+    # Sem uma métrica explicitamente classificada como health, qualquer valor
+    # periférico prova apenas telemetria parcial — nunca comunicação saudável.
+    return False
 
 
 def _frontend_generator(
@@ -643,9 +652,9 @@ def _frontend_generator(
         "metricLimits": _metric_limits(generator),
         "capabilities": _effective_capabilities(generator, status, binding_present),
         "telemetrySource": "last_known"
-        if telemetry_stale
+        if telemetry_stale and values
         else "rapid_scada"
-        if binding_present and status in {"online", "fault", "connected", "partial"}
+        if not telemetry_stale and binding_present and status in {"online", "fault", "connected", "partial"}
         else "none",
         "rapidDeviceNum": generator.get("rapid_device_num"),
         "telemetryStale": bool(telemetry_stale),
@@ -810,7 +819,7 @@ def _overlay_generators(generators):
                     binding_present=True,
                     health=health,
                     telemetry_at=stale_at,
-                    telemetry_stale=bool(stale_values),
+                    telemetry_stale=True,
                 )
             )
         elif values:
@@ -872,7 +881,7 @@ def _overlay_generators(generators):
                     binding_present=True,
                     health=health,
                     telemetry_at=stale_at,
-                    telemetry_stale=bool(stale_values),
+                    telemetry_stale=True,
                 )
             )
         else:
@@ -892,7 +901,7 @@ def _overlay_generators(generators):
                     binding_present=True,
                     health=health,
                     telemetry_at=stale_at,
-                    telemetry_stale=bool(stale_values),
+                    telemetry_stale=True,
                 )
             )
 

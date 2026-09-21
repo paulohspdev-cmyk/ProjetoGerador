@@ -524,7 +524,10 @@ async def external_command(
             generator["id"],
             f"ip={token.get('remote_ip')}; {exc}",
         )
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=409,
+            detail="Comando industrial rejeitado ou não concluído",
+        ) from exc
     db.add_audit(
         f"api-token:{token['id']}",
         f"command_{action}",
