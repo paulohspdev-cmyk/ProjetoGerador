@@ -77,6 +77,41 @@ from app.data_maintenance import apply_data_retention  # noqa: E402
 from app.migrations import LATEST_SCHEMA_VERSION, run_migrations  # noqa: E402
 from app.rapid import _is_undefined_raw  # noqa: E402
 from app.secret_box import PREFIX, protect_secret, reveal_secret  # noqa: E402
+from app.production_guard import validate_production_runtime  # noqa: E402
+
+
+# Runtime de produção deve falhar fechado se o cookie de sessão puder viajar sem TLS.
+_previous_environment = os.environ.get("RC_ENVIRONMENT")
+_previous_cookie_secure = os.environ.get("RC_AUTH_COOKIE_SECURE")
+_previous_api_docs = os.environ.get("RC_API_DOCS")
+_previous_dse_lab = os.environ.get("RC_ENABLE_DSE_LAB_CONTROL")
+_previous_ig4_lab = os.environ.get("RC_ENABLE_IG4_LAB_CONTROL")
+try:
+    os.environ["RC_ENVIRONMENT"] = "production"
+    os.environ["RC_API_DOCS"] = "0"
+    os.environ["RC_ENABLE_DSE_LAB_CONTROL"] = "0"
+    os.environ["RC_ENABLE_IG4_LAB_CONTROL"] = "0"
+    os.environ["RC_AUTH_COOKIE_SECURE"] = "0"
+    try:
+        validate_production_runtime()
+    except RuntimeError as exc:
+        assert "RC_AUTH_COOKIE_SECURE" in str(exc)
+    else:
+        raise AssertionError("produção aceitou cookie de sessão sem Secure")
+    os.environ["RC_AUTH_COOKIE_SECURE"] = "1"
+    validate_production_runtime()
+finally:
+    for key, value in (
+        ("RC_ENVIRONMENT", _previous_environment),
+        ("RC_AUTH_COOKIE_SECURE", _previous_cookie_secure),
+        ("RC_API_DOCS", _previous_api_docs),
+        ("RC_ENABLE_DSE_LAB_CONTROL", _previous_dse_lab),
+        ("RC_ENABLE_IG4_LAB_CONTROL", _previous_ig4_lab),
+    ):
+        if value is None:
+            os.environ.pop(key, None)
+        else:
+            os.environ[key] = value
 
 
 # DSE GenComm: sentinelas de instrumentação não podem virar valores físicos.
