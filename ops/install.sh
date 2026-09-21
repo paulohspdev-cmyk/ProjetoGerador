@@ -45,7 +45,7 @@ Instala em VM Ubuntu limpa:
   bridge reverse TCP somente leitura para o Rapid
   API FastAPI + frontend TanStack + worker + provisionador privilegiado
   SQLite do produto + login/RBAC + relatórios/backups/notificações
-  Nginx HTTPS na porta 443, com redirecionamento da porta 80
+  HTTPS local gerenciado por Nginx ou upstream HTTP para proxy externo
 
 Por padrão cadastra e provisiona um ComAp InteliGen 200 com os parâmetros acima.
 Use --skip-initial-generator para instalar a plataforma vazia e cadastrar depois pelo painel.
@@ -53,9 +53,10 @@ Use --skip-initial-generator para instalar a plataforma vazia e cadastrar depois
 A senha inicial é solicitada no terminal e nunca é persistida em texto claro.
 Para automação, --admin-password-file lê a senha de arquivo proprietário chmod 600.
 SMTP e WhatsApp permanecem desabilitados até receberem configuração real.
-HTTPS é obrigatório. Se RC_TLS_CERT_FILE/RC_TLS_KEY_FILE não apontarem para um
-certificado real, o instalador cria um certificado local autoassinado para evitar
-tráfego em texto claro; antes de exposição pública, substitua-o por certificado confiável.
+HTTPS é obrigatório na borda. Em RC_WEB_TLS_MODE=external_proxy, o instalador
+preserva o proxy externo e não instala/configura Nginx local. No modo managed,
+RC_TLS_CERT_FILE/RC_TLS_KEY_FILE podem fornecer certificado real; sem eles, o
+instalador cria certificado local autoassinado para bootstrap.
 EOF
 }
 
@@ -80,6 +81,14 @@ done
 if [[ $EUID -ne 0 ]]; then
   echo "Execute como root: sudo bash $0"
   exit 1
+fi
+
+# Respeita um modo external_proxy já configurado antes de instalar pacotes:
+# instalar nginx pode iniciar/ocupar 80/443 e interferir no proxy externo.
+WEB_TLS_MODE="managed"
+if [[ -f "$ENV_FILE" ]]; then
+  configured_tls_mode="$(sed -n 's/^RC_WEB_TLS_MODE=//p' "$ENV_FILE" | tail -n1 | tr -d '\r' | xargs)"
+  [[ -n "$configured_tls_mode" ]] && WEB_TLS_MODE="$configured_tls_mode"
 fi
 
 validate_range() {
@@ -112,9 +121,14 @@ echo
 
 echo "[1/15] Dependências do sistema..."
 apt-get update
-apt-get install -y \
-  git curl ca-certificates unzip nginx jq openssl sudo iproute2 \
+SYSTEM_PACKAGES=(
+  git curl ca-certificates unzip jq openssl sudo iproute2
   python3 python3-venv python3-pip build-essential
+)
+if [[ "$WEB_TLS_MODE" != "external_proxy" ]]; then
+  SYSTEM_PACKAGES+=(nginx)
+fi
+apt-get install -y "${SYSTEM_PACKAGES[@]}"
 
 NODE_MAJOR=0
 if command -v node >/dev/null 2>&1; then
@@ -266,7 +280,7 @@ set -a
 # shellcheck disable=SC1090
 source "$ENV_FILE"
 set +a
-WEB_TLS_MODE="${RC_WEB_TLS_MODE:-managed}"
+WEB_TLS_MODE="${RC_WEB_TLS_MODE:-$WEB_TLS_MODE}"
 RAPID_LOCAL_OFFSET="${RC_RAPID_LOCAL_OFFSET:-10000}"
 validate_range "RC_RAPID_LOCAL_OFFSET" "$RAPID_LOCAL_OFFSET" 1 65534
 if (( SKIP_INITIAL_GENERATOR == 0 && IG200_PORT + RAPID_LOCAL_OFFSET > 65535 )); then
