@@ -10,7 +10,7 @@ import time
 
 from . import db
 
-LATEST_SCHEMA_VERSION = 1
+LATEST_SCHEMA_VERSION = 2
 
 _REQUIRED_BASELINE_TABLES = {
     "generators",
@@ -32,7 +32,52 @@ def _baseline_v1(conn) -> None:
         raise RuntimeError("Schema base incompleto; tabelas ausentes: " + ", ".join(missing))
 
 
-_MIGRATIONS = {1: _baseline_v1}
+def _operator_role_v2(conn) -> None:
+    """Alinha o CHECK de users.role ao RBAC que já expõe o papel operador."""
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='users'"
+    ).fetchone()
+    schema = str(row[0] or "") if row else ""
+    if "'operador'" in schema:
+        return
+
+    # Não renomeamos a tabela original: as FKs filhas continuam apontando para
+    # "users". Com foreign_keys temporariamente desligado, a troca é atômica no
+    # mesmo arquivo e validada antes de reativar o enforcement.
+    conn.execute("PRAGMA foreign_keys=OFF")
+    try:
+        conn.executescript(
+            """
+            CREATE TABLE users_v2 (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+                password_hash TEXT NOT NULL,
+                role TEXT NOT NULL CHECK(role IN ('administrador','operador','cadastro','visualizacao')),
+                active INTEGER NOT NULL DEFAULT 1,
+                last_access INTEGER,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL
+            );
+            INSERT INTO users_v2(
+                id,name,email,password_hash,role,active,last_access,created_at,updated_at
+            )
+            SELECT id,name,email,password_hash,role,active,last_access,created_at,updated_at
+            FROM users;
+            DROP TABLE users;
+            ALTER TABLE users_v2 RENAME TO users;
+            """
+        )
+    finally:
+        conn.execute("PRAGMA foreign_keys=ON")
+
+    violations = conn.execute("PRAGMA foreign_key_check").fetchall()
+    if violations:
+        preview = "; ".join(str(tuple(item)) for item in violations[:20])
+        raise RuntimeError("Migração v2 deixou FKs inválidas: " + preview)
+
+
+_MIGRATIONS = {1: _baseline_v1, 2: _operator_role_v2}
 
 
 def run_migrations() -> int:
