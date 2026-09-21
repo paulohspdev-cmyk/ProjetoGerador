@@ -55,7 +55,7 @@ preserve_previous_frontend_assets() {
   # Registra somente os assets nativos desta release ANTES de adicionar o fallback.
   # Assim o próximo deploy preserva apenas uma geração anterior e não acumula
   # chunks antigos indefinidamente.
-  find "${next_assets}" -type f -printf '%P\\n' | sort >"${next_manifest}"
+  find "${next_assets}" -type f -printf '%P\n' | sort >"${next_manifest}"
 
   if [[ ! -d "${previous_assets}" ]]; then
     echo "Assets anteriores: nenhum"
