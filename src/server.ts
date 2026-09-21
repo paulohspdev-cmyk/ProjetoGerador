@@ -62,10 +62,7 @@ const RETAINED_ASSET_CONTENT_TYPES: Record<string, string> = {
   ".woff2": "font/woff2",
 };
 
-async function serveRetainedAssetFallback(
-  request: Request,
-  response: Response,
-): Promise<Response> {
+async function serveRetainedAssetFallback(request: Request, response: Response): Promise<Response> {
   if (response.status !== 404 || (request.method !== "GET" && request.method !== "HEAD")) {
     return response;
   }
