@@ -388,6 +388,16 @@ COMMAND_SCOPE = {
 }
 
 
+def _token_allows_generator(token: dict, generator: dict) -> bool:
+    allowed = {str(item).strip().lower() for item in token.get("allowed_generators") or [] if str(item).strip()}
+    if not allowed:
+        return True
+    return (
+        str(generator.get("id") or "").lower() in allowed
+        or str(generator.get("tag") or "").lower() in allowed
+    )
+
+
 @router.get("/api/api-tokens")
 def token_list(user: dict = Depends(require_admin)):
     return platform_store.list_api_tokens()
@@ -469,7 +479,11 @@ def token_revoke(item_id: str, user: dict = Depends(require_admin)):
 @router.get("/api/v1/generators")
 def external_generators(token: dict = Depends(external_token)):
     scope(token, "ops.read")
-    return overlay_generators(db.list_generators())
+    return [
+        generator
+        for generator in overlay_generators(db.list_generators())
+        if _token_allows_generator(token, generator)
+    ]
 
 
 @router.get("/api/v1/generators/{generator_id}")
@@ -479,11 +493,13 @@ def external_generator(generator_id: str, token: dict = Depends(external_token))
         (
             g
             for g in overlay_generators(db.list_generators())
-            if g["id"] == generator_id or g["tag"].lower() == generator_id.lower()
+            if (g["id"] == generator_id or g["tag"].lower() == generator_id.lower())
+            and _token_allows_generator(token, g)
         ),
         None,
     )
     if not item:
+        # Não revelar ao token se o ativo existe fora do seu allowlist.
         raise HTTPException(status_code=404, detail="Gerador não encontrado")
     return item
 
@@ -507,11 +523,9 @@ async def external_command(
     if not generator or not generator.get("enabled"):
         raise HTTPException(status_code=404, detail="Gerador não encontrado ou desabilitado")
 
-    allowed_generators = {str(item).lower() for item in token.get("allowed_generators") or []}
-    if not allowed_generators or not (
-        str(generator.get("id") or "").lower() in allowed_generators
-        or str(generator.get("tag") or "").lower() in allowed_generators
-    ):
+    # Comandos sempre exigem allowlist não vazio; a criação do token já
+    # impõe isso e esta checagem protege tokens legados/corrompidos.
+    if not token.get("allowed_generators") or not _token_allows_generator(token, generator):
         raise HTTPException(status_code=403, detail="Gerador fora do allowlist deste token")
 
     try:
