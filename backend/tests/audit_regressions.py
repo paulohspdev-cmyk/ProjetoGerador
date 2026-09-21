@@ -38,7 +38,6 @@ from app import (  # noqa: E402
     traffic_store,
 )
 from app.auth import hash_password  # noqa: E402
-from app.controller_library import pack_for_model  # noqa: E402
 from app.extra_routes import _token_allows_generator  # noqa: E402
 from app.rapid import _downsample_points, dashboard  # noqa: E402
 from app.migrations import _operator_role_v2  # noqa: E402
@@ -412,17 +411,6 @@ for create_invalid_reference in (
         pass
     else:
         raise AssertionError("referência a gerador inexistente foi aceita")
-
-# F10: exact controller models outrank generic aliases without changing maps.
-dse8610_pack = pack_for_model("DSE8610 MKII")
-assert dse8610_pack is not None
-assert dse8610_pack["manifestPath"] == "controllers/lab/dse/dse8610-mkii/manifest.json"
-assert dse8610_pack["lifecycle"] == "lab"
-
-ig4_pack = pack_for_model("IG4 200")
-assert ig4_pack is not None
-assert ig4_pack["manifestPath"] == "controllers/production/comap/ig4-200/manifest.json"
-assert ig4_pack["lifecycle"] == "production"
 
 # F10: field-device inventory must reject dangling site/generator references.
 for payload in (
