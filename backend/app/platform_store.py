@@ -670,7 +670,38 @@ def upsert_scheduler_job(data: dict, actor: str):
 def due_scheduler_jobs(limit: int = 20):
     now = _now()
     with db.connect() as conn:
-        rows = conn.execute("SELECT * FROM scheduler_jobs WHERE enabled=1 AND next_run<=? ORDER BY next_run LIMIT ?", (now, limit)).fetchall()
+        rows = conn.execute(
+            "SELECT * FROM scheduler_jobs WHERE enabled=1 AND next_run<=? ORDER BY next_run LIMIT ?",
+            (now, limit),
+        ).fetchall()
+    return [_row(r) for r in rows]
+
+
+def claim_scheduler_jobs(
+    allowed_kinds: set[str],
+    limit: int = 20,
+    lease_seconds: int = 1800,
+):
+    kinds = sorted({str(kind).strip() for kind in allowed_kinds if str(kind).strip()})
+    if not kinds:
+        return []
+    now = _now()
+    lease_seconds = max(60, min(int(lease_seconds), 21600))
+    placeholders = ",".join("?" for _ in kinds)
+    with db.connect() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        rows = conn.execute(
+            f"SELECT * FROM scheduler_jobs "
+            f"WHERE enabled=1 AND next_run<=? AND kind IN ({placeholders}) "
+            "ORDER BY next_run LIMIT ?",
+            (now, *kinds, max(1, min(int(limit), 200))),
+        ).fetchall()
+        for row in rows:
+            conn.execute(
+                "UPDATE scheduler_jobs SET next_run=?,last_result='RUNNING',updated_at=? "
+                "WHERE id=? AND enabled=1 AND next_run<=?",
+                (now + lease_seconds, now, row["id"], now),
+            )
     return [_row(r) for r in rows]
 
 
