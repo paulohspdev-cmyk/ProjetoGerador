@@ -262,7 +262,40 @@ with db.connect() as conn:
 assert platform_store.finish_lifecycle_operation(claimed_id, result={"late": True}) is False
 assert platform_store.get_lifecycle_operation(claimed_id)["status"] == "failed"
 
-# F06: automation uses effective stale status and retries a failed edge.
+# F06: scheduled jobs are leased atomically; two workers cannot execute one due job.
+scheduled = platform_store.upsert_scheduler_job(
+    {
+        "id": "job-race",
+        "name": "Race-safe scheduler",
+        "kind": "notification",
+        "interval_seconds": 60,
+        "payload": {},
+        "enabled": True,
+        "next_run": 1,
+    },
+    "test",
+)
+scheduler_claims = []
+scheduler_lock = threading.Lock()
+
+
+def claim_scheduler() -> None:
+    rows = platform_store.claim_scheduler_jobs({"notification"}, limit=1)
+    with scheduler_lock:
+        scheduler_claims.append(rows)
+
+
+scheduler_threads = [threading.Thread(target=claim_scheduler) for _ in range(2)]
+for thread in scheduler_threads:
+    thread.start()
+for thread in scheduler_threads:
+    thread.join()
+claimed_jobs = [row for batch in scheduler_claims for row in batch]
+assert len(claimed_jobs) == 1, scheduler_claims
+assert claimed_jobs[0]["id"] == scheduled["id"]
+platform_store.complete_scheduler_job(scheduled["id"], "OK synthetic")
+
+# F07: automation uses effective stale status and retries a failed edge.
 stale = {"id": "g", "tag": "GEN-AUTO", "status": "alerta", "telemetryStale": True}
 assert automation_engine._condition({"type": "generator_offline", "value": "GEN-AUTO"}, [stale])[0]
 assert not automation_engine._condition({"type": "generator_online", "value": "GEN-AUTO"}, [stale])[0]
