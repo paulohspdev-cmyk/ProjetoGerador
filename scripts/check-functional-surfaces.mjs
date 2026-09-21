@@ -404,6 +404,19 @@ for (const file of walk(join(root, "ops"))) {
   }
 }
 
+const mainApi = read("backend/app/main.py");
+if (
+  !mainApi.includes('result.get("result") != "OK"') ||
+  !mainApi.includes("Backup não foi concluído")
+) {
+  failures.push("endpoint manual de backup voltou a anunciar sucesso quando o backup falha");
+}
+
+const backupsScreen = read("src/components/scada/BackupsV3Screen.tsx");
+if (!backupsScreen.includes('r.result === "OK"')) {
+  failures.push("UI voltou a oferecer download para backup com resultado de falha");
+}
+
 const backup = read("backend/app/backup_manager.py");
 for (const marker of ["PRAGMA quick_check", "_pre_restore_snapshot", "_rollback_database"]) {
   if (!backup.includes(marker)) failures.push(`restore sem proteção obrigatória: ${marker}`);
