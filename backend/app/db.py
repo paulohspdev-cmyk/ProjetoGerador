@@ -8,6 +8,10 @@ from contextlib import contextmanager
 from .config import DATA_DIR, DB_FILE
 
 
+class LastAdminError(ValueError):
+    """Operação recusada porque removeria o último administrador ativo."""
+
+
 @contextmanager
 def connect():
     DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -242,62 +246,97 @@ def create_user(data, actor="system"):
 
 
 def update_user(user_id, patch, actor="system"):
-    current = get_user(user_id)
-    if not current:
-        return None
-
-    fields = []
-    values = []
-    detail = []
-    for key in ("name", "role", "active", "password_hash"):
-        if key not in patch or patch[key] is None:
-            continue
-        value = patch[key]
-        if key == "role":
-            value = str(value)
-            if value not in {"administrador", "operador", "cadastro", "visualizacao"}:
-                raise ValueError("Perfil inválido")
-        if key == "active":
-            value = 1 if bool(value) else 0
-        fields.append(f"{key}=?")
-        values.append(value)
-        detail.append(f"{key}=alterado" if key == "password_hash" else f"{key}={value}")
-
-    if not fields:
-        return current
-    prospective = dict(current)
-    for key, value in patch.items():
-        if key in allowed and value is not None:
-            prospective[key] = _normalized_generator_value(key, value)
-    _validate_generator_network_identity(prospective)
-    fields.append("updated_at=?")
-    values.append(int(time.time()))
-    values.append(user_id)
+    now = int(time.time())
+    allowed_roles = {"administrador", "operador", "cadastro", "visualizacao"}
 
     with connect() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute("SELECT * FROM users WHERE id=?", (user_id,)).fetchone()
+        current = _row(row)
+        if not current:
+            return None
+
+        fields = []
+        values = []
+        detail = []
+        prospective_role = current["role"]
+        prospective_active = bool(current["active"])
+
+        for key in ("name", "role", "active", "password_hash"):
+            if key not in patch or patch[key] is None:
+                continue
+            value = patch[key]
+            if key == "role":
+                value = str(value)
+                if value not in allowed_roles:
+                    raise ValueError("Perfil inválido")
+                prospective_role = value
+            if key == "active":
+                value = 1 if bool(value) else 0
+                prospective_active = bool(value)
+            fields.append(f"{key}=?")
+            values.append(value)
+            detail.append(f"{key}=alterado" if key == "password_hash" else f"{key}={value}")
+
+        if (
+            current["role"] == "administrador"
+            and bool(current["active"])
+            and (prospective_role != "administrador" or not prospective_active)
+        ):
+            remaining = int(
+                conn.execute(
+                    "SELECT COUNT(*) FROM users "
+                    "WHERE role='administrador' AND active=1 AND id<>?",
+                    (user_id,),
+                ).fetchone()[0]
+            )
+            if remaining < 1:
+                raise LastAdminError(
+                    "Não é possível desativar ou rebaixar o último administrador"
+                )
+
+        if not fields:
+            return _user_public(row)
+
+        fields.append("updated_at=?")
+        values.append(now)
+        values.append(user_id)
         conn.execute(f"UPDATE users SET {', '.join(fields)} WHERE id=?", values)
         if patch.get("active") is False or "password_hash" in patch:
             conn.execute("DELETE FROM sessions WHERE user_id=?", (user_id,))
         conn.execute(
-            "INSERT INTO audit_log(created_at,actor,action,entity_type,entity_id,detail) VALUES (?,?,?,?,?,?)",
-            (int(time.time()), actor, "update", "user", user_id, "; ".join(detail)),
+            "INSERT INTO audit_log(created_at,actor,action,entity_type,entity_id,detail) "
+            "VALUES (?,?,?,?,?,?)",
+            (now, actor, "update", "user", user_id, "; ".join(detail)),
         )
+
     return get_user(user_id)
 
-
 def delete_user(user_id, actor="system"):
-    current = get_user(user_id)
-    if not current:
-        return False
     now = int(time.time())
     with connect() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute("SELECT * FROM users WHERE id=?", (user_id,)).fetchone()
+        current = _row(row)
+        if not current:
+            return False
+        if current["role"] == "administrador" and bool(current["active"]):
+            remaining = int(
+                conn.execute(
+                    "SELECT COUNT(*) FROM users "
+                    "WHERE role='administrador' AND active=1 AND id<>?",
+                    (user_id,),
+                ).fetchone()[0]
+            )
+            if remaining < 1:
+                raise LastAdminError("Não é possível excluir o último administrador")
         conn.execute("DELETE FROM users WHERE id=?", (user_id,))
         conn.execute(
-            "INSERT INTO audit_log(created_at,actor,action,entity_type,entity_id,detail) VALUES (?,?,?,?,?,?)",
+            "INSERT INTO audit_log(created_at,actor,action,entity_type,entity_id,detail) "
+            "VALUES (?,?,?,?,?,?)",
             (now, actor, "delete", "user", user_id, current["email"]),
         )
     return True
-
 
 def touch_user_login(user_id, at=None):
     at = int(at or time.time())
