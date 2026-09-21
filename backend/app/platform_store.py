@@ -73,6 +73,7 @@ def init_platform_db() -> None:
                 attempts INTEGER NOT NULL DEFAULT 0,
                 max_attempts INTEGER NOT NULL DEFAULT 5,
                 next_attempt_at INTEGER NOT NULL,
+                claim_token TEXT NOT NULL DEFAULT '',
                 last_error TEXT NOT NULL DEFAULT '',
                 created_at INTEGER NOT NULL,
                 updated_at INTEGER NOT NULL
@@ -213,6 +214,15 @@ def init_platform_db() -> None:
             conn.execute("ALTER TABLE api_tokens ADD COLUMN allowed_generators TEXT NOT NULL DEFAULT ''")
         if "allowed_cidrs" not in api_token_columns:
             conn.execute("ALTER TABLE api_tokens ADD COLUMN allowed_cidrs TEXT NOT NULL DEFAULT ''")
+
+        notification_columns = {
+            str(row["name"])
+            for row in conn.execute("PRAGMA table_info(notification_queue)").fetchall()
+        }
+        if "claim_token" not in notification_columns:
+            conn.execute(
+                "ALTER TABLE notification_queue ADD COLUMN claim_token TEXT NOT NULL DEFAULT ''"
+            )
 
         conn.execute("DELETE FROM password_reset_tokens WHERE expires_at < ? OR used_at IS NOT NULL", (_now() - 86400,))
         conn.execute("DELETE FROM api_rate WHERE minute_bucket < ?", ((_now() // 60) - 120,))
@@ -451,6 +461,7 @@ _SENSITIVE_NOTIFICATION_TYPES = {"auth.password_reset"}
 
 def _public_notification(row) -> dict:
     item = _row(row)
+    item.pop("claim_token", None)
     if item.get("event_type") in _SENSITIVE_NOTIFICATION_TYPES:
         # Security delivery payloads may contain one-time credentials. They are
         # intentionally never exposed through operational notification APIs.
@@ -478,32 +489,69 @@ def list_deliveries(limit: int = 200):
 def claim_due_notifications(limit: int = 20, lease_seconds: int = 120):
     now = _now()
     lease_seconds = max(30, min(int(lease_seconds), 3600))
+    claimed = []
     with db.connect() as conn:
         conn.execute("BEGIN IMMEDIATE")
         # At-least-once delivery: recover claims abandoned by a crashed worker.
-        # Providers that support Idempotency-Key receive the queue id downstream.
+        # Each lease gets a fresh token so a late worker cannot overwrite the
+        # result of a newer retry after its original lease expired.
         conn.execute(
             """UPDATE notification_queue
-               SET status='retry', next_attempt_at=?, last_error='claim expirado; reentrega segura', updated_at=?
+               SET status='retry', claim_token='', next_attempt_at=?,
+                   last_error='claim expirado; reentrega segura', updated_at=?
                WHERE status='sending' AND updated_at<=?""",
             (now, now, now - lease_seconds),
         )
         rows = conn.execute(
-            "SELECT * FROM notification_queue WHERE status IN ('queued','retry') AND next_attempt_at<=? ORDER BY id LIMIT ?",
-            (now, limit),
+            "SELECT id FROM notification_queue "
+            "WHERE status IN ('queued','retry') AND next_attempt_at<=? "
+            "ORDER BY id LIMIT ?",
+            (now, max(1, min(int(limit), 200))),
         ).fetchall()
-        ids = [r["id"] for r in rows]
-        for item_id in ids:
-            conn.execute("UPDATE notification_queue SET status='sending',updated_at=? WHERE id=?", (now, item_id))
-    return [_row(r) for r in rows]
+        for row in rows:
+            claim_token = secrets.token_hex(16)
+            updated = conn.execute(
+                """UPDATE notification_queue
+                   SET status='sending',claim_token=?,updated_at=?
+                   WHERE id=? AND status IN ('queued','retry') AND next_attempt_at<=?""",
+                (claim_token, now, row["id"], now),
+            )
+            if updated.rowcount != 1:
+                continue
+            claimed_row = conn.execute(
+                "SELECT * FROM notification_queue WHERE id=? AND claim_token=?",
+                (row["id"], claim_token),
+            ).fetchone()
+            if claimed_row is not None:
+                claimed.append(claimed_row)
+    return [_row(row) for row in claimed]
 
 
-def finish_notification(item_id: int, channel: str, destination: str, ok: bool, detail: str = ""):
+def finish_notification(
+    item_id: int,
+    channel: str,
+    destination: str,
+    ok: bool,
+    detail: str = "",
+    claim_token: str = "",
+) -> bool:
     now = _now()
+    claim_token = str(claim_token or "")
+    if not claim_token:
+        return False
+
     with db.connect() as conn:
-        row = conn.execute("SELECT attempts,max_attempts FROM notification_queue WHERE id=?", (item_id,)).fetchone()
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            """SELECT attempts,max_attempts FROM notification_queue
+               WHERE id=? AND status='sending' AND claim_token=?""",
+            (item_id, claim_token),
+        ).fetchone()
         if not row:
-            return
+            # A lease can expire while a provider call is still in flight. A
+            # late worker must never overwrite a newer retry/claim.
+            return False
+
         attempts = int(row["attempts"]) + 1
         if ok:
             status = "sent"
@@ -517,14 +565,30 @@ def finish_notification(item_id: int, channel: str, destination: str, ok: bool, 
             status = "retry"
             next_at = now + min(3600, 30 * (2 ** (attempts - 1)))
             error = detail[:1000]
-        conn.execute(
-            "UPDATE notification_queue SET status=?,attempts=?,next_attempt_at=?,last_error=?,updated_at=? WHERE id=?",
-            (status, attempts, next_at, error, now, item_id),
+
+        updated = conn.execute(
+            """UPDATE notification_queue
+               SET status=?,attempts=?,next_attempt_at=?,claim_token='',
+                   last_error=?,updated_at=?
+               WHERE id=? AND status='sending' AND claim_token=?""",
+            (status, attempts, next_at, error, now, item_id, claim_token),
         )
+        if updated.rowcount != 1:
+            return False
         conn.execute(
-            "INSERT INTO notification_deliveries(queue_id,channel,destination,status,detail,created_at) VALUES (?,?,?,?,?,?)",
-            (item_id, channel, destination, "sent" if ok else "failed", detail[:2000], now),
+            """INSERT INTO notification_deliveries(
+                   queue_id,channel,destination,status,detail,created_at
+               ) VALUES (?,?,?,?,?,?)""",
+            (
+                item_id,
+                channel,
+                destination,
+                "sent" if ok else "failed",
+                detail[:2000],
+                now,
+            ),
         )
+    return True
 
 
 # ----------------------- lifecycle operation queue ------------------------
