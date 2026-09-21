@@ -1,3 +1,4 @@
+import hashlib
 import os
 import sqlite3
 import tempfile
@@ -365,7 +366,67 @@ except ValueError:
 else:
     raise AssertionError("artefato de relatório fora de DATA_DIR/reports foi aceito")
 
-# F09: reset flow is throttled independently from login.
+# F09: authentication throttles must not lose concurrent increments.
+race_key = platform_store.login_key("race@example.invalid", "192.0.2.44")
+login_threads = [
+    threading.Thread(
+        target=platform_store.record_login_failure,
+        args=(race_key,),
+        kwargs={"max_failures": 5, "lock_seconds": 900},
+    )
+    for _ in range(5)
+]
+for thread in login_threads:
+    thread.start()
+for thread in login_threads:
+    thread.join()
+allowed, _retry = platform_store.login_allowed(race_key, max_failures=5, lock_seconds=900)
+assert allowed is False
+with db.connect() as conn:
+    login_row = conn.execute(
+        "SELECT failures,locked_until FROM login_attempts WHERE attempt_key=?",
+        (race_key,),
+    ).fetchone()
+assert int(login_row["failures"]) == 5
+assert int(login_row["locked_until"]) > int(time.time())
+
+reset_email = "reset-race@example.invalid"
+reset_ip = "192.0.2.45"
+reset_results = []
+reset_lock = threading.Lock()
+
+
+def reset_race() -> None:
+    result = platform_store.password_reset_allowed(
+        reset_email,
+        reset_ip,
+        max_per_window=10,
+        account_max_per_window=10,
+        cooldown_seconds=0,
+    )
+    with reset_lock:
+        reset_results.append(result)
+
+
+reset_threads = [threading.Thread(target=reset_race) for _ in range(4)]
+for thread in reset_threads:
+    thread.start()
+for thread in reset_threads:
+    thread.join()
+assert reset_results == [True, True, True, True]
+pair_key = "pair:" + hashlib.sha256(f"{reset_email}|{reset_ip}".encode()).hexdigest()
+account_key = "acct:" + hashlib.sha256(reset_email.encode()).hexdigest()
+with db.connect() as conn:
+    pair_count = conn.execute(
+        "SELECT requests FROM password_reset_requests WHERE request_key=?", (pair_key,)
+    ).fetchone()[0]
+    account_count = conn.execute(
+        "SELECT requests FROM password_reset_requests WHERE request_key=?", (account_key,)
+    ).fetchone()[0]
+assert int(pair_count) == 4
+assert int(account_count) == 4
+
+# F10: reset flow is throttled independently from login.
 assert platform_store.password_reset_allowed("target@example.invalid", "192.0.2.10") is True
 assert platform_store.password_reset_allowed("target@example.invalid", "192.0.2.10") is False
 
