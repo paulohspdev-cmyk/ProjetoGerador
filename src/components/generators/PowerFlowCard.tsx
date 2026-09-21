@@ -230,7 +230,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         "vref-card",
         dse ? "is-dse" : "is-comap",
         mainsPresent ? "has-mains" : "no-mains",
-        gen.status === "alerta" && "has-alert",
+        displayStatus === "alerta" && "has-alert",
         gen.telemetryStale && "has-stale-telemetry",
       )}
       data-controller-vendor={vendor}
