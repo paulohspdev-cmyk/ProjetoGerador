@@ -13,6 +13,14 @@ async function login(page: Page) {
   await expect(page).not.toHaveURL(/\/login$/);
 }
 
+test("HTML da aplicação não fica preso em cache entre releases", async ({ page }) => {
+  const response = await page.goto("/login", { waitUntil: "domcontentloaded" });
+  expect(response).not.toBeNull();
+  expect(response!.status()).toBeLessThan(400);
+  expect(response!.headers()["content-type"] ?? "").toContain("text/html");
+  expect(response!.headers()["cache-control"] ?? "").toContain("no-store");
+});
+
 test("todas as superfícies de navegação renderizam sem rota quebrada", async ({ page }) => {
   test.setTimeout(180_000);
   await login(page);
