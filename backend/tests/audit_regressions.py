@@ -74,6 +74,27 @@ finally:
     else:
         os.environ["RC_WEB_TLS_MODE"] = previous_web_tls_mode
 
+# F00c: readiness must not demand a nominal-power field that the inventory cannot store.
+readiness = diagnostics._production_readiness(
+    [
+        {
+            "id": "readiness-ig200",
+            "tag": "READY-IG200",
+            "controller_model": "InteliGen 200",
+            "enabled": True,
+            "site": "Lab",
+            "customer": "Cliente",
+        }
+    ],
+    reverse_tcp_exposed=False,
+    reverse_tcp_allowlist=False,
+)
+nominal_check = next(
+    item for item in readiness["checks"] if item["id"] == "nominal_power"
+)
+assert nominal_check["severity"] == "ok", nominal_check
+assert "telemetria" in nominal_check["detail"].lower(), nominal_check
+
 # F01: the persistent users schema must accept the RBAC operator role.
 with db.connect() as conn:
     users_sql = str(
