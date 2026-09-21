@@ -402,16 +402,16 @@ if (!/set -a\s*[\s\S]*?source "\$\{ENV_FILE\}"\s*[\s\S]*?set \+a/.test(deployRel
   failures.push("deploy deve exportar EnvironmentFile para subprocessos/migrações");
 }
 
-
 const preservePreviousAssets = deployRelease.indexOf(
   'preserve_previous_frontend_assets "${BASE}/.output" "${NEW_OUTPUT}"',
 );
-const swapFrontendOutput = deployRelease.indexOf(
-  'mv "${NEW_OUTPUT}" "${BASE}/.output"',
-);
+const swapFrontendOutput = deployRelease.indexOf('mv "${NEW_OUTPUT}" "${BASE}/.output"');
 const manifestLine = deployRelease
   .split("\n")
-  .find((line) => line.includes("next_assets") && line.includes("-printf") && line.includes("next_manifest"));
+  .find(
+    (line) =>
+      line.includes("next_assets") && line.includes("-printf") && line.includes("next_manifest"),
+  );
 if (!deployRelease.includes(".rc-current-assets")) {
   failures.push("deploy deve manter manifesto dos assets nativos da release");
 }
