@@ -14,11 +14,13 @@ API_PORT="${E2E_API_PORT:-18090}"
 FRONTEND_PORT="${E2E_FRONTEND_PORT:-13000}"
 PROXY_PORT="${E2E_PROXY_PORT:-13100}"
 TMP="$(mktemp -d /tmp/rc-e2e-XXXXXX)"
+RETAINED_ASSET_FIXTURE="${BASE}/.output/public/assets/__retained-release-e2e.js"
 PIDS=()
 
 cleanup() {
   for pid in "${PIDS[@]:-}"; do kill "${pid}" 2>/dev/null || true; done
   for pid in "${PIDS[@]:-}"; do wait "${pid}" 2>/dev/null || true; done
+  rm -f "${RETAINED_ASSET_FIXTURE}" 2>/dev/null || true
   rm -rf "${TMP}"
 }
 trap cleanup EXIT
@@ -61,6 +63,7 @@ printf '{"updatedAt":0,"ports":[]}\n' >"${RC_BRIDGE_STATUS_FILE}"
 
 cd "${BASE}"
 NITRO_PRESET=node-server npm run build >"${TMP}/build.log" 2>&1
+printf 'globalThis.__RC_RETAINED_E2E__ = true;\n' >"${RETAINED_ASSET_FIXTURE}"
 "${PYTHON}" -m uvicorn app.main:app --host 127.0.0.1 --port "${API_PORT}" >"${TMP}/api.log" 2>&1 &
 PIDS+=("$!")
 PORT="${FRONTEND_PORT}" HOST=127.0.0.1 node .output/server/index.mjs >"${TMP}/frontend.log" 2>&1 &
