@@ -317,6 +317,37 @@ except ValueError as exc:
 else:
     raise AssertionError("envelope off-site aceitou chave incorreta")
 
+# Portas reverse TCP precisam caber também no listener local (remote + offset).
+try:
+    bridge.BridgePort(60000)
+except ValueError as exc:
+    assert "porta local inválida" in str(exc)
+else:
+    raise AssertionError("bridge aceitou remote+offset acima de 65535")
+
+try:
+    db.create_generator(
+        {
+            "tag": "GEN-OVERFLOW",
+            "name": "Overflow",
+            "customer": "",
+            "site": "Teste",
+            "controller_type": "COMAP",
+            "controller_model": "InteliGen 200",
+            "transport": "reverse_tcp",
+            "host": "",
+            "listen_port": 60000,
+            "modbus_unit": 1,
+            "rapid_device_num": None,
+            "enabled": True,
+        },
+        actor="hardening-test",
+    )
+except ValueError as exc:
+    assert "RC_RAPID_LOCAL_OFFSET" in str(exc)
+else:
+    raise AssertionError("cadastro aceitou porta reverse incompatível com offset local")
+
 # Allowlist reverse TCP deve aceitar apenas redes explicitamente configuradas.
 assert REMOTE_ALLOWED_NETWORKS
 port = HardenedBridgePort(15050)
