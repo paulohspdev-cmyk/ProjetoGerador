@@ -208,6 +208,12 @@ def init_platform_db() -> None:
             );
             """
         )
+        # API + múltiplos workers inicializam este store no boot. Serializamos
+        # as migrações aditivas para que dois processos não executem o mesmo
+        # ALTER TABLE após observarem simultaneamente uma coluna ausente.
+        conn.commit()
+        conn.execute("BEGIN IMMEDIATE")
+
         api_token_columns = {
             str(row["name"]) for row in conn.execute("PRAGMA table_info(api_tokens)").fetchall()
         }
