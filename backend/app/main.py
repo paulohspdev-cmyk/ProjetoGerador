@@ -610,7 +610,13 @@ def backups_list(user: dict = Depends(require_admin)):
 
 @app.post("/api/backups", status_code=status.HTTP_201_CREATED)
 def backups_create(user: dict = Depends(require_admin)):
-    return _backup_public(create_full_backup(actor(user)))
+    result = create_full_backup(actor(user))
+    if result.get("result") != "OK":
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Backup não foi concluído. Consulte o histórico de backups e a auditoria.",
+        )
+    return _backup_public(result)
 
 
 @app.get("/api/alarms/ack")
