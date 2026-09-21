@@ -208,42 +208,15 @@ def list_controller_catalog() -> list[dict]:
     return result
 
 
-def _pack_match_score(pack: dict, wanted: str) -> tuple[int, int, str]:
-    """Resolve colisões de nomes sem depender da ordem dos diretórios.
-
-    Um nome de modelo exato é mais específico que um alias genérico. Entre
-    dois matches igualmente específicos, um pack production-ready vence LAB;
-    depois LAB read-only vence perfis incompletos. O caminho só desempata para
-    manter resultado determinístico.
-    """
-    exact_model = int(_norm(pack.get("model")) == wanted)
-    readiness = 2 if pack_is_production_ready(pack) else 1 if pack_is_lab_onboarding_ready(pack) else 0
-    return exact_model, readiness, str(pack.get("manifestPath") or "")
-
-
-def _best_pack_for_name(packs: list[dict], wanted: str) -> dict | None:
-    matches = [
-        pack
-        for pack in packs
-        if any(
-            _norm(name) == wanted
-            for name in [pack.get("model"), *(pack.get("aliases") or [])]
-        )
-    ]
-    if not matches:
-        return None
-    return max(matches, key=lambda pack: _pack_match_score(pack, wanted))
-
-
 def _pack_name_index(packs: list[dict]) -> dict[str, dict]:
-    names = {
-        _norm(name)
-        for pack in packs
-        for name in [pack.get("model"), *(pack.get("aliases") or [])]
-        if _norm(name)
-    }
-    return {name: _best_pack_for_name(packs, name) for name in sorted(names)}
-
+    index: dict[str, dict] = {}
+    for pack in packs:
+        names = [pack.get("model"), *(pack.get("aliases") or [])]
+        for name in names:
+            key = _norm(name)
+            if key and key not in index:
+                index[key] = pack
+    return index
 
 def _pack_telemetry_state(pack: dict | None) -> dict:
     if not pack:
@@ -434,7 +407,11 @@ def pack_for_model(model: str) -> dict | None:
     wanted = _norm(model)
     if not wanted:
         return None
-    return _best_pack_for_name(list_controller_packs(), wanted)
+    for pack in list_controller_packs():
+        names = [pack.get("model"), *(pack.get("aliases") or [])]
+        if any(_norm(name) == wanted for name in names):
+            return pack
+    return None
 
 
 def catalog_for_model(model: str) -> dict | None:
