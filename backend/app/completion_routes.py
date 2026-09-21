@@ -199,6 +199,8 @@ def site_delete(item_id: str, user: dict = Depends(require_admin)):
 @router.patch("/api/agenda/{item_id}")
 def agenda_update(item_id: str, payload: AgendaUpdate, user: dict = Depends(require_edit)):
     patch = payload.model_dump(exclude_unset=True)
+    if patch.get("generatorId") and not db.get_generator(str(patch["generatorId"])):
+        raise HTTPException(status_code=422, detail="Gerador vinculado ao compromisso não existe")
     mapping = {"when": "when_text", "generatorId": "generator_id"}
     fields: list[str] = []
     values: list[object] = []
