@@ -54,9 +54,9 @@ def normalize_email(email: str) -> str:
 def request_remote_ip(request: Request) -> str:
     """Retorna o IP auditável sem confiar em headers enviados pelo cliente.
 
-    A API de produção fica em loopback e recebe tráfego do Nginx. Somente quando
-    o peer TCP é o proxy local aceitamos X-Real-IP; em qualquer outra situação
-    usamos diretamente o endereço do socket.
+    Somente quando o peer TCP pertence a RC_TRUSTED_PROXY_CIDRS aceitamos
+    X-Real-IP. Em qualquer outra situação usamos diretamente o endereço do
+    socket, impedindo spoofing do cabeçalho pelo cliente final.
     """
     peer = request.client.host if request.client else ""
     if not _peer_is_trusted_proxy(peer):
