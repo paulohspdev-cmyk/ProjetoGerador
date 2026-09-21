@@ -385,5 +385,48 @@ assert asset_delete(bundle["asset"]["id"], user=user).status_code == 204
 snapshot = domain_store.topology_snapshot()
 assert snapshot["counts"] == {"assets": 1, "controllers": 1, "connections": 1, "links": 0}
 
+# O espelho legacy não pode silenciosamente duplicar uma identidade já usada no domínio v3.
+conflict_asset = domain_store.create_asset(
+    {"tag": "CONFLICT-V3", "name": "Conflict V3", "kind": "genset", "site": "Lab"},
+    actor="test",
+)
+conflict_controller = domain_store.create_controller(
+    {"asset_id": conflict_asset["id"], "model": "InteliGen 200"},
+    actor="test",
+)
+domain_store.create_connection(
+    {
+        "controller_id": conflict_controller["id"],
+        "transport": "reverse_tcp",
+        "listen_port": 15040,
+        "modbus_unit": 7,
+        "rapid_device_num": 450,
+    },
+    actor="test",
+)
+db.create_generator(
+    {
+        "tag": "CONFLICT-LEGACY",
+        "name": "Conflict Legacy",
+        "customer": "",
+        "site": "Lab",
+        "controller_type": "COMAP",
+        "controller_model": "InteliGen 200",
+        "transport": "reverse_tcp",
+        "host": "",
+        "listen_port": 15040,
+        "modbus_unit": 7,
+        "rapid_device_num": 450,
+        "enabled": True,
+    },
+    actor="test",
+)
+try:
+    domain_store.sync_legacy_generators()
+except ValueError as exc:
+    assert "já usada" in str(exc) or "já usado" in str(exc)
+else:
+    raise AssertionError("sync legacy aceitou identidade industrial duplicada no domínio v3")
+
 print("RC Geradores domain v3 smoke: OK")
 tmp.cleanup()
