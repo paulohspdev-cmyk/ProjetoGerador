@@ -55,7 +55,7 @@ def init_db():
                 name TEXT NOT NULL,
                 email TEXT NOT NULL UNIQUE COLLATE NOCASE,
                 password_hash TEXT NOT NULL,
-                role TEXT NOT NULL CHECK(role IN ('administrador','cadastro','visualizacao')),
+                role TEXT NOT NULL CHECK(role IN ('administrador','operador','cadastro','visualizacao')),
                 active INTEGER NOT NULL DEFAULT 1,
                 last_access INTEGER,
                 created_at INTEGER NOT NULL,
@@ -210,7 +210,7 @@ def create_user(data, actor="system"):
     now = int(time.time())
     user_id = data.get("id") or f"usr-{uuid.uuid4().hex[:12]}"
     role = str(data.get("role") or "visualizacao")
-    if role not in {"administrador", "cadastro", "visualizacao"}:
+    if role not in {"administrador", "operador", "cadastro", "visualizacao"}:
         raise ValueError("Perfil inválido")
     record = {
         "id": user_id,
@@ -252,7 +252,7 @@ def update_user(user_id, patch, actor="system"):
         value = patch[key]
         if key == "role":
             value = str(value)
-            if value not in {"administrador", "cadastro", "visualizacao"}:
+            if value not in {"administrador", "operador", "cadastro", "visualizacao"}:
                 raise ValueError("Perfil inválido")
         if key == "active":
             value = 1 if bool(value) else 0
