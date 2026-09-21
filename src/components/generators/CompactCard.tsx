@@ -3,7 +3,7 @@ import { Clock, ExternalLink, Network, Signal } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
 import { CONTROLLER_IMAGE_FALLBACK, controllerImageSrc } from "@/assets";
-import { isGeneratorConnected, type Generator } from "@/data/generators";
+import { generatorDisplayStatus, isGeneratorConnected, type Generator } from "@/data/generators";
 import { cn } from "@/lib/utils";
 import { DeleteGeneratorButton } from "./DeleteGeneratorButton";
 import { StatusPill } from "./StatusPill";
@@ -32,7 +32,8 @@ function Metric({
 }
 
 export function CompactCard({ gen }: { gen: Generator }) {
-  const configured = gen.status !== "nao_configurado";
+  const displayStatus = generatorDisplayStatus(gen);
+  const configured = displayStatus !== "nao_configurado";
   const connected = isGeneratorConnected(gen);
   const battery = metricNumber(gen, "battery_voltage", gen.battery);
   const frequency = metricNumber(gen, "frequency", gen.frequency);
@@ -47,8 +48,8 @@ export function CompactCard({ gen }: { gen: Generator }) {
       className={cn(
         "flex min-w-0 flex-col rounded-lg border bg-card p-2.5",
         connected && "border-online/55 [box-shadow:var(--glow-online)]",
-        gen.status === "alerta" && "border-alert/50",
-        gen.status === "offline" && "border-offline/40",
+        displayStatus === "alerta" && "border-alert/50",
+        (displayStatus === "offline" || displayStatus === "stale") && "border-offline/40",
         !configured && "border-border",
       )}
     >
