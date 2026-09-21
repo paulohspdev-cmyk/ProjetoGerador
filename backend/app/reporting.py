@@ -1,4 +1,5 @@
 import csv
+import html
 import time
 from pathlib import Path
 
@@ -122,7 +123,7 @@ def generate_report(report: dict, generators: list[dict]) -> dict:
         doc = SimpleDocTemplate(str(path), pagesize=landscape(A4), leftMargin=10 * mm, rightMargin=10 * mm, topMargin=10 * mm, bottomMargin=10 * mm)
         styles = getSampleStyleSheet()
         story = [
-            Paragraph(title, styles["Title"]),
+            Paragraph(html.escape(title), styles["Title"]),
             Paragraph("Tipo: fotografia operacional", styles["Normal"]),
             Paragraph(f"Gerado em: {generated_label}", styles["Normal"]),
             Spacer(1, 5 * mm),
