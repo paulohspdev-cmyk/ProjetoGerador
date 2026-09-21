@@ -57,7 +57,9 @@ jobs:
           grep -q 'historyPreserved' rapid/provisioning/deprovision_generator.py
 
           grep -q 'request_remote_ip' backend/app/security_service.py
-          grep -q 'TRUSTED_PROXY_PEERS' backend/app/auth.py
+          grep -q 'TRUSTED_PROXY_CIDRS' backend/app/auth.py
+          grep -q '_peer_is_trusted_proxy' backend/app/auth.py
+          grep -q '^RC_TRUSTED_PROXY_CIDRS=' ops/rc-geradores.env.example
           grep -q 'proxy_set_header X-Real-IP \$remote_addr' ops/nginx/rc-geradores.conf
           grep -q 'proxy_set_header X-Forwarded-For \$remote_addr' ops/nginx/rc-geradores.conf
 
