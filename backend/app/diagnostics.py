@@ -294,7 +294,7 @@ def _production_readiness(
     }
     no_pack: list[str] = []
     no_binding: list[str] = []
-    missing_nominal: list[str] = []
+    missing_nominal_support: list[str] = []
     missing_site: list[str] = []
     missing_customer: list[str] = []
     missing_firmware: list[str] = []
@@ -318,8 +318,22 @@ def _production_readiness(
             no_pack.append(tag)
         elif str(generator.get("id") or "") not in bindings:
             no_binding.append(tag)
-        if generator.get("nominal_power") in (None, "", 0, 0.0):
-            missing_nominal.append(tag)
+
+        # nominal_power_kw é telemetria da controladora nos packs que a
+        # documentam; não existe campo nominal persistido no cadastro legado.
+        # Portanto production readiness não pode criar um blocker impossível
+        # de satisfazer quando a controladora está desligada.
+        validated_metrics = set((pack or {}).get("validatedTelemetry") or [])
+        mapped_registers = ((pack or {}).get("mapping") or {}).get("registers") or {}
+        nominal_supported = (
+            "nominal_power_kw" in validated_metrics
+            or (
+                isinstance(mapped_registers, dict)
+                and "nominal_power_kw" in mapped_registers
+            )
+        )
+        if not nominal_supported:
+            missing_nominal_support.append(tag)
         site = str(generator.get("site") or "").strip().lower()
         if not site or site in {"sem unidade", "n/d"}:
             missing_site.append(tag)
@@ -350,10 +364,14 @@ def _production_readiness(
     )
     add(
         "nominal_power",
-        "Potência nominal cadastrada",
-        not missing_nominal,
-        "blocker",
-        "Completa" if not missing_nominal else "Falta kW nominal: " + ", ".join(missing_nominal),
+        "Potência nominal disponível",
+        not missing_nominal_support,
+        "warning",
+        (
+            "Controller Packs disponibilizam kW nominal quando a telemetria estiver ativa"
+            if not missing_nominal_support
+            else "Sem métrica nominal homologada: " + ", ".join(missing_nominal_support)
+        ),
     )
     add(
         "site_assignment",
