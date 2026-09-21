@@ -262,6 +262,7 @@ set -a
 # shellcheck disable=SC1090
 source "$ENV_FILE"
 set +a
+WEB_TLS_MODE="${RC_WEB_TLS_MODE:-managed}"
 
 echo "[5/15] Backend, migrations e banco do produto..."
 python3 -m venv "$BASE/backend/.venv"
@@ -271,11 +272,13 @@ python3 -m venv "$BASE/backend/.venv"
 export PYTHONPATH="$BASE/backend"
 "$BASE/backend/.venv/bin/python" - <<'PY'
 from app import db, ops_store, platform_store, transport_store
+from app.migrations import run_migrations
 db.init_db()
 ops_store.init_ops_db()
 platform_store.init_platform_db()
 transport_store.init_transport_db()
-print("Banco/migrations RC Geradores: OK")
+version = run_migrations()
+print(f"Banco/migrations RC Geradores: schema v{version} OK")
 PY
 
 echo
@@ -375,64 +378,77 @@ systemctl restart rc-geradores-api.service
 systemctl restart rc-geradores-worker.service
 systemctl restart rc-geradores-frontend.service
 
-echo "[10/15] Configurando HTTPS/Nginx..."
-TLS_DIR="/etc/ssl/rc-geradores"
-TLS_CERT="$TLS_DIR/fullchain.pem"
-TLS_KEY="$TLS_DIR/privkey.pem"
-install -d -m 0755 -o root -g root "$TLS_DIR"
+echo "[10/15] Configurando camada web..."
+if [[ "$WEB_TLS_MODE" == "external_proxy" ]]; then
+  echo "TLS/HTTPS delegado ao proxy externo; instalador não altera Nginx/certificados locais."
+else
+  TLS_DIR="/etc/ssl/rc-geradores"
+  TLS_CERT="$TLS_DIR/fullchain.pem"
+  TLS_KEY="$TLS_DIR/privkey.pem"
+  install -d -m 0755 -o root -g root "$TLS_DIR"
 
-if [[ -n "${RC_TLS_CERT_FILE:-}" || -n "${RC_TLS_KEY_FILE:-}" ]]; then
-  [[ -n "${RC_TLS_CERT_FILE:-}" && -n "${RC_TLS_KEY_FILE:-}" ]] || {
-    echo "ERRO: configure RC_TLS_CERT_FILE e RC_TLS_KEY_FILE juntos." >&2
-    exit 5
-  }
-  [[ -f "$RC_TLS_CERT_FILE" && -f "$RC_TLS_KEY_FILE" ]] || {
-    echo "ERRO: certificado/chave TLS configurados não existem." >&2
-    exit 5
-  }
-  install -m 0644 -o root -g root "$RC_TLS_CERT_FILE" "$TLS_CERT"
-  install -m 0600 -o root -g root "$RC_TLS_KEY_FILE" "$TLS_KEY"
-elif [[ ! -s "$TLS_CERT" || ! -s "$TLS_KEY" ]]; then
-  TLS_SELF_SIGNED=1
-  TLS_NAME="${VM_IP:-rc-geradores.local}"
-  if [[ "$TLS_NAME" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    TLS_SAN="IP:${TLS_NAME},DNS:rc-geradores.local"
-  else
-    TLS_SAN="DNS:${TLS_NAME},DNS:rc-geradores.local"
+  if [[ -n "${RC_TLS_CERT_FILE:-}" || -n "${RC_TLS_KEY_FILE:-}" ]]; then
+    [[ -n "${RC_TLS_CERT_FILE:-}" && -n "${RC_TLS_KEY_FILE:-}" ]] || {
+      echo "ERRO: configure RC_TLS_CERT_FILE e RC_TLS_KEY_FILE juntos." >&2
+      exit 5
+    }
+    [[ -f "$RC_TLS_CERT_FILE" && -f "$RC_TLS_KEY_FILE" ]] || {
+      echo "ERRO: certificado/chave TLS configurados não existem." >&2
+      exit 5
+    }
+    install -m 0644 -o root -g root "$RC_TLS_CERT_FILE" "$TLS_CERT"
+    install -m 0600 -o root -g root "$RC_TLS_KEY_FILE" "$TLS_KEY"
+  elif [[ ! -s "$TLS_CERT" || ! -s "$TLS_KEY" ]]; then
+    TLS_SELF_SIGNED=1
+    TLS_NAME="${VM_IP:-rc-geradores.local}"
+    if [[ "$TLS_NAME" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+      TLS_SAN="IP:${TLS_NAME},DNS:rc-geradores.local"
+    else
+      TLS_SAN="DNS:${TLS_NAME},DNS:rc-geradores.local"
+    fi
+    openssl req -x509 -nodes -newkey rsa:3072 -sha256 -days 825 \
+      -keyout "$TLS_KEY" -out "$TLS_CERT" \
+      -subj "/CN=${TLS_NAME}" -addext "subjectAltName=${TLS_SAN}"
+    chmod 0600 "$TLS_KEY"
+    chmod 0644 "$TLS_CERT"
   fi
-  openssl req -x509 -nodes -newkey rsa:3072 -sha256 -days 825 \
-    -keyout "$TLS_KEY" -out "$TLS_CERT" \
-    -subj "/CN=${TLS_NAME}" -addext "subjectAltName=${TLS_SAN}"
-  chmod 0600 "$TLS_KEY"
-  chmod 0644 "$TLS_CERT"
+
+  openssl x509 -in "$TLS_CERT" -noout -subject -dates
+  openssl pkey -in "$TLS_KEY" -noout -check >/dev/null
+  cp "$BASE/ops/nginx/rc-geradores.conf" /etc/nginx/sites-available/rc-geradores
+  ln -sfn /etc/nginx/sites-available/rc-geradores /etc/nginx/sites-enabled/rc-geradores
+  rm -f /etc/nginx/sites-enabled/default /etc/nginx/sites-enabled/rc-scada
+  nginx -t
+  systemctl enable nginx >/dev/null
+  systemctl restart nginx
 fi
-
-openssl x509 -in "$TLS_CERT" -noout -subject -dates
-openssl pkey -in "$TLS_KEY" -noout -check >/dev/null
-cp "$BASE/ops/nginx/rc-geradores.conf" /etc/nginx/sites-available/rc-geradores
-ln -sfn /etc/nginx/sites-available/rc-geradores /etc/nginx/sites-enabled/rc-geradores
-rm -f /etc/nginx/sites-enabled/default /etc/nginx/sites-enabled/rc-scada
-nginx -t
-systemctl enable nginx >/dev/null
-systemctl restart nginx
-
-echo "[11/15] Validando API, frontend e proxy HTTPS..."
+echo "[11/15] Validando API, frontend e camada web..."
 for _ in $(seq 1 30); do
   curl -fsS http://127.0.0.1:8090/api/health >/tmp/rc-health.json 2>/dev/null && break
   sleep 1
 done
 curl -fsS http://127.0.0.1:8090/api/health | jq .
 curl -fsS http://127.0.0.1:3000/ >/dev/null
-curl -kfsS https://127.0.0.1/api/health | jq .
+if [[ "$WEB_TLS_MODE" == "external_proxy" ]]; then
+  echo "HTTPS externo não é sondado pelo instalador; upstreams locais estão OK."
+else
+  curl -kfsS https://127.0.0.1/api/health | jq .
+fi
 
 echo "[12/15] Validando serviços e sockets..."
-for svc in \
-  rc-geradores-bridge \
-  rc-geradores-provision \
-  rc-geradores-api \
-  rc-geradores-worker \
-  rc-geradores-frontend \
-  scadaserver6 scadacomm6 nginx; do
+INSTALL_SERVICES=(
+  rc-geradores-bridge
+  rc-geradores-provision
+  rc-geradores-api
+  rc-geradores-worker
+  rc-geradores-frontend
+  scadaserver6
+  scadacomm6
+)
+if [[ "$WEB_TLS_MODE" != "external_proxy" ]]; then
+  INSTALL_SERVICES+=(nginx)
+fi
+for svc in "${INSTALL_SERVICES[@]}"; do
   if ! systemctl is-active --quiet "$svc"; then
     echo "ERRO: serviço $svc não está ativo."
     systemctl --no-pager --full status "$svc" || true
@@ -489,9 +505,14 @@ echo
 echo "============================================================"
 echo " RC GERADORES INSTALADO"
 echo "============================================================"
-echo " Interface:       https://${IP:-IP_DA_VM}/"
+if [[ "$WEB_TLS_MODE" == "external_proxy" ]]; then
+  echo " Interface local: http://127.0.0.1:3000/ (publique via proxy externo)"
+  echo " API local:       http://127.0.0.1:8090/api/health"
+else
+  echo " Interface:       https://${IP:-IP_DA_VM}/"
+  echo " API health:      https://${IP:-IP_DA_VM}/api/health"
+fi
 echo " Usuário inicial: $ADMIN_EMAIL"
-echo " API health:      https://${IP:-IP_DA_VM}/api/health"
 echo " Banco:           /var/lib/rc-geradores/rc-geradores.db"
 echo " Rapid SCADA:     /opt/scada"
 if (( SKIP_INITIAL_GENERATOR == 0 )); then
@@ -503,7 +524,9 @@ fi
 echo " Worker:          ativo"
 echo " Provisionador:   ativo (socket local privilegiado)"
 echo " SMTP/WhatsApp:   desabilitados até configurar credenciais reais"
-if (( TLS_SELF_SIGNED == 1 )); then
+if [[ "$WEB_TLS_MODE" == "external_proxy" ]]; then
+  echo " HTTPS:           DELEGADO AO PROXY EXTERNO"
+elif (( TLS_SELF_SIGNED == 1 )); then
   echo " HTTPS:           ATIVO com certificado autoassinado; substitua por certificado confiável antes de Internet pública"
 else
   echo " HTTPS:           ATIVO"
