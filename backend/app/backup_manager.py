@@ -268,11 +268,39 @@ def apply_retention(keep: int = DEFAULT_RETENTION):
         key=lambda p: p.stat().st_mtime,
         reverse=True,
     )
+    staged: list[tuple[Path, Path]] = []
     for path in archives[keep:]:
+        temporary = path.with_name(f".{path.name}.retention-{uuid.uuid4().hex[:8]}.tmp")
         try:
-            path.unlink()
+            os.replace(path, temporary)
         except OSError:
+            continue
+        staged.append((path, temporary))
+
+    if not staged:
+        return 0
+
+    try:
+        with db.connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            for original, _temporary in staged:
+                conn.execute("DELETE FROM backup_records WHERE path=?", (str(original),))
+    except Exception:
+        for original, temporary in reversed(staged):
+            if temporary.exists() and not original.exists():
+                os.replace(temporary, original)
+        raise
+
+    removed = 0
+    for _original, temporary in staged:
+        try:
+            temporary.unlink()
+            removed += 1
+        except OSError:
+            # O registro já foi removido; um temporário oculto é preferível a
+            # anunciar na UI um backup que não pode mais ser baixado.
             pass
+    return removed
 
 
 def safe_archive_path(path: str | Path) -> Path:
