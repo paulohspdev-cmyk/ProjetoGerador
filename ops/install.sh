@@ -47,7 +47,7 @@ Instala em VM Ubuntu limpa:
   bridge reverse TCP somente leitura para o Rapid
   API FastAPI + frontend TanStack + worker + provisionador privilegiado
   SQLite do produto + login/RBAC + relatórios/backups/notificações
-  HTTPS local gerenciado por Nginx ou upstream HTTP para proxy externo
+  upstream HTTP para proxy externo por padrão; Nginx local somente em modo managed
 
 Por padrão cadastra e provisiona um ComAp InteliGen 200 com os parâmetros acima.
 Use --skip-initial-generator para instalar a plataforma vazia e cadastrar depois pelo painel.
@@ -89,7 +89,7 @@ fi
 # Resolve o modo web ANTES de instalar pacotes. Em instalação limpa, o
 # operador pode declarar external_proxy na própria linha de comando e evitar
 # que nginx seja sequer instalado/iniciado por engano.
-WEB_TLS_MODE="${RC_WEB_TLS_MODE:-managed}"
+WEB_TLS_MODE="${RC_WEB_TLS_MODE:-external_proxy}"
 if [[ -f "$ENV_FILE" ]]; then
   configured_tls_mode="$(sed -n 's/^RC_WEB_TLS_MODE=//p' "$ENV_FILE" | tail -n1 | tr -d '\r' | xargs)"
   [[ -n "$configured_tls_mode" ]] && WEB_TLS_MODE="$configured_tls_mode"
