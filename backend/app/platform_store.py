@@ -726,6 +726,7 @@ def login_key(email: str, remote_ip: str) -> str:
 def login_allowed(key: str, max_failures: int = 5, window_seconds: int = 900, lock_seconds: int = 900):
     now = _now()
     with db.connect() as conn:
+        conn.execute("BEGIN IMMEDIATE")
         row = conn.execute("SELECT * FROM login_attempts WHERE attempt_key=?", (key,)).fetchone()
         if row and int(row["locked_until"]) > now:
             return False, int(row["locked_until"]) - now
@@ -737,6 +738,7 @@ def login_allowed(key: str, max_failures: int = 5, window_seconds: int = 900, lo
 def record_login_failure(key: str, max_failures: int = 5, lock_seconds: int = 900):
     now = _now()
     with db.connect() as conn:
+        conn.execute("BEGIN IMMEDIATE")
         row = conn.execute("SELECT * FROM login_attempts WHERE attempt_key=?", (key,)).fetchone()
         if not row:
             conn.execute("INSERT INTO login_attempts(attempt_key,window_started,failures,locked_until) VALUES (?,?,1,0)", (key, now))
@@ -768,6 +770,7 @@ def password_reset_allowed(
         ("acct:" + hashlib.sha256(normalized.encode()).hexdigest(), account_max_per_window),
     ]
     with db.connect() as conn:
+        conn.execute("BEGIN IMMEDIATE")
         decisions = []
         for key, limit in keys:
             row = conn.execute(
