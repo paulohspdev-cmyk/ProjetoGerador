@@ -298,6 +298,51 @@ assert snapshot["counts"]["assets"] == 2
 assert snapshot["counts"]["controllers"] == 2
 assert snapshot["counts"]["connections"] == 2
 
+# Conexões v3 também precisam respeitar identidade industrial e transporte.
+probe_asset = domain_store.create_asset(
+    {"tag": "PROBE001", "name": "Probe", "kind": "genset", "site": "Lab"},
+    actor="test",
+)
+probe_controller = domain_store.create_controller(
+    {"asset_id": probe_asset["id"], "model": "InteliGen 200"},
+    actor="test",
+)
+for invalid_connection in (
+    {
+        "controller_id": probe_controller["id"],
+        "transport": "reverse_tcp",
+        "listen_port": 15001,
+        "modbus_unit": 2,
+    },
+    {
+        "controller_id": probe_controller["id"],
+        "transport": "reverse_tcp",
+        "listen_port": 60000,
+        "modbus_unit": 3,
+    },
+    {
+        "controller_id": probe_controller["id"],
+        "transport": "modbus_tcp_direct",
+        "host": "",
+        "listen_port": 502,
+        "modbus_unit": 1,
+    },
+    {
+        "controller_id": probe_controller["id"],
+        "transport": "reverse_tcp",
+        "listen_port": 15020,
+        "modbus_unit": 3,
+        "rapid_device_num": 200,
+    },
+):
+    try:
+        domain_store.create_connection(invalid_connection, actor="test")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError(f"conexão inválida aceita: {invalid_connection}")
+assert domain_store.delete_asset(probe_asset["id"], actor="test") is True
+
 # Lifecycle de remoção v3: nada de cascade implícito nem remoção ativa.
 try:
     asset_delete(bundle["asset"]["id"], user=user)
