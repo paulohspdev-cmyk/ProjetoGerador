@@ -459,7 +459,9 @@ if (!operationalMap.includes("load: measuredLoad.length")) {
 
 const generatorHealth = read("src/components/generators/generator-health.ts");
 if (!generatorHealth.includes("fuel <= fuelCapacity")) {
-  failures.push("barra de combustível voltou a aceitar percentual derivado acima da capacidade configurada");
+  failures.push(
+    "barra de combustível voltou a aceitar percentual derivado acima da capacidade configurada",
+  );
 }
 
 const verticalCard = read("src/components/generators/PowerFlowCard.tsx");
