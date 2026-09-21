@@ -234,7 +234,10 @@ if (!statusPill.includes("telemetryStale") || !statusPill.includes('"COMM LOST"'
 
 const kpiStrip = read("src/components/generators/KpiStrip.tsx");
 const compactCard = read("src/components/generators/CompactCard.tsx");
-if (!kpiStrip.includes("generatorDisplayStatus") || !kpiStrip.includes('displayStatus === "stale"')) {
+if (
+  !kpiStrip.includes("generatorDisplayStatus") ||
+  !kpiStrip.includes('displayStatus === "stale"')
+) {
   failures.push("KPIs voltaram a contar telemetria stale como online/alerta");
 }
 if (
