@@ -539,37 +539,41 @@ def process_escalations(generators: list[dict]) -> int:
                 continue
             if age < int(policy.get("after_seconds") or 0):
                 continue
+            # Reserva + enqueue + contador pertencem à mesma transação. Assim,
+            # mesmo se dois workers avaliarem o mesmo alarme simultaneamente,
+            # somente um deles materializa aquela ocorrência/repetição.
             with db.connect() as conn:
+                conn.execute("BEGIN IMMEDIATE")
                 run = conn.execute(
                     "SELECT sends,last_sent FROM escalation_runs WHERE policy_id=? AND alarm_key=?",
                     (policy["id"], alarm["alarm_key"]),
                 ).fetchone()
-            sends = int(run["sends"]) if run else 0
-            last_sent = int(run["last_sent"] or 0) if run else 0
-            if sends >= int(policy.get("max_repeats") or 1):
-                continue
-            repeat = int(policy.get("repeat_seconds") or 0)
-            if sends > 0 and (repeat <= 0 or now - last_sent < repeat):
-                continue
+                sends = int(run["sends"]) if run else 0
+                last_sent = int(run["last_sent"] or 0) if run else 0
+                if sends >= int(policy.get("max_repeats") or 1):
+                    continue
+                repeat = int(policy.get("repeat_seconds") or 0)
+                if sends > 0 and (repeat <= 0 or now - last_sent < repeat):
+                    continue
 
-            platform_store.enqueue_notification(
-                "industrial.alarm.escalation",
-                policy["channel"],
-                destination=policy.get("destination") or "",
-                subject=f"[{alarm['severity'].upper()}] RC Geradores",
-                body=alarm.get("message") or alarm["alarm_key"],
-                payload={
-                    "alarmKey": alarm["alarm_key"],
-                    "generatorId": alarm.get("generator_id"),
-                    "severity": alarm["severity"],
-                    "policyId": policy["id"],
-                },
-            )
-            with db.connect() as conn:
+                platform_store.enqueue_notification_in_connection(
+                    conn,
+                    "industrial.alarm.escalation",
+                    policy["channel"],
+                    destination=policy.get("destination") or "",
+                    subject=f"[{alarm['severity'].upper()}] RC Geradores",
+                    body=alarm.get("message") or alarm["alarm_key"],
+                    payload={
+                        "alarmKey": alarm["alarm_key"],
+                        "generatorId": alarm.get("generator_id"),
+                        "severity": alarm["severity"],
+                        "policyId": policy["id"],
+                    },
+                )
                 conn.execute(
                     """INSERT INTO escalation_runs(policy_id,alarm_key,sends,last_sent) VALUES (?,?,1,?)
                        ON CONFLICT(policy_id,alarm_key) DO UPDATE SET sends=escalation_runs.sends+1,last_sent=excluded.last_sent""",
                     (policy["id"], alarm["alarm_key"], now),
                 )
-            queued += 1
+                queued += 1
     return queued
