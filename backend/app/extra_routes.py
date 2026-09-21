@@ -173,11 +173,14 @@ def field_device_create(payload: FieldDeviceCreate, user: dict = Depends(require
 
 @router.patch("/api/field-devices/{item_id}")
 def field_device_update(item_id: str, payload: FieldDeviceUpdate, user: dict = Depends(require_admin)):
-    updated = platform_store.update_field_device(
-        item_id,
-        payload.model_dump(exclude_unset=True),
-        actor(user),
-    )
+    try:
+        updated = platform_store.update_field_device(
+            item_id,
+            payload.model_dump(exclude_unset=True),
+            actor(user),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     if not updated:
         raise HTTPException(status_code=404, detail="Equipamento não encontrado")
     return updated
