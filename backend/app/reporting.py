@@ -40,6 +40,16 @@ def _rows(generators: list[dict]):
         ]
 
 
+def safe_report_artifact_path(value: str | Path) -> Path:
+    reports_dir = (DATA_DIR / "reports").resolve()
+    path = Path(value).resolve()
+    try:
+        path.relative_to(reports_dir)
+    except ValueError as exc:
+        raise ValueError("Artefato de relatório fora do diretório protegido") from exc
+    return path
+
+
 HEADERS = [
     "Gerador",
     "Site",
