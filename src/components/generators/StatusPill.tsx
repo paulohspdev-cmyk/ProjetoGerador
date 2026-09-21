@@ -16,7 +16,7 @@ export function StatusPill({
   className,
 }: {
   status: GenStatus;
-  telemetryStale?: boolean;
+  telemetryStale?: boolean | undefined;
   className?: string;
 }) {
   const displayStatus = generatorDisplayStatus({ status, telemetryStale });

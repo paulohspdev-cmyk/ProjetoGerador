@@ -124,9 +124,10 @@ export const statusLabel: Record<GenStatus, string> = {
 
 export type GeneratorDisplayStatus = GenStatus | "stale";
 
-export function generatorDisplayStatus(
-  generator: Pick<Generator, "status" | "telemetryStale">,
-): GeneratorDisplayStatus {
+export function generatorDisplayStatus(generator: {
+  status: GenStatus;
+  telemetryStale?: boolean | undefined;
+}): GeneratorDisplayStatus {
   if (generator.status === "nao_configurado") return "nao_configurado";
   if (generator.telemetryStale) return "stale";
   return generator.status;
