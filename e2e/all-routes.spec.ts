@@ -21,7 +21,6 @@ test("HTML da aplicação não fica preso em cache entre releases", async ({ pag
   expect(response!.headers()["cache-control"] ?? "").toContain("no-store");
 });
 
-
 test("asset retido fora do manifesto Nitro continua disponível após troca de release", async ({
   request,
 }) => {
