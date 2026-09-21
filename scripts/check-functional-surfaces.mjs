@@ -402,6 +402,30 @@ if (!/set -a\s*[\s\S]*?source "\$\{ENV_FILE\}"\s*[\s\S]*?set \+a/.test(deployRel
   failures.push("deploy deve exportar EnvironmentFile para subprocessos/migrações");
 }
 
+
+const preservePreviousAssets = deployRelease.indexOf(
+  'preserve_previous_frontend_assets "${BASE}/.output" "${NEW_OUTPUT}"',
+);
+const swapFrontendOutput = deployRelease.indexOf(
+  'mv "${NEW_OUTPUT}" "${BASE}/.output"',
+);
+const manifestLine = deployRelease
+  .split("\n")
+  .find((line) => line.includes("next_assets") && line.includes("-printf") && line.includes("next_manifest"));
+if (!deployRelease.includes(".rc-current-assets")) {
+  failures.push("deploy deve manter manifesto dos assets nativos da release");
+}
+if (!manifestLine || !manifestLine.includes("%P\\n") || manifestLine.includes("%P\\\\n")) {
+  failures.push("manifesto de assets deve ser gravado com exatamente um arquivo por linha");
+}
+if (
+  preservePreviousAssets < 0 ||
+  swapFrontendOutput < 0 ||
+  preservePreviousAssets > swapFrontendOutput
+) {
+  failures.push("deploy deve preservar assets da release anterior antes da troca atômica");
+}
+
 const opsStore = read("backend/app/ops_store.py");
 if (opsStore.includes('data.get("tech") or "Equipe campo"')) {
   failures.push("ordem de serviço voltou a inventar responsável padrão");
