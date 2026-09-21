@@ -185,7 +185,8 @@ def refresh_observed_alarms(generators: list[dict]) -> int:
         if not gid:
             continue
         status = str(generator.get("status") or "")
-        if status == "offline":
+        telemetry_stale = bool(generator.get("telemetryStale"))
+        if status == "offline" or telemetry_stale:
             key, item = _desired_alarm(
                 f"comm:{gid}", generator, "derived.communication", "COMM_LOSS", "fault",
                 str(generator.get("lastError") or "Comunicação/telemetria indisponível"),
