@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useGenerators } from "@/components/generators/GeneratorsProvider";
+import { generatorDisplayStatus, isGeneratorAlert, isGeneratorOnline } from "@/data/generators";
 import { metricNumber } from "@/components/generators/generator-metrics";
 import { industrialApi, type IndustrialAlarm, type MaintenancePlan } from "@/lib/industrial-api";
 import { rcApi, type SystemDiagnostics } from "@/lib/api";
@@ -198,9 +199,9 @@ export function useOverviewDecisionModel() {
 
   const generatorStatus = useMemo<GeneratorStatusSummary>(
     () => ({
-      online: generators.filter((generator) => generator.status === "online").length,
-      alert: generators.filter((generator) => generator.status === "alerta").length,
-      offline: generators.filter((generator) => generator.status === "offline").length,
+      online: generators.filter(isGeneratorOnline).length,
+      alert: generators.filter(isGeneratorAlert).length,
+      offline: generators.filter((generator) => ["offline", "stale"].includes(generatorDisplayStatus(generator))).length,
       unconfigured: generators.filter((generator) => generator.status === "nao_configurado").length,
     }),
     [generators],

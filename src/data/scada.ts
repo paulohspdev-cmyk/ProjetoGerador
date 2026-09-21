@@ -1,4 +1,4 @@
-import type { Generator } from "@/data/generators";
+import { generatorDisplayStatus, isGeneratorAlert, isGeneratorConnected, isGeneratorOnline, type Generator } from "@/data/generators";
 
 export function fmt(n: number | null | undefined, d = 1) {
   return n == null || !Number.isFinite(n) ? "—" : n.toFixed(d).replace(".", ",");
@@ -67,9 +67,9 @@ export function gensBySite(list: Generator[] = []): SiteAggregate[] {
       lng: null,
       gens,
       total: gens.length,
-      online: gens.filter((g) => g.status === "online").length,
-      alerta: gens.filter((g) => g.status === "alerta").length,
-      offline: gens.filter((g) => g.status === "offline").length,
+      online: gens.filter(isGeneratorOnline).length,
+      alerta: gens.filter(isGeneratorAlert).length,
+      offline: gens.filter((g) => generatorDisplayStatus(g) === "offline" || generatorDisplayStatus(g) === "stale").length,
       // Compatibilidade com telas legadas. Zero aqui significa ausência de soma
       // exibível; measuredLoad/measuredFuel preservam a distinção N/D.
       load: measuredLoad ?? 0,
@@ -96,7 +96,7 @@ export type ScadaAlarm = {
  */
 export function buildAlarms(list: Generator[]): ScadaAlarm[] {
   return list.flatMap<ScadaAlarm>((g) => {
-    if (g.status === "offline") {
+    if (["offline", "stale"].includes(generatorDisplayStatus(g))) {
       return [
         {
           id: `COMM-${g.id}`,
@@ -109,7 +109,7 @@ export function buildAlarms(list: Generator[]): ScadaAlarm[] {
         },
       ];
     }
-    if (g.status === "alerta" || (g.alarms ?? 0) > 0) {
+    if (isGeneratorAlert(g) || (g.alarms ?? 0) > 0) {
       return [
         {
           id: `STATE-${g.id}`,
@@ -187,7 +187,7 @@ export function buildControllers(list: Generator[]) {
     fw: "—",
     proto: g.telemetrySource === "rapid_scada" ? "Telemetria" : "—",
     ip: g.ip,
-    online: g.status === "online" || g.status === "alerta",
+    online: isGeneratorConnected(g),
   }));
 }
 export const controllers: ReturnType<typeof buildControllers> = [];
