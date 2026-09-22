@@ -162,6 +162,8 @@ jobs:
           bash ops/test_frontend_asset_retention.sh
           bash -n ops/test_release_ref_resolution.sh
           bash ops/test_release_ref_resolution.sh
+          printf 'RC_RAPID_ADMIN_ALLOWED_CIDRS=\n' >/tmp/rapid-network-loopback.env
+          RC_ENV_FILE=/tmp/rapid-network-loopback.env bash ops/configure_rapid_network.sh --check
           printf 'RC_RAPID_ADMIN_ALLOWED_CIDRS=10.10.10.0/24\n' >/tmp/rapid-network-good.env
           RC_ENV_FILE=/tmp/rapid-network-good.env bash ops/configure_rapid_network.sh --check
           printf 'RC_RAPID_ADMIN_ALLOWED_CIDRS=0.0.0.0/0\n' >/tmp/rapid-network-bad.env
