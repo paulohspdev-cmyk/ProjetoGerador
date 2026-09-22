@@ -126,22 +126,24 @@ def _offsite_cipher(key_file: str | Path | None = None) -> Fernet:
 
 
 def _build_offsite_payload(archive: Path, target: Path) -> bool:
-    """Cria pacote temporário para DR sem expor a chave TOTP no backup local."""
+    """Cria envelope de DR criptografado sem expor segredos no backup local."""
     totp_key = Path(TOTP_KEY_FILE)
+    env_file = Path(ENV_FILE)
     with tempfile.TemporaryDirectory(prefix="rc-offsite-validate-") as tmp:
         with tarfile.open(archive, "r:gz") as source:
             _validate_members(source, Path(tmp))
             members = source.getmembers()
+            member_names = {member.name for member in members}
             with tarfile.open(target, "w:gz") as destination:
                 for member in members:
                     fileobj = source.extractfile(member) if member.isfile() else None
                     destination.addfile(member, fileobj)
-                if totp_key.is_file() and not any(
-                    member.name == "product/totp-fernet.key" for member in members
-                ):
+                if env_file.is_file() and "product/rc-geradores.env" not in member_names:
+                    destination.add(env_file, arcname="product/rc-geradores.env", recursive=False)
+                if totp_key.is_file() and "product/totp-fernet.key" not in member_names:
                     destination.add(totp_key, arcname="product/totp-fernet.key", recursive=False)
                     return True
-    return any(member.name == "product/totp-fernet.key" for member in members)
+    return "product/totp-fernet.key" in member_names
 
 
 def _validate_offsite_target_dir(target_dir: Path) -> None:
