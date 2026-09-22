@@ -59,6 +59,7 @@ export function RegisterGeneratorButton({
   const [listenPort, setListenPort] = useState("");
   const [modbusUnit, setModbusUnit] = useState("1");
   const [rapidDeviceNum, setRapidDeviceNum] = useState("");
+  const [nominalPower, setNominalPower] = useState("");
   const [baudRate, setBaudRate] = useState("");
   const [parity, setParity] = useState("");
   const [stopBits, setStopBits] = useState("");
@@ -135,6 +136,7 @@ export function RegisterGeneratorButton({
     setListenPort("");
     setModbusUnit("1");
     setRapidDeviceNum("");
+    setNominalPower("");
     setBaudRate("");
     setParity("");
     setStopBits("");
@@ -156,12 +158,20 @@ export function RegisterGeneratorButton({
   );
   const effectiveUnit = Number(modbusUnit || 1);
   const effectiveBaud = Number(baudRate);
+  const effectiveNominalPower = nominalPower.trim() ? Number(nominalPower) : null;
+  const nominalPowerValid =
+    effectiveNominalPower == null ||
+    (Number.isFinite(effectiveNominalPower) &&
+      effectiveNominalPower > 0 &&
+      effectiveNominalPower <= 100000);
 
   const isLabReadOnly = selectedController?.onboardingMode === "lab_read_only";
   const isCatalogRegistration = Boolean(
     selectedController && !selectedController.provisionable && !isLabReadOnly,
   );
-  const canContinueStep1 = Boolean(site.trim() && controller && selectedController);
+  const canContinueStep1 = Boolean(
+    site.trim() && controller && selectedController && nominalPowerValid,
+  );
   const canContinueStep2 =
     transport === "reverse_tcp"
       ? effectivePort > 0
@@ -212,6 +222,10 @@ export function RegisterGeneratorButton({
       setError("Escolha a unidade e a controladora.");
       return;
     }
+    if (!nominalPowerValid) {
+      setError("A potência nominal deve ficar entre 0 e 100000 kW.");
+      return;
+    }
     if (transport !== "reverse_tcp" && !host.trim()) {
       setError(
         isSerial
@@ -252,6 +266,7 @@ export function RegisterGeneratorButton({
         modbusUnit: effectiveUnit,
         ...(host.trim() ? { ip: host.trim() } : {}),
         ...(rapidDeviceNum ? { rapidDeviceNum: Number(rapidDeviceNum) } : {}),
+        ...(effectiveNominalPower != null ? { nominalPower: effectiveNominalPower } : {}),
       });
       setCreatedId(created.id);
 
@@ -394,6 +409,24 @@ export function RegisterGeneratorButton({
                 </label>
 
                 <label className="block text-sm font-semibold">
+                  Potência nominal (kW)
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min="0.1"
+                    max="100000"
+                    step="0.1"
+                    value={nominalPower}
+                    onChange={(e) => setNominalPower(e.target.value)}
+                    placeholder="Ex.: 450"
+                    className="mt-2 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
+                  />
+                  <span className="mt-1 block text-xs font-normal text-muted-foreground">
+                    Opcional. Use o rating em kW da placa/ficha técnica; não copie kVA como kW.
+                  </span>
+                </label>
+
+                <label className="block text-sm font-semibold">
                   Controladora
                   <select
                     value={controller}
@@ -459,6 +492,12 @@ export function RegisterGeneratorButton({
                   <div>
                     <dt className="text-xs text-muted-foreground">Unidade</dt>
                     <dd className="font-bold">{site}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Potência nominal</dt>
+                    <dd className="font-bold">
+                      {effectiveNominalPower == null ? "N/D" : `${effectiveNominalPower} kW`}
+                    </dd>
                   </div>
                   <div>
                     <dt className="text-xs text-muted-foreground">Controladora</dt>
