@@ -186,6 +186,13 @@ jobs:
             echo 'ERRO: external proxy aceitou peer NPM fora dos proxies confiáveis.' >&2
             exit 1
           fi
+          grep -q 'FIREWALL_SERVICE="rc-geradores-web-firewall"' ops/configure_external_proxy_network.sh
+          grep -q 'NFT_PERSIST="/etc/rc-geradores-web.nft"' ops/configure_external_proxy_network.sh
+          grep -q 'BindsTo=.*FIREWALL_SERVICE' ops/configure_external_proxy_network.sh
+          grep -q 'systemctl enable --now.*FIREWALL_SERVICE' ops/configure_external_proxy_network.sh
+          grep -q 'systemctl is-enabled --quiet.*FIREWALL_SERVICE' ops/configure_external_proxy_network.sh
+          grep -q 'systemctl is-active --quiet.*FIREWALL_SERVICE' ops/configure_external_proxy_network.sh
+          grep -q 'firewall persistente não contém peer do NPM' ops/configure_external_proxy_network.sh
           bash -n ops/run_backend_tests.sh
           bash -n ops/run_e2e_isolated.sh
           bash -n rapid/provisioning/provision_ig200.sh
