@@ -95,6 +95,75 @@ nominal_check = next(
 assert nominal_check["severity"] == "ok", nominal_check
 assert "telemetria" in nominal_check["detail"].lower(), nominal_check
 
+# F00d: firmware desconhecido só bloqueia packs que podem emitir comando industrial.
+original_load_bindings = diagnostics.load_bindings
+original_list_assets = diagnostics.domain_store.list_assets
+original_list_controllers = diagnostics.domain_store.list_controllers
+try:
+    diagnostics.load_bindings = lambda: [
+        {"generator_id": "fw-command"},
+        {"generator_id": "fw-readonly"},
+    ]
+    diagnostics.domain_store.list_assets = lambda: [
+        {"id": "asset-command", "legacy_generator_id": "fw-command"},
+        {"id": "asset-readonly", "legacy_generator_id": "fw-readonly"},
+    ]
+    diagnostics.domain_store.list_controllers = lambda: [
+        {"id": "ctrl-command", "asset_id": "asset-command", "firmware": ""},
+        {"id": "ctrl-readonly", "asset_id": "asset-readonly", "firmware": ""},
+    ]
+    firmware_readiness = diagnostics._production_readiness(
+        [
+            {
+                "id": "fw-command",
+                "tag": "FW-CMD",
+                "controller_model": "InteliGen 200",
+                "enabled": True,
+                "site": "Usina",
+                "customer": "Cliente",
+            },
+            {
+                "id": "fw-readonly",
+                "tag": "FW-READ",
+                "controller_model": "DSE4520 MKII",
+                "enabled": True,
+                "site": "Usina",
+                "customer": "Cliente",
+            },
+            {
+                "id": "fw-no-pack",
+                "tag": "FW-NOPACK",
+                "controller_model": "InteliCompact NT",
+                "enabled": True,
+                "site": "Usina",
+                "customer": "Cliente",
+            },
+        ],
+        reverse_tcp_exposed=False,
+        reverse_tcp_allowlist=False,
+    )
+finally:
+    diagnostics.load_bindings = original_load_bindings
+    diagnostics.domain_store.list_assets = original_list_assets
+    diagnostics.domain_store.list_controllers = original_list_controllers
+
+command_firmware = next(
+    item for item in firmware_readiness["checks"] if item["id"] == "controller_firmware"
+)
+readonly_firmware = next(
+    item
+    for item in firmware_readiness["checks"]
+    if item["id"] == "controller_firmware_readonly"
+)
+assert command_firmware["severity"] == "blocker", command_firmware
+assert "FW-CMD" in command_firmware["detail"], command_firmware
+assert "FW-READ" not in command_firmware["detail"], command_firmware
+assert readonly_firmware["severity"] == "warning", readonly_firmware
+assert "FW-READ" in readonly_firmware["detail"], readonly_firmware
+assert "FW-CMD" not in readonly_firmware["detail"], readonly_firmware
+assert "FW-NOPACK" not in command_firmware["detail"], command_firmware
+assert "FW-NOPACK" not in readonly_firmware["detail"], readonly_firmware
+
 # F01: the persistent users schema must accept the RBAC operator role.
 with db.connect() as conn:
     users_sql = str(
