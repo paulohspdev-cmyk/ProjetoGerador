@@ -373,7 +373,8 @@ rm -rf "${OLD_VENV}"
 VENV_SWAPPED=1
 if ! python3 -m venv "${BASE}/backend/.venv"; then rollback; fail "falha ao criar venv"; fi
 if ! "${BASE}/backend/.venv/bin/pip" install --disable-pip-version-check -r "${BASE}/backend/requirements.txt"; then rollback; fail "falha ao instalar dependências Python"; fi
-chown -R rcgeradores:rcgeradores "${BASE}/backend/.venv"
+chown -R root:root "${BASE}/backend/.venv"
+chmod -R u=rwX,go=rX "${BASE}/backend/.venv"
 
 log "COMPILANDO LEITOR RAPID"
 [[ -f "${SCADA_COMMON}" ]] || { rollback; fail "ScadaCommon.dll desapareceu durante o deploy"; }
@@ -383,7 +384,8 @@ READER_SWAPPED=1
 mkdir -p "${BASE}/.rapid-reader"
 if ! dotnet build "${BASE}/rapid/reader/RcRapidReader.csproj" -c Release -o "${BASE}/.rapid-reader" -p:ScadaCommonPath="${SCADA_COMMON}" --nologo; then rollback; fail "falha ao compilar leitor Rapid"; fi
 find "$(dirname "${SCADA_COMMON}")" -maxdepth 1 -type f -name 'Scada*.dll' -exec cp --update=none {} "${BASE}/.rapid-reader/" \; 2>/dev/null || true
-chmod -R a+rX "${BASE}/.rapid-reader"
+chown -R root:root "${BASE}/.rapid-reader"
+chmod -R u=rwX,go=rX "${BASE}/.rapid-reader"
 
 log "INSTALANDO UNIDADES SYSTEMD VERSIONADAS"
 for unit in "${BASE}"/ops/systemd/*.service; do install -m 0644 "${unit}" "/etc/systemd/system/$(basename "${unit}")"; done
@@ -421,7 +423,8 @@ if ! preserve_previous_frontend_assets "${BASE}/.output" "${NEW_OUTPUT}"; then
   rollback
   fail "falha ao preservar assets da release anterior"
 fi
-chown -R rcgeradores:rcgeradores "${NEW_OUTPUT}"
+chown -R root:root "${NEW_OUTPUT}"
+chmod -R u=rwX,go=rX "${NEW_OUTPUT}"
 [[ -d "${BASE}/.output" ]] && mv "${BASE}/.output" "${OLD_OUTPUT}"
 mv "${NEW_OUTPUT}" "${BASE}/.output"
 OUTPUT_SWAPPED=1
