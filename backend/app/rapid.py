@@ -555,6 +555,14 @@ def _has_controller_health(values, configured):
     return False
 
 
+def _positive_finite_number(value):
+    try:
+        number = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return number if math.isfinite(number) and number > 0 else None
+
+
 def _frontend_generator(
     generator,
     values,
@@ -575,6 +583,22 @@ def _frontend_generator(
     configured_metrics = sorted(set(configured_metrics or []))
     stale_metrics = sorted(set(stale_metrics or []))
     units = _metric_units(generator, configured_metrics)
+    live_nominal_power = (
+        _positive_finite_number(values.get("nominal_power_kw"))
+        if not telemetry_stale and "nominal_power_kw" in defined_metrics
+        else None
+    )
+    cadastral_nominal_power = _positive_finite_number(generator.get("nominal_power_kw"))
+    nominal_power = (
+        live_nominal_power if live_nominal_power is not None else cadastral_nominal_power
+    )
+    nominal_power_source = (
+        "telemetry"
+        if live_nominal_power is not None
+        else "cadastral"
+        if cadastral_nominal_power is not None
+        else None
+    )
     metric_states = {
         key: {
             "configured": True,
@@ -614,7 +638,9 @@ def _frontend_generator(
         "battery": values.get("battery_voltage"),
         "frequency": values.get("frequency"),
         "mainsFrequency": values.get("mains_frequency"),
-        "nominalPower": values.get("nominal_power_kw"),
+        "nominalPower": nominal_power,
+        "nominalPowerConfigured": cadastral_nominal_power,
+        "nominalPowerSource": nominal_power_source,
         "rpm": values.get("rpm"),
         "load": values.get("power_kw"),
         "oilPressure": values.get("oil_pressure"),
