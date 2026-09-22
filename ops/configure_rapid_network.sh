@@ -37,7 +37,7 @@ set +a
 
 RAW_CIDRS="${RC_RAPID_ADMIN_ALLOWED_CIDRS:-}"
 
-mapfile -t ADMIN_CIDRS < <(
+CIDR_OUTPUT="$(
   python3 - "${RAW_CIDRS}" <<'PY'
 import ipaddress
 import sys
@@ -59,7 +59,12 @@ for token in raw.split(","):
         seen.add(text)
         print(text)
 PY
-)
+)" || fail "RC_RAPID_ADMIN_ALLOWED_CIDRS inválido"
+
+ADMIN_CIDRS=()
+if [[ -n "${CIDR_OUTPUT}" ]]; then
+  mapfile -t ADMIN_CIDRS <<<"${CIDR_OUTPUT}"
+fi
 
 for cidr in "${ADMIN_CIDRS[@]}"; do
   case "${cidr}" in
