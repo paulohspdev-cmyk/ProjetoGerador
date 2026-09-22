@@ -1,9 +1,11 @@
 from contextlib import asynccontextmanager
+import logging
 import sqlite3
 import time
+import uuid
 from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from . import db, domain_store, ops_store, platform_store, transport_store
 from .auth import (
@@ -93,12 +95,41 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+_api_log = logging.getLogger("rc-geradores.api")
+
+
+@app.middleware("http")
+async def request_observability(request: Request, call_next):
+    request_id = uuid.uuid4().hex
+    request.state.request_id = request_id
+    try:
+        response = await call_next(request)
+    except Exception:
+        _api_log.exception(
+            "unhandled request failure request_id=%s method=%s path=%s",
+            request_id,
+            request.method,
+            request.url.path,
+        )
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "detail": "Erro interno do servidor",
+                "requestId": request_id,
+            },
+            headers={"X-Request-ID": request_id},
+        )
+    response.headers["X-Request-ID"] = request_id
+    return response
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["X-Request-ID"],
 )
 
 
