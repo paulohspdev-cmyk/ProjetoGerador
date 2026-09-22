@@ -330,6 +330,33 @@ def _offsite_target(archive: Path) -> Path | None:
     return target
 
 
+def apply_offsite_retention(keep: int = DEFAULT_RETENTION) -> int:
+    if not BACKUP_OFFSITE_DIR:
+        return 0
+
+    keep = max(1, min(int(keep), 365))
+    target_dir = Path(BACKUP_OFFSITE_DIR).resolve()
+    _validate_offsite_target_dir(target_dir)
+    envelopes = sorted(
+        target_dir.glob("rc-geradores-full-*.tar.gz.fernet"),
+        key=lambda p: p.stat().st_mtime,
+        reverse=True,
+    )
+
+    removed = 0
+    failures: list[str] = []
+    for path in envelopes[keep:]:
+        try:
+            path.unlink()
+            removed += 1
+        except OSError as exc:
+            failures.append(f"{path.name}: {exc}")
+
+    if failures:
+        raise OSError("Falha na retenção off-site: " + "; ".join(failures[:5]))
+    return removed
+
+
 def create_full_backup(actor: str = "system", retention: int | None = None) -> dict:
     BACKUP_DIR.mkdir(parents=True, exist_ok=True)
     try:
@@ -395,15 +422,45 @@ def create_full_backup(actor: str = "system", retention: int | None = None) -> d
             "INSERT INTO backup_records(id,created_at,path,size_bytes,type,result,detail) VALUES (?,?,?,?,?,?,?)",
             (backup_id, int(time.time()), str(archive), size, "Completo", result, detail),
         )
+
+    retention_keep = retention if retention is not None else DEFAULT_RETENTION
+    local_retention_removed = 0
+    offsite_retention_removed = 0
+    retention_warnings: list[str] = []
+    if result == "OK":
+        try:
+            local_retention_removed = apply_retention(retention_keep)
+        except Exception as exc:
+            retention_warnings.append(f"retenção local: {exc}")
+        if offsite_path:
+            try:
+                offsite_retention_removed = apply_offsite_retention(retention_keep)
+            except Exception as exc:
+                retention_warnings.append(f"retenção off-site: {exc}")
+
+    if retention_warnings:
+        retention_detail = "; ".join(retention_warnings)[:1000]
+        detail = f"{detail}; {retention_detail}".strip("; ")
+        with db.connect() as conn:
+            conn.execute(
+                "UPDATE backup_records SET detail=? WHERE id=?",
+                (detail, backup_id),
+            )
+
     db.add_audit(
         actor,
         "backup",
         "system",
         backup_id,
-        f"{result} {size} bytes; bindings={bindings_included}; secrets={'included' if INCLUDE_SECRETS else 'excluded'}; offsite={bool(offsite_path)}",
+        (
+            f"{result} {size} bytes; bindings={bindings_included}; "
+            f"secrets={'included' if INCLUDE_SECRETS else 'excluded'}; "
+            f"offsite={bool(offsite_path)}; "
+            f"retention_local_removed={local_retention_removed}; "
+            f"retention_offsite_removed={offsite_retention_removed}; "
+            f"retention_warnings={len(retention_warnings)}"
+        ),
     )
-    if result == "OK":
-        apply_retention(retention if retention is not None else DEFAULT_RETENTION)
     return {
         "id": backup_id,
         "path": str(archive),
@@ -418,6 +475,9 @@ def create_full_backup(actor: str = "system", retention: int | None = None) -> d
         "totpSecretEncryptedInDatabase": True,
         "offsiteCarriesTotpRecoveryKey": bool(offsite_path and Path(TOTP_KEY_FILE).is_file()),
         "rapidHistoricalArchiveIncluded": rapid_archive_included,
+        "localRetentionRemoved": local_retention_removed,
+        "offsiteRetentionRemoved": offsite_retention_removed,
+        "retentionWarnings": retention_warnings,
     }
 
 
