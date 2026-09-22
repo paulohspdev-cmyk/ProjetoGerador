@@ -20,6 +20,7 @@ export type CreateGeneratorPayload = {
   listenPort?: number | undefined;
   modbusUnit?: number | undefined;
   rapidDeviceNum?: number | undefined;
+  nominalPower?: number | undefined;
 };
 export type UserCreatePayload = { name: string; email: string; password: string; role: UserRole };
 export type UserUpdatePayload = {
@@ -464,7 +465,10 @@ export const rcApi = {
       request<Generator>("/api/generators", { method: "POST", body: JSON.stringify(payload) }),
     update: (
       id: string,
-      payload: Partial<CreateGeneratorPayload> & { enabled?: boolean | undefined },
+      payload: Partial<CreateGeneratorPayload> & {
+        enabled?: boolean | undefined;
+        nominalPower?: number | null | undefined;
+      },
     ) =>
       request<Generator>(`/api/generators/${encodeURIComponent(id)}`, {
         method: "PATCH",
