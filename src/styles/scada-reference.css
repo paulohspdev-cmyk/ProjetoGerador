@@ -288,7 +288,12 @@
 }
 
 .vref-mini-bar > i {
-  background: linear-gradient(90deg, var(--sc-ok-dark), var(--sc-ok-mid), var(--sc-ok-light)) !important;
+  background: linear-gradient(
+    90deg,
+    var(--sc-ok-dark),
+    var(--sc-ok-mid),
+    var(--sc-ok-light)
+  ) !important;
 }
 
 .vref-mini-bar.is-unknown {
