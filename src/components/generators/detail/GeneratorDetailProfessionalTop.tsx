@@ -2,19 +2,15 @@ import {
   Activity,
   ArrowRight,
   BatteryCharging,
-  Building2,
   Clock3,
   Cog,
   Droplets,
   Fuel,
   Gauge,
   Pencil,
-  Play,
-  Power,
   Radio,
   ShieldCheck,
   Thermometer,
-  UtilityPole,
   Zap,
 } from "lucide-react";
 
@@ -24,6 +20,15 @@ import type { IndustrialCommandAction } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 import { GeneratorEditDialog } from "../GeneratorEditDialog";
+import {
+  IconBreakerClosed,
+  IconBreakerOpen,
+  IconGenerator,
+  IconLoad,
+  IconMains,
+  IconStart,
+  IconStop,
+} from "../scada-icons";
 import { formatMetric } from "../generator-metrics";
 import type { GeneratorDetailModel } from "./generator-detail-model";
 import {
@@ -153,7 +158,7 @@ export function GeneratorDetailProfessionalTop({
                 : "START indisponível para esta controladora"
             }
           >
-            <Play className="size-4" /> {commandBusy === "start" ? "Enviando…" : "Ligar"}
+            <IconStart size={16} /> {commandBusy === "start" ? "Enviando…" : "Ligar"}
           </button>
           <button
             type="button"
@@ -194,7 +199,7 @@ export function GeneratorDetailProfessionalTop({
               canAction("stop") ? "Parada homologada" : "STOP indisponível para esta controladora"
             }
           >
-            <Power className="size-4" /> {commandBusy === "stop" ? "Enviando…" : "Desligar"}
+            <IconStop size={16} /> {commandBusy === "stop" ? "Enviando…" : "Desligar"}
           </button>
         </div>
       </header>
@@ -258,7 +263,7 @@ export function GeneratorDetailProfessionalTop({
           </div>
           <div className="scroll-slim flex min-w-0 items-center justify-between gap-2 overflow-x-auto pb-2">
             <FlowNode
-              icon={<UtilityPole className="size-6" />}
+              icon={<IconMains size={24} />}
               label="REDE"
               value={formatMetric(model.mainsL12 ?? model.mainsL1, "V", 0)}
               sub={model.mainsPresent ? "Presente" : model.mainsKnown ? "Ausente" : "N/D"}
@@ -271,7 +276,7 @@ export function GeneratorDetailProfessionalTop({
               )}
             />
             <FlowNode
-              icon={<ShieldCheck className="size-6" />}
+              icon={model.mcb && model.gcb ? <IconBreakerClosed size={24} /> : <IconBreakerOpen size={24} />}
               label="DISJUNTORES"
               value={model.mcbKnown ? (model.mcb ? "MCB I" : "MCB O") : "MCB N/D"}
               sub={model.gcbKnown ? (model.gcb ? "GCB fechado" : "GCB aberto") : "GCB N/D"}
@@ -297,7 +302,7 @@ export function GeneratorDetailProfessionalTop({
               )}
             />
             <FlowNode
-              icon={<Building2 className="size-6" />}
+              icon={<IconLoad size={24} />}
               label="CARGA"
               value={formatMetric(model.busLoadKw, "kW", 0)}
               sub={
