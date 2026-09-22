@@ -232,7 +232,6 @@ for (const marker of [
   }
 }
 
-
 const systemHealth = read("src/components/scada/SystemHealthScreen.tsx");
 for (const marker of [
   "readinessActions",
