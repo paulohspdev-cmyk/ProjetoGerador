@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 BASE="${RC_PROJECT_ROOT:-/opt/rc-geradores}"
 ENV_FILE="${RC_ENV_FILE:-/etc/rc-geradores.env}"
 REF="${1:-origin/main}"
@@ -87,6 +88,11 @@ for cmd in "${REQUIRED_CMDS[@]}"; do
   command -v "${cmd}" >/dev/null 2>&1 || fail "comando obrigatório não encontrado: ${cmd}"
 done
 ok "comandos obrigatórios disponíveis"
+
+if [[ "${RC_ENVIRONMENT:-development}" == "production" || -n "${RC_RAPID_ADMIN_ALLOWED_CIDRS:-}" ]]; then
+  bash "${SCRIPT_DIR}/configure_rapid_network.sh" --check
+  ok "política de rede nativa do Rapid SCADA configurada"
+fi
 
 id rcgeradores >/dev/null 2>&1 || fail "usuário rcgeradores não existe"
 ok "usuário rcgeradores disponível"
