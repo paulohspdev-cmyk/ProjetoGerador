@@ -45,7 +45,9 @@ export function UsersV3Screen() {
       const setup = await rcApi.auth.setup2fa();
       setTwoFaSetup(setup);
       setTwoFaCode("");
-      setTwoFaMessage("Segredo gerado. Adicione-o ao autenticador e confirme o código de 6 dígitos.");
+      setTwoFaMessage(
+        "Segredo gerado. Adicione-o ao autenticador e confirme o código de 6 dígitos.",
+      );
     } catch (err) {
       setTwoFaError(err instanceof Error ? err.message : "Falha ao iniciar configuração 2FA.");
     } finally {
@@ -255,7 +257,9 @@ export function UsersV3Screen() {
 
           {!user?.twoFactorEnabled && twoFaSetup && (
             <div className="space-y-3 rounded-xl border border-border bg-secondary/30 p-4">
-              <p className="text-sm font-semibold">1. Adicione esta chave ao seu autenticador TOTP</p>
+              <p className="text-sm font-semibold">
+                1. Adicione esta chave ao seu autenticador TOTP
+              </p>
               <div className="flex flex-wrap items-center gap-2">
                 <code className="break-all rounded-md bg-background px-3 py-2 text-xs">
                   {twoFaSetup.secret}
@@ -283,7 +287,10 @@ export function UsersV3Screen() {
                   placeholder="000000"
                   className="h-10 w-36 rounded-lg border border-input bg-background px-3 text-sm"
                 />
-                <ActionBtn disabled={twoFaBusy || twoFaCode.length !== 6} onClick={() => void enableTwoFa()}>
+                <ActionBtn
+                  disabled={twoFaBusy || twoFaCode.length !== 6}
+                  onClick={() => void enableTwoFa()}
+                >
                   Ativar 2FA
                 </ActionBtn>
                 <ActionBtn
@@ -303,7 +310,9 @@ export function UsersV3Screen() {
 
           {user?.twoFactorEnabled && (
             <details className="rounded-xl border border-border bg-secondary/20 p-4">
-              <summary className="cursor-pointer text-sm font-semibold">Desativar ou trocar 2FA</summary>
+              <summary className="cursor-pointer text-sm font-semibold">
+                Desativar ou trocar 2FA
+              </summary>
               <p className="mt-2 text-xs text-muted-foreground">
                 Desativar 2FA volta a bloquear ações privilegiadas em produção. Use somente para
                 troca controlada do autenticador.
