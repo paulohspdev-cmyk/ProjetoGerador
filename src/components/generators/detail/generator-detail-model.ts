@@ -1,6 +1,11 @@
 import type { Generator } from "@/data/generators";
 
-import { displayGeneratorName, hasFreshMetric, metricNumber, nominalPowerNumber } from "../generator-metrics";
+import {
+  displayGeneratorName,
+  hasFreshMetric,
+  metricNumber,
+  nominalPowerNumber,
+} from "../generator-metrics";
 import { hasPositiveMeasurement, isPositiveMeasurement } from "../generator-presence";
 
 export type GeneratorDetailModel = ReturnType<typeof buildGeneratorDetailModel>;
