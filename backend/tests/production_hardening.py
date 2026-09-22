@@ -82,6 +82,7 @@ from app.production_guard import validate_production_runtime  # noqa: E402
 
 # Off-site precisa ser mount real: diretório ausente ou no mesmo filesystem
 # do banco não pode ser aceito como recuperação de desastre.
+data_dir.mkdir(parents=True, exist_ok=True)
 try:
     backup_manager._validate_offsite_target_dir(offsite_dir)
 except ValueError as exc:
