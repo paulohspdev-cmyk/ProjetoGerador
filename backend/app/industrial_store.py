@@ -215,6 +215,10 @@ def refresh_observed_alarms(generators: list[dict]) -> int:
     # Alarme e seu evento de transição são gravados na MESMA transação. Isto
     # evita uma segunda conexão escritora concorrendo com o SQLite bloqueado.
     with db.connect() as conn:
+        # Serializa a leitura do estado + transições subsequentes. Sem o lock
+        # antecipado, dois workers podem observar a mesma alarm_key ausente e
+        # ambos tentar INSERT, causando UNIQUE constraint em uma das threads.
+        conn.execute("BEGIN IMMEDIATE")
         rows = conn.execute(
             "SELECT * FROM industrial_alarms WHERE source LIKE 'derived.%' OR source='rapid.metric'"
         ).fetchall()
