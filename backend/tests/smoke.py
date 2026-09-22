@@ -45,8 +45,25 @@ admin, created = db.bootstrap_admin(
 )
 assert created and admin["role"] == "administrador"
 
+
+@app.get("/api/__test__/request-id-boom", include_in_schema=False)
+def _request_id_boom():
+    raise RuntimeError("falha sintética para correlation id")
+
+
 with TestClient(app) as client:
-    expect(client.get("/api/health"), 200)
+    health = expect(client.get("/api/health"), 200)
+    assert health.headers.get("x-request-id")
+
+    boom = expect(client.get("/api/__test__/request-id-boom"), 500)
+    boom_payload = boom.json()
+    request_id = boom.headers.get("x-request-id")
+    assert request_id
+    assert boom_payload == {
+        "detail": "Erro interno do servidor",
+        "requestId": request_id,
+    }
+    assert "falha sintética" not in boom.text
     expect(client.get("/api/generators"), 401)
 
     login = expect(
