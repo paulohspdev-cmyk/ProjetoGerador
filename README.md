@@ -146,7 +146,7 @@ rc-geradores-provision    helper root para provisionar/reconciliar/deprovisionar
 rc-geradores-api          FastAPI em 127.0.0.1:8090
 rc-geradores-worker       alarmes, notificações, scheduler e automação não industrial
 rc-geradores-frontend     TanStack/Node em 127.0.0.1:3000
-nginx                     entrada HTTP na porta 80
+nginx                     somente no modo TLS local gerenciado; external_proxy usa NPM
 scadaserver6              Rapid SCADA Server
 scadacomm6                Rapid SCADA Communicator
 ```
@@ -172,7 +172,7 @@ O instalador:
 5. por padrão cria o primeiro IG200 e provisiona o Rapid usando o **cadastro real do banco**, não valores paralelos hardcoded;
 6. compila o leitor oficial do Rapid SCADA;
 7. compila o frontend para Linux/Node;
-8. instala e inicia bridge, provisionador, API, worker, frontend, Rapid e Nginx;
+8. instala e inicia bridge, provisionador, API, worker, frontend e Rapid; Nginx local só é instalado/configurado quando o TLS não estiver delegado ao proxy externo;
 9. valida API, proxy, serviços, sockets, BaseDAT, bindings e executa o smoke test da VM.
 
 ### Instalar sem gerador inicial
@@ -277,6 +277,9 @@ Diagnóstico detalhado:
 sudo /opt/rc-geradores/ops/status.sh
 ```
 
+Para instalações com Nginx Proxy Manager, siga o cutover em
+`ops/NPM_EXTERNAL_PROXY.md` antes de remover/desabilitar qualquer proxy local.
+
 ## Runtime e dados persistentes
 
 ```text
@@ -310,7 +313,7 @@ O banco SQLite guarda cadastro, alarmes/estado e dados do produto; **não substi
 - bindings divergentes não são reutilizados silenciosamente;
 - retirada de equipamento preserva canais/histórico antes de excluir cadastro;
 - SMTP, WhatsApp e acesso público devem receber credenciais/configuração reais antes do uso;
-- quando HTTPS estiver no Nginx Proxy Manager, use `RC_WEB_TLS_MODE=external_proxy`; o deploy não altera certificado, redirect ou configuração TLS local. Mantenha `RC_AUTH_COOKIE_SECURE=1` no acesso público HTTPS.
+- quando HTTPS estiver no Nginx Proxy Manager, use `RC_WEB_TLS_MODE=external_proxy`, configure `RC_TRUSTED_PROXY_CIDRS` com o IP/CIDR real do NPM e não mantenha uma segunda terminação TLS local; veja `ops/NPM_EXTERNAL_PROXY.md`. Mantenha `RC_AUTH_COOKIE_SECURE=1` no acesso público HTTPS.
 
 ## Desenvolvimento
 
