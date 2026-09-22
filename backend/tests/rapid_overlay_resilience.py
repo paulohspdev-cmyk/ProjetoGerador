@@ -14,6 +14,7 @@ generator = {
     "listen_port": 15001,
     "modbus_unit": 1,
     "rapid_device_num": 200,
+    "nominal_power_kw": 500.0,
     "enabled": True,
 }
 
@@ -32,6 +33,7 @@ binding = {
         "fuel_level": {"cnl": 1003, "scale": 1},
         "maintenance_hours": {"cnl": 1004, "scale": 1},
         "run_hours": {"cnl": 1005, "scale": 1},
+        "nominal_power_kw": {"cnl": 1006, "scale": 1},
     },
 }
 
@@ -96,12 +98,16 @@ try:
             1003: {"val": 516, "stat": 1, "defined": True},
             1004: {"val": 159, "stat": 1, "defined": True},
             1005: {"val": 1294.2, "stat": 1, "defined": True},
+            1006: {"val": 600, "stat": 1, "defined": True},
         },
         "",
     )
     rows = rapid.overlay_generators([generator])
     assert rows[0]["status"] == "online"
     assert rows[0]["health"]["controller"] == "responding"
+    assert rows[0]["nominalPower"] == 600
+    assert rows[0]["nominalPowerConfigured"] == 500
+    assert rows[0]["nominalPowerSource"] == "telemetry"
 
     # Ao perder comunicação, somente combustível, manutenção e horímetro
     # permanecem no card. Métricas instantâneas devem voltar a N/D.
@@ -113,6 +119,9 @@ try:
     assert rows[0]["fuelLevel"] == 516
     assert rows[0]["maintenance"] == 159
     assert rows[0]["runHours"] == 1294.2
+    assert rows[0]["nominalPower"] == 500
+    assert rows[0]["nominalPowerConfigured"] == 500
+    assert rows[0]["nominalPowerSource"] == "cadastral"
     assert rows[0]["telemetryStale"] is True
     assert rows[0]["definedMetrics"] == []
     assert rows[0]["telemetrySource"] == "last_known"
