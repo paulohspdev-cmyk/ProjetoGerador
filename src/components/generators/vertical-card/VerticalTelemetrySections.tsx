@@ -1,7 +1,8 @@
 import { cn } from "@/lib/utils";
-import { Battery, Clock3, Fuel, Gauge, Thermometer, Zap } from "lucide-react";
+import { Clock3, Gauge, Zap } from "lucide-react";
 
 import { RpmGauge } from "../RpmGauge";
+import { IconBattery, IconFuelPump, IconOilCan, IconThermometer } from "../scada-icons";
 
 function valueText(value: number | null, unit: string, digits = 0) {
   if (value == null || !Number.isFinite(value)) return "—";
@@ -64,25 +65,25 @@ export function VerticalEngineAndRpm({
           </span>
         </div>
         <div className="vref-engine-row">
-          <Gauge />
+          <IconOilCan />
           <span>Oil Pressure</span>
           <MiniBar percent={oilPercent} />
           <b>{valueText(oil, oilUnit, 1)}</b>
         </div>
         <div className="vref-engine-row">
-          <Thermometer />
+          <IconThermometer />
           <span>Coolant Temp.</span>
           <MiniBar percent={coolantPercent} />
           <b>{valueText(coolant, coolantUnit, 0)}</b>
         </div>
         <div className="vref-engine-row">
-          <Fuel />
+          <IconFuelPump />
           <span>Fuel Level</span>
           <MiniBar percent={fuelPercent} />
           <b>{valueText(fuel, fuelUnit, 0)}</b>
         </div>
         <div className="vref-engine-row">
-          <Battery />
+          <IconBattery />
           <span>Battery Voltage</span>
           <MiniBar percent={null} />
           <b>{valueText(battery, "V", 1)}</b>
