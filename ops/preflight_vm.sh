@@ -79,6 +79,8 @@ CONTROL_SOCKET="${RC_RAPID_CONTROL_SOCKET:-${CONTROL_SOCKET}}"
 PROVISION_SOCKET="${RC_PROVISION_SOCKET:-${PROVISION_SOCKET}}"
 TEST_PORT="${RC_DEPLOY_TEST_PORT:-${TEST_PORT}}"
 WEB_TLS_MODE="${RC_WEB_TLS_MODE:-${WEB_TLS_MODE}}"
+EXTERNAL_PROXY_ALLOWED_CIDRS="${RC_EXTERNAL_PROXY_ALLOWED_CIDRS:-}"
+TRUSTED_PROXY_CIDRS="${RC_TRUSTED_PROXY_CIDRS:-}"
 LEGACY_NGINX_SITE="${RC_LEGACY_NGINX_SITE:-/etc/nginx/sites-enabled/rc-geradores}"
 
 REQUIRED_CMDS=(git tar npm node curl systemctl runuser ss python3 dotnet hostname id find awk jq df)
@@ -130,8 +132,8 @@ done
 ok "Rapid SCADA ativo antes do deploy"
 
 if [[ "${WEB_TLS_MODE}" == "external_proxy" ]]; then
-  [[ -n "${RC_EXTERNAL_PROXY_ALLOWED_CIDRS//[[:space:],]/}" ]] || fail "RC_WEB_TLS_MODE=external_proxy exige RC_EXTERNAL_PROXY_ALLOWED_CIDRS com o IP/CIDR real do Nginx Proxy Manager"
-  [[ -n "${RC_TRUSTED_PROXY_CIDRS//[[:space:],]/}" ]] || fail "RC_WEB_TLS_MODE=external_proxy exige RC_TRUSTED_PROXY_CIDRS com o IP/CIDR real do Nginx Proxy Manager"
+  [[ -n "${EXTERNAL_PROXY_ALLOWED_CIDRS//[[:space:],]/}" ]] || fail "RC_WEB_TLS_MODE=external_proxy exige RC_EXTERNAL_PROXY_ALLOWED_CIDRS com o IP/CIDR real do Nginx Proxy Manager"
+  [[ -n "${TRUSTED_PROXY_CIDRS//[[:space:],]/}" ]] || fail "RC_WEB_TLS_MODE=external_proxy exige RC_TRUSTED_PROXY_CIDRS com o IP/CIDR real do Nginx Proxy Manager"
   bash "${SCRIPT_DIR}/configure_external_proxy_network.sh" --check-runtime
   if [[ -f "${LEGACY_NGINX_SITE}" ]] && grep -Eq '^[[:space:]]*listen[[:space:]].*443.*ssl' "${LEGACY_NGINX_SITE}"; then
     fail "RC_WEB_TLS_MODE=external_proxy, mas o site Nginx local ainda termina TLS em 443: ${LEGACY_NGINX_SITE}. Valide o NPM direto em 3000/8090 e remova a terminação TLS local antes do deploy."
