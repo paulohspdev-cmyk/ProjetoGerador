@@ -79,6 +79,20 @@ try:
     assert proxy_ok is False, proxy_detail
     assert "dupla terminação TLS" in proxy_detail, proxy_detail
 
+    proxy_readiness = diagnostics._production_readiness(
+        [],
+        reverse_tcp_exposed=False,
+        reverse_tcp_allowlist=False,
+        external_proxy_topology_ok=proxy_ok,
+        external_proxy_topology_detail=proxy_detail,
+    )
+    proxy_check = next(
+        item
+        for item in proxy_readiness["checks"]
+        if item["id"] == "external_proxy_topology"
+    )
+    assert proxy_check["severity"] == "blocker", proxy_check
+
     proxy_ok, proxy_detail = diagnostics._external_proxy_topology({3000, 8090})
     assert proxy_ok is True, proxy_detail
 
