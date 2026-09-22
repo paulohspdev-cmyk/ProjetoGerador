@@ -193,7 +193,9 @@ jobs:
           grep -q 'systemctl is-enabled --quiet.*FIREWALL_SERVICE' ops/configure_external_proxy_network.sh
           grep -q 'systemctl is-active --quiet.*FIREWALL_SERVICE' ops/configure_external_proxy_network.sh
           grep -q 'firewall persistente não contém peer do NPM' ops/configure_external_proxy_network.sh
-          grep -q '^After=nftables.service          bash -n ops/run_backend_tests.sh
+          grep -q '^After=nftables.service$' ops/configure_external_proxy_network.sh
+          grep -q '^PartOf=nftables.service$' ops/configure_external_proxy_network.sh
+          bash -n ops/run_backend_tests.sh
           bash -n ops/run_e2e_isolated.sh
           bash -n rapid/provisioning/provision_ig200.sh
           bash ops/preflight_vm.sh --help >/tmp/preflight-help.txt
