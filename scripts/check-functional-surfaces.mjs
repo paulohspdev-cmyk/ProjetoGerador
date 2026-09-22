@@ -232,6 +232,22 @@ for (const marker of [
   }
 }
 
+
+const systemHealth = read("src/components/scada/SystemHealthScreen.tsx");
+for (const marker of [
+  "readinessActions",
+  'backup_offsite: { slug: "backups"',
+  'privileged_2fa: { slug: "usuarios"',
+  'controller_packs: { slug: "controller-packs"',
+  'controller_firmware: { slug: "controladoras"',
+  'nominal_power: { slug: "geradores"',
+  "Ação externa",
+]) {
+  if (!systemHealth.includes(marker)) {
+    failures.push(`readiness perdeu rota de remediação: ${marker}`);
+  }
+}
+
 const generatorData = read("src/data/generators.ts");
 const powerFlowCard = read("src/components/generators/PowerFlowCard.tsx");
 const statusPill = read("src/components/generators/StatusPill.tsx");
