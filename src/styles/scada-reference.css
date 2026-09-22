@@ -1,0 +1,433 @@
+/* RC Geradores — SCADA reference layer derived from the user-provided industrial panel kit.
+ * The reference package is used as a visual/semantic guide only; proprietary vendor art is not shipped.
+ */
+
+:root {
+  --sc-canvas-bg: #272d43;
+  --sc-surface: #3b415b;
+  --sc-surface-2: #4d5576;
+  --sc-surface-3: #1f2436;
+  --sc-surface-active: #4b5371;
+  --sc-border: #4b5371;
+  --sc-border-strong: #5d6688;
+  --sc-text: #ffffff;
+  --sc-text-muted: #b3b9d5;
+  --sc-text-dim: #969dbd;
+  --sc-text-disabled: #9b9b9b;
+  --sc-state-active: #1dd322;
+  --sc-state-inactive: #7c7c7c;
+  --sc-alarm: #ff2b00;
+  --sc-warning: #fec600;
+  --sc-nocomm: #934d11;
+  --sc-info: #00b8d4;
+  --sc-ok-light: #1dda23;
+  --sc-ok-mid: #1cb922;
+  --sc-ok-dark: #1b721f;
+  --sc-w1-light: #ffee28;
+  --sc-w1-mid: #fed925;
+  --sc-w1-dark: #fe941b;
+  --sc-w2-light: #fd3136;
+  --sc-w2-mid: #e4241b;
+  --sc-w2-dark: #9b1918;
+  --sc-font: Roboto, "Segoe UI", Arial, sans-serif;
+  --sc-radius: 4px;
+  --sc-grid: 8px;
+  --sc-row-height: 48px;
+}
+
+/* Keep brand/navigation accent independent from process state colors.
+ * Green means live/closed/healthy here; red/yellow/brown are fault states only.
+ */
+.generator-reference-card-grid {
+  background: var(--sc-canvas-bg) !important;
+}
+
+.vref-card {
+  --vref-bg: var(--sc-canvas-bg);
+  --vref-panel: var(--sc-surface);
+  --vref-line: var(--sc-border);
+  --vref-line-soft: color-mix(in srgb, var(--sc-border) 60%, transparent);
+  --vref-text: var(--sc-text);
+  --vref-muted: var(--sc-text-muted);
+  --vref-green: var(--sc-state-active);
+  --vref-red: var(--sc-alarm);
+  --vref-yellow: var(--sc-warning);
+
+  border-color: var(--sc-border) !important;
+  border-radius: var(--sc-radius) !important;
+  background: var(--sc-canvas-bg) !important;
+  box-shadow: none !important;
+  font-family: var(--sc-font) !important;
+}
+
+.vref-section {
+  border-color: var(--sc-border) !important;
+  border-radius: var(--sc-radius) !important;
+  background: var(--sc-surface) !important;
+}
+
+.vref-section h4,
+.vref-section-heading h4,
+.vref-table-heading h4 {
+  color: var(--sc-text) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.035em !important;
+}
+
+.vref-header {
+  border-bottom-color: var(--sc-border) !important;
+  background: var(--sc-surface-3);
+}
+
+.vref-header-title > span.is-online,
+.vref-generator-badge.is-online,
+.vref-flow-controller-heading > span {
+  color: var(--sc-state-active) !important;
+}
+
+.vref-header-title > span.is-alert,
+.vref-generator-badge.is-alert {
+  color: var(--sc-warning) !important;
+}
+
+.vref-header-title > span.is-offline,
+.vref-generator-badge.is-offline {
+  color: var(--sc-alarm) !important;
+}
+
+.vref-card.has-stale-telemetry {
+  border-color: var(--sc-nocomm) !important;
+}
+
+.vref-card.has-stale-telemetry .vref-header {
+  box-shadow: inset 3px 0 0 var(--sc-nocomm);
+}
+
+.vref-gauge-base,
+.vref-rpm .gauge-bg {
+  stroke: var(--sc-surface-3) !important;
+}
+
+.vref-gauge-range {
+  stroke: var(--sc-border-strong) !important;
+}
+
+.vref-gauge-scale,
+.vref-flow-reading,
+.vref-flow-frequency,
+.vref-load-title,
+.vref-generator-letter,
+.vref-engine-row,
+.vref-engine-row > b,
+.vref-summary-item,
+.vref-summary-item > b {
+  color: var(--sc-text);
+  fill: var(--sc-text);
+}
+
+.vref-kw-nominal,
+.vref-table-heading > span,
+.vref-rpm .rpm-unit {
+  color: var(--sc-text-muted) !important;
+  fill: var(--sc-text-muted) !important;
+}
+
+.vref-device {
+  fill: var(--sc-surface-3) !important;
+  stroke: var(--sc-state-inactive) !important;
+}
+
+.vref-device.is-live {
+  stroke: var(--sc-state-active) !important;
+  filter: none !important;
+}
+
+.vref-device.is-dead,
+.vref-device.is-idle {
+  stroke: var(--sc-state-inactive) !important;
+}
+
+.vref-device.is-unknown {
+  stroke: var(--sc-nocomm) !important;
+}
+
+.vref-flow-icon {
+  color: var(--sc-text);
+  stroke: currentColor !important;
+}
+
+.vref-wire {
+  stroke: var(--sc-state-inactive) !important;
+}
+
+.vref-wire-live.is-live {
+  stroke: var(--sc-state-active) !important;
+  filter: none !important;
+}
+
+.vref-junction {
+  fill: var(--sc-state-inactive) !important;
+}
+
+.vref-junction.is-live {
+  fill: var(--sc-state-active) !important;
+}
+
+.vref-breaker > circle,
+.vref-breaker > line {
+  fill: var(--sc-state-inactive) !important;
+  stroke: var(--sc-state-inactive) !important;
+}
+
+.vref-breaker.is-closed > circle,
+.vref-breaker.is-closed > line {
+  fill: var(--sc-state-active) !important;
+  stroke: var(--sc-state-active) !important;
+}
+
+.vref-breaker.is-unknown > circle,
+.vref-breaker.is-unknown > line {
+  fill: var(--sc-nocomm) !important;
+  stroke: var(--sc-nocomm) !important;
+}
+
+.vref-breaker-badge > rect {
+  fill: var(--sc-surface-2) !important;
+  stroke: var(--sc-border-strong) !important;
+}
+
+.vref-breaker-badge .label {
+  fill: var(--sc-text-muted) !important;
+}
+
+.vref-breaker-badge .state {
+  fill: var(--sc-text) !important;
+}
+
+.vref-breaker-badge.is-closed > rect {
+  fill: color-mix(in srgb, var(--sc-state-active) 22%, var(--sc-surface)) !important;
+  stroke: var(--sc-state-active) !important;
+}
+
+.vref-breaker-badge.is-open > rect {
+  fill: var(--sc-surface-2) !important;
+  stroke: var(--sc-state-inactive) !important;
+}
+
+.vref-breaker-badge.is-unknown > rect {
+  fill: color-mix(in srgb, var(--sc-nocomm) 24%, var(--sc-surface)) !important;
+  stroke: var(--sc-nocomm) !important;
+}
+
+.vref-load-card {
+  fill: var(--sc-surface-3) !important;
+  stroke: var(--sc-border-strong) !important;
+}
+
+.vref-load-value {
+  fill: var(--sc-state-active) !important;
+}
+
+.vref-flow-command-stack .start {
+  border-color: var(--sc-state-active) !important;
+  background: color-mix(in srgb, var(--sc-state-active) 26%, var(--sc-surface-3)) !important;
+  color: var(--sc-text) !important;
+}
+
+.vref-flow-command-stack .stop {
+  border-color: var(--sc-alarm) !important;
+  background: color-mix(in srgb, var(--sc-alarm) 28%, var(--sc-surface-3)) !important;
+  color: var(--sc-text) !important;
+}
+
+.vref-flow-command-stack button:disabled {
+  border-color: var(--sc-border) !important;
+  background: var(--sc-surface-3) !important;
+  color: var(--sc-text-disabled) !important;
+  opacity: 0.72 !important;
+}
+
+.vref-mode-row button,
+.vref-dse-hand,
+.vref-dse-auto {
+  border-color: var(--sc-border) !important;
+  background: var(--sc-surface-3) !important;
+  color: var(--sc-text-muted) !important;
+}
+
+.vref-mode-row button.is-active,
+.vref-dse-hand.is-active,
+.vref-dse-auto.is-active {
+  border-color: var(--sc-state-active) !important;
+  background: color-mix(in srgb, var(--sc-state-active) 20%, var(--sc-surface)) !important;
+  color: var(--sc-text) !important;
+}
+
+.vref-mode-row button:disabled:not(.is-active),
+.vref-dse-hand:disabled:not(.is-active),
+.vref-dse-auto:disabled:not(.is-active) {
+  color: var(--sc-text-disabled) !important;
+  opacity: 0.72;
+}
+
+.vref-engine-heading > span.is-running {
+  color: var(--sc-state-active) !important;
+}
+
+.vref-engine-heading > span.is-stopped {
+  color: var(--sc-state-inactive) !important;
+}
+
+.vref-engine-heading > span.is-unknown {
+  color: var(--sc-nocomm) !important;
+}
+
+.vref-mini-bar {
+  border-color: var(--sc-border) !important;
+  background: var(--sc-surface-3) !important;
+}
+
+.vref-mini-bar > i {
+  background: linear-gradient(90deg, var(--sc-ok-dark), var(--sc-ok-mid), var(--sc-ok-light)) !important;
+}
+
+.vref-mini-bar.is-unknown {
+  border-color: var(--sc-nocomm) !important;
+  background: repeating-linear-gradient(
+    135deg,
+    var(--sc-surface-3) 0 3px,
+    color-mix(in srgb, var(--sc-nocomm) 28%, var(--sc-surface-3)) 3px 5px
+  ) !important;
+}
+
+.vref-rpm .gauge-green {
+  stroke: var(--sc-state-active) !important;
+}
+
+.vref-rpm .gauge-yellow {
+  stroke: var(--sc-warning) !important;
+}
+
+.vref-rpm .gauge-red {
+  stroke: var(--sc-alarm) !important;
+}
+
+.vref-rpm .rpm-percent {
+  fill: var(--sc-state-active) !important;
+}
+
+.vref-data-row {
+  min-height: 22px !important;
+  border-bottom-color: color-mix(in srgb, var(--sc-border) 68%, transparent) !important;
+}
+
+.vref-data-row > span {
+  color: var(--sc-text-muted) !important;
+}
+
+.vref-data-row > b {
+  color: var(--sc-text) !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.vref-data-row > b.generator {
+  color: var(--sc-text) !important;
+}
+
+.vref-summary-grid {
+  border-top-color: var(--sc-border) !important;
+}
+
+.vref-summary-item {
+  min-height: 21px !important;
+}
+
+.vref-command-message {
+  border-color: var(--sc-border-strong) !important;
+  background: color-mix(in srgb, var(--sc-surface-3) 96%, transparent) !important;
+  color: var(--sc-text) !important;
+  font-family: var(--sc-font) !important;
+}
+
+/* Detail page: same process semantics, without turning normal actions green. */
+.gen-detail-professional {
+  --industrial-bg: var(--sc-canvas-bg);
+  --industrial-panel: var(--sc-surface);
+  --industrial-panel-strong: var(--sc-surface-3);
+  --industrial-border: var(--sc-border);
+  --industrial-foreground: var(--sc-text);
+  --industrial-muted: var(--sc-text-muted);
+}
+
+.gen-detail-professional .gen-detail-section {
+  border-color: var(--sc-border) !important;
+  border-radius: var(--sc-radius) !important;
+  background: var(--sc-surface) !important;
+  box-shadow: none !important;
+  font-family: var(--sc-font);
+}
+
+.gen-detail-professional .scada-process-live {
+  color: var(--sc-state-active) !important;
+}
+
+.gen-detail-professional .scada-process-cold {
+  color: var(--sc-state-inactive) !important;
+}
+
+.gen-detail-professional .scada-process-warning {
+  color: var(--sc-warning) !important;
+}
+
+.gen-detail-professional .scada-process-alarm {
+  color: var(--sc-alarm) !important;
+}
+
+.gen-detail-professional .scada-process-nocomm {
+  color: var(--sc-nocomm) !important;
+}
+
+.scada-data-row {
+  display: grid;
+  min-height: var(--sc-row-height);
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--sc-border);
+  border-radius: var(--sc-radius);
+  background: var(--sc-surface);
+  padding: 6px 12px;
+  font-family: var(--sc-font);
+}
+
+.scada-data-row__name {
+  color: var(--sc-text-muted);
+  font-size: 14px;
+}
+
+.scada-data-row__value {
+  color: var(--sc-text);
+  font-size: 18px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.scada-data-row__unit {
+  margin-left: 4px;
+  color: var(--sc-text-muted);
+  font-size: 8px;
+  font-style: normal;
+}
+
+.scada-data-row[data-state="warning"] {
+  box-shadow: inset 0 0 0 2px var(--sc-warning);
+}
+
+.scada-data-row[data-state="alarm"] {
+  box-shadow: inset 0 0 0 2px var(--sc-alarm);
+}
+
+.scada-data-row[data-state="nocomm"] .scada-data-row__value {
+  color: var(--sc-nocomm);
+}
