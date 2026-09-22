@@ -61,14 +61,33 @@ def init_all():
 
 init_all()
 
-# F00: external TLS proxy mode must not report local nginx as a failed product service.
+# F00: external TLS proxy mode must not report local nginx as a failed product service,
+# but readiness must surface a legacy local TLS terminator that remains active on 443.
 previous_web_tls_mode = os.environ.get("RC_WEB_TLS_MODE")
+_original_proxy_run = diagnostics._run
 try:
     os.environ["RC_WEB_TLS_MODE"] = "external_proxy"
     assert "nginx.service" not in diagnostics._service_names()
+
+    def _local_nginx_active(args, timeout=2):
+        if args == ["systemctl", "is-active", "nginx.service"]:
+            return 0, "active"
+        return _original_proxy_run(args, timeout)
+
+    diagnostics._run = _local_nginx_active
+    proxy_ok, proxy_detail = diagnostics._external_proxy_topology({80, 443})
+    assert proxy_ok is False, proxy_detail
+    assert "dupla terminação TLS" in proxy_detail, proxy_detail
+
+    proxy_ok, proxy_detail = diagnostics._external_proxy_topology({3000, 8090})
+    assert proxy_ok is True, proxy_detail
+
     os.environ["RC_WEB_TLS_MODE"] = "managed"
     assert "nginx.service" in diagnostics._service_names()
+    proxy_ok, proxy_detail = diagnostics._external_proxy_topology({443})
+    assert proxy_ok is None and proxy_detail == ""
 finally:
+    diagnostics._run = _original_proxy_run
     if previous_web_tls_mode is None:
         os.environ.pop("RC_WEB_TLS_MODE", None)
     else:
