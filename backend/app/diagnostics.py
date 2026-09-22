@@ -1,3 +1,4 @@
+import ipaddress
 import json
 import os
 import shutil
@@ -34,6 +35,11 @@ SERVICES = [
     "scadaserver6.service",
     "scadacomm6.service",
 ]
+RAPID_NATIVE_NETWORK_SERVICES = (
+    "scadaserver6.service",
+    "scadaagent6.service",
+    "scadaweb6.service",
+)
 
 
 def _service_names() -> list[str]:
@@ -66,6 +72,69 @@ def _service(name):
         "status": "OK" if rc == 0 and out == "active" else "DOWN",
         "detail": out or "indisponível",
     }
+
+
+def _rapid_native_network_policy() -> tuple[bool, str]:
+    raw = os.environ.get("RC_RAPID_ADMIN_ALLOWED_CIDRS", "")
+    admin_networks: set[str] = set()
+    for token in raw.split(","):
+        token = token.strip()
+        if not token:
+            continue
+        try:
+            network = ipaddress.ip_network(token, strict=False)
+        except ValueError:
+            return False, f"RC_RAPID_ADMIN_ALLOWED_CIDRS contém CIDR inválido: {token}"
+        if network.prefixlen == 0:
+            return False, f"RC_RAPID_ADMIN_ALLOWED_CIDRS contém rede ampla demais: {network}"
+        admin_networks.add(str(network))
+
+    if not admin_networks:
+        return False, "RC_RAPID_ADMIN_ALLOWED_CIDRS não configurado"
+
+    required_allow = {"127.0.0.0/8", "::1/128", *admin_networks}
+    required_deny = {"0.0.0.0/0", "::/0"}
+    errors: list[str] = []
+
+    for service in RAPID_NATIVE_NETWORK_SERVICES:
+        rc, out = _run(
+            [
+                "systemctl",
+                "show",
+                service,
+                "-p",
+                "IPAddressAllow",
+                "-p",
+                "IPAddressDeny",
+                "--no-pager",
+            ]
+        )
+        if rc != 0:
+            errors.append(f"{service}: não foi possível ler política systemd")
+            continue
+
+        properties: dict[str, set[str]] = {}
+        for line in out.splitlines():
+            key, sep, value = line.partition("=")
+            if sep:
+                properties[key] = {item for item in value.split() if item}
+
+        allow = properties.get("IPAddressAllow", set())
+        deny = properties.get("IPAddressDeny", set())
+        missing_allow = sorted(required_allow - allow)
+        missing_deny = sorted(required_deny - deny)
+        if missing_allow:
+            errors.append(f"{service}: allow ausente {', '.join(missing_allow)}")
+        if missing_deny:
+            errors.append(f"{service}: deny ausente {', '.join(missing_deny)}")
+
+    if errors:
+        return False, "; ".join(errors)
+    return (
+        True,
+        "Server/Agent/Webstation restritos a loopback e redes administrativas: "
+        + ", ".join(sorted(admin_networks)),
+    )
 
 
 def _listening_ports() -> set[int]:
@@ -197,6 +266,8 @@ def _production_readiness(
     *,
     reverse_tcp_exposed: bool,
     reverse_tcp_allowlist: bool,
+    rapid_native_policy_ok: bool | None = None,
+    rapid_native_policy_detail: str = "",
 ) -> dict:
     checks: list[dict] = []
 
@@ -251,6 +322,19 @@ def _production_readiness(
             else "Listeners expostos sem allowlist de origem"
         ),
     )
+    if rapid_native_policy_ok is not None:
+        add(
+            "rapid_native_network_policy",
+            "Proteção das portas nativas do Rapid SCADA",
+            rapid_native_policy_ok,
+            "blocker",
+            rapid_native_policy_detail
+            or (
+                "Política systemd aplicada"
+                if rapid_native_policy_ok
+                else "Política systemd não aplicada ou incompleta"
+            ),
+        )
 
     offsite_ready = bool(
         BACKUP_OFFSITE_REQUIRED
@@ -532,6 +616,7 @@ def system_diagnostics():
         "workers": workers,
         "queues": queues,
     }
+    rapid_native_policy_ok, rapid_native_policy_detail = _rapid_native_network_policy()
     return {
         "ok": all(item["status"] == "OK" for item in services),
         "services": services,
@@ -574,6 +659,8 @@ def system_diagnostics():
             raw_generators,
             reverse_tcp_exposed=listeners_exposed,
             reverse_tcp_allowlist=allowlist_enabled,
+            rapid_native_policy_ok=rapid_native_policy_ok,
+            rapid_native_policy_detail=rapid_native_policy_detail,
         ),
         "version": version_info(),
     }
