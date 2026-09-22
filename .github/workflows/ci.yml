@@ -175,6 +175,8 @@ jobs:
           bash -n ops/configure_rapid_network.sh
           grep -q 'time.monotonic() + 30' ops/configure_rapid_network.sh
           grep -q 'não abriu loopback' ops/configure_rapid_network.sh
+          grep -q 'scadacomm6 não reconectou ao Server loopback:10000' ops/configure_rapid_network.sh
+          grep -q 'ss -tnp state established' ops/configure_rapid_network.sh
           bash -n ops/configure_external_proxy_network.sh
           printf 'RC_WEB_TLS_MODE=external_proxy\nRC_EXTERNAL_PROXY_ALLOWED_CIDRS=10.10.10.131/32\nRC_TRUSTED_PROXY_CIDRS=10.10.10.131/32\n' >/tmp/external-proxy-good.env
           RC_ENV_FILE=/tmp/external-proxy-good.env bash ops/configure_external_proxy_network.sh --check
