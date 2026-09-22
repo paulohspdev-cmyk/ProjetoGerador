@@ -24,11 +24,7 @@ from .config import (
     SMTP_HOST,
     WHATSAPP_API_URL,
 )
-from .controller_library import (
-    pack_for_model,
-    pack_is_lab_onboarding_ready,
-    pack_is_production_ready,
-)
+from .controller_library import pack_for_model, pack_is_production_ready
 from .rapid import load_bindings, overlay_generators
 
 SERVICES = [
@@ -422,7 +418,6 @@ def _production_readiness(
         if item.get("generator_id")
     }
     no_pack: list[str] = []
-    lab_readonly_inventory: list[str] = []
     no_binding: list[str] = []
     missing_nominal_support: list[str] = []
     missing_site: list[str] = []
@@ -446,14 +441,9 @@ def _production_readiness(
         tag = str(generator.get("tag") or generator.get("id") or "N/D")
         pack = pack_for_model(generator.get("controller_model") or "")
         pack_ready = pack_is_production_ready(pack)
-        generator_id = str(generator.get("id") or "")
-        has_binding = generator_id in bindings
         if not pack_ready:
-            if pack_is_lab_onboarding_ready(pack) and not has_binding:
-                lab_readonly_inventory.append(tag)
-            else:
-                no_pack.append(tag)
-        elif not has_binding:
+            no_pack.append(tag)
+        elif str(generator.get("id") or "") not in bindings:
             no_binding.append(tag)
 
         # nominal_power_kw é telemetria da controladora nos packs que a
@@ -512,21 +502,7 @@ def _production_readiness(
         "Controller Packs de produção",
         not no_pack,
         "blocker",
-        "Todos os ativos operacionais possuem pack production"
-        if not no_pack
-        else "Sem pack production seguro: " + ", ".join(no_pack),
-    )
-    add(
-        "lab_readonly_inventory",
-        "Inventário LAB fail-closed",
-        not lab_readonly_inventory,
-        "warning",
-        (
-            "Nenhum ativo LAB habilitado"
-            if not lab_readonly_inventory
-            else "LAB somente leitura, sem binding industrial: "
-            + ", ".join(lab_readonly_inventory)
-        ),
+        "Todos os ativos possuem pack production" if not no_pack else "Sem pack production: " + ", ".join(no_pack),
     )
     add(
         "industrial_bindings",
