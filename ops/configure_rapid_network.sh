@@ -190,6 +190,21 @@ for service, port in ports.items():
         )
 PY
 
+if systemctl is-active --quiet scadacomm6.service; then
+  COMM_PID="$(systemctl show scadacomm6.service -p MainPID --value)"
+  [[ "${COMM_PID}" =~ ^[0-9]+$ ]] && (( COMM_PID > 0 )) || fail "PID do scadacomm6 inválido"
+  COMM_CONNECTED=0
+  for _ in $(seq 1 60); do
+    if ss -tnp state established 2>/dev/null | grep -E ":10000 .*pid=${COMM_PID}|pid=${COMM_PID}.*:10000" >/dev/null; then
+      COMM_CONNECTED=1
+      break
+    fi
+    sleep 0.5
+  done
+  (( COMM_CONNECTED == 1 )) || fail "scadacomm6 não reconectou ao Server loopback:10000 em até 30s"
+  ok "scadacomm6 reconectado ao Server em loopback:10000"
+fi
+
 trap - EXIT
 cleanup
 echo "Rapid SCADA network policy: OK"
