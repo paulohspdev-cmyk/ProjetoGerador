@@ -1,4 +1,5 @@
 import json
+import math
 import os
 import sqlite3
 import time
@@ -44,6 +45,7 @@ def init_db():
                 listen_port INTEGER NOT NULL DEFAULT 0,
                 modbus_unit INTEGER NOT NULL DEFAULT 1,
                 rapid_device_num INTEGER,
+                nominal_power_kw REAL,
                 enabled INTEGER NOT NULL DEFAULT 1,
                 created_at INTEGER NOT NULL,
                 updated_at INTEGER NOT NULL
@@ -506,6 +508,18 @@ def _validate_domain_connection_conflicts(conn, record: dict) -> None:
             )
 
 
+def _normalize_nominal_power_kw(value):
+    if value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("Potência nominal deve ser um número em kW") from exc
+    if not math.isfinite(number) or number <= 0 or number > 100000:
+        raise ValueError("Potência nominal deve ficar entre 0 e 100000 kW")
+    return number
+
+
 def create_generator(data, actor="system"):
     now = int(time.time())
     generator_id = data.get("id") or f"gen-{uuid.uuid4().hex[:12]}"
@@ -522,6 +536,7 @@ def create_generator(data, actor="system"):
         "listen_port": int(data.get("listen_port") or 0),
         "modbus_unit": int(data.get("modbus_unit") or 1),
         "rapid_device_num": data.get("rapid_device_num"),
+        "nominal_power_kw": _normalize_nominal_power_kw(data.get("nominal_power_kw")),
         "enabled": 1 if data.get("enabled", True) else 0,
         "created_at": now,
         "updated_at": now,
@@ -534,11 +549,11 @@ def create_generator(data, actor="system"):
             """
             INSERT INTO generators (
                 id, tag, name, customer, site, controller_type, controller_model,
-                transport, host, listen_port, modbus_unit, rapid_device_num,
+                transport, host, listen_port, modbus_unit, rapid_device_num, nominal_power_kw,
                 enabled, created_at, updated_at
             ) VALUES (
                 :id, :tag, :name, :customer, :site, :controller_type, :controller_model,
-                :transport, :host, :listen_port, :modbus_unit, :rapid_device_num,
+                :transport, :host, :listen_port, :modbus_unit, :rapid_device_num, :nominal_power_kw,
                 :enabled, :created_at, :updated_at
             )
             """,
@@ -560,6 +575,8 @@ def _normalized_generator_value(key, value):
         return 1 if bool(value) else 0
     if key in {"listen_port", "modbus_unit", "rapid_device_num"}:
         return int(value)
+    if key == "nominal_power_kw":
+        return _normalize_nominal_power_kw(value)
     if key == "tag":
         return str(value).strip().upper()
     if key == "controller_type":
@@ -581,7 +598,8 @@ def update_generator(
         return None
     allowed = {
         "tag", "name", "customer", "site", "controller_type", "controller_model",
-        "transport", "host", "listen_port", "modbus_unit", "rapid_device_num", "enabled",
+        "transport", "host", "listen_port", "modbus_unit", "rapid_device_num",
+        "nominal_power_kw", "enabled",
     }
     industrial_identity = {
         "tag",
@@ -597,7 +615,9 @@ def update_generator(
     fields, values, detail = [], [], []
     normalized_patch = {}
     for key, value in patch.items():
-        if key not in allowed or value is None:
+        if key not in allowed:
+            continue
+        if value is None and key != "nominal_power_kw":
             continue
         value = _normalized_generator_value(key, value)
         current_value = current.get(key)
