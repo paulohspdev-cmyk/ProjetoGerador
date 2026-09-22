@@ -276,7 +276,13 @@ export function GeneratorDetailProfessionalTop({
               )}
             />
             <FlowNode
-              icon={model.mcb && model.gcb ? <IconBreakerClosed size={24} /> : <IconBreakerOpen size={24} />}
+              icon={
+                model.mcb && model.gcb ? (
+                  <IconBreakerClosed size={24} />
+                ) : (
+                  <IconBreakerOpen size={24} />
+                )
+              }
               label="DISJUNTORES"
               value={model.mcbKnown ? (model.mcb ? "MCB I" : "MCB O") : "MCB N/D"}
               sub={model.gcbKnown ? (model.gcb ? "GCB fechado" : "GCB aberto") : "GCB N/D"}
