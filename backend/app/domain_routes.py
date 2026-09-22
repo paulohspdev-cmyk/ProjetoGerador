@@ -235,16 +235,20 @@ def _assert_asset_not_legacy_mirror(asset_id: str) -> None:
         )
 
 
-def _assert_controller_not_legacy_mirror(controller_id: str) -> None:
+def _is_controller_legacy_mirror(controller_id: str) -> bool:
     controller = domain_store.get_controller(controller_id)
     if not controller:
-        return
+        return False
     asset = domain_store.get_asset(str(controller.get("asset_id") or ""))
     legacy_id = str((asset or {}).get("legacy_generator_id") or "")
-    if legacy_id and controller_id == f"ctrl-{legacy_id}":
+    return bool(legacy_id and controller_id == f"ctrl-{legacy_id}")
+
+
+def _assert_controller_not_legacy_mirror(controller_id: str) -> None:
+    if _is_controller_legacy_mirror(controller_id):
         raise HTTPException(
             status_code=409,
-            detail="Controladora espelhada de gerador legado é somente leitura no domínio v3.",
+            detail="Controladora espelhada de gerador legado é somente leitura estrutural no domínio v3.",
         )
 
 
@@ -772,11 +776,21 @@ def controller_update(
     payload: ControllerUpdate,
     user: dict = Depends(require_edit),
 ):
-    _assert_controller_not_legacy_mirror(controller_id)
+    patch = payload.model_dump(exclude_unset=True)
+    if _is_controller_legacy_mirror(controller_id):
+        forbidden = set(patch) - {"firmware", "metadata"}
+        if forbidden:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "Controladora espelhada aceita somente firmware/metadata de inventário; "
+                    "alterações estruturais devem ser feitas pelo cadastro do gerador."
+                ),
+            )
     try:
         item = domain_store.update_controller(
             controller_id,
-            payload.model_dump(exclude_unset=True),
+            patch,
             actor(user),
         )
     except ValueError as exc:
