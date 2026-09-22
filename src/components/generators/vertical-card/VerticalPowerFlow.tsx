@@ -160,7 +160,9 @@ export function VerticalPowerFlow({
                 !mainsKnown ? "is-unknown" : mainsPresent ? "is-live" : "is-dead",
               )}
             />
-            <g transform="translate(-18 -18)" className="vref-flow-icon"><IconMains size={36} /></g>
+            <g transform="translate(-18 -18)" className="vref-flow-icon">
+              <IconMains size={36} />
+            </g>
           </g>
           <text x="139" y="35" className="vref-flow-reading">
             {formatHz(mainsFrequency)}
