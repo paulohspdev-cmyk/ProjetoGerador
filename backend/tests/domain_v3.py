@@ -17,7 +17,9 @@ from app.domain_routes import (  # noqa: E402
     asset_delete,
     asset_link_delete,
     connection_delete,
+    ControllerUpdate,
     controller_delete,
+    controller_update,
 )
 
 
@@ -244,6 +246,31 @@ assert legacy_asset["legacy_generator_id"] == generator["id"]
 assert legacy_asset["kind"] == "genset"
 assert legacy_controller["pack_lifecycle"] == "production"
 assert legacy_connection["modbus_unit"] == 2
+
+# O espelho continua estruturalmente somente leitura, mas precisa aceitar
+# firmware/metadata de inventário para satisfazer readiness e rastreabilidade.
+updated_legacy_controller = controller_update(
+    legacy_controller["id"],
+    ControllerUpdate(firmware="1.8.1.1", metadata={"source": "field-read"}),
+    user=user,
+)
+assert updated_legacy_controller["firmware"] == "1.8.1.1"
+assert updated_legacy_controller["metadata"]["source"] == "field-read"
+assert domain_store.sync_legacy_generators() == 1
+resynced_legacy_controller = domain_store.get_controller(legacy_controller["id"])
+assert resynced_legacy_controller["firmware"] == "1.8.1.1"
+assert resynced_legacy_controller["metadata"]["source"] == "field-read"
+
+try:
+    controller_update(
+        legacy_controller["id"],
+        ControllerUpdate(enabled=False),
+        user=user,
+    )
+except HTTPException as exc:
+    assert exc.status_code == 409
+else:
+    raise AssertionError("espelho legacy aceitou alteração estrutural via controller_update")
 
 # Espelhos legacy não podem ser apagados pelo domínio v3.
 for remover, item_id in (
