@@ -172,6 +172,7 @@ render_api_dropin() {
   cat >"${file}" <<EOF
 [Unit]
 BindsTo=${FIREWALL_SERVICE}.service
+PartOf=${FIREWALL_SERVICE}.service
 After=${FIREWALL_SERVICE}.service
 
 [Service]
@@ -185,6 +186,7 @@ render_frontend_dropin() {
   cat >"${file}" <<EOF
 [Unit]
 BindsTo=${FIREWALL_SERVICE}.service
+PartOf=${FIREWALL_SERVICE}.service
 After=${FIREWALL_SERVICE}.service
 
 [Service]
@@ -212,10 +214,18 @@ runtime_check() {
     || fail "API não está vinculada ao firewall external_proxy"
   grep -q "BindsTo=${FIREWALL_SERVICE}.service" "${FRONTEND_DROPIN}" \
     || fail "frontend não está vinculado ao firewall external_proxy"
+  grep -q "PartOf=${FIREWALL_SERVICE}.service" "${API_DROPIN}" \
+    || fail "API não acompanha restart do firewall external_proxy"
+  grep -q "PartOf=${FIREWALL_SERVICE}.service" "${FRONTEND_DROPIN}" \
+    || fail "frontend não acompanha restart do firewall external_proxy"
   systemctl show "${API_SERVICE}.service" -p BindsTo --value | grep -Fq "${FIREWALL_SERVICE}.service" \
     || fail "systemd ainda não carregou BindsTo do firewall na API"
   systemctl show "${FRONTEND_SERVICE}.service" -p BindsTo --value | grep -Fq "${FIREWALL_SERVICE}.service" \
     || fail "systemd ainda não carregou BindsTo do firewall no frontend"
+  systemctl show "${API_SERVICE}.service" -p PartOf --value | grep -Fq "${FIREWALL_SERVICE}.service" \
+    || fail "systemd ainda não carregou PartOf do firewall na API"
+  systemctl show "${FRONTEND_SERVICE}.service" -p PartOf --value | grep -Fq "${FIREWALL_SERVICE}.service" \
+    || fail "systemd ainda não carregou PartOf do firewall no frontend"
   grep -q -- '--host 0.0.0.0 --port 8090' "${API_DROPIN}" \
     || fail "drop-in da API não expõe o upstream externo"
   grep -q '^Environment=NITRO_HOST=0.0.0.0$' "${FRONTEND_DROPIN}" \
