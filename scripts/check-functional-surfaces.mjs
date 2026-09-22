@@ -307,13 +307,15 @@ if (!deleteButton.includes("industrialApi.lifecycle.retire")) {
 }
 
 const registerGenerator = read("src/components/generators/RegisterGeneratorButton.tsx");
+const generatorIdentityFields = read("src/components/generators/GeneratorIdentityFields.tsx");
+const registerGeneratorFlow = registerGenerator + generatorIdentityFields;
 for (const marker of [
   'onboardingMode === "lab_read_only"',
   "selectedController?.registerable",
   "LAB (somente leitura)",
   "Cadastrar para homologação",
 ]) {
-  if (!registerGenerator.includes(marker)) {
+  if (!registerGeneratorFlow.includes(marker)) {
     failures.push(`cadastro de controladora LAB perdeu contrato seguro: ${marker}`);
   }
 }
