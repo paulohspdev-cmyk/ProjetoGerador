@@ -173,6 +173,31 @@ jobs:
           fi
           bash -n ops/configure_https.sh
           bash -n ops/configure_rapid_network.sh
+          bash -n ops/configure_external_proxy_network.sh
+          cat >/tmp/external-proxy-good.env <<'EOF'
+RC_WEB_TLS_MODE=external_proxy
+RC_EXTERNAL_PROXY_ALLOWED_CIDRS=10.10.10.131/32
+RC_TRUSTED_PROXY_CIDRS=10.10.10.131/32
+EOF
+          RC_ENV_FILE=/tmp/external-proxy-good.env bash ops/configure_external_proxy_network.sh --check
+          cat >/tmp/external-proxy-bad.env <<'EOF'
+RC_WEB_TLS_MODE=external_proxy
+RC_EXTERNAL_PROXY_ALLOWED_CIDRS=0.0.0.0/0
+RC_TRUSTED_PROXY_CIDRS=0.0.0.0/0
+EOF
+          if RC_ENV_FILE=/tmp/external-proxy-bad.env bash ops/configure_external_proxy_network.sh --check >/dev/null 2>&1; then
+            echo 'ERRO: external proxy aceitou CIDR global.' >&2
+            exit 1
+          fi
+          cat >/tmp/external-proxy-mismatch.env <<'EOF'
+RC_WEB_TLS_MODE=external_proxy
+RC_EXTERNAL_PROXY_ALLOWED_CIDRS=10.10.10.131/32
+RC_TRUSTED_PROXY_CIDRS=127.0.0.1/32
+EOF
+          if RC_ENV_FILE=/tmp/external-proxy-mismatch.env bash ops/configure_external_proxy_network.sh --check >/dev/null 2>&1; then
+            echo 'ERRO: external proxy aceitou peer NPM fora dos proxies confiáveis.' >&2
+            exit 1
+          fi
           bash -n ops/run_backend_tests.sh
           bash -n ops/run_e2e_isolated.sh
           bash -n rapid/provisioning/provision_ig200.sh
@@ -185,7 +210,12 @@ jobs:
           grep -q -- '--ig200-device' /tmp/install-help.txt
           grep -q -- '--admin-password-file' /tmp/install-help.txt
           grep -q -- '--web-tls-mode' /tmp/install-help.txt
+          grep -q -- '--external-proxy-cidrs' /tmp/install-help.txt
+          grep -q -- '--public-base-url' /tmp/install-help.txt
           grep -q 'RC_WEB_TLS_MODE:-external_proxy' ops/install.sh
+          grep -q 'configure_external_proxy_network.sh.*--apply' ops/install.sh
+          grep -q 'configure_external_proxy_network.sh.*--check-runtime' ops/install.sh
+          grep -q 'nftables' ops/install.sh
           grep -q 'dotnet --list-sdks' ops/install.sh
           grep -q 'dotnet --list-runtimes' ops/install.sh
           grep -q 'provision_generator.py' ops/install.sh
@@ -259,9 +289,12 @@ jobs:
           grep -q '^RC_BACKUP_OFFSITE_REQUIRED=' ops/rc-geradores.env.example
           grep -q '^RC_ENVIRONMENT=production$' ops/rc-geradores.env.example
           grep -q '^RC_WEB_TLS_MODE=external_proxy$' ops/rc-geradores.env.example
+          grep -q '^RC_EXTERNAL_PROXY_ALLOWED_CIDRS=' ops/rc-geradores.env.example
           grep -q '^RC_TRUSTED_PROXY_CIDRS=' ops/rc-geradores.env.example
+          grep -q 'configure_external_proxy_network.sh.*--check-runtime' ops/preflight_vm.sh
           grep -q 'LEGACY_NGINX_SITE' ops/preflight_vm.sh
-          grep -q 'Reconfigure o Nginx Proxy Manager' ops/preflight_vm.sh
+          grep -q 'Valide o NPM direto em 3000/8090' ops/preflight_vm.sh
+          grep -q 'external_proxy exige RC_EXTERNAL_PROXY_ALLOWED_CIDRS' ops/preflight_vm.sh
           grep -q 'external_proxy exige RC_TRUSTED_PROXY_CIDRS' ops/preflight_vm.sh
           grep -q 'external_proxy' ops/deploy_release_v2.sh
           grep -q 'external_proxy' ops/preflight_vm.sh
