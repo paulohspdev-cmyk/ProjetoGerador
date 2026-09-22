@@ -1,6 +1,6 @@
 import type { Generator } from "@/data/generators";
 
-import { displayGeneratorName, hasFreshMetric, metricNumber } from "../generator-metrics";
+import { displayGeneratorName, hasFreshMetric, metricNumber, nominalPowerNumber } from "../generator-metrics";
 import { hasPositiveMeasurement, isPositiveMeasurement } from "../generator-presence";
 
 export type GeneratorDetailModel = ReturnType<typeof buildGeneratorDetailModel>;
@@ -31,9 +31,7 @@ export function buildGeneratorDetailModel(gen: Generator) {
   const mainsL3 = metricNumber(gen, "mains_voltage_l3", gen.mains.l3);
   const mainsL12 = metricNumber(gen, "mains_voltage_l1_l2", gen.mains.l12);
   const load = metricNumber(gen, "power_kw", gen.load);
-  const nominalPower =
-    metricNumber(gen, "nominal_power_kw", gen.nominalPower) ??
-    metricNumber(gen, "nominal_power", gen.nominalPower);
+  const nominalPower = nominalPowerNumber(gen);
   const oil = metricNumber(gen, "oil_pressure", gen.oilPressure);
   const temp = metricNumber(gen, "coolant_temperature", gen.coolantTemp);
   const fuel = metricNumber(gen, "fuel_level", gen.fuelLevel);
