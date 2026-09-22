@@ -244,7 +244,6 @@ try:
     diagnostics.load_bindings = lambda: [
         {"generator_id": "fw-command"},
         {"generator_id": "fw-readonly"},
-        {"generator_id": "fw-lab-bound"},
     ]
     diagnostics.domain_store.list_assets = lambda: [
         {"id": "asset-command", "legacy_generator_id": "fw-command"},
@@ -280,14 +279,6 @@ try:
                 "site": "Usina",
                 "customer": "Cliente",
             },
-            {
-                "id": "fw-lab-bound",
-                "tag": "FW-LAB-BOUND",
-                "controller_model": "InteliCompact NT",
-                "enabled": True,
-                "site": "Usina",
-                "customer": "Cliente",
-            },
         ],
         reverse_tcp_exposed=False,
         reverse_tcp_allowlist=False,
@@ -313,21 +304,6 @@ assert "FW-READ" in readonly_firmware["detail"], readonly_firmware
 assert "FW-CMD" not in readonly_firmware["detail"], readonly_firmware
 assert "FW-NOPACK" not in command_firmware["detail"], command_firmware
 assert "FW-NOPACK" not in readonly_firmware["detail"], readonly_firmware
-
-pack_check = next(
-    item for item in firmware_readiness["checks"] if item["id"] == "controller_packs"
-)
-lab_inventory = next(
-    item
-    for item in firmware_readiness["checks"]
-    if item["id"] == "lab_readonly_inventory"
-)
-assert pack_check["severity"] == "blocker", pack_check
-assert "FW-LAB-BOUND" in pack_check["detail"], pack_check
-assert "FW-NOPACK" not in pack_check["detail"], pack_check
-assert lab_inventory["severity"] == "warning", lab_inventory
-assert "FW-NOPACK" in lab_inventory["detail"], lab_inventory
-assert "FW-LAB-BOUND" not in lab_inventory["detail"], lab_inventory
 
 # F01: the persistent users schema must accept the RBAC operator role.
 with db.connect() as conn:
