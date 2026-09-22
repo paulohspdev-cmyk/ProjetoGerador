@@ -152,7 +152,7 @@ ok "release resolvida: ${REF} -> ${COMMIT}"
 
 if [[ -f "${DB_FILE}" ]]; then
   python3 - "${DB_FILE}" <<'PY'
-import os, sqlite3, sys
+import ipaddress, os, sqlite3, sys
 path = sys.argv[1]
 conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
 try:
@@ -219,10 +219,59 @@ try:
             for device, qty, tags in device_conflicts
         )
         raise SystemExit("Conflito de Rapid Device antes da migração: " + detail)
+
+    reverse_ports = [
+        int(row[0])
+        for row in conn.execute(
+            """
+            SELECT DISTINCT listen_port
+            FROM generators
+            WHERE enabled=1 AND transport='reverse_tcp' AND listen_port > 0
+            ORDER BY listen_port
+            """
+        ).fetchall()
+    ]
+    if os.environ.get("RC_ENVIRONMENT", "development").strip() == "production" and reverse_ports:
+        if os.environ.get("RC_RAPID_REQUIRE_ALLOWLIST", "0").strip() != "1":
+            raise SystemExit(
+                "Produção com reverse TCP ativo exige RC_RAPID_REQUIRE_ALLOWLIST=1"
+            )
+
+        def parse_networks(raw, setting):
+            networks = []
+            for token in str(raw or "").split(","):
+                token = token.strip()
+                if not token:
+                    continue
+                try:
+                    network = ipaddress.ip_network(token, strict=False)
+                except ValueError as exc:
+                    raise SystemExit(f"CIDR inválido em {setting}: {token}: {exc}") from exc
+                if network.prefixlen == 0:
+                    raise SystemExit(f"CIDR amplo demais em {setting}: {network}")
+                networks.append(network)
+            return networks
+
+        global_networks = parse_networks(
+            os.environ.get("RC_RAPID_REMOTE_ALLOWED_CIDRS", ""),
+            "RC_RAPID_REMOTE_ALLOWED_CIDRS",
+        )
+        uncovered = []
+        for port in reverse_ports:
+            setting = f"RC_RAPID_REMOTE_ALLOWED_CIDRS_{port}"
+            raw_port = os.environ.get(setting, "")
+            networks = parse_networks(raw_port, setting) if str(raw_port).strip() else global_networks
+            if not networks:
+                uncovered.append(port)
+        if uncovered:
+            raise SystemExit(
+                "Reverse TCP sem allowlist de origem nas portas: "
+                + ", ".join(str(port) for port in uncovered)
+            )
 finally:
     conn.close()
 PY
-  ok "SQLite atual íntegro, FKs válidas e identidades industriais coerentes: ${DB_FILE}"
+  ok "SQLite atual íntegro, FKs válidas, identidades industriais coerentes e reverse TCP protegido: ${DB_FILE}"
 else
   ok "banco ainda não existe; deploy fará inicialização"
 fi
