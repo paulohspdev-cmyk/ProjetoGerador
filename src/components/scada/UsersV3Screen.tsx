@@ -229,7 +229,7 @@ export function UsersV3Screen() {
       <Panel title="Segurança da sua conta">
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-3">
-            <Pill tone={user?.twoFactorEnabled ? "online" : "warning"}>
+            <Pill tone={user?.twoFactorEnabled ? "ok" : "warn"}>
               {user?.twoFactorEnabled ? "2FA ativo" : "2FA obrigatório pendente"}
             </Pill>
             <p className="text-sm text-muted-foreground">
