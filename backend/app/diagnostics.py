@@ -332,7 +332,7 @@ def _production_readiness(
             "external_proxy_topology",
             "Topologia do proxy externo",
             external_proxy_topology_ok,
-            "warning",
+            "blocker",
             external_proxy_topology_detail
             or (
                 "Sem terminação TLS local adicional"
