@@ -128,10 +128,11 @@ done
 ok "Rapid SCADA ativo antes do deploy"
 
 if [[ "${WEB_TLS_MODE}" == "external_proxy" ]]; then
+  [[ -n "${RC_TRUSTED_PROXY_CIDRS//[[:space:],]/}" ]] || fail "RC_WEB_TLS_MODE=external_proxy exige RC_TRUSTED_PROXY_CIDRS com o IP/CIDR real do Nginx Proxy Manager"
   if [[ -f "${LEGACY_NGINX_SITE}" ]] && grep -Eq '^[[:space:]]*listen[[:space:]].*443.*ssl' "${LEGACY_NGINX_SITE}"; then
     fail "RC_WEB_TLS_MODE=external_proxy, mas o site Nginx local ainda termina TLS em 443: ${LEGACY_NGINX_SITE}. Reconfigure o Nginx Proxy Manager para encaminhar ao app sem esta terminação TLS local antes do deploy."
   fi
-  ok "TLS/HTTPS delegado ao proxy externo; sem terminação TLS local do site RC Geradores"
+  ok "TLS/HTTPS delegado ao proxy externo; proxy confiável configurado e sem terminação TLS local do site RC Geradores"
 else
   systemctl is-active --quiet nginx || fail "serviço pré-requisito inativo: nginx"
   nginx -t >/dev/null 2>&1 || fail "configuração Nginx atual inválida"
