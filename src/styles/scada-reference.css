@@ -436,3 +436,15 @@
 .scada-data-row[data-state="nocomm"] .scada-data-row__value {
   color: var(--sc-nocomm);
 }
+
+/* Preserve the existing short-card density contract: process data must never be clipped. */
+
+@container vref (max-height: 780px) {
+  .vref-data-row {
+    min-height: 17px !important;
+  }
+
+  .vref-summary-item {
+    min-height: 16px !important;
+  }
+}
