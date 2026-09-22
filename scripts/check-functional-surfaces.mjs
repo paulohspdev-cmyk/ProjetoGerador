@@ -198,7 +198,13 @@ for (const [file, markers] of [
   ],
   [
     "src/components/scada/UsersV3Screen.tsx",
-    ["const [busy, setBusy]", "disabled={busy}", 'autoComplete="new-password"'],
+    [
+      "const [busy, setBusy]",
+      "disabled={busy}",
+      'autoComplete="new-password"',
+      "usersError",
+      "const visibleError = error || usersError ||",
+    ],
   ],
   [
     "src/components/scada/IntegrationsV3Screens.tsx",
