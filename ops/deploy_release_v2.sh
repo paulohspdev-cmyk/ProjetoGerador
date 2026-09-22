@@ -495,7 +495,64 @@ sleep 4
 log "VALIDAÇÃO DE PRODUÇÃO"
 FAIL=0
 for svc in "${SERVICES[@]}"; do if systemctl is-active --quiet "${svc}"; then echo "${svc}: OK"; else echo "${svc}: FALHOU"; FAIL=1; fi; done
-curl -fsS http://127.0.0.1:3000/ >/dev/null 2>&1 && echo "Frontend interno: OK" || { echo "Frontend interno: FALHOU"; FAIL=1; }
+
+FRONTEND_HEADERS="/tmp/rc-deploy-${STAMP}-frontend.headers"
+FRONTEND_HTML="/tmp/rc-deploy-${STAMP}-frontend.html"
+if curl -fsS -D "${FRONTEND_HEADERS}" -o "${FRONTEND_HTML}" http://127.0.0.1:3000/login; then
+  if grep -qi '^Cache-Control:.*no-store' "${FRONTEND_HEADERS}"; then
+    echo "Frontend HTML no-store: OK"
+  else
+    echo "Frontend HTML no-store: FALHOU"
+    FAIL=1
+  fi
+
+  ASSET_LIST="$(
+    python3 - "${FRONTEND_HTML}" <<'PY'
+import re
+import sys
+
+html = open(sys.argv[1], encoding="utf-8").read()
+assets = sorted(
+    set(
+        re.findall(
+            r"""(?:src|href)=["'](/assets/[^"'?#]+\.(?:js|css))["']""",
+            html,
+            flags=re.IGNORECASE,
+        )
+    )
+)
+if not assets:
+    raise SystemExit("HTML não referencia assets JS/CSS")
+print("\n".join(assets))
+PY
+  )" || {
+    echo "Frontend assets: FALHOU ao extrair referências"
+    FAIL=1
+    ASSET_LIST=""
+  }
+
+  if [[ -n "${ASSET_LIST}" ]]; then
+    ASSET_FAIL=0
+    while IFS= read -r asset; do
+      [[ -n "${asset}" ]] || continue
+      if ! curl -fsS -o /dev/null "http://127.0.0.1:3000${asset}"; then
+        echo "Frontend asset ausente: ${asset}"
+        ASSET_FAIL=1
+      fi
+    done <<<"${ASSET_LIST}"
+    if [[ ${ASSET_FAIL} -eq 0 ]]; then
+      echo "Frontend assets referenciados: OK"
+    else
+      echo "Frontend assets referenciados: FALHOU"
+      FAIL=1
+    fi
+  fi
+else
+  echo "Frontend interno: FALHOU"
+  FAIL=1
+fi
+rm -f "${FRONTEND_HEADERS}" "${FRONTEND_HTML}"
+
 curl -fsS http://127.0.0.1:8090/api/health >/dev/null 2>&1 && echo "API interna: OK" || { echo "API interna: FALHOU"; FAIL=1; }
 if [[ "${WEB_TLS_MODE}" == "external_proxy" ]]; then
   echo "HTTPS: delegado ao Nginx Proxy Manager; nenhuma validação/alteração TLS local executada."
