@@ -10,7 +10,7 @@ import time
 
 from . import db
 
-LATEST_SCHEMA_VERSION = 2
+LATEST_SCHEMA_VERSION = 3
 
 _REQUIRED_BASELINE_TABLES = {
     "generators",
@@ -83,7 +83,22 @@ def _operator_role_v2(conn) -> None:
         raise RuntimeError("Migração v2 deixou FKs inválidas: " + preview)
 
 
-_MIGRATIONS = {1: _baseline_v1, 2: _operator_role_v2}
+def _generator_nominal_power_v3(conn) -> None:
+    """Adiciona rating cadastral opcional sem inferir valor por modelo/nome."""
+    columns = {
+        str(row[1])
+        for row in conn.execute("PRAGMA table_info(generators)").fetchall()
+    }
+    if "nominal_power_kw" in columns:
+        return
+    conn.execute("ALTER TABLE generators ADD COLUMN nominal_power_kw REAL")
+
+
+_MIGRATIONS = {
+    1: _baseline_v1,
+    2: _operator_role_v2,
+    3: _generator_nominal_power_v3,
+}
 
 
 def run_migrations() -> int:
