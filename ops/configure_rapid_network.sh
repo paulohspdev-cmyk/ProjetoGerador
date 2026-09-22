@@ -158,6 +158,7 @@ done
 python3 - <<'PY'
 import socket
 import subprocess
+import time
 
 ports = {
     "scadaserver6.service": 10000,
@@ -171,9 +172,22 @@ for service, port in ports.items():
     ).returncode == 0
     if not active:
         continue
-    with socket.create_connection(("127.0.0.1", port), timeout=3):
-        pass
-    print(f"OK: {service} loopback:{port}")
+
+    deadline = time.monotonic() + 30
+    last_error = None
+    while time.monotonic() < deadline:
+        try:
+            with socket.create_connection(("127.0.0.1", port), timeout=2):
+                pass
+            print(f"OK: {service} loopback:{port}")
+            break
+        except OSError as exc:
+            last_error = exc
+            time.sleep(0.5)
+    else:
+        raise SystemExit(
+            f"{service} não abriu loopback:{port} em até 30s: {last_error}"
+        )
 PY
 
 trap - EXIT
