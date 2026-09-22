@@ -16,8 +16,9 @@ case "${MODE}" in
 Uso: sudo bash ops/configure_rapid_network.sh [--check|--apply]
 
 Protege as portas nativas do Rapid SCADA usando IPAddressAllow/IPAddressDeny
-do systemd. Loopback é sempre permitido. Redes administrativas adicionais
-devem ser informadas em RC_RAPID_ADMIN_ALLOWED_CIDRS, separadas por vírgula.
+do systemd. Loopback é sempre permitido. RC_RAPID_ADMIN_ALLOWED_CIDRS é
+opcional: vazio significa somente loopback; redes administrativas adicionais
+podem ser informadas separadas por vírgula.
 
 --check  valida apenas a configuração.
 --apply  grava drop-ins, reinicia somente serviços que já estavam ativos e
@@ -35,7 +36,6 @@ source "${ENV_FILE}"
 set +a
 
 RAW_CIDRS="${RC_RAPID_ADMIN_ALLOWED_CIDRS:-}"
-[[ -n "${RAW_CIDRS//[[:space:],]/}" ]] || fail "RC_RAPID_ADMIN_ALLOWED_CIDRS não configurado"
 
 mapfile -t ADMIN_CIDRS < <(
   python3 - "${RAW_CIDRS}" <<'PY'
@@ -60,7 +60,6 @@ for token in raw.split(","):
         print(text)
 PY
 )
-((${#ADMIN_CIDRS[@]} > 0)) || fail "nenhum CIDR administrativo válido"
 
 for cidr in "${ADMIN_CIDRS[@]}"; do
   case "${cidr}" in
@@ -68,7 +67,11 @@ for cidr in "${ADMIN_CIDRS[@]}"; do
   esac
 done
 
-ok "CIDRs administrativos: ${ADMIN_CIDRS[*]}"
+if ((${#ADMIN_CIDRS[@]} > 0)); then
+  ok "CIDRs administrativos adicionais: ${ADMIN_CIDRS[*]}"
+else
+  ok "CIDRs administrativos adicionais: nenhum (Rapid nativo somente em loopback)"
+fi
 [[ "${MODE}" == "--check" ]] && exit 0
 [[ ${EUID} -eq 0 ]] || fail "--apply exige root"
 
