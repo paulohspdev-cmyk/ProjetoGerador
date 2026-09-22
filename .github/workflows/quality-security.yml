@@ -66,6 +66,9 @@ jobs:
           grep -q '^RC_AUTH_COOKIE_SECURE=1' ops/rc-geradores.env.example
           grep -q '^RC_BACKUP_INCLUDE_SECRETS=0' ops/rc-geradores.env.example
           grep -q '^RC_RAPID_REQUIRE_ALLOWLIST=' ops/rc-geradores.env.example
+          grep -q '^RC_RAPID_ADMIN_ALLOWED_CIDRS=' ops/rc-geradores.env.example
+          grep -q 'configure_rapid_network.sh.*--check' ops/preflight_vm.sh
+          grep -q 'configure_rapid_network.sh.*--apply' ops/deploy_release_v2.sh
           grep -q '^RC_BACKUP_OFFSITE_REQUIRED=' ops/rc-geradores.env.example
           grep -q 'listen 443 ssl' ops/nginx/rc-geradores.conf
           grep -q 'return 301 https://' ops/nginx/rc-geradores.conf
@@ -154,3 +157,4 @@ jobs:
           bash -n ops/deploy_release.sh
           bash -n ops/deploy_release_v2.sh
           bash -n ops/configure_https.sh
+          bash -n ops/configure_rapid_network.sh
