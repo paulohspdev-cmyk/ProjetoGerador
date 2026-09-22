@@ -207,26 +207,48 @@ runtime_check() {
   [[ -f "${FIREWALL_UNIT}" ]] || fail "unit persistente do firewall não aplicada"
   [[ -f "${NFT_PERSIST}" ]] || fail "configuração nft persistente não aplicada"
 
-  grep -q "BindsTo=${FIREWALL_SERVICE}.service" "${API_DROPIN}"     || fail "API não está vinculada ao firewall external_proxy"
-  grep -q "BindsTo=${FIREWALL_SERVICE}.service" "${FRONTEND_DROPIN}"     || fail "frontend não está vinculado ao firewall external_proxy"
-  grep -q -- '--host 0.0.0.0 --port 8090' "${API_DROPIN}"     || fail "drop-in da API não expõe o upstream externo"
-  grep -q '^Environment=HOST=0.0.0.0$' "${FRONTEND_DROPIN}"     || fail "drop-in do frontend não expõe o upstream externo"
+  grep -q "BindsTo=${FIREWALL_SERVICE}.service" "${API_DROPIN}" \
+    || fail "API não está vinculada ao firewall external_proxy"
+  grep -q "BindsTo=${FIREWALL_SERVICE}.service" "${FRONTEND_DROPIN}" \
+    || fail "frontend não está vinculado ao firewall external_proxy"
+  systemctl show "${API_SERVICE}.service" -p BindsTo --value | grep -Fq "${FIREWALL_SERVICE}.service" \
+    || fail "systemd ainda não carregou BindsTo do firewall na API"
+  systemctl show "${FRONTEND_SERVICE}.service" -p BindsTo --value | grep -Fq "${FIREWALL_SERVICE}.service" \
+    || fail "systemd ainda não carregou BindsTo do firewall no frontend"
+  grep -q -- '--host 0.0.0.0 --port 8090' "${API_DROPIN}" \
+    || fail "drop-in da API não expõe o upstream externo"
+  grep -q '^Environment=HOST=0.0.0.0$' "${FRONTEND_DROPIN}" \
+    || fail "drop-in do frontend não expõe o upstream externo"
 
-  systemctl is-enabled --quiet "${FIREWALL_SERVICE}.service"     || fail "serviço persistente do firewall não está habilitado"
-  systemctl is-active --quiet "${FIREWALL_SERVICE}.service"     || fail "serviço persistente do firewall não está ativo"
+  command -v nft >/dev/null 2>&1 || fail "nft não instalado"
+  grep -Fq "ExecStart=$(command -v nft) -f ${NFT_PERSIST}" "${FIREWALL_UNIT}" \
+    || fail "unit persistente do firewall aponta para configuração inesperada"
+  systemctl is-enabled --quiet "${FIREWALL_SERVICE}.service" \
+    || fail "serviço persistente do firewall não está habilitado"
+  systemctl is-active --quiet "${FIREWALL_SERVICE}.service" \
+    || fail "serviço persistente do firewall não está ativo"
 
   local runtime_nft="/tmp/rc-external-proxy-nft-$$.txt"
-  nft list table "${TABLE_FAMILY}" "${TABLE_NAME}" >"${runtime_nft}" 2>/dev/null     || fail "tabela nftables ${TABLE_FAMILY} ${TABLE_NAME} não aplicada"
-  grep -q '3000' "${runtime_nft}" || fail "firewall sem porta frontend"
-  grep -q '8090' "${runtime_nft}" || fail "firewall sem porta API"
-  grep -q 'drop' "${runtime_nft}" || fail "firewall sem regra de bloqueio"
+  nft list table "${TABLE_FAMILY}" "${TABLE_NAME}" >"${runtime_nft}" 2>/dev/null \
+    || fail "tabela nftables ${TABLE_FAMILY} ${TABLE_NAME} não aplicada"
+  grep -q '3000' "${runtime_nft}" || fail "firewall runtime sem porta frontend"
+  grep -q '8090' "${runtime_nft}" || fail "firewall runtime sem porta API"
+  grep -q 'drop' "${runtime_nft}" || fail "firewall runtime sem regra de bloqueio"
+  grep -q '3000' "${NFT_PERSIST}" || fail "firewall persistente sem porta frontend"
+  grep -q '8090' "${NFT_PERSIST}" || fail "firewall persistente sem porta API"
+  grep -q 'drop' "${NFT_PERSIST}" || fail "firewall persistente sem regra de bloqueio"
   for cidr in "${ALLOWED_CIDRS[@]}"; do
-    nft_peer_present "${cidr}" "${runtime_nft}"       || fail "firewall não contém peer do NPM: ${cidr}"
+    nft_peer_present "${cidr}" "${runtime_nft}" \
+      || fail "firewall runtime não contém peer do NPM: ${cidr}"
+    nft_peer_present "${cidr}" "${NFT_PERSIST}" \
+      || fail "firewall persistente não contém peer do NPM: ${cidr}"
   done
   rm -f "${runtime_nft}"
 
-  ss -lntH | awk '{print $4}' | grep -Eq '^(0\.0\.0\.0|\*):3000$'     || fail "frontend não está exposto pelo drop-in em 0.0.0.0:3000"
-  ss -lntH | awk '{print $4}' | grep -Eq '^(0\.0\.0\.0|\*):8090$'     || fail "API não está exposta pelo drop-in em 0.0.0.0:8090"
+  ss -lntH | awk '{print $4}' | grep -Eq '^(0\.0\.0\.0|\*):3000$' \
+    || fail "frontend não está exposto pelo drop-in em 0.0.0.0:3000"
+  ss -lntH | awk '{print $4}' | grep -Eq '^(0\.0\.0\.0|\*):8090$' \
+    || fail "API não está exposta pelo drop-in em 0.0.0.0:8090"
 }
 
 if [[ "${MODE}" == "--check" ]]; then
