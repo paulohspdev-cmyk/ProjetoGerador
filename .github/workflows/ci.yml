@@ -193,6 +193,8 @@ jobs:
           grep -q 'systemctl is-enabled --quiet.*FIREWALL_SERVICE' ops/configure_external_proxy_network.sh
           grep -q 'systemctl is-active --quiet.*FIREWALL_SERVICE' ops/configure_external_proxy_network.sh
           grep -q 'firewall persistente não contém peer do NPM' ops/configure_external_proxy_network.sh
+          grep -q '^Environment=NITRO_HOST=0.0.0.0$' ops/configure_external_proxy_network.sh
+          grep -q '^Environment=NITRO_PORT=3000$' ops/configure_external_proxy_network.sh
           grep -q '^Conflicts=nftables.service$' ops/configure_external_proxy_network.sh
           grep -q 'nftables.service global está ativo/habilitado' ops/configure_external_proxy_network.sh
           bash -n ops/run_backend_tests.sh
