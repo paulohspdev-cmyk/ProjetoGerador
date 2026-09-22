@@ -1,5 +1,6 @@
 import ipaddress
 import json
+import math
 import os
 import shutil
 import subprocess
@@ -446,10 +447,8 @@ def _production_readiness(
         elif str(generator.get("id") or "") not in bindings:
             no_binding.append(tag)
 
-        # nominal_power_kw é telemetria da controladora nos packs que a
-        # documentam; não existe campo nominal persistido no cadastro legado.
-        # Portanto production readiness não pode criar um blocker impossível
-        # de satisfazer quando a controladora está desligada.
+        # O rating nominal pode vir de telemetria homologada ou do cadastro
+        # técnico do ativo. Nunca inferimos kW a partir de kVA, nome ou modelo.
         validated_metrics = set((pack or {}).get("validatedTelemetry") or [])
         mapped_registers = ((pack or {}).get("mapping") or {}).get("registers") or {}
         nominal_supported = (
@@ -459,7 +458,12 @@ def _production_readiness(
                 and "nominal_power_kw" in mapped_registers
             )
         )
-        if pack_ready and not nominal_supported:
+        try:
+            cadastral_nominal = float(generator.get("nominal_power_kw") or 0)
+        except (TypeError, ValueError, OverflowError):
+            cadastral_nominal = 0
+        cadastral_nominal_ok = math.isfinite(cadastral_nominal) and cadastral_nominal > 0
+        if pack_ready and not nominal_supported and not cadastral_nominal_ok:
             missing_nominal_support.append(tag)
         site = str(generator.get("site") or "").strip().lower()
         if not site or site in {"sem unidade", "n/d"}:
@@ -517,9 +521,9 @@ def _production_readiness(
         not missing_nominal_support,
         "warning",
         (
-            "Controller Packs disponibilizam kW nominal quando a telemetria estiver ativa"
+            "kW nominal disponível por telemetria homologada ou cadastro técnico"
             if not missing_nominal_support
-            else "Sem métrica nominal homologada: " + ", ".join(missing_nominal_support)
+            else "Sem kW nominal homologado/cadastrado: " + ", ".join(missing_nominal_support)
         ),
     )
     add(
