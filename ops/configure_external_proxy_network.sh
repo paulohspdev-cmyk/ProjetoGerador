@@ -225,7 +225,11 @@ runtime_check() {
   command -v nft >/dev/null 2>&1 || fail "nft não instalado"
   grep -Fq "ExecStart=$(command -v nft) -f ${NFT_PERSIST}" "${FIREWALL_UNIT}" \
     || fail "unit persistente do firewall aponta para configuração inesperada"
-  grep -q '^After=nftables.service  systemctl is-enabled --quiet "${FIREWALL_SERVICE}.service" \
+  grep -q '^After=nftables.service$' "${FIREWALL_UNIT}" \
+    || fail "firewall RC não está ordenado após nftables.service"
+  grep -q '^PartOf=nftables.service$' "${FIREWALL_UNIT}" \
+    || fail "firewall RC não acompanha restart/stop de nftables.service"
+  systemctl is-enabled --quiet "${FIREWALL_SERVICE}.service" \
     || fail "serviço persistente do firewall não está habilitado"
   systemctl is-active --quiet "${FIREWALL_SERVICE}.service" \
     || fail "serviço persistente do firewall não está ativo"
