@@ -297,7 +297,8 @@ def _production_readiness(
     missing_nominal_support: list[str] = []
     missing_site: list[str] = []
     missing_customer: list[str] = []
-    missing_firmware: list[str] = []
+    missing_command_firmware: list[str] = []
+    missing_readonly_firmware: list[str] = []
     test_assets: list[str] = []
 
     assets_by_generator = {
@@ -314,7 +315,8 @@ def _production_readiness(
             continue
         tag = str(generator.get("tag") or generator.get("id") or "N/D")
         pack = pack_for_model(generator.get("controller_model") or "")
-        if not pack_is_production_ready(pack):
+        pack_ready = pack_is_production_ready(pack)
+        if not pack_ready:
             no_pack.append(tag)
         elif str(generator.get("id") or "") not in bindings:
             no_binding.append(tag)
@@ -342,8 +344,30 @@ def _production_readiness(
 
         asset = assets_by_generator.get(str(generator.get("id") or ""))
         controllers = controllers_by_asset.get(str((asset or {}).get("id") or ""), [])
-        if not controllers or all(not str(item.get("firmware") or "").strip() for item in controllers):
-            missing_firmware.append(tag)
+        firmware_missing = not controllers or all(
+            not str(item.get("firmware") or "").strip() for item in controllers
+        )
+        if pack_ready and firmware_missing:
+            capabilities = (pack or {}).get("capabilities") or {}
+            command_capable = any(
+                bool(capabilities.get(action))
+                for action in (
+                    "start",
+                    "stop",
+                    "auto",
+                    "manual",
+                    "test",
+                    "mcb_open",
+                    "mcb_close",
+                    "gcb_open",
+                    "gcb_close",
+                    "paralleling",
+                )
+            )
+            if command_capable:
+                missing_command_firmware.append(tag)
+            else:
+                missing_readonly_firmware.append(tag)
 
         if tag.upper().startswith(("TESTE", "TEST-", "LAB-")):
             test_assets.append(tag)
@@ -389,12 +413,23 @@ def _production_readiness(
     )
     add(
         "controller_firmware",
-        "Firmware das controladoras",
-        not missing_firmware,
+        "Firmware de controladoras com comando",
+        not missing_command_firmware,
         "blocker",
-        "Firmware registrado para todos os ativos"
-        if not missing_firmware
-        else "Firmware não informado: " + ", ".join(missing_firmware),
+        "Firmware registrado para todas as controladoras com comando habilitado"
+        if not missing_command_firmware
+        else "Firmware não informado em controladora com comando: "
+        + ", ".join(missing_command_firmware),
+    )
+    add(
+        "controller_firmware_readonly",
+        "Inventário de firmware read-only",
+        not missing_readonly_firmware,
+        "warning",
+        "Firmware registrado para as controladoras read-only"
+        if not missing_readonly_firmware
+        else "Firmware ainda não inventariado em read-only: "
+        + ", ".join(missing_readonly_firmware),
     )
     notifications_ready = bool(SMTP_HOST or WHATSAPP_API_URL)
     add(
