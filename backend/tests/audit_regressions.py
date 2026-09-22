@@ -46,7 +46,7 @@ from app.completion_routes import (  # noqa: E402
 )
 from app.extra_routes import _token_allows_generator  # noqa: E402
 from app.rapid import _downsample_points, dashboard  # noqa: E402
-from app.migrations import _operator_role_v2  # noqa: E402
+from app.migrations import _generator_nominal_power_v3, _operator_role_v2  # noqa: E402
 from app.reporting import generate_report, safe_report_artifact_path  # noqa: E402
 from app.secret_box import protect_secret  # noqa: E402
 from app.security_service import disable_totp, setup_totp, totp_code  # noqa: E402
@@ -270,6 +270,7 @@ try:
                 "enabled": True,
                 "site": "Usina",
                 "customer": "Cliente",
+                "nominal_power_kw": 450.0,
             },
             {
                 "id": "fw-no-pack",
@@ -308,6 +309,56 @@ nominal_readiness = next(
     item for item in firmware_readiness["checks"] if item["id"] == "nominal_power"
 )
 assert "FW-NOPACK" not in nominal_readiness["detail"], nominal_readiness
+assert "FW-READ" not in nominal_readiness["detail"], nominal_readiness
+
+# F00e: migration v3 adds nullable cadastral nominal power without fabricating a value.
+legacy_nominal_path = root / "legacy-nominal.sqlite3"
+legacy_nominal = sqlite3.connect(legacy_nominal_path)
+legacy_nominal.execute(
+    """CREATE TABLE generators(
+        id TEXT PRIMARY KEY,
+        tag TEXT NOT NULL,
+        enabled INTEGER NOT NULL DEFAULT 1
+    )"""
+)
+legacy_nominal.execute("INSERT INTO generators(id,tag,enabled) VALUES ('g1','LEGACY',1)")
+_generator_nominal_power_v3(legacy_nominal)
+nominal_columns = {
+    row[1] for row in legacy_nominal.execute("PRAGMA table_info(generators)").fetchall()
+}
+assert "nominal_power_kw" in nominal_columns, nominal_columns
+assert (
+    legacy_nominal.execute("SELECT nominal_power_kw FROM generators WHERE id='g1'").fetchone()[0]
+    is None
+)
+legacy_nominal.close()
+
+# F00f: cadastral nominal kW persists, updates and can be explicitly cleared.
+nominal_generator = db.create_generator(
+    {
+        "tag": "GEN-NOMINAL",
+        "name": "Nominal test",
+        "site": "Lab DB",
+        "controller_type": "DSE",
+        "controller_model": "DSE4520 MKII",
+        "transport": "reverse_tcp",
+        "host": "",
+        "listen_port": 15049,
+        "modbus_unit": 1,
+        "nominal_power_kw": 450.0,
+        "enabled": True,
+    },
+    actor="test",
+)
+assert nominal_generator["nominal_power_kw"] == 450.0, nominal_generator
+nominal_generator = db.update_generator(
+    nominal_generator["id"], {"nominal_power_kw": 500.0}, actor="test"
+)
+assert nominal_generator["nominal_power_kw"] == 500.0, nominal_generator
+nominal_generator = db.update_generator(
+    nominal_generator["id"], {"nominal_power_kw": None}, actor="test"
+)
+assert nominal_generator["nominal_power_kw"] is None, nominal_generator
 
 # F01: the persistent users schema must accept the RBAC operator role.
 with db.connect() as conn:
