@@ -178,6 +178,10 @@ jobs:
             echo 'ERRO: política Rapid aceitou allowlist administrativa global.' >&2
             exit 1
           fi
+          python3 -m py_compile ops/ig200_probe_readonly.py
+          grep -q -- '--firmware-version' ops/ig200_probe_readonly.py
+          grep -q 'FW Version 1281..1288' ops/ig200_probe_readonly.py
+          grep -q 'somente FC03/FC04 são permitidas' ops/ig200_probe_readonly.py
           bash -n ops/configure_https.sh
           bash -n ops/configure_rapid_network.sh
           grep -q 'time.monotonic() + 30' ops/configure_rapid_network.sh
