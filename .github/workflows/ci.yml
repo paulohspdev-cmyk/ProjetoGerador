@@ -250,6 +250,9 @@ jobs:
           grep -q 'RAPID_NETWORK_APPLIED=1' ops/deploy_release_v2.sh
           grep -q 'rapid-network-existing.txt' ops/deploy_release_v2.sh
           grep -q 'rapid-network-active.txt' ops/deploy_release_v2.sh
+          grep -q 'Frontend HTML no-store' ops/deploy_release_v2.sh
+          grep -q 'Frontend assets referenciados' ops/deploy_release_v2.sh
+          grep -q 'HTML não referencia assets JS/CSS' ops/deploy_release_v2.sh
           grep -q '^RC_LOGIN_MAX_FAILURES=' ops/rc-geradores.env.example
           grep -q '^RC_BACKUP_RETENTION=' ops/rc-geradores.env.example
           grep -q '^RC_RAPID_REQUIRE_ALLOWLIST=' ops/rc-geradores.env.example
