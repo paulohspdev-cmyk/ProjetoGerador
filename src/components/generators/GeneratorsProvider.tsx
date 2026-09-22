@@ -29,9 +29,13 @@ type CreateInput = {
   listenPort?: number | undefined;
   modbusUnit?: number | undefined;
   rapidDeviceNum?: number | undefined;
+  nominalPower?: number | undefined;
 };
 
-type UpdateInput = Partial<CreateInput> & { enabled?: boolean | undefined };
+type UpdateInput = Partial<Omit<CreateInput, "nominalPower">> & {
+  nominalPower?: number | null | undefined;
+  enabled?: boolean | undefined;
+};
 
 type GeneratorsContextValue = {
   generators: Generator[];
@@ -185,6 +189,7 @@ export function GeneratorsProvider({ children }: { children: ReactNode }) {
             ...(input.listenPort != null ? { listenPort: input.listenPort } : {}),
             ...(input.modbusUnit != null ? { modbusUnit: input.modbusUnit } : {}),
             ...(input.rapidDeviceNum != null ? { rapidDeviceNum: input.rapidDeviceNum } : {}),
+            ...(input.nominalPower != null ? { nominalPower: input.nominalPower } : {}),
           }),
         });
         await refresh();
@@ -209,6 +214,7 @@ export function GeneratorsProvider({ children }: { children: ReactNode }) {
           ...(input.listenPort != null ? { listenPort: input.listenPort } : {}),
           ...(input.modbusUnit != null ? { modbusUnit: input.modbusUnit } : {}),
           ...(input.rapidDeviceNum != null ? { rapidDeviceNum: input.rapidDeviceNum } : {}),
+          ...(input.nominalPower !== undefined ? { nominalPower: input.nominalPower } : {}),
           ...(input.enabled != null ? { enabled: input.enabled } : {}),
         };
         await httpRequest<Generator>(`/api/generators/${encodeURIComponent(id)}`, {
