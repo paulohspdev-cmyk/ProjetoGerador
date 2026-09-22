@@ -7,8 +7,11 @@ TABLE_FAMILY="inet"
 TABLE_NAME="rc_geradores_web"
 API_SERVICE="rc-geradores-api"
 FRONTEND_SERVICE="rc-geradores-frontend"
+FIREWALL_SERVICE="rc-geradores-web-firewall"
 API_DROPIN="/etc/systemd/system/${API_SERVICE}.service.d/60-external-proxy-network.conf"
 FRONTEND_DROPIN="/etc/systemd/system/${FRONTEND_SERVICE}.service.d/60-external-proxy-network.conf"
+FIREWALL_UNIT="/etc/systemd/system/${FIREWALL_SERVICE}.service"
+NFT_PERSIST="/etc/rc-geradores-web.nft"
 PROJECT_ROOT_DEFAULT="/opt/rc-geradores"
 
 fail() { echo "ERRO: $*" >&2; return 1; }
@@ -20,13 +23,13 @@ case "${MODE}" in
     cat <<'EOF'
 Uso: sudo bash ops/configure_external_proxy_network.sh [--check|--check-runtime|--apply|--remove]
 
-Prepara API e frontend para receber HTTP diretamente do Nginx Proxy Manager sem
-expor 3000/8090 para a rede inteira.
+Prepara API e frontend para receber HTTP diretamente do Nginx Proxy Manager
+sem expor 3000/8090 para a rede inteira.
 
 --check          valida somente a configuração declarada.
---check-runtime  exige drop-ins systemd e firewall nftables já aplicados.
---apply          cria drop-ins systemd, aplica firewall nftables e reinicia API/frontend.
---remove         remove a política externa, volta API/frontend ao bind loopback padrão.
+--check-runtime  exige firewall persistente, drop-ins systemd e listeners ativos.
+--apply          aplica firewall persistente, drop-ins e reinicia API/frontend.
+--remove         remove a política externa e volta API/frontend ao loopback.
 
 Variáveis obrigatórias em external_proxy:
   RC_EXTERNAL_PROXY_ALLOWED_CIDRS=IP/CIDR do NPM
@@ -49,12 +52,6 @@ PROJECT_ROOT="${RC_PROJECT_ROOT:-${PROJECT_ROOT_DEFAULT}}"
 WEB_TLS_MODE="${RC_WEB_TLS_MODE:-managed}"
 ALLOWED_RAW="${RC_EXTERNAL_PROXY_ALLOWED_CIDRS:-}"
 TRUSTED_RAW="${RC_TRUSTED_PROXY_CIDRS:-}"
-
-if [[ "${MODE}" != "--remove" ]]; then
-  [[ "${WEB_TLS_MODE}" == "external_proxy" ]] || fail "este helper só é válido com RC_WEB_TLS_MODE=external_proxy"
-  [[ -n "${ALLOWED_RAW//[[:space:],]/}" ]] || fail "RC_EXTERNAL_PROXY_ALLOWED_CIDRS não configurado"
-  [[ -n "${TRUSTED_RAW//[[:space:],]/}" ]] || fail "RC_TRUSTED_PROXY_CIDRS não configurado"
-fi
 
 parse_networks() {
   python3 - "$1" "$2" <<'PY'
@@ -81,6 +78,10 @@ PY
 }
 
 if [[ "${MODE}" != "--remove" ]]; then
+  [[ "${WEB_TLS_MODE}" == "external_proxy" ]]     || fail "este helper só é válido com RC_WEB_TLS_MODE=external_proxy"
+  [[ -n "${ALLOWED_RAW//[[:space:],]/}" ]]     || fail "RC_EXTERNAL_PROXY_ALLOWED_CIDRS não configurado"
+  [[ -n "${TRUSTED_RAW//[[:space:],]/}" ]]     || fail "RC_TRUSTED_PROXY_CIDRS não configurado"
+
   ALLOWED_OUTPUT="$(parse_networks "${ALLOWED_RAW}" "RC_EXTERNAL_PROXY_ALLOWED_CIDRS")"     || fail "RC_EXTERNAL_PROXY_ALLOWED_CIDRS inválido"
   TRUSTED_OUTPUT="$(parse_networks "${TRUSTED_RAW}" "RC_TRUSTED_PROXY_CIDRS")"     || fail "RC_TRUSTED_PROXY_CIDRS inválido"
 
@@ -146,23 +147,83 @@ render_nft() {
   } >"${file}"
 }
 
+render_firewall_unit() {
+  local file="$1" nft_bin="$2"
+  cat >"${file}" <<EOF
+[Unit]
+Description=RC Geradores External Proxy Firewall
+Before=${API_SERVICE}.service ${FRONTEND_SERVICE}.service
+
+[Service]
+Type=oneshot
+ExecStartPre=-${nft_bin} delete table ${TABLE_FAMILY} ${TABLE_NAME}
+ExecStart=${nft_bin} -f ${NFT_PERSIST}
+ExecStop=-${nft_bin} delete table ${TABLE_FAMILY} ${TABLE_NAME}
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+}
+
+render_api_dropin() {
+  local file="$1"
+  cat >"${file}" <<EOF
+[Unit]
+BindsTo=${FIREWALL_SERVICE}.service
+After=${FIREWALL_SERVICE}.service
+
+[Service]
+ExecStart=
+ExecStart=${PROJECT_ROOT}/backend/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8090
+EOF
+}
+
+render_frontend_dropin() {
+  local file="$1"
+  cat >"${file}" <<EOF
+[Unit]
+BindsTo=${FIREWALL_SERVICE}.service
+After=${FIREWALL_SERVICE}.service
+
+[Service]
+Environment=HOST=0.0.0.0
+Environment=PORT=3000
+EOF
+}
+
+nft_peer_present() {
+  local cidr="$1" file="$2" needle="${cidr}"
+  [[ "${needle}" == */32 ]] && needle="${needle%/32}"
+  [[ "${needle}" == */128 ]] && needle="${needle%/128}"
+  grep -Fq "${needle}" "${file}"
+}
+
 runtime_check() {
+  [[ ${EUID} -eq 0 ]] || fail "--check-runtime exige root"
   command -v nft >/dev/null 2>&1 || fail "nft não instalado"
   [[ -f "${API_DROPIN}" ]] || fail "drop-in da API não aplicado: ${API_DROPIN}"
   [[ -f "${FRONTEND_DROPIN}" ]] || fail "drop-in do frontend não aplicado: ${FRONTEND_DROPIN}"
-  grep -q -- '--host 0.0.0.0 --port 8090' "${API_DROPIN}" || fail "drop-in da API não expõe o upstream externo"
-  grep -q '^Environment=HOST=0.0.0.0$' "${FRONTEND_DROPIN}" || fail "drop-in do frontend não expõe o upstream externo"
-  nft list table "${TABLE_FAMILY}" "${TABLE_NAME}" >/tmp/rc-external-proxy-nft.txt 2>/dev/null     || fail "tabela nftables ${TABLE_FAMILY} ${TABLE_NAME} não aplicada"
-  grep -q '3000' /tmp/rc-external-proxy-nft.txt || fail "firewall sem porta frontend"
-  grep -q '8090' /tmp/rc-external-proxy-nft.txt || fail "firewall sem porta API"
-  grep -q 'drop' /tmp/rc-external-proxy-nft.txt || fail "firewall sem regra de bloqueio"
+  [[ -f "${FIREWALL_UNIT}" ]] || fail "unit persistente do firewall não aplicada"
+  [[ -f "${NFT_PERSIST}" ]] || fail "configuração nft persistente não aplicada"
+
+  grep -q "BindsTo=${FIREWALL_SERVICE}.service" "${API_DROPIN}"     || fail "API não está vinculada ao firewall external_proxy"
+  grep -q "BindsTo=${FIREWALL_SERVICE}.service" "${FRONTEND_DROPIN}"     || fail "frontend não está vinculado ao firewall external_proxy"
+  grep -q -- '--host 0.0.0.0 --port 8090' "${API_DROPIN}"     || fail "drop-in da API não expõe o upstream externo"
+  grep -q '^Environment=HOST=0.0.0.0$' "${FRONTEND_DROPIN}"     || fail "drop-in do frontend não expõe o upstream externo"
+
+  systemctl is-enabled --quiet "${FIREWALL_SERVICE}.service"     || fail "serviço persistente do firewall não está habilitado"
+  systemctl is-active --quiet "${FIREWALL_SERVICE}.service"     || fail "serviço persistente do firewall não está ativo"
+
+  local runtime_nft="/tmp/rc-external-proxy-nft-$$.txt"
+  nft list table "${TABLE_FAMILY}" "${TABLE_NAME}" >"${runtime_nft}" 2>/dev/null     || fail "tabela nftables ${TABLE_FAMILY} ${TABLE_NAME} não aplicada"
+  grep -q '3000' "${runtime_nft}" || fail "firewall sem porta frontend"
+  grep -q '8090' "${runtime_nft}" || fail "firewall sem porta API"
+  grep -q 'drop' "${runtime_nft}" || fail "firewall sem regra de bloqueio"
   for cidr in "${ALLOWED_CIDRS[@]}"; do
-    needle="${cidr}"
-    [[ "${needle}" == */32 ]] && needle="${needle%/32}"
-    [[ "${needle}" == */128 ]] && needle="${needle%/128}"
-    grep -Fq "${needle}" /tmp/rc-external-proxy-nft.txt       || fail "firewall não contém peer do NPM: ${cidr}"
+    nft_peer_present "${cidr}" "${runtime_nft}"       || fail "firewall não contém peer do NPM: ${cidr}"
   done
-  rm -f /tmp/rc-external-proxy-nft.txt
+  rm -f "${runtime_nft}"
 
   ss -lntH | awk '{print $4}' | grep -Eq '^(0\.0\.0\.0|\*):3000$'     || fail "frontend não está exposto pelo drop-in em 0.0.0.0:3000"
   ss -lntH | awk '{print $4}' | grep -Eq '^(0\.0\.0\.0|\*):8090$'     || fail "API não está exposta pelo drop-in em 0.0.0.0:8090"
@@ -176,7 +237,7 @@ fi
 
 if [[ "${MODE}" == "--check-runtime" ]]; then
   runtime_check
-  ok "bind externo e firewall do NPM estão aplicados"
+  ok "bind externo e firewall persistente do NPM estão aplicados"
   exit 0
 fi
 
@@ -185,80 +246,113 @@ command -v systemctl >/dev/null 2>&1 || fail "systemctl ausente"
 command -v nft >/dev/null 2>&1 || fail "nft ausente"
 
 if [[ "${MODE}" == "--remove" ]]; then
+  systemctl stop "${API_SERVICE}.service" "${FRONTEND_SERVICE}.service" >/dev/null 2>&1 || true
   rm -f "${API_DROPIN}" "${FRONTEND_DROPIN}"
+  systemctl disable --now "${FIREWALL_SERVICE}.service" >/dev/null 2>&1 || true
+  rm -f "${FIREWALL_UNIT}" "${NFT_PERSIST}"
   if nft list table "${TABLE_FAMILY}" "${TABLE_NAME}" >/dev/null 2>&1; then
-    nft delete table "${TABLE_FAMILY}" "${TABLE_NAME}"
+    nft delete table "${TABLE_FAMILY}" "${TABLE_NAME}" || true
   fi
   systemctl daemon-reload
-  systemctl restart "${API_SERVICE}.service" "${FRONTEND_SERVICE}.service"
-  ok "política external_proxy removida; units voltaram ao bind padrão"
+  systemctl start "${API_SERVICE}.service" "${FRONTEND_SERVICE}.service"
+  ok "política external_proxy removida; API/frontend voltaram ao bind loopback padrão"
   exit 0
 fi
 
+NFT_BIN="$(command -v nft)"
 TMP="$(mktemp -d /tmp/rc-external-proxy-network-XXXXXX)"
 cleanup() { rm -rf "${TMP}"; }
 trap cleanup EXIT
 
 API_BACKUP="${TMP}/api-dropin.before"
 FRONTEND_BACKUP="${TMP}/frontend-dropin.before"
-NFT_BACKUP="${TMP}/nft.before"
+UNIT_BACKUP="${TMP}/firewall-unit.before"
+PERSIST_BACKUP="${TMP}/firewall-nft.before"
+NFT_RUNTIME_BACKUP="${TMP}/nft-runtime.before"
 API_EXISTED=0
 FRONTEND_EXISTED=0
+UNIT_EXISTED=0
+PERSIST_EXISTED=0
 NFT_EXISTED=0
+FW_ENABLED=0
+FW_ACTIVE=0
 
-if [[ -f "${API_DROPIN}" ]]; then cp -a "${API_DROPIN}" "${API_BACKUP}"; API_EXISTED=1; fi
-if [[ -f "${FRONTEND_DROPIN}" ]]; then cp -a "${FRONTEND_DROPIN}" "${FRONTEND_BACKUP}"; FRONTEND_EXISTED=1; fi
-if nft list table "${TABLE_FAMILY}" "${TABLE_NAME}" >"${NFT_BACKUP}" 2>/dev/null; then NFT_EXISTED=1; fi
+[[ -f "${API_DROPIN}" ]] && { cp -a "${API_DROPIN}" "${API_BACKUP}"; API_EXISTED=1; }
+[[ -f "${FRONTEND_DROPIN}" ]] && { cp -a "${FRONTEND_DROPIN}" "${FRONTEND_BACKUP}"; FRONTEND_EXISTED=1; }
+[[ -f "${FIREWALL_UNIT}" ]] && { cp -a "${FIREWALL_UNIT}" "${UNIT_BACKUP}"; UNIT_EXISTED=1; }
+[[ -f "${NFT_PERSIST}" ]] && { cp -a "${NFT_PERSIST}" "${PERSIST_BACKUP}"; PERSIST_EXISTED=1; }
+nft list table "${TABLE_FAMILY}" "${TABLE_NAME}" >"${NFT_RUNTIME_BACKUP}" 2>/dev/null && NFT_EXISTED=1 || true
+systemctl is-enabled --quiet "${FIREWALL_SERVICE}.service" 2>/dev/null && FW_ENABLED=1 || true
+systemctl is-active --quiet "${FIREWALL_SERVICE}.service" 2>/dev/null && FW_ACTIVE=1 || true
+
+restore_file() {
+  local existed="$1" backup="$2" target="$3"
+  if (( existed == 1 )); then
+    install -d -m 0755 "$(dirname "${target}")"
+    cp -a "${backup}" "${target}"
+  else
+    rm -f "${target}"
+  fi
+}
 
 rollback() {
   trap - ERR
   set +e
-  if (( API_EXISTED == 1 )); then
-    install -d -m 0755 "$(dirname "${API_DROPIN}")"
-    cp -a "${API_BACKUP}" "${API_DROPIN}"
-  else
-    rm -f "${API_DROPIN}"
-  fi
-  if (( FRONTEND_EXISTED == 1 )); then
-    install -d -m 0755 "$(dirname "${FRONTEND_DROPIN}")"
-    cp -a "${FRONTEND_BACKUP}" "${FRONTEND_DROPIN}"
-  else
-    rm -f "${FRONTEND_DROPIN}"
-  fi
+  systemctl stop "${API_SERVICE}.service" "${FRONTEND_SERVICE}.service" >/dev/null 2>&1 || true
+  systemctl disable --now "${FIREWALL_SERVICE}.service" >/dev/null 2>&1 || true
+
+  restore_file "${API_EXISTED}" "${API_BACKUP}" "${API_DROPIN}"
+  restore_file "${FRONTEND_EXISTED}" "${FRONTEND_BACKUP}" "${FRONTEND_DROPIN}"
+  restore_file "${UNIT_EXISTED}" "${UNIT_BACKUP}" "${FIREWALL_UNIT}"
+  restore_file "${PERSIST_EXISTED}" "${PERSIST_BACKUP}" "${NFT_PERSIST}"
+
   if nft list table "${TABLE_FAMILY}" "${TABLE_NAME}" >/dev/null 2>&1; then
     nft delete table "${TABLE_FAMILY}" "${TABLE_NAME}" >/dev/null 2>&1 || true
   fi
-  if (( NFT_EXISTED == 1 )); then nft -f "${NFT_BACKUP}" >/dev/null 2>&1 || true; fi
+  if (( NFT_EXISTED == 1 )); then
+    nft -f "${NFT_RUNTIME_BACKUP}" >/dev/null 2>&1 || true
+  fi
+
   systemctl daemon-reload >/dev/null 2>&1 || true
-  systemctl restart "${API_SERVICE}.service" "${FRONTEND_SERVICE}.service" >/dev/null 2>&1 || true
+  if (( FW_ENABLED == 1 )); then
+    systemctl enable "${FIREWALL_SERVICE}.service" >/dev/null 2>&1 || true
+  fi
+  if (( FW_ACTIVE == 1 )); then
+    systemctl start "${FIREWALL_SERVICE}.service" >/dev/null 2>&1 || true
+  fi
+  systemctl start "${API_SERVICE}.service" "${FRONTEND_SERVICE}.service" >/dev/null 2>&1 || true
 }
 trap 'rc=$?; rollback; exit "$rc"' ERR
 
-install -d -m 0755 "$(dirname "${API_DROPIN}")" "$(dirname "${FRONTEND_DROPIN}")"
-cat >"${API_DROPIN}" <<EOF
-[Service]
-ExecStart=
-ExecStart=${PROJECT_ROOT}/backend/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8090
-EOF
-cat >"${FRONTEND_DROPIN}" <<'EOF'
-[Service]
-Environment=HOST=0.0.0.0
-Environment=PORT=3000
-EOF
-
 NFT_NEW="${TMP}/nft.new"
-NFT_BATCH="${TMP}/nft.batch"
+UNIT_NEW="${TMP}/firewall.service"
+API_NEW="${TMP}/api.conf"
+FRONTEND_NEW="${TMP}/frontend.conf"
 render_nft "${NFT_NEW}"
-: >"${NFT_BATCH}"
-if nft list table "${TABLE_FAMILY}" "${TABLE_NAME}" >/dev/null 2>&1; then
-  echo "delete table ${TABLE_FAMILY} ${TABLE_NAME}" >>"${NFT_BATCH}"
-fi
-cat "${NFT_NEW}" >>"${NFT_BATCH}"
-nft -c -f "${NFT_BATCH}"
-nft -f "${NFT_BATCH}"
+render_firewall_unit "${UNIT_NEW}" "${NFT_BIN}"
+render_api_dropin "${API_NEW}"
+render_frontend_dropin "${FRONTEND_NEW}"
 
+NFT_CHECK="${TMP}/nft.check"
+: >"${NFT_CHECK}"
+if nft list table "${TABLE_FAMILY}" "${TABLE_NAME}" >/dev/null 2>&1; then
+  echo "delete table ${TABLE_FAMILY} ${TABLE_NAME}" >>"${NFT_CHECK}"
+fi
+cat "${NFT_NEW}" >>"${NFT_CHECK}"
+nft -c -f "${NFT_CHECK}"
+
+systemctl stop "${API_SERVICE}.service" "${FRONTEND_SERVICE}.service"
+install -m 0644 "${NFT_NEW}" "${NFT_PERSIST}"
+install -m 0644 "${UNIT_NEW}" "${FIREWALL_UNIT}"
+install -d -m 0755 "$(dirname "${API_DROPIN}")" "$(dirname "${FRONTEND_DROPIN}")"
+install -m 0644 "${API_NEW}" "${API_DROPIN}"
+install -m 0644 "${FRONTEND_NEW}" "${FRONTEND_DROPIN}"
 systemctl daemon-reload
-systemctl restart "${API_SERVICE}.service" "${FRONTEND_SERVICE}.service"
+
+# O serviço persistente é ativado antes dos upstreams. BindsTo garante que uma
+# falha/remoção futura do firewall derrube API/frontend em vez de deixá-los abertos.
+systemctl enable --now "${FIREWALL_SERVICE}.service"
+systemctl start "${API_SERVICE}.service" "${FRONTEND_SERVICE}.service"
 
 for _ in $(seq 1 30); do
   if curl -fsS --max-time 2 http://127.0.0.1:8090/api/health >/dev/null 2>&1     && curl -fsS --max-time 2 http://127.0.0.1:3000/login >/dev/null 2>&1; then
@@ -270,8 +364,6 @@ curl -fsS --max-time 3 http://127.0.0.1:8090/api/health >/dev/null   || fail "AP
 curl -fsS --max-time 3 http://127.0.0.1:3000/login >/dev/null   || fail "frontend não respondeu após aplicar bind externo"
 
 runtime_check
-ss -lntH | awk '{print $4}' | grep -Eq '(^|:)3000$' || fail "frontend não está escutando em 3000"
-ss -lntH | awk '{print $4}' | grep -Eq '(^|:)8090$' || fail "API não está escutando em 8090"
 
 trap - ERR
-ok "upstreams externos ativos e protegidos por nftables para: ${ALLOWED_CIDRS[*]}"
+ok "upstreams externos ativos, persistentes e protegidos para: ${ALLOWED_CIDRS[*]}"
