@@ -138,13 +138,13 @@ export function FlowNode({
     <div
       className={cn(
         "min-w-[112px] rounded-xl border bg-background/25 p-3 text-center",
-        active ? "border-primary/55 shadow-[0_0_24px_rgba(255,107,0,.07)]" : "border-border/65",
+        active ? "border-online/60" : "border-border/65",
       )}
     >
       <span
         className={cn(
           "mx-auto grid size-11 place-items-center rounded-lg",
-          active ? "bg-primary/10 text-primary" : "bg-secondary text-muted-foreground",
+          active ? "bg-online/10 text-online" : "bg-secondary text-muted-foreground",
         )}
       >
         {icon}
