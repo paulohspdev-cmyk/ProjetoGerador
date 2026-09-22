@@ -304,6 +304,10 @@ assert "FW-READ" in readonly_firmware["detail"], readonly_firmware
 assert "FW-CMD" not in readonly_firmware["detail"], readonly_firmware
 assert "FW-NOPACK" not in command_firmware["detail"], command_firmware
 assert "FW-NOPACK" not in readonly_firmware["detail"], readonly_firmware
+nominal_readiness = next(
+    item for item in firmware_readiness["checks"] if item["id"] == "nominal_power"
+)
+assert "FW-NOPACK" not in nominal_readiness["detail"], nominal_readiness
 
 # F01: the persistent users schema must accept the RBAC operator role.
 with db.connect() as conn:
