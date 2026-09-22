@@ -11,7 +11,7 @@ API_DROPIN="/etc/systemd/system/${API_SERVICE}.service.d/60-external-proxy-netwo
 FRONTEND_DROPIN="/etc/systemd/system/${FRONTEND_SERVICE}.service.d/60-external-proxy-network.conf"
 PROJECT_ROOT_DEFAULT="/opt/rc-geradores"
 
-fail() { echo "ERRO: $*" >&2; exit 1; }
+fail() { echo "ERRO: $*" >&2; return 1; }
 ok() { echo "OK: $*"; }
 
 case "${MODE}" in
@@ -203,6 +203,7 @@ if [[ -f "${FRONTEND_DROPIN}" ]]; then cp -a "${FRONTEND_DROPIN}" "${FRONTEND_BA
 if nft list table "${TABLE_FAMILY}" "${TABLE_NAME}" >"${NFT_BACKUP}" 2>/dev/null; then NFT_EXISTED=1; fi
 
 rollback() {
+  trap - ERR
   set +e
   if (( API_EXISTED == 1 )); then
     install -d -m 0755 "$(dirname "${API_DROPIN}")"
@@ -238,12 +239,15 @@ Environment=PORT=3000
 EOF
 
 NFT_NEW="${TMP}/nft.new"
+NFT_BATCH="${TMP}/nft.batch"
 render_nft "${NFT_NEW}"
-nft -c -f "${NFT_NEW}"
+: >"${NFT_BATCH}"
 if nft list table "${TABLE_FAMILY}" "${TABLE_NAME}" >/dev/null 2>&1; then
-  nft delete table "${TABLE_FAMILY}" "${TABLE_NAME}"
+  echo "delete table ${TABLE_FAMILY} ${TABLE_NAME}" >>"${NFT_BATCH}"
 fi
-nft -f "${NFT_NEW}"
+cat "${NFT_NEW}" >>"${NFT_BATCH}"
+nft -c -f "${NFT_BATCH}"
+nft -f "${NFT_BATCH}"
 
 systemctl daemon-reload
 systemctl restart "${API_SERVICE}.service" "${FRONTEND_SERVICE}.service"
