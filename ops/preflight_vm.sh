@@ -82,7 +82,9 @@ WEB_TLS_MODE="${RC_WEB_TLS_MODE:-${WEB_TLS_MODE}}"
 LEGACY_NGINX_SITE="${RC_LEGACY_NGINX_SITE:-/etc/nginx/sites-enabled/rc-geradores}"
 
 REQUIRED_CMDS=(git tar npm node curl systemctl runuser ss python3 dotnet hostname id find awk jq df)
-if [[ "${WEB_TLS_MODE}" != "external_proxy" ]]; then
+if [[ "${WEB_TLS_MODE}" == "external_proxy" ]]; then
+  REQUIRED_CMDS+=(nft)
+else
   REQUIRED_CMDS+=(nginx openssl)
 fi
 for cmd in "${REQUIRED_CMDS[@]}"; do
@@ -128,11 +130,13 @@ done
 ok "Rapid SCADA ativo antes do deploy"
 
 if [[ "${WEB_TLS_MODE}" == "external_proxy" ]]; then
+  [[ -n "${RC_EXTERNAL_PROXY_ALLOWED_CIDRS//[[:space:],]/}" ]] || fail "RC_WEB_TLS_MODE=external_proxy exige RC_EXTERNAL_PROXY_ALLOWED_CIDRS com o IP/CIDR real do Nginx Proxy Manager"
   [[ -n "${RC_TRUSTED_PROXY_CIDRS//[[:space:],]/}" ]] || fail "RC_WEB_TLS_MODE=external_proxy exige RC_TRUSTED_PROXY_CIDRS com o IP/CIDR real do Nginx Proxy Manager"
+  bash "${SCRIPT_DIR}/configure_external_proxy_network.sh" --check-runtime
   if [[ -f "${LEGACY_NGINX_SITE}" ]] && grep -Eq '^[[:space:]]*listen[[:space:]].*443.*ssl' "${LEGACY_NGINX_SITE}"; then
-    fail "RC_WEB_TLS_MODE=external_proxy, mas o site Nginx local ainda termina TLS em 443: ${LEGACY_NGINX_SITE}. Reconfigure o Nginx Proxy Manager para encaminhar ao app sem esta terminação TLS local antes do deploy."
+    fail "RC_WEB_TLS_MODE=external_proxy, mas o site Nginx local ainda termina TLS em 443: ${LEGACY_NGINX_SITE}. Valide o NPM direto em 3000/8090 e remova a terminação TLS local antes do deploy."
   fi
-  ok "TLS/HTTPS delegado ao proxy externo; proxy confiável configurado e sem terminação TLS local do site RC Geradores"
+  ok "TLS/HTTPS delegado ao proxy externo; upstreams protegidos por nftables e sem terminação TLS local"
 else
   systemctl is-active --quiet nginx || fail "serviço pré-requisito inativo: nginx"
   nginx -t >/dev/null 2>&1 || fail "configuração Nginx atual inválida"
