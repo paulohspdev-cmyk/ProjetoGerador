@@ -15,17 +15,18 @@ fail() { echo "ERRO: $*" >&2; return 1; }
 ok() { echo "OK: $*"; }
 
 case "${MODE}" in
-  --check|--apply|--remove) ;;
+  --check|--check-runtime|--apply|--remove) ;;
   -h|--help)
     cat <<'EOF'
-Uso: sudo bash ops/configure_external_proxy_network.sh [--check|--apply|--remove]
+Uso: sudo bash ops/configure_external_proxy_network.sh [--check|--check-runtime|--apply|--remove]
 
 Prepara API e frontend para receber HTTP diretamente do Nginx Proxy Manager sem
 expor 3000/8090 para a rede inteira.
 
---check   valida configuração e, quando já aplicado, a política de runtime.
---apply   cria drop-ins systemd, aplica firewall nftables e reinicia API/frontend.
---remove  remove a política externa, volta API/frontend ao bind loopback padrão.
+--check          valida somente a configuração declarada.
+--check-runtime  exige drop-ins systemd e firewall nftables já aplicados.
+--apply          cria drop-ins systemd, aplica firewall nftables e reinicia API/frontend.
+--remove         remove a política externa, volta API/frontend ao bind loopback padrão.
 
 Variáveis obrigatórias em external_proxy:
   RC_EXTERNAL_PROXY_ALLOWED_CIDRS=IP/CIDR do NPM
@@ -163,12 +164,13 @@ runtime_check() {
 
 if [[ "${MODE}" == "--check" ]]; then
   ok "CIDRs do NPM: ${ALLOWED_CIDRS[*]}"
-  if [[ -f "${API_DROPIN}" || -f "${FRONTEND_DROPIN}" ]] || nft list table "${TABLE_FAMILY}" "${TABLE_NAME}" >/dev/null 2>&1; then
-    runtime_check
-    ok "bind externo e firewall do NPM estão aplicados"
-  else
-    ok "configuração válida; política externa ainda não aplicada"
-  fi
+  ok "configuração external_proxy válida"
+  exit 0
+fi
+
+if [[ "${MODE}" == "--check-runtime" ]]; then
+  runtime_check
+  ok "bind externo e firewall do NPM estão aplicados"
   exit 0
 fi
 
