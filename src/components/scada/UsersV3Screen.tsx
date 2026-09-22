@@ -261,7 +261,10 @@ export function UsersV3Screen() {
                 1. Adicione esta chave ao seu autenticador TOTP
               </p>
               <div className="flex flex-wrap items-center gap-2">
-                <code className="break-all rounded-md bg-background px-3 py-2 text-xs">
+                <code
+                  data-testid="twofa-secret"
+                  className="break-all rounded-md bg-background px-3 py-2 text-xs"
+                >
                   {twoFaSetup.secret}
                 </code>
                 <ActionBtn onClick={() => void copyTwoFaSecret()}>
@@ -278,6 +281,7 @@ export function UsersV3Screen() {
               <p className="text-sm font-semibold">2. Confirme o código de 6 dígitos</p>
               <div className="flex flex-wrap items-center gap-2">
                 <input
+                  aria-label="Código 2FA para ativação"
                   inputMode="numeric"
                   autoComplete="one-time-code"
                   value={twoFaCode}
@@ -319,6 +323,7 @@ export function UsersV3Screen() {
               </p>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <input
+                  aria-label="Senha atual para desativar 2FA"
                   type="password"
                   autoComplete="current-password"
                   value={twoFaPassword}
@@ -327,6 +332,7 @@ export function UsersV3Screen() {
                   className="h-10 min-w-52 rounded-lg border border-input bg-background px-3 text-sm"
                 />
                 <input
+                  aria-label="Código 2FA para desativação"
                   inputMode="numeric"
                   autoComplete="one-time-code"
                   value={twoFaCode}
