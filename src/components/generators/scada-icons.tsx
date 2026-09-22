@@ -338,4 +338,3 @@ export function IconWarning({ size = 24, className, color }: IconProps) {
     </svg>
   );
 }
-
