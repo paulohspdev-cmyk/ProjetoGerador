@@ -459,7 +459,7 @@ def _production_readiness(
                 and "nominal_power_kw" in mapped_registers
             )
         )
-        if not nominal_supported:
+        if pack_ready and not nominal_supported:
             missing_nominal_support.append(tag)
         site = str(generator.get("site") or "").strip().lower()
         if not site or site in {"sem unidade", "n/d"}:
