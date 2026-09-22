@@ -204,6 +204,10 @@ for (const [file, markers] of [
       'autoComplete="new-password"',
       "usersError",
       "const visibleError = error || usersError ||",
+      "rcApi.auth.setup2fa()",
+      "rcApi.auth.enable2fa(twoFaCode)",
+      "rcApi.auth.disable2fa(twoFaCode, twoFaPassword)",
+      "2FA obrigatório pendente",
     ],
   ],
   [
@@ -214,6 +218,13 @@ for (const [file, markers] of [
   const source = read(file);
   for (const marker of markers) {
     if (!source.includes(marker)) failures.push(`${file} perdeu proteção de mutação: ${marker}`);
+  }
+}
+
+const authProvider = read("src/components/auth/AuthProvider.tsx");
+for (const marker of ["refreshCurrentUser", "const current = await rcApi.auth.me()", "setUser(current)"]) {
+  if (!authProvider.includes(marker)) {
+    failures.push(`AuthProvider perdeu atualização de estado após mudança de 2FA: ${marker}`);
   }
 }
 
