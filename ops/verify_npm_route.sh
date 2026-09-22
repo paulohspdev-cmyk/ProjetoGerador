@@ -2,6 +2,7 @@
 set -Eeuo pipefail
 
 ENV_FILE="${RC_ENV_FILE:-/etc/rc-geradores.env}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NPM_ADDRESS=""
 CAPTURE_SECONDS="${RC_NPM_ROUTE_CAPTURE_SECONDS:-8}"
 
@@ -126,8 +127,9 @@ LOCAL_ADDRESS="$(
 )"
 [[ -n "${LOCAL_ADDRESS}" ]] || fail "não foi possível descobrir o IP local usado até o NPM"
 
-if [[ -x "/opt/rc-geradores/ops/configure_external_proxy_network.sh" ]]; then
-  bash /opt/rc-geradores/ops/configure_external_proxy_network.sh --check-runtime >/dev/null     || fail "política external_proxy da VM não está íntegra"
+if [[ -f "${SCRIPT_DIR}/configure_external_proxy_network.sh" ]]; then
+  bash "${SCRIPT_DIR}/configure_external_proxy_network.sh" --check-runtime >/dev/null \
+    || fail "política external_proxy da VM não está íntegra"
 fi
 
 WORKDIR="$(mktemp -d /tmp/rc-npm-route.XXXXXX)"
