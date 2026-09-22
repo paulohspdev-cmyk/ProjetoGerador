@@ -144,17 +144,56 @@ def _build_offsite_payload(archive: Path, target: Path) -> bool:
     return any(member.name == "product/totp-fernet.key" for member in members)
 
 
+def _validate_offsite_target_dir(target_dir: Path) -> None:
+    target_dir = target_dir.resolve()
+    data_root = DATA_DIR.resolve()
+    if target_dir == data_root or data_root in target_dir.parents:
+        raise ValueError("Destino off-site deve ficar fora de RC_DATA_DIR")
+    if not target_dir.exists():
+        raise ValueError(
+            "Destino off-site não existe. O mount/volume deve estar presente antes do backup; "
+            "o RC Geradores não cria o diretório para evitar falso off-site no disco local."
+        )
+    if not target_dir.is_dir():
+        raise ValueError(f"Destino off-site não é diretório: {target_dir}")
+    if not os.access(target_dir, os.W_OK | os.X_OK):
+        raise ValueError(f"Destino off-site não está gravável pelo serviço: {target_dir}")
+    try:
+        data_device = data_root.stat().st_dev
+        target_device = target_dir.stat().st_dev
+    except OSError as exc:
+        raise ValueError(f"Não foi possível validar filesystem do destino off-site: {exc}") from exc
+    if data_device == target_device:
+        raise ValueError(
+            "Destino off-site está no mesmo filesystem de RC_DATA_DIR; "
+            "use volume/mount remoto ou dispositivo separado."
+        )
+
+
+def offsite_storage_status() -> tuple[bool, str]:
+    if not BACKUP_OFFSITE_REQUIRED:
+        return False, "RC_BACKUP_OFFSITE_REQUIRED não está habilitado"
+    if not BACKUP_OFFSITE_DIR:
+        return False, "RC_BACKUP_OFFSITE_DIR não foi configurado"
+    if not BACKUP_OFFSITE_KEY_FILE:
+        return False, "RC_BACKUP_OFFSITE_KEY_FILE não foi configurado"
+    try:
+        _offsite_cipher()
+        target_dir = Path(BACKUP_OFFSITE_DIR).resolve()
+        _validate_offsite_target_dir(target_dir)
+    except Exception as exc:
+        return False, str(exc)
+    return True, f"Destino off-site validado em filesystem separado: {target_dir}"
+
+
 def _offsite_target(archive: Path) -> Path | None:
     if not BACKUP_OFFSITE_DIR:
         if BACKUP_OFFSITE_REQUIRED:
             raise ValueError("RC_BACKUP_OFFSITE_REQUIRED=1, mas RC_BACKUP_OFFSITE_DIR não foi configurado")
         return None
     target_dir = Path(BACKUP_OFFSITE_DIR).resolve()
-    data_root = DATA_DIR.resolve()
-    if target_dir == data_root or data_root in target_dir.parents:
-        raise ValueError("Destino off-site deve ficar fora de RC_DATA_DIR")
+    _validate_offsite_target_dir(target_dir)
     cipher = _offsite_cipher()
-    target_dir.mkdir(parents=True, exist_ok=True)
     target = target_dir / f"{archive.name}.fernet"
     staged = target_dir / f".{target.name}.{os.getpid()}.tmp"
     with tempfile.TemporaryDirectory(prefix="rc-offsite-payload-") as tmp:
