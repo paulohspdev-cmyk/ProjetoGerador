@@ -31,6 +31,9 @@ DB_SNAPSHOT=""
 NGINX_SITE_EXISTED=0
 NGINX_ENABLED_EXISTED=0
 TLS_DIR_EXISTED=0
+RAPID_NETWORK_APPLIED=0
+RAPID_NETWORK_DROPIN="50-rc-geradores-network.conf"
+RAPID_NETWORK_SERVICES=(scadaserver6 scadaagent6 scadaweb6)
 
 SERVICES=(rc-geradores-provision rc-geradores-worker rc-geradores-bridge rc-geradores-api rc-geradores-frontend)
 
@@ -249,6 +252,21 @@ for unit in "${STAGE}"/ops/systemd/*.service; do
   fi
 done
 
+mkdir -p "${BACKUP}/rapid-network"
+: >"${BACKUP}/rapid-network-existing.txt"
+: >"${BACKUP}/rapid-network-active.txt"
+for svc in "${RAPID_NETWORK_SERVICES[@]}"; do
+  dir="/etc/systemd/system/${svc}.service.d"
+  target="${dir}/${RAPID_NETWORK_DROPIN}"
+  if [[ -f "${target}" ]]; then
+    cp -a "${target}" "${BACKUP}/rapid-network/${svc}.conf"
+    echo "${svc}" >>"${BACKUP}/rapid-network-existing.txt"
+  fi
+  if systemctl is-active --quiet "${svc}.service"; then
+    echo "${svc}" >>"${BACKUP}/rapid-network-active.txt"
+  fi
+done
+
 if [[ "${WEB_TLS_MODE}" != "external_proxy" ]]; then
   if [[ -e "${NGINX_SITE}" || -L "${NGINX_SITE}" ]]; then
     cp -a "${NGINX_SITE}" "${BACKUP}/web/nginx-site-before"
@@ -284,7 +302,25 @@ rollback() {
 
   for unit in "${STAGE}"/ops/systemd/*.service; do rm -f "/etc/systemd/system/$(basename "${unit}")"; done
   if [[ -d "${BACKUP}/systemd" ]]; then cp -a "${BACKUP}/systemd"/*.service /etc/systemd/system/ 2>/dev/null || true; fi
+
+  if [[ ${RAPID_NETWORK_APPLIED} -eq 1 ]]; then
+    for svc in "${RAPID_NETWORK_SERVICES[@]}"; do
+      dir="/etc/systemd/system/${svc}.service.d"
+      target="${dir}/${RAPID_NETWORK_DROPIN}"
+      rm -f "${target}"
+      if grep -Fxq "${svc}" "${BACKUP}/rapid-network-existing.txt" 2>/dev/null; then
+        install -d -m 0755 "${dir}"
+        cp -a "${BACKUP}/rapid-network/${svc}.conf" "${target}" 2>/dev/null || true
+      fi
+    done
+  fi
   systemctl daemon-reload || true
+  if [[ ${RAPID_NETWORK_APPLIED} -eq 1 && -f "${BACKUP}/rapid-network-active.txt" ]]; then
+    while IFS= read -r svc; do
+      [[ -n "${svc}" ]] || continue
+      systemctl restart "${svc}.service" >/dev/null 2>&1 || true
+    done <"${BACKUP}/rapid-network-active.txt"
+  fi
 
   if [[ -n "${DB_SNAPSHOT}" && -f "${DB_SNAPSHOT}" ]]; then
     python3 - "${DB_SNAPSHOT}" "${DB_FILE}" <<'PY'
@@ -447,6 +483,7 @@ if ! bash "${BASE}/ops/configure_rapid_network.sh" --apply; then
   rollback
   fail "não foi possível aplicar política de rede do Rapid SCADA"
 fi
+RAPID_NETWORK_APPLIED=1
 
 log "REINICIANDO SERVIÇOS"
 START_SERVICES=(rc-geradores-api rc-geradores-provision rc-geradores-bridge rc-geradores-worker rc-geradores-frontend)
