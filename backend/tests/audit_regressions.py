@@ -94,6 +94,24 @@ try:
     assert policy_ok is True, policy_detail
     assert "10.10.10.0/24" in policy_detail, policy_detail
 
+    os.environ["RC_RAPID_ADMIN_ALLOWED_CIDRS"] = ""
+
+    def _rapid_policy_loopback_only_run(args, timeout=2):
+        if args[:2] == ["systemctl", "show"]:
+            return (
+                0,
+                "IPAddressAllow=127.0.0.0/8 ::1/128\n"
+                "IPAddressDeny=0.0.0.0/0 ::/0",
+            )
+        return _original_diagnostics_run(args, timeout)
+
+    diagnostics._run = _rapid_policy_loopback_only_run
+    policy_ok, policy_detail = diagnostics._rapid_native_network_policy()
+    assert policy_ok is True, policy_detail
+    assert "somente a loopback" in policy_detail, policy_detail
+
+    os.environ["RC_RAPID_ADMIN_ALLOWED_CIDRS"] = "10.10.10.0/24"
+
     def _rapid_policy_missing_deny(args, timeout=2):
         if args[:2] == ["systemctl", "show"]:
             service = args[2]
