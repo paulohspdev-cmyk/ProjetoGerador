@@ -759,11 +759,17 @@ race_offline = [
     {"id": "g-race", "tag": "GEN-RACE", "status": "offline", "lastError": "race-loss"}
 ]
 race_results = []
+race_errors = []
 race_lock = threading.Lock()
 
 
 def escalate_race() -> None:
-    result = industrial_store.process_escalations(race_offline)
+    try:
+        result = industrial_store.process_escalations(race_offline)
+    except Exception as exc:
+        with race_lock:
+            race_errors.append(repr(exc))
+        return
     with race_lock:
         race_results.append(result)
 
@@ -773,6 +779,7 @@ for thread in race_threads:
     thread.start()
 for thread in race_threads:
     thread.join()
+assert not race_errors, race_errors
 with db.connect() as conn:
     race_rows = conn.execute(
         "SELECT payload_json FROM notification_queue "
