@@ -340,6 +340,24 @@ def _production_readiness(
                 else "Possível dupla terminação TLS local"
             ),
         )
+
+    if os.environ.get("RC_WEB_TLS_MODE", "managed").strip() == "external_proxy":
+        trusted_proxy_cidrs = [
+            item.strip()
+            for item in os.environ.get("RC_TRUSTED_PROXY_CIDRS", "").split(",")
+            if item.strip()
+        ]
+        add(
+            "trusted_proxy_identity",
+            "Identidade do proxy confiável",
+            bool(trusted_proxy_cidrs),
+            "blocker",
+            (
+                "RC_TRUSTED_PROXY_CIDRS configurado: " + ", ".join(trusted_proxy_cidrs)
+                if trusted_proxy_cidrs
+                else "RC_TRUSTED_PROXY_CIDRS vazio; IP real do cliente e rate-limit ficam incorretos atrás do proxy"
+            ),
+        )
     add(
         "reverse_tcp_allowlist",
         "Proteção das portas reverse TCP",
