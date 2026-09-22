@@ -75,25 +75,35 @@ peers autorizados pelo firewall.
    - localização padrão `/` -> `http://10.10.10.130:3000`;
    - Custom Location `/api/` -> `http://10.10.10.130:8090`;
    - mantenha WebSocket Support habilitado.
-7. Teste pelo hostname HTTPS real:
+7. Verifique a rota real sem interromper serviços:
+   ```bash
+   sudo bash ops/verify_npm_route.sh
+   ```
+   O helper faz requisições controladas a `/login` e `/api/health` pelo
+   próprio NPM e observa apenas metadados TCP. Ele só aprova quando vê
+   `NPM -> VM:3000` para o frontend, `NPM -> VM:8090` para a API e nenhum
+   salto `NPM -> VM:443`. Assim, responder HTTP 200 não basta para declarar
+   o corte concluído se o tráfego ainda estiver passando pelo Nginx TLS local.
+8. Teste pelo hostname HTTPS real:
    - `GET /login` deve responder 200;
    - `GET /api/health` deve responder 200;
    - login/logout devem funcionar;
    - downloads e rotas administrativas devem permanecer no mesmo host.
-8. Se o NPM direto falhar, reverta o Proxy Host ao upstream anterior. A política
+9. Se o NPM direto falhar, reverta o Proxy Host ao upstream anterior. A política
    nftables pode permanecer aplicada; para voltar totalmente a loopback use:
    ```bash
    sudo bash ops/configure_external_proxy_network.sh --remove
    ```
-9. Somente depois do NPM direto estar validado, desabilite a terminação TLS
-   local do RC Geradores. Se o Nginx local não servir outro sistema, pare e
-   desabilite o serviço; não é necessário apagar certificados durante o cutover.
-10. Execute o preflight da release validada:
+10. Somente depois de `verify_npm_route.sh` aprovar o caminho direto,
+    desabilite a terminação TLS local do RC Geradores. Se o Nginx local não
+    servir outro sistema, pare e desabilite o serviço; não é necessário apagar
+    certificados durante o cutover.
+11. Execute o preflight da release validada:
     ```bash
     sudo bash /opt/rc-geradores/ops/preflight_vm.sh \
       factory/auditoria-producao SHA_VALIDADO
     ```
-11. O preflight só aprova quando:
+12. O preflight só aprova quando:
     - a política nftables externa está aplicada;
     - os drop-ins de API/frontend estão carregados;
     - o peer do NPM está configurado e confiável;
