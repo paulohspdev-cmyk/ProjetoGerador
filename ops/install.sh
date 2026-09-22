@@ -369,7 +369,8 @@ dotnet build "$BASE/rapid/reader/RcRapidReader.csproj" \
 SCADA_DLL_DIR="$(dirname "$SCADA_COMMON")"
 find "$SCADA_DLL_DIR" -maxdepth 1 -type f -name 'Scada*.dll' \
   -exec cp --update=none {} "$OUT/" \; 2>/dev/null || true
-chmod -R a+rX "$OUT"
+chown -R root:root "$OUT"
+chmod -R u=rwX,go=rX "$OUT"
 
 echo "[8/15] Compilando frontend para Linux/Node..."
 cd "$BASE"
@@ -379,6 +380,8 @@ cd "$BASE"
 npm ci --include=dev
 NITRO_PRESET=node-server npm run build
 test -f "$BASE/.output/server/index.mjs"
+chown -R root:root "$BASE/.output"
+chmod -R u=rwX,go=rX "$BASE/.output"
 # Depois do build, mantenha somente dependências de runtime na VM.
 npm prune --omit=dev
 
