@@ -1,7 +1,9 @@
+import hashlib
 import json
 import os
 import shutil
 import sqlite3
+import struct
 import tarfile
 import tempfile
 import time
@@ -31,6 +33,10 @@ RETIRED_BINDINGS = DATA_DIR / "rapid-retired-bindings.json"
 DEFAULT_RETENTION = int(os.environ.get("RC_BACKUP_RETENTION", "14"))
 INCLUDE_SECRETS = os.environ.get("RC_BACKUP_INCLUDE_SECRETS", "0").strip() == "1"
 ENV_FILE = Path(os.environ.get("RC_ENV_FILE", "/etc/rc-geradores.env"))
+
+OFFSITE_STREAM_MAGIC = b"RCG-OFFSITE-FERNET-CHUNKED-V1\n"
+OFFSITE_STREAM_CHUNK_SIZE = 4 * 1024 * 1024
+OFFSITE_STREAM_MAX_TOKEN_SIZE = 8 * 1024 * 1024
 
 
 def _quick_check(path: Path) -> None:
@@ -125,6 +131,120 @@ def _offsite_cipher(key_file: str | Path | None = None) -> Fernet:
         raise ValueError(f"Chave de backup off-site inválida: {key_path}") from exc
 
 
+def _write_offsite_record(target, token: bytes) -> None:
+    if not token or len(token) > OFFSITE_STREAM_MAX_TOKEN_SIZE:
+        raise ValueError("Token off-site inválido ou grande demais")
+    target.write(struct.pack(">I", len(token)))
+    target.write(token)
+
+
+def _encrypt_offsite_payload(source: Path, target: Path, cipher: Fernet) -> None:
+    digest = hashlib.sha256()
+    index = 0
+    with source.open("rb") as src, target.open("wb") as dst:
+        dst.write(OFFSITE_STREAM_MAGIC)
+        while True:
+            chunk = src.read(OFFSITE_STREAM_CHUNK_SIZE)
+            if not chunk:
+                break
+            digest.update(chunk)
+            clear_record = b"D" + struct.pack(">Q", index) + chunk
+            _write_offsite_record(dst, cipher.encrypt(clear_record))
+            index += 1
+
+        end_record = b"E" + struct.pack(">Q", index) + digest.digest()
+        _write_offsite_record(dst, cipher.encrypt(end_record))
+        dst.flush()
+        os.fsync(dst.fileno())
+
+
+def _decrypt_chunked_offsite_payload(source: Path, target: Path, cipher: Fernet) -> None:
+    digest = hashlib.sha256()
+    expected_index = 0
+    saw_end = False
+
+    with source.open("rb") as src, target.open("wb") as dst:
+        magic = src.read(len(OFFSITE_STREAM_MAGIC))
+        if magic != OFFSITE_STREAM_MAGIC:
+            raise ValueError("Envelope off-site chunked inválido")
+
+        while True:
+            header = src.read(4)
+            if not header:
+                break
+            if len(header) != 4:
+                raise ValueError("Envelope off-site truncado no cabeçalho de registro")
+
+            token_size = struct.unpack(">I", header)[0]
+            if token_size <= 0 or token_size > OFFSITE_STREAM_MAX_TOKEN_SIZE:
+                raise ValueError("Envelope off-site contém tamanho de registro inválido")
+
+            token = src.read(token_size)
+            if len(token) != token_size:
+                raise ValueError("Envelope off-site truncado no conteúdo de registro")
+
+            try:
+                clear_record = cipher.decrypt(token)
+            except InvalidToken as exc:
+                raise ValueError("Envelope off-site não autentica com a chave informada") from exc
+
+            if len(clear_record) < 9:
+                raise ValueError("Envelope off-site contém registro autenticado inválido")
+
+            record_type = clear_record[:1]
+            record_index = struct.unpack(">Q", clear_record[1:9])[0]
+            if record_index != expected_index:
+                raise ValueError(
+                    f"Envelope off-site fora de sequência: esperado {expected_index}, recebido {record_index}"
+                )
+
+            if record_type == b"D":
+                if saw_end:
+                    raise ValueError("Envelope off-site contém dados após o terminador")
+                chunk = clear_record[9:]
+                if not chunk:
+                    raise ValueError("Envelope off-site contém chunk vazio")
+                digest.update(chunk)
+                dst.write(chunk)
+                expected_index += 1
+                continue
+
+            if record_type == b"E":
+                if saw_end or len(clear_record) != 41:
+                    raise ValueError("Envelope off-site contém terminador inválido")
+                expected_digest = clear_record[9:]
+                if expected_digest != digest.digest():
+                    raise ValueError("Envelope off-site falhou na verificação SHA-256 final")
+                saw_end = True
+                if src.read(1):
+                    raise ValueError("Envelope off-site contém dados após o terminador")
+                break
+
+            raise ValueError("Envelope off-site contém tipo de registro desconhecido")
+
+        if not saw_end:
+            raise ValueError("Envelope off-site truncado: terminador autenticado ausente")
+
+        dst.flush()
+        os.fsync(dst.fileno())
+
+
+def _decrypt_offsite_payload(source: Path, target: Path, cipher: Fernet) -> None:
+    with source.open("rb") as src:
+        prefix = src.read(len(OFFSITE_STREAM_MAGIC))
+
+    if prefix == OFFSITE_STREAM_MAGIC:
+        _decrypt_chunked_offsite_payload(source, target, cipher)
+        return
+
+    # Compatibilidade de leitura com envelopes legados de token Fernet único.
+    try:
+        clear = cipher.decrypt(source.read_bytes())
+    except InvalidToken as exc:
+        raise ValueError("Envelope off-site não autentica com a chave informada") from exc
+    target.write_bytes(clear)
+
+
 def _build_offsite_payload(archive: Path, target: Path) -> bool:
     """Cria envelope de DR criptografado sem expor segredos no backup local."""
     totp_key = Path(TOTP_KEY_FILE)
@@ -201,8 +321,7 @@ def _offsite_target(archive: Path) -> Path | None:
     with tempfile.TemporaryDirectory(prefix="rc-offsite-payload-") as tmp:
         payload = Path(tmp) / archive.name
         _build_offsite_payload(archive, payload)
-        encrypted = cipher.encrypt(payload.read_bytes())
-    staged.write_bytes(encrypted)
+        _encrypt_offsite_payload(payload, staged, cipher)
     try:
         os.chmod(staged, 0o600)
     except PermissionError:
@@ -386,10 +505,6 @@ def materialize_offsite_backup(
     if not source.name.startswith("rc-geradores-full-"):
         raise ValueError("Envelope off-site não pertence ao formato RC Geradores")
     cipher = _offsite_cipher(key_file)
-    try:
-        clear = cipher.decrypt(source.read_bytes())
-    except InvalidToken as exc:
-        raise ValueError("Envelope off-site não autentica com a chave informada") from exc
 
     BACKUP_DIR.mkdir(parents=True, exist_ok=True)
     plain_name = source.name.removesuffix(".fernet")
@@ -398,8 +513,8 @@ def materialize_offsite_backup(
         stem = plain_name.removesuffix(".tar.gz")
         target = BACKUP_DIR / f"{stem}-recovered-{int(time.time())}.tar.gz"
     staged = BACKUP_DIR / f".{target.name}.{os.getpid()}.tmp"
-    staged.write_bytes(clear)
     try:
+        _decrypt_offsite_payload(source, staged, cipher)
         os.chmod(staged, 0o600)
         _validate_archive_database(staged)
         os.replace(staged, target)
