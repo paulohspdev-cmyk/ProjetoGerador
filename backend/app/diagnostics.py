@@ -7,6 +7,7 @@ import time
 from pathlib import Path
 
 from . import db, domain_store, platform_store, traffic_store
+from .backup_manager import offsite_storage_status
 from .config import (
     API_DOCS_ENABLED,
     APP_VERSION,
@@ -385,22 +386,13 @@ def _production_readiness(
             ),
         )
 
-    offsite_ready = bool(
-        BACKUP_OFFSITE_REQUIRED
-        and BACKUP_OFFSITE_DIR
-        and BACKUP_OFFSITE_KEY_FILE
-        and Path(BACKUP_OFFSITE_KEY_FILE).is_file()
-    )
+    offsite_ready, offsite_detail = offsite_storage_status()
     add(
         "backup_offsite",
         "Backup off-site",
         offsite_ready,
         "blocker",
-        (
-            "Obrigatório, destino e chave configurados"
-            if offsite_ready
-            else "Falta RC_BACKUP_OFFSITE_REQUIRED=1, destino off-site e/ou chave externa"
-        ),
+        offsite_detail,
     )
 
     users = [item for item in db.list_users() if item.get("active")]
