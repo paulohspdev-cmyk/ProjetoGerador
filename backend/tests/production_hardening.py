@@ -485,10 +485,13 @@ finally:
     backup_manager.DATA_DIR = previous_data_dir
 
 # Chave off-site errada deve falhar antes de materializar qualquer backup.
+# Use o envelope mais novo porque a retenção pode legitimamente remover o primeiro.
+wrong_key_target = Path(restore_source["offsitePath"])
+assert wrong_key_target.is_file()
 wrong_key = root / "wrong-offsite.key"
 wrong_key.write_bytes(Fernet.generate_key() + b"\n")
 try:
-    materialize_offsite_backup(encrypted, key_file=wrong_key)
+    materialize_offsite_backup(wrong_key_target, key_file=wrong_key)
 except ValueError as exc:
     assert "não autentica" in str(exc)
 else:
