@@ -143,10 +143,10 @@ Após a instalação:
 ```text
 rc-geradores-bridge       reverse TCP + socket de controle homologado
 rc-geradores-provision    helper root para provisionar/reconciliar/deprovisionar Rapid
-rc-geradores-api          FastAPI em 127.0.0.1:8090
+rc-geradores-api          FastAPI; loopback por padrão, upstream NPM via drop-in protegido
 rc-geradores-worker       alarmes, notificações, scheduler e automação não industrial
-rc-geradores-frontend     TanStack/Node em 127.0.0.1:3000
-nginx                     somente no modo TLS local gerenciado; external_proxy usa NPM
+rc-geradores-frontend     TanStack/Node; loopback por padrão, upstream NPM via drop-in protegido
+nginx                     somente no modo TLS local managed; external_proxy usa NPM + nftables
 scadaserver6              Rapid SCADA Server
 scadacomm6                Rapid SCADA Communicator
 ```
@@ -172,8 +172,27 @@ O instalador:
 5. por padrão cria o primeiro IG200 e provisiona o Rapid usando o **cadastro real do banco**, não valores paralelos hardcoded;
 6. compila o leitor oficial do Rapid SCADA;
 7. compila o frontend para Linux/Node;
-8. instala e inicia bridge, provisionador, API, worker, frontend e Rapid; Nginx local só é instalado/configurado quando o TLS não estiver delegado ao proxy externo;
-9. valida API, proxy, serviços, sockets, BaseDAT, bindings e executa o smoke test da VM.
+8. instala e inicia bridge, provisionador, API, worker, frontend e Rapid;
+9. em `external_proxy`, exige a URL pública e o CIDR real do NPM, prepara 3000/8090 com drop-ins systemd e restringe essas portas via nftables; Nginx local não é usado;
+10. valida API, política de rede, serviços, sockets, BaseDAT, bindings e executa o smoke test da VM.
+
+### Instalação atrás do Nginx Proxy Manager
+
+Em `external_proxy`, informe explicitamente o peer do NPM e a URL HTTPS que
+o operador realmente acessará. Exemplo da topologia auditada; confirme os
+endereços antes de usar:
+
+```bash
+sudo bash ops/install.sh \
+  --web-tls-mode external_proxy \
+  --external-proxy-cidrs 10.10.10.131/32 \
+  --public-base-url https://HOSTNAME_REAL
+```
+
+O instalador não cria TLS local nesse modo. Ele expõe 3000/8090 somente após
+aplicar uma tabela nftables que aceita loopback e o(s) CIDR(s) do NPM. O
+procedimento de migração de uma VM já existente está em
+`ops/NPM_EXTERNAL_PROXY.md`.
 
 ### Instalar sem gerador inicial
 
