@@ -9,6 +9,7 @@ User=rcgeradores
 Group=rcgeradores
 WorkingDirectory=/opt/rc-geradores/backend
 EnvironmentFile=-/etc/rc-geradores.env
+Environment=PYTHONDONTWRITEBYTECODE=1
 RuntimeDirectory=rc-geradores
 RuntimeDirectoryMode=0770
 RuntimeDirectoryPreserve=yes
@@ -19,6 +20,21 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=full
 ProtectHome=true
+UMask=0027
+ProtectClock=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectHostname=true
+LockPersonality=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=true
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+PrivateDevices=true
+CapabilityBoundingSet=
 ReadWritePaths=/var/lib/rc-geradores /var/log/rc-geradores /run/rc-geradores
 
 [Install]
