@@ -222,7 +222,11 @@ for (const [file, markers] of [
 }
 
 const authProvider = read("src/components/auth/AuthProvider.tsx");
-for (const marker of ["refreshCurrentUser", "const current = await rcApi.auth.me()", "setUser(current)"]) {
+for (const marker of [
+  "refreshCurrentUser",
+  "const current = await rcApi.auth.me()",
+  "setUser(current)",
+]) {
   if (!authProvider.includes(marker)) {
     failures.push(`AuthProvider perdeu atualização de estado após mudança de 2FA: ${marker}`);
   }
