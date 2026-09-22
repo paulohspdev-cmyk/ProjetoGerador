@@ -89,9 +89,6 @@ def _rapid_native_network_policy() -> tuple[bool, str]:
             return False, f"RC_RAPID_ADMIN_ALLOWED_CIDRS contém rede ampla demais: {network}"
         admin_networks.add(str(network))
 
-    if not admin_networks:
-        return False, "RC_RAPID_ADMIN_ALLOWED_CIDRS não configurado"
-
     required_allow = {"127.0.0.0/8", "::1/128", *admin_networks}
     required_deny = {"0.0.0.0/0", "::/0"}
     errors: list[str] = []
@@ -130,11 +127,13 @@ def _rapid_native_network_policy() -> tuple[bool, str]:
 
     if errors:
         return False, "; ".join(errors)
-    return (
-        True,
-        "Server/Agent/Webstation restritos a loopback e redes administrativas: "
-        + ", ".join(sorted(admin_networks)),
-    )
+    if admin_networks:
+        return (
+            True,
+            "Server/Agent/Webstation restritos a loopback e redes administrativas: "
+            + ", ".join(sorted(admin_networks)),
+        )
+    return True, "Server/Agent/Webstation restritos somente a loopback"
 
 
 def _listening_ports() -> set[int]:
