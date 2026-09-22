@@ -157,9 +157,15 @@ runtime_check() {
   grep -q '8090' /tmp/rc-external-proxy-nft.txt || fail "firewall sem porta API"
   grep -q 'drop' /tmp/rc-external-proxy-nft.txt || fail "firewall sem regra de bloqueio"
   for cidr in "${ALLOWED_CIDRS[@]}"; do
-    grep -Fq "${cidr}" /tmp/rc-external-proxy-nft.txt       || fail "firewall não contém peer do NPM: ${cidr}"
+    needle="${cidr}"
+    [[ "${needle}" == */32 ]] && needle="${needle%/32}"
+    [[ "${needle}" == */128 ]] && needle="${needle%/128}"
+    grep -Fq "${needle}" /tmp/rc-external-proxy-nft.txt       || fail "firewall não contém peer do NPM: ${cidr}"
   done
   rm -f /tmp/rc-external-proxy-nft.txt
+
+  ss -lntH | awk '{print $4}' | grep -Eq '^(0\.0\.0\.0|\*):3000$'     || fail "frontend não está exposto pelo drop-in em 0.0.0.0:3000"
+  ss -lntH | awk '{print $4}' | grep -Eq '^(0\.0\.0\.0|\*):8090$'     || fail "API não está exposta pelo drop-in em 0.0.0.0:8090"
 }
 
 if [[ "${MODE}" == "--check" ]]; then
