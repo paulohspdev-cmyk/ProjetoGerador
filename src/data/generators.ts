@@ -52,6 +52,8 @@ export type Generator = {
   frequency: number | null;
   mainsFrequency?: number | null;
   nominalPower?: number | null;
+  nominalPowerConfigured?: number | null;
+  nominalPowerSource?: "telemetry" | "cadastral" | null;
   rpm: number | null;
   load: number | null;
   oilPressure: number | null;
