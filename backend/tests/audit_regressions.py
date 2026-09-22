@@ -74,6 +74,68 @@ finally:
     else:
         os.environ["RC_WEB_TLS_MODE"] = previous_web_tls_mode
 
+# F00b2: readiness must verify the systemd policy actually loaded for native Rapid ports.
+_previous_admin_cidrs = os.environ.get("RC_RAPID_ADMIN_ALLOWED_CIDRS")
+_original_diagnostics_run = diagnostics._run
+try:
+    os.environ["RC_RAPID_ADMIN_ALLOWED_CIDRS"] = "10.10.10.0/24"
+
+    def _rapid_policy_ok_run(args, timeout=2):
+        if args[:2] == ["systemctl", "show"]:
+            return (
+                0,
+                "IPAddressAllow=10.10.10.0/24 127.0.0.0/8 ::1/128\n"
+                "IPAddressDeny=0.0.0.0/0 ::/0",
+            )
+        return _original_diagnostics_run(args, timeout)
+
+    diagnostics._run = _rapid_policy_ok_run
+    policy_ok, policy_detail = diagnostics._rapid_native_network_policy()
+    assert policy_ok is True, policy_detail
+    assert "10.10.10.0/24" in policy_detail, policy_detail
+
+    def _rapid_policy_missing_deny(args, timeout=2):
+        if args[:2] == ["systemctl", "show"]:
+            service = args[2]
+            deny = "" if service == "scadaweb6.service" else "IPAddressDeny=0.0.0.0/0 ::/0"
+            return (
+                0,
+                "IPAddressAllow=10.10.10.0/24 127.0.0.0/8 ::1/128\n" + deny,
+            )
+        return _original_diagnostics_run(args, timeout)
+
+    diagnostics._run = _rapid_policy_missing_deny
+    policy_ok, policy_detail = diagnostics._rapid_native_network_policy()
+    assert policy_ok is False, policy_detail
+    assert "scadaweb6.service" in policy_detail, policy_detail
+    assert "deny ausente" in policy_detail, policy_detail
+
+    os.environ["RC_RAPID_ADMIN_ALLOWED_CIDRS"] = "0.0.0.0/0"
+    policy_ok, policy_detail = diagnostics._rapid_native_network_policy()
+    assert policy_ok is False, policy_detail
+    assert "ampla demais" in policy_detail, policy_detail
+
+    policy_readiness = diagnostics._production_readiness(
+        [],
+        reverse_tcp_exposed=False,
+        reverse_tcp_allowlist=False,
+        rapid_native_policy_ok=False,
+        rapid_native_policy_detail="scadaweb6.service: deny ausente 0.0.0.0/0",
+    )
+    policy_check = next(
+        item
+        for item in policy_readiness["checks"]
+        if item["id"] == "rapid_native_network_policy"
+    )
+    assert policy_check["severity"] == "blocker", policy_check
+    assert "deny ausente" in policy_check["detail"], policy_check
+finally:
+    diagnostics._run = _original_diagnostics_run
+    if _previous_admin_cidrs is None:
+        os.environ.pop("RC_RAPID_ADMIN_ALLOWED_CIDRS", None)
+    else:
+        os.environ["RC_RAPID_ADMIN_ALLOWED_CIDRS"] = _previous_admin_cidrs
+
 # F00c: readiness must not demand a nominal-power field that the inventory cannot store.
 readiness = diagnostics._production_readiness(
     [
