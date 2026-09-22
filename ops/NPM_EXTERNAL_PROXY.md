@@ -20,9 +20,10 @@ Na topologia de fábrica validada durante a auditoria, o NPM está em
 endereços antes de qualquer mudança.
 
 O certificado, redirect HTTP->HTTPS, HSTS e demais opções TLS pertencem ao
-Proxy Host do NPM. API e frontend continuam escutando apenas em loopback na VM
-quando executados diretamente; o acesso externo deve ser definido de forma
-controlada conforme a rede da instalação.
+Proxy Host do NPM. Por padrão API e frontend continuam em loopback. O helper
+`configure_external_proxy_network.sh` cria drop-ins systemd para disponibilizar
+3000/8090 à rede e, na mesma operação, instala uma política nftables que aceita
+nessas portas somente loopback e os CIDRs explicitamente autorizados do NPM.
 
 ## Variáveis obrigatórias
 
@@ -31,38 +32,72 @@ Depois de conhecer o hostname real publicado no NPM:
 ```dotenv
 RC_WEB_TLS_MODE=external_proxy
 RC_AUTH_COOKIE_SECURE=1
+RC_EXTERNAL_PROXY_ALLOWED_CIDRS=10.10.10.131/32
 RC_TRUSTED_PROXY_CIDRS=10.10.10.131/32
 RC_PUBLIC_BASE_URL=https://HOSTNAME_REAL
 RC_CORS_ORIGINS=https://HOSTNAME_REAL
 ```
 
-Nunca use `0.0.0.0/0` ou `::/0` em `RC_TRUSTED_PROXY_CIDRS`.
+Nunca use `0.0.0.0/0` ou `::/0` em `RC_EXTERNAL_PROXY_ALLOWED_CIDRS`
+ou `RC_TRUSTED_PROXY_CIDRS`. A lista confiável da API deve cobrir todos os
+peers autorizados pelo firewall.
 
 ## Cutover sem interrupção
 
 1. Não altere o checkout de produção nem execute deploy.
-2. No NPM, altere o Proxy Host para encaminhar a localização padrão `/` por
-   HTTP para `10.10.10.130:3000`.
-3. No mesmo Proxy Host, crie uma Custom Location `/api/` por HTTP para
-   `10.10.10.130:8090`.
-4. Mantenha WebSocket Support habilitado para o Proxy Host.
-5. Teste pelo hostname real do NPM:
+2. Confirme o IP real do NPM e o hostname HTTPS publicado.
+3. Atualize apenas as variáveis de borda em `/etc/rc-geradores.env`:
+   ```dotenv
+   RC_WEB_TLS_MODE=external_proxy
+   RC_EXTERNAL_PROXY_ALLOWED_CIDRS=10.10.10.131/32
+   RC_TRUSTED_PROXY_CIDRS=10.10.10.131/32
+   RC_PUBLIC_BASE_URL=https://HOSTNAME_REAL
+   RC_CORS_ORIGINS=https://HOSTNAME_REAL
+   ```
+4. A partir de um checkout da release candidata, valide e prepare os upstreams:
+   ```bash
+   sudo RC_ENV_FILE=/etc/rc-geradores.env \
+     bash ops/configure_external_proxy_network.sh --check
+
+   sudo RC_ENV_FILE=/etc/rc-geradores.env \
+     bash ops/configure_external_proxy_network.sh --apply
+   ```
+   Esse passo reinicia somente API/frontend. O firewall nftables é aplicado
+   antes da exposição e permite 3000/8090 apenas para loopback e para o NPM.
+   O caminho HTTPS local antigo continua disponível durante esta preparação.
+5. Confirme localmente:
+   ```bash
+   curl -fsS http://127.0.0.1:8090/api/health
+   curl -fsS http://127.0.0.1:3000/login >/dev/null
+   sudo bash ops/configure_external_proxy_network.sh --check-runtime
+   ```
+6. Só agora altere o Proxy Host no NPM:
+   - localização padrão `/` -> `http://10.10.10.130:3000`;
+   - Custom Location `/api/` -> `http://10.10.10.130:8090`;
+   - mantenha WebSocket Support habilitado.
+7. Teste pelo hostname HTTPS real:
    - `GET /login` deve responder 200;
    - `GET /api/health` deve responder 200;
    - login/logout devem funcionar;
-   - downloads e rotas administrativas devem continuar no mesmo host HTTPS.
-6. Se qualquer teste falhar, reverta o Proxy Host do NPM. Não mexa no Nginx
-   local nesse caso.
-7. Somente depois do NPM direto estar validado, atualize
-   `/etc/rc-geradores.env` com o hostname e o CIDR confiável.
-8. Desabilite o site TLS local do RC Geradores. Se o Nginx local não servir
-   nenhum outro sistema, ele pode permanecer parado/desabilitado.
-9. Execute:
+   - downloads e rotas administrativas devem permanecer no mesmo host.
+8. Se o NPM direto falhar, reverta o Proxy Host ao upstream anterior. A política
+   nftables pode permanecer aplicada; para voltar totalmente a loopback use:
    ```bash
-   sudo bash /opt/rc-geradores/ops/preflight_vm.sh factory/auditoria-producao SHA_VALIDADO
+   sudo bash ops/configure_external_proxy_network.sh --remove
    ```
-10. O preflight só deve aprovar quando não existir terminação TLS local legada
-    e `RC_TRUSTED_PROXY_CIDRS` estiver configurado.
+9. Somente depois do NPM direto estar validado, desabilite a terminação TLS
+   local do RC Geradores. Se o Nginx local não servir outro sistema, pare e
+   desabilite o serviço; não é necessário apagar certificados durante o cutover.
+10. Execute o preflight da release validada:
+    ```bash
+    sudo bash /opt/rc-geradores/ops/preflight_vm.sh \
+      factory/auditoria-producao SHA_VALIDADO
+    ```
+11. O preflight só aprova quando:
+    - a política nftables externa está aplicada;
+    - os drop-ins de API/frontend estão carregados;
+    - o peer do NPM está configurado e confiável;
+    - não existe terminação TLS local legada.
 
 ## Validação pós-deploy
 
@@ -85,6 +120,7 @@ correlacionar a resposta com o journal da API.
 - Não apontar o NPM para o HTTPS local da VM.
 - Não manter NPM -> Nginx TLS local -> frontend/API como arquitetura final.
 - Não confiar na Internet inteira em `RC_TRUSTED_PROXY_CIDRS`.
-- Não remover o proxy local antes de validar o encaminhamento direto do NPM.
+- Não abrir 3000/8090 sem a política nftables gerenciada pelo helper.
+- Não remover o caminho TLS local antes de validar o encaminhamento direto do NPM.
 - Não fazer merge/deploy apenas porque o Proxy Host respondeu; os gates CI,
   Quality/Security, E2E e o preflight da VM continuam obrigatórios.
