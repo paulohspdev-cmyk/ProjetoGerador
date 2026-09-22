@@ -8,7 +8,7 @@ import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats } from "./kit";
 const roles: UserRole[] = ["administrador", "operador", "cadastro", "visualizacao"];
 
 export function UsersV3Screen() {
-  const { can, user, users, createUser, updateUser, removeUser } = useAuth();
+  const { can, user, users, usersError, createUser, updateUser, removeUser } = useAuth();
   const [editing, setEditing] = useState<AppUser | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -17,6 +17,7 @@ export function UsersV3Screen() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const visibleError = error || usersError || "";
 
   const activeAdmins = useMemo(
     () => users.filter((item) => item.active && item.role === "administrador").length,
@@ -126,9 +127,9 @@ export function UsersV3Screen() {
         ]}
       />
 
-      {error && (
+      {visibleError && (
         <p className="rounded-xl border border-offline/40 bg-offline/10 p-3 text-sm text-offline">
-          {error}
+          {visibleError}
         </p>
       )}
       {message && (
