@@ -64,9 +64,11 @@ init_all()
 # F00: external TLS proxy mode must not report local nginx as a failed product service,
 # but readiness must surface a legacy local TLS terminator that remains active on 443.
 previous_web_tls_mode = os.environ.get("RC_WEB_TLS_MODE")
+previous_trusted_proxy_cidrs = os.environ.get("RC_TRUSTED_PROXY_CIDRS")
 _original_proxy_run = diagnostics._run
 try:
     os.environ["RC_WEB_TLS_MODE"] = "external_proxy"
+    os.environ["RC_TRUSTED_PROXY_CIDRS"] = ""
     assert "nginx.service" not in diagnostics._service_names()
 
     def _local_nginx_active(args, timeout=2):
@@ -92,6 +94,28 @@ try:
         if item["id"] == "external_proxy_topology"
     )
     assert proxy_check["severity"] == "blocker", proxy_check
+    trusted_proxy_check = next(
+        item
+        for item in proxy_readiness["checks"]
+        if item["id"] == "trusted_proxy_identity"
+    )
+    assert trusted_proxy_check["severity"] == "blocker", trusted_proxy_check
+    assert trusted_proxy_check["ok"] is False, trusted_proxy_check
+
+    os.environ["RC_TRUSTED_PROXY_CIDRS"] = "10.10.10.131/32"
+    trusted_readiness = diagnostics._production_readiness(
+        [],
+        reverse_tcp_exposed=False,
+        reverse_tcp_allowlist=False,
+        external_proxy_topology_ok=True,
+        external_proxy_topology_detail="proxy externo sem TLS local",
+    )
+    trusted_proxy_check = next(
+        item
+        for item in trusted_readiness["checks"]
+        if item["id"] == "trusted_proxy_identity"
+    )
+    assert trusted_proxy_check["ok"] is True, trusted_proxy_check
 
     proxy_ok, proxy_detail = diagnostics._external_proxy_topology({3000, 8090})
     assert proxy_ok is True, proxy_detail
@@ -106,6 +130,10 @@ finally:
         os.environ.pop("RC_WEB_TLS_MODE", None)
     else:
         os.environ["RC_WEB_TLS_MODE"] = previous_web_tls_mode
+    if previous_trusted_proxy_cidrs is None:
+        os.environ.pop("RC_TRUSTED_PROXY_CIDRS", None)
+    else:
+        os.environ["RC_TRUSTED_PROXY_CIDRS"] = previous_trusted_proxy_cidrs
 
 # F00b2: readiness must verify the systemd policy actually loaded for native Rapid ports.
 _previous_admin_cidrs = os.environ.get("RC_RAPID_ADMIN_ALLOWED_CIDRS")
