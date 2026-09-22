@@ -80,6 +80,29 @@ from app.secret_box import PREFIX, protect_secret, reveal_secret  # noqa: E402
 from app.production_guard import validate_production_runtime  # noqa: E402
 
 
+# Off-site precisa ser mount real: diretório ausente ou no mesmo filesystem
+# do banco não pode ser aceito como recuperação de desastre.
+try:
+    backup_manager._validate_offsite_target_dir(offsite_dir)
+except ValueError as exc:
+    assert "não existe" in str(exc)
+else:
+    raise AssertionError("off-site aceitou diretório ausente")
+
+offsite_dir.mkdir(parents=True, exist_ok=True)
+try:
+    backup_manager._validate_offsite_target_dir(offsite_dir)
+except ValueError as exc:
+    assert "mesmo filesystem" in str(exc)
+else:
+    raise AssertionError("off-site aceitou diretório no mesmo filesystem")
+
+# O ambiente de CI não possui segundo mount. A partir daqui simulamos apenas
+# essa característica física para continuar testando envelope/restore.
+_original_validate_offsite_target_dir = backup_manager._validate_offsite_target_dir
+backup_manager._validate_offsite_target_dir = lambda _target: None
+
+
 # Runtime de produção deve falhar fechado se o cookie de sessão puder viajar sem TLS.
 _previous_environment = os.environ.get("RC_ENVIRONMENT")
 _previous_cookie_secure = os.environ.get("RC_AUTH_COOKIE_SECURE")
