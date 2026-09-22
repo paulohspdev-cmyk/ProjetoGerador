@@ -106,7 +106,9 @@ echo " RC GERADORES - SMOKE TEST DA VM"
 echo "============================================================"
 
 REQUIRED_COMMANDS=(python3 node npm dotnet curl jq ss systemctl runuser)
-if [[ "$WEB_TLS_MODE" != "external_proxy" ]]; then
+if [[ "$WEB_TLS_MODE" == "external_proxy" ]]; then
+  REQUIRED_COMMANDS+=(nft)
+else
   REQUIRED_COMMANDS+=(openssl nginx)
 fi
 for command in "${REQUIRED_COMMANDS[@]}"; do
@@ -120,6 +122,11 @@ if dotnet --list-sdks 2>/dev/null | grep -q '^8\.'; then ok ".NET SDK 8 instalad
 if dotnet --list-runtimes 2>/dev/null | grep -q '^Microsoft.NETCore.App 8\.'; then ok ".NET Runtime 8 instalado"; else fail ".NET Runtime 8 ausente"; fi
 if [[ "$WEB_TLS_MODE" == "external_proxy" ]]; then
   info "TLS/HTTPS delegado ao Nginx Proxy Manager; smoke não valida certificado local"
+  if bash "$BASE/ops/configure_external_proxy_network.sh" --check-runtime; then
+    ok "upstreams externos protegidos por nftables"
+  else
+    fail "política de upstream externo/NPM não está aplicada corretamente"
+  fi
 else
   if nginx -t >/dev/null 2>&1; then ok "configuração Nginx válida"; else fail "configuração Nginx inválida"; fi
 fi
