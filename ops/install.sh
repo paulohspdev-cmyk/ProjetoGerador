@@ -313,7 +313,13 @@ if [[ "$WEB_TLS_MODE" == "external_proxy" ]]; then
   set_env RC_PUBLIC_BASE_URL "$PUBLIC_BASE_URL"
   set_env RC_CORS_ORIGINS "$PUBLIC_BASE_URL"
 elif [[ -n "$VM_IP" ]]; then
-  if ! grep -Eq '^RC_CORS_ORIGINS=.+
+  if ! grep -Eq '^RC_CORS_ORIGINS=.+$' "$ENV_FILE"; then
+    set_env RC_CORS_ORIGINS "https://localhost,https://127.0.0.1,https://${VM_IP}"
+  fi
+  if ! grep -Eq '^RC_PUBLIC_BASE_URL=.+$' "$ENV_FILE"; then
+    set_env RC_PUBLIC_BASE_URL "https://${VM_IP}"
+  fi
+fi
 chmod 640 "$ENV_FILE"
 chown root:rcgeradores "$ENV_FILE"
 
