@@ -224,7 +224,13 @@ runtime_check() {
   command -v nft >/dev/null 2>&1 || fail "nft não instalado"
   grep -Fq "ExecStart=$(command -v nft) -f ${NFT_PERSIST}" "${FIREWALL_UNIT}" \
     || fail "unit persistente do firewall aponta para configuração inesperada"
-  grep -q '^Conflicts=nftables.service    || fail "serviço persistente do firewall não está habilitado"
+  grep -q '^Conflicts=nftables.service$' "${FIREWALL_UNIT}" \
+    || fail "firewall RC não bloqueia coexistência com nftables.service"
+  if systemctl is-active --quiet nftables.service || systemctl is-enabled --quiet nftables.service; then
+    fail "nftables.service global não pode coexistir com o firewall dedicado do RC Geradores"
+  fi
+  systemctl is-enabled --quiet "${FIREWALL_SERVICE}.service" \
+    || fail "serviço persistente do firewall não está habilitado"
   systemctl is-active --quiet "${FIREWALL_SERVICE}.service" \
     || fail "serviço persistente do firewall não está ativo"
 
