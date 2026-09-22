@@ -188,8 +188,8 @@ BindsTo=${FIREWALL_SERVICE}.service
 After=${FIREWALL_SERVICE}.service
 
 [Service]
-Environment=HOST=0.0.0.0
-Environment=PORT=3000
+Environment=NITRO_HOST=0.0.0.0
+Environment=NITRO_PORT=3000
 EOF
 }
 
@@ -218,8 +218,10 @@ runtime_check() {
     || fail "systemd ainda não carregou BindsTo do firewall no frontend"
   grep -q -- '--host 0.0.0.0 --port 8090' "${API_DROPIN}" \
     || fail "drop-in da API não expõe o upstream externo"
-  grep -q '^Environment=HOST=0.0.0.0$' "${FRONTEND_DROPIN}" \
+  grep -q '^Environment=NITRO_HOST=0.0.0.0$' "${FRONTEND_DROPIN}" \
     || fail "drop-in do frontend não expõe o upstream externo"
+  grep -q '^Environment=NITRO_PORT=3000$' "${FRONTEND_DROPIN}" \
+    || fail "drop-in do frontend não fixa a porta Nitro esperada"
 
   command -v nft >/dev/null 2>&1 || fail "nft não instalado"
   grep -Fq "ExecStart=$(command -v nft) -f ${NFT_PERSIST}" "${FIREWALL_UNIT}" \
