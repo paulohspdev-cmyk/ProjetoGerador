@@ -326,6 +326,45 @@ cipher = Fernet(offsite_key.read_bytes().strip())
 with encrypted.open("rb") as stream:
     assert stream.read(len(backup_manager.OFFSITE_STREAM_MAGIC)) == backup_manager.OFFSITE_STREAM_MAGIC
 
+# Retenção off-site precisa limitar envelopes criptografados sem tocar outros arquivos.
+previous_offsite_dir = backup_manager.BACKUP_OFFSITE_DIR
+retention_offsite_dir = root / "offsite-retention"
+retention_offsite_dir.mkdir(parents=True, exist_ok=True)
+offsite_candidates = []
+for index in range(3):
+    item = retention_offsite_dir / f"rc-geradores-full-retention-{index}.tar.gz.fernet"
+    item.write_bytes(f"backup-{index}".encode())
+    os.utime(item, (now + index, now + index))
+    offsite_candidates.append(item)
+backup_manager.BACKUP_OFFSITE_DIR = str(retention_offsite_dir)
+try:
+    assert backup_manager.apply_offsite_retention(1) == 2
+finally:
+    backup_manager.BACKUP_OFFSITE_DIR = previous_offsite_dir
+assert not offsite_candidates[0].exists()
+assert not offsite_candidates[1].exists()
+assert offsite_candidates[2].exists()
+
+# Falha de limpeza remota não pode transformar um backup recém-concluído em falha.
+original_offsite_retention = backup_manager.apply_offsite_retention
+backup_manager.apply_offsite_retention = lambda _keep: (_ for _ in ()).throw(
+    OSError("falha sintética de retenção remota")
+)
+try:
+    warning_backup = create_full_backup("hardening-retention-warning", retention=10)
+finally:
+    backup_manager.apply_offsite_retention = original_offsite_retention
+assert warning_backup["result"] == "OK", warning_backup
+assert warning_backup["retentionWarnings"], warning_backup
+assert "retenção off-site" in warning_backup["detail"], warning_backup
+with db.connect() as conn:
+    warning_row = conn.execute(
+        "SELECT detail FROM backup_records WHERE id=?",
+        (warning_backup["id"],),
+    ).fetchone()
+assert warning_row is not None
+assert "retenção off-site" in str(warning_row["detail"])
+
 # A recuperação off-site precisa autenticar, validar o SQLite e produzir um
 # archive local restaurável que contenha a chave TOTP protegida pelo envelope.
 materialized = materialize_offsite_backup(encrypted, key_file=offsite_key)
