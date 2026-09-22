@@ -136,6 +136,23 @@ def _rapid_native_network_policy() -> tuple[bool, str]:
     return True, "Server/Agent/Webstation restritos somente a loopback"
 
 
+def _external_proxy_topology(listening_ports: set[int]) -> tuple[bool | None, str]:
+    mode = os.environ.get("RC_WEB_TLS_MODE", "managed").strip()
+    if mode != "external_proxy":
+        return None, ""
+
+    rc, out = _run(["systemctl", "is-active", "nginx.service"])
+    local_nginx_active = rc == 0 and out == "active"
+    local_tls_active = 443 in listening_ports
+    if local_nginx_active and local_tls_active:
+        return (
+            False,
+            "RC_WEB_TLS_MODE=external_proxy, mas Nginx local continua ativo em 443; "
+            "valide dupla terminação TLS e preservação do IP real do cliente",
+        )
+    return True, "HTTPS/TLS não está sendo terminado pelo Nginx local"
+
+
 def _listening_ports() -> set[int]:
     """Lê listeners via ss sem abrir conexão e sem tocar na sessão do modem."""
     rc, out = _run(["ss", "-lntH"])
@@ -267,6 +284,8 @@ def _production_readiness(
     reverse_tcp_allowlist: bool,
     rapid_native_policy_ok: bool | None = None,
     rapid_native_policy_detail: str = "",
+    external_proxy_topology_ok: bool | None = None,
+    external_proxy_topology_detail: str = "",
 ) -> dict:
     checks: list[dict] = []
 
@@ -308,6 +327,19 @@ def _production_readiness(
         "warning",
         "Desabilitada" if not API_DOCS_ENABLED else "RC_API_DOCS=1",
     )
+    if external_proxy_topology_ok is not None:
+        add(
+            "external_proxy_topology",
+            "Topologia do proxy externo",
+            external_proxy_topology_ok,
+            "warning",
+            external_proxy_topology_detail
+            or (
+                "Sem terminação TLS local adicional"
+                if external_proxy_topology_ok
+                else "Possível dupla terminação TLS local"
+            ),
+        )
     add(
         "reverse_tcp_allowlist",
         "Proteção das portas reverse TCP",
@@ -555,6 +587,7 @@ def system_diagnostics():
     raw_generators = db.list_generators()
     generators = overlay_generators(raw_generators)
     listening = _listening_ports()
+    external_proxy_topology_ok, external_proxy_topology_detail = _external_proxy_topology(listening)
     local_offset = int(os.environ.get("RC_RAPID_LOCAL_OFFSET", "10000"))
     reverse_listeners = []
     for generator in raw_generators:
@@ -660,6 +693,8 @@ def system_diagnostics():
             reverse_tcp_allowlist=allowlist_enabled,
             rapid_native_policy_ok=rapid_native_policy_ok,
             rapid_native_policy_detail=rapid_native_policy_detail,
+            external_proxy_topology_ok=external_proxy_topology_ok,
+            external_proxy_topology_detail=external_proxy_topology_detail,
         ),
         "version": version_info(),
     }
