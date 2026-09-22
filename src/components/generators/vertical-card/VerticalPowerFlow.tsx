@@ -1,16 +1,7 @@
-import { Play, Square } from "lucide-react";
-
 import type { IndustrialCommandAction } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-function TowerIcon() {
-  return (
-    <g className="vref-flow-icon">
-      <path d="M0-19 0 16M-7 16 0-19 7 16M-12-7H12M-14 3H14M-17 12H17" />
-      <path d="m-11-7 11 9 11-9M-13 3 0 12 13 3" />
-    </g>
-  );
-}
+import { IconGenerator, IconLoad, IconMains, IconStart, IconStop } from "../scada-icons";
 
 function VerticalContact({
   x,
@@ -169,7 +160,7 @@ export function VerticalPowerFlow({
                 !mainsKnown ? "is-unknown" : mainsPresent ? "is-live" : "is-dead",
               )}
             />
-            <TowerIcon />
+            <g transform="translate(-18 -18)" className="vref-flow-icon"><IconMains size={36} /></g>
           </g>
           <text x="139" y="35" className="vref-flow-reading">
             {formatHz(mainsFrequency)}
@@ -201,8 +192,8 @@ export function VerticalPowerFlow({
           <path d="M112 126 H148" className={cn("vref-wire-live", busLive && "is-live")} />
           <g transform="translate(181 126)">
             <rect x="-33" y="-21" width="66" height="42" rx="5" className="vref-load-card" />
-            <g transform="translate(-17 -2)" className="vref-flow-icon">
-              <path d="M-8 8h16M-6 8V1l4 2V-5l5 2v11M3 1l5 2v5" />
+            <g transform="translate(-27 -13)" className="vref-flow-icon">
+              <IconLoad size={22} />
             </g>
             <text x="13" y="-3" textAnchor="middle" className="vref-load-title">
               LOAD
@@ -243,9 +234,9 @@ export function VerticalPowerFlow({
                 !generatorKnown ? "is-unknown" : generatorPresent ? "is-live" : "is-idle",
               )}
             />
-            <text x="0" y="9" textAnchor="middle" className="vref-generator-letter">
-              G
-            </text>
+            <g transform="translate(-17 -17)" className="vref-flow-icon">
+              <IconGenerator size={34} />
+            </g>
           </g>
         </svg>
 
@@ -256,7 +247,7 @@ export function VerticalPowerFlow({
             disabled={!canStart || busy !== null}
             onClick={() => onCommand("start")}
           >
-            <Play aria-hidden />
+            <IconStart size={10} />
             {busy === "start" ? "..." : "START"}
           </button>
           <button
@@ -265,7 +256,7 @@ export function VerticalPowerFlow({
             disabled={!canStop || busy !== null}
             onClick={() => onCommand("stop")}
           >
-            <Square aria-hidden />
+            <IconStop size={10} />
             {busy === "stop" ? "..." : "STOP"}
           </button>
         </div>
