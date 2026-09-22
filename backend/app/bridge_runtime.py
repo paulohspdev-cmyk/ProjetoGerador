@@ -68,9 +68,12 @@ def _parse_allowed_networks(raw: str, setting: str) -> list:
         if not text:
             continue
         try:
-            networks.append(ipaddress.ip_network(text, strict=False))
+            network = ipaddress.ip_network(text, strict=False)
         except ValueError as exc:
             raise RuntimeError(f"CIDR reverse TCP inválido em {setting}: {text}") from exc
+        if network.prefixlen == 0:
+            raise RuntimeError(f"CIDR reverse TCP amplo demais em {setting}: {network}")
+        networks.append(network)
     return networks
 
 
