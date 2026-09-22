@@ -1,6 +1,6 @@
 import type { Generator, MetricLimit } from "@/data/generators";
 
-import { metricNumber } from "./generator-metrics";
+import { metricNumber, nominalPowerNumber } from "./generator-metrics";
 
 export type MeterTone = "good" | "warning" | "critical" | "neutral";
 
@@ -92,9 +92,7 @@ export function readGeneratorTelemetry(gen: Generator) {
     Math.abs(powerKw) > 0
       ? rawPowerFactor
       : null;
-  const nominalPower =
-    metricNumber(gen, "nominal_power_kw", gen.nominalPower) ??
-    metricNumber(gen, "nominal_power", gen.nominalPower);
+  const nominalPower = nominalPowerNumber(gen);
   const engineLoad = metricNumber(gen, "engine_load", undefined);
   const currentL1 = metricNumber(gen, "current_l1", undefined);
   const currentL2 = metricNumber(gen, "current_l2", undefined);
