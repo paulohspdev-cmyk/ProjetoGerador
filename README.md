@@ -153,15 +153,23 @@ scadacomm6                Rapid SCADA Communicator
 
 ## Instalação em VM Ubuntu limpa
 
-Clone o repositório em uma área temporária e execute o instalador:
+Clone o repositório em uma área temporária. Em uma instalação limpa, escolha
+explicitamente a borda web. Para o padrão de fábrica com Nginx Proxy Manager,
+informe o peer real do NPM e o hostname HTTPS publicado:
 
 ```bash
 sudo apt-get update
 sudo apt-get install -y git
 git clone https://github.com/paulohspdev-cmyk/ProjetoGerador.git /tmp/ProjetoGerador
 cd /tmp/ProjetoGerador
-sudo bash ops/install.sh
+sudo bash ops/install.sh \
+  --web-tls-mode external_proxy \
+  --external-proxy-cidrs 10.10.10.131/32 \
+  --public-base-url https://HOSTNAME_REAL
 ```
+
+Se a instalação não usa NPM, selecione deliberadamente o modo local gerenciado
+(`--web-tls-mode managed`) em vez de depender de defaults.
 
 O instalador:
 
@@ -196,9 +204,19 @@ procedimento de migração de uma VM já existente está em
 
 ### Instalar sem gerador inicial
 
+Em uma VM nova com NPM, mantenha também os parâmetros de borda:
+
 ```bash
-sudo bash ops/install.sh --skip-initial-generator
+sudo bash ops/install.sh \
+  --skip-initial-generator \
+  --web-tls-mode external_proxy \
+  --external-proxy-cidrs 10.10.10.131/32 \
+  --public-base-url https://HOSTNAME_REAL
 ```
+
+Em uma VM já configurada, o instalador pode reutilizar
+`RC_EXTERNAL_PROXY_ALLOWED_CIDRS` e `RC_PUBLIC_BASE_URL` do
+`/etc/rc-geradores.env`.
 
 ### Configurar o primeiro IG200
 
