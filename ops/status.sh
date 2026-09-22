@@ -83,7 +83,14 @@ else
   echo "API direta não respondeu em 127.0.0.1:8090"
 fi
 if [[ "$WEB_TLS_MODE" == "external_proxy" ]]; then
-  echo "Proxy HTTPS/TLS: delegado ao Nginx Proxy Manager externo; não testado localmente"
+  echo "Proxy HTTPS/TLS: delegado ao Nginx Proxy Manager externo"
+  echo
+  echo "-- External proxy network --"
+  if bash "$BASE/ops/configure_external_proxy_network.sh" --check-runtime; then
+    echo "NPM upstream/firewall: OK"
+  else
+    echo "NPM upstream/firewall: FALHOU"
+  fi
 else
   if curl -kfsS https://127.0.0.1/api/health >/tmp/rc-geradores-proxy-health.json 2>/dev/null; then
     echo "Proxy HTTPS: OK"
@@ -153,7 +160,7 @@ echo "-- Leitor Rapid --"
 echo
 echo "-- Segurança / integrações (sem exibir segredos) --"
 if [[ -f "$ENV_FILE" ]]; then
-  grep -E '^(RC_ENVIRONMENT|RC_WEB_TLS_MODE|RC_TRUSTED_PROXY_CIDRS|RC_ENABLE_IG200_CONTROL|RC_ENABLE_IG4_LAB_CONTROL|RC_ENABLE_DSE_LAB_CONTROL|RC_AUTH_COOKIE_SECURE|RC_LOGIN_MAX_FAILURES|RC_LOGIN_LOCK_SECONDS|RC_BACKUP_RETENTION|RC_BACKUP_INCLUDE_SECRETS)=' "$ENV_FILE" || true
+  grep -E '^(RC_ENVIRONMENT|RC_WEB_TLS_MODE|RC_EXTERNAL_PROXY_ALLOWED_CIDRS|RC_TRUSTED_PROXY_CIDRS|RC_PUBLIC_BASE_URL|RC_ENABLE_IG200_CONTROL|RC_ENABLE_IG4_LAB_CONTROL|RC_ENABLE_DSE_LAB_CONTROL|RC_AUTH_COOKIE_SECURE|RC_LOGIN_MAX_FAILURES|RC_LOGIN_LOCK_SECONDS|RC_BACKUP_RETENTION|RC_BACKUP_INCLUDE_SECRETS)=' "$ENV_FILE" || true
   SMTP_HOST_VALUE="$(sed -n 's/^RC_SMTP_HOST=//p' "$ENV_FILE" | head -n1)"
   WA_URL="$(sed -n 's/^RC_WHATSAPP_API_URL=//p' "$ENV_FILE" | head -n1)"
   [[ -n "$SMTP_HOST_VALUE" ]] && echo "SMTP: configurado" || echo "SMTP: não configurado"
