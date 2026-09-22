@@ -506,6 +506,21 @@ failed = subprocess.run(
 assert failed.returncode != 0
 assert "RC_RAPID_REQUIRE_ALLOWLIST=1 exige" in failed.stdout
 
+world_open_env = os.environ.copy()
+world_open_env["RC_RAPID_REQUIRE_ALLOWLIST"] = "1"
+world_open_env["RC_RAPID_REMOTE_ALLOWED_CIDRS"] = "0.0.0.0/0"
+world_open = subprocess.run(
+    [sys.executable, "-c", "import app.bridge_runtime"],
+    cwd=Path(__file__).resolve().parents[1],
+    env=world_open_env,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.STDOUT,
+    text=True,
+    check=False,
+)
+assert world_open.returncode != 0
+assert "amplo demais" in world_open.stdout
+
 per_port_env = child_env.copy()
 per_port_env["RC_RAPID_REMOTE_ALLOWED_CIDRS_15001"] = "10.99.0.0/16"
 per_port_only = subprocess.run(
