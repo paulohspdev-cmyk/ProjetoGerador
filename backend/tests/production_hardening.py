@@ -1,5 +1,6 @@
 import ipaddress
 import os
+import shutil
 import stat
 import subprocess
 import sys
@@ -322,8 +323,8 @@ assert backup2["id"] != backup["id"]
 assert backup2["path"] != backup["path"]
 assert Path(backup2["path"]).is_file() and archive.is_file()
 cipher = Fernet(offsite_key.read_bytes().strip())
-decrypted = cipher.decrypt(encrypted.read_bytes())
-assert decrypted[:2] == b"\x1f\x8b"
+with encrypted.open("rb") as stream:
+    assert stream.read(len(backup_manager.OFFSITE_STREAM_MAGIC)) == backup_manager.OFFSITE_STREAM_MAGIC
 
 # A recuperação off-site precisa autenticar, validar o SQLite e produzir um
 # archive local restaurável que contenha a chave TOTP protegida pelo envelope.
@@ -338,6 +339,26 @@ with tarfile.open(materialized, "r:gz") as tar:
     recovered_env = tar.extractfile("product/rc-geradores.env")
     assert recovered_env is not None
     assert recovered_env.read() == b"RC_TEST_VALUE=offsite\n"
+
+# Envelope chunked truncado precisa falhar fechado antes de materializar archive.
+truncated = offsite_dir / "rc-geradores-full-truncated.tar.gz.fernet"
+shutil.copy2(encrypted, truncated)
+with truncated.open("r+b") as stream:
+    stream.truncate(max(len(backup_manager.OFFSITE_STREAM_MAGIC) + 8, truncated.stat().st_size - 32))
+try:
+    materialize_offsite_backup(truncated, key_file=offsite_key)
+except ValueError as exc:
+    assert "truncado" in str(exc) or "terminador" in str(exc)
+else:
+    raise AssertionError("envelope off-site truncado foi aceito")
+
+# Compatibilidade: envelopes legados com um único token Fernet continuam legíveis.
+legacy_envelope = offsite_dir / "rc-geradores-full-legacy.tar.gz.fernet"
+legacy_envelope.write_bytes(cipher.encrypt(materialized.read_bytes()))
+legacy_materialized = materialize_offsite_backup(legacy_envelope, key_file=offsite_key)
+assert legacy_materialized.is_file()
+with tarfile.open(legacy_materialized, "r:gz") as tar:
+    assert "product/product-db.sqlite3" in set(tar.getnames())
 
 # Restore real: banco, segredo e Rapid devem voltar ao snapshot do archive.
 env_file.write_text("RC_TEST_VALUE=before\n", encoding="utf-8")
