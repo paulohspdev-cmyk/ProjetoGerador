@@ -442,6 +442,12 @@ source "${ENV_FILE}"
 CONTROL_SOCKET="${RC_RAPID_CONTROL_SOCKET:-${CONTROL_SOCKET}}"
 WEB_TLS_MODE="${RC_WEB_TLS_MODE:-${WEB_TLS_MODE}}"
 
+log "APLICANDO POLÍTICA DE REDE RAPID SCADA"
+if ! bash "${BASE}/ops/configure_rapid_network.sh" --apply; then
+  rollback
+  fail "não foi possível aplicar política de rede do Rapid SCADA"
+fi
+
 log "REINICIANDO SERVIÇOS"
 START_SERVICES=(rc-geradores-api rc-geradores-provision rc-geradores-bridge rc-geradores-worker rc-geradores-frontend)
 for svc in "${START_SERVICES[@]}"; do
