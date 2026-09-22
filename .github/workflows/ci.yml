@@ -162,7 +162,15 @@ jobs:
           bash ops/test_frontend_asset_retention.sh
           bash -n ops/test_release_ref_resolution.sh
           bash ops/test_release_ref_resolution.sh
+          printf 'RC_RAPID_ADMIN_ALLOWED_CIDRS=10.10.10.0/24\n' >/tmp/rapid-network-good.env
+          RC_ENV_FILE=/tmp/rapid-network-good.env bash ops/configure_rapid_network.sh --check
+          printf 'RC_RAPID_ADMIN_ALLOWED_CIDRS=0.0.0.0/0\n' >/tmp/rapid-network-bad.env
+          if RC_ENV_FILE=/tmp/rapid-network-bad.env bash ops/configure_rapid_network.sh --check >/dev/null 2>&1; then
+            echo 'ERRO: política Rapid aceitou allowlist administrativa global.' >&2
+            exit 1
+          fi
           bash -n ops/configure_https.sh
+          bash -n ops/configure_rapid_network.sh
           bash -n ops/run_backend_tests.sh
           bash -n ops/run_e2e_isolated.sh
           bash -n rapid/provisioning/provision_ig200.sh
@@ -233,6 +241,10 @@ jobs:
           grep -q '^RC_PROVISION_OPERATION_TIMEOUT=' ops/rc-geradores.env.example
           grep -q '^RC_MODBUS_DEVICE_TIMEOUT_MS=' ops/rc-geradores.env.example
           grep -q '^RC_RAPID_READER_TIMEOUT=' ops/rc-geradores.env.example
+          grep -q '^RC_RAPID_ADMIN_ALLOWED_CIDRS=' ops/rc-geradores.env.example
+          grep -q 'configure_rapid_network.sh.*--check' ops/preflight_vm.sh
+          grep -q 'configure_rapid_network.sh.*--apply' ops/install.sh
+          grep -q 'configure_rapid_network.sh.*--apply' ops/deploy_release_v2.sh
           grep -q '^RC_LOGIN_MAX_FAILURES=' ops/rc-geradores.env.example
           grep -q '^RC_BACKUP_RETENTION=' ops/rc-geradores.env.example
           grep -q '^RC_RAPID_REQUIRE_ALLOWLIST=' ops/rc-geradores.env.example
