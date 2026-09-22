@@ -412,6 +412,12 @@ sleep 2
 systemctl restart scadacomm6.service
 systemctl restart scadaweb6.service 2>/dev/null || true
 
+if [[ -n "${RC_RAPID_ADMIN_ALLOWED_CIDRS:-}" ]]; then
+  bash "$BASE/ops/configure_rapid_network.sh" --apply
+else
+  echo "AVISO: RC_RAPID_ADMIN_ALLOWED_CIDRS não configurado; portas nativas do Rapid permanecem sem filtro systemd."
+fi
+
 # Provisionador é root restrito por socket; API e worker continuam sem root.
 systemctl enable rc-geradores-provision.service rc-geradores-api.service \
   rc-geradores-worker.service rc-geradores-frontend.service >/dev/null
