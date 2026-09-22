@@ -322,7 +322,7 @@
 }
 
 .vref-data-row {
-  min-height: 22px !important;
+  min-height: 20px !important;
   border-bottom-color: color-mix(in srgb, var(--sc-border) 68%, transparent) !important;
 }
 
@@ -344,7 +344,7 @@
 }
 
 .vref-summary-item {
-  min-height: 21px !important;
+  min-height: 19px !important;
 }
 
 .vref-command-message {
