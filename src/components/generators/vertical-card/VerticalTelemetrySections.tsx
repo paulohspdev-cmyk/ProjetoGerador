@@ -115,7 +115,7 @@ const valueIcons = {
   clock: Clock3,
   zap: Zap,
   gauge: Gauge,
-  battery: Battery,
+  battery: IconBattery,
 };
 
 export function VerticalTables({
