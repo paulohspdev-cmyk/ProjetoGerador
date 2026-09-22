@@ -297,7 +297,9 @@ with db.connect() as conn:
     ).fetchone() is not None
 
 # O backup local continua sem segredos por padrão. O envelope off-site, por ser
-# autenticado/criptografado, carrega a chave TOTP necessária para DR total.
+# autenticado/criptografado, carrega .env + chave TOTP para DR completo.
+env_file = Path(os.environ["RC_ENV_FILE"])
+env_file.write_text("RC_TEST_VALUE=offsite\n", encoding="utf-8")
 backup = create_full_backup("hardening-test", retention=2)
 assert backup["result"] == "OK", backup
 assert backup["offsitePath"], backup
@@ -332,10 +334,12 @@ with tarfile.open(materialized, "r:gz") as tar:
     recovered_names = set(tar.getnames())
     assert "product/product-db.sqlite3" in recovered_names
     assert "product/totp-fernet.key" in recovered_names
-    assert "product/rc-geradores.env" not in recovered_names
+    assert "product/rc-geradores.env" in recovered_names
+    recovered_env = tar.extractfile("product/rc-geradores.env")
+    assert recovered_env is not None
+    assert recovered_env.read() == b"RC_TEST_VALUE=offsite\n"
 
 # Restore real: banco, segredo e Rapid devem voltar ao snapshot do archive.
-env_file = Path(os.environ["RC_ENV_FILE"])
 env_file.write_text("RC_TEST_VALUE=before\n", encoding="utf-8")
 original_totp_key = key_file.read_bytes()
 original_base = (scada_root / "BaseDAT" / "placeholder.txt").read_text(encoding="utf-8")
