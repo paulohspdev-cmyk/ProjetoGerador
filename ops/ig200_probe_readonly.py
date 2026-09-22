@@ -110,6 +110,34 @@ def signed16(value: int) -> int:
     return value - 65536 if value & 0x8000 else value
 
 
+def decode_string_registers(values: dict[int, int], start: int, count: int) -> dict | None:
+    regs = [values.get(address) for address in range(start, start + count)]
+    if any(value is None for value in regs):
+        return None
+
+    raw_values = [int(value) for value in regs if value is not None]
+    byte_orders = {
+        "AB": b"".join(struct.pack(">H", value) for value in raw_values),
+        "BA": b"".join(struct.pack(">H", value)[::-1] for value in raw_values),
+    }
+
+    candidates = {}
+    for order, raw in byte_orders.items():
+        text = raw.split(b"\x00", 1)[0].decode("ascii", errors="replace").strip()
+        candidates[order] = {
+            "text": text,
+            "hex": raw.hex(),
+        }
+    return {
+        "start": start,
+        "end": start + count - 1,
+        "registers": count,
+        "bytes": count * 2,
+        "candidates": candidates,
+        "authority": "documented_fw_version_string_1281_1288_not_field_byte_order",
+    }
+
+
 def read_range_resilient(client: ReadOnlyClient, start: int, end: int, chunk: int):
     values: dict[int, int] = {}
     errors: dict[int, str] = {}
@@ -179,6 +207,11 @@ def main():
     parser.add_argument("--snapshot", default="manual")
     parser.add_argument("--output", type=Path)
     parser.add_argument("--also-nominal-power", action="store_true", help="lê também o endereço default 1228")
+    parser.add_argument(
+        "--firmware-version",
+        action="store_true",
+        help="lê o bloco documentado FW Version 1281..1288 (String, 16 bytes)",
+    )
     args = parser.parse_args()
 
     if not (1 <= args.unit <= 247):
@@ -197,6 +230,11 @@ def main():
         except Exception as exc:
             errors[1228] = str(exc)
 
+    if args.firmware_version and not (args.start <= 1281 and args.end >= 1288):
+        fw_values, fw_errors = read_range_resilient(client, 1281, 1288, min(args.chunk, 8))
+        values.update(fw_values)
+        errors.update(fw_errors)
+
     report = {
         "schema": 1,
         "safety": "read_only_fc03_fc04_values_range_1000_2999",
@@ -204,12 +242,19 @@ def main():
         "endpoint": {"host": args.host, "port": args.port, "unit": args.unit, "function": args.function},
         "range": {"start": args.start, "end": args.end},
         "known_default_candidates": known_interpretations(values),
+        "documented_strings": [],
         "registers": [
             {"address": address, "raw": raw, "hex": f"0x{raw:04X}", "signed16": signed16(raw)}
             for address, raw in sorted(values.items())
         ],
         "errors": [{"address": address, "error": error} for address, error in sorted(errors.items())],
     }
+
+    fw_version = decode_string_registers(values, 1281, 8)
+    if fw_version is not None:
+        fw_version["candidate"] = "fw_version"
+        fw_version["source"] = "ComAp InteliGen 200 Modbus export: 1281-1288, String, 16 bytes"
+        report["documented_strings"].append(fw_version)
 
     text = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
     if args.output:
@@ -221,6 +266,14 @@ def main():
     print("\nÂncoras documentais encontradas:")
     for item in report["known_default_candidates"]:
         print(f"  {item['address']}: {item['candidate']} raw={item['raw']} -> {item['value']} {item['unit']}")
+    for item in report["documented_strings"]:
+        print("\nString documental encontrada:")
+        print(
+            f"  {item['candidate']} {item['start']}..{item['end']} "
+            f"AB={item['candidates']['AB']['text']!r} "
+            f"BA={item['candidates']['BA']['text']!r}"
+        )
+
     print(f"\nRegistradores lidos: {len(values)} | erros isolados: {len(errors)}")
     print("Nenhum comando de escrita é implementado neste utilitário.")
 
