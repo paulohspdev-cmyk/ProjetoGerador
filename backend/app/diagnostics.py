@@ -517,8 +517,6 @@ def _production_readiness(
             if "fuel_capacity" in defined
             else None
         )
-        if capacity_key is None:
-            continue
         units = generator.get("metricUnits") or {}
         fuel_unit = str(units.get("fuel_level") or "").strip().upper()
         metrics = generator.get("metrics") or {}
