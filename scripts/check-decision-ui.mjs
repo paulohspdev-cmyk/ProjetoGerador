@@ -235,9 +235,7 @@ for (const source of [
   }
 }
 
-const verticalPowerGauge = read(
-  "src/components/generators/vertical-card/VerticalPowerGauge.tsx",
-);
+const verticalPowerGauge = read("src/components/generators/vertical-card/VerticalPowerGauge.tsx");
 for (const marker of [
   'nominalSource?: "telemetry" | "cadastral" | null',
   '"CONTROLADORA"',
