@@ -75,7 +75,7 @@ export function readGeneratorTelemetry(gen: Generator) {
   const rpm = metricNumber(gen, "rpm", gen.rpm);
   const oil = metricNumber(gen, "oil_pressure", gen.oilPressure);
   const coolant = metricNumber(gen, "coolant_temperature", gen.coolantTemp);
-  const fuel = metricNumber(gen, "fuel_level", gen.fuelLevel);
+  const rawFuel = metricNumber(gen, "fuel_level", gen.fuelLevel);
   const fuelRate = metricNumber(gen, "fuel_rate", undefined);
   const battery = metricNumber(gen, "battery_voltage", gen.battery);
   const alternator = metricNumber(gen, "alternator_voltage", gen.alternatorVoltage);
@@ -101,33 +101,53 @@ export function readGeneratorTelemetry(gen: Generator) {
 
   const oilUnit = gen.metricUnits?.["oil_pressure"] || "";
   const coolantUnit = gen.metricUnits?.["coolant_temperature"] || "";
-  const fuelUnit = gen.metricUnits?.["fuel_level"] || "";
+  const rawFuelUnit = gen.metricUnits?.["fuel_level"] || "";
   const fuelCapacity =
     metricNumber(gen, "fuel_capacity_l", undefined) ??
-    metricNumber(gen, "fuel_capacity", undefined);
+    metricNumber(gen, "fuel_capacity", undefined) ??
+    (gen.fuelCapacityLiters != null && Number.isFinite(Number(gen.fuelCapacityLiters))
+      ? Number(gen.fuelCapacityLiters)
+      : null);
+  const fuelLiters =
+    rawFuelUnit === "L"
+      ? rawFuel
+      : rawFuelUnit === "%" &&
+          rawFuel != null &&
+          rawFuel >= 0 &&
+          rawFuel <= 100 &&
+          fuelCapacity != null &&
+          fuelCapacity > 0
+        ? (rawFuel / 100) * fuelCapacity
+        : null;
+  const fuel = fuelLiters ?? rawFuel;
+  const fuelUnit = fuelLiters != null ? "L" : rawFuelUnit;
   const oilWarning = metricNumber(gen, "oil_warning_bar", undefined);
   const oilShutdown = metricNumber(gen, "oil_shutdown_bar", undefined);
   const coolantWarning = metricNumber(gen, "coolant_warning_c", undefined);
   const fuelWarning = metricNumber(gen, "fuel_warning_l", undefined);
   const fuelShutdown = metricNumber(gen, "fuel_shutdown_l", undefined);
   const autonomyHours =
-    fuelUnit === "L" && fuel != null && fuel >= 0 && fuelRate != null && fuelRate > 0
-      ? fuel / fuelRate
+    fuelLiters != null && fuelLiters >= 0 && fuelRate != null && fuelRate > 0
+      ? fuelLiters / fuelRate
       : null;
   const fuelWithinCapacity =
-    fuelCapacity != null && fuelCapacity > 0 && fuel != null && fuel >= 0 && fuel <= fuelCapacity;
-  const fuelOutOfRange =
-    fuelUnit === "L" &&
-    fuel != null &&
-    fuel >= 0 &&
     fuelCapacity != null &&
     fuelCapacity > 0 &&
-    fuel > fuelCapacity;
+    rawFuel != null &&
+    rawFuel >= 0 &&
+    rawFuel <= fuelCapacity;
+  const fuelOutOfRange =
+    rawFuelUnit === "L" &&
+    rawFuel != null &&
+    rawFuel >= 0 &&
+    fuelCapacity != null &&
+    fuelCapacity > 0 &&
+    rawFuel > fuelCapacity;
   const fuelPercent =
-    fuelUnit === "%"
-      ? progressPercent(fuel, 100)
+    rawFuelUnit === "%"
+      ? progressPercent(rawFuel, 100)
       : fuelWithinCapacity
-        ? progressPercent(fuel, fuelCapacity)
+        ? progressPercent(rawFuel, fuelCapacity)
         : null;
 
   const limits = gen.metricLimits ?? {};
@@ -150,7 +170,7 @@ export function readGeneratorTelemetry(gen: Generator) {
   }
 
   const fuelDisplay: VisualScale | undefined =
-    fuelUnit === "%"
+    rawFuelUnit === "%"
       ? { displayMin: 0, displayMax: 100 }
       : fuelCapacity != null && fuelCapacity > 0
         ? { displayMin: 0, displayMax: fuelCapacity }
@@ -160,14 +180,14 @@ export function readGeneratorTelemetry(gen: Generator) {
   const fuelScale =
     mergedScale(fuelDisplay, limits["fuel_level"]) ??
     (warning != null || shutdown != null ? {} : undefined);
-  if (fuelScale && fuelUnit === "L") {
+  if (fuelScale && rawFuelUnit === "L") {
     if (warning != null) fuelScale.warningLow = warning;
     if (shutdown != null) fuelScale.criticalLow = shutdown;
   }
 
   const oilMeter = meterState(oil, oilScale);
   const coolantMeter = meterState(coolant, coolantScale);
-  const fuelMeter = meterState(fuel, fuelScale);
+  const fuelMeter = meterState(rawFuel, fuelScale);
   const alternatorMeter = meterState(
     alternator,
     mergedScale(undefined, limits["alternator_voltage"]),
@@ -191,6 +211,10 @@ export function readGeneratorTelemetry(gen: Generator) {
     fuel,
     fuelRate,
     fuelUnit,
+    fuelRaw: rawFuel,
+    fuelRawUnit: rawFuelUnit,
+    fuelCapacity,
+    fuelCapacitySource: gen.fuelCapacitySource ?? null,
     fuelPercent,
     fuelOutOfRange,
     autonomyHours,

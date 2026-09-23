@@ -57,7 +57,7 @@ export function GeneratorDetailProfessionalTop({
 }: Props) {
   const voltage = model.genL12 ?? model.genL1;
   const telemetry = readGeneratorTelemetry(gen);
-  const fuelUnit = gen.metricUnits?.["fuel_level"]?.trim() || "";
+  const fuelUnit = model.fuelUnit;
   const fuelTone: MetricTone =
     telemetry.tones.fuel === "critical"
       ? "err"
@@ -256,7 +256,9 @@ export function GeneratorDetailProfessionalTop({
               ? "Sem leitura"
               : telemetry.fuelOutOfRange
                 ? "Acima da capacidade informada"
-                : "Nível medido"
+                : telemetry.fuelRawUnit === "%" && telemetry.fuelUnit === "L"
+                  ? "Convertido de percentual com capacidade real do tanque"
+                  : "Nível medido"
           }
           tone={fuelTone}
         />

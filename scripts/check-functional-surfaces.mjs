@@ -514,10 +514,20 @@ if (!operationalMap.includes("load: measuredLoad.length")) {
 }
 
 const generatorHealth = read("src/components/generators/generator-health.ts");
-if (!generatorHealth.includes("fuel <= fuelCapacity")) {
-  failures.push(
-    "barra de combustível voltou a aceitar percentual derivado acima da capacidade configurada",
-  );
+for (const marker of [
+  "fuel <= fuelCapacity",
+  "gen.fuelCapacityLiters",
+  'rawFuelUnit === "%"',
+  "fuelLiters",
+]) {
+  if (!generatorHealth.includes(marker)) {
+    failures.push(`combustível perdeu conversão segura/capacidade cadastrada: ${marker}`);
+  }
+}
+for (const marker of ["Capacidade do tanque (L)", "fuelCapacityLiters"]) {
+  if (!generatorEdit.includes(marker)) {
+    failures.push(`edição de gerador perdeu capacidade real do tanque: ${marker}`);
+  }
 }
 
 const verticalCard = read("src/components/generators/PowerFlowCard.tsx");
