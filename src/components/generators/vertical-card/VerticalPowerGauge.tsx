@@ -33,9 +33,15 @@ export function VerticalPowerGauge({
       : nominalSource === "cadastral"
         ? "CADASTRO"
         : "";
+  const scaleLabel = hasNominal
+    ? "NOMINAL " + nominalLabel + (nominalSourceLabel ? " · " + nominalSourceLabel : "")
+    : "ESCALA N/D · SEM kW NOMINAL";
 
   return (
-    <section className="vref-section vref-power">
+    <section
+      className={"vref-section vref-power " + (hasNominal ? "has-nominal" : "has-no-nominal")}
+      data-power-scale={hasNominal ? "known" : "unknown"}
+    >
       <div className="vref-section-heading">
         <h4>kW</h4>
       </div>
@@ -85,8 +91,7 @@ export function VerticalPowerGauge({
             {valueLabel}
           </text>
           <text x="160" y="160" textAnchor="middle" className="vref-kw-nominal">
-            NOMINAL {nominalLabel}
-            {nominalSourceLabel ? ` · ${nominalSourceLabel}` : ""}
+            {scaleLabel}
           </text>
         </svg>
       </div>
