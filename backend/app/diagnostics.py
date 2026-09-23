@@ -538,10 +538,13 @@ def _production_readiness(
                     missing_percent_fuel_capacity.append(tag)
             continue
 
-        if fuel_unit != "L" or capacity_key is None:
+        if fuel_unit != "L":
             continue
         try:
-            fuel_capacity = float(metrics.get(capacity_key))
+            fuel_capacity = float(
+                generator.get("fuelCapacityLiters")
+                or (metrics.get(capacity_key) if capacity_key is not None else 0)
+            )
         except (TypeError, ValueError, OverflowError):
             continue
         if (
