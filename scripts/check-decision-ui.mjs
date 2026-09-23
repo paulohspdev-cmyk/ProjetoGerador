@@ -253,7 +253,9 @@ for (const marker of [
   "const powerBlockKw = generatorPowerKw",
 ]) {
   if (!verticalPowerFlow.includes(marker)) {
-    failures.push(`fluxo vertical voltou a esconder kW medido sem confirmação do barramento: ${marker}`);
+    failures.push(
+      `fluxo vertical voltou a esconder kW medido sem confirmação do barramento: ${marker}`,
+    );
   }
 }
 
