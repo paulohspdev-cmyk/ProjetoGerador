@@ -53,7 +53,7 @@ function popupHtml(site: OperationalMapSite) {
           : displayStatus === "alerta"
             ? { label: "ALERTA", css: "text-alert" }
             : displayStatus === "stale"
-              ? { label: "COMM LOST", css: "text-offline" }
+              ? { label: "SEM COMUNICAÇÃO", css: "text-offline" }
               : displayStatus === "offline"
                 ? { label: "OFFLINE", css: "text-offline" }
                 : { label: "N/D", css: "text-muted-foreground" };
