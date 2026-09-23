@@ -23,6 +23,7 @@ from .config import (
     RAPID_COMM_CONFIG,
     RAPID_READER_DLL,
     SMTP_HOST,
+    TWO_FACTOR_ENFORCED,
     WHATSAPP_API_URL,
 )
 from .controller_library import pack_for_model, pack_is_production_ready
@@ -409,9 +410,15 @@ def _production_readiness(
     add(
         "privileged_2fa",
         "2FA de contas privilegiadas",
-        not missing_2fa,
+        TWO_FACTOR_ENFORCED and not missing_2fa,
         "blocker",
-        "Todas protegidas" if not missing_2fa else "Sem 2FA: " + ", ".join(missing_2fa),
+        (
+            "Todas protegidas"
+            if TWO_FACTOR_ENFORCED and not missing_2fa
+            else "Enforcement temporariamente desativado por RC_2FA_ENFORCED=0"
+            if not TWO_FACTOR_ENFORCED
+            else "Sem 2FA: " + ", ".join(missing_2fa)
+        ),
     )
 
     bindings = {
