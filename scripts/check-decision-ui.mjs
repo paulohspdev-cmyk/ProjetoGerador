@@ -78,6 +78,14 @@ if (board.includes('import "./operator-card-refinement.css"')) {
   failures.push("board voltou a carregar CSS concorrente do card vertical");
 }
 
+const verticalMinHeightMatch = board.match(/const VERTICAL_MIN_CARD_HEIGHT = (\d+);/);
+const verticalMinHeight = verticalMinHeightMatch ? Number(verticalMinHeightMatch[1]) : NaN;
+if (!Number.isFinite(verticalMinHeight) || verticalMinHeight > 780) {
+  failures.push(
+    `layout vertical compacto ficou inalcançável; altura mínima atual: ${verticalMinHeightMatch?.[1] ?? "N/D"}`,
+  );
+}
+
 const compact = read("src/components/generators/CompactCard.tsx");
 for (const marker of [
   "controllerImageSrc",
