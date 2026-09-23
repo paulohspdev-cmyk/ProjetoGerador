@@ -441,10 +441,10 @@
 
 @container vref (max-height: 780px) {
   .vref-data-row {
-    min-height: 17px !important;
+    min-height: 15px !important;
   }
 
   .vref-summary-item {
-    min-height: 16px !important;
+    min-height: 14px !important;
   }
 }
