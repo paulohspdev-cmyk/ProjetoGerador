@@ -59,22 +59,22 @@ export function VerticalEngineAndRpm({
     <div className="vref-engine-rpm">
       <section className="vref-section vref-engine">
         <div className="vref-engine-heading">
-          <h4>ENGINE STATUS</h4>
+          <h4>ESTADO DO MOTOR</h4>
           <span
             className={cn(!runningKnown ? "is-unknown" : running ? "is-running" : "is-stopped")}
           >
-            {!runningKnown ? "N/D" : running ? "RUNNING" : "STOPPED"}
+            {!runningKnown ? "N/D" : running ? "LIGADO" : "PARADO"}
           </span>
         </div>
         <div className="vref-engine-row">
           <IconOilCan />
-          <span>Oil Pressure</span>
+          <span>Pressão do óleo</span>
           <MiniBar percent={oilPercent} />
           <b>{valueText(oil, oilUnit, 1)}</b>
         </div>
         <div className="vref-engine-row">
           <IconThermometer />
-          <span>Coolant Temp.</span>
+          <span>Temp. do motor</span>
           <MiniBar percent={coolantPercent} />
           <b>{valueText(coolant, coolantUnit, 0)}</b>
         </div>
@@ -88,13 +88,13 @@ export function VerticalEngineAndRpm({
           }
         >
           <IconFuelPump />
-          <span>Fuel Level</span>
+          <span>Combustível</span>
           <MiniBar percent={fuelPercent} />
           <b>{valueText(fuel, fuelUnit, 0)}</b>
         </div>
         <div className="vref-engine-row">
           <IconBattery />
-          <span>Battery Voltage</span>
+          <span>Tensão da bateria</span>
           <MiniBar percent={null} />
           <b>{valueText(battery, "V", 1)}</b>
         </div>
@@ -138,8 +138,8 @@ export function VerticalTables({
   return (
     <section className="vref-section vref-measurements">
       <div className="vref-table-heading">
-        <h4>MAINS / GENERATOR</h4>
-        <span>MAINS</span>
+        <h4>REDE / GERADOR</h4>
+        <span>REDE</span>
         <span>GEN</span>
       </div>
 
@@ -153,7 +153,7 @@ export function VerticalTables({
         ))}
       </div>
 
-      <div className="vref-summary-grid" aria-label="Generator values">
+      <div className="vref-summary-grid" aria-label="Valores do gerador">
         {valueRows.map((row) => {
           const Icon = valueIcons[row.icon];
           return (
