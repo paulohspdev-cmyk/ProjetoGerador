@@ -114,6 +114,12 @@ export function readGeneratorTelemetry(gen: Generator) {
     fuelUnit === "L" && fuel != null && fuel >= 0 && fuelRate != null && fuelRate > 0
       ? fuel / fuelRate
       : null;
+  const fuelWithinCapacity =
+    fuelCapacity != null &&
+    fuelCapacity > 0 &&
+    fuel != null &&
+    fuel >= 0 &&
+    fuel <= fuelCapacity;
   const fuelOutOfRange =
     fuelUnit === "L" &&
     fuel != null &&
@@ -124,11 +130,7 @@ export function readGeneratorTelemetry(gen: Generator) {
   const fuelPercent =
     fuelUnit === "%"
       ? progressPercent(fuel, 100)
-      : fuelCapacity != null &&
-          fuelCapacity > 0 &&
-          fuel != null &&
-          fuel >= 0 &&
-          !fuelOutOfRange
+      : fuelWithinCapacity
         ? progressPercent(fuel, fuelCapacity)
         : null;
 
