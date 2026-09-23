@@ -328,8 +328,8 @@ export function GeneratorEditDialog({
               className="mt-2 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
             />
             <span className="mt-1 block text-xs font-normal text-muted-foreground">
-              Opcional. Use a capacidade física real do tanque. Se a controladora fornecer apenas
-              %, o sistema converte para litros sem estimativa.
+              Opcional. Use a capacidade física real do tanque. Se a controladora fornecer apenas %,
+              o sistema converte para litros sem estimativa.
             </span>
           </label>
 
