@@ -23,6 +23,7 @@ LOGIN_LOCK_SECONDS = int(os.environ.get("RC_LOGIN_LOCK_SECONDS", "900"))
 PASSWORD_RESET_TTL = int(os.environ.get("RC_PASSWORD_RESET_TTL", "1800"))
 PUBLIC_BASE_URL = os.environ.get("RC_PUBLIC_BASE_URL", "").rstrip("/")
 TOTP_KEY_FILE = Path(os.environ.get("RC_TOTP_KEY_FILE", DATA_DIR / ".secrets" / "totp-fernet.key"))
+TWO_FACTOR_ENFORCED = os.environ.get("RC_2FA_ENFORCED", "1").strip() == "1"
 
 ADMIN_NAME = os.environ.get("RC_ADMIN_NAME", "Administrador")
 ADMIN_EMAIL = os.environ.get("RC_ADMIN_EMAIL", "admin@rcgeradores.local").strip().lower()
