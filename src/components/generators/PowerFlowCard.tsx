@@ -252,7 +252,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       <VerticalPowerGauge
         powerKw={powerKw}
         nominalKw={nominalPower}
-        nominalSource={gen.nominalPowerSource}
+        nominalSource={gen.nominalPowerSource ?? null}
       />
 
       <VerticalPowerFlow
