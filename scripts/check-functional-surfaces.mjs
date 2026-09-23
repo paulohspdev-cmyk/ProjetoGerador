@@ -259,12 +259,12 @@ for (const marker of [
     failures.push(`estado efetivo de comunicação perdeu regra central: ${marker}`);
   }
 }
-for (const marker of ['displayStatus === "stale"', '"COMM LOST"', "currentValues.length > 0"]) {
+for (const marker of ['displayStatus === "stale"', '"SEM COMUNICAÇÃO"', "currentValues.length > 0"]) {
   if (!powerFlowCard.includes(marker)) {
     failures.push(`card principal perdeu precedência de stale/N-D: ${marker}`);
   }
 }
-if (!statusPill.includes("telemetryStale") || !statusPill.includes('"COMM LOST"')) {
+if (!statusPill.includes("telemetryStale") || !statusPill.includes('"SEM COMUNICAÇÃO"')) {
   failures.push("StatusPill voltou a ignorar telemetria expirada");
 }
 
@@ -283,7 +283,7 @@ if (
   failures.push("card compacto voltou a estilizar telemetria stale pelo status bruto");
 }
 if (!powerFlowCard.includes('displayStatus === "alerta" && "has-alert"')) {
-  failures.push("card principal voltou a aplicar alerta bruto sobre COMM LOST");
+  failures.push("card principal voltou a aplicar alerta bruto sobre SEM COMUNICAÇÃO");
 }
 
 const generatorBoard = read("src/components/generators/GeneratorsBoard.tsx");
@@ -516,10 +516,10 @@ if (!generatorHealth.includes("fuel <= fuelCapacity")) {
 }
 
 const verticalCard = read("src/components/generators/PowerFlowCard.tsx");
-if (!verticalCard.includes('label: "Run Hours"')) {
+if (!verticalCard.includes('label: "Horímetro"')) {
   failures.push("card vertical perdeu o horímetro operacional");
 }
-if (!verticalCard.includes('label: "Starts"') || !verticalCard.includes('"number_starts"')) {
+if (!verticalCard.includes('label: "Partidas"') || !verticalCard.includes('"number_starts"')) {
   failures.push("card vertical perdeu contador real de partidas");
 }
 if (verticalCard.includes('label: "Required Power"')) {
