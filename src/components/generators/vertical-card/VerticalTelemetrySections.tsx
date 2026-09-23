@@ -36,6 +36,7 @@ export function VerticalEngineAndRpm({
   oilPercent,
   coolantPercent,
   fuelPercent,
+  fuelOutOfRange,
   runningKnown,
   running,
 }: {
@@ -50,6 +51,7 @@ export function VerticalEngineAndRpm({
   oilPercent: number | null;
   coolantPercent: number | null;
   fuelPercent: number | null;
+  fuelOutOfRange: boolean;
   runningKnown: boolean;
   running: boolean;
 }) {
@@ -76,7 +78,15 @@ export function VerticalEngineAndRpm({
           <MiniBar percent={coolantPercent} />
           <b>{valueText(coolant, coolantUnit, 0)}</b>
         </div>
-        <div className="vref-engine-row">
+        <div
+          className={cn("vref-engine-row", fuelOutOfRange && "is-warning")}
+          data-quality={fuelOutOfRange ? "out-of-range" : "normal"}
+          title={
+            fuelOutOfRange
+              ? "Leitura de combustível acima da capacidade informada pela controladora"
+              : undefined
+          }
+        >
           <IconFuelPump />
           <span>Fuel Level</span>
           <MiniBar percent={fuelPercent} />
