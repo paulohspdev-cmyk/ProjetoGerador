@@ -15,9 +15,11 @@ function arcPath(start: number, end: number, cx = 160, cy = 112, radius = 106) {
 export function VerticalPowerGauge({
   powerKw,
   nominalKw,
+  nominalSource,
 }: {
   powerKw: number | null;
   nominalKw: number | null;
+  nominalSource?: "telemetry" | "cadastral" | null;
 }) {
   const hasPower = powerKw != null && Number.isFinite(powerKw);
   const hasNominal = nominalKw != null && Number.isFinite(nominalKw) && nominalKw > 0;
@@ -25,6 +27,12 @@ export function VerticalPowerGauge({
   const angle = fraction * 180 - 90;
   const valueLabel = hasPower ? Math.round(powerKw).toLocaleString("pt-BR") + " kW" : "—";
   const nominalLabel = hasNominal ? Math.round(nominalKw).toLocaleString("pt-BR") + " kW" : "—";
+  const nominalSourceLabel =
+    nominalSource === "telemetry"
+      ? "CONTROLADORA"
+      : nominalSource === "cadastral"
+        ? "CADASTRO"
+        : "";
 
   return (
     <section className="vref-section vref-power">
@@ -32,7 +40,7 @@ export function VerticalPowerGauge({
         <h4>kW</h4>
       </div>
       <div className="vref-power-gauge">
-        <svg viewBox="0 0 320 170" aria-label="Generator power gauge">
+        <svg viewBox="0 0 320 170" aria-label="Indicador de potência do gerador">
           <path className="vref-gauge-base" d={arcPath(0, 1)} />
           <path className="vref-gauge-range" d={arcPath(0, 1)} />
 
@@ -78,6 +86,7 @@ export function VerticalPowerGauge({
           </text>
           <text x="160" y="160" textAnchor="middle" className="vref-kw-nominal">
             NOMINAL {nominalLabel}
+            {nominalSourceLabel ? ` · ${nominalSourceLabel}` : ""}
           </text>
         </svg>
       </div>
