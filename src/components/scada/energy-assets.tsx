@@ -46,14 +46,11 @@ export function FuelScreen() {
   const measured = fuelRows.filter(
     ({ telemetry }) => telemetry.fuel != null && Boolean(telemetry.fuelUnit),
   );
-  const units = [
-    ...new Set(measured.map(({ telemetry }) => telemetry.fuelUnit).filter(Boolean)),
-  ];
+  const units = [...new Set(measured.map(({ telemetry }) => telemetry.fuelUnit).filter(Boolean))];
   const commonUnit = units.length === 1 ? (units[0] ?? "") : "";
   const mean =
     measured.length && commonUnit
-      ? measured.reduce((sum, { telemetry }) => sum + (telemetry.fuel ?? 0), 0) /
-        measured.length
+      ? measured.reduce((sum, { telemetry }) => sum + (telemetry.fuel ?? 0), 0) / measured.length
       : null;
   return (
     <ScreenBody>
