@@ -12,6 +12,7 @@ const readinessActions: Record<string, { slug: string; label: string }> = {
   controller_firmware: { slug: "controladoras", label: "Abrir controladoras" },
   controller_firmware_readonly: { slug: "controladoras", label: "Abrir controladoras" },
   nominal_power: { slug: "geradores", label: "Cadastrar kW" },
+  fuel_capacity_consistency: { slug: "combustivel", label: "Revisar combustível" },
   site_assignment: { slug: "geradores", label: "Revisar geradores" },
   customer_assignment: { slug: "geradores", label: "Revisar geradores" },
   notification_channel: { slug: "email", label: "Configurar canal" },
