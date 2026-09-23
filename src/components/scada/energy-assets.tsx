@@ -1,6 +1,7 @@
 import { BatteryCharging, Fuel, Timer } from "lucide-react";
 
 import { useGenerators } from "@/components/generators/GeneratorsProvider";
+import { readGeneratorTelemetry } from "@/components/generators/generator-health";
 import { metricNumber } from "@/components/generators/generator-metrics";
 import type { Generator } from "@/data/generators";
 import { fmt } from "@/data/scada";
@@ -38,7 +39,11 @@ function InfoNotice({ children }: { children: React.ReactNode }) {
 
 export function FuelScreen() {
   const { generators } = useGenerators();
-  const measured = generators.filter((g) => metricNumber(g, "fuel_level", g.fuelLevel) != null);
+  const measured = generators.filter(
+    (g) =>
+      metricNumber(g, "fuel_level", g.fuelLevel) != null &&
+      Boolean(metricUnit(g, "fuel_level")),
+  );
   const units = [...new Set(measured.map((g) => metricUnit(g, "fuel_level")).filter(Boolean))];
   const commonUnit = units.length === 1 ? (units[0] ?? "") : "";
   const mean =
@@ -69,7 +74,8 @@ export function FuelScreen() {
       />
       <InfoNotice>
         A unidade informada pelo Controller Pack é preservada por equipamento. Litros não são
-        convertidos em porcentagem sem capacidade de tanque configurada.
+        convertidos em porcentagem sem capacidade de tanque configurada. Leituras acima da
+        capacidade informada permanecem no valor bruto e são marcadas como fora de escala.
       </InfoNotice>
       <Panel title="Tanques / geradores">
         <ScadaTable
@@ -84,12 +90,18 @@ export function FuelScreen() {
             },
             {
               label: "Estado",
-              render: (r) =>
-                hasMetric(r, "fuel_level") ? (
-                  <Tone tone="muted">Medido · sem limite configurado</Tone>
+              render: (r) => {
+                const telemetry = readGeneratorTelemetry(r);
+                return hasMetric(r, "fuel_level") ? (
+                  telemetry.fuelOutOfRange ? (
+                    <Tone tone="warn">Fora de escala · acima da capacidade</Tone>
+                  ) : (
+                    <Tone tone="muted">Medido · sem limite configurado</Tone>
+                  )
                 ) : (
                   <Tone tone="muted">N/D</Tone>
-                ),
+                );
+              },
             },
           ]}
         />
