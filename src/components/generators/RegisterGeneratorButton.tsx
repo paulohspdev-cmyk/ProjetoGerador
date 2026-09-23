@@ -167,11 +167,7 @@ export function RegisterGeneratorButton({
     selectedController && !selectedController.provisionable && !isLabReadOnly,
   );
   const canContinueStep1 = Boolean(
-    site.trim() &&
-      controller &&
-      selectedController &&
-      nominalPowerValid &&
-      fuelCapacityValid,
+    site.trim() && controller && selectedController && nominalPowerValid && fuelCapacityValid,
   );
   const canContinueStep2 =
     transport === "reverse_tcp"
@@ -272,9 +268,7 @@ export function RegisterGeneratorButton({
         ...(host.trim() ? { ip: host.trim() } : {}),
         ...(rapidDeviceNum ? { rapidDeviceNum: Number(rapidDeviceNum) } : {}),
         ...(effectiveNominalPower != null ? { nominalPower: effectiveNominalPower } : {}),
-        ...(effectiveFuelCapacity != null
-          ? { fuelCapacityLiters: effectiveFuelCapacity }
-          : {}),
+        ...(effectiveFuelCapacity != null ? { fuelCapacityLiters: effectiveFuelCapacity } : {}),
       });
       setCreatedId(created.id);
 
