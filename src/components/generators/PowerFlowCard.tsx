@@ -213,7 +213,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
           ? "COMUNICAÇÃO OK"
           : displayStatus === "nao_configurado"
             ? "NÃO CONFIGURADO"
-            : "OFFLINE";
+            : "FORA DE LINHA";
   const statusClass =
     displayStatus === "alerta"
       ? "is-alert"
@@ -249,7 +249,11 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         </div>
       </header>
 
-      <VerticalPowerGauge powerKw={powerKw} nominalKw={nominalPower} />
+      <VerticalPowerGauge
+        powerKw={powerKw}
+        nominalKw={nominalPower}
+        nominalSource={gen.nominalPowerSource}
+      />
 
       <VerticalPowerFlow
         mainsPresent={mainsPresent}
