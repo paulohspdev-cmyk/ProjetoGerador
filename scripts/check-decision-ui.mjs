@@ -246,6 +246,17 @@ for (const source of [
   }
 }
 
+const verticalPowerFlow = read("src/components/generators/vertical-card/VerticalPowerFlow.tsx");
+for (const marker of [
+  "isolatedGeneratorLoad",
+  '"POT. GER."',
+  "const powerBlockKw = generatorPowerKw",
+]) {
+  if (!verticalPowerFlow.includes(marker)) {
+    failures.push(`fluxo vertical voltou a esconder kW medido sem confirmação do barramento: ${marker}`);
+  }
+}
+
 const verticalPowerGauge = read("src/components/generators/vertical-card/VerticalPowerGauge.tsx");
 for (const marker of [
   'nominalSource?: "telemetry" | "cadastral" | null',
