@@ -271,6 +271,36 @@ fuel_quality_readiness = diagnostics._production_readiness(
             "metricUnits": {"fuel_level": "L"},
             "metrics": {"fuel_level": 700, "fuel_capacity_l": 600},
         },
+        {
+            "id": "fuel-percent-no-capacity",
+            "tag": "FUEL-PCT-NOCAP",
+            "enabled": True,
+            "telemetryStale": False,
+            "definedMetrics": ["fuel_level"],
+            "metricUnits": {"fuel_level": "%"},
+            "metrics": {"fuel_level": 75},
+            "fuelCapacityLiters": None,
+        },
+        {
+            "id": "fuel-percent-with-capacity",
+            "tag": "FUEL-PCT-CAP",
+            "enabled": True,
+            "telemetryStale": False,
+            "definedMetrics": ["fuel_level"],
+            "metricUnits": {"fuel_level": "%"},
+            "metrics": {"fuel_level": 75},
+            "fuelCapacityLiters": 600,
+        },
+        {
+            "id": "fuel-percent-stale",
+            "tag": "FUEL-PCT-STALE",
+            "enabled": True,
+            "telemetryStale": True,
+            "definedMetrics": ["fuel_level"],
+            "metricUnits": {"fuel_level": "%"},
+            "metrics": {"fuel_level": 75},
+            "fuelCapacityLiters": None,
+        },
     ],
     reverse_tcp_exposed=False,
     reverse_tcp_allowlist=False,
@@ -285,6 +315,17 @@ assert fuel_quality_check["ok"] is False, fuel_quality_check
 assert "FUEL-BAD (658 L > 600 L)" in fuel_quality_check["detail"], fuel_quality_check
 assert "FUEL-GOOD" not in fuel_quality_check["detail"], fuel_quality_check
 assert "FUEL-STALE" not in fuel_quality_check["detail"], fuel_quality_check
+
+fuel_conversion_check = next(
+    item
+    for item in fuel_quality_readiness["checks"]
+    if item["id"] == "fuel_capacity_for_percent"
+)
+assert fuel_conversion_check["severity"] == "warning", fuel_conversion_check
+assert fuel_conversion_check["ok"] is False, fuel_conversion_check
+assert "FUEL-PCT-NOCAP" in fuel_conversion_check["detail"], fuel_conversion_check
+assert "FUEL-PCT-CAP" not in fuel_conversion_check["detail"], fuel_conversion_check
+assert "FUEL-PCT-STALE" not in fuel_conversion_check["detail"], fuel_conversion_check
 
 # F00d: firmware desconhecido só bloqueia packs que podem emitir comando industrial.
 original_load_bindings = diagnostics.load_bindings
