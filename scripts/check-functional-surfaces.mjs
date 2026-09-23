@@ -309,6 +309,13 @@ for (const marker of ["generatorsError", "refreshGenerators", "retryAll"]) {
     failures.push(`dashboard voltou a mascarar falha do parque: ${marker}`);
   }
 }
+const overviewModel = read("src/components/scada/overview-dashboard-model.ts");
+if (
+  !overviewModel.includes("readGeneratorTelemetry(generator)") ||
+  overviewModel.includes('metricNumber(generator, "fuel_level"')
+) {
+  failures.push("dashboard voltou a resumir combustível bruto fora da regra central");
+}
 
 const api = read("src/lib/api.ts");
 const generatorsStart = api.indexOf("\n  generators: {");
