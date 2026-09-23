@@ -13,6 +13,7 @@ from .config import (
     AUTH_COOKIE_SECURE,
     AUTH_SESSION_TTL,
     TRUSTED_PROXY_CIDRS,
+    TWO_FACTOR_ENFORCED,
 )
 from .production_guard import production_mode
 
@@ -192,7 +193,8 @@ def require(permission: str) -> Callable:
         if not can(user, permission):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permissão insuficiente")
         if (
-            production_mode()
+            TWO_FACTOR_ENFORCED
+            and production_mode()
             and user.get("role") in PRIVILEGED_ROLES
             and permission != "view"
             and not two_factor_enabled(user)
