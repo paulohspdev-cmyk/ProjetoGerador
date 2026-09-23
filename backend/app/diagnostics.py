@@ -427,6 +427,7 @@ def _production_readiness(
     missing_command_firmware: list[str] = []
     missing_readonly_firmware: list[str] = []
     fuel_capacity_mismatch: list[str] = []
+    missing_percent_fuel_capacity: list[str] = []
     test_assets: list[str] = []
 
     assets_by_generator = {
@@ -519,22 +520,37 @@ def _production_readiness(
         if capacity_key is None:
             continue
         units = generator.get("metricUnits") or {}
-        if str(units.get("fuel_level") or "").strip().upper() != "L":
-            continue
+        fuel_unit = str(units.get("fuel_level") or "").strip().upper()
         metrics = generator.get("metrics") or {}
         try:
             fuel_level = float(metrics.get("fuel_level"))
+        except (TypeError, ValueError, OverflowError):
+            continue
+        if not math.isfinite(fuel_level) or fuel_level < 0:
+            continue
+        tag = str(generator.get("tag") or generator.get("id") or "N/D")
+
+        if fuel_unit == "%":
+            if fuel_level <= 100:
+                try:
+                    fuel_capacity = float(generator.get("fuelCapacityLiters") or 0)
+                except (TypeError, ValueError, OverflowError):
+                    fuel_capacity = 0
+                if not math.isfinite(fuel_capacity) or fuel_capacity <= 0:
+                    missing_percent_fuel_capacity.append(tag)
+            continue
+
+        if fuel_unit != "L" or capacity_key is None:
+            continue
+        try:
             fuel_capacity = float(metrics.get(capacity_key))
         except (TypeError, ValueError, OverflowError):
             continue
         if (
-            math.isfinite(fuel_level)
-            and math.isfinite(fuel_capacity)
-            and fuel_level >= 0
+            math.isfinite(fuel_capacity)
             and fuel_capacity > 0
             and fuel_level > fuel_capacity
         ):
-            tag = str(generator.get("tag") or generator.get("id") or "N/D")
             fuel_capacity_mismatch.append(
                 f"{tag} ({fuel_level:g} L > {fuel_capacity:g} L)"
             )
@@ -573,6 +589,18 @@ def _production_readiness(
             "Níveis de combustível compatíveis com as capacidades informadas"
             if not fuel_capacity_mismatch
             else "Nível acima da capacidade informada: " + ", ".join(fuel_capacity_mismatch)
+        ),
+    )
+    add(
+        "fuel_capacity_for_percent",
+        "Conversão de combustível para litros",
+        not missing_percent_fuel_capacity,
+        "warning",
+        (
+            "Capacidade disponível para todas as leituras percentuais"
+            if not missing_percent_fuel_capacity
+            else "Sem capacidade de tanque para converter % em litros: "
+            + ", ".join(missing_percent_fuel_capacity)
         ),
     )
     add(
