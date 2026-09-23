@@ -124,32 +124,32 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const electricalRows = useMemo(
     () => [
       {
-        label: "L1-N Voltage",
+        label: "Tensão L1-N",
         mains: formatUnit(mainsKnown ? mainsL1 : null, "V"),
         generator: formatUnit(genL1, "V"),
       },
       {
-        label: "L2-N Voltage",
+        label: "Tensão L2-N",
         mains: formatUnit(mainsKnown ? mainsL2 : null, "V"),
         generator: formatUnit(genL2, "V"),
       },
       {
-        label: "L3-N Voltage",
+        label: "Tensão L3-N",
         mains: formatUnit(mainsKnown ? mainsL3 : null, "V"),
         generator: formatUnit(genL3, "V"),
       },
       {
-        label: "Frequency",
+        label: "Frequência",
         mains: formatUnit(mainsKnown ? mainsFrequency : null, "Hz", 1),
         generator: formatUnit(frequency, "Hz", 1),
       },
       {
-        label: "Power Factor",
+        label: "Fator de potência",
         mains: formatNumber(mainsPf, 2),
         generator: formatNumber(powerFactor, 2),
       },
       {
-        label: "Current (A)",
+        label: "Corrente",
         mains: formatUnit(mainsCurrent, "A", 0),
         generator: formatUnit(currentKnown ? genCurrent : null, "A", 0),
       },
@@ -173,9 +173,9 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   );
 
   const valueRows = [
-    { icon: "clock" as const, label: "Run Hours", value: formatUnit(runHours, "h", 1) },
-    { icon: "zap" as const, label: "Energy", value: formatUnit(energyKwh, "kWh", 0) },
-    { icon: "gauge" as const, label: "Starts", value: formatNumber(numberStarts, 0) },
+    { icon: "clock" as const, label: "Horímetro", value: formatUnit(runHours, "h", 1) },
+    { icon: "zap" as const, label: "Energia", value: formatUnit(energyKwh, "kWh", 0) },
+    { icon: "gauge" as const, label: "Partidas", value: formatNumber(numberStarts, 0) },
   ];
 
   const canOperate =
@@ -206,13 +206,13 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const online = isGeneratorConnected(gen);
   const statusText =
     displayStatus === "stale"
-      ? "COMM LOST"
+      ? "SEM COMUNICAÇÃO"
       : displayStatus === "alerta"
-        ? "ALARM"
+        ? "ALARME"
         : displayStatus === "online"
-          ? "COMM OK"
+          ? "COMUNICAÇÃO OK"
           : displayStatus === "nao_configurado"
-            ? "NOT CONFIG"
+            ? "NÃO CONFIGURADO"
             : "OFFLINE";
   const statusClass =
     displayStatus === "alerta"
