@@ -41,9 +41,12 @@ if (dashboard.includes("generator.tag") && dashboard.includes("/p/geradores/$id"
 }
 
 const dashboardModel = read("src/components/scada/overview-dashboard-model.ts");
-for (const marker of ["fuel_level", "todayBytes", "monthBytes", "friendlyAlarmMessage"]) {
+for (const marker of ["todayBytes", "monthBytes", "friendlyAlarmMessage"]) {
   if (!dashboardModel.includes(marker))
     failures.push(`modelo de decisão perdeu fonte real: ${marker}`);
+}
+if (!dashboardModel.includes("readGeneratorTelemetry(generator)")) {
+  failures.push("modelo de decisão perdeu combustível da telemetria centralizada");
 }
 
 const board = read("src/components/generators/GeneratorsBoard.tsx");
