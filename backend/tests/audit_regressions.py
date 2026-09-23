@@ -263,6 +263,16 @@ fuel_quality_readiness = diagnostics._production_readiness(
             "metrics": {"fuel_level": 590, "fuel_capacity_l": 600},
         },
         {
+            "id": "fuel-cadastral-bad",
+            "tag": "FUEL-CAD-BAD",
+            "enabled": True,
+            "telemetryStale": False,
+            "definedMetrics": ["fuel_level"],
+            "metricUnits": {"fuel_level": "L"},
+            "metrics": {"fuel_level": 650},
+            "fuelCapacityLiters": 600,
+        },
+        {
             "id": "fuel-stale",
             "tag": "FUEL-STALE",
             "enabled": True,
@@ -313,6 +323,7 @@ fuel_quality_check = next(
 assert fuel_quality_check["severity"] == "warning", fuel_quality_check
 assert fuel_quality_check["ok"] is False, fuel_quality_check
 assert "FUEL-BAD (658 L > 600 L)" in fuel_quality_check["detail"], fuel_quality_check
+assert "FUEL-CAD-BAD (650 L > 600 L)" in fuel_quality_check["detail"], fuel_quality_check
 assert "FUEL-GOOD" not in fuel_quality_check["detail"], fuel_quality_check
 assert "FUEL-STALE" not in fuel_quality_check["detail"], fuel_quality_check
 
