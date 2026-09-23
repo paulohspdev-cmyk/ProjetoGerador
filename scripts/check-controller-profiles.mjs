@@ -461,6 +461,21 @@ for (const marker of [
   if (!template.includes(marker)) failures.push(`IG200 template perdeu: ${marker}`);
 }
 
+const ig200Probe = read("ops/ig200_probe_readonly.py");
+for (const marker of [
+  '1227: ("nominal_power", 1.0, "kW")',
+  "args.start <= 1227 <= args.end",
+  "values[1227] = client.read(1227, 1)[0]",
+]) {
+  if (!ig200Probe.includes(marker)) failures.push(`IG200 probe perdeu âncora nominal: ${marker}`);
+}
+if (
+  ig200Probe.includes('1228: ("nominal_power", 1.0, "kW")') ||
+  ig200Probe.includes("values[1228] = client.read(1228, 1)[0]")
+) {
+  failures.push("IG200 probe voltou a confundir 1228 (tensão nominal) com potência nominal");
+}
+
 const dseTemplate = read("rapid/templates/DrvModbus_RC_DSE_GenComm_Core.xml");
 for (const marker of [
   'address="772"',
