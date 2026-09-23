@@ -147,7 +147,7 @@ for (const marker of [
   '"kW"',
   '"PF"',
   '"Óleo"',
-  '"Coolant"',
+  '"Temp. motor"',
   '"Combustível"',
   '"Alternador"',
   '"MCB"',
