@@ -699,6 +699,18 @@
   white-space: nowrap;
 }
 
+.vref-engine-row.is-warning > svg,
+.vref-engine-row.is-warning > span:not(.vref-mini-bar),
+.vref-engine-row.is-warning > b {
+  color: var(--vref-yellow);
+  stroke: var(--vref-yellow);
+}
+
+.vref-engine-row.is-warning .vref-mini-bar {
+  border-color: color-mix(in srgb, var(--vref-yellow) 65%, #304956);
+  background: repeating-linear-gradient(135deg, #241d06 0 3px, #3b2d05 3px 5px);
+}
+
 .vref-mini-bar {
   display: block;
   height: 5px;
