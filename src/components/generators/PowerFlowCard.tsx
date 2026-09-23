@@ -111,7 +111,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     ((runningKnown && running) ||
       hasPositiveMeasurement([genL1, genL2, genL3, generatorFrequencyKnown ? frequency : null]));
   const energyKwh = metricNumber(gen, "genset_kwh", undefined);
-  const requiredPower = metricNumber(gen, "required_power_kw", undefined);
+  const numberStarts = metricNumber(gen, "number_starts", undefined);
   const batteryVoltage = metricNumber(gen, "battery_voltage", battery);
   const currentValues = [currentL1, currentL2, currentL3].filter(
     (value): value is number => value != null,
@@ -175,7 +175,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const valueRows = [
     { icon: "clock" as const, label: "Run Hours", value: formatUnit(runHours, "h", 1) },
     { icon: "zap" as const, label: "Energy", value: formatUnit(energyKwh, "kWh", 0) },
-    { icon: "gauge" as const, label: "Required Power", value: formatUnit(requiredPower, "kW", 0) },
+    { icon: "gauge" as const, label: "Starts", value: formatNumber(numberStarts, 0) },
   ];
 
   const canOperate =
