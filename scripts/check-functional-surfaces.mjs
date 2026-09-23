@@ -240,6 +240,7 @@ for (const marker of [
   'controller_packs: { slug: "controller-packs"',
   'controller_firmware: { slug: "controladoras"',
   'nominal_power: { slug: "geradores"',
+  'fuel_capacity_consistency: { slug: "combustivel"',
   "Ação externa",
 ]) {
   if (!systemHealth.includes(marker)) {
