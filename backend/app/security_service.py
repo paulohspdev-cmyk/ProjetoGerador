@@ -8,7 +8,7 @@ from urllib.parse import quote
 
 from . import db, platform_store
 from .auth import hash_password, request_remote_ip, verify_password
-from .config import PASSWORD_RESET_TTL, PUBLIC_BASE_URL, SMTP_FROM, SMTP_HOST
+from .config import PASSWORD_RESET_TTL, PUBLIC_BASE_URL, SMTP_FROM, SMTP_HOST, TWO_FACTOR_ENFORCED
 from .secret_box import protect_secret, reveal_secret
 
 
@@ -94,11 +94,15 @@ def disable_totp(user: dict, code: str, current_password: str):
 
 
 def totp_required(user: dict) -> bool:
+    if not TWO_FACTOR_ENFORCED:
+        return False
     item = platform_store.get_totp(user["id"])
     return bool(item and item.get("enabled"))
 
 
 def verify_user_totp(user: dict, code: str | None) -> bool:
+    if not TWO_FACTOR_ENFORCED:
+        return True
     item = platform_store.get_totp(user["id"])
     if not item or not item.get("enabled"):
         return True
