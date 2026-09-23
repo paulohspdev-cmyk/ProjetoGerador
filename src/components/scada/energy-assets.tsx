@@ -40,6 +40,7 @@ function InfoNotice({ children }: { children: React.ReactNode }) {
 export function FuelScreen() {
   const { generators } = useGenerators();
   const fuelRows = generators.map((generator) => ({
+    id: generator.id,
     generator,
     telemetry: readGeneratorTelemetry(generator),
   }));
