@@ -141,7 +141,10 @@ export function VerticalPowerFlow({
   const mainsToBus = mainsKnown && mainsPresent && mcbKnown && mcb;
   const genToBus = generatorKnown && generatorPresent && gcbKnown && gcb;
   const busLive = mainsToBus || genToBus;
-  const busLoadKw = genToBus && !mainsToBus ? generatorPowerKw : null;
+  const isolatedGeneratorLoad = genToBus && !mainsToBus;
+  const powerBlockLabel =
+    isolatedGeneratorLoad || generatorPowerKw == null ? "CARGA" : "POT. GER.";
+  const powerBlockKw = generatorPowerKw;
 
   return (
     <section className="vref-section vref-flow vref-flow-controller">
@@ -198,10 +201,10 @@ export function VerticalPowerFlow({
               <IconLoad size={22} />
             </g>
             <text x="13" y="-3" textAnchor="middle" className="vref-load-title">
-              CARGA
+              {powerBlockLabel}
             </text>
             <text x="13" y="11" textAnchor="middle" className="vref-load-value">
-              {formatLoad(busLoadKw)}
+              {formatLoad(powerBlockKw)}
             </text>
           </g>
 
