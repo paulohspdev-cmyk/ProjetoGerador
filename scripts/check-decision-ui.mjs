@@ -174,6 +174,8 @@ for (const marker of [
   "gen.metricLimits",
   "visibleMeterPercent",
   "fuelCapacity",
+  "fuelOutOfRange",
+  "fuel > fuelCapacity",
   "coolantUnit",
 ]) {
   if (!health.includes(marker)) {
@@ -219,6 +221,13 @@ for (const source of [
 ]) {
   if (!source[1].includes("_current_metric_keys")) {
     failures.push(`${source[0]} perdeu proteção de métrica atual`);
+  }
+}
+
+const verticalTelemetry = read("src/components/generators/vertical-card/VerticalTelemetrySections.tsx");
+for (const marker of ['data-quality={fuelOutOfRange ? "out-of-range" : "normal"}', "fuelOutOfRange"]) {
+  if (!verticalTelemetry.includes(marker)) {
+    failures.push(`card vertical perdeu indicação de qualidade do combustível: ${marker}`);
   }
 }
 
