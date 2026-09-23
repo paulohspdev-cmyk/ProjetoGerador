@@ -236,6 +236,52 @@ nominal_check = next(
 assert nominal_check["severity"] == "ok", nominal_check
 assert "telemetria" in nominal_check["detail"].lower(), nominal_check
 
+# F00c2: fresh fuel telemetry above the controller-provided tank capacity must be visible.
+fuel_quality_readiness = diagnostics._production_readiness(
+    [],
+    observed_generators=[
+        {
+            "id": "fuel-bad",
+            "tag": "FUEL-BAD",
+            "enabled": True,
+            "telemetryStale": False,
+            "definedMetrics": ["fuel_level", "fuel_capacity_l"],
+            "metricUnits": {"fuel_level": "L"},
+            "metrics": {"fuel_level": 658, "fuel_capacity_l": 600},
+        },
+        {
+            "id": "fuel-good",
+            "tag": "FUEL-GOOD",
+            "enabled": True,
+            "telemetryStale": False,
+            "definedMetrics": ["fuel_level", "fuel_capacity_l"],
+            "metricUnits": {"fuel_level": "L"},
+            "metrics": {"fuel_level": 590, "fuel_capacity_l": 600},
+        },
+        {
+            "id": "fuel-stale",
+            "tag": "FUEL-STALE",
+            "enabled": True,
+            "telemetryStale": True,
+            "definedMetrics": ["fuel_level", "fuel_capacity_l"],
+            "metricUnits": {"fuel_level": "L"},
+            "metrics": {"fuel_level": 700, "fuel_capacity_l": 600},
+        },
+    ],
+    reverse_tcp_exposed=False,
+    reverse_tcp_allowlist=False,
+)
+fuel_quality_check = next(
+    item
+    for item in fuel_quality_readiness["checks"]
+    if item["id"] == "fuel_capacity_consistency"
+)
+assert fuel_quality_check["severity"] == "warning", fuel_quality_check
+assert fuel_quality_check["ok"] is False, fuel_quality_check
+assert "FUEL-BAD (658 L > 600 L)" in fuel_quality_check["detail"], fuel_quality_check
+assert "FUEL-GOOD" not in fuel_quality_check["detail"], fuel_quality_check
+assert "FUEL-STALE" not in fuel_quality_check["detail"], fuel_quality_check
+
 # F00d: firmware desconhecido só bloqueia packs que podem emitir comando industrial.
 original_load_bindings = diagnostics.load_bindings
 original_list_assets = diagnostics.domain_store.list_assets
