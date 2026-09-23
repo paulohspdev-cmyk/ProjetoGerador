@@ -115,11 +115,7 @@ export function readGeneratorTelemetry(gen: Generator) {
       ? fuel / fuelRate
       : null;
   const fuelWithinCapacity =
-    fuelCapacity != null &&
-    fuelCapacity > 0 &&
-    fuel != null &&
-    fuel >= 0 &&
-    fuel <= fuelCapacity;
+    fuelCapacity != null && fuelCapacity > 0 && fuel != null && fuel >= 0 && fuel <= fuelCapacity;
   const fuelOutOfRange =
     fuelUnit === "L" &&
     fuel != null &&
