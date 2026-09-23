@@ -183,7 +183,7 @@ for (const marker of [
   "visibleMeterPercent",
   "fuelCapacity",
   "fuelOutOfRange",
-  "fuel > fuelCapacity",
+  "rawFuel > fuelCapacity",
   "coolantUnit",
 ]) {
   if (!health.includes(marker)) {
