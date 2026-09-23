@@ -515,7 +515,7 @@ if (!operationalMap.includes("load: measuredLoad.length")) {
 
 const generatorHealth = read("src/components/generators/generator-health.ts");
 for (const marker of [
-  "fuel <= fuelCapacity",
+  "rawFuel <= fuelCapacity",
   "gen.fuelCapacityLiters",
   'rawFuelUnit === "%"',
   "fuelLiters",
