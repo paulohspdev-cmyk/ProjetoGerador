@@ -75,7 +75,7 @@ function MobileRow({ items }: { items: Generator[] }) {
             toneTextClass(telemetry.tones.oil),
           ],
           [
-            "Coolant",
+            "Temp. motor",
             telemetry.coolant == null
               ? "N/D"
               : `${fmt(telemetry.coolant, 0)} ${telemetry.coolantUnit}`,
@@ -96,7 +96,7 @@ function MobileRow({ items }: { items: Generator[] }) {
             telemetry.maintenance == null ? "N/D" : `${fmt(telemetry.maintenance, 0)} h`,
             toneTextClass(telemetry.tones.maintenance),
           ],
-          ["Run Hours", telemetry.runHours == null ? "N/D" : `${fmt(telemetry.runHours)} h`, ""],
+          ["Horímetro", telemetry.runHours == null ? "N/D" : `${fmt(telemetry.runHours)} h`, ""],
         ] as const;
 
         return (
@@ -180,7 +180,7 @@ const headers = [
   "PF",
   "BAT",
   "Óleo",
-  "Coolant",
+  "Temp. motor",
   "Combustível",
   "Alternador",
   "Manut.",
