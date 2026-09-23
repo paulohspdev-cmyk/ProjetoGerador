@@ -519,6 +519,12 @@ const verticalCard = read("src/components/generators/PowerFlowCard.tsx");
 if (!verticalCard.includes('label: "Run Hours"')) {
   failures.push("card vertical perdeu o horímetro operacional");
 }
+if (!verticalCard.includes('label: "Starts"') || !verticalCard.includes('"number_starts"')) {
+  failures.push("card vertical perdeu contador real de partidas");
+}
+if (verticalCard.includes('label: "Required Power"')) {
+  failures.push("card vertical voltou a ocupar espaço com Required Power indisponível");
+}
 
 const forbidden = [
   ["fuelLevel < 40", "limiar genérico inventado de combustível"],
