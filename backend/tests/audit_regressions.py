@@ -46,7 +46,11 @@ from app.completion_routes import (  # noqa: E402
 )
 from app.extra_routes import _token_allows_generator  # noqa: E402
 from app.rapid import _downsample_points, dashboard  # noqa: E402
-from app.migrations import _generator_nominal_power_v3, _operator_role_v2  # noqa: E402
+from app.migrations import (  # noqa: E402
+    _generator_fuel_capacity_v4,
+    _generator_nominal_power_v3,
+    _operator_role_v2,
+)
 from app.reporting import generate_report, safe_report_artifact_path  # noqa: E402
 from app.secret_box import protect_secret  # noqa: E402
 from app.security_service import disable_totp, setup_totp, totp_code  # noqa: E402
@@ -379,6 +383,28 @@ assert (
 )
 legacy_nominal.close()
 
+# F00ea: migration v4 adds nullable tank capacity without fabricating liters.
+legacy_fuel_path = root / "legacy-fuel.sqlite3"
+legacy_fuel = sqlite3.connect(legacy_fuel_path)
+legacy_fuel.execute(
+    """CREATE TABLE generators(
+        id TEXT PRIMARY KEY,
+        tag TEXT NOT NULL,
+        enabled INTEGER NOT NULL DEFAULT 1
+    )"""
+)
+legacy_fuel.execute("INSERT INTO generators(id,tag,enabled) VALUES ('g1','LEGACY-FUEL',1)")
+_generator_fuel_capacity_v4(legacy_fuel)
+fuel_columns = {
+    row[1] for row in legacy_fuel.execute("PRAGMA table_info(generators)").fetchall()
+}
+assert "fuel_capacity_l" in fuel_columns, fuel_columns
+assert (
+    legacy_fuel.execute("SELECT fuel_capacity_l FROM generators WHERE id='g1'").fetchone()[0]
+    is None
+)
+legacy_fuel.close()
+
 # F00f: cadastral nominal kW persists, updates and can be explicitly cleared.
 nominal_generator = db.create_generator(
     {
@@ -405,6 +431,14 @@ nominal_generator = db.update_generator(
     nominal_generator["id"], {"nominal_power_kw": None}, actor="test"
 )
 assert nominal_generator["nominal_power_kw"] is None, nominal_generator
+nominal_generator = db.update_generator(
+    nominal_generator["id"], {"fuel_capacity_l": 600.0}, actor="test"
+)
+assert nominal_generator["fuel_capacity_l"] == 600.0, nominal_generator
+nominal_generator = db.update_generator(
+    nominal_generator["id"], {"fuel_capacity_l": None}, actor="test"
+)
+assert nominal_generator["fuel_capacity_l"] is None, nominal_generator
 
 # F01: the persistent users schema must accept the RBAC operator role.
 with db.connect() as conn:

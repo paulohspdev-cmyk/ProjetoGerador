@@ -34,6 +34,7 @@ class GeneratorCreate(BaseModel):
     modbusUnit: int = Field(default=1, ge=1, le=247)
     rapidDeviceNum: int | None = Field(default=None, ge=1)
     nominalPower: float | None = Field(default=None, gt=0, le=100000)
+    fuelCapacityLiters: float | None = Field(default=None, gt=0, le=100000)
     enabled: bool = True
 
     @model_validator(mode="after")
@@ -89,6 +90,7 @@ class GeneratorCreate(BaseModel):
             "modbus_unit": self.modbusUnit,
             "rapid_device_num": self.rapidDeviceNum,
             "nominal_power_kw": self.nominalPower,
+            "fuel_capacity_l": self.fuelCapacityLiters,
             "enabled": self.enabled,
         }
 
@@ -104,6 +106,7 @@ class GeneratorUpdate(BaseModel):
     modbusUnit: int | None = Field(default=None, ge=1, le=247)
     rapidDeviceNum: int | None = Field(default=None, ge=1)
     nominalPower: float | None = Field(default=None, gt=0, le=100000)
+    fuelCapacityLiters: float | None = Field(default=None, gt=0, le=100000)
     enabled: bool | None = None
 
     @model_validator(mode="after")
@@ -126,11 +129,14 @@ class GeneratorUpdate(BaseModel):
             "modbus_unit": self.modbusUnit,
             "rapid_device_num": self.rapidDeviceNum,
             "nominal_power_kw": self.nominalPower,
+            "fuel_capacity_l": self.fuelCapacityLiters,
             "enabled": self.enabled,
         }
         result = {key: value for key, value in mapping.items() if value is not None}
         if "nominalPower" in self.model_fields_set:
             result["nominal_power_kw"] = self.nominalPower
+        if "fuelCapacityLiters" in self.model_fields_set:
+            result["fuel_capacity_l"] = self.fuelCapacityLiters
         return result
 
 

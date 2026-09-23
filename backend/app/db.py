@@ -46,6 +46,7 @@ def init_db():
                 modbus_unit INTEGER NOT NULL DEFAULT 1,
                 rapid_device_num INTEGER,
                 nominal_power_kw REAL,
+                fuel_capacity_l REAL,
                 enabled INTEGER NOT NULL DEFAULT 1,
                 created_at INTEGER NOT NULL,
                 updated_at INTEGER NOT NULL
@@ -520,6 +521,18 @@ def _normalize_nominal_power_kw(value):
     return number
 
 
+def _normalize_fuel_capacity_l(value):
+    if value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("Capacidade do tanque deve ser um número em litros") from exc
+    if not math.isfinite(number) or number <= 0 or number > 100000:
+        raise ValueError("Capacidade do tanque deve ficar entre 0 e 100000 L")
+    return number
+
+
 def create_generator(data, actor="system"):
     now = int(time.time())
     generator_id = data.get("id") or f"gen-{uuid.uuid4().hex[:12]}"
@@ -537,6 +550,7 @@ def create_generator(data, actor="system"):
         "modbus_unit": int(data.get("modbus_unit") or 1),
         "rapid_device_num": data.get("rapid_device_num"),
         "nominal_power_kw": _normalize_nominal_power_kw(data.get("nominal_power_kw")),
+        "fuel_capacity_l": _normalize_fuel_capacity_l(data.get("fuel_capacity_l")),
         "enabled": 1 if data.get("enabled", True) else 0,
         "created_at": now,
         "updated_at": now,
@@ -550,11 +564,11 @@ def create_generator(data, actor="system"):
             INSERT INTO generators (
                 id, tag, name, customer, site, controller_type, controller_model,
                 transport, host, listen_port, modbus_unit, rapid_device_num, nominal_power_kw,
-                enabled, created_at, updated_at
+                fuel_capacity_l, enabled, created_at, updated_at
             ) VALUES (
                 :id, :tag, :name, :customer, :site, :controller_type, :controller_model,
                 :transport, :host, :listen_port, :modbus_unit, :rapid_device_num, :nominal_power_kw,
-                :enabled, :created_at, :updated_at
+                :fuel_capacity_l, :enabled, :created_at, :updated_at
             )
             """,
             record,
@@ -577,6 +591,8 @@ def _normalized_generator_value(key, value):
         return int(value)
     if key == "nominal_power_kw":
         return _normalize_nominal_power_kw(value)
+    if key == "fuel_capacity_l":
+        return _normalize_fuel_capacity_l(value)
     if key == "tag":
         return str(value).strip().upper()
     if key == "controller_type":
@@ -599,7 +615,7 @@ def update_generator(
     allowed = {
         "tag", "name", "customer", "site", "controller_type", "controller_model",
         "transport", "host", "listen_port", "modbus_unit", "rapid_device_num",
-        "nominal_power_kw", "enabled",
+        "nominal_power_kw", "fuel_capacity_l", "enabled",
     }
     industrial_identity = {
         "tag",
@@ -617,7 +633,7 @@ def update_generator(
     for key, value in patch.items():
         if key not in allowed:
             continue
-        if value is None and key != "nominal_power_kw":
+        if value is None and key not in {"nominal_power_kw", "fuel_capacity_l"}:
             continue
         value = _normalized_generator_value(key, value)
         current_value = current.get(key)

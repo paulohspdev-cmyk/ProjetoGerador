@@ -599,6 +599,25 @@ def _frontend_generator(
         if cadastral_nominal_power is not None
         else None
     )
+    live_fuel_capacity = None
+    if not telemetry_stale:
+        for capacity_key in ("fuel_capacity_l", "fuel_capacity"):
+            if capacity_key not in defined_metrics:
+                continue
+            live_fuel_capacity = _positive_finite_number(values.get(capacity_key))
+            if live_fuel_capacity is not None:
+                break
+    cadastral_fuel_capacity = _positive_finite_number(generator.get("fuel_capacity_l"))
+    fuel_capacity = (
+        live_fuel_capacity if live_fuel_capacity is not None else cadastral_fuel_capacity
+    )
+    fuel_capacity_source = (
+        "telemetry"
+        if live_fuel_capacity is not None
+        else "cadastral"
+        if cadastral_fuel_capacity is not None
+        else None
+    )
     metric_states = {
         key: {
             "configured": True,
@@ -641,6 +660,9 @@ def _frontend_generator(
         "nominalPower": nominal_power,
         "nominalPowerConfigured": cadastral_nominal_power,
         "nominalPowerSource": nominal_power_source,
+        "fuelCapacityLiters": fuel_capacity,
+        "fuelCapacityConfigured": cadastral_fuel_capacity,
+        "fuelCapacitySource": fuel_capacity_source,
         "rpm": values.get("rpm"),
         "load": values.get("power_kw"),
         "oilPressure": values.get("oil_pressure"),
