@@ -224,8 +224,13 @@ for (const source of [
   }
 }
 
-const verticalTelemetry = read("src/components/generators/vertical-card/VerticalTelemetrySections.tsx");
-for (const marker of ['data-quality={fuelOutOfRange ? "out-of-range" : "normal"}', "fuelOutOfRange"]) {
+const verticalTelemetry = read(
+  "src/components/generators/vertical-card/VerticalTelemetrySections.tsx",
+);
+for (const marker of [
+  'data-quality={fuelOutOfRange ? "out-of-range" : "normal"}',
+  "fuelOutOfRange",
+]) {
   if (!verticalTelemetry.includes(marker)) {
     failures.push(`card vertical perdeu indicação de qualidade do combustível: ${marker}`);
   }
