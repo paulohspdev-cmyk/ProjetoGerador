@@ -282,6 +282,7 @@ def version_info():
 def _production_readiness(
     raw_generators: list[dict],
     *,
+    observed_generators: list[dict] | None = None,
     reverse_tcp_exposed: bool,
     reverse_tcp_allowlist: bool,
     rapid_native_policy_ok: bool | None = None,
@@ -425,6 +426,7 @@ def _production_readiness(
     missing_customer: list[str] = []
     missing_command_firmware: list[str] = []
     missing_readonly_firmware: list[str] = []
+    fuel_capacity_mismatch: list[str] = []
     test_assets: list[str] = []
 
     assets_by_generator = {
@@ -501,6 +503,42 @@ def _production_readiness(
         if tag.upper().startswith(("TESTE", "TEST-", "LAB-")):
             test_assets.append(tag)
 
+    for generator in observed_generators or []:
+        if not generator.get("enabled", True) or generator.get("telemetryStale"):
+            continue
+        defined = set(generator.get("definedMetrics") or [])
+        if "fuel_level" not in defined:
+            continue
+        capacity_key = (
+            "fuel_capacity_l"
+            if "fuel_capacity_l" in defined
+            else "fuel_capacity"
+            if "fuel_capacity" in defined
+            else None
+        )
+        if capacity_key is None:
+            continue
+        units = generator.get("metricUnits") or {}
+        if str(units.get("fuel_level") or "").strip().upper() != "L":
+            continue
+        metrics = generator.get("metrics") or {}
+        try:
+            fuel_level = float(metrics.get("fuel_level"))
+            fuel_capacity = float(metrics.get(capacity_key))
+        except (TypeError, ValueError, OverflowError):
+            continue
+        if (
+            math.isfinite(fuel_level)
+            and math.isfinite(fuel_capacity)
+            and fuel_level >= 0
+            and fuel_capacity > 0
+            and fuel_level > fuel_capacity
+        ):
+            tag = str(generator.get("tag") or generator.get("id") or "N/D")
+            fuel_capacity_mismatch.append(
+                f"{tag} ({fuel_level:g} L > {fuel_capacity:g} L)"
+            )
+
     add(
         "controller_packs",
         "Controller Packs de produção",
@@ -524,6 +562,17 @@ def _production_readiness(
             "kW nominal disponível por telemetria homologada ou cadastro técnico"
             if not missing_nominal_support
             else "Sem kW nominal homologado/cadastrado: " + ", ".join(missing_nominal_support)
+        ),
+    )
+    add(
+        "fuel_capacity_consistency",
+        "Consistência do tanque de combustível",
+        not fuel_capacity_mismatch,
+        "warning",
+        (
+            "Níveis de combustível compatíveis com as capacidades informadas"
+            if not fuel_capacity_mismatch
+            else "Nível acima da capacidade informada: " + ", ".join(fuel_capacity_mismatch)
         ),
     )
     add(
@@ -703,6 +752,7 @@ def system_diagnostics():
         "observability": observability,
         "productionReadiness": _production_readiness(
             raw_generators,
+            observed_generators=generators,
             reverse_tcp_exposed=listeners_exposed,
             reverse_tcp_allowlist=allowlist_enabled,
             rapid_native_policy_ok=rapid_native_policy_ok,
