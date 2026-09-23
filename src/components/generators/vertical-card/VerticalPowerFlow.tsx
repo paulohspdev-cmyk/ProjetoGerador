@@ -142,8 +142,7 @@ export function VerticalPowerFlow({
   const genToBus = generatorKnown && generatorPresent && gcbKnown && gcb;
   const busLive = mainsToBus || genToBus;
   const isolatedGeneratorLoad = genToBus && !mainsToBus;
-  const powerBlockLabel =
-    isolatedGeneratorLoad || generatorPowerKw == null ? "CARGA" : "POT. GER.";
+  const powerBlockLabel = isolatedGeneratorLoad || generatorPowerKw == null ? "CARGA" : "POT. GER.";
   const powerBlockKw = generatorPowerKw;
 
   return (
