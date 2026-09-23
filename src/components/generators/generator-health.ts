@@ -114,6 +114,13 @@ export function readGeneratorTelemetry(gen: Generator) {
     fuelUnit === "L" && fuel != null && fuel >= 0 && fuelRate != null && fuelRate > 0
       ? fuel / fuelRate
       : null;
+  const fuelOutOfRange =
+    fuelUnit === "L" &&
+    fuel != null &&
+    fuel >= 0 &&
+    fuelCapacity != null &&
+    fuelCapacity > 0 &&
+    fuel > fuelCapacity;
   const fuelPercent =
     fuelUnit === "%"
       ? progressPercent(fuel, 100)
@@ -121,7 +128,7 @@ export function readGeneratorTelemetry(gen: Generator) {
           fuelCapacity > 0 &&
           fuel != null &&
           fuel >= 0 &&
-          fuel <= fuelCapacity
+          !fuelOutOfRange
         ? progressPercent(fuel, fuelCapacity)
         : null;
 
@@ -171,7 +178,7 @@ export function readGeneratorTelemetry(gen: Generator) {
   const tones = {
     oil: oilMeter.tone,
     coolant: coolantMeter.tone,
-    fuel: fuelMeter.tone,
+    fuel: fuelOutOfRange ? ("warning" as const) : fuelMeter.tone,
     alternator: alternatorMeter.tone,
     maintenance: maintenanceMeter.tone,
     runHours: toneFromLimit(runHours, limits["run_hours"]),
@@ -187,6 +194,7 @@ export function readGeneratorTelemetry(gen: Generator) {
     fuelRate,
     fuelUnit,
     fuelPercent,
+    fuelOutOfRange,
     autonomyHours,
     battery,
     alternator,
