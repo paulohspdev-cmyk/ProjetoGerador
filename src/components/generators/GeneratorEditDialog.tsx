@@ -48,6 +48,9 @@ export function GeneratorEditDialog({
   const [nominalPower, setNominalPower] = useState(
     generator.nominalPowerConfigured != null ? String(generator.nominalPowerConfigured) : "",
   );
+  const [fuelCapacityLiters, setFuelCapacityLiters] = useState(
+    generator.fuelCapacityConfigured != null ? String(generator.fuelCapacityConfigured) : "",
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,6 +66,9 @@ export function GeneratorEditDialog({
     setModbusUnit(String(generator.modbusUnit || 1));
     setNominalPower(
       generator.nominalPowerConfigured != null ? String(generator.nominalPowerConfigured) : "",
+    );
+    setFuelCapacityLiters(
+      generator.fuelCapacityConfigured != null ? String(generator.fuelCapacityConfigured) : "",
     );
     setError(null);
   };
@@ -88,6 +94,7 @@ export function GeneratorEditDialog({
     const port = isSerial ? 0 : Number(listenPort || (transport === "reverse_tcp" ? 0 : 502));
     const unit = Number(modbusUnit);
     const nominal = nominalPower.trim() ? Number(nominalPower) : null;
+    const tankCapacity = fuelCapacityLiters.trim() ? Number(fuelCapacityLiters) : null;
     if (!isSerial && (!Number.isInteger(port) || port < 1 || port > 65535)) {
       setError("Informe uma porta TCP válida entre 1 e 65535.");
       return;
@@ -98,6 +105,13 @@ export function GeneratorEditDialog({
     }
     if (nominal != null && (!Number.isFinite(nominal) || nominal <= 0 || nominal > 100000)) {
       setError("A potência nominal deve ficar entre 0 e 100000 kW.");
+      return;
+    }
+    if (
+      tankCapacity != null &&
+      (!Number.isFinite(tankCapacity) || tankCapacity <= 0 || tankCapacity > 100000)
+    ) {
+      setError("A capacidade do tanque deve ficar entre 0 e 100000 L.");
       return;
     }
     if (transport !== "reverse_tcp" && !host.trim()) {
@@ -140,6 +154,7 @@ export function GeneratorEditDialog({
         name: name.trim(),
         site: site.trim(),
         nominalPower: nominal,
+        fuelCapacityLiters: tankCapacity,
       });
       if (result) throw new Error(result);
       await refresh();
@@ -296,6 +311,25 @@ export function GeneratorEditDialog({
             />
             <span className="mt-1 block text-xs font-normal text-muted-foreground">
               Dado de placa/cadastro. Não informe kVA como kW sem conversão homologada.
+            </span>
+          </label>
+
+          <label className="block text-sm font-semibold">
+            Capacidade do tanque (L)
+            <input
+              type="number"
+              inputMode="decimal"
+              min="0.1"
+              max="100000"
+              step="0.1"
+              value={fuelCapacityLiters}
+              onChange={(event) => setFuelCapacityLiters(event.target.value)}
+              placeholder="Ex.: 600"
+              className="mt-2 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
+            />
+            <span className="mt-1 block text-xs font-normal text-muted-foreground">
+              Opcional. Use a capacidade física real do tanque. Se a controladora fornecer apenas
+              %, o sistema converte para litros sem estimativa.
             </span>
           </label>
 

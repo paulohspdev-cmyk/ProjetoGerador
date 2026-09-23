@@ -22,6 +22,8 @@ export function GeneratorIdentityFields({
   gensetCatalog,
   nominalPower,
   setNominalPower,
+  fuelCapacityLiters,
+  setFuelCapacityLiters,
 }: {
   name: string;
   setName: (value: string) => void;
@@ -34,6 +36,8 @@ export function GeneratorIdentityFields({
   gensetCatalog: CatalogController[];
   nominalPower: string;
   setNominalPower: (value: string) => void;
+  fuelCapacityLiters: string;
+  setFuelCapacityLiters: (value: string) => void;
 }) {
   return (
     <div className="space-y-4">
@@ -79,6 +83,24 @@ export function GeneratorIdentityFields({
         />
         <span className="mt-1 block text-xs font-normal text-muted-foreground">
           Opcional. Use o rating em kW da placa/ficha técnica; não copie kVA como kW.
+        </span>
+      </label>
+
+      <label className="block text-sm font-semibold">
+        Capacidade do tanque (L)
+        <input
+          type="number"
+          inputMode="decimal"
+          min="0.1"
+          max="100000"
+          step="0.1"
+          value={fuelCapacityLiters}
+          onChange={(event) => setFuelCapacityLiters(event.target.value)}
+          placeholder="Ex.: 600"
+          className="mt-2 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
+        />
+        <span className="mt-1 block text-xs font-normal text-muted-foreground">
+          Opcional. Informe a capacidade física real para converter leituras percentuais em litros.
         </span>
       </label>
 

@@ -54,6 +54,9 @@ export type Generator = {
   nominalPower?: number | null;
   nominalPowerConfigured?: number | null;
   nominalPowerSource?: "telemetry" | "cadastral" | null;
+  fuelCapacityLiters?: number | null;
+  fuelCapacityConfigured?: number | null;
+  fuelCapacitySource?: "telemetry" | "cadastral" | null;
   rpm: number | null;
   load: number | null;
   oilPressure: number | null;

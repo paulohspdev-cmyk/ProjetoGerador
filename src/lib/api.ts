@@ -21,6 +21,7 @@ export type CreateGeneratorPayload = {
   modbusUnit?: number | undefined;
   rapidDeviceNum?: number | undefined;
   nominalPower?: number | undefined;
+  fuelCapacityLiters?: number | undefined;
 };
 export type UserCreatePayload = { name: string; email: string; password: string; role: UserRole };
 export type UserUpdatePayload = {
@@ -468,6 +469,7 @@ export const rcApi = {
       payload: Partial<CreateGeneratorPayload> & {
         enabled?: boolean | undefined;
         nominalPower?: number | null | undefined;
+        fuelCapacityLiters?: number | null | undefined;
       },
     ) =>
       request<Generator>(`/api/generators/${encodeURIComponent(id)}`, {
