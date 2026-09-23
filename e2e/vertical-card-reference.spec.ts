@@ -76,13 +76,13 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
 
   for (const card of [comap, dse]) {
     await expect(card.getByText("KW", { exact: true })).toBeVisible();
-    await expect(card.getByText("POWER FLOW")).toBeVisible();
+    await expect(card.getByText("FLUXO DE POTÊNCIA")).toBeVisible();
     await expect(card.locator(".vref-clock")).toHaveCount(0);
     await expect(card.locator(".vref-power")).not.toContainText("%");
     await expect(card.locator(".vref-flow")).not.toContainText(/RPM/);
-    await expect(card.getByText("ENGINE STATUS")).toBeVisible();
+    await expect(card.getByText("ESTADO DO MOTOR")).toBeVisible();
     await expect(card.getByRole("heading", { name: "RPM" })).toBeVisible();
-    await expect(card.getByText("MAINS / GENERATOR")).toBeVisible();
+    await expect(card.getByText("REDE / GERADOR")).toBeVisible();
     await expect(card.locator(".vref-summary-grid")).toBeVisible();
     await expect(card.getByText(/ALARM LIST/)).toHaveCount(0);
     await expect(card).toHaveAttribute("data-mains-state", "unknown");
@@ -92,11 +92,11 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
   await expect(comap.getByRole("button", { name: "MAN" })).toBeVisible();
   await expect(comap.getByRole("button", { name: "AUT" })).toBeVisible();
   await expect(comap.getByRole("button", { name: "TEST" })).toBeVisible();
-  await expect(comap.getByText("CONTROL", { exact: true })).toBeVisible();
+  await expect(comap.getByText("CONTROLE", { exact: true })).toBeVisible();
 
-  await expect(dse.getByText("CONTROL (DSE STYLE)")).toBeVisible();
-  await expect(dse.getByRole("button", { name: "DSE manual mode" })).toBeVisible();
-  await expect(dse.getByRole("button", { name: "DSE manual mode" }).locator("svg")).toHaveCount(1);
+  await expect(dse.getByText("CONTROLE", { exact: true })).toBeVisible();
+  await expect(dse.getByRole("button", { name: "Modo manual DSE" })).toBeVisible();
+  await expect(dse.getByRole("button", { name: "Modo manual DSE" }).locator("svg")).toHaveCount(1);
   await expect(dse.getByRole("button", { name: "AUTO" })).toBeVisible();
 
   for (const card of [comap, dse]) {
