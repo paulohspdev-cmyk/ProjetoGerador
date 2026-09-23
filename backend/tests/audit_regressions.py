@@ -2,6 +2,8 @@ import hashlib
 import json
 import os
 import sqlite3
+import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -578,6 +580,37 @@ except ValueError:
 else:
     raise AssertionError("2FA disabled without current-password reauthentication")
 assert platform_store.get_totp(user["id"])["enabled"] is True
+
+# F02b: o bypass temporário de enforcement deve desligar desafio TOTP e o
+# bloqueio de ações privilegiadas sem apagar a configuração 2FA armazenada.
+two_fa_test_env = os.environ.copy()
+two_fa_test_env["RC_ENVIRONMENT"] = "production"
+two_fa_test_env["RC_2FA_ENFORCED"] = "0"
+two_fa_test_env["RC_DATA_DIR"] = str(root / "two-fa-bypass")
+two_fa_test_env["RC_DB_FILE"] = str(root / "two-fa-bypass" / "db.sqlite3")
+two_fa_bypass = subprocess.run(
+    [
+        sys.executable,
+        "-c",
+        (
+            "from app.config import TWO_FACTOR_ENFORCED;"
+            "from app.auth import require;"
+            "from app.security_service import totp_required,verify_user_totp;"
+            "u={'id':'test-admin','role':'administrador'};"
+            "assert TWO_FACTOR_ENFORCED is False;"
+            "assert require('operate')(u) is u;"
+            "assert totp_required(u) is False;"
+            "assert verify_user_totp(u, None) is True"
+        ),
+    ],
+    cwd=Path(__file__).resolve().parents[1],
+    env=two_fa_test_env,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.STDOUT,
+    text=True,
+    check=False,
+)
+assert two_fa_bypass.returncode == 0, two_fa_bypass.stdout
 
 # F03: administrative password replacement revokes all old sessions.
 db.create_session("old-session-hash", user["id"], int(time.time()) + 3600)
