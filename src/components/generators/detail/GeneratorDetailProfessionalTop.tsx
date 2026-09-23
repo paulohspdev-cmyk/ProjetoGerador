@@ -29,6 +29,7 @@ import {
   IconStart,
   IconStop,
 } from "../scada-icons";
+import { readGeneratorTelemetry } from "../generator-health";
 import { formatMetric } from "../generator-metrics";
 import type { GeneratorDetailModel } from "./generator-detail-model";
 import {
@@ -55,7 +56,16 @@ export function GeneratorDetailProfessionalTop({
   onCommand,
 }: Props) {
   const voltage = model.genL12 ?? model.genL1;
+  const telemetry = readGeneratorTelemetry(gen);
   const fuelUnit = gen.metricUnits?.["fuel_level"]?.trim() || "";
+  const fuelTone: MetricTone =
+    telemetry.tones.fuel === "critical"
+      ? "err"
+      : telemetry.tones.fuel === "warning"
+        ? "warn"
+        : telemetry.tones.fuel === "good"
+          ? "ok"
+          : "info";
   const oilUnit = gen.metricUnits?.["oil_pressure"]?.trim() || "";
   const coolantUnit = gen.metricUnits?.["coolant_temperature"]?.trim() || "";
   const loadPercent =
@@ -241,8 +251,14 @@ export function GeneratorDetailProfessionalTop({
           icon={<Fuel className="size-5" />}
           label="Combustível"
           value={formatMetric(model.fuel, fuelUnit, 0)}
-          sub={model.fuel == null ? "Sem leitura" : "Nível medido"}
-          tone={metricTone(model.fuel, gen.metricLimits?.["fuel_level"])}
+          sub={
+            model.fuel == null
+              ? "Sem leitura"
+              : telemetry.fuelOutOfRange
+                ? "Acima da capacidade informada"
+                : "Nível medido"
+          }
+          tone={fuelTone}
         />
         <KpiCard
           icon={<Clock3 className="size-5" />}
@@ -420,7 +436,7 @@ export function GeneratorDetailProfessionalTop({
                   icon: Fuel,
                   label: "Nível de combustível",
                   value: formatMetric(model.fuel, fuelUnit, 0),
-                  tone: metricTone(model.fuel, gen.metricLimits?.["fuel_level"]),
+                  tone: fuelTone,
                 },
                 {
                   icon: Radio,
