@@ -128,6 +128,25 @@ for (const path of productionPaths) {
   const profile = load(path);
   validateSource(path, profile);
   validateLineOptions(path, profile);
+
+  const rapidTemplatePath = profile.rapid?.template;
+  if (rapidTemplatePath) {
+    if (!existsSync(join(root, rapidTemplatePath))) {
+      failures.push(`${path}: template Rapid ausente: ${rapidTemplatePath}`);
+    } else {
+      const rapidTemplate = read(rapidTemplatePath);
+      const trimmedTemplate = rapidTemplate.trim();
+      if (!trimmedTemplate.includes("<DeviceTemplate")) {
+        failures.push(`${path}: template Rapid sem raiz DeviceTemplate`);
+      }
+      if (!trimmedTemplate.endsWith("</DeviceTemplate>")) {
+        failures.push(`${path}: template Rapid contém XML incompleto ou lixo após DeviceTemplate`);
+      }
+      if (/readOnly="false"|<Cmd\b[^>]*address=/i.test(rapidTemplate)) {
+        failures.push(`${path}: template Rapid de produção contém superfície de escrita`);
+      }
+    }
+  }
   if (profile.schema !== 4) failures.push(`${path}: production exige schema 4`);
   const contracts = profile.commands ?? {};
   for (const command of forbiddenCommands) {
