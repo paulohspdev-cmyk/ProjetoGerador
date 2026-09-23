@@ -20,7 +20,7 @@ export function StatusPill({
   className?: string;
 }) {
   const displayStatus = generatorDisplayStatus({ status, telemetryStale });
-  const label = displayStatus === "stale" ? "COMM LOST" : statusLabel[displayStatus];
+  const label = displayStatus === "stale" ? "SEM COMUNICAÇÃO" : statusLabel[displayStatus];
   return (
     <span
       className={cn(
