@@ -146,12 +146,12 @@ export function VerticalPowerFlow({
   return (
     <section className="vref-section vref-flow vref-flow-controller">
       <div className="vref-flow-controller-heading">
-        <h4>POWER FLOW</h4>
-        <span>MODE: {modeLabel}</span>
+        <h4>FLUXO DE POTÊNCIA</h4>
+        <span>MODO: {modeLabel}</span>
       </div>
 
       <div className="vref-flow-controller-body">
-        <svg viewBox="0 0 235 250" aria-label="Power flow vertical">
+        <svg viewBox="0 0 235 250" aria-label="Fluxo de potência vertical">
           <g transform="translate(112 31)">
             <circle
               r="22"
@@ -198,7 +198,7 @@ export function VerticalPowerFlow({
               <IconLoad size={22} />
             </g>
             <text x="13" y="-3" textAnchor="middle" className="vref-load-title">
-              LOAD
+              CARGA
             </text>
             <text x="13" y="11" textAnchor="middle" className="vref-load-value">
               {formatLoad(busLoadKw)}
