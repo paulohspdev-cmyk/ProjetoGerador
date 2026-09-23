@@ -201,6 +201,17 @@ for (const forbidden of [
   }
 }
 
+const energyAssets = read("src/components/scada/energy-assets.tsx");
+for (const marker of [
+  "readGeneratorTelemetry",
+  "Fora de escala · acima da capacidade",
+  "capacidade informada permanecem no valor bruto",
+]) {
+  if (!energyAssets.includes(marker)) {
+    failures.push(`tela de combustível perdeu qualidade de dado: ${marker}`);
+  }
+}
+
 const reporting = read("backend/app/reporting.py");
 for (const forbidden of ['"Combustível %"']) {
   if (reporting.includes(forbidden)) {
