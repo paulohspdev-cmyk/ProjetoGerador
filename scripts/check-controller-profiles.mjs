@@ -437,6 +437,26 @@ else {
   }
 }
 
+const ig4Manifest = JSON.parse(
+  read("controllers/production/comap/ig4-200/manifest.json"),
+);
+if (!ig4Manifest.validatedTelemetry?.includes("fuel_level")) {
+  failures.push("IG4 200 perdeu fuel_level validado em campo");
+}
+for (const key of ["oil_pressure", "coolant_temperature"]) {
+  if (ig4Manifest.validatedTelemetry?.includes(key)) {
+    failures.push(`IG4 200 promoveu ${key} sem validação física válida`);
+  }
+}
+const ig4Fuel = ig4Manifest.mapping?.registers?.fuel_level;
+if (ig4Fuel?.address !== 1055 || ig4Fuel?.unit !== "L") {
+  failures.push("IG4 200 perdeu contrato Fuel Level HR1055 em litros");
+}
+const ig4FieldReference = String(ig4Manifest.validation?.fieldReference ?? "");
+if (!ig4FieldReference.includes("GEN152 Unit 15") || !ig4FieldReference.includes("HR1055=591 L")) {
+  failures.push("IG4 200 perdeu evidência read-only de fuel_level do GEN152");
+}
+
 const template = read("rapid/templates/DrvModbus_RC_IG200.xml");
 for (const marker of [
   'tagCode="coolant_temperature"',
