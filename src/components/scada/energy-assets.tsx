@@ -39,15 +39,18 @@ function InfoNotice({ children }: { children: React.ReactNode }) {
 
 export function FuelScreen() {
   const { generators } = useGenerators();
-  const measured = generators.filter(
-    (g) =>
-      metricNumber(g, "fuel_level", g.fuelLevel) != null && Boolean(metricUnit(g, "fuel_level")),
+  const fuelRows = generators.map((generator) => ({
+    generator,
+    telemetry: readGeneratorTelemetry(generator),
+  }));
+  const measured = fuelRows.filter(
+    ({ telemetry }) => telemetry.fuel != null && Boolean(telemetry.fuelUnit),
   );
-  const units = [...new Set(measured.map((g) => metricUnit(g, "fuel_level")).filter(Boolean))];
+  const units = [...new Set(measured.map(({ telemetry }) => telemetry.fuelUnit).filter(Boolean))];
   const commonUnit = units.length === 1 ? (units[0] ?? "") : "";
   const mean =
     measured.length && commonUnit
-      ? measured.reduce((s, g) => s + (metricNumber(g, "fuel_level", g.fuelLevel) ?? 0), 0) /
+      ? measured.reduce((sum, { telemetry }) => sum + (telemetry.fuel ?? 0), 0) /
         measured.length
       : null;
   return (
@@ -72,30 +75,35 @@ export function FuelScreen() {
         ]}
       />
       <InfoNotice>
-        A unidade informada pelo Controller Pack é preservada por equipamento. Litros não são
-        convertidos em porcentagem sem capacidade de tanque configurada. Leituras acima da
-        capacidade informada permanecem no valor bruto e são marcadas como fora de escala.
+        A unidade original do Controller Pack é preservada. Quando a controladora fornece apenas
+        percentual e existe capacidade real do tanque por telemetria ou cadastro, a interface
+        calcula litros. Sem capacidade conhecida, o percentual continua sendo exibido. Leituras
+        acima da capacidade informada permanecem no valor bruto e são marcadas como fora de escala.
       </InfoNotice>
       <Panel title="Tanques / geradores">
         <ScadaTable
-          rows={generators}
+          rows={fuelRows}
           columns={[
-            { label: "Gerador", render: (r) => <b>{r.tag}</b> },
-            { label: "Site", render: (r) => r.site },
+            { label: "Gerador", render: (r) => <b>{r.generator.tag}</b> },
+            { label: "Site", render: (r) => r.generator.site },
             {
               label: "Nível",
               render: (r) =>
-                valueOrDash(r, "fuel_level", r.fuelLevel, metricUnit(r, "fuel_level"), 0),
+                r.telemetry.fuel == null
+                  ? "—"
+                  : `${fmt(r.telemetry.fuel, 0)} ${r.telemetry.fuelUnit}`,
             },
             {
               label: "Estado",
               render: (r) => {
-                const telemetry = readGeneratorTelemetry(r);
-                return hasMetric(r, "fuel_level") ? (
+                const telemetry = r.telemetry;
+                return hasMetric(r.generator, "fuel_level") ? (
                   telemetry.fuelOutOfRange ? (
                     <Tone tone="warn">Fora de escala · acima da capacidade</Tone>
+                  ) : telemetry.fuelRawUnit === "%" && telemetry.fuelUnit === "L" ? (
+                    <Tone tone="ok">Convertido · capacidade real</Tone>
                   ) : (
-                    <Tone tone="muted">Medido · sem limite configurado</Tone>
+                    <Tone tone="muted">Medido · unidade original</Tone>
                   )
                 ) : (
                   <Tone tone="muted">N/D</Tone>
