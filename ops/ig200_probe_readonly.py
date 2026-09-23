@@ -37,7 +37,7 @@ KNOWN_DEFAULT = {
     1045: ("generator_frequency", 0.01, "Hz"),
     1053: ("battery_voltage", 0.1, "V"),
     1068: ("binary_inputs_mask", 1.0, "bits"),
-    1228: ("nominal_power", 1.0, "kW"),
+    1227: ("nominal_power", 1.0, "kW"),
 }
 
 
@@ -206,7 +206,7 @@ def main():
     parser.add_argument("--delay", type=float, default=0.03)
     parser.add_argument("--snapshot", default="manual")
     parser.add_argument("--output", type=Path)
-    parser.add_argument("--also-nominal-power", action="store_true", help="lê também o endereço default 1228")
+    parser.add_argument("--also-nominal-power", action="store_true", help="lê também o endereço default 1227")
     parser.add_argument(
         "--firmware-version",
         action="store_true",
@@ -224,11 +224,11 @@ def main():
     client = ReadOnlyClient(args.host, args.port, args.unit, args.function, args.timeout, args.delay)
     values, errors = read_range_resilient(client, args.start, args.end, args.chunk)
 
-    if args.also_nominal_power and not (args.start <= 1228 <= args.end):
+    if args.also_nominal_power and not (args.start <= 1227 <= args.end):
         try:
-            values[1228] = client.read(1228, 1)[0]
+            values[1227] = client.read(1227, 1)[0]
         except Exception as exc:
-            errors[1228] = str(exc)
+            errors[1227] = str(exc)
 
     if args.firmware_version and not (args.start <= 1281 and args.end >= 1288):
         fw_values, fw_errors = read_range_resilient(client, 1281, 1288, min(args.chunk, 8))
