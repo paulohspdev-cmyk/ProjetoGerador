@@ -173,7 +173,11 @@ test("vertical preserva todo o conteúdo e rola a grade quando a altura é curta
                       section.scrollHeight - section.clientHeight > 1 ||
                       section.scrollWidth - section.clientWidth > 1,
                   )
-                  .map((section) => section.className)
+                  .map((section) => ({
+                    className: section.className,
+                    overflowHeight: section.scrollHeight - section.clientHeight,
+                    overflowWidth: section.scrollWidth - section.clientWidth,
+                  }))
               : ["missing-card"],
           };
         });
