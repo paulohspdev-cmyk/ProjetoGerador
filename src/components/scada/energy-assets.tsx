@@ -40,9 +40,7 @@ function InfoNotice({ children }: { children: React.ReactNode }) {
 export function FuelScreen() {
   const { generators } = useGenerators();
   const measured = generators.filter(
-    (g) =>
-      metricNumber(g, "fuel_level", g.fuelLevel) != null &&
-      Boolean(metricUnit(g, "fuel_level")),
+    (g) => metricNumber(g, "fuel_level", g.fuelLevel) != null && Boolean(metricUnit(g, "fuel_level")),
   );
   const units = [...new Set(measured.map((g) => metricUnit(g, "fuel_level")).filter(Boolean))];
   const commonUnit = units.length === 1 ? (units[0] ?? "") : "";
