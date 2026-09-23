@@ -970,10 +970,10 @@
     grid-template-rows:
       38px
       96px
-      minmax(200px, 1.45fr)
-      46px
+      minmax(195px, 1.35fr)
+      52px
       92px
-      minmax(155px, 1fr);
+      minmax(158px, 1fr);
     gap: 3px;
     padding: 3px;
   }
@@ -1001,12 +1001,39 @@
     height: 27px;
   }
 
-  .vref-engine-row,
-  .vref-data-row {
+  .vref-control {
+    padding: 2px 4px;
+  }
+
+  .vref-mode-row button,
+  .vref-dse-hand,
+  .vref-dse-auto {
+    height: 20px;
+  }
+
+  .vref-measurements {
+    padding: 3px 5px;
+  }
+
+  .vref-table-heading {
+    min-height: 15px;
+    margin-bottom: 1px;
+  }
+
+  .vref-engine-row {
     min-height: 17px;
   }
 
+  .vref-data-row {
+    min-height: 15px;
+  }
+
+  .vref-summary-grid {
+    margin-top: 2px;
+    padding-top: 2px;
+  }
+
   .vref-summary-item {
-    min-height: 16px;
+    min-height: 14px;
   }
 }
