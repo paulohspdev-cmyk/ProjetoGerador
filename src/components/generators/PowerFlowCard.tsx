@@ -57,7 +57,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     coolantUnit,
     fuel,
     fuelUnit,
-    fuelPercent,
+    fuelOutOfRange,
     battery,
     runHours,
     frequency,
@@ -295,7 +295,8 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         rpm={rpm}
         oilPercent={percents.oil}
         coolantPercent={percents.coolant}
-        fuelPercent={fuelPercent}
+        fuelPercent={percents.fuel}
+        fuelOutOfRange={fuelOutOfRange}
         runningKnown={runningKnown}
         running={running}
       />
