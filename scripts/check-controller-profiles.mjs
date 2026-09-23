@@ -437,9 +437,7 @@ else {
   }
 }
 
-const ig4Manifest = JSON.parse(
-  read("controllers/production/comap/ig4-200/manifest.json"),
-);
+const ig4Manifest = JSON.parse(read("controllers/production/comap/ig4-200/manifest.json"));
 if (!ig4Manifest.validatedTelemetry?.includes("fuel_level")) {
   failures.push("IG4 200 perdeu fuel_level validado em campo");
 }
