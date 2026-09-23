@@ -235,6 +235,20 @@ for (const source of [
   }
 }
 
+const verticalPowerGauge = read(
+  "src/components/generators/vertical-card/VerticalPowerGauge.tsx",
+);
+for (const marker of [
+  'nominalSource?: "telemetry" | "cadastral" | null',
+  '"CONTROLADORA"',
+  '"CADASTRO"',
+  'aria-label="Indicador de potência do gerador"',
+]) {
+  if (!verticalPowerGauge.includes(marker)) {
+    failures.push(`gauge de potência perdeu rastreabilidade da nominal: ${marker}`);
+  }
+}
+
 const verticalTelemetry = read(
   "src/components/generators/vertical-card/VerticalTelemetrySections.tsx",
 );
