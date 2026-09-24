@@ -16,7 +16,7 @@
 .rc-auth-visual {
   min-width: 0;
   min-height: 100dvh;
-  background: #03101a url("/images/auth/login-reference-left.svg") 0 0 / 100% 100% no-repeat;
+  background: #03101a url("/images/auth/login-reference-left.webp") 0 0 / 100% 100% no-repeat;
 }
 
 .rc-auth-access {
@@ -437,7 +437,7 @@ html:not(.dark) .rc-auth-access {
     padding: 86px 14px 24px;
     background:
       linear-gradient(180deg, rgba(3, 16, 26, 0.58), rgba(3, 16, 26, 0.82)),
-      url("/images/auth/login-reference-left.svg") center / cover no-repeat;
+      url("/images/auth/login-reference-left.webp") center / cover no-repeat;
   }
 
   .rc-auth-theme-toggle.rc-theme-toggle {
