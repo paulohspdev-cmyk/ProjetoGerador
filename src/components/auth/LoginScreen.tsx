@@ -1,52 +1,13 @@
 import { type FormEvent, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import {
-  Activity,
-  BellRing,
-  Eye,
-  EyeOff,
-  Gauge,
-  LockKeyhole,
-  Moon,
-  ShieldCheck,
-  Sun,
-  Thermometer,
-  Wrench,
-} from "lucide-react";
+import { Eye, EyeOff, LockKeyhole, Moon, ShieldCheck, Sun } from "lucide-react";
 
 import { useTheme } from "@/components/layout/ThemeProvider";
 import { useAuth } from "./AuthProvider";
 import "./login-screen.css";
 
-const indicators = [
-  { icon: Activity, label: "Potência ativa", value: "8.4 GW", note: "↑ 3.2%", tone: "cyan" },
-  { icon: Gauge, label: "Disponibilidade", value: "73%", note: "↑ 2.1%", tone: "cyan" },
-  { icon: Thermometer, label: "Temp. média", value: "73°C", note: "↑ 1.4%", tone: "orange" },
-] as const;
-
-const features = [
-  {
-    icon: Activity,
-    title: "Monitoramento em tempo real",
-    text: "Acompanhe geradores, indicadores e desempenho em tempo real.",
-    tone: "cyan",
-  },
-  {
-    icon: BellRing,
-    title: "Alarmes e eventos",
-    text: "Receba alertas, registre ocorrências e tome decisões com agilidade.",
-    tone: "orange",
-  },
-  {
-    icon: Wrench,
-    title: "Manutenção e energia",
-    text: "Planeje manutenções, controle consumíveis e otimize a disponibilidade.",
-    tone: "green",
-  },
-] as const;
-
 export function LoginScreen() {
-  const { login, sessionError } = useAuth();
+  const { login } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
@@ -98,46 +59,10 @@ export function LoginScreen() {
 
   return (
     <main className="rc-auth-screen">
-      <section className="rc-auth-visual" aria-label="RC Geradores">
-        <div className="rc-auth-brand">
-          <img src="/images/auth/rc-bolt.svg" alt="" className="rc-auth-brand-logo" />
-          <div>
-            <div className="rc-auth-brand-name">RC GERADORES</div>
-            <div className="rc-auth-brand-subtitle">Central de monitoramento</div>
-          </div>
-        </div>
-
-        <div className="rc-auth-indicators" aria-hidden="true">
-          {indicators.map((item) => (
-            <article key={item.label} className="rc-auth-indicator">
-              <item.icon className={`rc-auth-indicator-icon is-${item.tone}`} />
-              <div className="rc-auth-indicator-copy">
-                <span>{item.label}</span>
-                <strong>{item.value}</strong>
-              </div>
-              <small>{item.note}</small>
-            </article>
-          ))}
-        </div>
-
-        <div className="rc-auth-features">
-          {features.map((item) => (
-            <article key={item.title} className="rc-auth-feature">
-              <item.icon className={`rc-auth-feature-icon is-${item.tone}`} />
-              <h2>{item.title}</h2>
-              <p>{item.text}</p>
-              <span className={`rc-auth-feature-line is-${item.tone}`} />
-            </article>
-          ))}
-        </div>
-
-        <div className="rc-auth-status">
-          <span className="rc-auth-status-dot" />
-          <span>Sistema operacional</span>
-          <span className="rc-auth-status-divider" />
-          <span>Todos os sistemas operacionais</span>
-        </div>
-      </section>
+      <section
+        className="rc-auth-visual"
+        aria-label="RC Geradores — Central de monitoramento"
+      />
 
       <section className="rc-auth-access">
         <button
@@ -180,12 +105,6 @@ export function LoginScreen() {
                 : "Acesse a central de monitoramento de geradores."}
             </p>
           </header>
-
-          {sessionError && (
-            <div className="rc-auth-message is-error">
-              Não foi possível recuperar a sessão anterior. Entre novamente.
-            </div>
-          )}
 
           <div className="rc-auth-fields">
             <label className="rc-auth-field">
