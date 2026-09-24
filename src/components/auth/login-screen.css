@@ -5,8 +5,7 @@
   --auth-orange: #ff6500;
   width: 100%;
   min-height: 100dvh;
-  display: grid;
-  grid-template-columns: 57.88% 42.12%;
+  display: flex;
   overflow: hidden;
   color: var(--auth-text);
   background: var(--auth-bg);
@@ -14,9 +13,13 @@
 }
 
 .rc-auth-visual {
+  width: auto;
+  height: 100dvh;
   min-width: 0;
   min-height: 100dvh;
-  background: #03101a url("/images/auth/login-reference-left.webp") 0 0 / 100% 100% no-repeat;
+  aspect-ratio: 639 / 694;
+  flex: 0 0 auto;
+  background: #03101a url("/images/auth/login-reference-left.webp") left top / 100% 100% no-repeat;
 }
 
 .rc-auth-access {
@@ -33,10 +36,10 @@
   position: absolute;
   z-index: 3;
   top: 3.15vh;
-  right: 1.8vw;
-  width: 9.7vw;
+  right: 3.05vh;
+  width: 15.42vh;
   min-width: 107px;
-  max-width: 190px;
+  max-width: 148px;
   height: 5.2vh;
   min-height: 36px;
   max-height: 50px;
@@ -45,7 +48,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.72vw;
+  gap: 1.15vh;
   background: rgba(6, 18, 29, 0.58) !important;
   color: #647685 !important;
   box-shadow: none !important;
@@ -53,7 +56,7 @@
 }
 
 .rc-auth-theme-toggle > svg {
-  width: 1.55vw;
+  width: 2.45vh;
   min-width: 17px;
   max-width: 22px;
   height: 2.45vh;
@@ -66,9 +69,9 @@
 }
 
 .rc-auth-theme-track {
-  width: 3.15vw;
+  width: 5.05vh;
   min-width: 35px;
-  max-width: 54px;
+  max-width: 48px;
   height: 2.75vh;
   min-height: 19px;
   max-height: 26px;
@@ -92,7 +95,7 @@
 }
 
 .rc-auth-theme-knob.translate-x-5 {
-  transform: translateX(1.45vw) !important;
+  transform: translateX(2.3vh) !important;
 }
 
 .rc-auth-theme-knob.translate-x-0 {
@@ -102,13 +105,13 @@
 .rc-auth-card {
   position: absolute;
   top: 11.82vh;
-  right: 1.8vw;
+  right: auto;
   bottom: 6.77vh;
   left: 0;
-  width: auto;
+  width: 64.05vh;
   min-height: 0;
   margin: 0;
-  padding: 6.34vh 4.08vw 0;
+  padding: 6.34vh 6.48vh 0;
   border: 1px solid rgba(112, 147, 170, 0.23);
   border-radius: 2.3vh;
   display: flex;
@@ -156,9 +159,9 @@
 }
 
 .rc-auth-lock-line {
-  width: 3.05vw;
+  width: 4.86vh;
   min-width: 32px;
-  max-width: 58px;
+  max-width: 47px;
   height: 1px;
   position: relative;
   background: linear-gradient(90deg, transparent, rgba(255, 102, 0, 0.82));
@@ -176,7 +179,7 @@
 }
 
 .rc-auth-lock-line-left {
-  margin-right: 0.7vw;
+  margin-right: 1.12vh;
 }
 
 .rc-auth-lock-line-left::before {
@@ -188,7 +191,7 @@
 }
 
 .rc-auth-lock-line-right {
-  margin-left: 0.7vw;
+  margin-left: 1.12vh;
   transform: rotate(180deg);
 }
 
@@ -215,7 +218,7 @@
 }
 
 .rc-auth-card-header p {
-  max-width: 24vw;
+  max-width: 38.2vh;
   margin: 0.78vh auto 0;
   color: #8d9aa6;
   font-size: 1.66vh;
@@ -236,8 +239,8 @@
   border-radius: 0.95vh;
   display: flex;
   align-items: center;
-  gap: 1.05vw;
-  padding: 0 1.25vw;
+  gap: 1.67vh;
+  padding: 0 2vh;
   background: linear-gradient(180deg, rgba(12, 31, 44, 0.92), rgba(9, 25, 38, 0.92));
   transition:
     border-color 140ms ease,
@@ -329,7 +332,7 @@
 }
 
 .rc-auth-optional {
-  padding: 0.55vh 0.8vw;
+  padding: 0.55vh 1.27vh;
   border: 1px solid rgba(115, 148, 169, 0.14);
   border-radius: 0.7vh;
   color: #83919c;
@@ -339,11 +342,11 @@
 
 .rc-auth-message {
   position: absolute;
-  left: 4.08vw;
-  right: 4.08vw;
+  left: 6.48vh;
+  right: 6.48vh;
   top: 38.4vh;
   z-index: 2;
-  padding: 1vh 1vw;
+  padding: 1vh 1.6vh;
   border-radius: 0.8vh;
   font-size: 1.35vh;
   line-height: 1.4;
@@ -396,7 +399,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.8vw;
+  gap: 1.27vh;
   color: #83919b;
   background: rgba(8, 24, 36, 0.38);
   font-size: 1.3vh;
