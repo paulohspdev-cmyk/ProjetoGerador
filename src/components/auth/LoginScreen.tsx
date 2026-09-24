@@ -148,7 +148,7 @@ export function LoginScreen() {
         >
           <Sun className={theme === "light" ? "is-active" : ""} />
           <span className="rc-auth-theme-track" aria-hidden="true">
-            <span className={`rc-auth-theme-knob ${theme === "dark" ? "is-dark" : ""}`} />
+            <span className={`rc-auth-theme-knob ${theme === "dark" ? "translate-x-5" : "translate-x-0"}`} />
           </span>
           <Moon className={theme === "dark" ? "is-active" : ""} />
         </button>
