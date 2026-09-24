@@ -59,10 +59,7 @@ export function LoginScreen() {
 
   return (
     <main className="rc-auth-screen">
-      <section
-        className="rc-auth-visual"
-        aria-label="RC Geradores — Central de monitoramento"
-      />
+      <section className="rc-auth-visual" aria-label="RC Geradores — Central de monitoramento" />
 
       <section className="rc-auth-access">
         <button
