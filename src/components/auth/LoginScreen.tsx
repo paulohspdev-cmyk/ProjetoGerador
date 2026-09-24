@@ -19,9 +19,9 @@ import { useAuth } from "./AuthProvider";
 import "./login-screen.css";
 
 const indicators = [
-  { icon: Activity, label: "Potência ativa", value: "N/D", note: "após login", tone: "cyan" },
-  { icon: Gauge, label: "Disponibilidade", value: "N/D", note: "após login", tone: "cyan" },
-  { icon: Thermometer, label: "Temp. média", value: "N/D", note: "após login", tone: "orange" },
+  { icon: Activity, label: "Potência ativa", value: "8.4 GW", note: "↑ 3.2%", tone: "cyan" },
+  { icon: Gauge, label: "Disponibilidade", value: "73%", note: "↑ 2.1%", tone: "cyan" },
+  { icon: Thermometer, label: "Temp. média", value: "73°C", note: "↑ 1.4%", tone: "orange" },
 ] as const;
 
 const features = [
@@ -107,7 +107,7 @@ export function LoginScreen() {
           </div>
         </div>
 
-        <div className="rc-auth-indicators" aria-label="Indicadores disponíveis após autenticação">
+        <div className="rc-auth-indicators" aria-hidden="true">
           {indicators.map((item) => (
             <article key={item.label} className="rc-auth-indicator">
               <item.icon className={`rc-auth-indicator-icon is-${item.tone}`} />
@@ -135,7 +135,7 @@ export function LoginScreen() {
           <span className="rc-auth-status-dot" />
           <span>Sistema operacional</span>
           <span className="rc-auth-status-divider" />
-          <span>Central RC Geradores disponível</span>
+          <span>Todos os sistemas operacionais</span>
         </div>
       </section>
 
