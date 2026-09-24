@@ -143,7 +143,7 @@ export function LoginScreen() {
         <button
           type="button"
           onClick={toggleTheme}
-          className="rc-auth-theme-toggle"
+          className="rc-auth-theme-toggle rc-theme-toggle"
           aria-label={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
         >
           <Sun className={theme === "light" ? "is-active" : ""} />
@@ -202,7 +202,7 @@ export function LoginScreen() {
                   resetSecondFactor();
                 }}
                 placeholder="Usuário"
-                aria-label="Usuário"
+                aria-label="E-mail"
                 required
                 autoFocus
               />

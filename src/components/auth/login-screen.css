@@ -225,7 +225,7 @@
   border-left: 1px solid rgba(107, 143, 165, 0.08);
 }
 
-.rc-auth-theme-toggle {
+.rc-auth-theme-toggle.rc-theme-toggle {
   position: absolute;
   top: 22px;
   right: 20px;
@@ -262,7 +262,7 @@
   transition: transform 160ms ease;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.22);
 }
-.rc-auth-theme-knob.is-dark { transform: translateX(16px); }
+.rc-auth-theme-knob.translate-x-5 { transform: translateX(16px) !important; }\n.rc-auth-theme-knob.translate-x-0 { transform: translateX(0) !important; }
 
 .rc-auth-card {
   width: min(100%, 444px);
