@@ -26,6 +26,7 @@
   position: relative;
   min-width: 0;
   min-height: 100dvh;
+  flex: 1 1 auto;
   overflow: hidden;
   background:
     radial-gradient(circle at 0 48%, rgba(11, 101, 150, 0.06), transparent 38%),
