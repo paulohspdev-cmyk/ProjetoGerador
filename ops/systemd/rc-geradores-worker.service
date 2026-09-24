@@ -1,0 +1,38 @@
+[Unit]
+Description=RC Geradores Worker Supervisor
+After=network-online.target rc-geradores-api.service scadaserver6.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=rcgeradores
+Group=rcgeradores
+WorkingDirectory=/opt/rc-geradores/backend
+EnvironmentFile=-/etc/rc-geradores.env
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/rc-geradores/backend/.venv/bin/python -m app.worker_supervisor
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+UMask=0027
+ProtectClock=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectHostname=true
+LockPersonality=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=true
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+PrivateDevices=true
+CapabilityBoundingSet=
+ReadWritePaths=/var/lib/rc-geradores /var/log/rc-geradores
+
+[Install]
+WantedBy=multi-user.target

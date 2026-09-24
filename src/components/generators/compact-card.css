@@ -1,0 +1,22 @@
+.compact-generator-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+}
+
+.controller-image-area {
+  display: flex;
+  width: 105px;
+  height: 72px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--card);
+}
+
+.controller-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: transparent;
+}

@@ -1,0 +1,318 @@
+import json
+import os
+import tempfile
+from pathlib import Path
+
+# Precisa ser definido antes de importar app.config/db.
+tmp = tempfile.TemporaryDirectory(prefix="rc-geradores-test-")
+os.environ["RC_DATA_DIR"] = tmp.name
+os.environ["RC_DB_FILE"] = str(Path(tmp.name) / "test.db")
+scada_root = Path(tmp.name) / "scada"
+for rel in ("BaseDAT", "Config", "ScadaComm/Config"):
+    target = scada_root / rel
+    target.mkdir(parents=True, exist_ok=True)
+    (target / "placeholder.txt").write_text("test")
+os.environ["RC_RAPID_SCADA_ROOT"] = str(scada_root)
+os.environ["RC_BRIDGE_STATUS_FILE"] = str(Path(tmp.name) / "bridge-status.json")
+os.environ["RC_RAPID_CONTROL_SOCKET"] = str(Path(tmp.name) / "control.sock")
+os.environ["RC_PROVISION_SOCKET"] = str(Path(tmp.name) / "provision.sock")
+rapid_archive = Path(tmp.name) / "rapid-archive"
+rapid_archive.mkdir(parents=True, exist_ok=True)
+(rapid_archive / "history.bin").write_bytes(b"history")
+os.environ["RC_RAPID_ARCHIVE_DIR"] = str(rapid_archive)
+os.environ["RC_ENABLE_IG200_CONTROL"] = "0"
+
+from fastapi.testclient import TestClient  # noqa: E402
+
+from app import db  # noqa: E402
+from app.auth import hash_password  # noqa: E402
+from app.main import app  # noqa: E402
+
+
+def expect(response, code):
+    if response.status_code != code:
+        raise AssertionError(
+            f"esperado HTTP {code}, recebido {response.status_code}: {response.text}"
+        )
+    return response
+
+
+db.init_db()
+admin, created = db.bootstrap_admin(
+    "Administrador Teste",
+    "admin@test.local",
+    hash_password("Teste-Seguro-123"),
+)
+assert created and admin["role"] == "administrador"
+
+
+@app.get("/api/__test__/request-id-boom", include_in_schema=False)
+def _request_id_boom():
+    raise RuntimeError("falha sintética para correlation id")
+
+
+with TestClient(app) as client:
+    health = expect(client.get("/api/health"), 200)
+    assert health.headers.get("x-request-id")
+
+    boom = expect(client.get("/api/__test__/request-id-boom"), 500)
+    boom_payload = boom.json()
+    request_id = boom.headers.get("x-request-id")
+    assert request_id
+    assert boom_payload == {
+        "detail": "Erro interno do servidor",
+        "requestId": request_id,
+    }
+    assert "falha sintética" not in boom.text
+    expect(client.get("/api/generators"), 401)
+
+    login = expect(
+        client.post(
+            "/api/auth/login",
+            json={"email": "admin@test.local", "password": "Teste-Seguro-123"},
+        ),
+        200,
+    )
+    assert login.json()["role"] == "administrador"
+    assert "rc_session" in client.cookies
+
+    me = expect(client.get("/api/auth/me"), 200).json()
+    assert me["email"] == "admin@test.local"
+
+    viewer = expect(
+        client.post(
+            "/api/users",
+            json={
+                "name": "Visualizador",
+                "email": "viewer@test.local",
+                "password": "Viewer-Seguro-123",
+                "role": "visualizacao",
+            },
+        ),
+        201,
+    ).json()
+    assert viewer["role"] == "visualizacao"
+
+    generator = expect(
+        client.post(
+            "/api/generators",
+            json={
+                "tag": "GEN001",
+                "name": "Gerador 01",
+                "site": "Teste",
+                "controller": "ComAp InteliGen 200",
+                "transport": "reverse_tcp",
+                "listenPort": 15001,
+                "modbusUnit": 2,
+                "rapidDeviceNum": 200,
+            },
+        ),
+        201,
+    ).json()
+    assert generator["tag"] == "GEN001"
+    assert generator["rapidDeviceNum"] == 200
+
+    # O smoke representa runtime provisionado; o binding vivo pertence ao DATA_DIR,
+    # nunca ao rapid/bindings.json canônico do repositório.
+    Path(tmp.name, "rapid-bindings.json").write_text(
+        json.dumps(
+            [
+                {
+                    "generator_id": generator["id"],
+                    "controller_type": "COMAP",
+                    "controller_model": "InteliGen 200",
+                    "transport": "reverse_tcp",
+                    "listen_port": 15001,
+                    "modbus_unit": 2,
+                    "rapid_line_num": 100,
+                    "rapid_device_num": 200,
+                    "channels": {},
+                }
+            ]
+        )
+    )
+
+    # F10: o contrato HTTP de ciclo de vida deve ser assíncrono e rastreável.
+    queued_generator = expect(
+        client.post(
+            "/api/generators",
+            json={
+                "tag": "GENASYNC",
+                "name": "Gerador Async",
+                "site": "Teste",
+                "controller": "ComAp InteliGen 200",
+                "transport": "reverse_tcp",
+                "listenPort": 15009,
+                "modbusUnit": 1,
+            },
+        ),
+        201,
+    ).json()
+    operation = expect(
+        client.post(
+            f"/api/generators/{queued_generator['id']}/provision",
+            json={"confirmation": "PROVISION", "operationId": "op-smoke-http-0001"},
+        ),
+        202,
+    ).json()
+    assert operation["operationId"] == "op-smoke-http-0001"
+    assert operation["status"] == "queued"
+    operation_status = expect(
+        client.get(
+            f"/api/generators/{queued_generator['id']}/operations/{operation['operationId']}"
+        ),
+        200,
+    ).json()
+    assert operation_status["operationId"] == operation["operationId"]
+    assert operation_status["status"] == "queued"
+
+    # Módulos de produto não podem depender de localStorage.
+    client_row = expect(
+        client.post("/api/clients", json={"name": "Cliente Teste", "units": 1, "gens": 1, "sla": "99,9%"}),
+        201,
+    ).json()
+    site = expect(
+        client.post(
+            "/api/sites",
+            json={
+                "name": "Unidade Teste",
+                "clientId": client_row["id"],
+                "city": "São Paulo",
+                "state": "SP",
+                "latitude": -23.55,
+                "longitude": -46.63,
+            },
+        ),
+        201,
+    ).json()
+    assert site["clientId"] == client_row["id"]
+
+    work_order = expect(
+        client.post(
+            "/api/work-orders",
+            json={"generatorId": generator["id"], "type": "Preventiva", "due": 50, "tech": "Equipe campo"},
+        ),
+        201,
+    ).json()
+    assert work_order["gen"] == "GEN001"
+    work_order = expect(
+        client.patch(f"/api/work-orders/{work_order['id']}", json={"status": "Em andamento"}),
+        200,
+    ).json()
+    assert work_order["status"] == "Em andamento"
+
+    agenda = expect(
+        client.post("/api/agenda", json={"title": "Inspeção", "when": "30/08 09:00", "site": "Unidade Teste"}),
+        201,
+    ).json()
+    assert agenda["when"] == "30/08 09:00"
+
+    # Regra nasce em rascunho, não pode ser ativada sem aprovação explícita.
+    # Usa apenas gatilho/ação não industriais reconhecidos pelo motor seguro.
+    rule = expect(
+        client.post(
+            "/api/automation/rules",
+            json={
+                "name": "Regra teste",
+                "trigger": "generator_offline:GEN001",
+                "action": "notify:panel",
+            },
+        ),
+        201,
+    ).json()
+    assert rule["enabled"] is False
+    expect(
+        client.put(f"/api/automation/rules/{rule['id']}/enabled", json={"enabled": True}),
+        409,
+    )
+    approved = expect(client.post(f"/api/automation/rules/{rule['id']}/approve"), 200).json()
+    assert approved["safety_state"] == "approved_nonindustrial"
+    rule = expect(
+        client.put(f"/api/automation/rules/{rule['id']}/enabled", json={"enabled": True}),
+        200,
+    ).json()
+    assert rule["enabled"] is True
+
+    # Biblioteca e diagnóstico são APIs reais e autenticadas.
+    expect(client.get("/api/library"), 200)
+    expect(client.get("/api/system/diagnostics"), 200)
+    expect(client.get("/api/system/bridge-peers"), 200)
+    expect(client.get("/api/system/version"), 200)
+
+    report = expect(
+        client.post("/api/reports", json={"name": "Parque", "period": "Hoje", "format": "CSV"}),
+        201,
+    ).json()
+    download = expect(client.get(f"/api/reports/{report['id']}/download"), 200)
+    assert "Gerador;Site" in download.text
+
+    webhook = expect(
+        client.post("/api/webhooks", json={"url": "https://example.test/hook", "event": "alarme.criado"}),
+        201,
+    ).json()
+    webhook = expect(
+        client.patch(f"/api/webhooks/{webhook['id']}", json={"status": "Ativo"}),
+        200,
+    ).json()
+    assert webhook["status"] == "Ativo"
+
+    expect(client.put("/api/settings/cfg.test", json={"value": True}), 200)
+    backup = expect(client.post("/api/backups"), 201).json()
+    assert backup["result"] == "OK"
+    assert Path(backup["path"]).exists()
+
+    bootstrap = expect(client.get("/api/ops/bootstrap"), 200).json()
+    assert len(bootstrap["clients"]) == 1
+    assert len(bootstrap["workOrders"]) == 1
+    assert len(bootstrap["agenda"]) == 1
+    assert len(bootstrap["rules"]) == 1
+
+    # Sem socket privilegiado, o endpoint deve falhar fechado.
+    expect(
+        client.post(
+            f"/api/generators/{generator['id']}/commands/start",
+            json={"confirmation": "START"},
+        ),
+        409,
+    )
+
+    expect(client.post("/api/auth/logout"), 204)
+    expect(client.get("/api/auth/me"), 401)
+
+with TestClient(app) as viewer_client:
+    expect(
+        viewer_client.post(
+            "/api/auth/login",
+            json={"email": "viewer@test.local", "password": "Viewer-Seguro-123"},
+        ),
+        200,
+    )
+    expect(viewer_client.get("/api/generators"), 200)
+    expect(viewer_client.get("/api/ops/bootstrap"), 200)
+    expect(viewer_client.get("/api/system/bridge-peers"), 403)
+    expect(
+        viewer_client.post(
+            "/api/generators",
+            json={
+                "tag": "GEN002",
+                "site": "Teste",
+                "controller": "ComAp InteliGen 200",
+                "listenPort": 15002,
+                "modbusUnit": 2,
+            },
+        ),
+        403,
+    )
+    expect(viewer_client.post("/api/clients", json={"name": "Bloqueado"}), 403)
+    expect(viewer_client.post("/api/backups"), 403)
+    expect(viewer_client.post("/api/alarms/ack", json={"alarmKey": "X"}), 403)
+    expect(
+        viewer_client.post(
+            f"/api/generators/{generator['id']}/commands/stop",
+            json={"confirmation": "STOP"},
+        ),
+        403,
+    )
+
+print("RC Geradores backend smoke: OK")
+tmp.cleanup()

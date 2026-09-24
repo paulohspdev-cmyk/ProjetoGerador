@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 900" role="img" aria-label="Ilustração industrial abstrata">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#071522"/>
+      <stop offset="0.55" stop-color="#0a1d2a"/>
+      <stop offset="1" stop-color="#06111a"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#213a49"/>
+      <stop offset="1" stop-color="#0b1820"/>
+    </linearGradient>
+    <linearGradient id="steel2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#102631"/>
+      <stop offset="0.5" stop-color="#304a58"/>
+      <stop offset="1" stop-color="#0e202b"/>
+    </linearGradient>
+    <filter id="orangeGlow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="7" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="blueGlow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <radialGradient id="mist" cx="55%" cy="45%" r="55%">
+      <stop offset="0" stop-color="#1a5b79" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#07131d" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1400" height="900" fill="url(#bg)"/>
+  <rect width="1400" height="900" fill="url(#mist)"/>
+
+  <!-- distant towers -->
+  <g opacity=".48" fill="url(#steel)">
+    <rect x="90" y="250" width="62" height="410" rx="6"/>
+    <rect x="103" y="180" width="36" height="90" rx="3"/>
+    <rect x="180" y="330" width="76" height="330" rx="6"/>
+    <rect x="201" y="240" width="34" height="110" rx="3"/>
+    <rect x="1185" y="260" width="74" height="400" rx="6"/>
+    <rect x="1202" y="155" width="40" height="125" rx="3"/>
+  </g>
+
+  <!-- main process buildings -->
+  <g stroke="#456271" stroke-opacity=".55" stroke-width="2" fill="url(#steel2)">
+    <path d="M250 660V420h140v240z"/>
+    <path d="M400 660V350h180v310z"/>
+    <path d="M590 660V465h150v195z"/>
+    <path d="M750 660V315h205v345z"/>
+    <path d="M970 660V430h140v230z"/>
+  </g>
+
+  <!-- distillation columns -->
+  <g fill="url(#steel)" stroke="#5b7480" stroke-opacity=".7" stroke-width="2">
+    <rect x="438" y="140" width="56" height="520" rx="24"/>
+    <rect x="815" y="95" width="64" height="565" rx="28"/>
+    <rect x="1035" y="210" width="50" height="450" rx="22"/>
+  </g>
+
+  <!-- tower bands -->
+  <g stroke="#718996" stroke-opacity=".48" stroke-width="4">
+    <path d="M438 215h56M438 290h56M438 365h56M438 440h56M438 515h56"/>
+    <path d="M815 180h64M815 260h64M815 340h64M815 420h64M815 500h64"/>
+    <path d="M1035 285h50M1035 360h50M1035 435h50M1035 510h50"/>
+  </g>
+
+  <!-- piping -->
+  <g fill="none" stroke="#506b78" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" opacity=".9">
+    <path d="M150 535h115v-78h170"/>
+    <path d="M492 250h105v76h218"/>
+    <path d="M580 555h120v-98h115"/>
+    <path d="M878 215h112v94h96"/>
+    <path d="M955 520h84v-92h151"/>
+  </g>
+  <g fill="none" stroke="#173443" stroke-width="4" opacity=".9">
+    <path d="M250 450h140M250 500h140M250 550h140M400 430h180M400 490h180M400 550h180M750 390h205M750 455h205M750 520h205"/>
+  </g>
+
+  <!-- catwalks -->
+  <g stroke="#76909d" stroke-opacity=".5" stroke-width="2">
+    <path d="M210 390h350M690 285h360M320 610h790"/>
+    <path d="M230 390v270M285 390v270M340 390v270M700 285v375M760 285v375M920 285v375"/>
+  </g>
+
+  <!-- orange operational lights -->
+  <g fill="#ff6b00" filter="url(#orangeGlow)">
+    <circle cx="318" cy="445" r="4"/><circle cx="466" cy="260" r="4"/><circle cx="532" cy="430" r="4"/>
+    <circle cx="682" cy="515" r="4"/><circle cx="847" cy="188" r="5"/><circle cx="903" cy="392" r="4"/>
+    <circle cx="1057" cy="308" r="4"/><circle cx="1210" cy="416" r="4"/>
+  </g>
+
+  <!-- network circuit -->
+  <g fill="none" stroke="#ff6b00" stroke-width="2" stroke-opacity=".55" filter="url(#orangeGlow)">
+    <path d="M825 120l85 0 38 36h92l35 35h106"/>
+    <path d="M895 220h95l45 45h92"/>
+    <path d="M1005 110v95l55 55"/>
+    <path d="M725 170h70l38 38"/>
+  </g>
+  <g fill="#ff7b16" opacity=".85">
+    <circle cx="825" cy="120" r="4"/><circle cx="910" cy="120" r="4"/><circle cx="948" cy="156" r="4"/>
+    <circle cx="1040" cy="156" r="4"/><circle cx="1075" cy="191" r="4"/><circle cx="1181" cy="191" r="4"/>
+    <circle cx="895" cy="220" r="4"/><circle cx="990" cy="220" r="4"/><circle cx="1035" cy="265" r="4"/><circle cx="1127" cy="265" r="4"/>
+  </g>
+
+  <!-- blue data wave -->
+  <g fill="none" stroke="#168fd1" stroke-width="2.5" stroke-opacity=".75" filter="url(#blueGlow)">
+    <path d="M0 750C120 710 190 790 310 752s180-20 295 8 175 22 290-12 190-28 305 10 135 22 200-3"/>
+    <path d="M0 785C135 745 225 820 360 780s170-18 285 14 185 30 300-10 190-30 310 8 95 17 145 5" opacity=".55"/>
+  </g>
+  <g fill="#149bdc" opacity=".75">
+    <circle cx="90" cy="742" r="3"/><circle cx="252" cy="766" r="3"/><circle cx="410" cy="752" r="3"/>
+    <circle cx="580" cy="782" r="3"/><circle cx="755" cy="765" r="3"/><circle cx="930" cy="748" r="3"/><circle cx="1110" cy="773" r="3"/>
+  </g>
+
+  <rect y="660" width="1400" height="240" fill="url(#bg)" opacity=".36"/>
+</svg>

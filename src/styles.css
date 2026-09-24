@@ -1,0 +1,19 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Entrada única de estilos do frontend.
+ * Tokens, base e utilitários globais vivem em src/styles/.
+ * CSS específico de componente permanece próximo ao componente até ser consolidado.
+ */
+@import "./styles/tokens.css";
+@import "./styles/base.css";
+@import "./styles/utilities.css";
+@import "./styles/readability.css";
+@import "./styles/professional-ui.css";
+
+@import "./styles/industrial-console.css";
+@import "./styles/scada-reference.css";

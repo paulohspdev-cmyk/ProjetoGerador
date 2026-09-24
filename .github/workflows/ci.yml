@@ -1,0 +1,421 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Higiene do repositório
+        run: |
+          set -euo pipefail
+          BAD="$(git ls-files | grep -E '(^|/)node_modules/|(^|/)__pycache__/|\.py[co]$|(^|/)\.venv/|(^|/)backend/\.venv/|(^|/)\.output/' || true)"
+          if [[ -n "$BAD" ]]; then
+            echo 'ERRO: artefatos de runtime/build foram versionados:' >&2
+            echo "$BAD" >&2
+            exit 1
+          fi
+
+      - name: Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Frontend dependencies como VM de produção
+        env:
+          NODE_ENV: production
+        run: npm ci --include=dev
+
+      - name: Arquitetura frontend
+        run: npm run check:architecture
+
+      - name: Superfícies funcionais frontend
+        run: npm run check:functional
+
+      - name: Frontend ESLint
+        run: npm run lint
+
+      - name: Frontend TypeScript
+        env:
+          NODE_ENV: production
+        run: npm run typecheck
+
+      - name: Frontend build para VM
+        env:
+          NODE_ENV: production
+          NITRO_PRESET: node-server
+        run: npm run build
+
+      - name: Frontend Node smoke test
+        env:
+          NODE_ENV: production
+        run: |
+          set -euo pipefail
+          npm prune --omit=dev
+          test -f .output/server/index.mjs
+          PORT=3000 HOST=127.0.0.1 node .output/server/index.mjs > /tmp/frontend.log 2>&1 &
+          PID=$!
+          trap 'kill $PID 2>/dev/null || true' EXIT
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:3000/ >/dev/null; then
+              curl -fsS 'http://127.0.0.1:3000/reset-password?token=ci-smoke' | grep -q 'Redefinir senha'
+              exit 0
+            fi
+            sleep 0.5
+          done
+          cat /tmp/frontend.log
+          exit 1
+
+      - name: Layout industrial e fluxo sem dados simulados
+        run: |
+          set -euo pipefail
+          if grep -R -n -E 'Teltonika RUT241|Sierra AirLink|Atlas Data Centers|23/05/2025|14:32:18|612 kW|0,92|phaseSeries|kwSeries' src --include='*.ts' --include='*.tsx'; then
+            echo 'ERRO: dado/série demonstrativa conhecida voltou ao frontend.' >&2
+            exit 1
+          fi
+          test ! -f src/components/generators/detail-widgets.tsx
+          test -f src/components/generators/detail/generator-detail-model.ts
+          test -f src/components/generators/detail/useGeneratorDetailData.ts
+          test -f src/components/generators/vertical-card/VerticalPowerFlow.tsx
+          test -f src/components/generators/vertical-card/VerticalPowerGauge.tsx
+          grep -q 'metricNumber' src/components/generators/detail/generator-detail-model.ts
+          grep -q 'const mainsToBus' src/components/generators/vertical-card/VerticalPowerFlow.tsx
+          grep -q 'const genToBus' src/components/generators/vertical-card/VerticalPowerFlow.tsx
+          for obsolete in \
+            src/components/generators/generator-six-card.css \
+            src/components/generators/generator-six-card-v10.css \
+            src/components/generators/operator-card-refinement.css \
+            src/components/generators/powerflow-card-v2.css \
+            src/components/generators/comap-panel.css \
+            src/components/generators/GeneratorDetailDialog.tsx \
+            src/components/generators/ControllerFace.tsx \
+            src/components/generators/detail/GeneratorDetailPowerFlow.tsx \
+            src/components/generators/detail/GeneratorDetailOverview.tsx \
+            src/components/generators/detail/GeneratorDetailBottom.tsx \
+            src/components/generators/detail/GeneratorDetailElectrical.tsx \
+            src/components/generators/power-flow/PowerFlowDiagram.tsx \
+            src/components/generators/power-flow/PowerFlowPrimitives.tsx; do
+            test ! -e "$obsolete" || { echo "ERRO: legado voltou ao frontend: $obsolete" >&2; exit 1; }
+          done
+          grep -q 'industrialApi.lifecycle.retire' src/components/generators/DeleteGeneratorButton.tsx
+          grep -q 'IndustrialAlarmsScreen' src/components/scada/registry.ts
+          grep -q 'ProcessHistoryScreen' src/components/scada/registry.ts
+          grep -q 'MaintenanceHubScreen' src/components/scada/registry.ts
+          grep -q 'MaintenanceV3Screen' src/components/scada/MaintenanceHubScreen.tsx
+          grep -q 'EscalationV3Screen' src/components/scada/registry.ts
+          grep -q 'refreshInFlight' src/components/generators/GeneratorsProvider.tsx
+          grep -q 'document.hidden' src/components/generators/GeneratorsProvider.tsx
+          if grep -R -n -E 'Generator Freq\.|autoKwScale|meterColor|batt < 12|n < 12\.2|n < 11\.5' src/components/generators --include='*.ts' --include='*.tsx'; then
+            echo 'ERRO: voltou lógica visual/telemetria não homologada no frontend.' >&2
+            exit 1
+          fi
+          if grep -R -n 'rapidDeviceNum === 200' src/components/generators --include='*.ts' --include='*.tsx'; then
+            echo 'ERRO: frontend voltou a restringir o IG200 ao Rapid Device 200.' >&2
+            exit 1
+          fi
+          if grep -R -n -E 'gridHz[[:space:]]*=.*60|Math\.max\(gen\.mains.*> 50' src/components/generators --include='*.ts' --include='*.tsx'; then
+            echo 'ERRO: power-flow voltou a inferir rede/Hz sem canal homologado.' >&2
+            exit 1
+          fi
+
+      - name: Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Backend dependencies
+        run: pip install -r backend/requirements-test.txt
+
+      - name: Backend syntax
+        run: |
+          python -m compileall -q backend/app backend/tests rapid/provisioning ops
+
+      - name: Backend import
+        working-directory: backend
+        env:
+          RC_DATA_DIR: ${{ runner.temp }}/rc-geradores-import
+        run: python -c "from app.main import app; print(app.title, app.version)"
+
+      - name: Backend smoke suite
+        env:
+          RC_PROJECT_ROOT: ${{ github.workspace }}
+          RC_TEST_PYTHON: python
+        run: bash ops/run_backend_tests.sh
+
+      - name: Instaladores Bash
+        run: |
+          set -euo pipefail
+          bash -n ops/install.sh
+          bash -n ops/status.sh
+          bash -n ops/vm-smoke.sh
+          bash -n ops/preflight_vm.sh
+          bash -n ops/deploy_release.sh
+          bash -n ops/deploy_release_v2.sh
+          bash -n ops/test_frontend_asset_retention.sh
+          bash ops/test_frontend_asset_retention.sh
+          bash -n ops/test_release_ref_resolution.sh
+          bash ops/test_release_ref_resolution.sh
+          grep -q 'OFFSITE_STREAM_MAGIC' backend/app/backup_manager.py
+          grep -q '_encrypt_offsite_payload' backend/app/backup_manager.py
+          grep -q '_decrypt_chunked_offsite_payload' backend/app/backup_manager.py
+          if grep -Fq 'cipher.encrypt(payload.read_bytes())' backend/app/backup_manager.py; then
+            echo 'ERRO: backup off-site voltou a carregar payload inteiro na memória.' >&2
+            exit 1
+          fi
+          printf 'RC_RAPID_ADMIN_ALLOWED_CIDRS=\n' >/tmp/rapid-network-loopback.env
+          RC_ENV_FILE=/tmp/rapid-network-loopback.env bash ops/configure_rapid_network.sh --check
+          printf 'RC_RAPID_ADMIN_ALLOWED_CIDRS=10.10.10.0/24\n' >/tmp/rapid-network-good.env
+          RC_ENV_FILE=/tmp/rapid-network-good.env bash ops/configure_rapid_network.sh --check
+          printf 'RC_RAPID_ADMIN_ALLOWED_CIDRS=0.0.0.0/0\n' >/tmp/rapid-network-bad.env
+          if RC_ENV_FILE=/tmp/rapid-network-bad.env bash ops/configure_rapid_network.sh --check >/dev/null 2>&1; then
+            echo 'ERRO: política Rapid aceitou allowlist administrativa global.' >&2
+            exit 1
+          fi
+          python3 -m py_compile ops/ig200_probe_readonly.py
+          grep -q -- '--firmware-version' ops/ig200_probe_readonly.py
+          grep -q 'FW Version 1281..1288' ops/ig200_probe_readonly.py
+          grep -q 'somente FC03/FC04 são permitidas' ops/ig200_probe_readonly.py
+          bash -n ops/configure_https.sh
+          bash -n ops/configure_rapid_network.sh
+          grep -q 'time.monotonic() + 30' ops/configure_rapid_network.sh
+          grep -q 'não abriu loopback' ops/configure_rapid_network.sh
+          grep -q 'scadacomm6 não reconectou ao Server loopback:10000' ops/configure_rapid_network.sh
+          grep -q 'ss -tnp state established' ops/configure_rapid_network.sh
+          bash -n ops/configure_external_proxy_network.sh
+          printf 'RC_WEB_TLS_MODE=external_proxy\nRC_EXTERNAL_PROXY_ALLOWED_CIDRS=10.10.10.131/32\nRC_TRUSTED_PROXY_CIDRS=10.10.10.131/32\n' >/tmp/external-proxy-good.env
+          RC_ENV_FILE=/tmp/external-proxy-good.env bash ops/configure_external_proxy_network.sh --check
+          printf 'RC_WEB_TLS_MODE=external_proxy\nRC_EXTERNAL_PROXY_ALLOWED_CIDRS=0.0.0.0/0\nRC_TRUSTED_PROXY_CIDRS=0.0.0.0/0\n' >/tmp/external-proxy-bad.env
+          if RC_ENV_FILE=/tmp/external-proxy-bad.env bash ops/configure_external_proxy_network.sh --check >/dev/null 2>&1; then
+            echo 'ERRO: external proxy aceitou CIDR global.' >&2
+            exit 1
+          fi
+          printf 'RC_WEB_TLS_MODE=external_proxy\nRC_EXTERNAL_PROXY_ALLOWED_CIDRS=10.10.10.131/32\nRC_TRUSTED_PROXY_CIDRS=127.0.0.1/32\n' >/tmp/external-proxy-mismatch.env
+          if RC_ENV_FILE=/tmp/external-proxy-mismatch.env bash ops/configure_external_proxy_network.sh --check >/dev/null 2>&1; then
+            echo 'ERRO: external proxy aceitou peer NPM fora dos proxies confiáveis.' >&2
+            exit 1
+          fi
+          grep -q 'FIREWALL_SERVICE="rc-geradores-web-firewall"' ops/configure_external_proxy_network.sh
+          grep -q 'NFT_PERSIST="/etc/rc-geradores-web.nft"' ops/configure_external_proxy_network.sh
+          grep -q 'BindsTo=.*FIREWALL_SERVICE' ops/configure_external_proxy_network.sh
+          grep -q 'PartOf=.*FIREWALL_SERVICE' ops/configure_external_proxy_network.sh
+          grep -q 'systemctl show.*-p PartOf' ops/configure_external_proxy_network.sh
+          grep -q 'systemctl enable --now.*FIREWALL_SERVICE' ops/configure_external_proxy_network.sh
+          grep -q 'systemctl is-enabled --quiet.*FIREWALL_SERVICE' ops/configure_external_proxy_network.sh
+          grep -q 'systemctl is-active --quiet.*FIREWALL_SERVICE' ops/configure_external_proxy_network.sh
+          grep -q 'firewall persistente não contém peer do NPM' ops/configure_external_proxy_network.sh
+          grep -q '^Environment=NITRO_HOST=0.0.0.0$' ops/configure_external_proxy_network.sh
+          grep -q '^Environment=NITRO_PORT=3000$' ops/configure_external_proxy_network.sh
+          grep -q '^Conflicts=nftables.service$' ops/configure_external_proxy_network.sh
+          grep -q 'nftables.service global está ativo/habilitado' ops/configure_external_proxy_network.sh
+          bash -n ops/run_backend_tests.sh
+          bash -n ops/run_e2e_isolated.sh
+          bash -n rapid/provisioning/provision_ig200.sh
+          bash ops/preflight_vm.sh --help >/tmp/preflight-help.txt
+          grep -q 'sha-esperado' /tmp/preflight-help.txt
+          bash ops/install.sh --help >/tmp/install-help.txt
+          grep -q -- '--skip-initial-generator' /tmp/install-help.txt
+          grep -q -- '--ig200-port' /tmp/install-help.txt
+          grep -q -- '--ig200-unit' /tmp/install-help.txt
+          grep -q -- '--ig200-device' /tmp/install-help.txt
+          grep -q -- '--admin-password-file' /tmp/install-help.txt
+          grep -q -- '--web-tls-mode' /tmp/install-help.txt
+          grep -q -- '--external-proxy-cidrs' /tmp/install-help.txt
+          grep -q -- '--public-base-url' /tmp/install-help.txt
+          grep -q 'RC_WEB_TLS_MODE:-external_proxy' ops/install.sh
+          grep -q 'configure_external_proxy_network.sh.*--apply' ops/install.sh
+          grep -q 'configure_external_proxy_network.sh.*--check-runtime' ops/install.sh
+          grep -q 'nftables' ops/install.sh
+          grep -q 'dotnet --list-sdks' ops/install.sh
+          grep -q 'dotnet --list-runtimes' ops/install.sh
+          grep -q 'provision_generator.py' ops/install.sh
+          grep -q 'vm-smoke.sh' ops/install.sh
+          grep -q 'npm ci --include=dev' ops/install.sh
+          grep -q 'npm prune --omit=dev' ops/install.sh
+          test -f ops/systemd/rc-geradores-api.service
+          test -f ops/systemd/rc-geradores-frontend.service
+          test -f ops/systemd/rc-geradores-bridge.service
+          test -f ops/systemd/rc-geradores-worker.service
+          test -f ops/systemd/rc-geradores-provision.service
+          grep -q 'app.bridge_runtime' ops/systemd/rc-geradores-bridge.service
+          grep -q 'app.worker' ops/systemd/rc-geradores-worker.service
+          grep -q 'app.provision_service' ops/systemd/rc-geradores-provision.service
+          grep -q '^RuntimeDirectoryPreserve=yes$' ops/systemd/rc-geradores-bridge.service
+          grep -q '^RuntimeDirectoryPreserve=yes$' ops/systemd/rc-geradores-provision.service
+          for unit in ops/systemd/rc-geradores-*.service; do
+            grep -q '^UMask=0027$' "$unit"
+            grep -q '^ProtectClock=true$' "$unit"
+            grep -q '^ProtectKernelTunables=true$' "$unit"
+            grep -q '^ProtectKernelModules=true$' "$unit"
+            grep -q '^ProtectKernelLogs=true$' "$unit"
+            grep -q '^ProtectControlGroups=true$' "$unit"
+            grep -q '^ProtectHostname=true$' "$unit"
+            grep -q '^LockPersonality=true$' "$unit"
+            grep -q '^RestrictSUIDSGID=true$' "$unit"
+            grep -q '^RestrictRealtime=true$' "$unit"
+            grep -q '^RestrictNamespaces=true$' "$unit"
+            grep -q '^SystemCallArchitectures=native$' "$unit"
+            grep -q '^RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6$' "$unit"
+            grep -q '^PrivateDevices=true$' "$unit"
+          done
+          for unit in \
+            ops/systemd/rc-geradores-api.service \
+            ops/systemd/rc-geradores-frontend.service \
+            ops/systemd/rc-geradores-bridge.service \
+            ops/systemd/rc-geradores-worker.service; do
+            grep -q '^CapabilityBoundingSet=$' "$unit"
+          done
+          grep -q '^CapabilityBoundingSet=CAP_CHOWN CAP_DAC_OVERRIDE CAP_FOWNER CAP_KILL$' ops/systemd/rc-geradores-provision.service
+          grep -q '^Environment=PYTHONDONTWRITEBYTECODE=1$' ops/systemd/rc-geradores-api.service
+          grep -q '^Environment=PYTHONDONTWRITEBYTECODE=1$' ops/systemd/rc-geradores-bridge.service
+          grep -q '^Environment=PYTHONDONTWRITEBYTECODE=1$' ops/systemd/rc-geradores-worker.service
+          grep -q '^Environment=PYTHONDONTWRITEBYTECODE=1$' ops/systemd/rc-geradores-provision.service
+          grep -q 'chown -R root:root "${NEW_OUTPUT}"' ops/deploy_release_v2.sh
+          grep -q 'chown -R root:root "${BASE}/backend/.venv"' ops/deploy_release_v2.sh
+          grep -q 'chown -R root:root "$BASE/.output"' ops/install.sh
+          if grep -q 'chown -R rcgeradores:rcgeradores "${NEW_OUTPUT}"' ops/deploy_release_v2.sh; then
+            echo 'ERRO: frontend voltou a ser gravável pelo usuário de runtime.' >&2
+            exit 1
+          fi
+          grep -q 'rc-geradores-worker.service' ops/install.sh
+          grep -q 'rc-geradores-provision.service' ops/install.sh
+          grep -q '^RC_PROVISION_SOCKET=' ops/rc-geradores.env.example
+          grep -q '^RC_PROVISION_OPERATION_TIMEOUT=' ops/rc-geradores.env.example
+          grep -q '^RC_MODBUS_DEVICE_TIMEOUT_MS=' ops/rc-geradores.env.example
+          grep -q '^RC_RAPID_READER_TIMEOUT=' ops/rc-geradores.env.example
+          grep -q '^RC_RAPID_ADMIN_ALLOWED_CIDRS=' ops/rc-geradores.env.example
+          grep -q 'configure_rapid_network.sh.*--check' ops/preflight_vm.sh
+          grep -q 'configure_rapid_network.sh.*--apply' ops/install.sh
+          grep -q 'configure_rapid_network.sh.*--apply' ops/deploy_release_v2.sh
+          grep -q 'RAPID_NETWORK_APPLIED=1' ops/deploy_release_v2.sh
+          grep -q 'rapid-network-existing.txt' ops/deploy_release_v2.sh
+          grep -q 'rapid-network-active.txt' ops/deploy_release_v2.sh
+          grep -q 'Frontend HTML no-store' ops/deploy_release_v2.sh
+          grep -q 'Frontend assets referenciados' ops/deploy_release_v2.sh
+          grep -q 'HTML não referencia assets JS/CSS' ops/deploy_release_v2.sh
+          grep -q '^RC_LOGIN_MAX_FAILURES=' ops/rc-geradores.env.example
+          grep -q '^RC_BACKUP_RETENTION=' ops/rc-geradores.env.example
+          grep -q '^RC_RAPID_REQUIRE_ALLOWLIST=' ops/rc-geradores.env.example
+          grep -q '^RC_BACKUP_OFFSITE_REQUIRED=' ops/rc-geradores.env.example
+          grep -q '^RC_ENVIRONMENT=production$' ops/rc-geradores.env.example
+          grep -q '^RC_WEB_TLS_MODE=external_proxy$' ops/rc-geradores.env.example
+          grep -q '^RC_EXTERNAL_PROXY_ALLOWED_CIDRS=' ops/rc-geradores.env.example
+          grep -q '^RC_TRUSTED_PROXY_CIDRS=' ops/rc-geradores.env.example
+          grep -q 'configure_external_proxy_network.sh.*--check-runtime' ops/preflight_vm.sh
+          grep -q 'LEGACY_NGINX_SITE' ops/preflight_vm.sh
+          grep -q 'Valide o NPM direto em 3000/8090' ops/preflight_vm.sh
+          grep -q 'external_proxy exige RC_EXTERNAL_PROXY_ALLOWED_CIDRS' ops/preflight_vm.sh
+          grep -q 'external_proxy exige RC_TRUSTED_PROXY_CIDRS' ops/preflight_vm.sh
+          grep -q 'external_proxy' ops/deploy_release_v2.sh
+          grep -q 'external_proxy' ops/preflight_vm.sh
+          grep -q 'external_proxy' ops/vm-smoke.sh
+          grep -q 'external_proxy' ops/preflight_vm.sh
+          grep -q 'external_proxy' ops/vm-smoke.sh
+          if grep -q -E 'rapid_device.*!= *200|device.*!= *200' ops/bootstrap_ig200.py; then
+            echo 'ERRO: bootstrap voltou a tratar Device 200 como autorização de controle.' >&2
+            exit 1
+          fi
+
+      - name: Provisionamento idempotente e seguro
+        run: |
+          set -euo pipefail
+          grep -q '_binding_is_materialized' rapid/provisioning/provision_generator.py
+          grep -q '_binding_identity_matches' rapid/provisioning/provision_generator.py
+          grep -q 'não pode fazer uma' rapid/provisioning/provision_generator.py
+          grep -q 'Binding Rapid existente diverge' rapid/provisioning/provision_generator.py
+          grep -q 'preservando identidade atual' ops/bootstrap_ig200.py
+          grep -q 'historyPreserved' rapid/provisioning/deprovision_generator.py
+          grep -q 'DEPROVISION_CONFIRMED' backend/app/provision_service.py
+          grep -q 'start_new_session=True' backend/app/provision_service.py
+          grep -q '_terminate_process' backend/app/provision_service.py
+          grep -q 'RETIRAR' backend/app/domain_routes.py
+          grep -q 'deploy_release_v2.sh' ops/deploy_release.sh
+          grep -q 'Git HEAD: OK' ops/deploy_release_v2.sh
+          grep -q 'deployed-commit' ops/deploy_release_v2.sh
+          grep -q 'RC_HTTPS_SKIP_APP_SMOKE=1' ops/deploy_release_v2.sh
+          grep -q "trap 'rc=\$?; rollback; exit" ops/deploy_release_v2.sh
+
+      - name: Política industrial segura
+        run: |
+          set -euo pipefail
+          grep -q 'g.get("transport") == "reverse_tcp"' backend/app/bridge_runtime.py
+          grep -q 'bridge.resolve_ig200 = resolve_ig200_bound_device' backend/app/bridge_runtime.py
+          grep -q 'int(item.get("rapid_device_num") or 0) == device_num' backend/app/bridge_runtime.py
+          grep -q '"device": rapid_device' backend/app/control.py
+          grep -q '_validated_binding' backend/app/control.py
+          grep -q 'pack_is_production_ready' backend/app/control.py
+          grep -q 'command_contract' backend/app/control.py
+          grep -q 'COMMAND_ACTIONS' backend/app/control.py
+          grep -q 'ig200_privileged' backend/app/control.py
+          grep -q 'validate_production_runtime' backend/app/main.py
+          grep -q 'RC_ENABLE_DSE_LAB_CONTROL' backend/app/production_guard.py
+          grep -q 'RC_ENABLE_IG4_LAB_CONTROL' backend/app/production_guard.py
+          if grep -q 'rapid_device != 200' backend/app/control.py; then
+            echo 'ERRO: control.py voltou a restringir o controle ao Device 200.' >&2
+            exit 1
+          fi
+          if grep -q -E 'dse_lab|ig4_lab' backend/app/control.py; then
+            echo 'ERRO: caminho LAB voltou ao roteador de comandos de produção.' >&2
+            exit 1
+          fi
+          grep -q 'ALLOWED_ACTIONS = {"notify", "work_order"}' backend/app/automation_engine.py
+          grep -q 'CmdEnabled.*false' rapid/provisioning/provision_generator.py
+          grep -q 'unit_conflict' rapid/provisioning/provision_generator.py
+          grep -q '_validate_shared_reverse_line' rapid/provisioning/provision_generator.py
+          grep -q 'if shared:' rapid/provisioning/provision_generator.py
+          grep -q 'industrial.alarm.escalation' backend/app/industrial_store.py
+          if grep -n -E 'start|stop|mcb|gcb|paralleling' backend/app/industrial_store.py | grep -E 'enqueue_notification.*(start|stop|mcb|gcb|paralleling)'; then
+            echo 'ERRO: escalonamento industrial não pode executar comandos.' >&2
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          data=json.load(open('controllers/production/comap/inteligen-200/manifest.json'))
+          assert data['schema'] == 4
+          caps=data['capabilities']
+          commands=data.get('commands') or {}
+          assert caps['start'] and caps['stop']
+          assert set(commands) == {'start', 'stop'}
+          assert commands['start']['executor'] == 'ig200_privileged'
+          assert commands['stop']['executor'] == 'ig200_privileged'
+          for key in ('auto','manual','test','mcb_open','mcb_close','gcb_open','gcb_close','paralleling'):
+              assert caps[key] is False, key
+          print('Política industrial: OK')
+          PY
+
+  e2e:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Frontend dependencies
+        run: npm ci --include=dev
+
+      - name: Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Backend test dependencies
+        run: pip install -r backend/requirements-test.txt
+
+      - name: Chromium para Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E isolado de todas as rotas
+        env:
+          RC_TEST_PYTHON: python
+        run: npm run e2e:isolated

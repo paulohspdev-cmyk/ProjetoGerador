@@ -1,0 +1,706 @@
+{
+  "schema": 4,
+  "manufacturer": "DSE",
+  "family": "DSE GenComm",
+  "model": "DSE GenComm Genset",
+  "aliases": [
+    "DSEG7400",
+    "DSEG7300",
+    "DSEG4500",
+    "DSEG4501",
+    "DSE7410 MKII",
+    "DSE7420 MKII",
+    "DSE7310 MKII",
+    "DSE7320 MKII",
+    "DSE7110 MKII",
+    "DSE7120 MKII",
+    "DSE6110 MKIII",
+    "DSE6120 MKIII",
+    "DSE6010 MKII",
+    "DSE6020 MKII",
+    "DSE4610",
+    "DSE4620",
+    "DSE4510 MKII",
+    "DSE4520 MKII",
+    "DSE8910",
+    "DSE8920",
+    "DSE8610 MKII",
+    "DSE8620 MKII",
+    "DSE4210",
+    "DSE4220",
+    "DSE4510",
+    "DSE4520",
+    "DSE7210",
+    "DSE7220",
+    "DSE7310",
+    "DSE7320",
+    "DSE7410",
+    "DSE7420",
+    "DSE8610",
+    "DSE8620",
+    "DSE8810"
+  ],
+  "status": "production",
+  "application": "genset",
+  "category": "documented_read_only_gencomm",
+  "firmware": {
+    "tested": [],
+    "minimum": null,
+    "maximum": null,
+    "notes": "Pack de produção somente leitura por contrato GenComm. A matriz de firmware de campo será preenchida conforme unidades reais forem conectadas."
+  },
+  "protocols": [
+    "dse_gencomm_v1",
+    "modbus"
+  ],
+  "transports": [
+    "reverse_tcp",
+    "modbus_tcp_direct",
+    "rtu_over_tcp",
+    "modbus_rtu_serial"
+  ],
+  "reverseTcpFraming": "modbus_rtu",
+  "defaults": {
+    "batteryNominalVoltage": null,
+    "modbusUnit": null,
+    "tcpPort": 502
+  },
+  "capabilities": {
+    "telemetry": true,
+    "start": false,
+    "stop": false,
+    "auto": false,
+    "manual": false,
+    "test": false,
+    "mcb_open": false,
+    "mcb_close": false,
+    "gcb_open": false,
+    "gcb_close": false,
+    "paralleling": false
+  },
+  "validatedTelemetry": [],
+  "documentedTelemetry": [
+    "controller_mode_raw",
+    "controller_status_flags_raw",
+    "oil_pressure",
+    "coolant_temperature",
+    "oil_temperature",
+    "fuel_level",
+    "alternator_voltage",
+    "battery_voltage",
+    "rpm",
+    "frequency",
+    "voltage_l1",
+    "voltage_l2",
+    "voltage_l3",
+    "voltage_l1_l2",
+    "voltage_l2_l3",
+    "voltage_l3_l1",
+    "current_l1",
+    "current_l2",
+    "current_l3",
+    "power_kw",
+    "power_factor",
+    "engine_load",
+    "maintenance_hours",
+    "run_hours",
+    "genset_kwh",
+    "number_starts",
+    "mains_frequency",
+    "mains_voltage_l1",
+    "mains_voltage_l2",
+    "mains_voltage_l3",
+    "mains_voltage_l1_l2",
+    "mains_voltage_l2_l3",
+    "mains_voltage_l3_l1",
+    "bus_frequency",
+    "bus_voltage_l1",
+    "bus_voltage_l2",
+    "bus_voltage_l3",
+    "bus_voltage_l1_l2",
+    "bus_voltage_l2_l3",
+    "bus_voltage_l3_l1"
+  ],
+  "metricUnits": {
+    "oil_pressure": "kPa",
+    "coolant_temperature": "°C",
+    "oil_temperature": "°C",
+    "fuel_level": "%",
+    "alternator_voltage": "V",
+    "battery_voltage": "V",
+    "rpm": "rpm",
+    "frequency": "Hz",
+    "voltage_l1": "V",
+    "voltage_l2": "V",
+    "voltage_l3": "V",
+    "voltage_l1_l2": "V",
+    "voltage_l2_l3": "V",
+    "voltage_l3_l1": "V",
+    "current_l1": "A",
+    "current_l2": "A",
+    "current_l3": "A",
+    "power_kw": "kW",
+    "engine_load": "%",
+    "maintenance_hours": "h",
+    "run_hours": "h",
+    "genset_kwh": "kWh",
+    "mains_frequency": "Hz",
+    "bus_frequency": "Hz",
+    "mains_voltage_l1": "V",
+    "mains_voltage_l2": "V",
+    "mains_voltage_l3": "V",
+    "mains_voltage_l1_l2": "V",
+    "mains_voltage_l2_l3": "V",
+    "mains_voltage_l3_l1": "V",
+    "bus_voltage_l1": "V",
+    "bus_voltage_l2": "V",
+    "bus_voltage_l3": "V",
+    "bus_voltage_l1_l2": "V",
+    "bus_voltage_l2_l3": "V",
+    "bus_voltage_l3_l1": "V"
+  },
+  "mapping": {
+    "kind": "modbus_register_export",
+    "readOnly": true,
+    "sourceFile": "modbus/source-registers.txt",
+    "sourceSha256": "0b35675aaf9f76bddf61e650f1153a42b3e7afda00c865540beffedf6a30b767",
+    "addressFormula": "page * 256 + offset",
+    "readFunctions": [
+      3
+    ],
+    "wordOrder": "most_significant_register_first",
+    "registers": {
+      "controller_mode_raw": {
+        "address": 772,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1
+      },
+      "oil_pressure": {
+        "address": 1024,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "kPa"
+      },
+      "coolant_temperature": {
+        "address": 1025,
+        "count": 1,
+        "type": "int16",
+        "scale": 1,
+        "unit": "°C"
+      },
+      "oil_temperature": {
+        "address": 1026,
+        "count": 1,
+        "type": "int16",
+        "scale": 1,
+        "unit": "°C"
+      },
+      "fuel_level": {
+        "address": 1027,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "%"
+      },
+      "alternator_voltage": {
+        "address": 1028,
+        "count": 1,
+        "type": "uint16",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "battery_voltage": {
+        "address": 1029,
+        "count": 1,
+        "type": "uint16",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "rpm": {
+        "address": 1030,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "rpm"
+      },
+      "frequency": {
+        "address": 1031,
+        "count": 1,
+        "type": "uint16",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      "voltage_l1": {
+        "address": 1032,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "voltage_l2": {
+        "address": 1034,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "voltage_l3": {
+        "address": 1036,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "voltage_l1_l2": {
+        "address": 1038,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "voltage_l2_l3": {
+        "address": 1040,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "voltage_l3_l1": {
+        "address": 1042,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "current_l1": {
+        "address": 1044,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "A"
+      },
+      "current_l2": {
+        "address": 1046,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "A"
+      },
+      "current_l3": {
+        "address": 1048,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "A"
+      },
+      "power_kw": {
+        "address": 1536,
+        "count": 2,
+        "type": "int32",
+        "scale": 0.001,
+        "unit": "kW"
+      },
+      "power_factor": {
+        "address": 1557,
+        "count": 1,
+        "type": "int16",
+        "scale": 0.01
+      },
+      "engine_load": {
+        "address": 1558,
+        "count": 1,
+        "type": "int16",
+        "scale": 0.1,
+        "unit": "%"
+      },
+      "maintenance_hours": {
+        "address": 1794,
+        "count": 2,
+        "type": "int32",
+        "scale": 0.0002777777777777778,
+        "unit": "h"
+      },
+      "run_hours": {
+        "address": 1798,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.0002777777777777778,
+        "unit": "h"
+      },
+      "genset_kwh": {
+        "address": 1800,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "kWh"
+      },
+      "number_starts": {
+        "address": 1808,
+        "count": 2,
+        "type": "uint32",
+        "scale": 1
+      },
+      "controller_status_flags_raw": {
+        "address": 774,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1
+      },
+      "mains_frequency": {
+        "address": 1059,
+        "count": 1,
+        "type": "uint16",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      "mains_voltage_l1": {
+        "address": 1060,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "mains_voltage_l2": {
+        "address": 1062,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "mains_voltage_l3": {
+        "address": 1064,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "mains_voltage_l1_l2": {
+        "address": 1066,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "mains_voltage_l2_l3": {
+        "address": 1068,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "mains_voltage_l3_l1": {
+        "address": 1070,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "bus_frequency": {
+        "address": 1091,
+        "count": 1,
+        "type": "uint16",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      "bus_voltage_l1": {
+        "address": 1092,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "bus_voltage_l2": {
+        "address": 1094,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "bus_voltage_l3": {
+        "address": 1096,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "bus_voltage_l1_l2": {
+        "address": 1098,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "bus_voltage_l2_l3": {
+        "address": 1100,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "bus_voltage_l3_l1": {
+        "address": 1102,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.1,
+        "unit": "V"
+      }
+    }
+  },
+  "rapid": {
+    "template": "rapid/templates/DrvModbus_RC_DSE_GenComm_Core.xml",
+    "driver": "DrvModbus",
+    "channels": [
+      {
+        "key": "controller_mode_raw",
+        "tagCode": "controller_mode_raw",
+        "scale": 1
+      },
+      {
+        "key": "controller_status_flags_raw",
+        "tagCode": "controller_status_flags_raw",
+        "scale": 1
+      },
+      {
+        "key": "oil_pressure",
+        "tagCode": "oil_pressure",
+        "scale": 1,
+        "unit": "kPa"
+      },
+      {
+        "key": "coolant_temperature",
+        "tagCode": "coolant_temperature",
+        "scale": 1,
+        "unit": "°C"
+      },
+      {
+        "key": "oil_temperature",
+        "tagCode": "oil_temperature",
+        "scale": 1,
+        "unit": "°C"
+      },
+      {
+        "key": "fuel_level",
+        "tagCode": "fuel_level",
+        "scale": 1,
+        "unit": "%"
+      },
+      {
+        "key": "alternator_voltage",
+        "tagCode": "alternator_voltage",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "battery_voltage",
+        "tagCode": "battery_voltage",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "rpm",
+        "tagCode": "rpm",
+        "scale": 1,
+        "unit": "rpm"
+      },
+      {
+        "key": "frequency",
+        "tagCode": "frequency",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      {
+        "key": "voltage_l1",
+        "tagCode": "voltage_l1",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l2",
+        "tagCode": "voltage_l2",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l3",
+        "tagCode": "voltage_l3",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l1_l2",
+        "tagCode": "voltage_l1_l2",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l2_l3",
+        "tagCode": "voltage_l2_l3",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l3_l1",
+        "tagCode": "voltage_l3_l1",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "current_l1",
+        "tagCode": "current_l1",
+        "scale": 0.1,
+        "unit": "A"
+      },
+      {
+        "key": "current_l2",
+        "tagCode": "current_l2",
+        "scale": 0.1,
+        "unit": "A"
+      },
+      {
+        "key": "current_l3",
+        "tagCode": "current_l3",
+        "scale": 0.1,
+        "unit": "A"
+      },
+      {
+        "key": "power_kw",
+        "tagCode": "power_kw",
+        "scale": 0.001,
+        "unit": "kW"
+      },
+      {
+        "key": "power_factor",
+        "tagCode": "power_factor",
+        "scale": 0.01
+      },
+      {
+        "key": "engine_load",
+        "tagCode": "engine_load",
+        "scale": 0.1,
+        "unit": "%"
+      },
+      {
+        "key": "maintenance_hours",
+        "tagCode": "maintenance_hours",
+        "scale": 0.0002777777777777778,
+        "unit": "h"
+      },
+      {
+        "key": "run_hours",
+        "tagCode": "run_hours",
+        "scale": 0.0002777777777777778,
+        "unit": "h"
+      },
+      {
+        "key": "genset_kwh",
+        "tagCode": "genset_kwh",
+        "scale": 0.1,
+        "unit": "kWh"
+      },
+      {
+        "key": "number_starts",
+        "tagCode": "number_starts",
+        "scale": 1
+      },
+      {
+        "key": "mains_frequency",
+        "tagCode": "mains_frequency",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      {
+        "key": "mains_voltage_l1",
+        "tagCode": "mains_voltage_l1",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "mains_voltage_l2",
+        "tagCode": "mains_voltage_l2",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "mains_voltage_l3",
+        "tagCode": "mains_voltage_l3",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "mains_voltage_l1_l2",
+        "tagCode": "mains_voltage_l1_l2",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "mains_voltage_l2_l3",
+        "tagCode": "mains_voltage_l2_l3",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "mains_voltage_l3_l1",
+        "tagCode": "mains_voltage_l3_l1",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "bus_frequency",
+        "tagCode": "bus_frequency",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      {
+        "key": "bus_voltage_l1",
+        "tagCode": "bus_voltage_l1",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "bus_voltage_l2",
+        "tagCode": "bus_voltage_l2",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "bus_voltage_l3",
+        "tagCode": "bus_voltage_l3",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "bus_voltage_l1_l2",
+        "tagCode": "bus_voltage_l1_l2",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "bus_voltage_l2_l3",
+        "tagCode": "bus_voltage_l2_l3",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "bus_voltage_l3_l1",
+        "tagCode": "bus_voltage_l3_l1",
+        "scale": 0.1,
+        "unit": "V"
+      }
+    ]
+  },
+  "validation": {
+    "documentation": [
+      "DSE GenComm standard and Gencomm Control Keys training document 056-051",
+      "MODEL_EVIDENCE.md: model-by-model evidence from official Deep Sea Electronics product/download pages",
+      "DSE8610 MKII register list supplied by the user and retained as the register-map source",
+      "DSE GenComm rule: 32-bit values store the most-significant register at the lowest address"
+    ],
+    "lab": false,
+    "field": false,
+    "commandSafety": "Produção estritamente somente leitura. FC16/control keys are deliberately not materialized; START, STOP, modes and breaker commands remain blocked until model-specific physical validation."
+  },
+  "notes": "Pack compartilhado para controladoras DSE de GERADOR com GenComm/Modbus documentado. Produção significa TELEMETRIA SOMENTE LEITURA por especificação, não field_validated. Equipamentos DSE de rede/ATS, bus-tie, sync-lock e modelos sem evidência GenComm específica ficam fora deste pack. Comandos permanecem bloqueados até validação física por modelo.",
+  "commands": {}
+}

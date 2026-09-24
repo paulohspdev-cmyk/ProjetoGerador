@@ -1,0 +1,343 @@
+import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { KeyRound, Plug, ShieldCheck } from "lucide-react";
+
+import { useAuth } from "@/components/auth/AuthProvider";
+import { rcApi, type ApiTokenItem, type SystemHealth } from "@/lib/api";
+import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats } from "./kit";
+
+export function ApiV3Screen() {
+  const { can } = useAuth();
+  const admin = can("manageUsers");
+  const [health, setHealth] = useState<SystemHealth | null>(null);
+  const [tokens, setTokens] = useState<ApiTokenItem[]>([]);
+  const [name, setName] = useState("");
+  const [read, setRead] = useState(true);
+  const [start, setStart] = useState(false);
+  const [stop, setStop] = useState(false);
+  const [mode, setMode] = useState(false);
+  const [breaker, setBreaker] = useState(false);
+  const [paralleling, setParalleling] = useState(false);
+  const [allowedGenerators, setAllowedGenerators] = useState("");
+  const [allowedCidrs, setAllowedCidrs] = useState("");
+  const [rateLimit, setRateLimit] = useState("120");
+  const [expiresDays, setExpiresDays] = useState("");
+  const [issuedToken, setIssuedToken] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const currentHealth = await rcApi.system.health();
+      setHealth(currentHealth);
+      if (admin) setTokens(await rcApi.apiTokens.list());
+      setError("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha ao consultar API.");
+    }
+  }, [admin]);
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const create = async (e: FormEvent) => {
+    e.preventDefault();
+    const scopes = [
+      read ? "ops.read" : "",
+      start ? "generator.start" : "",
+      stop ? "generator.stop" : "",
+      mode ? "generator.mode" : "",
+      breaker ? "breaker.control" : "",
+      paralleling ? "paralleling.control" : "",
+    ].filter(Boolean);
+    if (!scopes.length) {
+      setError("Selecione pelo menos um escopo.");
+      return;
+    }
+    const hasCommand = scopes.some((scope) => scope !== "ops.read");
+    if (
+      hasCommand &&
+      !window.confirm(
+        "Criar token com permissão industrial? O backend ainda exige capability homologada, allowlist de geradores, CIDR de origem e confirmação por requisição.",
+      )
+    )
+      return;
+    const limit = Number(rateLimit);
+    if (!Number.isInteger(limit) || limit < 10 || limit > 5000) {
+      setError("Rate limit deve ficar entre 10 e 5000 requisições por janela.");
+      return;
+    }
+    const days = Number(expiresDays || 0);
+    const expiresAt = days > 0 ? Math.floor(Date.now() / 1000) + days * 86400 : undefined;
+    setBusy(true);
+    try {
+      const item = await rcApi.apiTokens.create({
+        name: name.trim(),
+        scopes,
+        rateLimit: limit,
+        ...(expiresAt ? { expiresAt } : {}),
+        allowedGenerators: allowedGenerators
+          .split(/[\s,;]+/)
+          .map((value) => value.trim())
+          .filter(Boolean),
+        allowedCidrs: allowedCidrs
+          .split(/[\s,;]+/)
+          .map((value) => value.trim())
+          .filter(Boolean),
+      });
+      setIssuedToken(item.token ?? null);
+      setName("");
+      setAllowedGenerators("");
+      setAllowedCidrs("");
+      setTokens(await rcApi.apiTokens.list());
+      setError("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha ao criar token.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const revoke = async (id: string) => {
+    if (!window.confirm("Revogar este token de API? A operação não pode ser desfeita.")) return;
+    try {
+      await rcApi.apiTokens.revoke(id);
+      setTokens(await rcApi.apiTokens.list());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha ao revogar token.");
+    }
+  };
+
+  return (
+    <ScreenBody>
+      <Stats
+        items={[
+          {
+            icon: Plug,
+            label: "API",
+            value: health?.ok ? "ONLINE" : "N/D",
+            tone: health?.ok ? "text-online" : undefined,
+          },
+          { icon: Plug, label: "Versão", value: health?.version.apiVersion ?? "—" },
+          {
+            icon: KeyRound,
+            label: "Tokens ativos",
+            value: admin ? tokens.filter((t) => t.active).length : "RESTRITO",
+          },
+        ]}
+      />
+      {error && (
+        <p className="rounded-md border border-offline/40 bg-offline/10 p-3 text-sm text-offline">
+          {error}
+        </p>
+      )}
+
+      <Panel title="API RC Geradores">
+        <div className="grid gap-2 text-[12px] md:grid-cols-2">
+          <div className="rounded-md border border-border p-3">
+            <b>API interna</b>
+            <p className="mt-1 text-muted-foreground">
+              Base <span className="num">/api</span>, sessão HttpOnly, RBAC e auditoria.
+            </p>
+          </div>
+          <div className="rounded-md border border-border p-3">
+            <b>API externa v1</b>
+            <p className="mt-1 text-muted-foreground">
+              Bearer token com rate limit, allowlist de origem e escopos separados por ação. Mesmo
+              com escopo, o comando só executa quando o Controller Pack possui capability
+              fisicamente homologada.
+            </p>
+          </div>
+        </div>
+      </Panel>
+
+      {issuedToken && (
+        <Panel title="Token criado — exibição única">
+          <div className="rounded-md border border-alert/40 bg-alert/10 p-3">
+            <p className="text-[11px] font-semibold text-alert">
+              Copie e guarde agora. O valor completo não será mostrado novamente.
+            </p>
+            <code className="mt-2 block break-all rounded bg-background p-2 text-[12px]">
+              {issuedToken}
+            </code>
+            <button
+              type="button"
+              className="mt-2 rounded-md border border-border px-3 py-1.5 text-[11px] font-semibold"
+              onClick={() => {
+                void navigator.clipboard?.writeText(issuedToken);
+              }}
+            >
+              Copiar
+            </button>
+            <button
+              type="button"
+              className="ml-2 mt-2 rounded-md border border-border px-3 py-1.5 text-[11px]"
+              onClick={() => setIssuedToken(null)}
+            >
+              Ocultar
+            </button>
+          </div>
+        </Panel>
+      )}
+
+      {admin && (
+        <Panel title="Criar token externo">
+          <form onSubmit={create} className="grid gap-3 lg:grid-cols-2">
+            <label className="text-[11px] font-semibold text-muted-foreground">
+              Nome
+              <input
+                required
+                minLength={2}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Integração BMS"
+                className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+              />
+            </label>
+            <div className="text-[11px] font-semibold text-muted-foreground">
+              <span>Escopos</span>
+              <div className="mt-1 flex min-h-9 flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-input px-2 py-1">
+                {[
+                  ["ops.read", read, setRead],
+                  ["generator.start", start, setStart],
+                  ["generator.stop", stop, setStop],
+                  ["generator.mode", mode, setMode],
+                  ["breaker.control", breaker, setBreaker],
+                  ["paralleling.control", paralleling, setParalleling],
+                ].map(([label, checked, setter]) => (
+                  <label key={String(label)} className="flex items-center gap-1">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(checked)}
+                      onChange={(e) => (setter as (value: boolean) => void)(e.target.checked)}
+                    />
+                    {String(label)}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <label className="text-[11px] font-semibold text-muted-foreground">
+              Geradores permitidos
+              <input
+                value={allowedGenerators}
+                onChange={(e) => setAllowedGenerators(e.target.value)}
+                placeholder="GEN157, GEN153"
+                className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+              />
+            </label>
+            <label className="text-[11px] font-semibold text-muted-foreground">
+              CIDRs/IPs permitidos
+              <input
+                value={allowedCidrs}
+                onChange={(e) => setAllowedCidrs(e.target.value)}
+                placeholder="10.10.10.0/24, 203.0.113.10/32"
+                className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+              />
+            </label>
+            <label className="text-[11px] font-semibold text-muted-foreground">
+              Rate limit
+              <input
+                inputMode="numeric"
+                value={rateLimit}
+                onChange={(e) => setRateLimit(e.target.value.replace(/\D/g, ""))}
+                className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+              />
+            </label>
+            <label className="text-[11px] font-semibold text-muted-foreground">
+              Expira em dias
+              <input
+                inputMode="numeric"
+                value={expiresDays}
+                onChange={(e) => setExpiresDays(e.target.value.replace(/\D/g, ""))}
+                placeholder="vazio = sem data"
+                className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+              />
+            </label>
+            <div className="lg:col-span-2 flex items-center justify-between gap-3">
+              <p className="text-[11px] text-muted-foreground">
+                Tokens com qualquer escopo de comando exigem geradores e CIDRs explícitos.
+              </p>
+              <button
+                type="submit"
+                disabled={busy}
+                className="h-9 rounded-md bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50"
+              >
+                {busy ? "Criando…" : "Criar token"}
+              </button>
+            </div>
+          </form>
+        </Panel>
+      )}
+
+      {admin && (
+        <Panel title="Tokens de API">
+          <ScadaTable
+            rows={tokens}
+            columns={[
+              { label: "Nome", render: (r) => <b>{r.name}</b> },
+              { label: "Prefixo", render: (r) => <span className="num">{r.token_prefix}</span> },
+              {
+                label: "Escopos",
+                render: (r) => (
+                  <span className="flex flex-wrap gap-1">
+                    {r.scopes.map((scope) => (
+                      <Pill key={scope} tone={scope === "ops.read" ? "info" : "warn"}>
+                        {scope}
+                      </Pill>
+                    ))}
+                  </span>
+                ),
+              },
+              {
+                label: "Allowlist",
+                render: (r) => (
+                  <span className="text-[10px]">
+                    <b>
+                      {r.allowed_generators.length
+                        ? r.allowed_generators.join(", ")
+                        : "todos (leitura)"}
+                    </b>
+                    <span className="block text-muted-foreground">
+                      {r.allowed_cidrs.length
+                        ? r.allowed_cidrs.join(", ")
+                        : "sem restrição adicional"}
+                    </span>
+                  </span>
+                ),
+              },
+              { label: "Limite", render: (r) => <span className="num">{r.rate_limit}</span> },
+              {
+                label: "Expiração",
+                render: (r) =>
+                  r.expires_at ? new Date(r.expires_at * 1000).toLocaleString("pt-BR") : "Sem data",
+              },
+              {
+                label: "Estado",
+                render: (r) => (
+                  <Pill tone={r.active ? "ok" : "muted"}>{r.active ? "Ativo" : "Revogado"}</Pill>
+                ),
+              },
+              {
+                label: "Controle",
+                render: (r) =>
+                  r.active ? (
+                    <ActionBtn tone="danger" onClick={() => void revoke(r.id)}>
+                      Revogar
+                    </ActionBtn>
+                  ) : (
+                    "—"
+                  ),
+              },
+            ]}
+          />
+        </Panel>
+      )}
+
+      {!admin && (
+        <p className="rounded-md border border-border bg-card px-3 py-2 text-[12px] text-muted-foreground">
+          <ShieldCheck className="mr-1 inline size-4" />
+          Gerenciamento de tokens é restrito ao perfil gestor do sistema.
+        </p>
+      )}
+    </ScreenBody>
+  );
+}

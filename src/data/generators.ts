@@ -1,0 +1,162 @@
+export type GenStatus = "online" | "alerta" | "offline" | "nao_configurado";
+export type GeneratorTransport =
+  "reverse_tcp" | "modbus_tcp_direct" | "rtu_over_tcp" | "modbus_rtu_serial";
+
+export type MetricLimit = {
+  displayMin?: number;
+  displayMax?: number;
+  warningLow?: number;
+  warningHigh?: number;
+  criticalLow?: number;
+  criticalHigh?: number;
+};
+
+export type MetricState = {
+  configured: boolean;
+  defined: boolean;
+  value: number | null;
+  unit?: string | null;
+  lastKnown?: boolean;
+};
+
+export type GeneratorCapabilities = {
+  telemetry?: boolean;
+  start?: boolean;
+  stop?: boolean;
+  auto?: boolean;
+  manual?: boolean;
+  test?: boolean;
+  mcb_open?: boolean;
+  mcb_close?: boolean;
+  gcb_open?: boolean;
+  gcb_close?: boolean;
+  paralleling?: boolean;
+};
+
+export type Generator = {
+  id: string;
+  tag: string;
+  name?: string;
+  customer?: string;
+  controller: string;
+  controllerType?: string;
+  site: string;
+  enabled?: boolean;
+  status: GenStatus;
+  mode: "AUTO" | "MANUAL" | "STOP" | "TESTE" | "OFF";
+  ip: string;
+  transport?: GeneratorTransport;
+  listenPort?: number | null;
+  modbusUnit?: number | null;
+  battery: number | null;
+  frequency: number | null;
+  mainsFrequency?: number | null;
+  nominalPower?: number | null;
+  nominalPowerConfigured?: number | null;
+  nominalPowerSource?: "telemetry" | "cadastral" | null;
+  fuelCapacityLiters?: number | null;
+  fuelCapacityConfigured?: number | null;
+  fuelCapacitySource?: "telemetry" | "cadastral" | null;
+  rpm: number | null;
+  load: number | null;
+  oilPressure: number | null;
+  coolantTemp: number | null;
+  fuelLevel: number | null;
+  alternatorVoltage: number | null;
+  maintenance: number | null;
+  runHours: number | null;
+  latency: number | null;
+  alarms: number;
+  mcb: boolean;
+  gcb: boolean;
+  mains: { l1: number | null; l2: number | null; l3: number | null; l12: number | null };
+  gen: { l1: number | null; l2: number | null; l3: number | null; l12: number | null };
+  metrics?: Record<string, number>;
+  /** Valores realmente definidos na leitura atual. */
+  availableMetrics?: string[];
+  definedMetrics?: string[];
+  /** Canais provisionados/configurados, mesmo quando a amostra atual está N/D. */
+  configuredMetrics?: string[];
+  metricStates?: Record<string, MetricState>;
+  metricUnits?: Record<string, string>;
+  metricLimits?: Record<string, MetricLimit>;
+  capabilities?: GeneratorCapabilities;
+  telemetrySource?: "rapid_scada" | "none" | string;
+  telemetryStale?: boolean;
+  staleMetrics?: string[];
+  lastTelemetryAt?: number | null;
+  dataAgeSeconds?: number | null;
+  rapidDeviceNum?: number | null;
+  lastError?: string;
+};
+
+// Estes arrays servem apenas como opções de formulário. Dados operacionais nunca são
+// criados a partir deles; a fonte de geradores é exclusivamente a API.
+export const GEN_SITES: string[] = [];
+export const CONTROLLER_MODELS = ["ComAp InteliGen 200"];
+
+let liveGenerators: Generator[] = [];
+
+export function getGenerators() {
+  return liveGenerators;
+}
+
+export function syncLiveGenerators(list: Generator[]) {
+  liveGenerators = list;
+}
+
+export function nextGeneratorTag(list: Generator[]) {
+  const nums = list.map((g) => Number(g.tag.replace(/\D/g, "")) || 0);
+  const n = Math.max(0, ...nums) + 1;
+  return { n, tag: `GEN${String(n).padStart(3, "0")}` };
+}
+
+export function getGenerator(id: string) {
+  return liveGenerators.find((g) => g.id === id || g.tag.toLowerCase() === id.toLowerCase());
+}
+
+export function displayGenName(tag: string) {
+  const n = tag.replace(/\D/g, "");
+  return n ? `Gerador ${String(Number(n)).padStart(2, "0")}` : tag;
+}
+
+export const statusLabel: Record<GenStatus, string> = {
+  online: "ONLINE",
+  alerta: "ALERTA",
+  offline: "OFFLINE",
+  nao_configurado: "NÃO CONFIGURADO",
+};
+
+export type GeneratorDisplayStatus = GenStatus | "stale";
+
+export function generatorDisplayStatus(generator: {
+  status: GenStatus;
+  telemetryStale?: boolean | undefined;
+}): GeneratorDisplayStatus {
+  if (generator.status === "nao_configurado") return "nao_configurado";
+  if (generator.telemetryStale) return "stale";
+  return generator.status;
+}
+
+export function isGeneratorOnline(generator: Pick<Generator, "status" | "telemetryStale">) {
+  return generatorDisplayStatus(generator) === "online";
+}
+
+export function isGeneratorAlert(generator: Pick<Generator, "status" | "telemetryStale">) {
+  return generatorDisplayStatus(generator) === "alerta";
+}
+
+export function isGeneratorConnected(generator: Pick<Generator, "status" | "telemetryStale">) {
+  const status = generatorDisplayStatus(generator);
+  return status === "online" || status === "alerta";
+}
+
+export type EventItem = {
+  gen: string;
+  message: string;
+  time: string;
+  date: string;
+  kind: "ok" | "info" | "battery" | "warn" | "error";
+};
+
+export const recentEvents: EventItem[] = [];

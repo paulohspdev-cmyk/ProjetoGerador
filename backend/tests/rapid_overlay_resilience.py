@@ -1,0 +1,207 @@
+from app import rapid
+
+
+generator = {
+    "id": "gen-test",
+    "tag": "GEN001",
+    "name": "Gerador 1",
+    "customer": "",
+    "site": "Unidade Teste",
+    "controller_type": "COMAP",
+    "controller_model": "InteliGen 200",
+    "transport": "reverse_tcp",
+    "host": "",
+    "listen_port": 15001,
+    "modbus_unit": 1,
+    "rapid_device_num": 200,
+    "nominal_power_kw": 500.0,
+    "fuel_capacity_l": 550.0,
+    "enabled": True,
+}
+
+binding = {
+    "generator_id": generator["id"],
+    "tag": generator["tag"],
+    "controller_type": "COMAP",
+    "controller_model": "InteliGen 200",
+    "transport": "reverse_tcp",
+    "listen_port": 15001,
+    "modbus_unit": 1,
+    "rapid_device_num": 200,
+    "channels": {
+        "rpm": {"cnl": 1001, "scale": 1},
+        "frequency": {"cnl": 1002, "scale": 1},
+        "fuel_level": {"cnl": 1003, "scale": 1},
+        "maintenance_hours": {"cnl": 1004, "scale": 1},
+        "run_hours": {"cnl": 1005, "scale": 1},
+        "nominal_power_kw": {"cnl": 1006, "scale": 1},
+        "fuel_capacity_l": {"cnl": 1007, "scale": 1},
+    },
+}
+
+original_load_bindings = rapid.load_bindings
+original_read_channels = rapid.read_channels
+original_bridge_status = rapid._load_bridge_status
+original_get_snapshot = rapid.db.get_telemetry_snapshot
+original_save_snapshot = rapid.db.save_telemetry_snapshot
+snapshots = {}
+
+try:
+    rapid.load_bindings = lambda: [binding]
+    rapid.db.get_telemetry_snapshot = lambda generator_id: snapshots.get(generator_id)
+    rapid.db.save_telemetry_snapshot = lambda generator_id, values, defined: snapshots.update(
+        {
+            generator_id: {
+                "values": {**snapshots.get(generator_id, {}).get("values", {}), **values},
+                "defined": sorted(
+                    set(snapshots.get(generator_id, {}).get("defined", [])) | set(defined)
+                ),
+                "updated_at": 123456789,
+            }
+        }
+    )
+    rapid._load_bridge_status = lambda: {
+        "updatedAt": 9999999999,
+        "ports": [
+            {
+                "remotePort": 15001,
+                "connected": True,
+                "lastRxAt": 9999999999,
+                "lastTxAt": 9999999999,
+                "timeouts": 0,
+                "errors": 0,
+            }
+        ],
+    }
+
+    # Um canal periférico válido não pode declarar a controladora ONLINE quando
+    # a métrica de saúde configurada (RPM) está inválida.
+    rapid.read_channels = lambda _nums: (
+        {
+            1001: {"val": None, "stat": 1, "defined": True},
+            1002: {"val": 60.0, "stat": 1, "defined": True},
+        },
+        "",
+    )
+    rows = rapid.overlay_generators([generator])
+    assert len(rows) == 1
+    assert rows[0]["tag"] == "GEN001"
+    assert rows[0]["status"] == "alerta"
+    assert rows[0]["frequency"] == 60.0
+    assert rows[0]["health"]["transport"] == "connected"
+    assert rows[0]["health"]["controller"] == "partial"
+    assert "rpm" in rows[0]["lastError"]
+
+    # Com uma métrica de saúde válida, o mesmo equipamento pode ficar ONLINE.
+    rapid.read_channels = lambda _nums: (
+        {
+            1001: {"val": 1500, "stat": 1, "defined": True},
+            1002: {"val": 60.0, "stat": 1, "defined": True},
+            1003: {"val": 516, "stat": 1, "defined": True},
+            1004: {"val": 159, "stat": 1, "defined": True},
+            1005: {"val": 1294.2, "stat": 1, "defined": True},
+            1006: {"val": 600, "stat": 1, "defined": True},
+            1007: {"val": 600, "stat": 1, "defined": True},
+        },
+        "",
+    )
+    rows = rapid.overlay_generators([generator])
+    assert rows[0]["status"] == "online"
+    assert rows[0]["health"]["controller"] == "responding"
+    assert rows[0]["nominalPower"] == 600
+    assert rows[0]["nominalPowerConfigured"] == 500
+    assert rows[0]["nominalPowerSource"] == "telemetry"
+    assert rows[0]["fuelCapacityLiters"] == 600
+    assert rows[0]["fuelCapacityConfigured"] == 550
+    assert rows[0]["fuelCapacitySource"] == "telemetry"
+
+    # Ao perder comunicação, somente combustível, manutenção e horímetro
+    # permanecem no card. Métricas instantâneas devem voltar a N/D.
+    rapid.read_channels = lambda _nums: ({}, "falha de comunicação sintética")
+    rows = rapid.overlay_generators([generator])
+    assert rows[0]["status"] in {"offline", "alerta"}
+    assert rows[0]["rpm"] is None
+    assert rows[0]["frequency"] is None
+    assert rows[0]["fuelLevel"] == 516
+    assert rows[0]["maintenance"] == 159
+    assert rows[0]["runHours"] == 1294.2
+    assert rows[0]["nominalPower"] == 500
+    assert rows[0]["nominalPowerConfigured"] == 500
+    assert rows[0]["nominalPowerSource"] == "cadastral"
+    assert rows[0]["fuelCapacityLiters"] == 550
+    assert rows[0]["fuelCapacityConfigured"] == 550
+    assert rows[0]["fuelCapacitySource"] == "cadastral"
+    assert rows[0]["telemetryStale"] is True
+    assert rows[0]["definedMetrics"] == []
+    assert rows[0]["telemetrySource"] == "last_known"
+
+    # Ausência de `val` nunca pode virar zero físico na normalização do reader.
+    parsed = rapid._parse_reader_channels(
+        {"channels": [{"cnl": 1001, "defined": True, "stat": 1}]}
+    )
+    assert parsed[1001]["defined"] is False
+    assert parsed[1001]["val"] is None
+
+    # Um pack sem métrica de health explícita permanece parcial, ainda que
+    # algum canal periférico esteja definido.
+    assert rapid._has_controller_health({"fuel_level": 50}, ["fuel_level"]) is False
+
+    # Cold start sem snapshot não pode parecer telemetria atual nem last-known.
+    snapshots.clear()
+    rapid.read_channels = lambda _nums: ({}, "falha de comunicação sintética")
+    rows = rapid.overlay_generators([generator])
+    assert rows[0]["telemetryStale"] is True
+    assert rows[0]["telemetrySource"] == "none"
+    assert rows[0]["definedMetrics"] == []
+
+    # Dashboard jamais pode repromover availableMetrics/última leitura quando
+    # definedMetrics está explicitamente vazio ou a telemetria está expirada.
+    stale_dashboard = rapid.dashboard(
+        [
+            {
+                "status": "offline",
+                "telemetryStale": True,
+                "definedMetrics": [],
+                "availableMetrics": ["rpm", "power_kw"],
+                "rpm": 1500,
+                "load": 50,
+            }
+        ]
+    )
+    assert stale_dashboard["running"] == 0
+    assert stale_dashboard["loadKw"] == 0
+
+    ig4_generator = {
+        **generator,
+        "controller_model": "IG4 200",
+        "controller_type": "COMAP",
+    }
+    assert rapid._metric_value_in_documented_range(ig4_generator, "fuel_level", 682)
+    assert not rapid._metric_value_in_documented_range(ig4_generator, "fuel_level", 683)
+    assert not rapid._metric_value_in_documented_range(ig4_generator, "fuel_level", 1041)
+
+    # Um binding pertencente a outro generator_id jamais pode ser adotado só por
+    # coincidir porta, Unit e Rapid Device.
+    foreign = {**binding, "generator_id": "gen-other"}
+    assert rapid.binding_for(generator, [foreign]) is None
+
+    # Binding legado sem dono continua migrável quando a identidade inteira bate.
+    legacy = {**binding}
+    legacy.pop("generator_id")
+    assert rapid.binding_for(generator, [legacy]) is legacy
+
+    # Mesmo uma exceção inesperada de binding/leitor deve preservar o inventário.
+    rapid.load_bindings = lambda: (_ for _ in ()).throw(RuntimeError("falha sintética"))
+    rows = rapid.overlay_generators([generator])
+    assert len(rows) == 1
+    assert rows[0]["tag"] == "GEN001"
+    assert rows[0]["status"] == "offline"
+    assert "Telemetria Rapid indisponível" in rows[0]["lastError"]
+finally:
+    rapid.load_bindings = original_load_bindings
+    rapid.read_channels = original_read_channels
+    rapid._load_bridge_status = original_bridge_status
+    rapid.db.get_telemetry_snapshot = original_get_snapshot
+    rapid.db.save_telemetry_snapshot = original_save_snapshot
+
+print("RC Geradores overlay Rapid resiliente: OK")

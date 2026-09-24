@@ -1,0 +1,5 @@
+# Canonicalize repository text files to LF so Windows checkouts do not create
+# CRLF-only diffs or Prettier failures. Keep native Windows launchers on CRLF.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf

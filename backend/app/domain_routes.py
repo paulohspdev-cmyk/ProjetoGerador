@@ -1,0 +1,915 @@
+from __future__ import annotations
+
+import asyncio
+import json
+import os
+import uuid
+
+from fastapi import APIRouter, Depends, HTTPException, Response, status
+from pydantic import BaseModel, Field
+
+from . import db, domain_bundle, domain_store, network_discovery, platform_store
+from .auth import require_admin, require_create, require_edit, require_remove, require_view
+from .binding_store import BindingStoreError
+from .industrial_routes import router as industrial_router
+from .integration_status import safe_integration_status
+from .rapid import load_bindings
+
+router = APIRouter()
+PROVISION_SOCKET = os.environ.get("RC_PROVISION_SOCKET", "/run/rc-geradores/provision.sock")
+
+
+def actor(user: dict) -> str:
+    return user.get("email") or user.get("name") or user.get("id") or "unknown"
+
+
+class AssetCreate(BaseModel):
+    tag: str = Field(min_length=1, max_length=64)
+    name: str | None = Field(default=None, max_length=160)
+    kind: str
+    site: str = Field(default="", max_length=160)
+    site_id: str | None = None
+    customer: str = Field(default="", max_length=160)
+    enabled: bool = True
+    metadata: dict = Field(default_factory=dict)
+
+
+class AssetUpdate(BaseModel):
+    tag: str | None = Field(default=None, min_length=1, max_length=64)
+    name: str | None = Field(default=None, min_length=1, max_length=160)
+    kind: str | None = None
+    site: str | None = Field(default=None, max_length=160)
+    site_id: str | None = None
+    customer: str | None = Field(default=None, max_length=160)
+    enabled: bool | None = None
+    metadata: dict | None = None
+
+
+class ControllerCreate(BaseModel):
+    asset_id: str | None = None
+    manufacturer: str | None = None
+    family: str | None = None
+    model: str = Field(min_length=1, max_length=180)
+    firmware: str = Field(default="", max_length=120)
+    enabled: bool = True
+    metadata: dict = Field(default_factory=dict)
+
+
+class ControllerUpdate(BaseModel):
+    asset_id: str | None = None
+    firmware: str | None = Field(default=None, max_length=120)
+    enabled: bool | None = None
+    metadata: dict | None = None
+
+
+class ConnectionCreate(BaseModel):
+    controller_id: str
+    name: str = Field(default="Principal", max_length=120)
+    transport: str = "reverse_tcp"
+    host: str = Field(default="", max_length=255)
+    listen_port: int = Field(default=0, ge=0, le=65535)
+    modbus_unit: int = Field(default=1, ge=1, le=247)
+    rapid_device_num: int | None = Field(default=None, ge=1)
+    enabled: bool = True
+    config: dict = Field(default_factory=dict)
+
+
+class ConnectionUpdate(BaseModel):
+    name: str | None = Field(default=None, max_length=120)
+    transport: str | None = None
+    host: str | None = Field(default=None, max_length=255)
+    listen_port: int | None = Field(default=None, ge=0, le=65535)
+    modbus_unit: int | None = Field(default=None, ge=1, le=247)
+    rapid_device_num: int | None = Field(default=None, ge=1)
+    enabled: bool | None = None
+    config: dict | None = None
+
+
+class BundleController(BaseModel):
+    manufacturer: str | None = None
+    family: str | None = None
+    model: str = Field(min_length=1, max_length=180)
+    firmware: str = Field(default="", max_length=120)
+    enabled: bool = True
+    metadata: dict = Field(default_factory=dict)
+
+
+class BundleConnection(BaseModel):
+    name: str = Field(default="Principal", max_length=120)
+    transport: str = "reverse_tcp"
+    host: str = Field(default="", max_length=255)
+    listen_port: int = Field(default=0, ge=0, le=65535)
+    modbus_unit: int = Field(default=1, ge=1, le=247)
+    rapid_device_num: int | None = Field(default=None, ge=1)
+    enabled: bool = True
+    config: dict = Field(default_factory=dict)
+
+
+class EquipmentBundleCreate(BaseModel):
+    asset: AssetCreate
+    controller: BundleController
+    connection: BundleConnection | None = None
+
+
+class AssetLinkCreate(BaseModel):
+    from_asset_id: str
+    to_asset_id: str
+    relation: str = Field(min_length=1, max_length=80)
+    metadata: dict = Field(default_factory=dict)
+
+
+class ProvisionRequest(BaseModel):
+    confirmation: str = Field(min_length=1, max_length=64)
+    operationId: str | None = Field(default=None, min_length=8, max_length=120)
+
+
+class DeprovisionRequest(BaseModel):
+    confirmation: str = Field(min_length=1, max_length=64)
+    operationId: str | None = Field(default=None, min_length=8, max_length=120)
+
+
+class RetireRequest(BaseModel):
+    confirmation: str = Field(min_length=1, max_length=160)
+    operationId: str | None = Field(default=None, min_length=8, max_length=120)
+
+
+class GeneratorReconfigureRequest(BaseModel):
+    operationId: str | None = Field(default=None, min_length=8, max_length=120)
+    transport: str
+    ip: str = Field(default="", max_length=255)
+    listenPort: int = Field(default=0, ge=0, le=65535)
+    modbusUnit: int = Field(ge=1, le=247)
+    enabled: bool | None = None
+    confirmation: str = Field(min_length=1, max_length=160)
+
+
+class NetworkDiscoveryRequest(BaseModel):
+    cidr: str = Field(min_length=9, max_length=32)
+    port: int = Field(default=502, ge=1, le=65535)
+    timeoutMs: int = Field(default=350, ge=100, le=2000)
+    confirmation: str = Field(min_length=1, max_length=64)
+
+
+async def _privileged_operation(generator_id: str, operation: str) -> dict:
+    if operation not in {"provision", "deprovision"}:
+        raise HTTPException(status_code=500, detail="Operação privilegiada inválida")
+    try:
+        reader, writer = await asyncio.open_unix_connection(PROVISION_SOCKET)
+    except OSError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Serviço privilegiado de provisionamento não está disponível",
+        ) from exc
+
+    confirmation = "PROVISION_CONFIRMED" if operation == "provision" else "DEPROVISION_CONFIRMED"
+    writer.write(
+        (
+            json.dumps(
+                {
+                    "operation": operation,
+                    "generator_id": generator_id,
+                    "confirm": confirmation,
+                }
+            )
+            + "\n"
+        ).encode()
+    )
+    await writer.drain()
+    try:
+        raw = await asyncio.wait_for(reader.readline(), timeout=100)
+    finally:
+        writer.close()
+        await writer.wait_closed()
+    try:
+        result = json.loads(raw.decode())
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502,
+            detail="Resposta inválida do serviço de provisionamento",
+        ) from exc
+    if not result.get("ok"):
+        label = "Provisionamento" if operation == "provision" else "Deprovisionamento"
+        raise HTTPException(status_code=409, detail=result.get("error") or f"{label} recusado")
+    return result
+
+
+async def _privileged_deprovision(generator_id: str) -> dict:
+    return await _privileged_operation(generator_id, "deprovision")
+
+
+def _active_binding(generator_id: str) -> dict | None:
+    try:
+        bindings = load_bindings()
+    except BindingStoreError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail="Estado dos bindings Rapid está corrompido ou inconsistente; operação bloqueada até reconciliação.",
+        ) from exc
+    return next(
+        (
+            item
+            for item in bindings
+            if str(item.get("generator_id") or "") == generator_id
+        ),
+        None,
+    )
+
+
+def _assert_industrial_state_consistent(generator: dict, binding: dict | None) -> None:
+    if binding is None and int(generator.get("rapid_device_num") or 0) > 0:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Cadastro possui Rapid Device, mas o binding ativo está ausente. "
+                "Reconcilie o estado industrial antes de alterar, desativar ou retirar o gerador."
+            ),
+        )
+
+
+def _assert_asset_not_legacy_mirror(asset_id: str) -> None:
+    item = domain_store.get_asset(asset_id)
+    if item and item.get("legacy_generator_id"):
+        raise HTTPException(
+            status_code=409,
+            detail="Asset espelhado de gerador legado é somente leitura no domínio v3; altere pelo cadastro do gerador.",
+        )
+
+
+def _is_controller_legacy_mirror(controller_id: str) -> bool:
+    controller = domain_store.get_controller(controller_id)
+    if not controller:
+        return False
+    asset = domain_store.get_asset(str(controller.get("asset_id") or ""))
+    legacy_id = str((asset or {}).get("legacy_generator_id") or "")
+    return bool(legacy_id and controller_id == f"ctrl-{legacy_id}")
+
+
+def _assert_controller_not_legacy_mirror(controller_id: str) -> None:
+    if _is_controller_legacy_mirror(controller_id):
+        raise HTTPException(
+            status_code=409,
+            detail="Controladora espelhada de gerador legado é somente leitura estrutural no domínio v3.",
+        )
+
+
+def _assert_connection_not_legacy_mirror(connection_id: str) -> None:
+    connection = domain_store.get_connection(connection_id)
+    if not connection:
+        return
+    controller = domain_store.get_controller(str(connection.get("controller_id") or ""))
+    asset = domain_store.get_asset(str((controller or {}).get("asset_id") or ""))
+    legacy_id = str((asset or {}).get("legacy_generator_id") or "")
+    if legacy_id and connection_id == f"conn-{legacy_id}":
+        raise HTTPException(
+            status_code=409,
+            detail="Conexão espelhada de gerador legado é somente leitura no domínio v3.",
+        )
+
+
+@router.get("/api/integrations/status")
+def integrations_status(user: dict = Depends(require_view)):
+    return safe_integration_status()
+
+
+@router.get("/api/topology")
+def topology(user: dict = Depends(require_view)):
+    return domain_store.topology_snapshot()
+
+
+@router.post("/api/equipment-bundles", status_code=status.HTTP_201_CREATED)
+def equipment_bundle_create(payload: EquipmentBundleCreate, user: dict = Depends(require_create)):
+    try:
+        return domain_bundle.create_equipment_bundle(payload.model_dump(), actor(user))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        if "UNIQUE constraint failed" in str(exc):
+            raise HTTPException(
+                status_code=409,
+                detail="Já existe um asset com esta tag ou vínculo duplicado",
+            ) from exc
+        raise
+
+
+@router.get("/api/generators/{generator_id}/lifecycle")
+def generator_lifecycle(generator_id: str, user: dict = Depends(require_view)):
+    generator = db.get_generator(generator_id)
+    if not generator:
+        raise HTTPException(status_code=404, detail="Gerador não encontrado")
+    binding = _active_binding(generator["id"])
+    consistent = not (binding is None and int(generator.get("rapid_device_num") or 0) > 0)
+    return {
+        "generatorId": generator["id"],
+        "tag": generator["tag"],
+        "provisioned": binding is not None,
+        "binding": binding,
+        "industrialStateConsistent": consistent,
+        "canDeleteSafely": binding is None and consistent,
+    }
+
+
+async def _execute_generator_provision(
+    generator_id: str,
+    payload: ProvisionRequest,
+    user: dict = Depends(require_create),
+):
+    if payload.confirmation.strip().upper() != "PROVISION":
+        raise HTTPException(status_code=422, detail="Confirmação deve ser PROVISION")
+    generator = db.get_generator(generator_id)
+    if not generator:
+        raise HTTPException(status_code=404, detail="Gerador não encontrado")
+    binding = _active_binding(generator["id"])
+    _assert_industrial_state_consistent(generator, binding)
+    if binding:
+        return {
+            "ok": True,
+            "existing": True,
+            "generatorId": generator["id"],
+            "binding": binding,
+        }
+    result = await _privileged_operation(generator["id"], "provision")
+    db.add_audit(
+        actor(user),
+        "provision_requested",
+        "generator",
+        generator["id"],
+        "configuração industrial aplicada pelo fluxo guiado",
+    )
+    return result
+
+
+async def _execute_generator_deprovision(
+    generator_id: str,
+    payload: DeprovisionRequest,
+    user: dict = Depends(require_admin),
+):
+    if payload.confirmation.strip().upper() != "DEPROVISION":
+        raise HTTPException(status_code=422, detail="Confirmação deve ser DEPROVISION")
+    generator = db.get_generator(generator_id)
+    if not generator:
+        raise HTTPException(status_code=404, detail="Gerador não encontrado")
+    result = await _privileged_deprovision(generator["id"])
+    db.add_audit(
+        actor(user),
+        "deprovision_requested",
+        "generator",
+        generator["id"],
+        "Motor de telemetria; histórico preservado",
+    )
+    return result
+
+
+async def _execute_generator_reconfigure(
+    generator_id: str,
+    payload: GeneratorReconfigureRequest,
+    user: dict = Depends(require_admin),
+):
+    generator = db.get_generator(generator_id)
+    if not generator:
+        raise HTTPException(status_code=404, detail="Gerador não encontrado")
+    expected = f"RECONFIGURAR {generator['tag']}"
+    if payload.confirmation.strip().upper() != expected.upper():
+        raise HTTPException(status_code=422, detail=f"Confirmação deve ser {expected}")
+
+    transport = payload.transport.strip()
+    supported = {"reverse_tcp", "modbus_tcp_direct", "rtu_over_tcp", "modbus_rtu_serial"}
+    if transport not in supported:
+        raise HTTPException(status_code=422, detail="Tipo de conexão não suportado neste fluxo")
+    host = payload.ip.strip()
+    if transport in {"modbus_tcp_direct", "rtu_over_tcp", "modbus_rtu_serial"} and not host:
+        raise HTTPException(status_code=422, detail="Informe o IP/gateway ou dispositivo serial")
+    if transport == "reverse_tcp":
+        host = ""
+    listen_port = int(payload.listenPort or 0)
+    if transport in {"reverse_tcp", "modbus_tcp_direct", "rtu_over_tcp"}:
+        if listen_port == 0 and transport in {"modbus_tcp_direct", "rtu_over_tcp"}:
+            listen_port = 502
+        if not 1 <= listen_port <= 65535:
+            raise HTTPException(status_code=422, detail="Informe uma porta TCP válida")
+    else:
+        listen_port = 0
+
+    target_enabled = bool(generator.get("enabled")) if payload.enabled is None else bool(payload.enabled)
+    identity = {
+        "transport": transport,
+        "host": host,
+        "listen_port": listen_port,
+        "modbus_unit": payload.modbusUnit,
+    }
+    previous = {
+        "transport": generator.get("transport") or "reverse_tcp",
+        "host": generator.get("host") or "",
+        "listen_port": int(generator.get("listen_port") or 0),
+        "modbus_unit": int(generator.get("modbus_unit") or 1),
+        "rapid_device_num": generator.get("rapid_device_num"),
+        "enabled": bool(generator.get("enabled")),
+    }
+    identity_changed = any(identity[key] != previous[key] for key in identity)
+    enabled_changed = target_enabled != previous["enabled"]
+    if not identity_changed and not enabled_changed:
+        return {"ok": True, "changed": False, "generator": generator}
+
+    active_binding = _active_binding(generator["id"])
+    _assert_industrial_state_consistent(generator, active_binding)
+    was_provisioned = active_binding is not None
+    should_deprovision = was_provisioned and (identity_changed or not target_enabled)
+    should_provision = target_enabled and (
+        was_provisioned or (payload.enabled is True and not previous["enabled"])
+    )
+
+    if should_deprovision:
+        await _privileged_deprovision(generator["id"])
+        if _active_binding(generator["id"]):
+            raise HTTPException(status_code=409, detail="Configuração industrial anterior ainda está ativa")
+
+    update_patch = {**identity, "enabled": target_enabled}
+    provision_result = None
+    try:
+        updated = db.update_generator(
+            generator["id"],
+            update_patch,
+            actor=actor(user),
+            allow_industrial_identity=True,
+        )
+        domain_store.sync_legacy_generators()
+        if should_provision:
+            provision_result = await _privileged_operation(generator["id"], "provision")
+            updated = db.get_generator(generator["id"])
+    except Exception as exc:
+        rollback_error = None
+        try:
+            # Se a tentativa chegou a provisionar parcialmente, retire primeiro.
+            rollback_binding = _active_binding(generator["id"])
+            if rollback_binding:
+                await _privileged_deprovision(generator["id"])
+            db.update_generator(
+                generator["id"],
+                previous,
+                actor="system:reconfigure-rollback",
+                allow_industrial_identity=True,
+            )
+            domain_store.sync_legacy_generators()
+            if was_provisioned:
+                await _privileged_operation(generator["id"], "provision")
+        except Exception as rollback_exc:
+            rollback_error = str(rollback_exc)
+        db.add_audit(
+            actor(user),
+            "reconfigure_failed",
+            "generator",
+            generator["id"],
+            f"rollback={'failed: ' + rollback_error if rollback_error else 'ok'}",
+        )
+        detail = "Reconfiguração falhou; configuração anterior restaurada."
+        if rollback_error:
+            detail = (
+                "Reconfiguração falhou e a restauração automática também falhou. "
+                "Equipamento mantido bloqueado para intervenção administrativa."
+            )
+        raise HTTPException(status_code=502, detail=detail) from exc
+
+    db.add_audit(
+        actor(user),
+        "reconfigure",
+        "generator",
+        generator["id"],
+        (
+            f"{previous['transport']}:{previous['listen_port']}/unit={previous['modbus_unit']} "
+            f"enabled={previous['enabled']} -> "
+            f"{transport}:{listen_port}/unit={payload.modbusUnit} enabled={target_enabled}"
+        ),
+    )
+    return {
+        "ok": True,
+        "changed": True,
+        "generator": updated,
+        "reprovisioned": bool(should_provision),
+        "deprovisioned": bool(should_deprovision),
+        "provision": provision_result,
+    }
+
+
+@router.post("/api/network-discovery/modbus-tcp")
+async def network_discovery_modbus_tcp(
+    payload: NetworkDiscoveryRequest,
+    user: dict = Depends(require_admin),
+):
+    if payload.confirmation.strip().upper() != "SCAN SOMENTE LEITURA":
+        raise HTTPException(status_code=422, detail="Confirmação deve ser SCAN SOMENTE LEITURA")
+    try:
+        result = await network_discovery.scan_tcp(payload.cidr, payload.port, payload.timeoutMs)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    db.add_audit(
+        actor(user),
+        "read_only_scan",
+        "network",
+        result["cidr"],
+        f"port={result['port']};hosts={result['scannedHosts']};found={len(result['found'])}",
+    )
+    return result
+
+
+async def _execute_generator_retire(
+    generator_id: str,
+    payload: RetireRequest,
+    user: dict = Depends(require_remove),
+):
+    generator = db.get_generator(generator_id)
+    if not generator:
+        raise HTTPException(status_code=404, detail="Gerador não encontrado")
+    expected = f"RETIRAR {generator['tag']}"
+    if payload.confirmation.strip().upper() != expected.upper():
+        raise HTTPException(status_code=422, detail=f"Confirmação deve ser {expected}")
+
+    binding = _active_binding(generator["id"])
+    _assert_industrial_state_consistent(generator, binding)
+    deprovision_result = None
+    if binding:
+        if str(user.get("role") or "") != "administrador":
+            raise HTTPException(
+                status_code=403,
+                detail="Gerador provisionado só pode ser retirado por administrador",
+            )
+        deprovision_result = await _privileged_deprovision(generator["id"])
+    if _active_binding(generator["id"]):
+        raise HTTPException(status_code=409, detail="Binding Rapid ainda está ativo; retirada recusada")
+    refreshed = db.get_generator(generator["id"])
+    if refreshed and int(refreshed.get("rapid_device_num") or 0) > 0:
+        raise HTTPException(
+            status_code=409,
+            detail="Rapid Device ainda está associado ao cadastro; retirada recusada",
+        )
+
+    if not db.delete_generator(generator["id"], actor=actor(user)):
+        raise HTTPException(status_code=404, detail="Gerador não encontrado")
+    domain_store.remove_legacy_generator(generator["id"])
+    db.add_audit(
+        actor(user),
+        "retire",
+        "generator",
+        generator["id"],
+        "cadastro removido após ciclo de vida seguro",
+    )
+    return {
+        "ok": True,
+        "generatorId": generator["id"],
+        "tag": generator["tag"],
+        "deprovisioned": bool(deprovision_result),
+        "historyPreserved": bool((deprovision_result or {}).get("historyPreserved", True)),
+    }
+
+
+def _queue_lifecycle_operation(
+    generator_id: str,
+    kind: str,
+    payload: BaseModel,
+    user: dict,
+) -> dict:
+    generator = db.get_generator(generator_id)
+    if not generator:
+        raise HTTPException(status_code=404, detail="Gerador não encontrado")
+    operation_id = str(getattr(payload, "operationId", None) or uuid.uuid4())
+    payload_dict = payload.model_dump()
+    payload_dict["operationId"] = operation_id
+    try:
+        queued = platform_store.enqueue_lifecycle_operation(
+            operation_id,
+            generator["id"],
+            kind,
+            payload_dict,
+            actor(user),
+            str(user.get("role") or ""),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    db.add_audit(
+        actor(user),
+        f"{kind}_queued",
+        "generator",
+        generator["id"],
+        f"operation={operation_id}",
+    )
+    return queued
+
+
+@router.post(
+    "/api/generators/{generator_id}/provision",
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def generator_provision(
+    generator_id: str,
+    payload: ProvisionRequest,
+    user: dict = Depends(require_create),
+):
+    if payload.confirmation.strip().upper() != "PROVISION":
+        raise HTTPException(status_code=422, detail="Confirmação deve ser PROVISION")
+    return _queue_lifecycle_operation(generator_id, "provision", payload, user)
+
+
+@router.post(
+    "/api/generators/{generator_id}/deprovision",
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def generator_deprovision(
+    generator_id: str,
+    payload: DeprovisionRequest,
+    user: dict = Depends(require_admin),
+):
+    if payload.confirmation.strip().upper() != "DEPROVISION":
+        raise HTTPException(status_code=422, detail="Confirmação deve ser DEPROVISION")
+    return _queue_lifecycle_operation(generator_id, "deprovision", payload, user)
+
+
+@router.post(
+    "/api/generators/{generator_id}/reconfigure",
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def generator_reconfigure(
+    generator_id: str,
+    payload: GeneratorReconfigureRequest,
+    user: dict = Depends(require_admin),
+):
+    generator = db.get_generator(generator_id)
+    if not generator:
+        raise HTTPException(status_code=404, detail="Gerador não encontrado")
+    expected = f"RECONFIGURAR {generator['tag']}"
+    if payload.confirmation.strip().upper() != expected.upper():
+        raise HTTPException(status_code=422, detail=f"Confirmação deve ser {expected}")
+    return _queue_lifecycle_operation(generator_id, "reconfigure", payload, user)
+
+
+@router.post(
+    "/api/generators/{generator_id}/retire",
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def generator_retire(
+    generator_id: str,
+    payload: RetireRequest,
+    user: dict = Depends(require_remove),
+):
+    generator = db.get_generator(generator_id)
+    if not generator:
+        raise HTTPException(status_code=404, detail="Gerador não encontrado")
+    expected = f"RETIRAR {generator['tag']}"
+    if payload.confirmation.strip().upper() != expected.upper():
+        raise HTTPException(status_code=422, detail=f"Confirmação deve ser {expected}")
+    return _queue_lifecycle_operation(generator_id, "retire", payload, user)
+
+
+@router.get("/api/generators/{generator_id}/operations/{operation_id}")
+def generator_operation_status(
+    generator_id: str,
+    operation_id: str,
+    user: dict = Depends(require_view),
+):
+    operation = platform_store.get_lifecycle_operation(operation_id, generator_id)
+    if not operation:
+        raise HTTPException(status_code=404, detail="Operação não encontrada")
+    return operation
+
+
+async def execute_lifecycle_operation(item: dict) -> dict:
+    """Executed only by the dedicated lifecycle worker, never by an HTTP timeout window."""
+    kind = str(item.get("kind") or "")
+    payload = item.get("payload") or {}
+    user = {
+        "id": item.get("actor") or "system",
+        "email": item.get("actor") or "system",
+        "role": item.get("actorRole") or "",
+    }
+    generator_id = str(item.get("generatorId") or "")
+    if kind == "provision":
+        return await _execute_generator_provision(generator_id, ProvisionRequest(**payload), user)
+    if kind == "deprovision":
+        return await _execute_generator_deprovision(generator_id, DeprovisionRequest(**payload), user)
+    if kind == "reconfigure":
+        return await _execute_generator_reconfigure(
+            generator_id, GeneratorReconfigureRequest(**payload), user
+        )
+    if kind == "retire":
+        return await _execute_generator_retire(generator_id, RetireRequest(**payload), user)
+    raise ValueError(f"Operação desconhecida: {kind}")
+
+
+@router.get("/api/assets")
+def assets_list(user: dict = Depends(require_view)):
+    domain_store.sync_legacy_generators()
+    return domain_store.list_assets()
+
+
+@router.post("/api/assets", status_code=status.HTTP_201_CREATED)
+def assets_create(payload: AssetCreate, user: dict = Depends(require_create)):
+    try:
+        return domain_store.create_asset(payload.model_dump(), actor(user))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        if "UNIQUE constraint failed" in str(exc):
+            raise HTTPException(status_code=409, detail="Já existe um asset com esta tag") from exc
+        raise
+
+
+@router.get("/api/assets/{asset_id}")
+def asset_get(asset_id: str, user: dict = Depends(require_view)):
+    item = domain_store.get_asset(asset_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Asset não encontrado")
+    return item
+
+
+@router.patch("/api/assets/{asset_id}")
+def asset_update(asset_id: str, payload: AssetUpdate, user: dict = Depends(require_edit)):
+    _assert_asset_not_legacy_mirror(asset_id)
+    try:
+        item = domain_store.update_asset(
+            asset_id,
+            payload.model_dump(exclude_unset=True),
+            actor(user),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    if not item:
+        raise HTTPException(status_code=404, detail="Asset não encontrado")
+    return item
+
+
+@router.delete("/api/assets/{asset_id}", status_code=status.HTTP_204_NO_CONTENT)
+def asset_delete(asset_id: str, user: dict = Depends(require_remove)):
+    _assert_asset_not_legacy_mirror(asset_id)
+    if domain_store.list_controllers(asset_id):
+        raise HTTPException(
+            status_code=409,
+            detail="Asset possui controladora(s). Remova as conexões e controladoras antes de excluir o asset.",
+        )
+    if domain_store.list_asset_links(asset_id):
+        raise HTTPException(
+            status_code=409,
+            detail="Asset participa da topologia. Remova os vínculos antes de excluir o asset.",
+        )
+    try:
+        ok = domain_store.delete_asset(asset_id, actor(user))
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    if not ok:
+        raise HTTPException(status_code=404, detail="Asset não encontrado")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/api/controllers")
+def controllers_list(asset_id: str | None = None, user: dict = Depends(require_view)):
+    domain_store.sync_legacy_generators()
+    return domain_store.list_controllers(asset_id)
+
+
+@router.post("/api/controllers", status_code=status.HTTP_201_CREATED)
+def controllers_create(payload: ControllerCreate, user: dict = Depends(require_create)):
+    try:
+        return domain_store.create_controller(payload.model_dump(), actor(user))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.patch("/api/controllers/{controller_id}")
+def controller_update(
+    controller_id: str,
+    payload: ControllerUpdate,
+    user: dict = Depends(require_edit),
+):
+    patch = payload.model_dump(exclude_unset=True)
+    if _is_controller_legacy_mirror(controller_id):
+        forbidden = set(patch) - {"firmware", "metadata"}
+        if forbidden:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "Controladora espelhada aceita somente firmware/metadata de inventário; "
+                    "alterações estruturais devem ser feitas pelo cadastro do gerador."
+                ),
+            )
+    try:
+        item = domain_store.update_controller(
+            controller_id,
+            patch,
+            actor(user),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    if not item:
+        raise HTTPException(status_code=404, detail="Controladora não encontrada")
+    return item
+
+
+@router.delete("/api/controllers/{controller_id}", status_code=status.HTTP_204_NO_CONTENT)
+def controller_delete(controller_id: str, user: dict = Depends(require_remove)):
+    _assert_controller_not_legacy_mirror(controller_id)
+    current = domain_store.get_controller(controller_id)
+    if not current:
+        raise HTTPException(status_code=404, detail="Controladora não encontrada")
+    connections = domain_store.list_connections(controller_id)
+    if connections:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Controladora possui {len(connections)} conexão(ões). Remova-as antes de excluir a controladora.",
+        )
+    with db.connect() as conn:
+        conn.execute("DELETE FROM controller_instances WHERE id=?", (controller_id,))
+    db.add_audit(actor(user), "delete", "controller", controller_id, str(current.get("model") or ""))
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/api/connections")
+def connections_list(controller_id: str | None = None, user: dict = Depends(require_view)):
+    domain_store.sync_legacy_generators()
+    return domain_store.list_connections(controller_id)
+
+
+@router.post("/api/connections", status_code=status.HTTP_201_CREATED)
+def connections_create(payload: ConnectionCreate, user: dict = Depends(require_create)):
+    _assert_controller_not_legacy_mirror(payload.controller_id)
+    try:
+        return domain_store.create_connection(payload.model_dump(), actor(user))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.patch("/api/connections/{connection_id}")
+def connection_update(
+    connection_id: str,
+    payload: ConnectionUpdate,
+    user: dict = Depends(require_edit),
+):
+    _assert_connection_not_legacy_mirror(connection_id)
+    try:
+        item = domain_store.update_connection(
+            connection_id,
+            payload.model_dump(exclude_unset=True),
+            actor(user),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    if not item:
+        raise HTTPException(status_code=404, detail="Conexão não encontrada")
+    return item
+
+
+@router.delete("/api/connections/{connection_id}", status_code=status.HTTP_204_NO_CONTENT)
+def connection_delete(connection_id: str, user: dict = Depends(require_remove)):
+    _assert_connection_not_legacy_mirror(connection_id)
+    current = domain_store.get_connection(connection_id)
+    if not current:
+        raise HTTPException(status_code=404, detail="Conexão não encontrada")
+    if current.get("enabled"):
+        raise HTTPException(
+            status_code=409,
+            detail="Conexão ativa não pode ser excluída. Desative-a antes da remoção.",
+        )
+    with db.connect() as conn:
+        conn.execute("DELETE FROM controller_connections WHERE id=?", (connection_id,))
+    db.add_audit(
+        actor(user),
+        "delete",
+        "controller_connection",
+        connection_id,
+        f"{current.get('transport') or ''};unit={current.get('modbus_unit') or ''}",
+    )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/api/asset-links")
+def asset_links_list(asset_id: str | None = None, user: dict = Depends(require_view)):
+    return domain_store.list_asset_links(asset_id)
+
+
+@router.post("/api/asset-links", status_code=status.HTTP_201_CREATED)
+def asset_links_create(payload: AssetLinkCreate, user: dict = Depends(require_create)):
+    try:
+        return domain_store.create_asset_link(
+            payload.from_asset_id,
+            payload.to_asset_id,
+            payload.relation,
+            payload.metadata,
+            actor(user),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.delete("/api/asset-links/{link_id}", status_code=status.HTTP_204_NO_CONTENT)
+def asset_link_delete(link_id: str, user: dict = Depends(require_remove)):
+    with db.connect() as conn:
+        current = conn.execute("SELECT * FROM asset_links WHERE id=?", (link_id,)).fetchone()
+        if not current:
+            raise HTTPException(status_code=404, detail="Vínculo de topologia não encontrado")
+        conn.execute("DELETE FROM asset_links WHERE id=?", (link_id,))
+    db.add_audit(
+        actor(user),
+        "delete",
+        "asset_link",
+        link_id,
+        f"{current['from_asset_id']}->{current['to_asset_id']}:{current['relation']}",
+    )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+router.include_router(industrial_router)

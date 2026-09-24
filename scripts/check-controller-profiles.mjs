@@ -1,0 +1,603 @@
+import { createHash } from "node:crypto";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { dirname, join, relative, resolve, sep } from "node:path";
+
+const root = process.cwd();
+const failures = [];
+const read = (path) => readFileSync(join(root, path), "utf8");
+const load = (path) => JSON.parse(read(path));
+
+function manifestPaths(base) {
+  const found = [];
+  const walk = (directory) => {
+    for (const entry of readdirSync(join(root, directory), { withFileTypes: true })) {
+      const path = join(directory, entry.name);
+      if (entry.isDirectory()) walk(path);
+      else if (entry.isFile() && entry.name === "manifest.json") {
+        found.push(relative(root, join(root, path)).split(sep).join("/"));
+      }
+    }
+  };
+  walk(base);
+  return found.sort();
+}
+
+const labPaths = manifestPaths("controllers/lab");
+const productionPaths = manifestPaths("controllers/production");
+const forbiddenCommands = [
+  "start",
+  "stop",
+  "auto",
+  "manual",
+  "test",
+  "mcb_open",
+  "mcb_close",
+  "gcb_open",
+  "gcb_close",
+  "paralleling",
+];
+
+function validateSource(path, profile) {
+  const mapping = profile.mapping ?? profile.modbusMapping;
+  if (!mapping?.sourceFile) return;
+  if (!/^[0-9a-f]{64}$/.test(mapping.sourceSha256 ?? "")) {
+    failures.push(`${path}: SHA-256 da fonte ausente ou inválido`);
+    return;
+  }
+  const manifestDirectory = resolve(dirname(join(root, path)));
+  const sourcePath = resolve(manifestDirectory, mapping.sourceFile);
+  const sourceRelative = relative(manifestDirectory, sourcePath);
+  if (sourceRelative === ".." || sourceRelative.startsWith(`..${sep}`)) {
+    failures.push(`${path}: fonte deve permanecer dentro do próprio Controller Pack`);
+    return;
+  }
+  if (!existsSync(sourcePath)) {
+    failures.push(`${path}: fonte documental ausente: ${mapping.sourceFile}`);
+    return;
+  }
+  const digest = createHash("sha256").update(readFileSync(sourcePath)).digest("hex");
+  if (digest !== mapping.sourceSha256) {
+    failures.push(`${path}: SHA-256 não confere com a fonte documental`);
+  }
+  const lines = readFileSync(sourcePath).toString("latin1").split(/\r?\n/);
+  const entries = mapping.registers ?? mapping.objects ?? {};
+  for (const [metric, entry] of Object.entries(entries)) {
+    const objectNumber = entry.object == null ? "" : String(entry.object);
+    const candidates =
+      entry.address == null
+        ? lines.filter((line) => new RegExp(`^\\s*${objectNumber}\\s+`).test(line))
+        : lines.filter((line) => new RegExp(`^\\s*0*${Number(entry.address)}(?:\\s|-)`).test(line));
+    if (
+      candidates.length === 0 ||
+      (objectNumber && !candidates.some((line) => new RegExp(`\\b${objectNumber}\\b`).test(line)))
+    ) {
+      failures.push(`${path}: ${metric} não confere com a fonte documental`);
+    }
+  }
+}
+
+function documentedReadOnlyProduction(profile) {
+  return (
+    profile.status === "production" &&
+    profile.mapping?.readOnly === true &&
+    profile.capabilities?.telemetry === true &&
+    forbiddenCommands.every((command) => profile.capabilities?.[command] === false) &&
+    (profile.validation?.documentation ?? []).length > 0 &&
+    profile.validation?.field !== true &&
+    Boolean(profile.rapid?.template) &&
+    (profile.rapid?.channels ?? []).length > 0
+  );
+}
+
+function validateLineOptions(path, profile) {
+  const options = profile.rapid?.lineOptions ?? {};
+  for (const key of ["CmdEnabled", "PollAfterCmd"]) {
+    if (Object.hasOwn(options, key)) {
+      failures.push(
+        `${path}: ${key} pertence à política global de segurança e não pode ser sobrescrito pelo pack`,
+      );
+    }
+  }
+}
+
+if (labPaths.length === 0) failures.push("nenhum Controller Pack LAB encontrado");
+if (productionPaths.length === 0) failures.push("nenhum Controller Pack production encontrado");
+
+for (const path of labPaths) {
+  const profile = load(path);
+  validateSource(path, profile);
+  validateLineOptions(path, profile);
+  if (profile.schema !== 3) failures.push(`${path}: schema deve ser 3`);
+  if (!["investigation", "documented", "lab_validated"].includes(profile.status)) {
+    failures.push(`${path}: lifecycle LAB não pode usar status ${profile.status}`);
+  }
+  if (profile.mapping && profile.mapping.readOnly !== true) {
+    failures.push(`${path}: qualquer mapa LAB deve permanecer somente leitura`);
+  }
+  if (profile.status === "investigation" && (profile.validatedTelemetry ?? []).length !== 0) {
+    failures.push(`${path}: investigação não pode declarar telemetria validada`);
+  }
+  for (const command of forbiddenCommands) {
+    if (profile.capabilities?.[command] !== false) {
+      failures.push(`${path}: comando ${command} não pode ser habilitado em LAB`);
+    }
+  }
+}
+
+for (const path of productionPaths) {
+  const profile = load(path);
+  validateSource(path, profile);
+  validateLineOptions(path, profile);
+
+  const rapidTemplatePath = profile.rapid?.template;
+  if (rapidTemplatePath) {
+    if (!existsSync(join(root, rapidTemplatePath))) {
+      failures.push(`${path}: template Rapid ausente: ${rapidTemplatePath}`);
+    } else {
+      const rapidTemplate = read(rapidTemplatePath);
+      const trimmedTemplate = rapidTemplate.trim();
+      if (!trimmedTemplate.includes("<DeviceTemplate")) {
+        failures.push(`${path}: template Rapid sem raiz DeviceTemplate`);
+      }
+      if (!trimmedTemplate.endsWith("</DeviceTemplate>")) {
+        failures.push(`${path}: template Rapid contém XML incompleto ou lixo após DeviceTemplate`);
+      }
+      if (/readOnly="false"|<Cmd\b[^>]*address=/i.test(rapidTemplate)) {
+        failures.push(`${path}: template Rapid de produção contém superfície de escrita`);
+      }
+    }
+  }
+  if (profile.schema !== 4) failures.push(`${path}: production exige schema 4`);
+  const contracts = profile.commands ?? {};
+  for (const command of forbiddenCommands) {
+    if (profile.capabilities?.[command] === true && !contracts[command]) {
+      failures.push(`${path}: capability ${command} exige contrato commands.${command}`);
+    }
+  }
+  if (profile.status !== "field_validated" && !documentedReadOnlyProduction(profile)) {
+    failures.push(
+      `${path}: production exige field_validated ou contrato documental estritamente read-only`,
+    );
+  }
+}
+
+const ig200Path = "controllers/production/comap/inteligen-200/manifest.json";
+if (!productionPaths.includes(ig200Path)) failures.push("IG200 homologado não está em production");
+const ig200 = load(ig200Path);
+const map = ig200.modbusMapping?.registers ?? {};
+const expected = {
+  rpm: [1000, 1],
+  fuel_rate: [1004, 0.1],
+  coolant_temperature: [1005, 1],
+  intake_temperature: [1006, 1],
+  oil_pressure: [1007, 0.01],
+  intake_pressure: [1008, 0.01],
+  engine_load: [1009, 1],
+  power_kw: [1019, 1],
+  power_kvar: [1023, 1],
+  power_kva: [1027, 1],
+  power_factor: [1031, 0.01],
+  frequency: [1035, 0.1],
+  voltage_l1: [1036, 1],
+  voltage_l2: [1037, 1],
+  voltage_l3: [1038, 1],
+  voltage_l1_l2: [1039, 1],
+  voltage_l2_l3: [1040, 1],
+  voltage_l3_l1: [1041, 1],
+  current_l1: [1042, 1],
+  current_l2: [1043, 1],
+  current_l3: [1044, 1],
+  battery_voltage: [1083, 0.1],
+  alternator_voltage: [1084, 0.1],
+  fuel_level: [1087, 1],
+  nominal_power_kw: [1227, 1],
+  nominal_voltage: [1228, 1],
+  nominal_current: [1229, 1],
+  genset_kwh: [1230, 1],
+  run_hours: [1238, 0.1],
+  number_starts: [1240, 1],
+  maintenance_hours: [1241, 1],
+  engine_state_raw: [1258, 1],
+  breaker_state_raw: [1259, 1],
+  controller_mode_raw: [1342, 1],
+};
+
+for (const [metric, [address, scale]] of Object.entries(expected)) {
+  if (map[metric]?.address !== address || map[metric]?.scale !== scale) {
+    failures.push(`IG200: ${metric} deve permanecer em ${address} / escala ${scale}`);
+  }
+  if (!(ig200.validatedTelemetry ?? []).includes(metric)) {
+    failures.push(`IG200: ${metric} perdeu homologação de campo`);
+  }
+  if (!(ig200.rapid?.channels ?? []).some((channel) => channel.key === metric)) {
+    failures.push(`IG200: canal Rapid ausente para ${metric}`);
+  }
+}
+
+if (
+  ig200.modbusMapping?.exportStatus !== "field_validated" ||
+  ig200.modbusMapping?.exportName !== "in200.txt" ||
+  ig200.modbusMapping?.exportTool !== "ComAp InteliConfig"
+) {
+  failures.push("IG200: export in200.txt validado deixou de ser a fonte do mapa");
+}
+if (ig200.metricUnits?.fuel_level !== "L" || ig200.metricUnits?.oil_pressure !== "bar") {
+  failures.push("IG200: unidades reais de combustível/óleo foram alteradas");
+}
+if (
+  ig200.capabilities?.start !== true ||
+  ig200.capabilities?.stop !== true ||
+  forbiddenCommands.slice(2).some((command) => ig200.capabilities?.[command] !== false)
+) {
+  failures.push("IG200: política de comandos homologados foi alterada");
+}
+
+const ig4Path = "controllers/production/comap/ig4-200/manifest.json";
+if (!productionPaths.includes(ig4Path)) failures.push("IG4 200 validado não está em production");
+else {
+  const ig4 = load(ig4Path);
+  if (ig4.metricUnits?.fuel_level !== "L") {
+    failures.push("IG4 200: unidade real do diesel deve permanecer em litros");
+  }
+  if (ig4.metricLimits?.fuel_level?.displayMax != null) {
+    failures.push(
+      "IG4 200: range documental do registro não pode ser tratado como capacidade do tanque",
+    );
+  }
+}
+
+const dse8610Path = "controllers/lab/dse/dse8610-mkii/manifest.json";
+if (!labPaths.includes(dse8610Path)) failures.push("DSE8610 MKII documental não está em LAB");
+const dse8610 = load(dse8610Path);
+const dseMap = dse8610.mapping?.registers ?? {};
+const dseExpected = {
+  controller_mode_raw: [772, 1],
+  oil_pressure: [1024, 1],
+  coolant_temperature: [1025, 1],
+  fuel_level: [1027, 1],
+  battery_voltage: [1029, 0.1],
+  rpm: [1030, 1],
+  frequency: [1031, 0.1],
+  voltage_l1: [1032, 0.1],
+  current_l1: [1044, 0.1],
+  power_kw: [1536, 0.001],
+  run_hours: [1798, 1 / 3600],
+  genset_kwh: [1800, 0.1],
+  gcb_closed: [48660, 1],
+};
+for (const [metric, [address, scale]] of Object.entries(dseExpected)) {
+  if (dseMap[metric]?.address !== address || dseMap[metric]?.scale !== scale) {
+    failures.push(`DSE8610: ${metric} deve permanecer em ${address} / escala ${scale}`);
+  }
+}
+if (
+  dse8610.status !== "documented" ||
+  dse8610.mapping?.readOnly !== true ||
+  dse8610.documentedControl?.enabled !== false ||
+  dse8610.documentedControl?.firstAddress !== 4104 ||
+  dse8610.documentedControl?.registerCount !== 2 ||
+  dse8610.documentedControl?.atomicWriteRequired !== true
+) {
+  failures.push("DSE8610: contrato documental/controle bloqueado foi alterado");
+}
+for (const command of forbiddenCommands) {
+  if (dse8610.capabilities?.[command] !== false) {
+    failures.push(`DSE8610: comando ${command} foi habilitado sem homologação`);
+  }
+}
+
+const dseProductionPath = "controllers/production/dse/dse-gencomm-v1/manifest.json";
+if (!productionPaths.includes(dseProductionPath)) {
+  failures.push("DSE GenComm production read-only não está em production");
+}
+const dseProduction = load(dseProductionPath);
+if (!documentedReadOnlyProduction(dseProduction)) {
+  failures.push("DSE GenComm: contrato de produção documental read-only inválido");
+}
+if ((dseProduction.validatedTelemetry ?? []).length !== 0) {
+  failures.push("DSE GenComm: telemetria documental não pode fingir validação de campo");
+}
+if (dseProduction.mapping?.wordOrder !== "most_significant_register_first") {
+  failures.push("DSE GenComm: ordem de palavras 32-bit documentada foi alterada");
+}
+
+const catalogRows = load("controllers/catalog/catalog-v1.json").controllers ?? [];
+const dseGensets = catalogRows.filter(
+  (item) => item.manufacturer === "DSE" && item.application === "genset",
+);
+if (dseGensets.length !== 46) {
+  failures.push(`DSE: catálogo deve manter 46 modelos genset, encontrado ${dseGensets.length}`);
+}
+const registrationOnlyDse = new Set([
+  "DSE3110",
+  "DSE5110",
+  "DSE710",
+  "DSE720",
+  "DSE501",
+  "DSE7510",
+  "DSE7520",
+  "DSE5310",
+  "DSE5510",
+  "DSE5520",
+]);
+const newlyDocumentedDse = new Set([
+  "DSE4210",
+  "DSE4220",
+  "DSE4510",
+  "DSE4520",
+  "DSE7210",
+  "DSE7220",
+  "DSE7310",
+  "DSE7320",
+  "DSE7410",
+  "DSE7420",
+  "DSE8610",
+  "DSE8620",
+  "DSE8810",
+]);
+const dseAliases = new Set(dseProduction.aliases ?? []);
+const dseProductionPacks = productionPaths
+  .map((path) => load(path))
+  .filter((profile) => profile.manufacturer === "DSE" && profile.application === "genset");
+const dseProductionNames = new Set(
+  dseProductionPacks.flatMap((profile) => [profile.model, ...(profile.aliases ?? [])]),
+);
+for (const model of newlyDocumentedDse) {
+  if (!dseAliases.has(model)) failures.push(`DSE: ${model} perdeu cobertura GenComm documental`);
+}
+for (const model of registrationOnlyDse) {
+  if (dseAliases.has(model)) {
+    failures.push(`DSE: ${model} não pode ser provisionada sem evidência GenComm suficiente`);
+  }
+}
+for (const item of dseGensets) {
+  if (!registrationOnlyDse.has(item.model) && !dseProductionNames.has(item.model)) {
+    failures.push(`DSE: ${item.model} deveria ter um Controller Pack de produção read-only`);
+  }
+}
+for (const model of dseAliases) {
+  if (!dseGensets.some((item) => item.model === model)) {
+    failures.push(`DSE: alias ${model} não corresponde a uma controladora primária de gerador`);
+  }
+}
+const excludedDse = new Map([
+  ["DSE7560", "ats"],
+  ["DSE7570", "sync_lock"],
+  ["DSE8660 MKII", "ats"],
+  ["DSE8680", "bus_tie"],
+]);
+for (const [model, application] of excludedDse) {
+  const item = catalogRows.find((row) => row.model === model);
+  if (!item || item.application !== application) {
+    failures.push(`DSE: ${model} precisa permanecer classificada como ${application}`);
+  }
+  if (dseProductionNames.has(model)) failures.push(`DSE: ${model} não pode usar pack de gerador`);
+}
+if (dseAliases.size !== 35) {
+  failures.push(
+    `DSE GenComm: esperado cobertura documental de 35 aliases, encontrado ${dseAliases.size}`,
+  );
+}
+const dse5210Path = "controllers/production/dse/dse5210-gencomm-v1/manifest.json";
+if (!productionPaths.includes(dse5210Path)) failures.push("DSE5210: pack específico ausente");
+else {
+  const dse5210 = load(dse5210Path);
+  if (!documentedReadOnlyProduction(dse5210)) {
+    failures.push("DSE5210: contrato production read-only inválido");
+  }
+  const required5210 = {
+    controller_mode_raw: 772,
+    alarm_class_raw: 774,
+    oil_pressure: 1024,
+    coolant_temperature: 1025,
+    fuel_level: 1027,
+    battery_voltage: 1029,
+    rpm: 1030,
+    frequency: 1031,
+    voltage_l1: 1032,
+    voltage_l2: 1034,
+    voltage_l3: 1036,
+    current_l1: 1044,
+    current_l2: 1046,
+    current_l3: 1048,
+    run_hours: 1798,
+    number_starts: 1808,
+  };
+  for (const [metric, address] of Object.entries(required5210)) {
+    if (dse5210.mapping?.registers?.[metric]?.address !== address) {
+      failures.push(`DSE5210: ${metric} deve permanecer em ${address}`);
+    }
+  }
+  for (const unsupported of [
+    "oil_temperature",
+    "power_kw",
+    "power_factor",
+    "engine_load",
+    "maintenance_hours",
+    "genset_kwh",
+  ]) {
+    if (dse5210.mapping?.registers?.[unsupported]) {
+      failures.push(`DSE5210: ${unsupported} não pode ser presumida pelo pack legado`);
+    }
+  }
+  const dse5210Evidence = "controllers/production/dse/dse5210-gencomm-v1/MODEL_EVIDENCE.md";
+  if (!existsSync(join(root, dse5210Evidence))) {
+    failures.push("DSE5210: evidência model-specific ausente");
+  }
+  const dse5210Template = read("rapid/templates/DrvModbus_RC_DSE5210_GenComm.xml");
+  for (const marker of [
+    'address="772"',
+    'tagCode="controller_mode_raw"',
+    'address="1024"',
+    'tagCode="oil_pressure"',
+    'address="1027"',
+    'tagCode="fuel_level"',
+    'address="1798"',
+    'tagCode="run_hours"',
+    'readOnly="true"',
+    "<Cmds />",
+  ]) {
+    if (!dse5210Template.includes(marker)) failures.push(`DSE5210 template perdeu: ${marker}`);
+  }
+  if (/power_kw|oil_temperature|readOnly="false"|Cmd[^>]+address=/.test(dse5210Template)) {
+    failures.push(
+      "DSE5210 template contém registrador opcional/reservado ou superfície de escrita",
+    );
+  }
+}
+
+const dseEvidencePath = "controllers/production/dse/dse-gencomm-v1/MODEL_EVIDENCE.md";
+if (!existsSync(join(root, dseEvidencePath)))
+  failures.push("DSE GenComm: matriz de evidência ausente");
+else {
+  const evidence = read(dseEvidencePath);
+  for (const model of newlyDocumentedDse) {
+    if (!evidence.includes(model)) failures.push(`DSE: evidência documental ausente para ${model}`);
+  }
+}
+
+const ig4Manifest = JSON.parse(read("controllers/production/comap/ig4-200/manifest.json"));
+if (!ig4Manifest.validatedTelemetry?.includes("fuel_level")) {
+  failures.push("IG4 200 perdeu fuel_level validado em campo");
+}
+for (const key of ["oil_pressure", "coolant_temperature"]) {
+  if (ig4Manifest.validatedTelemetry?.includes(key)) {
+    failures.push(`IG4 200 promoveu ${key} sem validação física válida`);
+  }
+}
+const ig4Fuel = ig4Manifest.mapping?.registers?.fuel_level;
+if (ig4Fuel?.address !== 1055 || ig4Fuel?.unit !== "L") {
+  failures.push("IG4 200 perdeu contrato Fuel Level HR1055 em litros");
+}
+const ig4FieldReference = String(ig4Manifest.validation?.fieldReference ?? "");
+if (!ig4FieldReference.includes("GEN152 Unit 15") || !ig4FieldReference.includes("HR1055=591 L")) {
+  failures.push("IG4 200 perdeu evidência read-only de fuel_level do GEN152");
+}
+
+const template = read("rapid/templates/DrvModbus_RC_IG200.xml");
+for (const marker of [
+  'tagCode="coolant_temperature"',
+  'tagCode="oil_pressure_raw"',
+  'address="1019"',
+  'tagCode="power_kw"',
+  'address="1035"',
+  'tagCode="frequency_raw"',
+  'address="1087"',
+  'tagCode="fuel_level"',
+  'address="1227"',
+  'tagCode="nominal_power_kw"',
+  'address="1238"',
+  'tagCode="run_hours_raw"',
+  'address="1258"',
+  'tagCode="engine_state_raw"',
+  'address="1342"',
+  'tagCode="controller_mode_raw"',
+  'readOnly="true"',
+  "<Cmds />",
+]) {
+  if (!template.includes(marker)) failures.push(`IG200 template perdeu: ${marker}`);
+}
+
+const ig200Probe = read("ops/ig200_probe_readonly.py");
+for (const marker of [
+  '1227: ("nominal_power", 1.0, "kW")',
+  "args.start <= 1227 <= args.end",
+  "values[1227] = client.read(1227, 1)[0]",
+]) {
+  if (!ig200Probe.includes(marker)) failures.push(`IG200 probe perdeu âncora nominal: ${marker}`);
+}
+if (
+  ig200Probe.includes('1228: ("nominal_power", 1.0, "kW")') ||
+  ig200Probe.includes("values[1228] = client.read(1228, 1)[0]")
+) {
+  failures.push("IG200 probe voltou a confundir 1228 (tensão nominal) com potência nominal");
+}
+
+const dseTemplate = read("rapid/templates/DrvModbus_RC_DSE_GenComm_Core.xml");
+for (const marker of [
+  'address="772"',
+  'tagCode="controller_mode_raw"',
+  'address="1024"',
+  'tagCode="oil_pressure"',
+  'tagCode="rpm"',
+  'tagCode="voltage_l1"',
+  'tagCode="current_l1"',
+  'address="1536"',
+  'tagCode="power_kw"',
+  'address="1798"',
+  'tagCode="run_hours"',
+  'readOnly="true"',
+  "<Cmds />",
+]) {
+  if (!dseTemplate.includes(marker)) failures.push(`DSE GenComm template perdeu: ${marker}`);
+}
+if (/Cmd[^>]+address=|readOnly="false"/.test(dseTemplate)) {
+  failures.push("DSE GenComm template contém superfície de escrita");
+}
+
+const dseProvisioner = read("rapid/provisioning/provision_dse_gencomm.py");
+for (const marker of [
+  "pack_is_production_ready",
+  'mapping.get("readOnly") is True',
+  "COMMAND_CAPABILITIES",
+  'provision(str(generator["id"]), restart=False)',
+  "_restart_rapid()",
+]) {
+  if (!dseProvisioner.includes(marker)) {
+    failures.push(`provisionador DSE perdeu guardrail: ${marker}`);
+  }
+}
+
+const card = read("src/components/generators/PowerFlowCard.tsx");
+for (const marker of [
+  "readGeneratorTelemetry(gen)",
+  "gen.capabilities?.[action] === true",
+  'canAction("mcb_open")',
+  'canAction("gcb_close")',
+  "formatNumber(powerFactor, 2)",
+]) {
+  if (!card.includes(marker)) failures.push(`card perdeu contrato seguro: ${marker}`);
+}
+for (const forbidden of ["oilTone(", "coolantTone(", "fuelTone(", "alternatorTone(", "1000;"]) {
+  if (card.includes(forbidden)) {
+    failures.push(`card voltou a conter inferência industrial: ${forbidden}`);
+  }
+}
+
+const health = read("src/components/generators/generator-health.ts");
+if (!health.includes("toneFromLimit") || !health.includes("gen.metricLimits")) {
+  failures.push("saúde visual não está centralizada em limites homologáveis");
+}
+if (
+  health.includes("value < 2") ||
+  health.includes("value > 105") ||
+  health.includes(": 1000") ||
+  health.includes("displayMax: 682")
+) {
+  failures.push("saúde visual voltou a conter limite industrial presumido");
+}
+
+const metricHelper = read("src/components/generators/generator-metrics.ts");
+if (!metricHelper.includes("gen.metrics")) failures.push("helper não prioriza telemetria atual");
+
+const rapid = read("backend/app/rapid.py");
+for (const marker of [
+  '"metrics": dict(values)',
+  '"definedMetrics": defined_metrics',
+  '"configuredMetrics": configured_metrics',
+  '"metricStates": metric_states',
+  '"capabilities": _effective_capabilities',
+  "_cache_lock",
+  "_is_undefined_raw",
+  "_derive_breaker_feedback",
+]) {
+  if (!rapid.includes(marker)) failures.push(`overlay Rapid perdeu: ${marker}`);
+}
+
+if (failures.length) {
+  console.error("Controller profile check falhou:\n- " + failures.join("\n- "));
+  process.exit(1);
+}
+console.log(
+  `Controller profile check OK: ${productionPaths.length} production e ${labPaths.length} LAB cobertos recursivamente.`,
+);
