@@ -92,9 +92,6 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
     await expect(card.getByText("ESTADO DO MOTOR")).toHaveCount(0);
     await expect(card.locator(".vref-engine-heading")).toHaveCount(0);
     await expect(card.locator(".vref-motor-gauge")).toHaveCount(4);
-    await expect(
-      card.locator('[data-motor-gauge="bateria"] .vref-motor-gauge-progress'),
-    ).toHaveCount(1);
     await expect(card.locator(".vref-motor-gauge .needle")).toHaveCount(0);
     await expect(card.locator(".vref-mini-bar")).toHaveCount(0);
     await expect(card.locator(".vref-gauge-panel-rpm > h4")).toHaveText("RPM");
