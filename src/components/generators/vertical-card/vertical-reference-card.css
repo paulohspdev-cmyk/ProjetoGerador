@@ -42,7 +42,7 @@
     44px
     118px
     minmax(250px, 1.7fr)
-    70px
+    auto
     108px
     minmax(216px, 1fr);
   gap: 4px;
@@ -984,7 +984,7 @@
       38px
       96px
       minmax(195px, 1.35fr)
-      64px
+      auto
       92px
       minmax(158px, 1fr);
     gap: 3px;
