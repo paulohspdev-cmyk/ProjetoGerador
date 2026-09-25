@@ -669,7 +669,7 @@
   box-shadow: 0 0 4px rgb(46 230 0 / 65%);
 }
 
-/* Engine */
+/* Motor gauges */
 .vref-engine-rpm {
   display: block;
   min-width: 0;
@@ -683,19 +683,13 @@
 }
 
 .vref-engine {
-  padding: 4px 5px;
+  display: grid;
+  grid-template-rows: 14px minmax(0, 1fr);
+  padding: 3px 5px 4px;
 }
 
 .vref-engine-heading {
-  margin-bottom: 2px;
-}
-
-.vref-engine-heading {
-  display: flex;
   min-width: 0;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px;
 }
 
 .vref-engine-heading h4 {
@@ -703,88 +697,89 @@
   line-height: 1;
 }
 
-.vref-engine-heading > span {
-  font-size: 7.5px;
-  font-weight: 900;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-}
-
-.vref-engine-heading > span.is-running {
-  color: var(--vref-green);
-}
-
-.vref-engine-heading > span.is-stopped {
-  color: #a9bbc5;
-}
-
-.vref-engine-heading > span.is-unknown {
-  color: var(--vref-yellow);
-}
-
-.vref-engine-row {
+.vref-motor-gauges {
   display: grid;
-  grid-template-columns: 11px minmax(50px, 1fr) minmax(23px, 0.65fr) 39px;
-  align-items: center;
-  gap: 2px;
-  min-height: 18px;
-  color: #eaf2f6;
-  font-size: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 3px;
+  min-width: 0;
+  min-height: 0;
 }
 
-.vref-engine-row svg {
-  width: 10px;
-  height: 10px;
-  stroke-width: 1.8;
+.vref-motor-gauge {
+  display: grid;
+  grid-template-rows: 11px minmax(0, 1fr);
+  align-items: stretch;
+  min-width: 0;
+  min-height: 0;
+  overflow: visible;
 }
 
-.vref-engine-row > span:not(.vref-mini-bar) {
+.vref-motor-gauge + .vref-motor-gauge {
+  border-left: 1px solid var(--vref-line-soft);
+}
+
+.vref-motor-gauge-label {
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.vref-engine-row > b {
-  overflow: hidden;
-  color: #fff;
-  font-size: 10px;
+  color: #b7c7d1;
+  font-size: 8px;
   font-weight: 900;
-  text-align: right;
+  line-height: 10px;
+  text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.vref-engine-row.is-warning > svg,
-.vref-engine-row.is-warning > span:not(.vref-mini-bar),
-.vref-engine-row.is-warning > b {
-  color: var(--vref-yellow);
+.vref-motor-gauge svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: visible;
+}
+
+.vref-motor-gauge-track,
+.vref-motor-gauge-progress {
+  fill: none;
+  stroke-width: 10;
+  stroke-linecap: butt;
+}
+
+.vref-motor-gauge-track {
+  stroke: #24384b;
+}
+
+.vref-motor-gauge-progress {
+  stroke: #21a7d5;
+}
+
+.vref-motor-gauge-value {
+  fill: #27b7e7;
+  font-size: 14px;
+  font-weight: 900;
+  paint-order: stroke;
+  stroke: #06131f;
+  stroke-width: 1.4px;
+  stroke-linejoin: round;
+}
+
+.vref-motor-gauge-unit {
+  fill: #8fa5b3;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.vref-motor-gauge.is-warning .vref-motor-gauge-progress {
   stroke: var(--vref-yellow);
 }
 
-.vref-engine-row.is-warning .vref-mini-bar {
-  border-color: color-mix(in srgb, var(--vref-yellow) 65%, #304956);
-  background: repeating-linear-gradient(135deg, #241d06 0 3px, #3b2d05 3px 5px);
+.vref-motor-gauge.is-warning .vref-motor-gauge-value,
+.vref-motor-gauge.is-warning .vref-motor-gauge-unit {
+  fill: var(--vref-yellow);
 }
 
-.vref-mini-bar {
-  display: block;
-  height: 5px;
-  overflow: hidden;
-  border: 1px solid #20485f;
-  border-radius: 999px;
-  background: #03121c;
-}
-
-.vref-mini-bar > i {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #1978a3, #35a6d4);
-}
-
-.vref-mini-bar.is-unknown {
-  border-color: #304956;
-  background: repeating-linear-gradient(135deg, #071923 0 3px, #102834 3px 5px);
+.vref-motor-gauge.is-warning .vref-motor-gauge-label {
+  color: var(--vref-yellow);
 }
 
 /* Measurements */
@@ -939,13 +934,11 @@
     font-size: 10px;
   }
 
-  .vref-engine-row,
   .vref-data-row,
   .vref-summary-item {
     font-size: 10px;
   }
 
-  .vref-engine-row > b,
   .vref-summary-item > b {
     font-size: 10px;
   }
@@ -966,13 +959,11 @@
     font-size: 12px;
   }
 
-  .vref-engine-row,
   .vref-data-row,
   .vref-summary-item {
     font-size: 10px;
   }
 
-  .vref-engine-row > b,
   .vref-summary-item > b {
     font-size: 10px;
   }
@@ -1033,14 +1024,22 @@
     margin-bottom: 1px;
   }
 
-  .vref-engine-heading {
-    margin-bottom: 1px;
-    line-height: 1;
+  .vref-engine {
+    grid-template-rows: 12px minmax(0, 1fr);
+    padding: 2px 4px 3px;
   }
 
-  .vref-engine-row {
-    min-height: 15px;
-    line-height: 1;
+  .vref-motor-gauge {
+    grid-template-rows: 9px minmax(0, 1fr);
+  }
+
+  .vref-motor-gauge-label {
+    font-size: 7px;
+    line-height: 8px;
+  }
+
+  .vref-motor-gauge-value {
+    font-size: 12px;
   }
 
   .vref-data-row {

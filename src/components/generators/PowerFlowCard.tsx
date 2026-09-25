@@ -307,8 +307,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         coolantPercent={percents.coolant}
         fuelPercent={percents.fuel}
         fuelOutOfRange={fuelOutOfRange}
-        runningKnown={runningKnown}
-        running={running}
       />
 
       <VerticalTables
