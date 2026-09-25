@@ -765,11 +765,6 @@
   stroke: var(--vref-yellow);
 }
 
-.vref-motor-gauge.is-warning .vref-motor-gauge-value,
-.vref-motor-gauge.is-warning .vref-motor-gauge-unit {
-  fill: var(--vref-yellow);
-}
-
 .vref-motor-gauge.is-warning .vref-motor-gauge-label {
   color: var(--vref-yellow);
 }
