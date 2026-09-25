@@ -40,10 +40,10 @@
   display: grid;
   grid-template-rows:
     44px
-    140px
-    minmax(234px, 1.55fr)
-    132px
-    minmax(216px, 1fr);
+    164px
+    minmax(232px, 1.5fr)
+    124px
+    minmax(210px, 1fr);
   gap: 4px;
   width: 100%;
   height: 100%;
@@ -223,90 +223,104 @@
   min-height: 0;
 }
 
-.vref-power-gauge > svg,
-.vref-gauge-panel-rpm .rpm-svg {
+.vref-instrument-gauge {
   display: block;
   width: 100%;
   height: 100%;
   overflow: visible;
 }
 
-.vref-gauge-base,
-.vref-gauge-range,
-.vref-gauge-panel-rpm .gauge-bg,
-.vref-gauge-panel-rpm .gauge-active {
+.vref-dial-face {
+  fill: #0b1823;
+  stroke: #2c4354;
+  stroke-width: 2;
+}
+
+.vref-dial-track,
+.vref-dial-active {
   fill: none;
-  stroke-width: 10;
-  stroke-linecap: round;
+  stroke-width: 13;
+  stroke-linecap: butt;
 }
 
-.vref-gauge-base,
-.vref-gauge-panel-rpm .gauge-bg {
-  stroke: #405267;
+.vref-dial-track {
+  stroke: #3c4e63;
 }
 
-.vref-gauge-range {
-  stroke: #25b9ed;
-  filter: drop-shadow(0 0 2px rgb(37 185 237 / 34%));
+.vref-instrument-gauge[data-accent="cyan"] .vref-dial-active {
+  stroke: #24b8e6;
+  filter: drop-shadow(0 0 2px rgb(36 184 230 / 42%));
 }
 
-.vref-gauge-panel-rpm .gauge-active {
-  stroke: var(--vref-green);
-  filter: drop-shadow(0 0 2px rgb(46 230 0 / 34%));
+.vref-instrument-gauge[data-accent="green"] .vref-dial-active {
+  stroke: #2dde14;
+  filter: drop-shadow(0 0 2px rgb(45 222 20 / 38%));
 }
 
-.vref-gauge-scale,
-.vref-gauge-panel-rpm .rpm-scale-label {
+.vref-dial-tick {
+  stroke: #8fa2b0;
+  stroke-width: 1.1;
+}
+
+.vref-dial-tick.is-major {
+  stroke: #eef5f8;
+  stroke-width: 1.8;
+}
+
+.vref-dial-scale-label {
   fill: #f4f8fb;
-  font-size: 13px;
+  font-size: 8.5px;
   font-weight: 900;
   paint-order: stroke;
   stroke: #07131d;
-  stroke-width: 1.3px;
+  stroke-width: 1.15px;
   stroke-linejoin: round;
 }
 
-.vref-kw-needle-line,
-.rpm-needle-line {
-  stroke: #fff;
-  stroke-width: 3;
+.vref-dial-needle > line {
+  stroke: #eef4f7;
+  stroke-width: 3.2;
   stroke-linecap: round;
-  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 68%));
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 72%));
 }
 
-.vref-gauge-hub,
-.rpm-gauge-hub {
-  fill: #e9f2f7;
+.vref-dial-needle > circle:first-of-type {
+  fill: #b8c8d2;
   stroke: #071923;
   stroke-width: 2;
 }
 
-.vref-kw-value,
-.vref-gauge-panel-rpm .rpm-percent {
+.vref-dial-needle-core {
+  fill: #071923;
+}
+
+.vref-dial-idle-hub {
+  fill: #071923;
+  stroke: #9cb0bc;
+  stroke-width: 2;
+}
+
+.vref-dial-value {
   fill: #fff;
-  font-size: 26px;
+  font-size: 20px;
   font-weight: 900;
   paint-order: stroke;
   stroke: #06131f;
-  stroke-width: 2.3px;
+  stroke-width: 2px;
   stroke-linejoin: round;
+}
+
+.vref-dial-unit {
+  fill: #e3edf2;
+  font-size: 9px;
+  font-weight: 900;
 }
 
 /* Power flow */
 .vref-flow-controller {
   display: flex;
   flex-direction: column;
-  padding: 5px 6px 4px;
-}
-
-.vref-flow-controller-heading {
-  display: flex;
-  flex: 0 0 18px;
-  align-items: center;
-}
-
-.vref-flow-controller-heading h4 {
-  margin: 0;
+  padding: 4px 5px 4px;
 }
 
 .vref-flow-controller-body {
@@ -318,18 +332,18 @@
 
 .vref-flow-mode-controls {
   flex: 0 0 auto;
-  margin-top: 3px;
-  padding-top: 4px;
+  margin-top: 2px;
+  padding-top: 3px;
   border-top: 1px solid var(--vref-line-soft);
 }
 
 .vref-flow-controller-body > svg {
   position: absolute;
   top: 0;
-  left: 50%;
+  left: calc(50% - 18px);
   display: block;
   width: auto;
-  max-width: calc(100% - 10px);
+  max-width: calc(100% - 42px);
   height: 100%;
   min-height: 0;
   overflow: visible;
@@ -337,105 +351,67 @@
 }
 
 .vref-wire,
-.vref-wire-live,
-.vref-bus,
-.vref-bus-live {
+.vref-wire-live {
   fill: none;
+  stroke-width: 3.2;
   stroke-linecap: round;
 }
 
-.vref-wire,
+.vref-wire {
+  stroke: #627581;
+}
+
 .vref-wire-live {
-  stroke-width: 3.5;
-}
-
-.vref-bus,
-.vref-bus-live {
-  stroke-width: 5;
-}
-
-.vref-wire,
-.vref-bus {
-  stroke: #63747e;
-}
-
-.vref-wire-live,
-.vref-bus-live {
   stroke: transparent;
 }
 
-.vref-wire-live.is-live,
-.vref-bus-live.is-live {
+.vref-wire-live.is-live {
   stroke: var(--vref-green);
-  filter: drop-shadow(0 0 2px rgb(46 230 0 / 36%));
+  filter: drop-shadow(0 0 2px rgb(46 230 0 / 42%));
 }
 
 .vref-junction {
-  fill: #63747e;
+  fill: #627581;
 }
 
 .vref-junction.is-live {
   fill: var(--vref-green);
+  filter: drop-shadow(0 0 2px rgb(46 230 0 / 45%));
 }
 
-.vref-bus-label,
-.vref-generator-label {
-  fill: #9db0bc;
-  font-size: 7.5px;
-  font-weight: 900;
-  letter-spacing: 0.035em;
+.vref-utility-node > circle {
+  fill: #0b1823;
+  stroke: #79909d;
+  stroke-width: 1.7;
 }
 
-.vref-flow-frequency {
-  fill: #eef4f7;
-  font-size: 9px;
-  font-weight: 900;
-}
-
-.vref-source-node > rect,
-.vref-load-node > rect {
-  fill: #071923;
-  stroke: #516978;
-  stroke-width: 1.4;
-}
-
-.vref-source-node .title,
-.vref-load-node .title {
-  fill: #fff;
-  font-size: 9px;
-  font-weight: 900;
-}
-
-.vref-source-node .value,
-.vref-load-node .value {
-  fill: #b7c6cf;
-  font-size: 8.5px;
-  font-weight: 900;
-}
-
-.vref-source-node.is-live > rect,
-.vref-load-node.is-live > rect {
+.vref-utility-node.is-live > circle {
   stroke: var(--vref-green);
 }
 
-.vref-source-node.is-live .value,
-.vref-load-node.is-live .value {
-  fill: var(--vref-green);
+.vref-pylon-icon {
+  fill: none;
+  stroke: #eaf2f6;
+  stroke-width: 1.1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-.vref-source-node.is-dead > rect,
-.vref-source-node.is-unknown > rect {
-  stroke: #63747e;
+.vref-utility-node .frequency,
+.vref-generator-node .frequency {
+  fill: #fff;
+  font-size: 9.5px;
+  font-weight: 900;
 }
 
 .vref-breaker > circle {
-  fill: #71848f;
-  stroke: #71848f;
+  fill: #6d818c;
+  stroke: #6d818c;
 }
 
 .vref-breaker > line {
-  stroke: #71848f;
-  stroke-width: 3.8;
+  stroke: #6d818c;
+  stroke-width: 3.4;
   stroke-linecap: round;
 }
 
@@ -445,88 +421,115 @@
   stroke: var(--vref-green);
 }
 
-.vref-breaker-badge > rect {
-  fill: #071923;
-  stroke: #516978;
-  stroke-width: 1.2;
+.vref-breaker-panel > rect {
+  fill: #eef3f5;
+  stroke: #8297a2;
+  stroke-width: 1.3;
 }
 
-.vref-breaker-badge .label {
-  fill: #b7c7d1;
+.vref-breaker-panel .label {
+  fill: #dce7ed;
   font-size: 8.5px;
   font-weight: 900;
 }
 
-.vref-breaker-badge .state {
-  fill: #fff;
-  font-size: 7.2px;
+.vref-breaker-panel .symbol {
+  fill: #0a1720;
+  font-size: 10px;
   font-weight: 900;
 }
 
-.vref-breaker-badge.is-closed > rect {
-  border-color: var(--vref-green);
+.vref-breaker-panel .state {
+  fill: #9eb0bb;
+  font-size: 6.8px;
+  font-weight: 800;
+}
+
+.vref-breaker-panel.is-closed > rect {
   stroke: var(--vref-green);
-  fill: rgb(20 62 22 / 72%);
 }
 
-.vref-breaker-badge.is-open > rect,
-.vref-breaker-badge.is-unknown > rect {
-  fill: #071923;
-  stroke: #516978;
-}
-
-.vref-breaker-badge.is-commandable {
+.vref-breaker-panel.is-commandable {
   cursor: pointer;
   outline: none;
 }
 
-.vref-breaker-badge.is-commandable:focus > rect,
-.vref-breaker-badge.is-commandable:hover > rect {
-  stroke: #d8e6ed;
+.vref-breaker-panel.is-commandable:focus > rect,
+.vref-breaker-panel.is-commandable:hover > rect {
+  stroke: #fff;
+}
+
+.vref-load-node > rect {
+  fill: #0a1c29;
+  stroke: #2d617b;
+  stroke-width: 1.2;
+}
+
+.vref-load-node.is-live > rect {
+  stroke: var(--vref-green);
+}
+
+.vref-load-icon {
+  fill: none;
+  stroke: #eaf2f6;
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+
+.vref-load-node .title {
+  fill: #fff;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.vref-load-node .value {
+  fill: #aabac3;
+  font-size: 8.2px;
+  font-weight: 900;
+}
+
+.vref-load-node.is-live .value {
+  fill: var(--vref-green);
 }
 
 .vref-generator-node > circle {
-  fill: #071923;
-  stroke: #607987;
+  fill: #0b1823;
+  stroke: #738995;
   stroke-width: 2;
 }
 
-.vref-generator-node > text {
+.vref-generator-node .letter {
   fill: #fff;
-  font-size: 24px;
+  font-size: 21px;
   font-weight: 900;
 }
 
 .vref-generator-node.is-live > circle {
   stroke: var(--vref-green);
-  filter: drop-shadow(0 0 3px rgb(46 230 0 / 32%));
-}
-
-.vref-generator-node.is-idle > circle,
-.vref-generator-node.is-unknown > circle {
-  stroke: #607987;
+  filter: drop-shadow(0 0 3px rgb(46 230 0 / 36%));
 }
 
 .vref-flow-command-stack {
   position: absolute;
-  right: 0;
-  bottom: 12px;
+  top: 52%;
+  right: 1px;
   display: flex;
-  width: 46px;
+  width: 45px;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
+  transform: translateY(-24%);
 }
 
 .vref-flow-command-stack button {
   display: inline-flex;
   width: 100%;
-  height: 30px;
+  height: 34px;
   align-items: center;
   justify-content: center;
   gap: 2px;
   border: 1px solid #516978;
-  border-radius: 4px;
-  background: #071923;
+  border-radius: 5px;
+  background: #0a1c29;
   color: #fff;
   font-family: inherit;
   font-size: 8px;
@@ -539,18 +542,18 @@
 }
 
 .vref-flow-command-stack .start:not(:disabled) {
-  border-color: var(--vref-green);
-  background: rgb(20 62 22 / 72%);
+  border-color: #31d817;
+  background: #1dbb06;
 }
 
 .vref-flow-command-stack .stop:not(:disabled) {
-  border-color: var(--vref-red);
-  background: rgb(78 26 25 / 76%);
+  border-color: #e4312a;
+  background: #be201b;
 }
 
 .vref-flow-command-stack button:disabled {
   color: #7f909a;
-  opacity: 0.72;
+  opacity: 0.58;
   cursor: not-allowed;
 }
 
@@ -948,10 +951,10 @@
   .vref-card {
     grid-template-rows:
       38px
-      116px
-      minmax(182px, 1.3fr)
-      115px
-      minmax(158px, 1fr);
+      138px
+      minmax(176px, 1.25fr)
+      108px
+      minmax(154px, 1fr);
     gap: 3px;
     padding: 3px;
   }
@@ -973,6 +976,14 @@
   .vref-gauge-panel > h4 {
     font-size: 10px;
     line-height: 12px;
+  }
+
+  .vref-dial-scale-label {
+    font-size: 7.5px;
+  }
+
+  .vref-dial-value {
+    font-size: 18px;
   }
 
   .vref-flow-command-stack button {

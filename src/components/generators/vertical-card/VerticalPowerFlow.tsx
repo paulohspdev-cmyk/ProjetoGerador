@@ -6,7 +6,7 @@ import { IconStart, IconStop } from "../scada-icons";
 
 type BreakerSourceSide = "top" | "bottom";
 
-function VerticalContact({
+function SwitchSymbol({
   x,
   y1,
   y2,
@@ -22,7 +22,7 @@ function VerticalContact({
   sourceSide: BreakerSourceSide;
 }) {
   const stateClass = !known ? "is-unknown" : closed ? "is-closed" : "is-open";
-  const line = closed
+  const arm = closed
     ? { x1: x, y1: y1 + 4, x2: x, y2: y2 - 4 }
     : sourceSide === "top"
       ? { x1: x, y1: y1 + 4, x2: x + 13, y2: y2 - 7 }
@@ -34,14 +34,14 @@ function VerticalContact({
       data-breaker-state={stateClass.replace("is-", "")}
       data-source-side={sourceSide}
     >
-      <circle cx={x} cy={y1} r="3.6" />
-      <circle cx={x} cy={y2} r="3.6" />
-      <line {...line} />
+      <circle cx={x} cy={y1} r="3.3" />
+      <circle cx={x} cy={y2} r="3.3" />
+      <line {...arm} />
     </g>
   );
 }
 
-function BreakerBadge({
+function BreakerPanel({
   x,
   y,
   label,
@@ -61,7 +61,8 @@ function BreakerBadge({
   onToggle: () => void;
 }) {
   const stateClass = !known ? "is-unknown" : closed ? "is-closed" : "is-open";
-  const stateText = !known ? "N/D" : closed ? "FECH." : "ABER.";
+  const symbol = !known ? "I/O" : closed ? "I" : "O";
+  const stateText = !known ? "N/D" : closed ? "FECHADO" : "ABERTO";
   const interactive = known && commandable && !busy;
   const activate = () => {
     if (interactive) onToggle();
@@ -69,7 +70,12 @@ function BreakerBadge({
 
   return (
     <g
-      className={cn("vref-breaker-badge", stateClass, interactive && "is-commandable")}
+      className={cn(
+        "vref-breaker-panel",
+        "vref-breaker-badge",
+        stateClass,
+        interactive && "is-commandable",
+      )}
       transform={`translate(${x} ${y})`}
       role={interactive ? "button" : undefined}
       tabIndex={interactive ? 0 : undefined}
@@ -83,12 +89,15 @@ function BreakerBadge({
         }
       }}
     >
-      <text x="0" y="-11" textAnchor="middle" className="label">
+      <text x="0" y="-17" textAnchor="middle" className="label">
         {label}
       </text>
-      <rect x="-22" y="-7" width="44" height="22" rx="4" />
-      <text x="0" y="7" textAnchor="middle" className="state">
-        {busy ? "…" : stateText}
+      <rect x="-22" y="-11" width="44" height="30" rx="3" />
+      <text x="0" y="8" textAnchor="middle" className="symbol">
+        {busy ? "…" : symbol}
+      </text>
+      <text x="0" y="31" textAnchor="middle" className="state">
+        {stateText}
       </text>
     </g>
   );
@@ -104,27 +113,26 @@ function formatLoad(value: number | null) {
   return `${Math.round(value).toLocaleString("pt-BR")} kW`;
 }
 
-function SourceNode({
+function UtilityNode({
   x,
   y,
-  title,
-  value,
+  frequency,
   state,
 }: {
   x: number;
   y: number;
-  title: string;
-  value: string;
+  frequency: number | null;
   state: "live" | "dead" | "unknown";
 }) {
   return (
-    <g className={cn("vref-source-node", `is-${state}`)} transform={`translate(${x} ${y})`}>
-      <rect x="-35" y="-16" width="70" height="32" rx="6" />
-      <text x="0" y="-2" textAnchor="middle" className="title">
-        {title}
-      </text>
-      <text x="0" y="11" textAnchor="middle" className="value">
-        {value}
+    <g className={cn("vref-utility-node", `is-${state}`)} transform={`translate(${x} ${y})`}>
+      <circle r="19" />
+      <g className="vref-pylon-icon">
+        <path d="M0 -12 L-7 11 M0 -12 L7 11 M-5 -5 H5 M-8 1 H8 M-11 7 H11 M-4 11 H4" />
+        <path d="M-11 7 L-15 11 M11 7 L15 11" />
+      </g>
+      <text x="25" y="4" className="frequency">
+        {formatHz(frequency)}
       </text>
     </g>
   );
@@ -145,11 +153,15 @@ function LoadNode({
 }) {
   return (
     <g className={cn("vref-load-node", live && "is-live")} transform={`translate(${x} ${y})`}>
-      <rect x="-33" y="-18" width="66" height="36" rx="5" />
-      <text x="0" y="-3" textAnchor="middle" className="title">
+      <rect x="-31" y="-19" width="62" height="38" rx="4" />
+      <g className="vref-load-icon" transform="translate(-19 -1)">
+        <path d="M-7 8 V-3 L-2 0 V-7 L4 -3 V8 Z" />
+        <path d="M-9 8 H8" />
+      </g>
+      <text x="9" y="-2" textAnchor="middle" className="title">
         {title}
       </text>
-      <text x="0" y="10" textAnchor="middle" className="value">
+      <text x="9" y="11" textAnchor="middle" className="value">
         {formatLoad(power)}
       </text>
     </g>
@@ -161,20 +173,25 @@ function GeneratorNode({
   y,
   known,
   present,
+  frequency,
 }: {
   x: number;
   y: number;
   known: boolean;
   present: boolean;
+  frequency: number | null;
 }) {
   return (
     <g
       className={cn("vref-generator-node", !known ? "is-unknown" : present ? "is-live" : "is-idle")}
       transform={`translate(${x} ${y})`}
     >
-      <circle r="21" />
-      <text x="0" y="7" textAnchor="middle">
+      <circle r="20" />
+      <text x="0" y="7" textAnchor="middle" className="letter">
         G
+      </text>
+      <text x="-28" y="4" textAnchor="end" className="frequency">
+        {formatHz(frequency)}
       </text>
     </g>
   );
@@ -236,38 +253,23 @@ export function VerticalPowerFlow({
 
   return (
     <section className="vref-section vref-flow vref-flow-controller">
-      <div className="vref-flow-controller-heading">
-        <h4>FLUXO DE POTÊNCIA</h4>
-      </div>
-
       <div className="vref-flow-controller-body">
         <svg
-          viewBox="0 0 235 244"
-          aria-label={
-            hasMainsSource
-              ? "Fluxo de potência vertical com rede"
-              : "Fluxo de potência vertical sem rede"
-          }
+          viewBox="0 0 240 244"
+          aria-label={hasMainsSource ? "Diagrama unifilar com rede" : "Diagrama unifilar sem rede"}
         >
           {hasMainsSource ? (
             <>
-              <SourceNode
-                x={112}
-                y={22}
-                title="REDE"
-                value={formatHz(mainsFrequency)}
-                state={mainsState}
-              />
-
-              <path d="M112 38 V58" className="vref-wire" />
+              <UtilityNode x={124} y={24} frequency={mainsFrequency} state={mainsState} />
+              <path d="M124 43 V64" className="vref-wire" />
               <path
-                d="M112 38 V58"
+                d="M124 43 V64"
                 className={cn("vref-wire-live", mainsKnown && mainsPresent && "is-live")}
               />
 
-              <BreakerBadge
+              <BreakerPanel
                 x={45}
-                y={70}
+                y={76}
                 label="MCB"
                 closed={mcb}
                 known={mcbKnown}
@@ -275,44 +277,38 @@ export function VerticalPowerFlow({
                 busy={busy === "mcb_open" || busy === "mcb_close"}
                 onToggle={() => onCommand(mcb ? "mcb_open" : "mcb_close")}
               />
-              <VerticalContact
-                x={112}
-                y1={58}
-                y2={80}
+              <SwitchSymbol
+                x={124}
+                y1={64}
+                y2={86}
                 closed={mcb}
                 known={mcbKnown}
                 sourceSide="top"
               />
 
-              <path d="M112 80 V108" className="vref-wire" />
-              <path d="M112 80 V108" className={cn("vref-wire-live", mainsToBus && "is-live")} />
-              <text x="112" y="101" textAnchor="middle" className="vref-bus-label">
-                BARRAMENTO
-              </text>
-              <path d="M82 108 H150" className="vref-bus" />
-              <path d="M82 108 H150" className={cn("vref-bus-live", busLive && "is-live")} />
+              <path d="M124 86 V116" className="vref-wire" />
+              <path d="M124 86 V116" className={cn("vref-wire-live", mainsToBus && "is-live")} />
               <circle
-                cx="112"
-                cy="108"
+                cx="124"
+                cy="116"
                 r="4"
                 className={cn("vref-junction", busLive && "is-live")}
               />
-
-              <path d="M150 108 H160" className="vref-wire" />
-              <path d="M150 108 H160" className={cn("vref-wire-live", busLive && "is-live")} />
+              <path d="M124 116 H166" className="vref-wire" />
+              <path d="M124 116 H166" className={cn("vref-wire-live", busLive && "is-live")} />
               <LoadNode
-                x={194}
-                y={108}
+                x={198}
+                y={116}
                 title={powerBlockLabel}
                 power={powerBlockKw}
                 live={busLive}
               />
 
-              <path d="M112 108 V138" className="vref-wire" />
-              <path d="M112 108 V138" className={cn("vref-wire-live", genToBus && "is-live")} />
-              <BreakerBadge
+              <path d="M124 116 V145" className="vref-wire" />
+              <path d="M124 116 V145" className={cn("vref-wire-live", genToBus && "is-live")} />
+              <BreakerPanel
                 x={45}
-                y={151}
+                y={157}
                 label="GCB"
                 closed={gcb}
                 known={gcbKnown}
@@ -320,56 +316,49 @@ export function VerticalPowerFlow({
                 busy={busy === "gcb_open" || busy === "gcb_close"}
                 onToggle={() => onCommand(gcb ? "gcb_open" : "gcb_close")}
               />
-              <VerticalContact
-                x={112}
-                y1={138}
-                y2={160}
+              <SwitchSymbol
+                x={124}
+                y1={145}
+                y2={167}
                 closed={gcb}
                 known={gcbKnown}
                 sourceSide="bottom"
               />
-              <path d="M112 160 V196" className="vref-wire" />
+              <path d="M124 167 V202" className="vref-wire" />
               <path
-                d="M112 160 V196"
+                d="M124 167 V202"
                 className={cn("vref-wire-live", generatorPresent && "is-live")}
               />
-
-              <text x="16" y="205" className="vref-flow-frequency">
-                {formatHz(generatorFrequency)}
-              </text>
-              <GeneratorNode x={112} y={211} known={generatorKnown} present={generatorPresent} />
-              <text x="112" y="240" textAnchor="middle" className="vref-generator-label">
-                GERADOR
-              </text>
+              <GeneratorNode
+                x={124}
+                y={220}
+                known={generatorKnown}
+                present={generatorPresent}
+                frequency={generatorFrequency}
+              />
             </>
           ) : (
             <>
-              <text x="112" y="48" textAnchor="middle" className="vref-bus-label">
-                BARRAMENTO
-              </text>
-              <path d="M82 56 H150" className="vref-bus" />
-              <path d="M82 56 H150" className={cn("vref-bus-live", genToBus && "is-live")} />
               <circle
-                cx="112"
-                cy="56"
+                cx="124"
+                cy="58"
                 r="4"
                 className={cn("vref-junction", genToBus && "is-live")}
               />
-              <path d="M150 56 H160" className="vref-wire" />
-              <path d="M150 56 H160" className={cn("vref-wire-live", genToBus && "is-live")} />
+              <path d="M124 58 H166" className="vref-wire" />
+              <path d="M124 58 H166" className={cn("vref-wire-live", genToBus && "is-live")} />
               <LoadNode
-                x={194}
-                y={56}
+                x={198}
+                y={58}
                 title={powerBlockLabel}
                 power={powerBlockKw}
                 live={genToBus}
               />
-
-              <path d="M112 56 V102" className="vref-wire" />
-              <path d="M112 56 V102" className={cn("vref-wire-live", genToBus && "is-live")} />
-              <BreakerBadge
+              <path d="M124 58 V109" className="vref-wire" />
+              <path d="M124 58 V109" className={cn("vref-wire-live", genToBus && "is-live")} />
+              <BreakerPanel
                 x={45}
-                y={115}
+                y={121}
                 label="GCB"
                 closed={gcb}
                 known={gcbKnown}
@@ -377,26 +366,26 @@ export function VerticalPowerFlow({
                 busy={busy === "gcb_open" || busy === "gcb_close"}
                 onToggle={() => onCommand(gcb ? "gcb_open" : "gcb_close")}
               />
-              <VerticalContact
-                x={112}
-                y1={102}
-                y2={124}
+              <SwitchSymbol
+                x={124}
+                y1={109}
+                y2={131}
                 closed={gcb}
                 known={gcbKnown}
                 sourceSide="bottom"
               />
-              <path d="M112 124 V184" className="vref-wire" />
+              <path d="M124 131 V199" className="vref-wire" />
               <path
-                d="M112 124 V184"
+                d="M124 131 V199"
                 className={cn("vref-wire-live", generatorPresent && "is-live")}
               />
-              <text x="16" y="193" className="vref-flow-frequency">
-                {formatHz(generatorFrequency)}
-              </text>
-              <GeneratorNode x={112} y={200} known={generatorKnown} present={generatorPresent} />
-              <text x="112" y="229" textAnchor="middle" className="vref-generator-label">
-                GERADOR
-              </text>
+              <GeneratorNode
+                x={124}
+                y={218}
+                known={generatorKnown}
+                present={generatorPresent}
+                frequency={generatorFrequency}
+              />
             </>
           )}
         </svg>

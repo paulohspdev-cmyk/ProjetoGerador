@@ -82,9 +82,9 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
 
   for (const card of [comap, dse]) {
     await expect(card.locator(".vref-gauge-panel-power > h4")).toHaveText("GERADOR");
-    await expect(card.getByText("FLUXO DE POTÊNCIA")).toBeVisible();
+    await expect(card.getByText("FLUXO DE POTÊNCIA")).toHaveCount(0);
     await expect(card.locator(".vref-header-mode")).toContainText("MODO:");
-    await expect(card.locator(".vref-flow-controller-heading")).not.toContainText("MODO:");
+    await expect(card.locator(".vref-flow-controller-heading")).toHaveCount(0);
     await expect(card.locator(".vref-clock")).toHaveCount(0);
     await expect(card.locator(".vref-power")).not.toContainText("%");
     await expect(card.locator(".vref-flow")).not.toContainText(/RPM/);
@@ -96,8 +96,18 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
     await expect(card.locator(".vref-mini-bar")).toHaveCount(0);
     await expect(card.locator(".vref-gauge-panel-rpm > h4")).toHaveText("RPM");
     await expect(card.locator(".vref-dual-gauges .vref-gauge-panel")).toHaveCount(2);
-    await expect(card.locator(".vref-gauge-panel-power .vref-gauge-scale")).toHaveCount(2);
-    await expect(card.locator(".vref-gauge-panel-rpm .rpm-scale-label")).toHaveCount(2);
+    expect(
+      await card.locator(".vref-gauge-panel-power .vref-dial-scale-label").count(),
+    ).toBeGreaterThanOrEqual(2);
+    expect(
+      await card.locator(".vref-gauge-panel-rpm .vref-dial-scale-label").count(),
+    ).toBeGreaterThanOrEqual(2);
+    expect(
+      await card.locator(".vref-gauge-panel-power .vref-dial-tick").count(),
+    ).toBeGreaterThanOrEqual(20);
+    expect(
+      await card.locator(".vref-gauge-panel-rpm .vref-dial-tick").count(),
+    ).toBeGreaterThanOrEqual(20);
     await expect(card.locator(".vref-kw-nominal")).toHaveCount(0);
     await expect(card.locator(".vref-gauge-panel-rpm .rpm-unit")).toHaveCount(0);
     await expect(card.locator(".vref-engine-rpm .vref-rpm")).toHaveCount(0);
@@ -186,9 +196,7 @@ test("vertical sem rede remove somente a topologia da concessionária em ComAp e
     await expect(card).toHaveAttribute("data-power-topology-source", "configured");
     await expect(card.getByText("REDE / GERADOR")).toHaveCount(0);
     await expect(card.locator(".vref-table-heading h4")).toHaveText("GERADOR");
-    await expect(
-      card.locator('svg[aria-label="Fluxo de potência vertical sem rede"]'),
-    ).toBeVisible();
+    await expect(card.locator('svg[aria-label="Diagrama unifilar sem rede"]')).toBeVisible();
     await expect(card.locator(".vref-breaker-badge")).toHaveCount(1);
     await expect(card.getByText("MCB", { exact: true })).toHaveCount(0);
     await expect(card.getByText("GCB", { exact: true })).toBeVisible();
