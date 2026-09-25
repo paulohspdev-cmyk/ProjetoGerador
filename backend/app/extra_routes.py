@@ -1,8 +1,6 @@
 import ipaddress
 import json
 import time
-from pathlib import Path
-
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
@@ -12,13 +10,13 @@ from .auth import current_user, hash_password, request_remote_ip, require_admin,
 from .automation_engine import approve_rule, set_rule_enabled
 from .backup_manager import safe_archive_path
 from .completion_routes import router as completion_router
-from .config import LOGIN_LOCK_SECONDS, LOGIN_MAX_FAILURES
+from .config import DATA_DIR, LOGIN_LOCK_SECONDS, LOGIN_MAX_FAILURES
 from .controller_library import channel_catalog, library_summary
 from .control import send_homologated_command
 from .diagnostics import system_diagnostics, version_info
 from .notifications import process_due_notifications
 from .rapid import load_bindings, overlay_generators
-from .reporting import generate_report
+from .reporting import generate_report, safe_report_artifact_path
 from .security_service import (
     change_password,
     confirm_password_reset,
@@ -175,11 +173,14 @@ def field_device_create(payload: FieldDeviceCreate, user: dict = Depends(require
 
 @router.patch("/api/field-devices/{item_id}")
 def field_device_update(item_id: str, payload: FieldDeviceUpdate, user: dict = Depends(require_admin)):
-    updated = platform_store.update_field_device(
-        item_id,
-        payload.model_dump(exclude_unset=True),
-        actor(user),
-    )
+    try:
+        updated = platform_store.update_field_device(
+            item_id,
+            payload.model_dump(exclude_unset=True),
+            actor(user),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     if not updated:
         raise HTTPException(status_code=404, detail="Equipamento não encontrado")
     return updated
@@ -360,11 +361,11 @@ def external_token(request: Request, authorization: str | None = Header(default=
     token = platform_store.authenticate_api_token(raw)
     if not token:
         raise HTTPException(status_code=401, detail="Token inválido ou expirado")
-    if not platform_store.consume_api_rate(token["id"], token["rate_limit"]):
-        raise HTTPException(status_code=429, detail="Rate limit excedido")
     remote_ip = request_remote_ip(request)
     if not _ip_allowed(remote_ip, token.get("allowed_cidrs") or []):
         raise HTTPException(status_code=403, detail="Origem não autorizada para este token")
+    if not platform_store.consume_api_rate(token["id"], token["rate_limit"]):
+        raise HTTPException(status_code=429, detail="Rate limit excedido")
     token["remote_ip"] = remote_ip
     return token
 
@@ -386,6 +387,16 @@ COMMAND_SCOPE = {
     "gcb_close": "breaker.control",
     "paralleling": "paralleling.control",
 }
+
+
+def _token_allows_generator(token: dict, generator: dict) -> bool:
+    allowed = {str(item).strip().lower() for item in token.get("allowed_generators") or [] if str(item).strip()}
+    if not allowed:
+        return True
+    return (
+        str(generator.get("id") or "").lower() in allowed
+        or str(generator.get("tag") or "").lower() in allowed
+    )
 
 
 @router.get("/api/api-tokens")
@@ -469,7 +480,11 @@ def token_revoke(item_id: str, user: dict = Depends(require_admin)):
 @router.get("/api/v1/generators")
 def external_generators(token: dict = Depends(external_token)):
     scope(token, "ops.read")
-    return overlay_generators(db.list_generators())
+    return [
+        generator
+        for generator in overlay_generators(db.list_generators())
+        if _token_allows_generator(token, generator)
+    ]
 
 
 @router.get("/api/v1/generators/{generator_id}")
@@ -479,11 +494,13 @@ def external_generator(generator_id: str, token: dict = Depends(external_token))
         (
             g
             for g in overlay_generators(db.list_generators())
-            if g["id"] == generator_id or g["tag"].lower() == generator_id.lower()
+            if (g["id"] == generator_id or g["tag"].lower() == generator_id.lower())
+            and _token_allows_generator(token, g)
         ),
         None,
     )
     if not item:
+        # Não revelar ao token se o ativo existe fora do seu allowlist.
         raise HTTPException(status_code=404, detail="Gerador não encontrado")
     return item
 
@@ -507,11 +524,9 @@ async def external_command(
     if not generator or not generator.get("enabled"):
         raise HTTPException(status_code=404, detail="Gerador não encontrado ou desabilitado")
 
-    allowed_generators = {str(item).lower() for item in token.get("allowed_generators") or []}
-    if not allowed_generators or not (
-        str(generator.get("id") or "").lower() in allowed_generators
-        or str(generator.get("tag") or "").lower() in allowed_generators
-    ):
+    # Comandos sempre exigem allowlist não vazio; a criação do token já
+    # impõe isso e esta checagem protege tokens legados/corrompidos.
+    if not token.get("allowed_generators") or not _token_allows_generator(token, generator):
         raise HTTPException(status_code=403, detail="Gerador fora do allowlist deste token")
 
     try:
@@ -524,7 +539,10 @@ async def external_command(
             generator["id"],
             f"ip={token.get('remote_ip')}; {exc}",
         )
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=409,
+            detail="Comando industrial rejeitado ou não concluído",
+        ) from exc
     db.add_audit(
         f"api-token:{token['id']}",
         f"command_{action}",
@@ -554,14 +572,26 @@ def report_artifact(report_id: str, user: dict = Depends(require_view)):
     report = next((x for x in ops_store.list_reports() if x["id"] == report_id), None)
     if not report:
         raise HTTPException(status_code=404, detail="Relatório não encontrado")
+
     artifact = platform_store.get_report_artifact(report_id)
-    if not artifact or not Path(artifact["path"]).exists():
-        artifact = generate_report(report, overlay_generators(db.list_generators()))
-        path = Path(artifact["path"])
-        media_type = artifact["media_type"]
+    if artifact:
+        try:
+            path = safe_report_artifact_path(artifact["path"])
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        if path.exists() and not path.is_file():
+            raise HTTPException(status_code=409, detail="Artefato de relatório não é um arquivo")
     else:
-        path = Path(artifact["path"])
-        media_type = artifact["media_type"]
+        path = DATA_DIR / "reports" / "__missing__"
+
+    if not artifact or not path.exists():
+        artifact = generate_report(report, overlay_generators(db.list_generators()))
+        try:
+            path = safe_report_artifact_path(artifact["path"])
+        except ValueError as exc:
+            raise HTTPException(status_code=500, detail="Falha de integridade do relatório") from exc
+
+    media_type = artifact["media_type"]
     return FileResponse(path, media_type=media_type, filename=path.name)
 
 

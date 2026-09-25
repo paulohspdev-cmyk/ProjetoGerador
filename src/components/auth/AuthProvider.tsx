@@ -23,6 +23,7 @@ type AuthContextValue = {
   logout: () => Promise<void>;
   can: (perm: Permission) => boolean;
   refreshUsers: () => Promise<void>;
+  refreshCurrentUser: () => Promise<AppUser>;
   createUser: (input: {
     name: string;
     email: string;
@@ -55,6 +56,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUsersError(errorMessage(error, "Falha ao carregar usuários."));
       throw error;
     }
+  }, []);
+
+  const refreshCurrentUser = useCallback(async () => {
+    const current = await rcApi.auth.me();
+    setUser(current);
+    setSessionError(null);
+    return current;
   }, []);
 
   useEffect(() => {
@@ -212,6 +220,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       can,
       refreshUsers,
+      refreshCurrentUser,
       createUser,
       updateUser,
       removeUser,
@@ -226,6 +235,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       can,
       refreshUsers,
+      refreshCurrentUser,
       createUser,
       updateUser,
       removeUser,

@@ -49,6 +49,18 @@ jobs:
       - name: Regressões de segurança e lifecycle
         run: |
           set -euo pipefail
+          [[ "$(grep -c '^  e2e:$' .github/workflows/ci.yml)" -eq 1 ]] || {
+            echo 'ERRO: workflow CI com job e2e ausente ou duplicado.' >&2
+            exit 1
+          }
+          if grep -q 'RC_WEB_TLS_MODE=external_proxy.*grep -q' .github/workflows/ci.yml; then
+            echo 'ERRO: workflow CI contém comandos grep concatenados/corrompidos.' >&2
+            exit 1
+          fi
+          if grep -q '^ ops/rc-geradores.env.example$' .github/workflows/ci.yml; then
+            echo 'ERRO: workflow CI contém bloco residual duplicado.' >&2
+            exit 1
+          fi
           grep -q 'require_remove = require_remove_permission' backend/app/auth.py
           grep -q 'Exclusão direta de gerador bloqueada' backend/app/auth.py
           grep -q 'POST /api/generators/{id}/retire' backend/app/auth.py
@@ -57,13 +69,18 @@ jobs:
           grep -q 'historyPreserved' rapid/provisioning/deprovision_generator.py
 
           grep -q 'request_remote_ip' backend/app/security_service.py
-          grep -q 'TRUSTED_PROXY_PEERS' backend/app/auth.py
+          grep -q 'TRUSTED_PROXY_CIDRS' backend/app/auth.py
+          grep -q '_peer_is_trusted_proxy' backend/app/auth.py
+          grep -q '^RC_TRUSTED_PROXY_CIDRS=' ops/rc-geradores.env.example
           grep -q 'proxy_set_header X-Real-IP \$remote_addr' ops/nginx/rc-geradores.conf
           grep -q 'proxy_set_header X-Forwarded-For \$remote_addr' ops/nginx/rc-geradores.conf
 
           grep -q '^RC_AUTH_COOKIE_SECURE=1' ops/rc-geradores.env.example
           grep -q '^RC_BACKUP_INCLUDE_SECRETS=0' ops/rc-geradores.env.example
           grep -q '^RC_RAPID_REQUIRE_ALLOWLIST=' ops/rc-geradores.env.example
+          grep -q '^RC_RAPID_ADMIN_ALLOWED_CIDRS=' ops/rc-geradores.env.example
+          grep -q 'configure_rapid_network.sh.*--check' ops/preflight_vm.sh
+          grep -q 'configure_rapid_network.sh.*--apply' ops/deploy_release_v2.sh
           grep -q '^RC_BACKUP_OFFSITE_REQUIRED=' ops/rc-geradores.env.example
           grep -q 'listen 443 ssl' ops/nginx/rc-geradores.conf
           grep -q 'return 301 https://' ops/nginx/rc-geradores.conf
@@ -152,3 +169,4 @@ jobs:
           bash -n ops/deploy_release.sh
           bash -n ops/deploy_release_v2.sh
           bash -n ops/configure_https.sh
+          bash -n ops/configure_rapid_network.sh

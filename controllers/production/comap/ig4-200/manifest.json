@@ -67,6 +67,7 @@
     "mains_voltage_l3_l1",
     "battery_voltage",
     "alternator_voltage",
+    "fuel_level",
     "nominal_power_kw",
     "genset_kwh",
     "run_hours",
@@ -151,6 +152,14 @@
     "coolant_temperature": {
       "displayMin": -16,
       "displayMax": 120
+    },
+    "battery_voltage": {
+      "displayMin": 0,
+      "displayMax": 36
+    },
+    "rpm": {
+      "displayMin": 0,
+      "displayMax": 3000
     }
   },
   "mapping": {
@@ -777,9 +786,9 @@
     ],
     "lab": true,
     "field": true,
-    "fieldReference": "GEN152 / Unit 15 / FW 2.0.3.1, IG4-U3 / Unit 3 / FW 2.1.4.1 e IG4-U4 / Unit 4 / FW 2.1.0.15; Nominal Power HR1280 validado em leitura FC03; reverse TCP; leituras sem escrita de comando.",
+    "fieldReference": "GEN152 / Unit 15 / FW 2.0.3.1, IG4-U3 / Unit 3 / FW 2.1.4.1 e IG4-U4 / Unit 4 / FW 2.1.0.15; Nominal Power HR1280 validado em leitura FC03; GEN152 Unit 15 confirmou Fuel Level HR1055=591 L por FC03 em 2026-09-23; reverse TCP; leituras sem escrita de comando.",
     "commandSafety": "Perfil de produção somente leitura. START/STOP/AUTO/MANUAL/TEST/MCB/GCB/paralelismo permanecem bloqueados. O mapa fornecido não contém setpoints de comando utilizáveis."
   },
-  "notes": "Telemetria read-only promovida após validação de campo nos Units 3 e 4. Óleo e temperatura permanecem documentados, mas não são materializados no Rapid quando retornam sentinela/valor inválido. Diesel instantâneo (registro 1055, unidade L) foi validado em campo nos GEN203/GEN204 e é materializado como fuel_level. O máximo 682 presente no export Modbus de origem não é tratado como capacidade universal de tanque; percentual de combustível só pode ser derivado quando houver capacidade explícita do equipamento. Estados GCB/MCB da interface são derivados de Breaker State até validação dedicada dos binaries FC01/02.",
+  "notes": "Telemetria read-only promovida após validação de campo. Óleo e temperatura permanecem documentados, mas não entram em validatedTelemetry enquanto retornarem sentinela/valor inválido. Diesel instantâneo (registro 1055, unidade L) foi validado em campo nos GEN203/GEN204 e confirmado no GEN152 Unit 15 com leitura FC03 de 591 L em 2026-09-23; é materializado como fuel_level. O máximo 682 presente no export Modbus de origem não é tratado como capacidade universal de tanque; percentual de combustível só pode ser derivado quando houver capacidade explícita do equipamento. Estados GCB/MCB da interface são derivados de Breaker State até validação dedicada dos binaries FC01/02.",
   "commands": {}
 }

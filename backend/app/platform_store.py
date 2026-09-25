@@ -73,11 +73,13 @@ def init_platform_db() -> None:
                 attempts INTEGER NOT NULL DEFAULT 0,
                 max_attempts INTEGER NOT NULL DEFAULT 5,
                 next_attempt_at INTEGER NOT NULL,
+                claim_token TEXT NOT NULL DEFAULT '',
                 last_error TEXT NOT NULL DEFAULT '',
                 created_at INTEGER NOT NULL,
                 updated_at INTEGER NOT NULL
             );
             CREATE INDEX IF NOT EXISTS idx_notification_due ON notification_queue(status,next_attempt_at);
+            CREATE INDEX IF NOT EXISTS idx_notification_retention ON notification_queue(status,created_at);
 
             CREATE TABLE IF NOT EXISTS notification_deliveries (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -89,6 +91,8 @@ def init_platform_db() -> None:
                 created_at INTEGER NOT NULL,
                 FOREIGN KEY(queue_id) REFERENCES notification_queue(id) ON DELETE SET NULL
             );
+            CREATE INDEX IF NOT EXISTS idx_notification_deliveries_created_at
+                ON notification_deliveries(created_at);
 
             CREATE TABLE IF NOT EXISTS scheduler_jobs (
                 id TEXT PRIMARY KEY,
@@ -100,6 +104,7 @@ def init_platform_db() -> None:
                 next_run INTEGER NOT NULL,
                 last_run INTEGER,
                 last_result TEXT NOT NULL DEFAULT '',
+                claim_token TEXT NOT NULL DEFAULT '',
                 created_at INTEGER NOT NULL,
                 updated_at INTEGER NOT NULL
             );
@@ -203,6 +208,12 @@ def init_platform_db() -> None:
             );
             """
         )
+        # API + múltiplos workers inicializam este store no boot. Serializamos
+        # as migrações aditivas para que dois processos não executem o mesmo
+        # ALTER TABLE após observarem simultaneamente uma coluna ausente.
+        conn.commit()
+        conn.execute("BEGIN IMMEDIATE")
+
         api_token_columns = {
             str(row["name"]) for row in conn.execute("PRAGMA table_info(api_tokens)").fetchall()
         }
@@ -210,6 +221,24 @@ def init_platform_db() -> None:
             conn.execute("ALTER TABLE api_tokens ADD COLUMN allowed_generators TEXT NOT NULL DEFAULT ''")
         if "allowed_cidrs" not in api_token_columns:
             conn.execute("ALTER TABLE api_tokens ADD COLUMN allowed_cidrs TEXT NOT NULL DEFAULT ''")
+
+        notification_columns = {
+            str(row["name"])
+            for row in conn.execute("PRAGMA table_info(notification_queue)").fetchall()
+        }
+        if "claim_token" not in notification_columns:
+            conn.execute(
+                "ALTER TABLE notification_queue ADD COLUMN claim_token TEXT NOT NULL DEFAULT ''"
+            )
+
+        scheduler_columns = {
+            str(row["name"])
+            for row in conn.execute("PRAGMA table_info(scheduler_jobs)").fetchall()
+        }
+        if "claim_token" not in scheduler_columns:
+            conn.execute(
+                "ALTER TABLE scheduler_jobs ADD COLUMN claim_token TEXT NOT NULL DEFAULT ''"
+            )
 
         conn.execute("DELETE FROM password_reset_tokens WHERE expires_at < ? OR used_at IS NOT NULL", (_now() - 86400,))
         conn.execute("DELETE FROM api_rate WHERE minute_bucket < ?", ((_now() // 60) - 120,))
@@ -336,6 +365,16 @@ def list_field_devices(kind: str | None = None):
     return [_row(r) for r in rows]
 
 
+def _validate_field_device_refs(*, site_id=None, generator_id=None) -> None:
+    if generator_id and not db.get_generator(str(generator_id)):
+        raise ValueError("Gerador vinculado ao equipamento não existe")
+    if site_id:
+        with db.connect() as conn:
+            exists = conn.execute("SELECT 1 FROM sites WHERE id=?", (str(site_id),)).fetchone()
+        if not exists:
+            raise ValueError("Unidade/site vinculada ao equipamento não existe")
+
+
 def create_field_device(data: dict, actor: str):
     kind = str(data.get("kind") or "").strip().lower()
     if kind not in {"modem", "gateway"}:
@@ -363,6 +402,10 @@ def create_field_device(data: dict, actor: str):
     }
     if not item["name"]:
         raise ValueError("Nome obrigatório")
+    _validate_field_device_refs(
+        site_id=item.get("site_id"),
+        generator_id=item.get("generator_id"),
+    )
     with db.connect() as conn:
         conn.execute(
             """INSERT INTO field_devices(id,kind,name,site_id,generator_id,model,serial,imei,sim_iccid,carrier,host,rssi,status,last_seen,metadata_json,active,created_at,updated_at)
@@ -375,6 +418,15 @@ def create_field_device(data: dict, actor: str):
 
 def update_field_device(item_id: str, patch: dict, actor: str):
     allowed = {"name", "site_id", "generator_id", "model", "serial", "imei", "sim_iccid", "carrier", "host", "rssi", "status", "last_seen", "metadata", "active"}
+    current = next((x for x in list_field_devices() if x["id"] == item_id), None)
+    if not current:
+        return None
+    prospective_site = patch.get("site_id", current.get("site_id"))
+    prospective_generator = patch.get("generator_id", current.get("generator_id"))
+    _validate_field_device_refs(
+        site_id=prospective_site,
+        generator_id=prospective_generator,
+    )
     fields, values = [], []
     for key, value in patch.items():
         if key not in allowed or value is None:
@@ -409,15 +461,58 @@ def delete_field_device(item_id: str, actor: str) -> bool:
 
 # ---------------------------- notifications -------------------------------
 
-def enqueue_notification(event_type: str, channel: str, destination: str = "", subject: str = "", body: str = "", payload=None, max_attempts: int = 5):
+def enqueue_notification_in_connection(
+    conn,
+    event_type: str,
+    channel: str,
+    destination: str = "",
+    subject: str = "",
+    body: str = "",
+    payload=None,
+    max_attempts: int = 5,
+):
     now = _now()
+    cur = conn.execute(
+        """INSERT INTO notification_queue(
+               event_type,channel,destination,subject,body,payload_json,
+               status,attempts,max_attempts,next_attempt_at,last_error,created_at,updated_at
+           ) VALUES (?,?,?,?,?,?,'queued',0,?,?, '',?,?)""",
+        (
+            event_type,
+            channel,
+            destination,
+            subject,
+            body,
+            json.dumps(payload or {}, ensure_ascii=False),
+            max(1, min(int(max_attempts), 10)),
+            now,
+            now,
+            now,
+        ),
+    )
+    return cur.lastrowid
+
+
+def enqueue_notification(
+    event_type: str,
+    channel: str,
+    destination: str = "",
+    subject: str = "",
+    body: str = "",
+    payload=None,
+    max_attempts: int = 5,
+):
     with db.connect() as conn:
-        cur = conn.execute(
-            """INSERT INTO notification_queue(event_type,channel,destination,subject,body,payload_json,status,attempts,max_attempts,next_attempt_at,last_error,created_at,updated_at)
-               VALUES (?,?,?,?,?,?,'queued',0,?,?, '',?,?)""",
-            (event_type, channel, destination, subject, body, json.dumps(payload or {}, ensure_ascii=False), max(1, min(int(max_attempts), 10)), now, now, now),
+        return enqueue_notification_in_connection(
+            conn,
+            event_type,
+            channel,
+            destination,
+            subject,
+            body,
+            payload,
+            max_attempts,
         )
-        return cur.lastrowid
 
 
 _SENSITIVE_NOTIFICATION_TYPES = {"auth.password_reset"}
@@ -425,6 +520,7 @@ _SENSITIVE_NOTIFICATION_TYPES = {"auth.password_reset"}
 
 def _public_notification(row) -> dict:
     item = _row(row)
+    item.pop("claim_token", None)
     if item.get("event_type") in _SENSITIVE_NOTIFICATION_TYPES:
         # Security delivery payloads may contain one-time credentials. They are
         # intentionally never exposed through operational notification APIs.
@@ -452,31 +548,69 @@ def list_deliveries(limit: int = 200):
 def claim_due_notifications(limit: int = 20, lease_seconds: int = 120):
     now = _now()
     lease_seconds = max(30, min(int(lease_seconds), 3600))
+    claimed = []
     with db.connect() as conn:
+        conn.execute("BEGIN IMMEDIATE")
         # At-least-once delivery: recover claims abandoned by a crashed worker.
-        # Providers that support Idempotency-Key receive the queue id downstream.
+        # Each lease gets a fresh token so a late worker cannot overwrite the
+        # result of a newer retry after its original lease expired.
         conn.execute(
             """UPDATE notification_queue
-               SET status='retry', next_attempt_at=?, last_error='claim expirado; reentrega segura', updated_at=?
+               SET status='retry', claim_token='', next_attempt_at=?,
+                   last_error='claim expirado; reentrega segura', updated_at=?
                WHERE status='sending' AND updated_at<=?""",
             (now, now, now - lease_seconds),
         )
         rows = conn.execute(
-            "SELECT * FROM notification_queue WHERE status IN ('queued','retry') AND next_attempt_at<=? ORDER BY id LIMIT ?",
-            (now, limit),
+            "SELECT id FROM notification_queue "
+            "WHERE status IN ('queued','retry') AND next_attempt_at<=? "
+            "ORDER BY id LIMIT ?",
+            (now, max(1, min(int(limit), 200))),
         ).fetchall()
-        ids = [r["id"] for r in rows]
-        for item_id in ids:
-            conn.execute("UPDATE notification_queue SET status='sending',updated_at=? WHERE id=?", (now, item_id))
-    return [_row(r) for r in rows]
+        for row in rows:
+            claim_token = secrets.token_hex(16)
+            updated = conn.execute(
+                """UPDATE notification_queue
+                   SET status='sending',claim_token=?,updated_at=?
+                   WHERE id=? AND status IN ('queued','retry') AND next_attempt_at<=?""",
+                (claim_token, now, row["id"], now),
+            )
+            if updated.rowcount != 1:
+                continue
+            claimed_row = conn.execute(
+                "SELECT * FROM notification_queue WHERE id=? AND claim_token=?",
+                (row["id"], claim_token),
+            ).fetchone()
+            if claimed_row is not None:
+                claimed.append(claimed_row)
+    return [_row(row) for row in claimed]
 
 
-def finish_notification(item_id: int, channel: str, destination: str, ok: bool, detail: str = ""):
+def finish_notification(
+    item_id: int,
+    channel: str,
+    destination: str,
+    ok: bool,
+    detail: str = "",
+    claim_token: str = "",
+) -> bool:
     now = _now()
+    claim_token = str(claim_token or "")
+    if not claim_token:
+        return False
+
     with db.connect() as conn:
-        row = conn.execute("SELECT attempts,max_attempts FROM notification_queue WHERE id=?", (item_id,)).fetchone()
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            """SELECT attempts,max_attempts FROM notification_queue
+               WHERE id=? AND status='sending' AND claim_token=?""",
+            (item_id, claim_token),
+        ).fetchone()
         if not row:
-            return
+            # A lease can expire while a provider call is still in flight. A
+            # late worker must never overwrite a newer retry/claim.
+            return False
+
         attempts = int(row["attempts"]) + 1
         if ok:
             status = "sent"
@@ -490,14 +624,30 @@ def finish_notification(item_id: int, channel: str, destination: str, ok: bool, 
             status = "retry"
             next_at = now + min(3600, 30 * (2 ** (attempts - 1)))
             error = detail[:1000]
-        conn.execute(
-            "UPDATE notification_queue SET status=?,attempts=?,next_attempt_at=?,last_error=?,updated_at=? WHERE id=?",
-            (status, attempts, next_at, error, now, item_id),
+
+        updated = conn.execute(
+            """UPDATE notification_queue
+               SET status=?,attempts=?,next_attempt_at=?,claim_token='',
+                   last_error=?,updated_at=?
+               WHERE id=? AND status='sending' AND claim_token=?""",
+            (status, attempts, next_at, error, now, item_id, claim_token),
         )
+        if updated.rowcount != 1:
+            return False
         conn.execute(
-            "INSERT INTO notification_deliveries(queue_id,channel,destination,status,detail,created_at) VALUES (?,?,?,?,?,?)",
-            (item_id, channel, destination, "sent" if ok else "failed", detail[:2000], now),
+            """INSERT INTO notification_deliveries(
+                   queue_id,channel,destination,status,detail,created_at
+               ) VALUES (?,?,?,?,?,?)""",
+            (
+                item_id,
+                channel,
+                destination,
+                "sent" if ok else "failed",
+                detail[:2000],
+                now,
+            ),
         )
+    return True
 
 
 # ----------------------- lifecycle operation queue ------------------------
@@ -534,6 +684,8 @@ def enqueue_lifecycle_operation(
     now = _now()
     payload_json = json.dumps(payload or {}, ensure_ascii=False, sort_keys=True)
     with db.connect() as conn:
+        # Serializa a checagem "uma operação ativa por gerador" com o INSERT.
+        conn.execute("BEGIN IMMEDIATE")
         existing = conn.execute(
             "SELECT * FROM lifecycle_operations WHERE id=?", (operation_id,)
         ).fetchone()
@@ -583,6 +735,8 @@ def claim_lifecycle_operation(lease_seconds: int = 900) -> dict | None:
     now = _now()
     lease_seconds = max(120, min(int(lease_seconds), 3600))
     with db.connect() as conn:
+        # Um lifecycle industrial só pode ter um executor, mesmo com dois workers.
+        conn.execute("BEGIN IMMEDIATE")
         conn.execute(
             """UPDATE lifecycle_operations
                SET status='failed',
@@ -596,10 +750,12 @@ def claim_lifecycle_operation(lease_seconds: int = 900) -> dict | None:
         ).fetchone()
         if not row:
             return None
-        conn.execute(
+        claimed_update = conn.execute(
             "UPDATE lifecycle_operations SET status='running',updated_at=? WHERE id=? AND status='queued'",
             (now, row["id"]),
         )
+        if claimed_update.rowcount != 1:
+            return None
         claimed = conn.execute(
             "SELECT * FROM lifecycle_operations WHERE id=?", (row["id"],)
         ).fetchone()
@@ -612,13 +768,14 @@ def claim_lifecycle_operation(lease_seconds: int = 900) -> dict | None:
     }
 
 
-def finish_lifecycle_operation(operation_id: str, result: dict | None = None, error: str = "") -> None:
+def finish_lifecycle_operation(operation_id: str, result: dict | None = None, error: str = "") -> bool:
     now = _now()
     status = "failed" if error else "succeeded"
     with db.connect() as conn:
-        conn.execute(
+        updated = conn.execute(
             """UPDATE lifecycle_operations
-               SET status=?,result_json=?,error=?,updated_at=? WHERE id=?""",
+               SET status=?,result_json=?,error=?,updated_at=?
+               WHERE id=? AND status='running'""",
             (
                 status,
                 json.dumps(result or {}, ensure_ascii=False),
@@ -627,14 +784,21 @@ def finish_lifecycle_operation(operation_id: str, result: dict | None = None, er
                 operation_id,
             ),
         )
+        return updated.rowcount == 1
 
 
 # ------------------------------- scheduler --------------------------------
 
+def _public_scheduler_job(row) -> dict:
+    item = _row(row)
+    item.pop("claim_token", None)
+    return item
+
+
 def list_scheduler_jobs():
     with db.connect() as conn:
         rows = conn.execute("SELECT * FROM scheduler_jobs ORDER BY name").fetchall()
-    return [_row(r) for r in rows]
+    return [_public_scheduler_job(r) for r in rows]
 
 
 def upsert_scheduler_job(data: dict, actor: str):
@@ -658,20 +822,80 @@ def upsert_scheduler_job(data: dict, actor: str):
 def due_scheduler_jobs(limit: int = 20):
     now = _now()
     with db.connect() as conn:
-        rows = conn.execute("SELECT * FROM scheduler_jobs WHERE enabled=1 AND next_run<=? ORDER BY next_run LIMIT ?", (now, limit)).fetchall()
-    return [_row(r) for r in rows]
+        rows = conn.execute(
+            "SELECT * FROM scheduler_jobs WHERE enabled=1 AND next_run<=? ORDER BY next_run LIMIT ?",
+            (now, limit),
+        ).fetchall()
+    return [_public_scheduler_job(r) for r in rows]
 
 
-def complete_scheduler_job(item_id: str, result: str):
+def claim_scheduler_jobs(
+    allowed_kinds: set[str],
+    limit: int = 20,
+    lease_seconds: int = 1800,
+):
+    kinds = sorted({str(kind).strip() for kind in allowed_kinds if str(kind).strip()})
+    if not kinds:
+        return []
     now = _now()
+    lease_seconds = max(60, min(int(lease_seconds), 21600))
+    placeholders = ",".join("?" for _ in kinds)
+    claimed = []
     with db.connect() as conn:
-        row = conn.execute("SELECT interval_seconds FROM scheduler_jobs WHERE id=?", (item_id,)).fetchone()
+        conn.execute("BEGIN IMMEDIATE")
+        rows = conn.execute(
+            f"SELECT id FROM scheduler_jobs "
+            f"WHERE enabled=1 AND next_run<=? AND kind IN ({placeholders}) "
+            "ORDER BY next_run LIMIT ?",
+            (now, *kinds, max(1, min(int(limit), 200))),
+        ).fetchall()
+        for row in rows:
+            claim_token = secrets.token_hex(16)
+            updated = conn.execute(
+                """UPDATE scheduler_jobs
+                   SET next_run=?,last_result='RUNNING',claim_token=?,updated_at=?
+                   WHERE id=? AND enabled=1 AND next_run<=?""",
+                (now + lease_seconds, claim_token, now, row["id"], now),
+            )
+            if updated.rowcount != 1:
+                continue
+            claimed_row = conn.execute(
+                "SELECT * FROM scheduler_jobs WHERE id=? AND claim_token=?",
+                (row["id"], claim_token),
+            ).fetchone()
+            if claimed_row is not None:
+                claimed.append(claimed_row)
+    return [_row(row) for row in claimed]
+
+
+def complete_scheduler_job(item_id: str, result: str, claim_token: str = "") -> bool:
+    now = _now()
+    claim_token = str(claim_token or "")
+    if not claim_token:
+        return False
+    with db.connect() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            """SELECT interval_seconds FROM scheduler_jobs
+               WHERE id=? AND last_result='RUNNING' AND claim_token=?""",
+            (item_id, claim_token),
+        ).fetchone()
         if not row:
-            return
-        conn.execute(
-            "UPDATE scheduler_jobs SET last_run=?,last_result=?,next_run=?,updated_at=? WHERE id=?",
-            (now, result[:1000], now + int(row["interval_seconds"]), now, item_id),
+            return False
+        updated = conn.execute(
+            """UPDATE scheduler_jobs
+               SET last_run=?,last_result=?,next_run=?,claim_token='',updated_at=?
+               WHERE id=? AND last_result='RUNNING' AND claim_token=?""",
+            (
+                now,
+                result[:1000],
+                now + int(row["interval_seconds"]),
+                now,
+                item_id,
+                claim_token,
+            ),
         )
+        return updated.rowcount == 1
 
 
 # ------------------------------- security ---------------------------------
@@ -683,6 +907,7 @@ def login_key(email: str, remote_ip: str) -> str:
 def login_allowed(key: str, max_failures: int = 5, window_seconds: int = 900, lock_seconds: int = 900):
     now = _now()
     with db.connect() as conn:
+        conn.execute("BEGIN IMMEDIATE")
         row = conn.execute("SELECT * FROM login_attempts WHERE attempt_key=?", (key,)).fetchone()
         if row and int(row["locked_until"]) > now:
             return False, int(row["locked_until"]) - now
@@ -694,6 +919,7 @@ def login_allowed(key: str, max_failures: int = 5, window_seconds: int = 900, lo
 def record_login_failure(key: str, max_failures: int = 5, lock_seconds: int = 900):
     now = _now()
     with db.connect() as conn:
+        conn.execute("BEGIN IMMEDIATE")
         row = conn.execute("SELECT * FROM login_attempts WHERE attempt_key=?", (key,)).fetchone()
         if not row:
             conn.execute("INSERT INTO login_attempts(attempt_key,window_started,failures,locked_until) VALUES (?,?,1,0)", (key, now))
@@ -725,6 +951,7 @@ def password_reset_allowed(
         ("acct:" + hashlib.sha256(normalized.encode()).hexdigest(), account_max_per_window),
     ]
     with db.connect() as conn:
+        conn.execute("BEGIN IMMEDIATE")
         decisions = []
         for key, limit in keys:
             row = conn.execute(
@@ -762,14 +989,68 @@ def create_password_reset(user_id: str, ttl: int = 1800):
 
 
 def consume_password_reset(token: str):
+    """Compatibilidade: consome um token de forma atômica, sem alterar a senha."""
     digest = hashlib.sha256(token.encode()).hexdigest()
     now = _now()
     with db.connect() as conn:
-        row = conn.execute("SELECT * FROM password_reset_tokens WHERE token_hash=? AND used_at IS NULL AND expires_at>?", (digest, now)).fetchone()
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT user_id FROM password_reset_tokens "
+            "WHERE token_hash=? AND used_at IS NULL AND expires_at>?",
+            (digest, now),
+        ).fetchone()
         if not row:
             return None
-        conn.execute("UPDATE password_reset_tokens SET used_at=? WHERE token_hash=?", (now, digest))
+        updated = conn.execute(
+            "UPDATE password_reset_tokens SET used_at=? "
+            "WHERE token_hash=? AND used_at IS NULL AND expires_at>?",
+            (now, digest, now),
+        )
+        if updated.rowcount != 1:
+            return None
         return row["user_id"]
+
+
+def complete_password_reset(token: str, password_hash: str):
+    """Troca senha, revoga sessões e consome o token em uma única transação."""
+    digest = hashlib.sha256(token.encode()).hexdigest()
+    now = _now()
+    with db.connect() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            """SELECT t.user_id,u.email
+               FROM password_reset_tokens t
+               JOIN users u ON u.id=t.user_id
+               WHERE t.token_hash=? AND t.used_at IS NULL AND t.expires_at>?""",
+            (digest, now),
+        ).fetchone()
+        if not row:
+            return None
+
+        updated = conn.execute(
+            """UPDATE password_reset_tokens
+               SET used_at=?
+               WHERE token_hash=? AND used_at IS NULL AND expires_at>?""",
+            (now, digest, now),
+        )
+        if updated.rowcount != 1:
+            return None
+
+        user_id = str(row["user_id"])
+        changed = conn.execute(
+            "UPDATE users SET password_hash=?,updated_at=? WHERE id=?",
+            (password_hash, now, user_id),
+        )
+        if changed.rowcount != 1:
+            raise RuntimeError("Usuário do token de reset não existe")
+
+        conn.execute("DELETE FROM sessions WHERE user_id=?", (user_id,))
+        conn.execute(
+            "INSERT INTO audit_log(created_at,actor,action,entity_type,entity_id,detail) "
+            "VALUES (?,?,?,?,?,?)",
+            (now, str(row["email"] or user_id), "password_reset", "user", user_id, "sessões revogadas"),
+        )
+        return {"id": user_id, "email": str(row["email"] or "")}
 
 
 def set_totp(user_id: str, secret_base32: str, enabled: bool):

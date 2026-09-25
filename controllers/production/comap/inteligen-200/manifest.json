@@ -112,6 +112,24 @@
     "run_hours": "h",
     "maintenance_hours": "h"
   },
+  "metricLimits": {
+    "oil_pressure": {
+      "displayMin": 0,
+      "displayMax": 10
+    },
+    "coolant_temperature": {
+      "displayMin": -40,
+      "displayMax": 100
+    },
+    "battery_voltage": {
+      "displayMin": 0,
+      "displayMax": 36
+    },
+    "rpm": {
+      "displayMin": 0,
+      "displayMax": 3000
+    }
+  },
   "documentedObjects": {
     "rpm": {
       "object": 10123,

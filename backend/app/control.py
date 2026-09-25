@@ -2,9 +2,14 @@ import asyncio
 import json
 from pathlib import Path
 
+from . import domain_store
+from .binding_store import load_runtime_bindings
 from .config import CONTROL_SOCKET
-from .controller_library import pack_for_model, pack_is_production_ready
-from .rapid import load_bindings
+from .controller_library import (
+    command_firmware_approval,
+    pack_for_model,
+    pack_is_production_ready,
+)
 
 COMMAND_ACTIONS = frozenset({
     "start", "stop", "auto", "manual", "test",
@@ -21,7 +26,7 @@ def _validated_binding(generator: dict) -> dict:
     binding = next(
         (
             item
-            for item in load_bindings()
+            for item in load_runtime_bindings()
             if str(item.get("generator_id") or "") == generator_id
         ),
         None,
@@ -48,6 +53,37 @@ def _validated_binding(generator: dict) -> dict:
     if actual != expected:
         raise ValueError("Controle bloqueado: cadastro e binding Rapid divergem")
     return binding
+
+
+def _validated_controller_firmware(generator: dict, pack: dict) -> str:
+    generator_id = str(generator.get("id") or "")
+    model = str(generator.get("controller_model") or "").strip().casefold()
+    assets = [
+        item
+        for item in domain_store.list_assets()
+        if str(item.get("legacy_generator_id") or "") == generator_id
+    ]
+    if len(assets) != 1:
+        raise ValueError(
+            "Controle bloqueado: inventário da controladora não está vinculado de forma única ao gerador"
+        )
+
+    controllers = [
+        item
+        for item in domain_store.list_controllers(str(assets[0].get("id") or ""))
+        if item.get("enabled", True)
+        and str(item.get("model") or "").strip().casefold() == model
+    ]
+    if len(controllers) != 1:
+        raise ValueError(
+            "Controle bloqueado: inventário possui zero ou múltiplas controladoras compatíveis"
+        )
+
+    firmware = str(controllers[0].get("firmware") or "").strip()
+    approved, detail = command_firmware_approval(pack, firmware)
+    if not approved:
+        raise ValueError(f"Controle bloqueado: {detail}")
+    return firmware
 
 
 async def _send_socket_command(socket_path: Path, payload: dict, timeout: float = 20.0) -> dict:
@@ -112,6 +148,7 @@ def command_contract(generator: dict, action: str) -> tuple[dict, dict]:
             f"cadastro usa {actual_transport or 'N/D'}"
         )
 
+    _validated_controller_firmware(generator, pack)
     _validated_binding(generator)
     return pack, contract
 

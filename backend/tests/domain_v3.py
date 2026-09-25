@@ -1,4 +1,5 @@
 import os
+import sqlite3
 import tempfile
 from pathlib import Path
 
@@ -16,7 +17,9 @@ from app.domain_routes import (  # noqa: E402
     asset_delete,
     asset_link_delete,
     connection_delete,
+    ControllerUpdate,
     controller_delete,
+    controller_update,
 )
 
 
@@ -244,6 +247,31 @@ assert legacy_asset["kind"] == "genset"
 assert legacy_controller["pack_lifecycle"] == "production"
 assert legacy_connection["modbus_unit"] == 2
 
+# O espelho continua estruturalmente somente leitura, mas precisa aceitar
+# firmware/metadata de inventário para satisfazer readiness e rastreabilidade.
+updated_legacy_controller = controller_update(
+    legacy_controller["id"],
+    ControllerUpdate(firmware="1.8.1.1", metadata={"source": "field-read"}),
+    user=user,
+)
+assert updated_legacy_controller["firmware"] == "1.8.1.1"
+assert updated_legacy_controller["metadata"]["source"] == "field-read"
+assert domain_store.sync_legacy_generators() == 1
+resynced_legacy_controller = domain_store.get_controller(legacy_controller["id"])
+assert resynced_legacy_controller["firmware"] == "1.8.1.1"
+assert resynced_legacy_controller["metadata"]["source"] == "field-read"
+
+try:
+    controller_update(
+        legacy_controller["id"],
+        ControllerUpdate(enabled=False),
+        user=user,
+    )
+except HTTPException as exc:
+    assert exc.status_code == 409
+else:
+    raise AssertionError("espelho legacy aceitou alteração estrutural via controller_update")
+
 # Espelhos legacy não podem ser apagados pelo domínio v3.
 for remover, item_id in (
     (asset_delete, legacy_asset["id"]),
@@ -298,6 +326,51 @@ assert snapshot["counts"]["assets"] == 2
 assert snapshot["counts"]["controllers"] == 2
 assert snapshot["counts"]["connections"] == 2
 
+# Conexões v3 também precisam respeitar identidade industrial e transporte.
+probe_asset = domain_store.create_asset(
+    {"tag": "PROBE001", "name": "Probe", "kind": "genset", "site": "Lab"},
+    actor="test",
+)
+probe_controller = domain_store.create_controller(
+    {"asset_id": probe_asset["id"], "model": "InteliGen 200"},
+    actor="test",
+)
+for invalid_connection in (
+    {
+        "controller_id": probe_controller["id"],
+        "transport": "reverse_tcp",
+        "listen_port": 15001,
+        "modbus_unit": 2,
+    },
+    {
+        "controller_id": probe_controller["id"],
+        "transport": "reverse_tcp",
+        "listen_port": 60000,
+        "modbus_unit": 3,
+    },
+    {
+        "controller_id": probe_controller["id"],
+        "transport": "modbus_tcp_direct",
+        "host": "",
+        "listen_port": 502,
+        "modbus_unit": 1,
+    },
+    {
+        "controller_id": probe_controller["id"],
+        "transport": "reverse_tcp",
+        "listen_port": 15020,
+        "modbus_unit": 3,
+        "rapid_device_num": 200,
+    },
+):
+    try:
+        domain_store.create_connection(invalid_connection, actor="test")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError(f"conexão inválida aceita: {invalid_connection}")
+assert domain_store.delete_asset(probe_asset["id"], actor="test") is True
+
 # Lifecycle de remoção v3: nada de cascade implícito nem remoção ativa.
 try:
     asset_delete(bundle["asset"]["id"], user=user)
@@ -339,6 +412,49 @@ assert asset_delete(bundle["asset"]["id"], user=user).status_code == 204
 
 snapshot = domain_store.topology_snapshot()
 assert snapshot["counts"] == {"assets": 1, "controllers": 1, "connections": 1, "links": 0}
+
+# O espelho legacy não pode silenciosamente duplicar uma identidade já usada no domínio v3.
+conflict_asset = domain_store.create_asset(
+    {"tag": "CONFLICT-V3", "name": "Conflict V3", "kind": "genset", "site": "Lab"},
+    actor="test",
+)
+conflict_controller = domain_store.create_controller(
+    {"asset_id": conflict_asset["id"], "model": "InteliGen 200"},
+    actor="test",
+)
+domain_store.create_connection(
+    {
+        "controller_id": conflict_controller["id"],
+        "transport": "reverse_tcp",
+        "listen_port": 15040,
+        "modbus_unit": 7,
+        "rapid_device_num": 450,
+    },
+    actor="test",
+)
+try:
+    db.create_generator(
+        {
+            "tag": "CONFLICT-LEGACY",
+            "name": "Conflict Legacy",
+            "customer": "",
+            "site": "Lab",
+            "controller_type": "COMAP",
+            "controller_model": "InteliGen 200",
+            "transport": "reverse_tcp",
+            "host": "",
+            "listen_port": 15040,
+            "modbus_unit": 7,
+            "rapid_device_num": 450,
+            "enabled": True,
+        },
+        actor="test",
+    )
+except sqlite3.IntegrityError:
+    pass
+else:
+    raise AssertionError("cadastro legacy aceitou identidade industrial já usada no domínio v3")
+assert db.get_generator("CONFLICT-LEGACY") is None
 
 print("RC Geradores domain v3 smoke: OK")
 tmp.cleanup()

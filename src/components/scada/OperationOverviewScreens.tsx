@@ -3,6 +3,7 @@ import { Gauge, MapPin, RefreshCw, Server } from "lucide-react";
 
 import { useGenerators } from "@/components/generators/GeneratorsProvider";
 import { metricNumber } from "@/components/generators/generator-metrics";
+import { generatorDisplayStatus, isGeneratorAlert, isGeneratorOnline } from "@/data/generators";
 import { rcApi, type OpsSite } from "@/lib/api";
 import { Panel, ScreenBody, Stats } from "./kit";
 import { fmt } from "./operation-helpers";
@@ -43,9 +44,11 @@ export function SitesScreen() {
           : null;
         return {
           ...site,
-          online: gens.filter((generator) => generator.status === "online").length,
-          alerta: gens.filter((generator) => generator.status === "alerta").length,
-          offline: gens.filter((generator) => generator.status === "offline").length,
+          online: gens.filter(isGeneratorOnline).length,
+          alerta: gens.filter(isGeneratorAlert).length,
+          offline: gens.filter((generator) =>
+            ["offline", "stale"].includes(generatorDisplayStatus(generator)),
+          ).length,
           total: gens.length,
           measuredLoad: siteLoad,
           loadSources: measuredRows.length,

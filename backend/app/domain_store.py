@@ -13,6 +13,7 @@ idempotente e mantém o cadastro legado como fonte compatível durante a transi�
 from __future__ import annotations
 
 import json
+import os
 import time
 import uuid
 from typing import Any
@@ -235,6 +236,17 @@ def sync_legacy_generators() -> int:
                     now,
                 ),
             )
+            connection_record = _validate_connection_identity(
+                conn,
+                {
+                    "transport": generator.get("transport") or "reverse_tcp",
+                    "host": generator.get("host") or "",
+                    "listen_port": int(generator.get("listen_port") or 0),
+                    "modbus_unit": int(generator.get("modbus_unit") or 1),
+                    "rapid_device_num": generator.get("rapid_device_num"),
+                },
+                exclude_id=connection_id,
+            )
             conn.execute(
                 """
                 INSERT INTO controller_connections(id,controller_id,name,transport,host,listen_port,modbus_unit,rapid_device_num,enabled,config_json,created_at,updated_at)
@@ -252,11 +264,11 @@ def sync_legacy_generators() -> int:
                 (
                     connection_id,
                     controller_id,
-                    generator.get("transport") or "reverse_tcp",
-                    generator.get("host") or "",
-                    int(generator.get("listen_port") or 0),
-                    int(generator.get("modbus_unit") or 1),
-                    generator.get("rapid_device_num"),
+                    connection_record["transport"],
+                    connection_record["host"],
+                    connection_record["listen_port"],
+                    connection_record["modbus_unit"],
+                    connection_record["rapid_device_num"],
                     1 if generator.get("enabled", True) else 0,
                     now,
                     now,
@@ -286,6 +298,72 @@ def _validate_transport(transport: str) -> str:
     if transport not in TRANSPORTS:
         raise ValueError(f"Transporte inválido. Permitidos: {', '.join(sorted(TRANSPORTS))}")
     return transport
+
+
+def _validate_connection_identity(
+    conn,
+    record: dict,
+    *,
+    exclude_id: str | None = None,
+) -> dict:
+    transport = _validate_transport(record.get("transport") or "reverse_tcp")
+    host = str(record.get("host") or "").strip()
+    port = int(record.get("listen_port") or 0)
+    unit = int(record.get("modbus_unit") or 1)
+    rapid_device = record.get("rapid_device_num")
+    rapid_device = int(rapid_device) if rapid_device is not None else None
+
+    if not 1 <= unit <= 247:
+        raise ValueError("Modbus Unit ID deve ficar entre 1 e 247")
+    if transport in {"reverse_tcp", "modbus_tcp_direct", "rtu_over_tcp"} and not 1 <= port <= 65535:
+        raise ValueError("Transporte TCP exige porta válida")
+    if transport in {"modbus_tcp_direct", "rtu_over_tcp", "modbus_rtu_serial"} and not host:
+        raise ValueError("Transporte direto/serial exige host ou dispositivo")
+    if transport == "reverse_tcp":
+        offset = int(os.environ.get("RC_RAPID_LOCAL_OFFSET", "10000"))
+        local_port = port + offset
+        if offset <= 0 or not 1 <= local_port <= 65535:
+            raise ValueError(
+                "Porta reverse TCP incompatível com RC_RAPID_LOCAL_OFFSET: "
+                f"remote={port} offset={offset} local={local_port}"
+            )
+
+    suffix = " AND id<>?" if exclude_id else ""
+    if transport == "reverse_tcp":
+        params = [port, unit]
+        if exclude_id:
+            params.append(exclude_id)
+        conflict = conn.execute(
+            "SELECT id FROM controller_connections "
+            "WHERE transport='reverse_tcp' AND listen_port=? AND modbus_unit=?" + suffix,
+            params,
+        ).fetchone()
+        if conflict:
+            raise ValueError(
+                f"Identidade reverse TCP já usada por outra conexão: porta {port} / Unit {unit}"
+            )
+
+    if rapid_device is not None:
+        if rapid_device <= 0:
+            raise ValueError("Rapid Device deve ser positivo")
+        params = [rapid_device]
+        if exclude_id:
+            params.append(exclude_id)
+        conflict = conn.execute(
+            "SELECT id FROM controller_connections WHERE rapid_device_num=?" + suffix,
+            params,
+        ).fetchone()
+        if conflict:
+            raise ValueError(f"Rapid Device {rapid_device} já usado por outra conexão")
+
+    return {
+        **record,
+        "transport": transport,
+        "host": host,
+        "listen_port": port,
+        "modbus_unit": unit,
+        "rapid_device_num": rapid_device,
+    }
 
 
 def list_assets() -> list[dict]:
@@ -500,16 +578,11 @@ def create_connection(data: dict, actor: str = "system") -> dict:
     controller_id = str(data.get("controller_id") or "")
     if not get_controller(controller_id):
         raise ValueError("Controladora não encontrada")
-    transport = _validate_transport(data.get("transport") or "reverse_tcp")
-    port = int(data.get("listen_port") or 0)
-    unit = int(data.get("modbus_unit") or 1)
-    if not 1 <= unit <= 247:
-        raise ValueError("Modbus Unit ID deve ficar entre 1 e 247")
-    if transport in {"reverse_tcp", "modbus_tcp_direct", "rtu_over_tcp"} and not 1 <= port <= 65535:
-        raise ValueError("Transporte TCP exige porta válida")
     connection_id = str(data.get("id") or f"conn-{uuid.uuid4().hex[:12]}")
     now = _now()
     with db.connect() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        record = _validate_connection_identity(conn, data)
         conn.execute(
             """
             INSERT INTO controller_connections(id,controller_id,name,transport,host,listen_port,modbus_unit,rapid_device_num,enabled,config_json,created_at,updated_at)
@@ -519,66 +592,57 @@ def create_connection(data: dict, actor: str = "system") -> dict:
                 connection_id,
                 controller_id,
                 str(data.get("name") or "Principal"),
-                transport,
-                str(data.get("host") or "").strip(),
-                port,
-                unit,
-                data.get("rapid_device_num"),
+                record["transport"],
+                record["host"],
+                record["listen_port"],
+                record["modbus_unit"],
+                record["rapid_device_num"],
                 1 if data.get("enabled", True) else 0,
                 _json(data.get("config")),
                 now,
                 now,
             ),
         )
-    db.add_audit(actor, "create", "controller_connection", connection_id, f"{transport};unit={unit};port={port}")
+    db.add_audit(actor, "create", "controller_connection", connection_id, f"{record['transport']};unit={record['modbus_unit']};port={record['listen_port']}")
     return get_connection(connection_id)
-
 
 def update_connection(connection_id: str, patch: dict, actor: str = "system") -> dict | None:
     current = get_connection(connection_id)
     if not current:
         return None
     allowed = {"name", "transport", "host", "listen_port", "modbus_unit", "rapid_device_num", "enabled", "config"}
-    merged = {**current, **{k: v for k, v in patch.items() if k in allowed and v is not None}}
-    transport = _validate_transport(merged.get("transport") or "reverse_tcp")
-    port = int(merged.get("listen_port") or 0)
-    unit = int(merged.get("modbus_unit") or 1)
-    if not 1 <= unit <= 247:
-        raise ValueError("Modbus Unit ID deve ficar entre 1 e 247")
-    if transport in {"reverse_tcp", "modbus_tcp_direct", "rtu_over_tcp"} and not 1 <= port <= 65535:
-        raise ValueError("Transporte TCP exige porta válida")
-
-    fields: list[str] = []
-    values: list[Any] = []
-    detail: list[str] = []
-    for key, value in patch.items():
-        if key not in allowed or value is None:
-            continue
-        column = key
-        if key == "transport":
-            value = transport
-        elif key == "modbus_unit":
-            value = unit
-        elif key == "listen_port":
-            value = port
-        elif key == "enabled":
-            value = 1 if bool(value) else 0
-        elif key == "config":
-            column = "config_json"
-            value = _json(value)
-        fields.append(f"{column}=?")
-        values.append(value)
-        detail.append(key)
-    if not fields:
+    requested = {k: v for k, v in patch.items() if k in allowed and v is not None}
+    if not requested:
         return current
-    fields.append("updated_at=?")
-    values.append(_now())
-    values.append(connection_id)
+
+    merged = {**current, **requested}
     with db.connect() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        normalized = _validate_connection_identity(conn, merged, exclude_id=connection_id)
+
+        fields: list[str] = []
+        values: list[Any] = []
+        detail: list[str] = []
+        for key, value in requested.items():
+            column = key
+            if key in {"transport", "host", "listen_port", "modbus_unit", "rapid_device_num"}:
+                value = normalized[key]
+            elif key == "enabled":
+                value = 1 if bool(value) else 0
+            elif key == "config":
+                column = "config_json"
+                value = _json(value)
+            fields.append(f"{column}=?")
+            values.append(value)
+            detail.append(key)
+
+        fields.append("updated_at=?")
+        values.append(_now())
+        values.append(connection_id)
         conn.execute(f"UPDATE controller_connections SET {', '.join(fields)} WHERE id=?", values)
+
     db.add_audit(actor, "update", "controller_connection", connection_id, ",".join(detail))
     return get_connection(connection_id)
-
 
 def create_asset_link(from_asset_id: str, to_asset_id: str, relation: str, metadata: dict | None, actor: str = "system") -> dict:
     if not get_asset(from_asset_id) or not get_asset(to_asset_id):

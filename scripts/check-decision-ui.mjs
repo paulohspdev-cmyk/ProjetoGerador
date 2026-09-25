@@ -41,9 +41,12 @@ if (dashboard.includes("generator.tag") && dashboard.includes("/p/geradores/$id"
 }
 
 const dashboardModel = read("src/components/scada/overview-dashboard-model.ts");
-for (const marker of ["fuel_level", "todayBytes", "monthBytes", "friendlyAlarmMessage"]) {
+for (const marker of ["todayBytes", "monthBytes", "friendlyAlarmMessage"]) {
   if (!dashboardModel.includes(marker))
     failures.push(`modelo de decisão perdeu fonte real: ${marker}`);
+}
+if (!dashboardModel.includes("readGeneratorTelemetry(generator)")) {
+  failures.push("modelo de decisão perdeu combustível da telemetria centralizada");
 }
 
 const board = read("src/components/generators/GeneratorsBoard.tsx");
@@ -76,6 +79,14 @@ if (!board.includes('useState<GenStatus | "todos">("todos")')) {
 }
 if (board.includes('import "./operator-card-refinement.css"')) {
   failures.push("board voltou a carregar CSS concorrente do card vertical");
+}
+
+const verticalMinHeightMatch = board.match(/const VERTICAL_MIN_CARD_HEIGHT = (\d+);/);
+const verticalMinHeight = verticalMinHeightMatch ? Number(verticalMinHeightMatch[1]) : NaN;
+if (!Number.isFinite(verticalMinHeight) || verticalMinHeight > 780) {
+  failures.push(
+    `layout vertical compacto ficou inalcançável; altura mínima atual: ${verticalMinHeightMatch?.[1] ?? "N/D"}`,
+  );
 }
 
 const compact = read("src/components/generators/CompactCard.tsx");
@@ -147,7 +158,7 @@ for (const marker of [
   '"kW"',
   '"PF"',
   '"Óleo"',
-  '"Coolant"',
+  '"Temp. motor"',
   '"Combustível"',
   '"Alternador"',
   '"MCB"',
@@ -174,6 +185,8 @@ for (const marker of [
   "gen.metricLimits",
   "visibleMeterPercent",
   "fuelCapacity",
+  "fuelOutOfRange",
+  "rawFuel > fuelCapacity",
   "coolantUnit",
 ]) {
   if (!health.includes(marker)) {
@@ -199,6 +212,17 @@ for (const forbidden of [
   }
 }
 
+const energyAssets = read("src/components/scada/energy-assets.tsx");
+for (const marker of [
+  "readGeneratorTelemetry",
+  "Fora de escala · acima da capacidade",
+  "capacidade informada permanecem no valor bruto",
+]) {
+  if (!energyAssets.includes(marker)) {
+    failures.push(`tela de combustível perdeu qualidade de dado: ${marker}`);
+  }
+}
+
 const reporting = read("backend/app/reporting.py");
 for (const forbidden of ['"Combustível %"']) {
   if (reporting.includes(forbidden)) {
@@ -219,6 +243,43 @@ for (const source of [
 ]) {
   if (!source[1].includes("_current_metric_keys")) {
     failures.push(`${source[0]} perdeu proteção de métrica atual`);
+  }
+}
+
+const verticalPowerFlow = read("src/components/generators/vertical-card/VerticalPowerFlow.tsx");
+for (const marker of [
+  "isolatedGeneratorLoad",
+  '"POT. GER."',
+  "const powerBlockKw = generatorPowerKw",
+]) {
+  if (!verticalPowerFlow.includes(marker)) {
+    failures.push(
+      `fluxo vertical voltou a esconder kW medido sem confirmação do barramento: ${marker}`,
+    );
+  }
+}
+
+const verticalPowerGauge = read("src/components/generators/vertical-card/VerticalPowerGauge.tsx");
+for (const marker of [
+  'nominalSource?: "telemetry" | "cadastral" | null',
+  '"CONTROLADORA"',
+  '"CADASTRO"',
+  'aria-label="Indicador de potência do gerador"',
+]) {
+  if (!verticalPowerGauge.includes(marker)) {
+    failures.push(`gauge de potência perdeu rastreabilidade da nominal: ${marker}`);
+  }
+}
+
+const verticalTelemetry = read(
+  "src/components/generators/vertical-card/VerticalTelemetrySections.tsx",
+);
+for (const marker of [
+  'data-quality={fuelOutOfRange ? "out-of-range" : "normal"}',
+  "fuelOutOfRange",
+]) {
+  if (!verticalTelemetry.includes(marker)) {
+    failures.push(`card vertical perdeu indicação de qualidade do combustível: ${marker}`);
   }
 }
 

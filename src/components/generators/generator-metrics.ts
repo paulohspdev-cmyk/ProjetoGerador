@@ -39,6 +39,18 @@ export function metricNumber(gen: Generator, key: string, value: number | null |
     : null;
 }
 
+export function nominalPowerNumber(gen: Generator) {
+  const live =
+    metricNumber(gen, "nominal_power_kw", undefined) ??
+    metricNumber(gen, "nominal_power", undefined);
+  if (live != null && Number.isFinite(live) && live > 0) return live;
+
+  const effective = gen.nominalPower;
+  return effective != null && Number.isFinite(Number(effective)) && Number(effective) > 0
+    ? Number(effective)
+    : null;
+}
+
 export function formatMetric(value: number | null, unit = "", digits = 1) {
   if (value == null) return "N/D";
   const text = fmt(value, digits);

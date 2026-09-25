@@ -198,7 +198,17 @@ for (const [file, markers] of [
   ],
   [
     "src/components/scada/UsersV3Screen.tsx",
-    ["const [busy, setBusy]", "disabled={busy}", 'autoComplete="new-password"'],
+    [
+      "const [busy, setBusy]",
+      "disabled={busy}",
+      'autoComplete="new-password"',
+      "usersError",
+      "const visibleError = error || usersError ||",
+      "rcApi.auth.setup2fa()",
+      "rcApi.auth.enable2fa(twoFaCode)",
+      "rcApi.auth.disable2fa(twoFaCode, twoFaPassword)",
+      "2FA obrigatório pendente",
+    ],
   ],
   [
     "src/components/scada/IntegrationsV3Screens.tsx",
@@ -209,6 +219,77 @@ for (const [file, markers] of [
   for (const marker of markers) {
     if (!source.includes(marker)) failures.push(`${file} perdeu proteção de mutação: ${marker}`);
   }
+}
+
+const authProvider = read("src/components/auth/AuthProvider.tsx");
+for (const marker of [
+  "refreshCurrentUser",
+  "const current = await rcApi.auth.me()",
+  "setUser(current)",
+]) {
+  if (!authProvider.includes(marker)) {
+    failures.push(`AuthProvider perdeu atualização de estado após mudança de 2FA: ${marker}`);
+  }
+}
+
+const systemHealth = read("src/components/scada/SystemHealthScreen.tsx");
+for (const marker of [
+  "readinessActions",
+  'backup_offsite: { slug: "backups"',
+  'privileged_2fa: { slug: "usuarios"',
+  'controller_packs: { slug: "controller-packs"',
+  'controller_firmware: { slug: "controladoras"',
+  'nominal_power: { slug: "geradores"',
+  'fuel_capacity_consistency: { slug: "combustivel"',
+  'fuel_capacity_for_percent: { slug: "geradores"',
+  "Ação externa",
+]) {
+  if (!systemHealth.includes(marker)) {
+    failures.push(`readiness perdeu rota de remediação: ${marker}`);
+  }
+}
+
+const generatorData = read("src/data/generators.ts");
+const powerFlowCard = read("src/components/generators/PowerFlowCard.tsx");
+const statusPill = read("src/components/generators/StatusPill.tsx");
+for (const marker of [
+  "generatorDisplayStatus",
+  'if (generator.telemetryStale) return "stale"',
+  "isGeneratorOnline",
+]) {
+  if (!generatorData.includes(marker)) {
+    failures.push(`estado efetivo de comunicação perdeu regra central: ${marker}`);
+  }
+}
+for (const marker of [
+  'displayStatus === "stale"',
+  '"SEM COMUNICAÇÃO"',
+  "currentValues.length > 0",
+]) {
+  if (!powerFlowCard.includes(marker)) {
+    failures.push(`card principal perdeu precedência de stale/N-D: ${marker}`);
+  }
+}
+if (!statusPill.includes("telemetryStale") || !statusPill.includes('"SEM COMUNICAÇÃO"')) {
+  failures.push("StatusPill voltou a ignorar telemetria expirada");
+}
+
+const kpiStrip = read("src/components/generators/KpiStrip.tsx");
+const compactCard = read("src/components/generators/CompactCard.tsx");
+if (
+  !kpiStrip.includes("generatorDisplayStatus") ||
+  !kpiStrip.includes('displayStatus === "stale"')
+) {
+  failures.push("KPIs voltaram a contar telemetria stale como online/alerta");
+}
+if (
+  !compactCard.includes("generatorDisplayStatus") ||
+  !compactCard.includes('displayStatus === "stale"')
+) {
+  failures.push("card compacto voltou a estilizar telemetria stale pelo status bruto");
+}
+if (!powerFlowCard.includes('displayStatus === "alerta" && "has-alert"')) {
+  failures.push("card principal voltou a aplicar alerta bruto sobre SEM COMUNICAÇÃO");
 }
 
 const generatorBoard = read("src/components/generators/GeneratorsBoard.tsx");
@@ -229,6 +310,13 @@ for (const marker of ["generatorsError", "refreshGenerators", "retryAll"]) {
     failures.push(`dashboard voltou a mascarar falha do parque: ${marker}`);
   }
 }
+const overviewModel = read("src/components/scada/overview-dashboard-model.ts");
+if (
+  !overviewModel.includes("readGeneratorTelemetry(generator)") ||
+  overviewModel.includes('metricNumber(generator, "fuel_level"')
+) {
+  failures.push("dashboard voltou a resumir combustível bruto fora da regra central");
+}
 
 const api = read("src/lib/api.ts");
 const generatorsStart = api.indexOf("\n  generators: {");
@@ -247,13 +335,15 @@ if (!deleteButton.includes("industrialApi.lifecycle.retire")) {
 }
 
 const registerGenerator = read("src/components/generators/RegisterGeneratorButton.tsx");
+const generatorIdentityFields = read("src/components/generators/GeneratorIdentityFields.tsx");
+const registerGeneratorFlow = registerGenerator + generatorIdentityFields;
 for (const marker of [
   'onboardingMode === "lab_read_only"',
   "selectedController?.registerable",
   "LAB (somente leitura)",
   "Cadastrar para homologação",
 ]) {
-  if (!registerGenerator.includes(marker)) {
+  if (!registerGeneratorFlow.includes(marker)) {
     failures.push(`cadastro de controladora LAB perdeu contrato seguro: ${marker}`);
   }
 }
@@ -286,6 +376,14 @@ for (const marker of ["bytes_rx", "bytes_tx", "last_rx_at", "last_tx_at"]) {
 const equipmentBarrel = read("src/components/scada/equip-auto.tsx");
 if (!equipmentBarrel.includes('from "./equip-connectivity"')) {
   failures.push("equip-auto deixou de exportar as telas de conectividade física");
+}
+
+if (
+  !rootRoute.includes("DEPLOY_CHUNK_ERROR") ||
+  !rootRoute.includes("window.location.reload()") ||
+  !rootRoute.includes("window.sessionStorage")
+) {
+  failures.push("error boundary perdeu recuperação controlada de chunk obsoleto após deploy");
 }
 
 const verticalTelemetry = read(
@@ -357,9 +455,57 @@ for (const file of walk(join(root, "ops"))) {
   }
 }
 
+const mainApi = read("backend/app/main.py");
+if (
+  !mainApi.includes('result.get("result") != "OK"') ||
+  !mainApi.includes("Backup não foi concluído")
+) {
+  failures.push("endpoint manual de backup voltou a anunciar sucesso quando o backup falha");
+}
+
+const backupsScreen = read("src/components/scada/BackupsV3Screen.tsx");
+if (!backupsScreen.includes('r.result === "OK"')) {
+  failures.push("UI voltou a oferecer download para backup com resultado de falha");
+}
+
 const backup = read("backend/app/backup_manager.py");
 for (const marker of ["PRAGMA quick_check", "_pre_restore_snapshot", "_rollback_database"]) {
   if (!backup.includes(marker)) failures.push(`restore sem proteção obrigatória: ${marker}`);
+}
+const restoreCli = read("ops/restore_backup.py");
+const restoreEnvLoad = restoreCli.indexOf("_load_env_file(ENV_FILE)");
+const restoreAppImport = restoreCli.indexOf("from app.backup_manager import");
+if (restoreEnvLoad < 0 || restoreAppImport < 0 || restoreEnvLoad > restoreAppImport) {
+  failures.push("restore CLI deve carregar o EnvironmentFile antes de importar app/config");
+}
+
+const deployRelease = read("ops/deploy_release_v2.sh");
+if (!/set -a\s*[\s\S]*?source "\$\{ENV_FILE\}"\s*[\s\S]*?set \+a/.test(deployRelease)) {
+  failures.push("deploy deve exportar EnvironmentFile para subprocessos/migrações");
+}
+
+const preservePreviousAssets = deployRelease.indexOf(
+  'preserve_previous_frontend_assets "${BASE}/.output" "${NEW_OUTPUT}"',
+);
+const swapFrontendOutput = deployRelease.indexOf('mv "${NEW_OUTPUT}" "${BASE}/.output"');
+const manifestLine = deployRelease
+  .split("\n")
+  .find(
+    (line) =>
+      line.includes("next_assets") && line.includes("-printf") && line.includes("next_manifest"),
+  );
+if (!deployRelease.includes(".rc-current-assets")) {
+  failures.push("deploy deve manter manifesto dos assets nativos da release");
+}
+if (!manifestLine || !manifestLine.includes("%P\\n") || manifestLine.includes("%P\\\\n")) {
+  failures.push("manifesto de assets deve ser gravado com exatamente um arquivo por linha");
+}
+if (
+  preservePreviousAssets < 0 ||
+  swapFrontendOutput < 0 ||
+  preservePreviousAssets > swapFrontendOutput
+) {
+  failures.push("deploy deve preservar assets da release anterior antes da troca atômica");
 }
 
 const opsStore = read("backend/app/ops_store.py");
@@ -375,9 +521,32 @@ if (!operationalMap.includes("load: measuredLoad.length")) {
   failures.push("mapa perdeu distinção entre potência medida e N/D");
 }
 
+const generatorHealth = read("src/components/generators/generator-health.ts");
+for (const marker of [
+  "rawFuel <= fuelCapacity",
+  "gen.fuelCapacityLiters",
+  'rawFuelUnit === "%"',
+  "fuelLiters",
+]) {
+  if (!generatorHealth.includes(marker)) {
+    failures.push(`combustível perdeu conversão segura/capacidade cadastrada: ${marker}`);
+  }
+}
+for (const marker of ["Capacidade do tanque (L)", "fuelCapacityLiters"]) {
+  if (!generatorEdit.includes(marker)) {
+    failures.push(`edição de gerador perdeu capacidade real do tanque: ${marker}`);
+  }
+}
+
 const verticalCard = read("src/components/generators/PowerFlowCard.tsx");
-if (!verticalCard.includes('label: "Run Hours"')) {
+if (!verticalCard.includes('label: "Horímetro"')) {
   failures.push("card vertical perdeu o horímetro operacional");
+}
+if (!verticalCard.includes('label: "Partidas"') || !verticalCard.includes('"number_starts"')) {
+  failures.push("card vertical perdeu contador real de partidas");
+}
+if (verticalCard.includes('label: "Required Power"')) {
+  failures.push("card vertical voltou a ocupar espaço com Required Power indisponível");
 }
 
 const forbidden = [

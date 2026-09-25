@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useGenerators } from "@/components/generators/GeneratorsProvider";
-import { metricNumber } from "@/components/generators/generator-metrics";
+import { readGeneratorTelemetry } from "@/components/generators/generator-health";
+import { generatorDisplayStatus, isGeneratorAlert, isGeneratorOnline } from "@/data/generators";
 import { industrialApi, type IndustrialAlarm, type MaintenancePlan } from "@/lib/industrial-api";
 import { rcApi, type SystemDiagnostics } from "@/lib/api";
 import { useScadaOps } from "./ScadaOpsProvider";
@@ -112,14 +113,6 @@ export function friendlyAlarmMessage(alarm: IndustrialAlarm) {
   return alarm.message || "Ocorrência ativa requer verificação.";
 }
 
-function metricUnit(
-  generator: { metricUnits?: Record<string, string> },
-  key: string,
-  fallback = "",
-) {
-  return generator.metricUnits?.[key] || fallback;
-}
-
 function isOpenWorkOrder(status: string) {
   return !/conclu|cancel|fechad/i.test(status);
 }
@@ -198,9 +191,11 @@ export function useOverviewDecisionModel() {
 
   const generatorStatus = useMemo<GeneratorStatusSummary>(
     () => ({
-      online: generators.filter((generator) => generator.status === "online").length,
-      alert: generators.filter((generator) => generator.status === "alerta").length,
-      offline: generators.filter((generator) => generator.status === "offline").length,
+      online: generators.filter(isGeneratorOnline).length,
+      alert: generators.filter(isGeneratorAlert).length,
+      offline: generators.filter((generator) =>
+        ["offline", "stale"].includes(generatorDisplayStatus(generator)),
+      ).length,
       unconfigured: generators.filter((generator) => generator.status === "nao_configurado").length,
     }),
     [generators],
@@ -209,9 +204,10 @@ export function useOverviewDecisionModel() {
   const fuel = useMemo<FuelSummary>(() => {
     const measured = generators
       .map((generator) => {
-        const value = metricNumber(generator, "fuel_level", generator.fuelLevel);
-        const unit = metricUnit(generator, "fuel_level", "");
-        return value == null || !unit ? null : { value, unit };
+        const telemetry = readGeneratorTelemetry(generator);
+        return telemetry.fuel == null || !telemetry.fuelUnit
+          ? null
+          : { value: telemetry.fuel, unit: telemetry.fuelUnit };
       })
       .filter((row): row is { value: number; unit: string } => row != null);
     const units = new Set(measured.map((row) => row.unit));

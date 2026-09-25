@@ -12,10 +12,21 @@ os.environ["RC_DATA_DIR"] = tmp.name
 os.environ["RC_DB_FILE"] = str(Path(tmp.name) / "test.db")
 os.environ["RC_RAPID_BINDINGS"] = str(Path(tmp.name) / "bindings.json")
 
-from app import bridge, bridge_runtime, control, db, rapid  # noqa: E402
+from app import bridge, bridge_runtime, control, db, domain_store, rapid  # noqa: E402
+from app.controller_library import command_firmware_approval  # noqa: E402
 
 
 db.init_db()
+
+approved, detail = command_firmware_approval(
+    {"firmware": {"tested": ["1.2.3"]}},
+    "1.2.3",
+)
+assert approved is True, detail
+assert command_firmware_approval({"firmware": {"tested": ["1.2.3"]}}, "")[0] is False
+assert command_firmware_approval({"firmware": {"tested": []}}, "1.2.3")[0] is False
+assert command_firmware_approval({"firmware": {"tested": ["1.2.3"]}}, "1.2.4")[0] is False
+
 generator = db.create_generator(
     {
         "tag": "GEN005",
@@ -30,6 +41,15 @@ generator = db.create_generator(
         "enabled": True,
     }
 )
+domain_store.sync_legacy_generators()
+asset = next(
+    item
+    for item in domain_store.list_assets()
+    if item.get("legacy_generator_id") == generator["id"]
+)
+controller = domain_store.list_controllers(asset["id"])[0]
+domain_store.update_controller(controller["id"], {"firmware": "TEST-FW"}, actor="test")
+
 Path(os.environ["RC_RAPID_BINDINGS"]).write_text(
     json.dumps(
         [
@@ -42,6 +62,7 @@ Path(os.environ["RC_RAPID_BINDINGS"]).write_text(
                 "modbus_unit": 16,
                 "rapid_line_num": 102,
                 "rapid_device_num": 204,
+                "status": "field_validated",
             }
         ]
     ),
@@ -61,6 +82,18 @@ except ValueError:
     pass
 else:
     raise AssertionError("Device sem binding não pode ser resolvido para controle")
+
+bindings_path = Path(os.environ["RC_RAPID_BINDINGS"])
+owned_bindings = json.loads(bindings_path.read_text(encoding="utf-8"))
+foreign_binding = {**owned_bindings[0], "generator_id": "gen-other"}
+bindings_path.write_text(json.dumps([foreign_binding]), encoding="utf-8")
+try:
+    bridge_runtime.resolve_ig200_bound_device(204)
+except ValueError:
+    pass
+else:
+    raise AssertionError("binding de outro generator_id não pode controlar este equipamento")
+bindings_path.write_text(json.dumps(owned_bindings), encoding="utf-8")
 
 
 class FakeReader:
@@ -85,13 +118,25 @@ class FakeWriter:
         return None
 
 
+# O pack real ainda não possui firmware.tested: comando precisa falhar fechado
+# antes de alcançar o socket de controle.
+try:
+    control.command_contract(generator, "start")
+except ValueError as exc:
+    assert "firmware" in str(exc).lower(), exc
+else:
+    raise AssertionError("comando foi aceito sem firmware homologado")
+
+
 async def validate_payload():
     writer = FakeWriter()
 
     async def fake_open_unix_connection(_path):
         return FakeReader(), writer
 
-    with patch.object(control.Path, "exists", return_value=True), patch.object(
+    with patch.object(control, "command_firmware_approval", return_value=(True, "teste")), patch.object(
+        control.Path, "exists", return_value=True
+    ), patch.object(
         control.asyncio,
         "open_unix_connection",
         side_effect=fake_open_unix_connection,

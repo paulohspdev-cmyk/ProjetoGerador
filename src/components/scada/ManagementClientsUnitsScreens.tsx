@@ -3,6 +3,7 @@ import { type FormEvent, useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useGenerators } from "@/components/generators/GeneratorsProvider";
+import { isGeneratorOnline } from "@/data/generators";
 import { rcApi, type OpsClient, type OpsSite } from "@/lib/api";
 import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats, Tone } from "./kit";
 
@@ -358,7 +359,7 @@ export function UnitsScreen() {
         return {
           ...site,
           total: gens.length,
-          online: gens.filter((g) => g.status === "online").length,
+          online: gens.filter(isGeneratorOnline).length,
         };
       }),
     [generators, rows],

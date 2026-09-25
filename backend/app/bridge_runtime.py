@@ -68,9 +68,12 @@ def _parse_allowed_networks(raw: str, setting: str) -> list:
         if not text:
             continue
         try:
-            networks.append(ipaddress.ip_network(text, strict=False))
+            network = ipaddress.ip_network(text, strict=False)
         except ValueError as exc:
             raise RuntimeError(f"CIDR reverse TCP inválido em {setting}: {text}") from exc
+        if network.prefixlen == 0:
+            raise RuntimeError(f"CIDR reverse TCP amplo demais em {setting}: {network}")
+        networks.append(network)
     return networks
 
 
@@ -151,7 +154,15 @@ def resolve_ig200_bound_device(device_num):
         None,
     )
     if not binding:
-        raise ValueError(f"binding InteliGen 200 reverse TCP não encontrado para Rapid Device {device_num}")
+        raise ValueError(
+            f"binding InteliGen 200 reverse TCP não encontrado para Rapid Device {device_num}"
+        )
+
+    generator_id = str(binding.get("generator_id") or "").strip()
+    if not generator_id:
+        raise ValueError("controle IG200 bloqueado: binding sem proprietário canônico")
+    if str(binding.get("status") or "") != "field_validated":
+        raise PermissionError("controle IG200 bloqueado: binding não está field_validated")
 
     port = int(binding.get("listen_port") or 0)
     unit = int(binding.get("modbus_unit") or 0)
@@ -159,7 +170,8 @@ def resolve_ig200_bound_device(device_num):
         (
             item
             for item in db.list_generators()
-            if int(item.get("rapid_device_num") or 0) == device_num
+            if str(item.get("id") or "") == generator_id
+            and int(item.get("rapid_device_num") or 0) == device_num
             and int(item.get("listen_port") or 0) == port
             and int(item.get("modbus_unit") or 0) == unit
             and str(item.get("controller_type", "")).upper() == "COMAP"

@@ -1,6 +1,12 @@
 import type { Generator } from "@/data/generators";
 
-import { displayGeneratorName, hasFreshMetric, metricNumber } from "../generator-metrics";
+import {
+  displayGeneratorName,
+  hasFreshMetric,
+  metricNumber,
+  nominalPowerNumber,
+} from "../generator-metrics";
+import { readGeneratorTelemetry } from "../generator-health";
 import { hasPositiveMeasurement, isPositiveMeasurement } from "../generator-presence";
 
 export type GeneratorDetailModel = ReturnType<typeof buildGeneratorDetailModel>;
@@ -15,6 +21,7 @@ function statusText(gen: Generator, rotating: boolean | null) {
 }
 
 export function buildGeneratorDetailModel(gen: Generator) {
+  const telemetry = readGeneratorTelemetry(gen);
   const rpm = metricNumber(gen, "rpm", gen.rpm);
   const frequency = metricNumber(gen, "frequency", gen.frequency);
   const mainsFrequency = metricNumber(gen, "mains_frequency", gen.mainsFrequency);
@@ -31,12 +38,10 @@ export function buildGeneratorDetailModel(gen: Generator) {
   const mainsL3 = metricNumber(gen, "mains_voltage_l3", gen.mains.l3);
   const mainsL12 = metricNumber(gen, "mains_voltage_l1_l2", gen.mains.l12);
   const load = metricNumber(gen, "power_kw", gen.load);
-  const nominalPower =
-    metricNumber(gen, "nominal_power_kw", gen.nominalPower) ??
-    metricNumber(gen, "nominal_power", gen.nominalPower);
+  const nominalPower = nominalPowerNumber(gen);
   const oil = metricNumber(gen, "oil_pressure", gen.oilPressure);
   const temp = metricNumber(gen, "coolant_temperature", gen.coolantTemp);
-  const fuel = metricNumber(gen, "fuel_level", gen.fuelLevel);
+  const fuel = telemetry.fuel;
   const batt = metricNumber(gen, "battery_voltage", gen.battery);
   const alt = metricNumber(gen, "alternator_voltage", gen.alternatorVoltage);
   const maintenance = metricNumber(gen, "maintenance_hours", gen.maintenance);
@@ -98,6 +103,11 @@ export function buildGeneratorDetailModel(gen: Generator) {
     oil,
     temp,
     fuel,
+    fuelUnit: telemetry.fuelUnit,
+    fuelPercent: telemetry.fuelPercent,
+    fuelCapacity: telemetry.fuelCapacity,
+    fuelCapacitySource: telemetry.fuelCapacitySource,
+    fuelOutOfRange: telemetry.fuelOutOfRange,
     batt,
     alt,
     maintenance,

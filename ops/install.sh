@@ -21,6 +21,9 @@ IG200_DEVICE=200
 INITIAL_GENERATOR_ID=""
 INITIAL_LOCAL_PORT=""
 TLS_SELF_SIGNED=0
+WEB_TLS_MODE_OVERRIDE=""
+EXTERNAL_PROXY_CIDRS_OVERRIDE=""
+PUBLIC_BASE_URL_OVERRIDE=""
 
 usage() {
   cat <<'EOF'
@@ -31,6 +34,9 @@ Opções:
   --admin-email EMAIL           e-mail do primeiro administrador
   --admin-name NOME             nome do primeiro administrador
   --admin-password-file ARQ     arquivo chmod 600 com a senha inicial (automação segura)
+  --web-tls-mode MODO           managed ou external_proxy
+  --external-proxy-cidrs CIDRS   peers do NPM autorizados em 3000/8090
+  --public-base-url URL          URL HTTPS pública publicada pelo NPM
   --skip-initial-generator      instala a plataforma sem cadastrar/provisionar gerador
   --ig200-tag TAG               tag do primeiro IG200 (padrão GEN001)
   --ig200-name NOME             nome do primeiro IG200
@@ -45,7 +51,7 @@ Instala em VM Ubuntu limpa:
   bridge reverse TCP somente leitura para o Rapid
   API FastAPI + frontend TanStack + worker + provisionador privilegiado
   SQLite do produto + login/RBAC + relatórios/backups/notificações
-  Nginx HTTPS na porta 443, com redirecionamento da porta 80
+  upstream HTTP para proxy externo por padrão; Nginx local somente em modo managed
 
 Por padrão cadastra e provisiona um ComAp InteliGen 200 com os parâmetros acima.
 Use --skip-initial-generator para instalar a plataforma vazia e cadastrar depois pelo painel.
@@ -53,9 +59,10 @@ Use --skip-initial-generator para instalar a plataforma vazia e cadastrar depois
 A senha inicial é solicitada no terminal e nunca é persistida em texto claro.
 Para automação, --admin-password-file lê a senha de arquivo proprietário chmod 600.
 SMTP e WhatsApp permanecem desabilitados até receberem configuração real.
-HTTPS é obrigatório. Se RC_TLS_CERT_FILE/RC_TLS_KEY_FILE não apontarem para um
-certificado real, o instalador cria um certificado local autoassinado para evitar
-tráfego em texto claro; antes de exposição pública, substitua-o por certificado confiável.
+HTTPS é obrigatório na borda. Em RC_WEB_TLS_MODE=external_proxy, o instalador
+preserva o proxy externo e não instala/configura Nginx local. No modo managed,
+RC_TLS_CERT_FILE/RC_TLS_KEY_FILE podem fornecer certificado real; sem eles, o
+instalador cria certificado local autoassinado para bootstrap.
 EOF
 }
 
@@ -65,6 +72,9 @@ while [[ $# -gt 0 ]]; do
     --admin-email) ADMIN_EMAIL="${2:?Informe o e-mail}"; shift 2 ;;
     --admin-name) ADMIN_NAME="${2:?Informe o nome}"; shift 2 ;;
     --admin-password-file) ADMIN_PASSWORD_FILE="${2:?Informe o arquivo}"; shift 2 ;;
+    --web-tls-mode) WEB_TLS_MODE_OVERRIDE="${2:?Informe managed ou external_proxy}"; shift 2 ;;
+    --external-proxy-cidrs) EXTERNAL_PROXY_CIDRS_OVERRIDE="${2:?Informe o IP/CIDR do NPM}"; shift 2 ;;
+    --public-base-url) PUBLIC_BASE_URL_OVERRIDE="${2:?Informe a URL HTTPS pública}"; shift 2 ;;
     --skip-initial-generator) SKIP_INITIAL_GENERATOR=1; shift ;;
     --ig200-tag) IG200_TAG="${2:?Informe a tag}"; shift 2 ;;
     --ig200-name) IG200_NAME="${2:?Informe o nome}"; shift 2 ;;
@@ -80,6 +90,45 @@ done
 if [[ $EUID -ne 0 ]]; then
   echo "Execute como root: sudo bash $0"
   exit 1
+fi
+
+# Resolve o modo web ANTES de instalar pacotes. Em instalação limpa, o
+# operador pode declarar external_proxy na própria linha de comando e evitar
+# que nginx seja sequer instalado/iniciado por engano.
+WEB_TLS_MODE="${RC_WEB_TLS_MODE:-external_proxy}"
+if [[ -f "$ENV_FILE" ]]; then
+  configured_tls_mode="$(sed -n 's/^RC_WEB_TLS_MODE=//p' "$ENV_FILE" | tail -n1 | tr -d '\r' | xargs)"
+  [[ -n "$configured_tls_mode" ]] && WEB_TLS_MODE="$configured_tls_mode"
+fi
+if [[ -n "$WEB_TLS_MODE_OVERRIDE" ]]; then
+  WEB_TLS_MODE="$WEB_TLS_MODE_OVERRIDE"
+fi
+case "$WEB_TLS_MODE" in
+  managed|external_proxy) ;;
+  *)
+    echo "ERRO: --web-tls-mode/RC_WEB_TLS_MODE deve ser managed ou external_proxy" >&2
+    exit 2
+    ;;
+esac
+
+EXTERNAL_PROXY_CIDRS=""
+PUBLIC_BASE_URL=""
+if [[ -f "$ENV_FILE" ]]; then
+  EXTERNAL_PROXY_CIDRS="$(sed -n 's/^RC_EXTERNAL_PROXY_ALLOWED_CIDRS=//p' "$ENV_FILE" | tail -n1 | tr -d '\r' | xargs)"
+  PUBLIC_BASE_URL="$(sed -n 's/^RC_PUBLIC_BASE_URL=//p' "$ENV_FILE" | tail -n1 | tr -d '\r' | xargs)"
+fi
+[[ -n "$EXTERNAL_PROXY_CIDRS_OVERRIDE" ]] && EXTERNAL_PROXY_CIDRS="$EXTERNAL_PROXY_CIDRS_OVERRIDE"
+[[ -n "$PUBLIC_BASE_URL_OVERRIDE" ]] && PUBLIC_BASE_URL="$PUBLIC_BASE_URL_OVERRIDE"
+
+if [[ "$WEB_TLS_MODE" == "external_proxy" ]]; then
+  [[ -n "$EXTERNAL_PROXY_CIDRS" ]] || {
+    echo "ERRO: external_proxy exige --external-proxy-cidrs ou RC_EXTERNAL_PROXY_ALLOWED_CIDRS no env." >&2
+    exit 2
+  }
+  [[ "$PUBLIC_BASE_URL" == https://* ]] || {
+    echo "ERRO: external_proxy exige --public-base-url/RC_PUBLIC_BASE_URL com URL https:// real do NPM." >&2
+    exit 2
+  }
 fi
 
 validate_range() {
@@ -112,9 +161,14 @@ echo
 
 echo "[1/15] Dependências do sistema..."
 apt-get update
-apt-get install -y \
-  git curl ca-certificates unzip nginx jq openssl sudo iproute2 \
+SYSTEM_PACKAGES=(
+  git curl ca-certificates unzip jq openssl sudo iproute2 nftables
   python3 python3-venv python3-pip build-essential
+)
+if [[ "$WEB_TLS_MODE" != "external_proxy" ]]; then
+  SYSTEM_PACKAGES+=(nginx)
+fi
+apt-get install -y "${SYSTEM_PACKAGES[@]}"
 
 NODE_MAJOR=0
 if command -v node >/dev/null 2>&1; then
@@ -224,6 +278,7 @@ install -d -m 0770 -o root -g rcgeradores /run/rc-geradores
 
 chmod +x \
   "$BASE/ops/install.sh" "$BASE/ops/status.sh" "$BASE/ops/vm-smoke.sh" \
+  "$BASE/ops/configure_external_proxy_network.sh" \
   "$BASE/ops/bootstrap_admin.py" "$BASE/ops/bootstrap_ig200.py" \
   "$BASE/rapid/provisioning/provision_ig200.sh" \
   "$BASE/rapid/provisioning/provision_generator.py" \
@@ -251,9 +306,19 @@ set_env RC_ENABLE_IG200_CONTROL "$ENABLE_CONTROL"
 set_env RC_RAPID_BINDINGS "/var/lib/rc-geradores/rapid-bindings.json"
 set_env RC_PROVISION_SOCKET "/run/rc-geradores/provision.sock"
 set_env RC_AUTH_COOKIE_SECURE "1"
-if [[ -n "$VM_IP" ]]; then
-  set_env RC_CORS_ORIGINS "https://localhost,https://127.0.0.1,https://${VM_IP}"
-  set_env RC_PUBLIC_BASE_URL "https://${VM_IP}"
+set_env RC_WEB_TLS_MODE "$WEB_TLS_MODE"
+if [[ "$WEB_TLS_MODE" == "external_proxy" ]]; then
+  set_env RC_EXTERNAL_PROXY_ALLOWED_CIDRS "$EXTERNAL_PROXY_CIDRS"
+  set_env RC_TRUSTED_PROXY_CIDRS "$EXTERNAL_PROXY_CIDRS"
+  set_env RC_PUBLIC_BASE_URL "$PUBLIC_BASE_URL"
+  set_env RC_CORS_ORIGINS "$PUBLIC_BASE_URL"
+elif [[ -n "$VM_IP" ]]; then
+  if ! grep -Eq '^RC_CORS_ORIGINS=.+$' "$ENV_FILE"; then
+    set_env RC_CORS_ORIGINS "https://localhost,https://127.0.0.1,https://${VM_IP}"
+  fi
+  if ! grep -Eq '^RC_PUBLIC_BASE_URL=.+$' "$ENV_FILE"; then
+    set_env RC_PUBLIC_BASE_URL "https://${VM_IP}"
+  fi
 fi
 chmod 640 "$ENV_FILE"
 chown root:rcgeradores "$ENV_FILE"
@@ -262,6 +327,13 @@ set -a
 # shellcheck disable=SC1090
 source "$ENV_FILE"
 set +a
+WEB_TLS_MODE="${RC_WEB_TLS_MODE:-$WEB_TLS_MODE}"
+RAPID_LOCAL_OFFSET="${RC_RAPID_LOCAL_OFFSET:-10000}"
+validate_range "RC_RAPID_LOCAL_OFFSET" "$RAPID_LOCAL_OFFSET" 1 65534
+if (( SKIP_INITIAL_GENERATOR == 0 && IG200_PORT + RAPID_LOCAL_OFFSET > 65535 )); then
+  echo "ERRO: porta IG200 + RC_RAPID_LOCAL_OFFSET excede 65535." >&2
+  exit 2
+fi
 
 echo "[5/15] Backend, migrations e banco do produto..."
 python3 -m venv "$BASE/backend/.venv"
@@ -271,11 +343,13 @@ python3 -m venv "$BASE/backend/.venv"
 export PYTHONPATH="$BASE/backend"
 "$BASE/backend/.venv/bin/python" - <<'PY'
 from app import db, ops_store, platform_store, transport_store
+from app.migrations import run_migrations
 db.init_db()
 ops_store.init_ops_db()
 platform_store.init_platform_db()
 transport_store.init_transport_db()
-print("Banco/migrations RC Geradores: OK")
+version = run_migrations()
+print(f"Banco/migrations RC Geradores: schema v{version} OK")
 PY
 
 echo
@@ -301,7 +375,7 @@ if not g:
 print(g['id'], g['tag'], g['listen_port'], g['modbus_unit'], g.get('rapid_device_num') or 0)
 PY
   )
-  INITIAL_LOCAL_PORT=$((IG200_PORT + ${RC_RAPID_LOCAL_OFFSET:-10000}))
+  INITIAL_LOCAL_PORT=$((IG200_PORT + RAPID_LOCAL_OFFSET))
 fi
 
 echo "[6/15] Provisionamento industrial inicial..."
@@ -327,7 +401,8 @@ dotnet build "$BASE/rapid/reader/RcRapidReader.csproj" \
 SCADA_DLL_DIR="$(dirname "$SCADA_COMMON")"
 find "$SCADA_DLL_DIR" -maxdepth 1 -type f -name 'Scada*.dll' \
   -exec cp --update=none {} "$OUT/" \; 2>/dev/null || true
-chmod -R a+rX "$OUT"
+chown -R root:root "$OUT"
+chmod -R u=rwX,go=rX "$OUT"
 
 echo "[8/15] Compilando frontend para Linux/Node..."
 cd "$BASE"
@@ -337,6 +412,8 @@ cd "$BASE"
 npm ci --include=dev
 NITRO_PRESET=node-server npm run build
 test -f "$BASE/.output/server/index.mjs"
+chown -R root:root "$BASE/.output"
+chmod -R u=rwX,go=rX "$BASE/.output"
 # Depois do build, mantenha somente dependências de runtime na VM.
 npm prune --omit=dev
 
@@ -367,6 +444,12 @@ sleep 2
 systemctl restart scadacomm6.service
 systemctl restart scadaweb6.service 2>/dev/null || true
 
+if [[ -n "${RC_RAPID_ADMIN_ALLOWED_CIDRS:-}" ]]; then
+  bash "$BASE/ops/configure_rapid_network.sh" --apply
+else
+  echo "AVISO: RC_RAPID_ADMIN_ALLOWED_CIDRS não configurado; portas nativas do Rapid permanecem sem filtro systemd."
+fi
+
 # Provisionador é root restrito por socket; API e worker continuam sem root.
 systemctl enable rc-geradores-provision.service rc-geradores-api.service \
   rc-geradores-worker.service rc-geradores-frontend.service >/dev/null
@@ -375,64 +458,79 @@ systemctl restart rc-geradores-api.service
 systemctl restart rc-geradores-worker.service
 systemctl restart rc-geradores-frontend.service
 
-echo "[10/15] Configurando HTTPS/Nginx..."
-TLS_DIR="/etc/ssl/rc-geradores"
-TLS_CERT="$TLS_DIR/fullchain.pem"
-TLS_KEY="$TLS_DIR/privkey.pem"
-install -d -m 0755 -o root -g root "$TLS_DIR"
+echo "[10/15] Configurando camada web..."
+if [[ "$WEB_TLS_MODE" == "external_proxy" ]]; then
+  echo "TLS/HTTPS delegado ao proxy externo; preparando upstreams diretos protegidos por nftables."
+  bash "$BASE/ops/configure_external_proxy_network.sh" --apply
+else
+  TLS_DIR="/etc/ssl/rc-geradores"
+  TLS_CERT="$TLS_DIR/fullchain.pem"
+  TLS_KEY="$TLS_DIR/privkey.pem"
+  install -d -m 0755 -o root -g root "$TLS_DIR"
 
-if [[ -n "${RC_TLS_CERT_FILE:-}" || -n "${RC_TLS_KEY_FILE:-}" ]]; then
-  [[ -n "${RC_TLS_CERT_FILE:-}" && -n "${RC_TLS_KEY_FILE:-}" ]] || {
-    echo "ERRO: configure RC_TLS_CERT_FILE e RC_TLS_KEY_FILE juntos." >&2
-    exit 5
-  }
-  [[ -f "$RC_TLS_CERT_FILE" && -f "$RC_TLS_KEY_FILE" ]] || {
-    echo "ERRO: certificado/chave TLS configurados não existem." >&2
-    exit 5
-  }
-  install -m 0644 -o root -g root "$RC_TLS_CERT_FILE" "$TLS_CERT"
-  install -m 0600 -o root -g root "$RC_TLS_KEY_FILE" "$TLS_KEY"
-elif [[ ! -s "$TLS_CERT" || ! -s "$TLS_KEY" ]]; then
-  TLS_SELF_SIGNED=1
-  TLS_NAME="${VM_IP:-rc-geradores.local}"
-  if [[ "$TLS_NAME" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    TLS_SAN="IP:${TLS_NAME},DNS:rc-geradores.local"
-  else
-    TLS_SAN="DNS:${TLS_NAME},DNS:rc-geradores.local"
+  if [[ -n "${RC_TLS_CERT_FILE:-}" || -n "${RC_TLS_KEY_FILE:-}" ]]; then
+    [[ -n "${RC_TLS_CERT_FILE:-}" && -n "${RC_TLS_KEY_FILE:-}" ]] || {
+      echo "ERRO: configure RC_TLS_CERT_FILE e RC_TLS_KEY_FILE juntos." >&2
+      exit 5
+    }
+    [[ -f "$RC_TLS_CERT_FILE" && -f "$RC_TLS_KEY_FILE" ]] || {
+      echo "ERRO: certificado/chave TLS configurados não existem." >&2
+      exit 5
+    }
+    install -m 0644 -o root -g root "$RC_TLS_CERT_FILE" "$TLS_CERT"
+    install -m 0600 -o root -g root "$RC_TLS_KEY_FILE" "$TLS_KEY"
+  elif [[ ! -s "$TLS_CERT" || ! -s "$TLS_KEY" ]]; then
+    TLS_SELF_SIGNED=1
+    TLS_NAME="${VM_IP:-rc-geradores.local}"
+    if [[ "$TLS_NAME" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+      TLS_SAN="IP:${TLS_NAME},DNS:rc-geradores.local"
+    else
+      TLS_SAN="DNS:${TLS_NAME},DNS:rc-geradores.local"
+    fi
+    openssl req -x509 -nodes -newkey rsa:3072 -sha256 -days 825 \
+      -keyout "$TLS_KEY" -out "$TLS_CERT" \
+      -subj "/CN=${TLS_NAME}" -addext "subjectAltName=${TLS_SAN}"
+    chmod 0600 "$TLS_KEY"
+    chmod 0644 "$TLS_CERT"
   fi
-  openssl req -x509 -nodes -newkey rsa:3072 -sha256 -days 825 \
-    -keyout "$TLS_KEY" -out "$TLS_CERT" \
-    -subj "/CN=${TLS_NAME}" -addext "subjectAltName=${TLS_SAN}"
-  chmod 0600 "$TLS_KEY"
-  chmod 0644 "$TLS_CERT"
+
+  openssl x509 -in "$TLS_CERT" -noout -subject -dates
+  openssl pkey -in "$TLS_KEY" -noout -check >/dev/null
+  cp "$BASE/ops/nginx/rc-geradores.conf" /etc/nginx/sites-available/rc-geradores
+  ln -sfn /etc/nginx/sites-available/rc-geradores /etc/nginx/sites-enabled/rc-geradores
+  rm -f /etc/nginx/sites-enabled/default /etc/nginx/sites-enabled/rc-scada
+  nginx -t
+  systemctl enable nginx >/dev/null
+  systemctl restart nginx
 fi
-
-openssl x509 -in "$TLS_CERT" -noout -subject -dates
-openssl pkey -in "$TLS_KEY" -noout -check >/dev/null
-cp "$BASE/ops/nginx/rc-geradores.conf" /etc/nginx/sites-available/rc-geradores
-ln -sfn /etc/nginx/sites-available/rc-geradores /etc/nginx/sites-enabled/rc-geradores
-rm -f /etc/nginx/sites-enabled/default /etc/nginx/sites-enabled/rc-scada
-nginx -t
-systemctl enable nginx >/dev/null
-systemctl restart nginx
-
-echo "[11/15] Validando API, frontend e proxy HTTPS..."
+echo "[11/15] Validando API, frontend e camada web..."
 for _ in $(seq 1 30); do
   curl -fsS http://127.0.0.1:8090/api/health >/tmp/rc-health.json 2>/dev/null && break
   sleep 1
 done
 curl -fsS http://127.0.0.1:8090/api/health | jq .
 curl -fsS http://127.0.0.1:3000/ >/dev/null
-curl -kfsS https://127.0.0.1/api/health | jq .
+if [[ "$WEB_TLS_MODE" == "external_proxy" ]]; then
+  bash "$BASE/ops/configure_external_proxy_network.sh" --check-runtime
+  echo "HTTPS externo pertence ao NPM; upstreams diretos e firewall local estão OK."
+else
+  curl -kfsS https://127.0.0.1/api/health | jq .
+fi
 
 echo "[12/15] Validando serviços e sockets..."
-for svc in \
-  rc-geradores-bridge \
-  rc-geradores-provision \
-  rc-geradores-api \
-  rc-geradores-worker \
-  rc-geradores-frontend \
-  scadaserver6 scadacomm6 nginx; do
+INSTALL_SERVICES=(
+  rc-geradores-bridge
+  rc-geradores-provision
+  rc-geradores-api
+  rc-geradores-worker
+  rc-geradores-frontend
+  scadaserver6
+  scadacomm6
+)
+if [[ "$WEB_TLS_MODE" != "external_proxy" ]]; then
+  INSTALL_SERVICES+=(nginx)
+fi
+for svc in "${INSTALL_SERVICES[@]}"; do
   if ! systemctl is-active --quiet "$svc"; then
     echo "ERRO: serviço $svc não está ativo."
     systemctl --no-pager --full status "$svc" || true
@@ -489,9 +587,14 @@ echo
 echo "============================================================"
 echo " RC GERADORES INSTALADO"
 echo "============================================================"
-echo " Interface:       https://${IP:-IP_DA_VM}/"
+if [[ "$WEB_TLS_MODE" == "external_proxy" ]]; then
+  echo " Interface local: http://127.0.0.1:3000/ (publique via proxy externo)"
+  echo " API local:       http://127.0.0.1:8090/api/health"
+else
+  echo " Interface:       https://${IP:-IP_DA_VM}/"
+  echo " API health:      https://${IP:-IP_DA_VM}/api/health"
+fi
 echo " Usuário inicial: $ADMIN_EMAIL"
-echo " API health:      https://${IP:-IP_DA_VM}/api/health"
 echo " Banco:           /var/lib/rc-geradores/rc-geradores.db"
 echo " Rapid SCADA:     /opt/scada"
 if (( SKIP_INITIAL_GENERATOR == 0 )); then
@@ -503,7 +606,9 @@ fi
 echo " Worker:          ativo"
 echo " Provisionador:   ativo (socket local privilegiado)"
 echo " SMTP/WhatsApp:   desabilitados até configurar credenciais reais"
-if (( TLS_SELF_SIGNED == 1 )); then
+if [[ "$WEB_TLS_MODE" == "external_proxy" ]]; then
+  echo " HTTPS:           DELEGADO AO PROXY EXTERNO"
+elif (( TLS_SELF_SIGNED == 1 )); then
   echo " HTTPS:           ATIVO com certificado autoassinado; substitua por certificado confiável antes de Internet pública"
 else
   echo " HTTPS:           ATIVO"

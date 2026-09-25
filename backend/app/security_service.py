@@ -8,7 +8,7 @@ from urllib.parse import quote
 
 from . import db, platform_store
 from .auth import hash_password, request_remote_ip, verify_password
-from .config import PASSWORD_RESET_TTL, PUBLIC_BASE_URL, SMTP_FROM, SMTP_HOST
+from .config import PASSWORD_RESET_TTL, PUBLIC_BASE_URL, SMTP_FROM, SMTP_HOST, TWO_FACTOR_ENFORCED
 from .secret_box import protect_secret, reveal_secret
 
 
@@ -94,11 +94,15 @@ def disable_totp(user: dict, code: str, current_password: str):
 
 
 def totp_required(user: dict) -> bool:
+    if not TWO_FACTOR_ENFORCED:
+        return False
     item = platform_store.get_totp(user["id"])
     return bool(item and item.get("enabled"))
 
 
 def verify_user_totp(user: dict, code: str | None) -> bool:
+    if not TWO_FACTOR_ENFORCED:
+        return True
     item = platform_store.get_totp(user["id"])
     if not item or not item.get("enabled"):
         return True
@@ -137,16 +141,10 @@ def request_password_reset(email: str, remote_ip: str = ""):
 
 
 def confirm_password_reset(token: str, new_password: str):
-    user_id = platform_store.consume_password_reset(token)
-    if not user_id:
+    password_hash = hash_password(new_password)
+    result = platform_store.complete_password_reset(token, password_hash)
+    if not result:
         raise ValueError("Token inválido ou expirado")
-    user = db.get_user(user_id)
-    if not user:
-        raise ValueError("Usuário não encontrado")
-    db.update_user(user_id, {"password_hash": hash_password(new_password)}, actor="password-reset")
-    with db.connect() as conn:
-        conn.execute("DELETE FROM sessions WHERE user_id=?", (user_id,))
-    db.add_audit(user.get("email") or user_id, "password_reset", "user", user_id, "sessões revogadas")
 
 
 def list_sessions(user_id: str):

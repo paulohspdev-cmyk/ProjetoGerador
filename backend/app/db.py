@@ -1,10 +1,16 @@
 import json
+import math
+import os
 import sqlite3
 import time
 import uuid
 from contextlib import contextmanager
 
 from .config import DATA_DIR, DB_FILE
+
+
+class LastAdminError(ValueError):
+    """Operação recusada porque removeria o último administrador ativo."""
 
 
 @contextmanager
@@ -39,6 +45,9 @@ def init_db():
                 listen_port INTEGER NOT NULL DEFAULT 0,
                 modbus_unit INTEGER NOT NULL DEFAULT 1,
                 rapid_device_num INTEGER,
+                nominal_power_kw REAL,
+                fuel_capacity_l REAL,
+                power_topology TEXT NOT NULL DEFAULT 'auto',
                 enabled INTEGER NOT NULL DEFAULT 1,
                 created_at INTEGER NOT NULL,
                 updated_at INTEGER NOT NULL
@@ -55,7 +64,7 @@ def init_db():
                 name TEXT NOT NULL,
                 email TEXT NOT NULL UNIQUE COLLATE NOCASE,
                 password_hash TEXT NOT NULL,
-                role TEXT NOT NULL CHECK(role IN ('administrador','cadastro','visualizacao')),
+                role TEXT NOT NULL CHECK(role IN ('administrador','operador','cadastro','visualizacao')),
                 active INTEGER NOT NULL DEFAULT 1,
                 last_access INTEGER,
                 created_at INTEGER NOT NULL,
@@ -83,6 +92,7 @@ def init_db():
                 created_at INTEGER NOT NULL,
                 FOREIGN KEY(generator_id) REFERENCES generators(id) ON DELETE SET NULL
             );
+            CREATE INDEX IF NOT EXISTS idx_events_created_at ON events(created_at);
 
             CREATE TABLE IF NOT EXISTS audit_log (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -93,6 +103,7 @@ def init_db():
                 entity_id TEXT NOT NULL,
                 detail TEXT NOT NULL DEFAULT ''
             );
+            CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at);
 
             CREATE TABLE IF NOT EXISTS generator_telemetry_snapshots (
                 generator_id TEXT PRIMARY KEY,
@@ -210,7 +221,7 @@ def create_user(data, actor="system"):
     now = int(time.time())
     user_id = data.get("id") or f"usr-{uuid.uuid4().hex[:12]}"
     role = str(data.get("role") or "visualizacao")
-    if role not in {"administrador", "cadastro", "visualizacao"}:
+    if role not in {"administrador", "operador", "cadastro", "visualizacao"}:
         raise ValueError("Perfil inválido")
     record = {
         "id": user_id,
@@ -239,57 +250,97 @@ def create_user(data, actor="system"):
 
 
 def update_user(user_id, patch, actor="system"):
-    current = get_user(user_id)
-    if not current:
-        return None
-
-    fields = []
-    values = []
-    detail = []
-    for key in ("name", "role", "active", "password_hash"):
-        if key not in patch or patch[key] is None:
-            continue
-        value = patch[key]
-        if key == "role":
-            value = str(value)
-            if value not in {"administrador", "cadastro", "visualizacao"}:
-                raise ValueError("Perfil inválido")
-        if key == "active":
-            value = 1 if bool(value) else 0
-        fields.append(f"{key}=?")
-        values.append(value)
-        detail.append(f"{key}=alterado" if key == "password_hash" else f"{key}={value}")
-
-    if not fields:
-        return current
-    fields.append("updated_at=?")
-    values.append(int(time.time()))
-    values.append(user_id)
+    now = int(time.time())
+    allowed_roles = {"administrador", "operador", "cadastro", "visualizacao"}
 
     with connect() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute("SELECT * FROM users WHERE id=?", (user_id,)).fetchone()
+        current = _row(row)
+        if not current:
+            return None
+
+        fields = []
+        values = []
+        detail = []
+        prospective_role = current["role"]
+        prospective_active = bool(current["active"])
+
+        for key in ("name", "role", "active", "password_hash"):
+            if key not in patch or patch[key] is None:
+                continue
+            value = patch[key]
+            if key == "role":
+                value = str(value)
+                if value not in allowed_roles:
+                    raise ValueError("Perfil inválido")
+                prospective_role = value
+            if key == "active":
+                value = 1 if bool(value) else 0
+                prospective_active = bool(value)
+            fields.append(f"{key}=?")
+            values.append(value)
+            detail.append(f"{key}=alterado" if key == "password_hash" else f"{key}={value}")
+
+        if (
+            current["role"] == "administrador"
+            and bool(current["active"])
+            and (prospective_role != "administrador" or not prospective_active)
+        ):
+            remaining = int(
+                conn.execute(
+                    "SELECT COUNT(*) FROM users "
+                    "WHERE role='administrador' AND active=1 AND id<>?",
+                    (user_id,),
+                ).fetchone()[0]
+            )
+            if remaining < 1:
+                raise LastAdminError(
+                    "Não é possível desativar ou rebaixar o último administrador"
+                )
+
+        if not fields:
+            return _user_public(row)
+
+        fields.append("updated_at=?")
+        values.append(now)
+        values.append(user_id)
         conn.execute(f"UPDATE users SET {', '.join(fields)} WHERE id=?", values)
         if patch.get("active") is False or "password_hash" in patch:
             conn.execute("DELETE FROM sessions WHERE user_id=?", (user_id,))
         conn.execute(
-            "INSERT INTO audit_log(created_at,actor,action,entity_type,entity_id,detail) VALUES (?,?,?,?,?,?)",
-            (int(time.time()), actor, "update", "user", user_id, "; ".join(detail)),
+            "INSERT INTO audit_log(created_at,actor,action,entity_type,entity_id,detail) "
+            "VALUES (?,?,?,?,?,?)",
+            (now, actor, "update", "user", user_id, "; ".join(detail)),
         )
+
     return get_user(user_id)
 
-
 def delete_user(user_id, actor="system"):
-    current = get_user(user_id)
-    if not current:
-        return False
     now = int(time.time())
     with connect() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute("SELECT * FROM users WHERE id=?", (user_id,)).fetchone()
+        current = _row(row)
+        if not current:
+            return False
+        if current["role"] == "administrador" and bool(current["active"]):
+            remaining = int(
+                conn.execute(
+                    "SELECT COUNT(*) FROM users "
+                    "WHERE role='administrador' AND active=1 AND id<>?",
+                    (user_id,),
+                ).fetchone()[0]
+            )
+            if remaining < 1:
+                raise LastAdminError("Não é possível excluir o último administrador")
         conn.execute("DELETE FROM users WHERE id=?", (user_id,))
         conn.execute(
-            "INSERT INTO audit_log(created_at,actor,action,entity_type,entity_id,detail) VALUES (?,?,?,?,?,?)",
+            "INSERT INTO audit_log(created_at,actor,action,entity_type,entity_id,detail) "
+            "VALUES (?,?,?,?,?,?)",
             (now, actor, "delete", "user", user_id, current["email"]),
         )
     return True
-
 
 def touch_user_login(user_id, at=None):
     at = int(at or time.time())
@@ -352,6 +403,137 @@ def get_generator(generator_id):
     return _row(row)
 
 
+def _validate_generator_network_identity(record: dict) -> None:
+    transport = str(record.get("transport") or "reverse_tcp").strip()
+    allowed = {"reverse_tcp", "modbus_tcp_direct", "rtu_over_tcp", "modbus_rtu_serial"}
+    if transport not in allowed:
+        raise ValueError("Transporte inválido")
+
+    host = str(record.get("host") or "").strip()
+    port = int(record.get("listen_port") or 0)
+    unit = int(record.get("modbus_unit") or 1)
+    rapid_device = record.get("rapid_device_num")
+
+    if not 1 <= unit <= 247:
+        raise ValueError("Modbus Unit ID deve ficar entre 1 e 247")
+    if rapid_device is not None and int(rapid_device) <= 0:
+        raise ValueError("Rapid Device deve ser positivo")
+
+    if transport == "reverse_tcp":
+        if not 1 <= port <= 65535:
+            raise ValueError("TCP reverso exige porta de escuta válida")
+        offset = int(os.environ.get("RC_RAPID_LOCAL_OFFSET", "10000"))
+        local_port = port + offset
+        if offset <= 0 or not 1 <= local_port <= 65535:
+            raise ValueError(
+                "Porta reverse TCP incompatível com RC_RAPID_LOCAL_OFFSET: "
+                f"remote={port} offset={offset} local={local_port}"
+            )
+        return
+
+    if transport in {"modbus_tcp_direct", "rtu_over_tcp"}:
+        if not host:
+            raise ValueError("Transporte TCP direto exige host/IP")
+        if not 1 <= port <= 65535:
+            raise ValueError("Transporte TCP direto exige porta válida")
+        return
+
+    if not host:
+        raise ValueError("Transporte serial exige dispositivo, por exemplo /dev/ttyUSB0")
+
+
+def _validate_domain_connection_conflicts(conn, record: dict) -> None:
+    """Evita gravar no legado uma identidade que o domínio v3 recusaria.
+
+    As duas representações compartilham o mesmo SQLite. Validar dentro da
+    transação de escrita evita que a API persista um gerador e só descubra o
+    conflito ao tentar espelhá-lo no domínio v3 depois do commit.
+    """
+    required_tables = {"assets", "controller_instances", "controller_connections"}
+    present = {
+        str(row[0])
+        for row in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' "
+            "AND name IN ('assets','controller_instances','controller_connections')"
+        ).fetchall()
+    }
+    if present != required_tables:
+        return
+
+    generator_id = str(record.get("id") or "")
+    mirror_id = f"conn-{generator_id}" if generator_id else ""
+    exclude_mirror = False
+    if mirror_id:
+        mirror = conn.execute(
+            """
+            SELECT cc.id
+            FROM controller_connections cc
+            JOIN controller_instances ci ON ci.id=cc.controller_id
+            JOIN assets a ON a.id=ci.asset_id
+            WHERE cc.id=? AND a.legacy_generator_id=?
+            """,
+            (mirror_id, generator_id),
+        ).fetchone()
+        exclude_mirror = mirror is not None
+
+    suffix = " AND id<>?" if exclude_mirror else ""
+    transport = str(record.get("transport") or "reverse_tcp").strip()
+    if transport == "reverse_tcp":
+        params = [
+            int(record.get("listen_port") or 0),
+            int(record.get("modbus_unit") or 1),
+        ]
+        if exclude_mirror:
+            params.append(mirror_id)
+        conflict = conn.execute(
+            "SELECT id FROM controller_connections "
+            "WHERE transport='reverse_tcp' AND listen_port=? AND modbus_unit=?" + suffix,
+            params,
+        ).fetchone()
+        if conflict:
+            raise sqlite3.IntegrityError(
+                "domain controller_connections reverse identity conflict"
+            )
+
+    rapid_device = record.get("rapid_device_num")
+    if rapid_device is not None:
+        params = [int(rapid_device)]
+        if exclude_mirror:
+            params.append(mirror_id)
+        conflict = conn.execute(
+            "SELECT id FROM controller_connections WHERE rapid_device_num=?" + suffix,
+            params,
+        ).fetchone()
+        if conflict:
+            raise sqlite3.IntegrityError(
+                "domain controller_connections rapid_device_num conflict"
+            )
+
+
+def _normalize_nominal_power_kw(value):
+    if value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("Potência nominal deve ser um número em kW") from exc
+    if not math.isfinite(number) or number <= 0 or number > 100000:
+        raise ValueError("Potência nominal deve ficar entre 0 e 100000 kW")
+    return number
+
+
+def _normalize_fuel_capacity_l(value):
+    if value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("Capacidade do tanque deve ser um número em litros") from exc
+    if not math.isfinite(number) or number <= 0 or number > 100000:
+        raise ValueError("Capacidade do tanque deve ficar entre 0 e 100000 L")
+    return number
+
+
 def create_generator(data, actor="system"):
     now = int(time.time())
     generator_id = data.get("id") or f"gen-{uuid.uuid4().hex[:12]}"
@@ -368,21 +550,29 @@ def create_generator(data, actor="system"):
         "listen_port": int(data.get("listen_port") or 0),
         "modbus_unit": int(data.get("modbus_unit") or 1),
         "rapid_device_num": data.get("rapid_device_num"),
+        "nominal_power_kw": _normalize_nominal_power_kw(data.get("nominal_power_kw")),
+        "fuel_capacity_l": _normalize_fuel_capacity_l(data.get("fuel_capacity_l")),
+        "power_topology": str(data.get("power_topology") or "auto").strip().lower(),
         "enabled": 1 if data.get("enabled", True) else 0,
         "created_at": now,
         "updated_at": now,
     }
+    if record["power_topology"] not in {"auto", "mains_genset", "genset_only"}:
+        raise ValueError("Topologia elétrica inválida")
+    _validate_generator_network_identity(record)
     with connect() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        _validate_domain_connection_conflicts(conn, record)
         conn.execute(
             """
             INSERT INTO generators (
                 id, tag, name, customer, site, controller_type, controller_model,
-                transport, host, listen_port, modbus_unit, rapid_device_num,
-                enabled, created_at, updated_at
+                transport, host, listen_port, modbus_unit, rapid_device_num, nominal_power_kw,
+                fuel_capacity_l, power_topology, enabled, created_at, updated_at
             ) VALUES (
                 :id, :tag, :name, :customer, :site, :controller_type, :controller_model,
-                :transport, :host, :listen_port, :modbus_unit, :rapid_device_num,
-                :enabled, :created_at, :updated_at
+                :transport, :host, :listen_port, :modbus_unit, :rapid_device_num, :nominal_power_kw,
+                :fuel_capacity_l, :power_topology, :enabled, :created_at, :updated_at
             )
             """,
             record,
@@ -403,6 +593,15 @@ def _normalized_generator_value(key, value):
         return 1 if bool(value) else 0
     if key in {"listen_port", "modbus_unit", "rapid_device_num"}:
         return int(value)
+    if key == "nominal_power_kw":
+        return _normalize_nominal_power_kw(value)
+    if key == "fuel_capacity_l":
+        return _normalize_fuel_capacity_l(value)
+    if key == "power_topology":
+        text = str(value or "auto").strip().lower()
+        if text not in {"auto", "mains_genset", "genset_only"}:
+            raise ValueError("Topologia elétrica inválida")
+        return text
     if key == "tag":
         return str(value).strip().upper()
     if key == "controller_type":
@@ -424,7 +623,8 @@ def update_generator(
         return None
     allowed = {
         "tag", "name", "customer", "site", "controller_type", "controller_model",
-        "transport", "host", "listen_port", "modbus_unit", "rapid_device_num", "enabled",
+        "transport", "host", "listen_port", "modbus_unit", "rapid_device_num",
+        "nominal_power_kw", "fuel_capacity_l", "power_topology", "enabled",
     }
     industrial_identity = {
         "tag",
@@ -438,8 +638,11 @@ def update_generator(
     }
     provisioned = int(current.get("rapid_device_num") or 0) > 0
     fields, values, detail = [], [], []
+    normalized_patch = {}
     for key, value in patch.items():
-        if key not in allowed or value is None:
+        if key not in allowed:
+            continue
+        if value is None and key not in {"nominal_power_kw", "fuel_capacity_l"}:
             continue
         value = _normalized_generator_value(key, value)
         current_value = current.get(key)
@@ -464,13 +667,20 @@ def update_generator(
             continue
         fields.append(f"{key}=?")
         values.append(value)
+        normalized_patch[key] = value
         detail.append(f"{key}={value}")
     if not fields:
         return current
+
+    prospective = {**current, **normalized_patch}
+    _validate_generator_network_identity(prospective)
+
     fields.append("updated_at=?")
     values.append(int(time.time()))
     values.append(current["id"])
     with connect() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        _validate_domain_connection_conflicts(conn, prospective)
         conn.execute(f"UPDATE generators SET {', '.join(fields)} WHERE id=?", values)
         conn.execute(
             "INSERT INTO audit_log(created_at,actor,action,entity_type,entity_id,detail) VALUES (?,?,?,?,?,?)",

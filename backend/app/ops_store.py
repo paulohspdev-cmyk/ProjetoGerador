@@ -227,9 +227,10 @@ def create_work_order(data: dict, actor: str):
     site = str(data.get("site") or "").strip()
     if generator_id:
         generator = db.get_generator(generator_id)
-        if generator:
-            gen = generator["tag"]
-            site = generator["site"]
+        if not generator:
+            raise ValueError("Gerador vinculado à ordem de serviço não existe")
+        gen = generator["tag"]
+        site = generator["site"]
     item = {
         "id": _id("os"),
         "generator_id": generator_id,
@@ -283,12 +284,15 @@ def list_agenda():
 
 def create_agenda(data: dict, actor: str):
     now = _now()
+    generator_id = data.get("generator_id") or None
+    if generator_id and not db.get_generator(generator_id):
+        raise ValueError("Gerador vinculado ao compromisso não existe")
     item = {
         "id": _id("ag"),
         "title": str(data["title"]).strip(),
         "when_text": str(data["when"]).strip(),
         "site": str(data.get("site") or "").strip(),
-        "generator_id": data.get("generator_id") or None,
+        "generator_id": generator_id,
         "kind": str(data.get("kind") or "manual").strip(),
         "enabled": 1,
         "created_at": now,
@@ -365,7 +369,7 @@ def create_report(data: dict, actor: str):
         "name": str(data["name"]).strip(),
         "period": str(data["period"]).strip(),
         "format": str(data.get("format") or "CSV").upper(),
-        "status": "Pronto",
+        "status": "Gerando",
         "created_by": actor,
         "created_at": now,
         "updated_at": now,
@@ -377,6 +381,18 @@ def create_report(data: dict, actor: str):
         )
     _audit(actor, "create", "report", item["id"], item["name"])
     return next(x for x in list_reports() if x["id"] == item["id"])
+
+
+def set_report_status(item_id: str, status: str) -> bool:
+    status = str(status or "").strip()
+    if status not in {"Gerando", "Pronto", "Falha"}:
+        raise ValueError("Status de relatório inválido")
+    with db.connect() as conn:
+        updated = conn.execute(
+            "UPDATE reports SET status=?,updated_at=? WHERE id=?",
+            (status, _now(), item_id),
+        )
+        return updated.rowcount == 1
 
 
 def list_webhooks():

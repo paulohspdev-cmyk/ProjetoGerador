@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 BASE="${RC_PROJECT_ROOT:-/opt/rc-geradores}"
 ENV_FILE="${RC_ENV_FILE:-/etc/rc-geradores.env}"
 REF="${1:-origin/main}"
@@ -13,6 +14,44 @@ PROVISION_SOCKET="/run/rc-geradores/provision.sock"
 
 fail() { echo "ERRO: $*" >&2; exit 1; }
 ok() { echo "OK: $*"; }
+
+resolve_release_commit() {
+  local ref="$1"
+  local branch=""
+  local remote_match=""
+
+  case "${ref}" in
+    origin/*) branch="${ref#origin/}" ;;
+    refs/heads/*) branch="${ref#refs/heads/}" ;;
+    refs/remotes/origin/*) branch="${ref#refs/remotes/origin/}" ;;
+  esac
+
+  if [[ -n "${branch}" ]]; then
+    git check-ref-format --branch "${branch}" >/dev/null 2>&1 || return 1
+    git -c safe.directory="${BASE}" -C "${BASE}" fetch --quiet --no-tags origin "refs/heads/${branch}"
+    git -c safe.directory="${BASE}" -C "${BASE}" rev-parse 'FETCH_HEAD^{commit}'
+    return
+  fi
+
+  if [[ "${ref}" =~ ^[0-9a-fA-F]{40}$ ]]; then
+    if ! git -c safe.directory="${BASE}" -C "${BASE}" cat-file -e "${ref}^{commit}" 2>/dev/null; then
+      git -c safe.directory="${BASE}" -C "${BASE}" fetch --quiet --no-tags origin "${ref}"
+    fi
+    git -c safe.directory="${BASE}" -C "${BASE}" rev-parse "${ref}^{commit}"
+    return
+  fi
+
+  if git check-ref-format --branch "${ref}" >/dev/null 2>&1; then
+    remote_match="$(git -c safe.directory="${BASE}" -C "${BASE}" ls-remote --exit-code origin "refs/heads/${ref}" 2>/dev/null | awk 'NR == 1 { print $1 }' || true)"
+    if [[ -n "${remote_match}" ]]; then
+      git -c safe.directory="${BASE}" -C "${BASE}" fetch --quiet --no-tags origin "refs/heads/${ref}"
+      git -c safe.directory="${BASE}" -C "${BASE}" rev-parse 'FETCH_HEAD^{commit}'
+      return
+    fi
+  fi
+
+  git -c safe.directory="${BASE}" -C "${BASE}" rev-parse "${ref}^{commit}"
+}
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
   cat <<'EOF'
@@ -40,15 +79,25 @@ CONTROL_SOCKET="${RC_RAPID_CONTROL_SOCKET:-${CONTROL_SOCKET}}"
 PROVISION_SOCKET="${RC_PROVISION_SOCKET:-${PROVISION_SOCKET}}"
 TEST_PORT="${RC_DEPLOY_TEST_PORT:-${TEST_PORT}}"
 WEB_TLS_MODE="${RC_WEB_TLS_MODE:-${WEB_TLS_MODE}}"
+EXTERNAL_PROXY_ALLOWED_CIDRS="${RC_EXTERNAL_PROXY_ALLOWED_CIDRS:-}"
+TRUSTED_PROXY_CIDRS="${RC_TRUSTED_PROXY_CIDRS:-}"
+LEGACY_NGINX_SITE="${RC_LEGACY_NGINX_SITE:-/etc/nginx/sites-enabled/rc-geradores}"
 
 REQUIRED_CMDS=(git tar npm node curl systemctl runuser ss python3 dotnet hostname id find awk jq df)
-if [[ "${WEB_TLS_MODE}" != "external_proxy" ]]; then
+if [[ "${WEB_TLS_MODE}" == "external_proxy" ]]; then
+  REQUIRED_CMDS+=(nft)
+else
   REQUIRED_CMDS+=(nginx openssl)
 fi
 for cmd in "${REQUIRED_CMDS[@]}"; do
   command -v "${cmd}" >/dev/null 2>&1 || fail "comando obrigatório não encontrado: ${cmd}"
 done
 ok "comandos obrigatórios disponíveis"
+
+if [[ "${RC_ENVIRONMENT:-development}" == "production" || -n "${RC_RAPID_ADMIN_ALLOWED_CIDRS:-}" ]]; then
+  bash "${SCRIPT_DIR}/configure_rapid_network.sh" --check
+  ok "política de rede nativa do Rapid SCADA configurada"
+fi
 
 id rcgeradores >/dev/null 2>&1 || fail "usuário rcgeradores não existe"
 ok "usuário rcgeradores disponível"
@@ -83,7 +132,13 @@ done
 ok "Rapid SCADA ativo antes do deploy"
 
 if [[ "${WEB_TLS_MODE}" == "external_proxy" ]]; then
-  ok "TLS/HTTPS delegado ao proxy externo; preflight não altera nem valida certificados locais"
+  [[ -n "${EXTERNAL_PROXY_ALLOWED_CIDRS//[[:space:],]/}" ]] || fail "RC_WEB_TLS_MODE=external_proxy exige RC_EXTERNAL_PROXY_ALLOWED_CIDRS com o IP/CIDR real do Nginx Proxy Manager"
+  [[ -n "${TRUSTED_PROXY_CIDRS//[[:space:],]/}" ]] || fail "RC_WEB_TLS_MODE=external_proxy exige RC_TRUSTED_PROXY_CIDRS com o IP/CIDR real do Nginx Proxy Manager"
+  bash "${SCRIPT_DIR}/configure_external_proxy_network.sh" --check-runtime
+  if [[ -f "${LEGACY_NGINX_SITE}" ]] && grep -Eq '^[[:space:]]*listen[[:space:]].*443.*ssl' "${LEGACY_NGINX_SITE}"; then
+    fail "RC_WEB_TLS_MODE=external_proxy, mas o site Nginx local ainda termina TLS em 443: ${LEGACY_NGINX_SITE}. Valide o NPM direto em 3000/8090 e remova a terminação TLS local antes do deploy."
+  fi
+  ok "TLS/HTTPS delegado ao proxy externo; upstreams protegidos por nftables e sem terminação TLS local"
 else
   systemctl is-active --quiet nginx || fail "serviço pré-requisito inativo: nginx"
   nginx -t >/dev/null 2>&1 || fail "configuração Nginx atual inválida"
@@ -99,9 +154,7 @@ DIRTY="$(git -c safe.directory="${BASE}" -C "${BASE}" status --porcelain --untra
 [[ -z "${DIRTY}" ]] || { echo "${DIRTY}" >&2; fail "há alterações locais rastreadas em ${BASE}"; }
 ok "checkout sem alterações rastreadas"
 
-git -c safe.directory="${BASE}" -C "${BASE}" fetch --prune origin
-git -c safe.directory="${BASE}" -C "${BASE}" fetch origin main
-COMMIT="$(git -c safe.directory="${BASE}" -C "${BASE}" rev-parse "${REF}^{commit}")"
+COMMIT="$(resolve_release_commit "${REF}")" || fail "não foi possível resolver/fazer fetch da release ${REF}"
 [[ -n "${COMMIT}" ]] || fail "não foi possível resolver ref ${REF}"
 if [[ -n "${EXPECTED_SHA}" && "${COMMIT}" != "${EXPECTED_SHA}" ]]; then
   fail "ref ${REF} resolveu ${COMMIT}, mas o commit validado esperado é ${EXPECTED_SHA}"
@@ -110,13 +163,39 @@ ok "release resolvida: ${REF} -> ${COMMIT}"
 
 if [[ -f "${DB_FILE}" ]]; then
   python3 - "${DB_FILE}" <<'PY'
-import sqlite3, sys
+import ipaddress, os, sqlite3, sys
 path = sys.argv[1]
 conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
 try:
     rows = [r[0] for r in conn.execute("PRAGMA quick_check")]
     if rows != ["ok"]:
         raise SystemExit("SQLite quick_check falhou: " + "; ".join(rows))
+    integrity = [r[0] for r in conn.execute("PRAGMA integrity_check")]
+    if integrity != ["ok"]:
+        raise SystemExit("SQLite integrity_check falhou: " + "; ".join(integrity))
+    foreign_keys = conn.execute("PRAGMA foreign_key_check").fetchall()
+    if foreign_keys:
+        raise SystemExit("SQLite foreign_key_check falhou: " + repr(foreign_keys[:20]))
+
+    local_offset = int(os.environ.get("RC_RAPID_LOCAL_OFFSET", "10000"))
+    if local_offset <= 0:
+        raise SystemExit("RC_RAPID_LOCAL_OFFSET deve ser positivo")
+    invalid_reverse_ports = conn.execute(
+        """
+        SELECT tag, listen_port
+        FROM generators
+        WHERE transport='reverse_tcp'
+          AND (listen_port < 1 OR listen_port > 65535 OR listen_port + ? > 65535)
+        ORDER BY tag
+        """,
+        (local_offset,),
+    ).fetchall()
+    if invalid_reverse_ports:
+        detail = "; ".join(
+            f"{tag}: remote={port}, local={int(port) + local_offset}"
+            for tag, port in invalid_reverse_ports
+        )
+        raise SystemExit("Portas reverse TCP incompatíveis com offset local: " + detail)
 
     reverse_conflicts = conn.execute(
         """
@@ -151,10 +230,59 @@ try:
             for device, qty, tags in device_conflicts
         )
         raise SystemExit("Conflito de Rapid Device antes da migração: " + detail)
+
+    reverse_ports = [
+        int(row[0])
+        for row in conn.execute(
+            """
+            SELECT DISTINCT listen_port
+            FROM generators
+            WHERE enabled=1 AND transport='reverse_tcp' AND listen_port > 0
+            ORDER BY listen_port
+            """
+        ).fetchall()
+    ]
+    if os.environ.get("RC_ENVIRONMENT", "development").strip() == "production" and reverse_ports:
+        if os.environ.get("RC_RAPID_REQUIRE_ALLOWLIST", "0").strip() != "1":
+            raise SystemExit(
+                "Produção com reverse TCP ativo exige RC_RAPID_REQUIRE_ALLOWLIST=1"
+            )
+
+        def parse_networks(raw, setting):
+            networks = []
+            for token in str(raw or "").split(","):
+                token = token.strip()
+                if not token:
+                    continue
+                try:
+                    network = ipaddress.ip_network(token, strict=False)
+                except ValueError as exc:
+                    raise SystemExit(f"CIDR inválido em {setting}: {token}: {exc}") from exc
+                if network.prefixlen == 0:
+                    raise SystemExit(f"CIDR amplo demais em {setting}: {network}")
+                networks.append(network)
+            return networks
+
+        global_networks = parse_networks(
+            os.environ.get("RC_RAPID_REMOTE_ALLOWED_CIDRS", ""),
+            "RC_RAPID_REMOTE_ALLOWED_CIDRS",
+        )
+        uncovered = []
+        for port in reverse_ports:
+            setting = f"RC_RAPID_REMOTE_ALLOWED_CIDRS_{port}"
+            raw_port = os.environ.get(setting, "")
+            networks = parse_networks(raw_port, setting) if str(raw_port).strip() else global_networks
+            if not networks:
+                uncovered.append(port)
+        if uncovered:
+            raise SystemExit(
+                "Reverse TCP sem allowlist de origem nas portas: "
+                + ", ".join(str(port) for port in uncovered)
+            )
 finally:
     conn.close()
 PY
-  ok "SQLite atual íntegro e sem identidades industriais duplicadas: ${DB_FILE}"
+  ok "SQLite atual íntegro, FKs válidas, identidades industriais coerentes e reverse TCP protegido: ${DB_FILE}"
 else
   ok "banco ainda não existe; deploy fará inicialização"
 fi

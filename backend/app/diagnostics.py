@@ -1,4 +1,6 @@
+import ipaddress
 import json
+import math
 import os
 import shutil
 import subprocess
@@ -6,6 +8,7 @@ import time
 from pathlib import Path
 
 from . import db, domain_store, platform_store, traffic_store
+from .backup_manager import offsite_storage_status
 from .config import (
     API_DOCS_ENABLED,
     APP_VERSION,
@@ -14,15 +17,21 @@ from .config import (
     BACKUP_OFFSITE_REQUIRED,
     BRIDGE_STATUS_FILE,
     CONTROL_SOCKET,
+    DATA_DIR,
     ENVIRONMENT,
     PROJECT_ROOT,
     RAPID_BINDINGS_FILE,
     RAPID_COMM_CONFIG,
     RAPID_READER_DLL,
     SMTP_HOST,
+    TWO_FACTOR_ENFORCED,
     WHATSAPP_API_URL,
 )
-from .controller_library import pack_for_model, pack_is_production_ready
+from .controller_library import (
+    command_firmware_approval,
+    pack_for_model,
+    pack_is_production_ready,
+)
 from .rapid import load_bindings, overlay_generators
 
 SERVICES = [
@@ -33,8 +42,61 @@ SERVICES = [
     "rc-geradores-provision.service",
     "scadaserver6.service",
     "scadacomm6.service",
-    "nginx.service",
 ]
+RAPID_NATIVE_NETWORK_SERVICES = (
+    "scadaserver6.service",
+    "scadaagent6.service",
+    "scadaweb6.service",
+)
+
+
+def _local_backup_status(max_age_seconds: int = 36 * 3600) -> tuple[bool, str]:
+    backup_dir = Path(DATA_DIR) / "backups"
+    if not backup_dir.is_dir():
+        return False, f"Diretório de backups não existe: {backup_dir}"
+    if not os.access(backup_dir, os.W_OK | os.X_OK):
+        return False, f"Diretório de backups não está gravável pelo serviço: {backup_dir}"
+
+    try:
+        with db.connect() as conn:
+            row = conn.execute(
+                """
+                SELECT created_at,path,size_bytes,result,detail
+                FROM backup_records
+                WHERE type='Completo'
+                ORDER BY created_at DESC
+                LIMIT 1
+                """
+            ).fetchone()
+    except Exception as exc:
+        return False, f"Não foi possível consultar histórico de full backup: {exc}"
+
+    if not row:
+        return False, "Nenhum backup completo registrado"
+
+    created_at = int(row["created_at"] or 0)
+    result = str(row["result"] or "")
+    detail = str(row["detail"] or "").strip()
+    path = Path(str(row["path"] or ""))
+    size = int(row["size_bytes"] or 0)
+    age = max(0, int(time.time()) - created_at)
+
+    if result != "OK":
+        suffix = f": {detail}" if detail else ""
+        return False, f"Último backup completo falhou{suffix}"
+    if age > max_age_seconds:
+        hours = age / 3600
+        return False, f"Último backup completo OK está antigo ({hours:.1f} h)"
+    if not path.is_file() or size <= 0:
+        return False, f"Registro do último backup completo não possui artefato válido: {path}"
+    return True, f"Último backup completo OK há {age / 3600:.1f} h ({path.name})"
+
+
+def _service_names() -> list[str]:
+    services = list(SERVICES)
+    if os.environ.get("RC_WEB_TLS_MODE", "managed").strip() != "external_proxy":
+        services.append("nginx.service")
+    return services
 
 
 def _safe_exists(path) -> bool:
@@ -60,6 +122,85 @@ def _service(name):
         "status": "OK" if rc == 0 and out == "active" else "DOWN",
         "detail": out or "indisponível",
     }
+
+
+def _rapid_native_network_policy() -> tuple[bool, str]:
+    raw = os.environ.get("RC_RAPID_ADMIN_ALLOWED_CIDRS", "")
+    admin_networks: set[str] = set()
+    for token in raw.split(","):
+        token = token.strip()
+        if not token:
+            continue
+        try:
+            network = ipaddress.ip_network(token, strict=False)
+        except ValueError:
+            return False, f"RC_RAPID_ADMIN_ALLOWED_CIDRS contém CIDR inválido: {token}"
+        if network.prefixlen == 0:
+            return False, f"RC_RAPID_ADMIN_ALLOWED_CIDRS contém rede ampla demais: {network}"
+        admin_networks.add(str(network))
+
+    required_allow = {"127.0.0.0/8", "::1/128", *admin_networks}
+    required_deny = {"0.0.0.0/0", "::/0"}
+    errors: list[str] = []
+
+    for service in RAPID_NATIVE_NETWORK_SERVICES:
+        rc, out = _run(
+            [
+                "systemctl",
+                "show",
+                service,
+                "-p",
+                "IPAddressAllow",
+                "-p",
+                "IPAddressDeny",
+                "--no-pager",
+            ]
+        )
+        if rc != 0:
+            errors.append(f"{service}: não foi possível ler política systemd")
+            continue
+
+        properties: dict[str, set[str]] = {}
+        for line in out.splitlines():
+            key, sep, value = line.partition("=")
+            if sep:
+                properties[key] = {item for item in value.split() if item}
+
+        allow = properties.get("IPAddressAllow", set())
+        deny = properties.get("IPAddressDeny", set())
+        missing_allow = sorted(required_allow - allow)
+        missing_deny = sorted(required_deny - deny)
+        if missing_allow:
+            errors.append(f"{service}: allow ausente {', '.join(missing_allow)}")
+        if missing_deny:
+            errors.append(f"{service}: deny ausente {', '.join(missing_deny)}")
+
+    if errors:
+        return False, "; ".join(errors)
+    if admin_networks:
+        return (
+            True,
+            "Server/Agent/Webstation restritos a loopback e redes administrativas: "
+            + ", ".join(sorted(admin_networks)),
+        )
+    return True, "Server/Agent/Webstation restritos somente a loopback"
+
+
+def _external_proxy_topology(listening_ports: set[int]) -> tuple[bool | None, str]:
+    mode = os.environ.get("RC_WEB_TLS_MODE", "managed").strip()
+    if mode != "external_proxy":
+        return None, ""
+
+    rc, out = _run(["systemctl", "is-active", "nginx.service"])
+    local_nginx_active = rc == 0 and out == "active"
+    local_tls_active = 443 in listening_ports
+    if local_nginx_active and local_tls_active:
+        return (
+            False,
+            "RC_WEB_TLS_MODE=external_proxy, mas Nginx local continua ativo em 443; "
+            "valide dupla terminação TLS e preservação do IP real do cliente",
+        )
+    return True, "HTTPS/TLS não está sendo terminado pelo Nginx local"
 
 
 def _listening_ports() -> set[int]:
@@ -189,8 +330,13 @@ def version_info():
 def _production_readiness(
     raw_generators: list[dict],
     *,
+    observed_generators: list[dict] | None = None,
     reverse_tcp_exposed: bool,
     reverse_tcp_allowlist: bool,
+    rapid_native_policy_ok: bool | None = None,
+    rapid_native_policy_detail: str = "",
+    external_proxy_topology_ok: bool | None = None,
+    external_proxy_topology_detail: str = "",
 ) -> dict:
     checks: list[dict] = []
 
@@ -232,6 +378,37 @@ def _production_readiness(
         "warning",
         "Desabilitada" if not API_DOCS_ENABLED else "RC_API_DOCS=1",
     )
+    if external_proxy_topology_ok is not None:
+        add(
+            "external_proxy_topology",
+            "Topologia do proxy externo",
+            external_proxy_topology_ok,
+            "blocker",
+            external_proxy_topology_detail
+            or (
+                "Sem terminação TLS local adicional"
+                if external_proxy_topology_ok
+                else "Possível dupla terminação TLS local"
+            ),
+        )
+
+    if os.environ.get("RC_WEB_TLS_MODE", "managed").strip() == "external_proxy":
+        trusted_proxy_cidrs = [
+            item.strip()
+            for item in os.environ.get("RC_TRUSTED_PROXY_CIDRS", "").split(",")
+            if item.strip()
+        ]
+        add(
+            "trusted_proxy_identity",
+            "Identidade do proxy confiável",
+            bool(trusted_proxy_cidrs),
+            "blocker",
+            (
+                "RC_TRUSTED_PROXY_CIDRS configurado: " + ", ".join(trusted_proxy_cidrs)
+                if trusted_proxy_cidrs
+                else "RC_TRUSTED_PROXY_CIDRS vazio; IP real do cliente e rate-limit ficam incorretos atrás do proxy"
+            ),
+        )
     add(
         "reverse_tcp_allowlist",
         "Proteção das portas reverse TCP",
@@ -245,23 +422,36 @@ def _production_readiness(
             else "Listeners expostos sem allowlist de origem"
         ),
     )
+    if rapid_native_policy_ok is not None:
+        add(
+            "rapid_native_network_policy",
+            "Proteção das portas nativas do Rapid SCADA",
+            rapid_native_policy_ok,
+            "blocker",
+            rapid_native_policy_detail
+            or (
+                "Política systemd aplicada"
+                if rapid_native_policy_ok
+                else "Política systemd não aplicada ou incompleta"
+            ),
+        )
 
-    offsite_ready = bool(
-        BACKUP_OFFSITE_REQUIRED
-        and BACKUP_OFFSITE_DIR
-        and BACKUP_OFFSITE_KEY_FILE
-        and Path(BACKUP_OFFSITE_KEY_FILE).is_file()
+    local_backup_ready, local_backup_detail = _local_backup_status()
+    add(
+        "backup_local",
+        "Backup completo local",
+        local_backup_ready,
+        "blocker",
+        local_backup_detail,
     )
+
+    offsite_ready, offsite_detail = offsite_storage_status()
     add(
         "backup_offsite",
         "Backup off-site",
         offsite_ready,
         "blocker",
-        (
-            "Obrigatório, destino e chave configurados"
-            if offsite_ready
-            else "Falta RC_BACKUP_OFFSITE_REQUIRED=1, destino off-site e/ou chave externa"
-        ),
+        offsite_detail,
     )
 
     users = [item for item in db.list_users() if item.get("active")]
@@ -276,9 +466,15 @@ def _production_readiness(
     add(
         "privileged_2fa",
         "2FA de contas privilegiadas",
-        not missing_2fa,
+        TWO_FACTOR_ENFORCED and not missing_2fa,
         "blocker",
-        "Todas protegidas" if not missing_2fa else "Sem 2FA: " + ", ".join(missing_2fa),
+        (
+            "Todas protegidas"
+            if TWO_FACTOR_ENFORCED and not missing_2fa
+            else "Enforcement temporariamente desativado por RC_2FA_ENFORCED=0"
+            if not TWO_FACTOR_ENFORCED
+            else "Sem 2FA: " + ", ".join(missing_2fa)
+        ),
     )
 
     bindings = {
@@ -288,10 +484,13 @@ def _production_readiness(
     }
     no_pack: list[str] = []
     no_binding: list[str] = []
-    missing_nominal: list[str] = []
+    missing_nominal_support: list[str] = []
     missing_site: list[str] = []
     missing_customer: list[str] = []
-    missing_firmware: list[str] = []
+    missing_command_firmware: list[str] = []
+    missing_readonly_firmware: list[str] = []
+    fuel_capacity_mismatch: list[str] = []
+    missing_percent_fuel_capacity: list[str] = []
     test_assets: list[str] = []
 
     assets_by_generator = {
@@ -308,12 +507,30 @@ def _production_readiness(
             continue
         tag = str(generator.get("tag") or generator.get("id") or "N/D")
         pack = pack_for_model(generator.get("controller_model") or "")
-        if not pack_is_production_ready(pack):
+        pack_ready = pack_is_production_ready(pack)
+        if not pack_ready:
             no_pack.append(tag)
         elif str(generator.get("id") or "") not in bindings:
             no_binding.append(tag)
-        if generator.get("nominal_power") in (None, "", 0, 0.0):
-            missing_nominal.append(tag)
+
+        # O rating nominal pode vir de telemetria homologada ou do cadastro
+        # técnico do ativo. Nunca inferimos kW a partir de kVA, nome ou modelo.
+        validated_metrics = set((pack or {}).get("validatedTelemetry") or [])
+        mapped_registers = ((pack or {}).get("mapping") or {}).get("registers") or {}
+        nominal_supported = (
+            "nominal_power_kw" in validated_metrics
+            or (
+                isinstance(mapped_registers, dict)
+                and "nominal_power_kw" in mapped_registers
+            )
+        )
+        try:
+            cadastral_nominal = float(generator.get("nominal_power_kw") or 0)
+        except (TypeError, ValueError, OverflowError):
+            cadastral_nominal = 0
+        cadastral_nominal_ok = math.isfinite(cadastral_nominal) and cadastral_nominal > 0
+        if pack_ready and not nominal_supported and not cadastral_nominal_ok:
+            missing_nominal_support.append(tag)
         site = str(generator.get("site") or "").strip().lower()
         if not site or site in {"sem unidade", "n/d"}:
             missing_site.append(tag)
@@ -322,11 +539,96 @@ def _production_readiness(
 
         asset = assets_by_generator.get(str(generator.get("id") or ""))
         controllers = controllers_by_asset.get(str((asset or {}).get("id") or ""), [])
-        if not controllers or all(not str(item.get("firmware") or "").strip() for item in controllers):
-            missing_firmware.append(tag)
+        firmwares = sorted(
+            {
+                str(item.get("firmware") or "").strip()
+                for item in controllers
+                if str(item.get("firmware") or "").strip()
+            }
+        )
+        firmware_missing = not firmwares
+        if pack_ready:
+            capabilities = (pack or {}).get("capabilities") or {}
+            command_capable = any(
+                bool(capabilities.get(action))
+                for action in (
+                    "start",
+                    "stop",
+                    "auto",
+                    "manual",
+                    "test",
+                    "mcb_open",
+                    "mcb_close",
+                    "gcb_open",
+                    "gcb_close",
+                    "paralleling",
+                )
+            )
+            if command_capable:
+                if len(firmwares) != 1:
+                    reason = "não informado" if firmware_missing else "inventário ambíguo"
+                    missing_command_firmware.append(f"{tag} ({reason})")
+                else:
+                    approved, reason = command_firmware_approval(pack, firmwares[0])
+                    if not approved:
+                        missing_command_firmware.append(f"{tag} ({reason})")
+            elif firmware_missing:
+                missing_readonly_firmware.append(tag)
 
         if tag.upper().startswith(("TESTE", "TEST-", "LAB-")):
             test_assets.append(tag)
+
+    for generator in observed_generators or []:
+        if not generator.get("enabled", True) or generator.get("telemetryStale"):
+            continue
+        defined = set(generator.get("definedMetrics") or [])
+        if "fuel_level" not in defined:
+            continue
+        capacity_key = (
+            "fuel_capacity_l"
+            if "fuel_capacity_l" in defined
+            else "fuel_capacity"
+            if "fuel_capacity" in defined
+            else None
+        )
+        units = generator.get("metricUnits") or {}
+        fuel_unit = str(units.get("fuel_level") or "").strip().upper()
+        metrics = generator.get("metrics") or {}
+        try:
+            fuel_level = float(metrics.get("fuel_level"))
+        except (TypeError, ValueError, OverflowError):
+            continue
+        if not math.isfinite(fuel_level) or fuel_level < 0:
+            continue
+        tag = str(generator.get("tag") or generator.get("id") or "N/D")
+
+        if fuel_unit == "%":
+            if fuel_level <= 100:
+                try:
+                    fuel_capacity = float(generator.get("fuelCapacityLiters") or 0)
+                except (TypeError, ValueError, OverflowError):
+                    fuel_capacity = 0
+                if not math.isfinite(fuel_capacity) or fuel_capacity <= 0:
+                    missing_percent_fuel_capacity.append(tag)
+            continue
+
+        if fuel_unit != "L":
+            continue
+        try:
+            fuel_capacity = float(
+                generator.get("fuelCapacityLiters")
+                or (metrics.get(capacity_key) if capacity_key is not None else 0)
+            )
+        except (TypeError, ValueError, OverflowError):
+            continue
+        if (
+            math.isfinite(fuel_capacity)
+            and fuel_capacity > 0
+            and fuel_level > fuel_capacity
+        ):
+            fuel_capacity_mismatch.append(
+                f"{tag} ({fuel_level:g} L > {fuel_capacity:g} L)"
+            )
 
     add(
         "controller_packs",
@@ -344,10 +646,37 @@ def _production_readiness(
     )
     add(
         "nominal_power",
-        "Potência nominal cadastrada",
-        not missing_nominal,
-        "blocker",
-        "Completa" if not missing_nominal else "Falta kW nominal: " + ", ".join(missing_nominal),
+        "Potência nominal disponível",
+        not missing_nominal_support,
+        "warning",
+        (
+            "kW nominal disponível por telemetria homologada ou cadastro técnico"
+            if not missing_nominal_support
+            else "Sem kW nominal homologado/cadastrado: " + ", ".join(missing_nominal_support)
+        ),
+    )
+    add(
+        "fuel_capacity_consistency",
+        "Consistência do tanque de combustível",
+        not fuel_capacity_mismatch,
+        "warning",
+        (
+            "Níveis de combustível compatíveis com as capacidades informadas"
+            if not fuel_capacity_mismatch
+            else "Nível acima da capacidade informada: " + ", ".join(fuel_capacity_mismatch)
+        ),
+    )
+    add(
+        "fuel_capacity_for_percent",
+        "Conversão de combustível para litros",
+        not missing_percent_fuel_capacity,
+        "warning",
+        (
+            "Capacidade disponível para todas as leituras percentuais"
+            if not missing_percent_fuel_capacity
+            else "Sem capacidade de tanque para converter % em litros: "
+            + ", ".join(missing_percent_fuel_capacity)
+        ),
     )
     add(
         "site_assignment",
@@ -365,12 +694,23 @@ def _production_readiness(
     )
     add(
         "controller_firmware",
-        "Firmware das controladoras",
-        not missing_firmware,
+        "Firmware de controladoras com comando",
+        not missing_command_firmware,
         "blocker",
-        "Firmware registrado para todos os ativos"
-        if not missing_firmware
-        else "Firmware não informado: " + ", ".join(missing_firmware),
+        "Firmware registrado para todas as controladoras com comando habilitado"
+        if not missing_command_firmware
+        else "Firmware ausente ou não homologado em controladora com comando: "
+        + ", ".join(missing_command_firmware),
+    )
+    add(
+        "controller_firmware_readonly",
+        "Inventário de firmware read-only",
+        not missing_readonly_firmware,
+        "warning",
+        "Firmware registrado para as controladoras read-only"
+        if not missing_readonly_firmware
+        else "Firmware ainda não inventariado em read-only: "
+        + ", ".join(missing_readonly_firmware),
     )
     notifications_ready = bool(SMTP_HOST or WHATSAPP_API_URL)
     add(
@@ -402,7 +742,7 @@ def _production_readiness(
 
 
 def system_diagnostics():
-    services = [_service(name) for name in SERVICES]
+    services = [_service(name) for name in _service_names()]
     usage = shutil.disk_usage("/")
     try:
         load = os.getloadavg()
@@ -413,6 +753,7 @@ def system_diagnostics():
     raw_generators = db.list_generators()
     generators = overlay_generators(raw_generators)
     listening = _listening_ports()
+    external_proxy_topology_ok, external_proxy_topology_detail = _external_proxy_topology(listening)
     local_offset = int(os.environ.get("RC_RAPID_LOCAL_OFFSET", "10000"))
     reverse_listeners = []
     for generator in raw_generators:
@@ -473,6 +814,7 @@ def system_diagnostics():
         "workers": workers,
         "queues": queues,
     }
+    rapid_native_policy_ok, rapid_native_policy_detail = _rapid_native_network_policy()
     return {
         "ok": all(item["status"] == "OK" for item in services),
         "services": services,
@@ -513,8 +855,13 @@ def system_diagnostics():
         "observability": observability,
         "productionReadiness": _production_readiness(
             raw_generators,
+            observed_generators=generators,
             reverse_tcp_exposed=listeners_exposed,
             reverse_tcp_allowlist=allowlist_enabled,
+            rapid_native_policy_ok=rapid_native_policy_ok,
+            rapid_native_policy_detail=rapid_native_policy_detail,
+            external_proxy_topology_ok=external_proxy_topology_ok,
+            external_proxy_topology_detail=external_proxy_topology_detail,
         ),
         "version": version_info(),
     }

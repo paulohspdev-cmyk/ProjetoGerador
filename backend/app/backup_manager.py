@@ -1,7 +1,9 @@
+import hashlib
 import json
 import os
 import shutil
 import sqlite3
+import struct
 import tarfile
 import tempfile
 import time
@@ -30,6 +32,23 @@ RUNTIME_BINDINGS = Path(RAPID_BINDINGS_FILE)
 RETIRED_BINDINGS = DATA_DIR / "rapid-retired-bindings.json"
 DEFAULT_RETENTION = int(os.environ.get("RC_BACKUP_RETENTION", "14"))
 INCLUDE_SECRETS = os.environ.get("RC_BACKUP_INCLUDE_SECRETS", "0").strip() == "1"
+ENV_FILE = Path(os.environ.get("RC_ENV_FILE", "/etc/rc-geradores.env"))
+
+OFFSITE_STREAM_MAGIC = b"RCG-OFFSITE-FERNET-CHUNKED-V1\n"
+OFFSITE_STREAM_CHUNK_SIZE = 4 * 1024 * 1024
+OFFSITE_STREAM_MAX_TOKEN_SIZE = 8 * 1024 * 1024
+REMOTE_OFFSITE_FS_TYPES = frozenset(
+    {
+        "nfs",
+        "nfs4",
+        "cifs",
+        "smb3",
+        "fuse.sshfs",
+        "fuse.rclone",
+        "davfs",
+        "davfs2",
+    }
+)
 
 
 def _quick_check(path: Path) -> None:
@@ -43,6 +62,22 @@ def _quick_check(path: Path) -> None:
     messages = [str(row[0]) for row in rows]
     if messages != ["ok"]:
         raise ValueError("SQLite quick_check falhou: " + "; ".join(messages[:20]))
+
+
+def _integrity_check(path: Path) -> None:
+    """Valida páginas, integridade e chaves estrangeiras."""
+    _quick_check(path)
+    connection = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+    try:
+        integrity = [str(row[0]) for row in connection.execute("PRAGMA integrity_check").fetchall()]
+        foreign_keys = connection.execute("PRAGMA foreign_key_check").fetchall()
+    finally:
+        connection.close()
+    if integrity != ["ok"]:
+        raise ValueError("SQLite integrity_check falhou: " + "; ".join(integrity[:20]))
+    if foreign_keys:
+        preview = "; ".join(str(tuple(row)) for row in foreign_keys[:20])
+        raise ValueError("SQLite foreign_key_check falhou: " + preview)
 
 
 def _snapshot_database(target: Path) -> None:
@@ -108,23 +143,231 @@ def _offsite_cipher(key_file: str | Path | None = None) -> Fernet:
         raise ValueError(f"Chave de backup off-site inválida: {key_path}") from exc
 
 
+def _write_offsite_record(target, token: bytes) -> None:
+    if not token or len(token) > OFFSITE_STREAM_MAX_TOKEN_SIZE:
+        raise ValueError("Token off-site inválido ou grande demais")
+    target.write(struct.pack(">I", len(token)))
+    target.write(token)
+
+
+def _encrypt_offsite_payload(source: Path, target: Path, cipher: Fernet) -> None:
+    digest = hashlib.sha256()
+    index = 0
+    with source.open("rb") as src, target.open("wb") as dst:
+        dst.write(OFFSITE_STREAM_MAGIC)
+        while True:
+            chunk = src.read(OFFSITE_STREAM_CHUNK_SIZE)
+            if not chunk:
+                break
+            digest.update(chunk)
+            clear_record = b"D" + struct.pack(">Q", index) + chunk
+            _write_offsite_record(dst, cipher.encrypt(clear_record))
+            index += 1
+
+        end_record = b"E" + struct.pack(">Q", index) + digest.digest()
+        _write_offsite_record(dst, cipher.encrypt(end_record))
+        dst.flush()
+        os.fsync(dst.fileno())
+
+
+def _decrypt_chunked_offsite_payload(source: Path, target: Path, cipher: Fernet) -> None:
+    digest = hashlib.sha256()
+    expected_index = 0
+    saw_end = False
+
+    with source.open("rb") as src, target.open("wb") as dst:
+        magic = src.read(len(OFFSITE_STREAM_MAGIC))
+        if magic != OFFSITE_STREAM_MAGIC:
+            raise ValueError("Envelope off-site chunked inválido")
+
+        while True:
+            header = src.read(4)
+            if not header:
+                break
+            if len(header) != 4:
+                raise ValueError("Envelope off-site truncado no cabeçalho de registro")
+
+            token_size = struct.unpack(">I", header)[0]
+            if token_size <= 0 or token_size > OFFSITE_STREAM_MAX_TOKEN_SIZE:
+                raise ValueError("Envelope off-site contém tamanho de registro inválido")
+
+            token = src.read(token_size)
+            if len(token) != token_size:
+                raise ValueError("Envelope off-site truncado no conteúdo de registro")
+
+            try:
+                clear_record = cipher.decrypt(token)
+            except InvalidToken as exc:
+                raise ValueError("Envelope off-site não autentica com a chave informada") from exc
+
+            if len(clear_record) < 9:
+                raise ValueError("Envelope off-site contém registro autenticado inválido")
+
+            record_type = clear_record[:1]
+            record_index = struct.unpack(">Q", clear_record[1:9])[0]
+            if record_index != expected_index:
+                raise ValueError(
+                    f"Envelope off-site fora de sequência: esperado {expected_index}, recebido {record_index}"
+                )
+
+            if record_type == b"D":
+                if saw_end:
+                    raise ValueError("Envelope off-site contém dados após o terminador")
+                chunk = clear_record[9:]
+                if not chunk:
+                    raise ValueError("Envelope off-site contém chunk vazio")
+                digest.update(chunk)
+                dst.write(chunk)
+                expected_index += 1
+                continue
+
+            if record_type == b"E":
+                if saw_end or len(clear_record) != 41:
+                    raise ValueError("Envelope off-site contém terminador inválido")
+                expected_digest = clear_record[9:]
+                if expected_digest != digest.digest():
+                    raise ValueError("Envelope off-site falhou na verificação SHA-256 final")
+                saw_end = True
+                if src.read(1):
+                    raise ValueError("Envelope off-site contém dados após o terminador")
+                break
+
+            raise ValueError("Envelope off-site contém tipo de registro desconhecido")
+
+        if not saw_end:
+            raise ValueError("Envelope off-site truncado: terminador autenticado ausente")
+
+        dst.flush()
+        os.fsync(dst.fileno())
+
+
+def _decrypt_offsite_payload(source: Path, target: Path, cipher: Fernet) -> None:
+    with source.open("rb") as src:
+        prefix = src.read(len(OFFSITE_STREAM_MAGIC))
+
+    if prefix == OFFSITE_STREAM_MAGIC:
+        _decrypt_chunked_offsite_payload(source, target, cipher)
+        return
+
+    # Compatibilidade de leitura com envelopes legados de token Fernet único.
+    try:
+        clear = cipher.decrypt(source.read_bytes())
+    except InvalidToken as exc:
+        raise ValueError("Envelope off-site não autentica com a chave informada") from exc
+    target.write_bytes(clear)
+
+
 def _build_offsite_payload(archive: Path, target: Path) -> bool:
-    """Cria pacote temporário para DR sem expor a chave TOTP no backup local."""
+    """Cria envelope de DR criptografado sem expor segredos no backup local."""
     totp_key = Path(TOTP_KEY_FILE)
+    env_file = Path(ENV_FILE)
     with tempfile.TemporaryDirectory(prefix="rc-offsite-validate-") as tmp:
         with tarfile.open(archive, "r:gz") as source:
             _validate_members(source, Path(tmp))
             members = source.getmembers()
+            member_names = {member.name for member in members}
             with tarfile.open(target, "w:gz") as destination:
                 for member in members:
                     fileobj = source.extractfile(member) if member.isfile() else None
                     destination.addfile(member, fileobj)
-                if totp_key.is_file() and not any(
-                    member.name == "product/totp-fernet.key" for member in members
-                ):
+                if env_file.is_file() and "product/rc-geradores.env" not in member_names:
+                    destination.add(env_file, arcname="product/rc-geradores.env", recursive=False)
+                if totp_key.is_file() and "product/totp-fernet.key" not in member_names:
                     destination.add(totp_key, arcname="product/totp-fernet.key", recursive=False)
                     return True
-    return any(member.name == "product/totp-fernet.key" for member in members)
+    return "product/totp-fernet.key" in member_names
+
+
+def _mount_fstype_for_path(target_dir: Path) -> str:
+    """Retorna o tipo do mount mais específico que contém target_dir."""
+    target = target_dir.resolve()
+    best: tuple[int, str] | None = None
+    try:
+        lines = Path("/proc/self/mountinfo").read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        raise ValueError(f"Não foi possível inspecionar mounts para o off-site: {exc}") from exc
+
+    for line in lines:
+        if " - " not in line:
+            continue
+        left, right = line.split(" - ", 1)
+        left_fields = left.split()
+        right_fields = right.split()
+        if len(left_fields) < 5 or not right_fields:
+            continue
+        mount_point = Path(
+            left_fields[4]
+            .replace(r"\040", " ")
+            .replace(r"\011", "\t")
+            .replace(r"\012", "\n")
+            .replace(r"\134", "\\")
+        )
+        try:
+            resolved_mount = mount_point.resolve()
+        except OSError:
+            continue
+        if target != resolved_mount and resolved_mount not in target.parents:
+            continue
+        candidate = (len(str(resolved_mount)), right_fields[0].lower())
+        if best is None or candidate[0] > best[0]:
+            best = candidate
+    if best is None:
+        raise ValueError(f"Não foi possível identificar o mount do destino off-site: {target}")
+    return best[1]
+
+
+def _validate_remote_offsite_fstype(target_dir: Path) -> str:
+    fstype = _mount_fstype_for_path(target_dir)
+    if fstype not in REMOTE_OFFSITE_FS_TYPES:
+        raise ValueError(
+            "Destino off-site precisa estar em armazenamento remoto homologado "
+            f"(NFS/CIFS/SSHFS/rclone); filesystem detectado: {fstype}"
+        )
+    return fstype
+
+
+def _validate_offsite_target_dir(target_dir: Path) -> None:
+    target_dir = target_dir.resolve()
+    data_root = DATA_DIR.resolve()
+    if target_dir == data_root or data_root in target_dir.parents:
+        raise ValueError("Destino off-site deve ficar fora de RC_DATA_DIR")
+    if not target_dir.exists():
+        raise ValueError(
+            "Destino off-site não existe. O mount/volume deve estar presente antes do backup; "
+            "o RC Geradores não cria o diretório para evitar falso off-site no disco local."
+        )
+    if not target_dir.is_dir():
+        raise ValueError(f"Destino off-site não é diretório: {target_dir}")
+    if not os.access(target_dir, os.W_OK | os.X_OK):
+        raise ValueError(f"Destino off-site não está gravável pelo serviço: {target_dir}")
+    try:
+        data_device = data_root.stat().st_dev
+        target_device = target_dir.stat().st_dev
+    except OSError as exc:
+        raise ValueError(f"Não foi possível validar filesystem do destino off-site: {exc}") from exc
+    if data_device == target_device:
+        raise ValueError(
+            "Destino off-site está no mesmo filesystem de RC_DATA_DIR; "
+            "use um mount remoto dedicado."
+        )
+    _validate_remote_offsite_fstype(target_dir)
+
+
+def offsite_storage_status() -> tuple[bool, str]:
+    if not BACKUP_OFFSITE_REQUIRED:
+        return False, "RC_BACKUP_OFFSITE_REQUIRED não está habilitado"
+    if not BACKUP_OFFSITE_DIR:
+        return False, "RC_BACKUP_OFFSITE_DIR não foi configurado"
+    if not BACKUP_OFFSITE_KEY_FILE:
+        return False, "RC_BACKUP_OFFSITE_KEY_FILE não foi configurado"
+    try:
+        _offsite_cipher()
+        target_dir = Path(BACKUP_OFFSITE_DIR).resolve()
+        _validate_offsite_target_dir(target_dir)
+    except Exception as exc:
+        return False, str(exc)
+    fstype = _mount_fstype_for_path(target_dir)
+    return True, f"Destino off-site remoto validado ({fstype}): {target_dir}"
 
 
 def _offsite_target(archive: Path) -> Path | None:
@@ -133,24 +376,47 @@ def _offsite_target(archive: Path) -> Path | None:
             raise ValueError("RC_BACKUP_OFFSITE_REQUIRED=1, mas RC_BACKUP_OFFSITE_DIR não foi configurado")
         return None
     target_dir = Path(BACKUP_OFFSITE_DIR).resolve()
-    data_root = DATA_DIR.resolve()
-    if target_dir == data_root or data_root in target_dir.parents:
-        raise ValueError("Destino off-site deve ficar fora de RC_DATA_DIR")
+    _validate_offsite_target_dir(target_dir)
     cipher = _offsite_cipher()
-    target_dir.mkdir(parents=True, exist_ok=True)
     target = target_dir / f"{archive.name}.fernet"
     staged = target_dir / f".{target.name}.{os.getpid()}.tmp"
     with tempfile.TemporaryDirectory(prefix="rc-offsite-payload-") as tmp:
         payload = Path(tmp) / archive.name
         _build_offsite_payload(archive, payload)
-        encrypted = cipher.encrypt(payload.read_bytes())
-    staged.write_bytes(encrypted)
+        _encrypt_offsite_payload(payload, staged, cipher)
     try:
         os.chmod(staged, 0o600)
     except PermissionError:
         pass
     os.replace(staged, target)
     return target
+
+
+def apply_offsite_retention(keep: int = DEFAULT_RETENTION) -> int:
+    if not BACKUP_OFFSITE_DIR:
+        return 0
+
+    keep = max(1, min(int(keep), 365))
+    target_dir = Path(BACKUP_OFFSITE_DIR).resolve()
+    _validate_offsite_target_dir(target_dir)
+    envelopes = sorted(
+        target_dir.glob("rc-geradores-full-*.tar.gz.fernet"),
+        key=lambda p: p.stat().st_mtime,
+        reverse=True,
+    )
+
+    removed = 0
+    failures: list[str] = []
+    for path in envelopes[keep:]:
+        try:
+            path.unlink()
+            removed += 1
+        except OSError as exc:
+            failures.append(f"{path.name}: {exc}")
+
+    if failures:
+        raise OSError("Falha na retenção off-site: " + "; ".join(failures[:5]))
+    return removed
 
 
 def create_full_backup(actor: str = "system", retention: int | None = None) -> dict:
@@ -189,7 +455,7 @@ def create_full_backup(actor: str = "system", retention: int | None = None) -> d
                 _add_if_exists(tar, RUNTIME_BINDINGS, "product/rapid-bindings.json")
                 _add_if_exists(tar, RETIRED_BINDINGS, "product/rapid-retired-bindings.json")
                 if INCLUDE_SECRETS:
-                    _add_if_exists(tar, Path("/etc/rc-geradores.env"), "product/rc-geradores.env")
+                    _add_if_exists(tar, ENV_FILE, "product/rc-geradores.env")
                     _add_if_exists(tar, Path(TOTP_KEY_FILE), "product/totp-fernet.key")
                 _add_if_exists(tar, PROJECT_ROOT / "rapid", "product/rapid")
                 _add_if_exists(tar, PROJECT_ROOT / "controllers", "product/controllers")
@@ -218,15 +484,45 @@ def create_full_backup(actor: str = "system", retention: int | None = None) -> d
             "INSERT INTO backup_records(id,created_at,path,size_bytes,type,result,detail) VALUES (?,?,?,?,?,?,?)",
             (backup_id, int(time.time()), str(archive), size, "Completo", result, detail),
         )
+
+    retention_keep = retention if retention is not None else DEFAULT_RETENTION
+    local_retention_removed = 0
+    offsite_retention_removed = 0
+    retention_warnings: list[str] = []
+    if result == "OK":
+        try:
+            local_retention_removed = apply_retention(retention_keep)
+        except Exception as exc:
+            retention_warnings.append(f"retenção local: {exc}")
+        if offsite_path:
+            try:
+                offsite_retention_removed = apply_offsite_retention(retention_keep)
+            except Exception as exc:
+                retention_warnings.append(f"retenção off-site: {exc}")
+
+    if retention_warnings:
+        retention_detail = "; ".join(retention_warnings)[:1000]
+        detail = f"{detail}; {retention_detail}".strip("; ")
+        with db.connect() as conn:
+            conn.execute(
+                "UPDATE backup_records SET detail=? WHERE id=?",
+                (detail, backup_id),
+            )
+
     db.add_audit(
         actor,
         "backup",
         "system",
         backup_id,
-        f"{result} {size} bytes; bindings={bindings_included}; secrets={'included' if INCLUDE_SECRETS else 'excluded'}; offsite={bool(offsite_path)}",
+        (
+            f"{result} {size} bytes; bindings={bindings_included}; "
+            f"secrets={'included' if INCLUDE_SECRETS else 'excluded'}; "
+            f"offsite={bool(offsite_path)}; "
+            f"retention_local_removed={local_retention_removed}; "
+            f"retention_offsite_removed={offsite_retention_removed}; "
+            f"retention_warnings={len(retention_warnings)}"
+        ),
     )
-    if result == "OK":
-        apply_retention(retention if retention is not None else DEFAULT_RETENTION)
     return {
         "id": backup_id,
         "path": str(archive),
@@ -241,6 +537,9 @@ def create_full_backup(actor: str = "system", retention: int | None = None) -> d
         "totpSecretEncryptedInDatabase": True,
         "offsiteCarriesTotpRecoveryKey": bool(offsite_path and Path(TOTP_KEY_FILE).is_file()),
         "rapidHistoricalArchiveIncluded": rapid_archive_included,
+        "localRetentionRemoved": local_retention_removed,
+        "offsiteRetentionRemoved": offsite_retention_removed,
+        "retentionWarnings": retention_warnings,
     }
 
 
@@ -251,11 +550,39 @@ def apply_retention(keep: int = DEFAULT_RETENTION):
         key=lambda p: p.stat().st_mtime,
         reverse=True,
     )
+    staged: list[tuple[Path, Path]] = []
     for path in archives[keep:]:
+        temporary = path.with_name(f".{path.name}.retention-{uuid.uuid4().hex[:8]}.tmp")
         try:
-            path.unlink()
+            os.replace(path, temporary)
         except OSError:
+            continue
+        staged.append((path, temporary))
+
+    if not staged:
+        return 0
+
+    try:
+        with db.connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            for original, _temporary in staged:
+                conn.execute("DELETE FROM backup_records WHERE path=?", (str(original),))
+    except Exception:
+        for original, temporary in reversed(staged):
+            if temporary.exists() and not original.exists():
+                os.replace(temporary, original)
+        raise
+
+    removed = 0
+    for _original, temporary in staged:
+        try:
+            temporary.unlink()
+            removed += 1
+        except OSError:
+            # O registro já foi removido; um temporário oculto é preferível a
+            # anunciar na UI um backup que não pode mais ser baixado.
             pass
+    return removed
 
 
 def safe_archive_path(path: str | Path) -> Path:
@@ -300,10 +627,6 @@ def materialize_offsite_backup(
     if not source.name.startswith("rc-geradores-full-"):
         raise ValueError("Envelope off-site não pertence ao formato RC Geradores")
     cipher = _offsite_cipher(key_file)
-    try:
-        clear = cipher.decrypt(source.read_bytes())
-    except InvalidToken as exc:
-        raise ValueError("Envelope off-site não autentica com a chave informada") from exc
 
     BACKUP_DIR.mkdir(parents=True, exist_ok=True)
     plain_name = source.name.removesuffix(".fernet")
@@ -312,8 +635,8 @@ def materialize_offsite_backup(
         stem = plain_name.removesuffix(".tar.gz")
         target = BACKUP_DIR / f"{stem}-recovered-{int(time.time())}.tar.gz"
     staged = BACKUP_DIR / f".{target.name}.{os.getpid()}.tmp"
-    staged.write_bytes(clear)
     try:
+        _decrypt_offsite_payload(source, staged, cipher)
         os.chmod(staged, 0o600)
         _validate_archive_database(staged)
         os.replace(staged, target)
@@ -382,48 +705,140 @@ def _pre_restore_snapshot() -> Path | None:
     return target
 
 
+def _remove_database_sidecars() -> None:
+    for suffix in ("-wal", "-shm"):
+        Path(str(DB_FILE) + suffix).unlink(missing_ok=True)
+
+
 def _install_database(source: Path) -> None:
-    _quick_check(source)
+    _integrity_check(source)
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     staged = DATA_DIR / f".{DB_FILE.name}.restore-{os.getpid()}.tmp"
     shutil.copy2(source, staged)
-    _quick_check(staged)
+    _integrity_check(staged)
     _restore_product_ownership(staged)
+    _remove_database_sidecars()
     os.replace(staged, DB_FILE)
     _restore_product_ownership(DB_FILE)
-    _quick_check(DB_FILE)
+    _integrity_check(DB_FILE)
 
 
-def _rollback_database(snapshot: Path | None) -> None:
-    if not snapshot or not snapshot.exists():
+def _rollback_database(snapshot: Path | None, existed_before: bool = True) -> None:
+    if snapshot and snapshot.exists():
+        staged = DATA_DIR / f".{DB_FILE.name}.rollback-{os.getpid()}.tmp"
+        shutil.copy2(snapshot, staged)
+        _integrity_check(staged)
+        _restore_product_ownership(staged)
+        _remove_database_sidecars()
+        os.replace(staged, DB_FILE)
+        _restore_product_ownership(DB_FILE)
+        _integrity_check(DB_FILE)
         return
-    staged = DATA_DIR / f".{DB_FILE.name}.rollback-{os.getpid()}.tmp"
-    shutil.copy2(snapshot, staged)
-    _quick_check(staged)
-    _restore_product_ownership(staged)
-    os.replace(staged, DB_FILE)
-    _restore_product_ownership(DB_FILE)
-    _quick_check(DB_FILE)
+    if not existed_before:
+        _remove_database_sidecars()
+        DB_FILE.unlink(missing_ok=True)
+
+
+def _restore_env_file(source: Path) -> None:
+    ENV_FILE.parent.mkdir(parents=True, exist_ok=True)
+    staged = ENV_FILE.parent / f".{ENV_FILE.name}.restore-{os.getpid()}.tmp"
+    shutil.copy2(source, staged)
+    os.chmod(staged, 0o640)
+    try:
+        shutil.chown(staged, user="root", group="rcgeradores")
+    except (LookupError, PermissionError):
+        pass
+    os.replace(staged, ENV_FILE)
+
+
+def _rollback_env_file(snapshot: tuple[bool, bytes | None]) -> None:
+    existed, content = snapshot
+    if not existed:
+        ENV_FILE.unlink(missing_ok=True)
+        return
+    ENV_FILE.parent.mkdir(parents=True, exist_ok=True)
+    staged = ENV_FILE.parent / f".{ENV_FILE.name}.rollback-{os.getpid()}.tmp"
+    staged.write_bytes(content or b"")
+    os.chmod(staged, 0o640)
+    try:
+        shutil.chown(staged, user="root", group="rcgeradores")
+    except (LookupError, PermissionError):
+        pass
+    os.replace(staged, ENV_FILE)
+
+
+def _rollback_totp_key(snapshot: tuple[bool, bytes | None]) -> None:
+    target = Path(TOTP_KEY_FILE)
+    existed, content = snapshot
+    if not existed:
+        target.unlink(missing_ok=True)
+        return
+    target.parent.mkdir(parents=True, exist_ok=True)
+    staged = target.parent / f".{target.name}.rollback-{os.getpid()}.tmp"
+    staged.write_bytes(content or b"")
+    os.chmod(staged, 0o600)
+    try:
+        shutil.chown(staged, user="rcgeradores", group="rcgeradores")
+    except (LookupError, PermissionError):
+        pass
+    os.replace(staged, target)
+
+
+def _install_directory_tree(source: Path, target: Path) -> tuple[Path, bool]:
+    target.parent.mkdir(parents=True, exist_ok=True)
+    token = f"{os.getpid()}-{uuid.uuid4().hex[:8]}"
+    staged = target.parent / f".{target.name}.restore-new-{token}"
+    previous = target.parent / f".{target.name}.restore-before-{token}"
+    shutil.copytree(source, staged)
+    existed = target.exists()
+    try:
+        if existed:
+            os.replace(target, previous)
+        os.replace(staged, target)
+    except Exception:
+        if staged.exists():
+            shutil.rmtree(staged, ignore_errors=True)
+        if existed and previous.exists() and not target.exists():
+            os.replace(previous, target)
+        raise
+    return previous, existed
+
+
+def _rollback_directory_tree(target: Path, previous: Path, existed: bool) -> None:
+    if target.exists():
+        shutil.rmtree(target)
+    if existed and previous.exists():
+        os.replace(previous, target)
+    elif previous.exists():
+        shutil.rmtree(previous, ignore_errors=True)
+
+
+def _commit_directory_tree(previous: Path) -> None:
+    if previous.exists():
+        shutil.rmtree(previous, ignore_errors=True)
 
 
 def _restore_totp_key(source: Path) -> None:
     target = Path(TOTP_KEY_FILE)
     target.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(source, target)
-    os.chmod(target, 0o600)
+    staged = target.parent / f".{target.name}.restore-{os.getpid()}.tmp"
+    shutil.copy2(source, staged)
+    os.chmod(staged, 0o600)
     try:
-        shutil.chown(target, user="rcgeradores", group="rcgeradores")
+        shutil.chown(staged, user="rcgeradores", group="rcgeradores")
     except (LookupError, PermissionError):
         pass
+    os.replace(staged, target)
 
 
 def restore_archive(archive_path: str | Path, restore_rapid: bool = True) -> dict:
-    """Restaura backup local por CLI administrativo, nunca por uma sessão HTTP."""
+    """Restaura backup administrativo com rollback de todos os artefatos tocados."""
     archive = safe_archive_path(archive_path)
     pre_restore: Path | None = None
     secrets_restored = False
     bindings_restored = False
     retired_bindings_restored = False
+    directory_swaps: list[tuple[Path, Path, bool]] = []
 
     with tempfile.TemporaryDirectory(prefix="rc-restore-") as tmp:
         root = Path(tmp)
@@ -434,7 +849,7 @@ def restore_archive(archive_path: str | Path, restore_rapid: bool = True) -> dic
         db_src = root / "product/product-db.sqlite3"
         if not db_src.exists():
             raise ValueError("Backup sem banco do produto")
-        _quick_check(db_src)
+        _integrity_check(db_src)
 
         binding_src = root / "product/rapid-bindings.json"
         retired_src = root / "product/rapid-retired-bindings.json"
@@ -446,9 +861,12 @@ def restore_archive(archive_path: str | Path, restore_rapid: bool = True) -> dic
                 "mas o archive não contém product/rapid-bindings.json"
             )
 
+        database_existed_before = DB_FILE.exists()
         pre_restore = _pre_restore_snapshot()
         bindings_before = _capture_state_file(RUNTIME_BINDINGS)
         retired_before = _capture_state_file(RETIRED_BINDINGS)
+        env_before = _capture_state_file(ENV_FILE)
+        totp_key_before = _capture_state_file(Path(TOTP_KEY_FILE))
 
         try:
             _install_database(db_src)
@@ -462,15 +880,12 @@ def restore_archive(archive_path: str | Path, restore_rapid: bool = True) -> dic
             if retired_src.exists():
                 _install_state_file(retired_src, RETIRED_BINDINGS)
                 retired_bindings_restored = True
+            else:
+                RETIRED_BINDINGS.unlink(missing_ok=True)
 
             env_src = root / "product/rc-geradores.env"
             if env_src.exists():
-                shutil.copy2(env_src, "/etc/rc-geradores.env")
-                os.chmod("/etc/rc-geradores.env", 0o640)
-                try:
-                    shutil.chown("/etc/rc-geradores.env", user="root", group="rcgeradores")
-                except (LookupError, PermissionError):
-                    pass
+                _restore_env_file(env_src)
                 secrets_restored = True
 
             totp_key_src = root / "product/totp-fernet.key"
@@ -487,14 +902,25 @@ def restore_archive(archive_path: str | Path, restore_rapid: bool = True) -> dic
                 ]
                 for src, dst in pairs:
                     if src.exists():
-                        if dst.exists():
-                            shutil.rmtree(dst)
-                        shutil.copytree(src, dst)
+                        previous, existed = _install_directory_tree(src, dst)
+                        directory_swaps.append((dst, previous, existed))
+
+            _integrity_check(DB_FILE)
         except Exception:
-            _rollback_database(pre_restore)
+            for target, previous, existed in reversed(directory_swaps):
+                try:
+                    _rollback_directory_tree(target, previous, existed)
+                except Exception:
+                    pass
+            _rollback_totp_key(totp_key_before)
+            _rollback_env_file(env_before)
+            _rollback_database(pre_restore, database_existed_before)
             _rollback_state_file(RUNTIME_BINDINGS, bindings_before)
             _rollback_state_file(RETIRED_BINDINGS, retired_before)
             raise
+        else:
+            for _target, previous, _existed in directory_swaps:
+                _commit_directory_tree(previous)
 
     return {
         "ok": True,
@@ -505,4 +931,6 @@ def restore_archive(archive_path: str | Path, restore_rapid: bool = True) -> dic
         "secretsRestored": secrets_restored,
         "preRestoreSnapshot": str(pre_restore) if pre_restore else None,
         "databaseQuickCheck": "ok",
+        "databaseIntegrityCheck": "ok",
+        "databaseForeignKeyCheck": "ok",
     }

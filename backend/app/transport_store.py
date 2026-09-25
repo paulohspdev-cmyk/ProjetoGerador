@@ -119,6 +119,13 @@ def validate_for_transport(generator: dict, config: dict):
         port = int(generator.get("listen_port") or 0)
         if not 1 <= port <= 65535:
             raise ValueError("TCP reverso exige porta de escuta válida")
+        local_offset = int(os.environ.get("RC_RAPID_LOCAL_OFFSET", "10000"))
+        local_port = port + local_offset
+        if local_offset <= 0 or not 1 <= local_port <= 65535:
+            raise ValueError(
+                "TCP reverso gera porta local inválida: "
+                f"remote={port} offset={local_offset} local={local_port}"
+            )
     elif transport in {"modbus_tcp_direct", "rtu_over_tcp"}:
         host = str(generator.get("host") or config.get("host") or "").strip()
         port = int(generator.get("listen_port") or config.get("tcpPort") or 502)

@@ -1,8 +1,23 @@
-import { HeartPulse, Settings, ShieldAlert } from "lucide-react";
+import { ArrowRight, HeartPulse, Settings, ShieldAlert } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 import { rcApi, type BridgePeerObservation, type SystemDiagnostics } from "@/lib/api";
 import { Panel, ScadaTable, ScreenBody, Stats, Tone } from "./kit";
 import { DiagnosticsTable, RemoteState, useRemote } from "./scada-lib";
+
+const readinessActions: Record<string, { slug: string; label: string }> = {
+  backup_offsite: { slug: "backups", label: "Abrir backups" },
+  privileged_2fa: { slug: "usuarios", label: "Configurar 2FA" },
+  controller_packs: { slug: "controller-packs", label: "Abrir perfis" },
+  controller_firmware: { slug: "controladoras", label: "Abrir controladoras" },
+  controller_firmware_readonly: { slug: "controladoras", label: "Abrir controladoras" },
+  nominal_power: { slug: "geradores", label: "Cadastrar kW" },
+  fuel_capacity_consistency: { slug: "combustivel", label: "Revisar combustível" },
+  fuel_capacity_for_percent: { slug: "geradores", label: "Cadastrar tanque" },
+  site_assignment: { slug: "geradores", label: "Revisar geradores" },
+  customer_assignment: { slug: "geradores", label: "Revisar geradores" },
+  notification_channel: { slug: "email", label: "Configurar canal" },
+};
 
 export function HealthScreen() {
   const { data, error, loading } = useRemote<SystemDiagnostics | null>(
@@ -107,6 +122,26 @@ export function HealthScreen() {
                 ),
               },
               { label: "Detalhe", render: (row) => row.detail },
+              {
+                label: "Ação",
+                render: (row) => {
+                  if (row.ok) return <span className="text-muted-foreground">—</span>;
+                  const action = readinessActions[row.id];
+                  if (!action) {
+                    return <span className="text-[11px] text-muted-foreground">Ação externa</span>;
+                  }
+                  return (
+                    <Link
+                      to="/p/$slug"
+                      params={{ slug: action.slug }}
+                      className="inline-flex items-center gap-1 whitespace-nowrap text-[11px] font-semibold text-primary hover:underline"
+                    >
+                      {action.label}
+                      <ArrowRight className="size-3" />
+                    </Link>
+                  );
+                },
+              },
             ]}
           />
         </Panel>

@@ -40,6 +40,9 @@ export type Generator = {
   customer?: string;
   controller: string;
   controllerType?: string;
+  powerTopology?: "mains_genset" | "genset_only" | "unknown";
+  powerTopologySource?:
+    "configured" | "asset_metadata" | "asset_graph" | "catalog" | "binding" | "unknown";
   site: string;
   enabled?: boolean;
   status: GenStatus;
@@ -52,6 +55,11 @@ export type Generator = {
   frequency: number | null;
   mainsFrequency?: number | null;
   nominalPower?: number | null;
+  nominalPowerConfigured?: number | null;
+  nominalPowerSource?: "telemetry" | "cadastral" | null;
+  fuelCapacityLiters?: number | null;
+  fuelCapacityConfigured?: number | null;
+  fuelCapacitySource?: "telemetry" | "cadastral" | null;
   rpm: number | null;
   load: number | null;
   oilPressure: number | null;
@@ -121,6 +129,30 @@ export const statusLabel: Record<GenStatus, string> = {
   offline: "OFFLINE",
   nao_configurado: "NÃO CONFIGURADO",
 };
+
+export type GeneratorDisplayStatus = GenStatus | "stale";
+
+export function generatorDisplayStatus(generator: {
+  status: GenStatus;
+  telemetryStale?: boolean | undefined;
+}): GeneratorDisplayStatus {
+  if (generator.status === "nao_configurado") return "nao_configurado";
+  if (generator.telemetryStale) return "stale";
+  return generator.status;
+}
+
+export function isGeneratorOnline(generator: Pick<Generator, "status" | "telemetryStale">) {
+  return generatorDisplayStatus(generator) === "online";
+}
+
+export function isGeneratorAlert(generator: Pick<Generator, "status" | "telemetryStale">) {
+  return generatorDisplayStatus(generator) === "alerta";
+}
+
+export function isGeneratorConnected(generator: Pick<Generator, "status" | "telemetryStale">) {
+  const status = generatorDisplayStatus(generator);
+  return status === "online" || status === "alerta";
+}
 
 export type EventItem = {
   gen: string;

@@ -212,6 +212,13 @@ def process_due_notifications(limit: int = 20):
             ok, detail = deliver_notification(item)
         except Exception as exc:
             ok, detail = False, str(exc)
-        platform_store.finish_notification(item["id"], item.get("channel") or "", item.get("destination") or "", ok, detail)
-        processed += 1
+        if platform_store.finish_notification(
+            item["id"],
+            item.get("channel") or "",
+            item.get("destination") or "",
+            ok,
+            detail,
+            item.get("claim_token") or "",
+        ):
+            processed += 1
     return processed

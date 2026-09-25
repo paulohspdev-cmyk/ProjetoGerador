@@ -143,25 +143,33 @@ Após a instalação:
 ```text
 rc-geradores-bridge       reverse TCP + socket de controle homologado
 rc-geradores-provision    helper root para provisionar/reconciliar/deprovisionar Rapid
-rc-geradores-api          FastAPI em 127.0.0.1:8090
+rc-geradores-api          FastAPI; loopback por padrão, upstream NPM via drop-in protegido
 rc-geradores-worker       alarmes, notificações, scheduler e automação não industrial
-rc-geradores-frontend     TanStack/Node em 127.0.0.1:3000
-nginx                     entrada HTTP na porta 80
+rc-geradores-frontend     TanStack/Node; loopback por padrão, upstream NPM via drop-in protegido
+nginx                     somente no modo TLS local managed; external_proxy usa NPM + nftables
 scadaserver6              Rapid SCADA Server
 scadacomm6                Rapid SCADA Communicator
 ```
 
 ## Instalação em VM Ubuntu limpa
 
-Clone o repositório em uma área temporária e execute o instalador:
+Clone o repositório em uma área temporária. Em uma instalação limpa, escolha
+explicitamente a borda web. Para o padrão de fábrica com Nginx Proxy Manager,
+informe o peer real do NPM e o hostname HTTPS publicado:
 
 ```bash
 sudo apt-get update
 sudo apt-get install -y git
 git clone https://github.com/paulohspdev-cmyk/ProjetoGerador.git /tmp/ProjetoGerador
 cd /tmp/ProjetoGerador
-sudo bash ops/install.sh
+sudo bash ops/install.sh \
+  --web-tls-mode external_proxy \
+  --external-proxy-cidrs 10.10.10.131/32 \
+  --public-base-url https://HOSTNAME_REAL
 ```
+
+Se a instalação não usa NPM, selecione deliberadamente o modo local gerenciado
+(`--web-tls-mode managed`) em vez de depender de defaults.
 
 O instalador:
 
@@ -172,14 +180,43 @@ O instalador:
 5. por padrão cria o primeiro IG200 e provisiona o Rapid usando o **cadastro real do banco**, não valores paralelos hardcoded;
 6. compila o leitor oficial do Rapid SCADA;
 7. compila o frontend para Linux/Node;
-8. instala e inicia bridge, provisionador, API, worker, frontend, Rapid e Nginx;
-9. valida API, proxy, serviços, sockets, BaseDAT, bindings e executa o smoke test da VM.
+8. instala e inicia bridge, provisionador, API, worker, frontend e Rapid;
+9. em `external_proxy`, exige a URL pública e o CIDR real do NPM, prepara 3000/8090 com drop-ins systemd e restringe essas portas via nftables; Nginx local não é usado;
+10. valida API, política de rede, serviços, sockets, BaseDAT, bindings e executa o smoke test da VM.
+
+### Instalação atrás do Nginx Proxy Manager
+
+Em `external_proxy`, informe explicitamente o peer do NPM e a URL HTTPS que
+o operador realmente acessará. Exemplo da topologia auditada; confirme os
+endereços antes de usar:
+
+```bash
+sudo bash ops/install.sh \
+  --web-tls-mode external_proxy \
+  --external-proxy-cidrs 10.10.10.131/32 \
+  --public-base-url https://HOSTNAME_REAL
+```
+
+O instalador não cria TLS local nesse modo. Ele expõe 3000/8090 somente após
+aplicar uma tabela nftables que aceita loopback e o(s) CIDR(s) do NPM. O
+procedimento de migração de uma VM já existente está em
+`ops/NPM_EXTERNAL_PROXY.md`.
 
 ### Instalar sem gerador inicial
 
+Em uma VM nova com NPM, mantenha também os parâmetros de borda:
+
 ```bash
-sudo bash ops/install.sh --skip-initial-generator
+sudo bash ops/install.sh \
+  --skip-initial-generator \
+  --web-tls-mode external_proxy \
+  --external-proxy-cidrs 10.10.10.131/32 \
+  --public-base-url https://HOSTNAME_REAL
 ```
+
+Em uma VM já configurada, o instalador pode reutilizar
+`RC_EXTERNAL_PROXY_ALLOWED_CIDRS` e `RC_PUBLIC_BASE_URL` do
+`/etc/rc-geradores.env`.
 
 ### Configurar o primeiro IG200
 
@@ -277,6 +314,9 @@ Diagnóstico detalhado:
 sudo /opt/rc-geradores/ops/status.sh
 ```
 
+Para instalações com Nginx Proxy Manager, siga o cutover em
+`ops/NPM_EXTERNAL_PROXY.md` antes de remover/desabilitar qualquer proxy local.
+
 ## Runtime e dados persistentes
 
 ```text
@@ -310,7 +350,7 @@ O banco SQLite guarda cadastro, alarmes/estado e dados do produto; **não substi
 - bindings divergentes não são reutilizados silenciosamente;
 - retirada de equipamento preserva canais/histórico antes de excluir cadastro;
 - SMTP, WhatsApp e acesso público devem receber credenciais/configuração reais antes do uso;
-- quando HTTPS estiver no Nginx Proxy Manager, use `RC_WEB_TLS_MODE=external_proxy`; o deploy não altera certificado, redirect ou configuração TLS local. Mantenha `RC_AUTH_COOKIE_SECURE=1` no acesso público HTTPS.
+- quando HTTPS estiver no Nginx Proxy Manager, use `RC_WEB_TLS_MODE=external_proxy`, configure `RC_TRUSTED_PROXY_CIDRS` com o IP/CIDR real do NPM e não mantenha uma segunda terminação TLS local; veja `ops/NPM_EXTERNAL_PROXY.md`. Mantenha `RC_AUTH_COOKIE_SECURE=1` no acesso público HTTPS.
 
 ## Desenvolvimento
 

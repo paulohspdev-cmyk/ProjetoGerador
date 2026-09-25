@@ -14,6 +14,8 @@ generator = {
     "listen_port": 15001,
     "modbus_unit": 1,
     "rapid_device_num": 200,
+    "nominal_power_kw": 500.0,
+    "fuel_capacity_l": 550.0,
     "enabled": True,
 }
 
@@ -32,6 +34,8 @@ binding = {
         "fuel_level": {"cnl": 1003, "scale": 1},
         "maintenance_hours": {"cnl": 1004, "scale": 1},
         "run_hours": {"cnl": 1005, "scale": 1},
+        "nominal_power_kw": {"cnl": 1006, "scale": 1},
+        "fuel_capacity_l": {"cnl": 1007, "scale": 1},
     },
 }
 
@@ -96,12 +100,20 @@ try:
             1003: {"val": 516, "stat": 1, "defined": True},
             1004: {"val": 159, "stat": 1, "defined": True},
             1005: {"val": 1294.2, "stat": 1, "defined": True},
+            1006: {"val": 600, "stat": 1, "defined": True},
+            1007: {"val": 600, "stat": 1, "defined": True},
         },
         "",
     )
     rows = rapid.overlay_generators([generator])
     assert rows[0]["status"] == "online"
     assert rows[0]["health"]["controller"] == "responding"
+    assert rows[0]["nominalPower"] == 600
+    assert rows[0]["nominalPowerConfigured"] == 500
+    assert rows[0]["nominalPowerSource"] == "telemetry"
+    assert rows[0]["fuelCapacityLiters"] == 600
+    assert rows[0]["fuelCapacityConfigured"] == 550
+    assert rows[0]["fuelCapacitySource"] == "telemetry"
 
     # Ao perder comunicação, somente combustível, manutenção e horímetro
     # permanecem no card. Métricas instantâneas devem voltar a N/D.
@@ -113,9 +125,34 @@ try:
     assert rows[0]["fuelLevel"] == 516
     assert rows[0]["maintenance"] == 159
     assert rows[0]["runHours"] == 1294.2
+    assert rows[0]["nominalPower"] == 500
+    assert rows[0]["nominalPowerConfigured"] == 500
+    assert rows[0]["nominalPowerSource"] == "cadastral"
+    assert rows[0]["fuelCapacityLiters"] == 550
+    assert rows[0]["fuelCapacityConfigured"] == 550
+    assert rows[0]["fuelCapacitySource"] == "cadastral"
     assert rows[0]["telemetryStale"] is True
     assert rows[0]["definedMetrics"] == []
     assert rows[0]["telemetrySource"] == "last_known"
+
+    # Ausência de `val` nunca pode virar zero físico na normalização do reader.
+    parsed = rapid._parse_reader_channels(
+        {"channels": [{"cnl": 1001, "defined": True, "stat": 1}]}
+    )
+    assert parsed[1001]["defined"] is False
+    assert parsed[1001]["val"] is None
+
+    # Um pack sem métrica de health explícita permanece parcial, ainda que
+    # algum canal periférico esteja definido.
+    assert rapid._has_controller_health({"fuel_level": 50}, ["fuel_level"]) is False
+
+    # Cold start sem snapshot não pode parecer telemetria atual nem last-known.
+    snapshots.clear()
+    rapid.read_channels = lambda _nums: ({}, "falha de comunicação sintética")
+    rows = rapid.overlay_generators([generator])
+    assert rows[0]["telemetryStale"] is True
+    assert rows[0]["telemetrySource"] == "none"
+    assert rows[0]["definedMetrics"] == []
 
     # Dashboard jamais pode repromover availableMetrics/última leitura quando
     # definedMetrics está explicitamente vazio ou a telemetria está expirada.

@@ -128,6 +128,25 @@ for (const path of productionPaths) {
   const profile = load(path);
   validateSource(path, profile);
   validateLineOptions(path, profile);
+
+  const rapidTemplatePath = profile.rapid?.template;
+  if (rapidTemplatePath) {
+    if (!existsSync(join(root, rapidTemplatePath))) {
+      failures.push(`${path}: template Rapid ausente: ${rapidTemplatePath}`);
+    } else {
+      const rapidTemplate = read(rapidTemplatePath);
+      const trimmedTemplate = rapidTemplate.trim();
+      if (!trimmedTemplate.includes("<DeviceTemplate")) {
+        failures.push(`${path}: template Rapid sem raiz DeviceTemplate`);
+      }
+      if (!trimmedTemplate.endsWith("</DeviceTemplate>")) {
+        failures.push(`${path}: template Rapid contém XML incompleto ou lixo após DeviceTemplate`);
+      }
+      if (/readOnly="false"|<Cmd\b[^>]*address=/i.test(rapidTemplate)) {
+        failures.push(`${path}: template Rapid de produção contém superfície de escrita`);
+      }
+    }
+  }
   if (profile.schema !== 4) failures.push(`${path}: production exige schema 4`);
   const contracts = profile.commands ?? {};
   for (const command of forbiddenCommands) {
@@ -437,6 +456,24 @@ else {
   }
 }
 
+const ig4Manifest = JSON.parse(read("controllers/production/comap/ig4-200/manifest.json"));
+if (!ig4Manifest.validatedTelemetry?.includes("fuel_level")) {
+  failures.push("IG4 200 perdeu fuel_level validado em campo");
+}
+for (const key of ["oil_pressure", "coolant_temperature"]) {
+  if (ig4Manifest.validatedTelemetry?.includes(key)) {
+    failures.push(`IG4 200 promoveu ${key} sem validação física válida`);
+  }
+}
+const ig4Fuel = ig4Manifest.mapping?.registers?.fuel_level;
+if (ig4Fuel?.address !== 1055 || ig4Fuel?.unit !== "L") {
+  failures.push("IG4 200 perdeu contrato Fuel Level HR1055 em litros");
+}
+const ig4FieldReference = String(ig4Manifest.validation?.fieldReference ?? "");
+if (!ig4FieldReference.includes("GEN152 Unit 15") || !ig4FieldReference.includes("HR1055=591 L")) {
+  failures.push("IG4 200 perdeu evidência read-only de fuel_level do GEN152");
+}
+
 const template = read("rapid/templates/DrvModbus_RC_IG200.xml");
 for (const marker of [
   'tagCode="coolant_temperature"',
@@ -459,6 +496,21 @@ for (const marker of [
   "<Cmds />",
 ]) {
   if (!template.includes(marker)) failures.push(`IG200 template perdeu: ${marker}`);
+}
+
+const ig200Probe = read("ops/ig200_probe_readonly.py");
+for (const marker of [
+  '1227: ("nominal_power", 1.0, "kW")',
+  "args.start <= 1227 <= args.end",
+  "values[1227] = client.read(1227, 1)[0]",
+]) {
+  if (!ig200Probe.includes(marker)) failures.push(`IG200 probe perdeu âncora nominal: ${marker}`);
+}
+if (
+  ig200Probe.includes('1228: ("nominal_power", 1.0, "kW")') ||
+  ig200Probe.includes("values[1228] = client.read(1228, 1)[0]")
+) {
+  failures.push("IG200 probe voltou a confundir 1228 (tensão nominal) com potência nominal");
 }
 
 const dseTemplate = read("rapid/templates/DrvModbus_RC_DSE_GenComm_Core.xml");

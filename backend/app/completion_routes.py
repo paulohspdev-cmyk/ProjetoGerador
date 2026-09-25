@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import os
 import sqlite3
+import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
@@ -51,6 +53,41 @@ def _inside(path: Path, parent: Path) -> bool:
         return True
     except ValueError:
         return False
+
+
+def _stage_file_delete(path: Path, parent: Path) -> tuple[Path, Path] | None:
+    """Move o arquivo para um nome temporário antes do commit SQLite.
+
+    Renomear no mesmo filesystem é atômico. Se a transação do banco falhar,
+    o chamador consegue recolocar o arquivo original sem deixar metadata e
+    filesystem divergentes.
+    """
+    path = path.resolve()
+    parent = parent.resolve()
+    if not _inside(path, parent):
+        raise ValueError("Arquivo fora do diretório protegido")
+    if not path.exists():
+        return None
+    if not path.is_file():
+        raise ValueError("Artefato protegido não é um arquivo regular")
+    staged = path.with_name(f".{path.name}.delete-{uuid.uuid4().hex}.tmp")
+    os.replace(path, staged)
+    return path, staged
+
+
+def _restore_staged_file(staged: tuple[Path, Path] | None) -> None:
+    if not staged:
+        return
+    original, temporary = staged
+    if temporary.exists() and not original.exists():
+        os.replace(temporary, original)
+
+
+def _finish_staged_file(staged: tuple[Path, Path] | None) -> None:
+    if not staged:
+        return
+    _, temporary = staged
+    temporary.unlink(missing_ok=True)
 
 
 class ClientUpdate(BaseModel):
@@ -199,6 +236,8 @@ def site_delete(item_id: str, user: dict = Depends(require_admin)):
 @router.patch("/api/agenda/{item_id}")
 def agenda_update(item_id: str, payload: AgendaUpdate, user: dict = Depends(require_edit)):
     patch = payload.model_dump(exclude_unset=True)
+    if patch.get("generatorId") and not db.get_generator(str(patch["generatorId"])):
+        raise HTTPException(status_code=422, detail="Gerador vinculado ao compromisso não existe")
     mapping = {"when": "when_text", "generatorId": "generator_id"}
     fields: list[str] = []
     values: list[object] = []
@@ -276,17 +315,30 @@ def webhook_delete(item_id: str, user: dict = Depends(require_admin)):
 @router.delete("/api/reports/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 def report_delete(item_id: str, user: dict = Depends(require_admin)):
     reports_dir = DATA_DIR / "reports"
-    with db.connect() as conn:
-        current = conn.execute("SELECT * FROM reports WHERE id=?", (item_id,)).fetchone()
-        if not current:
-            raise HTTPException(status_code=404, detail="Relatório não encontrado")
-        artifact = conn.execute("SELECT * FROM report_artifacts WHERE report_id=?", (item_id,)).fetchone()
-        if artifact:
-            path = Path(artifact["path"])
-            if _inside(path, reports_dir) and path.exists() and path.is_file():
-                path.unlink()
-            conn.execute("DELETE FROM report_artifacts WHERE report_id=?", (item_id,))
-        conn.execute("DELETE FROM reports WHERE id=?", (item_id,))
+    staged = None
+    current = None
+    try:
+        with db.connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            current = conn.execute("SELECT * FROM reports WHERE id=?", (item_id,)).fetchone()
+            if not current:
+                raise HTTPException(status_code=404, detail="Relatório não encontrado")
+            artifact = conn.execute(
+                "SELECT * FROM report_artifacts WHERE report_id=?",
+                (item_id,),
+            ).fetchone()
+            if artifact:
+                try:
+                    staged = _stage_file_delete(Path(artifact["path"]), reports_dir)
+                except ValueError as exc:
+                    raise HTTPException(status_code=409, detail=str(exc)) from exc
+                conn.execute("DELETE FROM report_artifacts WHERE report_id=?", (item_id,))
+            conn.execute("DELETE FROM reports WHERE id=?", (item_id,))
+    except Exception:
+        _restore_staged_file(staged)
+        raise
+
+    _finish_staged_file(staged)
     db.add_audit(actor(user), "delete", "report", item_id, current["name"])
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -294,15 +346,28 @@ def report_delete(item_id: str, user: dict = Depends(require_admin)):
 @router.delete("/api/backups/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 def backup_delete(item_id: str, user: dict = Depends(require_admin)):
     backups_dir = DATA_DIR / "backups"
-    with db.connect() as conn:
-        current = conn.execute("SELECT * FROM backup_records WHERE id=?", (item_id,)).fetchone()
-        if not current:
-            raise HTTPException(status_code=404, detail="Backup não encontrado")
-        path = Path(current["path"])
-        if not _inside(path, backups_dir):
-            raise HTTPException(status_code=409, detail="Caminho do backup está fora do diretório protegido")
-        if path.exists() and path.is_file():
-            path.unlink()
-        conn.execute("DELETE FROM backup_records WHERE id=?", (item_id,))
+    staged = None
+    current = None
+    path = None
+    try:
+        with db.connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            current = conn.execute(
+                "SELECT * FROM backup_records WHERE id=?",
+                (item_id,),
+            ).fetchone()
+            if not current:
+                raise HTTPException(status_code=404, detail="Backup não encontrado")
+            path = Path(current["path"])
+            try:
+                staged = _stage_file_delete(path, backups_dir)
+            except ValueError as exc:
+                raise HTTPException(status_code=409, detail=str(exc)) from exc
+            conn.execute("DELETE FROM backup_records WHERE id=?", (item_id,))
+    except Exception:
+        _restore_staged_file(staged)
+        raise
+
+    _finish_staged_file(staged)
     db.add_audit(actor(user), "delete", "backup", item_id, path.name)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -55,3 +55,6 @@ rapid/reader/bin/
 *.sw?
 test-results/
 playwright-report/
+
+# Local Maestri factory state
+.maestri/

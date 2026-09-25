@@ -2,28 +2,34 @@ import {
   Activity,
   ArrowRight,
   BatteryCharging,
-  Building2,
   Clock3,
   Cog,
   Droplets,
   Fuel,
   Gauge,
   Pencil,
-  Play,
-  Power,
   Radio,
   ShieldCheck,
   Thermometer,
-  UtilityPole,
   Zap,
 } from "lucide-react";
 
 import { Pill } from "@/components/scada/kit";
-import type { Generator } from "@/data/generators";
+import { generatorDisplayStatus, type Generator } from "@/data/generators";
 import type { IndustrialCommandAction } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 import { GeneratorEditDialog } from "../GeneratorEditDialog";
+import {
+  IconBreakerClosed,
+  IconBreakerOpen,
+  IconGenerator,
+  IconLoad,
+  IconMains,
+  IconStart,
+  IconStop,
+} from "../scada-icons";
+import { readGeneratorTelemetry } from "../generator-health";
 import { formatMetric } from "../generator-metrics";
 import type { GeneratorDetailModel } from "./generator-detail-model";
 import {
@@ -50,7 +56,16 @@ export function GeneratorDetailProfessionalTop({
   onCommand,
 }: Props) {
   const voltage = model.genL12 ?? model.genL1;
-  const fuelUnit = gen.metricUnits?.["fuel_level"]?.trim() || "";
+  const telemetry = readGeneratorTelemetry(gen);
+  const fuelUnit = model.fuelUnit;
+  const fuelTone: MetricTone =
+    telemetry.tones.fuel === "critical"
+      ? "err"
+      : telemetry.tones.fuel === "warning"
+        ? "warn"
+        : telemetry.tones.fuel === "good"
+          ? "ok"
+          : "info";
   const oilUnit = gen.metricUnits?.["oil_pressure"]?.trim() || "";
   const coolantUnit = gen.metricUnits?.["coolant_temperature"]?.trim() || "";
   const loadPercent =
@@ -60,22 +75,25 @@ export function GeneratorDetailProfessionalTop({
   const lastTelemetry = gen.lastTelemetryAt
     ? new Date(gen.lastTelemetryAt * 1000).toLocaleString("pt-BR")
     : "N/D";
+  const displayStatus = generatorDisplayStatus(gen);
   const healthTone: MetricTone =
-    gen.status === "offline"
+    displayStatus === "stale" || displayStatus === "offline"
       ? "err"
-      : gen.status === "alerta" || (model.alarms ?? 0) > 0
+      : displayStatus === "alerta" || (model.alarms ?? 0) > 0
         ? "warn"
         : model.comm
           ? "ok"
           : "info";
   const healthLabel =
-    gen.status === "offline"
-      ? "Sem comunicação"
-      : gen.status === "alerta" || (model.alarms ?? 0) > 0
-        ? "Atenção"
-        : model.comm
-          ? "Operacional"
-          : "N/D";
+    displayStatus === "stale"
+      ? "Comunicação perdida"
+      : displayStatus === "offline"
+        ? "Sem comunicação"
+        : displayStatus === "alerta" || (model.alarms ?? 0) > 0
+          ? "Atenção"
+          : model.comm
+            ? "Operacional"
+            : "N/D";
 
   return (
     <>
@@ -89,22 +107,24 @@ export function GeneratorDetailProfessionalTop({
               <h1 className="truncate text-2xl font-black tracking-tight">{gen.tag}</h1>
               <Pill
                 tone={
-                  gen.status === "online"
+                  displayStatus === "online"
                     ? "ok"
-                    : gen.status === "alerta"
+                    : displayStatus === "alerta"
                       ? "warn"
-                      : gen.status === "offline"
+                      : displayStatus === "offline" || displayStatus === "stale"
                         ? "err"
                         : "muted"
                 }
               >
-                {gen.status === "online"
-                  ? "Online"
-                  : gen.status === "alerta"
-                    ? "Em alerta"
-                    : gen.status === "offline"
-                      ? "Offline"
-                      : "Não configurado"}
+                {displayStatus === "stale"
+                  ? "Comunicação perdida"
+                  : displayStatus === "online"
+                    ? "Online"
+                    : displayStatus === "alerta"
+                      ? "Em alerta"
+                      : displayStatus === "offline"
+                        ? "Offline"
+                        : "Não configurado"}
               </Pill>
               <Pill tone="info">{model.modeLabel}</Pill>
               {model.mainsToBus && model.generatorToBus ? (
@@ -148,7 +168,7 @@ export function GeneratorDetailProfessionalTop({
                 : "START indisponível para esta controladora"
             }
           >
-            <Play className="size-4" /> {commandBusy === "start" ? "Enviando…" : "Ligar"}
+            <IconStart size={16} /> {commandBusy === "start" ? "Enviando…" : "Ligar"}
           </button>
           <button
             type="button"
@@ -189,7 +209,7 @@ export function GeneratorDetailProfessionalTop({
               canAction("stop") ? "Parada homologada" : "STOP indisponível para esta controladora"
             }
           >
-            <Power className="size-4" /> {commandBusy === "stop" ? "Enviando…" : "Desligar"}
+            <IconStop size={16} /> {commandBusy === "stop" ? "Enviando…" : "Desligar"}
           </button>
         </div>
       </header>
@@ -231,8 +251,16 @@ export function GeneratorDetailProfessionalTop({
           icon={<Fuel className="size-5" />}
           label="Combustível"
           value={formatMetric(model.fuel, fuelUnit, 0)}
-          sub={model.fuel == null ? "Sem leitura" : "Nível medido"}
-          tone={metricTone(model.fuel, gen.metricLimits?.["fuel_level"])}
+          sub={
+            model.fuel == null
+              ? "Sem leitura"
+              : telemetry.fuelOutOfRange
+                ? "Acima da capacidade informada"
+                : telemetry.fuelRawUnit === "%" && telemetry.fuelUnit === "L"
+                  ? "Convertido de percentual com capacidade real do tanque"
+                  : "Nível medido"
+          }
+          tone={fuelTone}
         />
         <KpiCard
           icon={<Clock3 className="size-5" />}
@@ -253,7 +281,7 @@ export function GeneratorDetailProfessionalTop({
           </div>
           <div className="scroll-slim flex min-w-0 items-center justify-between gap-2 overflow-x-auto pb-2">
             <FlowNode
-              icon={<UtilityPole className="size-6" />}
+              icon={<IconMains size={24} />}
               label="REDE"
               value={formatMetric(model.mainsL12 ?? model.mainsL1, "V", 0)}
               sub={model.mainsPresent ? "Presente" : model.mainsKnown ? "Ausente" : "N/D"}
@@ -266,7 +294,13 @@ export function GeneratorDetailProfessionalTop({
               )}
             />
             <FlowNode
-              icon={<ShieldCheck className="size-6" />}
+              icon={
+                model.mcb && model.gcb ? (
+                  <IconBreakerClosed size={24} />
+                ) : (
+                  <IconBreakerOpen size={24} />
+                )
+              }
               label="DISJUNTORES"
               value={model.mcbKnown ? (model.mcb ? "MCB I" : "MCB O") : "MCB N/D"}
               sub={model.gcbKnown ? (model.gcb ? "GCB fechado" : "GCB aberto") : "GCB N/D"}
@@ -292,7 +326,7 @@ export function GeneratorDetailProfessionalTop({
               )}
             />
             <FlowNode
-              icon={<Building2 className="size-6" />}
+              icon={<IconLoad size={24} />}
               label="CARGA"
               value={formatMetric(model.busLoadKw, "kW", 0)}
               sub={
@@ -404,7 +438,7 @@ export function GeneratorDetailProfessionalTop({
                   icon: Fuel,
                   label: "Nível de combustível",
                   value: formatMetric(model.fuel, fuelUnit, 0),
-                  tone: metricTone(model.fuel, gen.metricLimits?.["fuel_level"]),
+                  tone: fuelTone,
                 },
                 {
                   icon: Radio,

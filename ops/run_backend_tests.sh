@@ -37,6 +37,7 @@ TESTS=(
   reconfigure_transaction.py
   domain_v3.py
   industrial_v3.py
+  power_topology.py
   control_multi_device.py
   production_hardening.py
   provision_timeout.py

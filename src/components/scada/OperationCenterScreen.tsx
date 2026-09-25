@@ -5,6 +5,7 @@ import { BellRing, ClipboardList, FileText, Gauge, MapPin, RefreshCw, Wrench } f
 import { StatusPill } from "@/components/generators/StatusPill";
 import { useGenerators } from "@/components/generators/GeneratorsProvider";
 import { metricNumber } from "@/components/generators/generator-metrics";
+import { generatorDisplayStatus, isGeneratorOnline } from "@/data/generators";
 import { OperationalMap } from "./OperationalMap";
 import { useScadaOps } from "./ScadaOpsProvider";
 import { Panel, Pill, ScreenBody, Stats } from "./kit";
@@ -35,7 +36,14 @@ export function OperationCenter() {
       generators.filter((generator) => {
         if (siteFilter && generator.site !== siteFilter) return false;
         if (clientFilter && generator.customer !== clientFilter) return false;
-        if (statusFilter && generator.status !== statusFilter) return false;
+        if (statusFilter) {
+          const displayStatus = generatorDisplayStatus(generator);
+          const statusMatches =
+            statusFilter === "offline"
+              ? displayStatus === "offline" || displayStatus === "stale"
+              : displayStatus === statusFilter;
+          if (!statusMatches) return false;
+        }
         return true;
       }),
     [clientFilter, generators, siteFilter, statusFilter],
@@ -53,7 +61,7 @@ export function OperationCenter() {
   const alarmRows = allAlarmRows.filter((alarm) => visibleTags.has(alarm.gen));
   const pendingAlarms = alarmRows.filter((alarm) => !alarm.ack);
   const criticalAlarms = pendingAlarms.filter((alarm) => alarm.severity === "falha");
-  const online = visibleGenerators.filter((generator) => generator.status === "online").length;
+  const online = visibleGenerators.filter(isGeneratorOnline).length;
   const urgentWork = workOrders.filter((order) =>
     ["urgente", "urgent"].includes((order.status || "").trim().toLowerCase()),
   ).length;
@@ -81,9 +89,10 @@ export function OperationCenter() {
         load: null,
       };
       current.total += 1;
-      if (generator.status === "online") current.online += 1;
-      else if (generator.status === "alerta") current.alert += 1;
-      else if (generator.status === "offline") current.offline += 1;
+      const displayStatus = generatorDisplayStatus(generator);
+      if (displayStatus === "online") current.online += 1;
+      else if (displayStatus === "alerta") current.alert += 1;
+      else if (displayStatus === "offline" || displayStatus === "stale") current.offline += 1;
       const powerKw = metricNumber(generator, "power_kw", generator.load);
       if (powerKw != null) {
         current.load = (current.load ?? 0) + powerKw;
@@ -399,7 +408,7 @@ export function OperationCenter() {
                     {generator.ip || generator.transport || "Endpoint N/D"}
                   </span>
                 </div>
-                <StatusPill status={generator.status} />
+                <StatusPill status={generator.status} telemetryStale={generator.telemetryStale} />
               </div>
             ))}
             {!visibleGenerators.length && (

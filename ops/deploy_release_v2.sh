@@ -31,11 +31,105 @@ DB_SNAPSHOT=""
 NGINX_SITE_EXISTED=0
 NGINX_ENABLED_EXISTED=0
 TLS_DIR_EXISTED=0
+RAPID_NETWORK_APPLIED=0
+RAPID_NETWORK_DROPIN="50-rc-geradores-network.conf"
+RAPID_NETWORK_SERVICES=(scadaserver6 scadaagent6 scadaweb6)
 
 SERVICES=(rc-geradores-provision rc-geradores-worker rc-geradores-bridge rc-geradores-api rc-geradores-frontend)
 
 log() { printf '\n=== %s ===\n' "$*"; }
 fail() { echo "ERRO: $*" >&2; exit 1; }
+
+resolve_release_commit() {
+  local ref="$1"
+  local branch=""
+  local remote_match=""
+
+  case "${ref}" in
+    origin/*) branch="${ref#origin/}" ;;
+    refs/heads/*) branch="${ref#refs/heads/}" ;;
+    refs/remotes/origin/*) branch="${ref#refs/remotes/origin/}" ;;
+  esac
+
+  if [[ -n "${branch}" ]]; then
+    git check-ref-format --branch "${branch}" >/dev/null 2>&1 || return 1
+    git -c safe.directory="${BASE}" -C "${BASE}" fetch --quiet --no-tags origin "refs/heads/${branch}"
+    git -c safe.directory="${BASE}" -C "${BASE}" rev-parse 'FETCH_HEAD^{commit}'
+    return
+  fi
+
+  if [[ "${ref}" =~ ^[0-9a-fA-F]{40}$ ]]; then
+    if ! git -c safe.directory="${BASE}" -C "${BASE}" cat-file -e "${ref}^{commit}" 2>/dev/null; then
+      git -c safe.directory="${BASE}" -C "${BASE}" fetch --quiet --no-tags origin "${ref}"
+    fi
+    git -c safe.directory="${BASE}" -C "${BASE}" rev-parse "${ref}^{commit}"
+    return
+  fi
+
+  if git check-ref-format --branch "${ref}" >/dev/null 2>&1; then
+    remote_match="$(git -c safe.directory="${BASE}" -C "${BASE}" ls-remote --exit-code origin "refs/heads/${ref}" 2>/dev/null | awk 'NR == 1 { print $1 }' || true)"
+    if [[ -n "${remote_match}" ]]; then
+      git -c safe.directory="${BASE}" -C "${BASE}" fetch --quiet --no-tags origin "refs/heads/${ref}"
+      git -c safe.directory="${BASE}" -C "${BASE}" rev-parse 'FETCH_HEAD^{commit}'
+      return
+    fi
+  fi
+
+  git -c safe.directory="${BASE}" -C "${BASE}" rev-parse "${ref}^{commit}"
+}
+
+preserve_previous_frontend_assets() {
+  local previous_output="$1"
+  local next_output="$2"
+  local previous_assets="${previous_output}/public/assets"
+  local next_assets="${next_output}/public/assets"
+  local previous_manifest="${previous_output}/.rc-current-assets"
+  local next_manifest="${next_output}/.rc-current-assets"
+  local rel src dest
+  local preserved=0
+
+  [[ -d "${next_assets}" ]] || {
+    echo "build novo sem diretório public/assets: ${next_assets}" >&2
+    return 1
+  }
+
+  # Registra somente os assets nativos desta release ANTES de adicionar o fallback.
+  # Assim o próximo deploy preserva apenas uma geração anterior e não acumula
+  # chunks antigos indefinidamente.
+  find "${next_assets}" -type f -printf '%P\n' | sort >"${next_manifest}"
+
+  if [[ ! -d "${previous_assets}" ]]; then
+    echo "Assets anteriores: nenhum"
+    return 0
+  fi
+
+  copy_previous_asset() {
+    rel="$1"
+    [[ -n "${rel}" ]] || return 0
+    [[ "${rel}" != /* && "${rel}" != ".." && "${rel}" != ../* && "${rel}" != */../* && "${rel}" != */.. ]] || return 0
+    src="${previous_assets}/${rel}"
+    dest="${next_assets}/${rel}"
+    [[ -f "${src}" ]] || return 0
+    [[ -e "${dest}" ]] && return 0
+    mkdir -p "$(dirname "${dest}")"
+    cp -a "${src}" "${dest}"
+    preserved=$((preserved + 1))
+  }
+
+  if [[ -f "${previous_manifest}" ]]; then
+    while IFS= read -r rel; do
+      copy_previous_asset "${rel}"
+    done <"${previous_manifest}"
+  else
+    # Primeira implantação deste mecanismo: a release antiga ainda não possui
+    # manifesto, então preservamos somente os assets que ela contém agora.
+    while IFS= read -r -d '' src; do
+      copy_previous_asset "${src#${previous_assets}/}"
+    done < <(find "${previous_assets}" -type f -print0)
+  fi
+
+  echo "Assets anteriores preservados para clientes com release aberta: ${preserved}"
+}
 
 cleanup() {
   if [[ -n "${TEST_PID}" ]]; then
@@ -51,8 +145,10 @@ trap cleanup EXIT
 [[ -f "${BASE}/package.json" ]] || fail "package.json não encontrado em ${BASE}"
 [[ -f "${ENV_FILE}" ]] || fail "arquivo de ambiente não encontrado: ${ENV_FILE}"
 
+set -a
 # shellcheck disable=SC1090
 source "${ENV_FILE}"
+set +a
 CONTROL_SOCKET="${RC_RAPID_CONTROL_SOCKET:-${CONTROL_SOCKET}}"
 DB_FILE="${RC_DB_FILE:-${RC_DATA_DIR:-/var/lib/rc-geradores}/rc-geradores.db}"
 WEB_TLS_MODE="${RC_WEB_TLS_MODE:-${WEB_TLS_MODE}}"
@@ -88,9 +184,8 @@ DIRTY="$(git -c safe.directory="${BASE}" -C "${BASE}" status --porcelain --untra
 [[ -z "${DIRTY}" ]] || { echo "${DIRTY}" >&2; fail "há alterações locais rastreadas em ${BASE}"; }
 
 log "RESOLVENDO RELEASE ${REF}"
-git -c safe.directory="${BASE}" -C "${BASE}" fetch --prune origin
-git -c safe.directory="${BASE}" -C "${BASE}" fetch origin main
-COMMIT="$(git -c safe.directory="${BASE}" -C "${BASE}" rev-parse "${REF}^{commit}")"
+COMMIT="$(resolve_release_commit "${REF}")" || fail "não foi possível resolver/fazer fetch da release ${REF}"
+[[ -n "${COMMIT}" ]] || fail "release ${REF} resolveu para SHA vazio"
 echo "Commit: ${COMMIT}"
 
 log "CRIANDO STAGING LIMPO"
@@ -140,6 +235,10 @@ wait "${TEST_PID}" 2>/dev/null || true
 TEST_PID=""
 
 log "BACKUP TRANSACIONAL DA PRODUÇÃO"
+# O diretório raiz também é usado pelo backup completo executado pelo worker
+# não privilegiado. Se o primeiro deploy o criar como root, os backups
+# agendados falham com EACCES.
+install -d -m 0750 -o rcgeradores -g rcgeradores "${BACKUP_ROOT}"
 install -d -m 0750 -o root -g rcgeradores "${BACKUP}"
 printf '%s\n' "${PREV_HEAD}" >"${BACKUP}/git-head-before"
 printf '%s\n' "${PREV_BRANCH}" >"${BACKUP}/git-branch-before"
@@ -154,6 +253,21 @@ for unit in "${STAGE}"/ops/systemd/*.service; do
   if [[ -f "/etc/systemd/system/${name}" ]]; then
     cp -a "/etc/systemd/system/${name}" "${BACKUP}/systemd/${name}"
     echo "${name}" >>"${BACKUP}/systemd-existing.txt"
+  fi
+done
+
+mkdir -p "${BACKUP}/rapid-network"
+: >"${BACKUP}/rapid-network-existing.txt"
+: >"${BACKUP}/rapid-network-active.txt"
+for svc in "${RAPID_NETWORK_SERVICES[@]}"; do
+  dir="/etc/systemd/system/${svc}.service.d"
+  target="${dir}/${RAPID_NETWORK_DROPIN}"
+  if [[ -f "${target}" ]]; then
+    cp -a "${target}" "${BACKUP}/rapid-network/${svc}.conf"
+    echo "${svc}" >>"${BACKUP}/rapid-network-existing.txt"
+  fi
+  if systemctl is-active --quiet "${svc}.service"; then
+    echo "${svc}" >>"${BACKUP}/rapid-network-active.txt"
   fi
 done
 
@@ -192,7 +306,25 @@ rollback() {
 
   for unit in "${STAGE}"/ops/systemd/*.service; do rm -f "/etc/systemd/system/$(basename "${unit}")"; done
   if [[ -d "${BACKUP}/systemd" ]]; then cp -a "${BACKUP}/systemd"/*.service /etc/systemd/system/ 2>/dev/null || true; fi
+
+  if [[ ${RAPID_NETWORK_APPLIED} -eq 1 ]]; then
+    for svc in "${RAPID_NETWORK_SERVICES[@]}"; do
+      dir="/etc/systemd/system/${svc}.service.d"
+      target="${dir}/${RAPID_NETWORK_DROPIN}"
+      rm -f "${target}"
+      if grep -Fxq "${svc}" "${BACKUP}/rapid-network-existing.txt" 2>/dev/null; then
+        install -d -m 0755 "${dir}"
+        cp -a "${BACKUP}/rapid-network/${svc}.conf" "${target}" 2>/dev/null || true
+      fi
+    done
+  fi
   systemctl daemon-reload || true
+  if [[ ${RAPID_NETWORK_APPLIED} -eq 1 && -f "${BACKUP}/rapid-network-active.txt" ]]; then
+    while IFS= read -r svc; do
+      [[ -n "${svc}" ]] || continue
+      systemctl restart "${svc}.service" >/dev/null 2>&1 || true
+    done <"${BACKUP}/rapid-network-active.txt"
+  fi
 
   if [[ -n "${DB_SNAPSHOT}" && -f "${DB_SNAPSHOT}" ]]; then
     python3 - "${DB_SNAPSHOT}" "${DB_FILE}" <<'PY'
@@ -201,9 +333,18 @@ src, dst = sys.argv[1:3]
 tmp = dst + ".rollback.tmp"
 shutil.copy2(src, tmp)
 c = sqlite3.connect(f"file:{tmp}?mode=ro", uri=True)
-try: rows=[r[0] for r in c.execute("PRAGMA quick_check")]
-finally: c.close()
-if rows != ["ok"]: raise SystemExit("snapshot de rollback inválido")
+try:
+    rows=[r[0] for r in c.execute("PRAGMA quick_check")]
+    integrity=[r[0] for r in c.execute("PRAGMA integrity_check")]
+finally:
+    c.close()
+if rows != ["ok"] or integrity != ["ok"]:
+    raise SystemExit("snapshot de rollback SQLite inválido")
+for suffix in ("-wal", "-shm"):
+    try:
+        os.unlink(dst + suffix)
+    except FileNotFoundError:
+        pass
 os.replace(tmp, dst)
 PY
     chown rcgeradores:rcgeradores "${DB_FILE}" 2>/dev/null || true
@@ -262,7 +403,7 @@ PY
 fi
 
 log "ALINHANDO CHECKOUT AO COMMIT ${COMMIT}"
-git -c safe.directory="${BASE}" -C "${BASE}" checkout -B main "${COMMIT}"
+git -c safe.directory="${BASE}" -C "${BASE}" checkout --detach "${COMMIT}"
 git -c safe.directory="${BASE}" -C "${BASE}" reset --hard "${COMMIT}"
 [[ "$(git -c safe.directory="${BASE}" -C "${BASE}" rev-parse HEAD)" == "${COMMIT}" ]] || { rollback; fail "HEAD não ficou no commit solicitado"; }
 
@@ -272,7 +413,8 @@ rm -rf "${OLD_VENV}"
 VENV_SWAPPED=1
 if ! python3 -m venv "${BASE}/backend/.venv"; then rollback; fail "falha ao criar venv"; fi
 if ! "${BASE}/backend/.venv/bin/pip" install --disable-pip-version-check -r "${BASE}/backend/requirements.txt"; then rollback; fail "falha ao instalar dependências Python"; fi
-chown -R rcgeradores:rcgeradores "${BASE}/backend/.venv"
+chown -R root:root "${BASE}/backend/.venv"
+chmod -R u=rwX,go=rX "${BASE}/backend/.venv"
 
 log "COMPILANDO LEITOR RAPID"
 [[ -f "${SCADA_COMMON}" ]] || { rollback; fail "ScadaCommon.dll desapareceu durante o deploy"; }
@@ -282,7 +424,8 @@ READER_SWAPPED=1
 mkdir -p "${BASE}/.rapid-reader"
 if ! dotnet build "${BASE}/rapid/reader/RcRapidReader.csproj" -c Release -o "${BASE}/.rapid-reader" -p:ScadaCommonPath="${SCADA_COMMON}" --nologo; then rollback; fail "falha ao compilar leitor Rapid"; fi
 find "$(dirname "${SCADA_COMMON}")" -maxdepth 1 -type f -name 'Scada*.dll' -exec cp --update=none {} "${BASE}/.rapid-reader/" \; 2>/dev/null || true
-chmod -R a+rX "${BASE}/.rapid-reader"
+chown -R root:root "${BASE}/.rapid-reader"
+chmod -R u=rwX,go=rX "${BASE}/.rapid-reader"
 
 log "INSTALANDO UNIDADES SYSTEMD VERSIONADAS"
 for unit in "${BASE}"/ops/systemd/*.service; do install -m 0644 "${unit}" "/etc/systemd/system/$(basename "${unit}")"; done
@@ -294,21 +437,34 @@ set -a
 source "${ENV_FILE}"
 set +a
 export PYTHONPATH="${BASE}/backend"
+if ! "${BASE}/backend/.venv/bin/python" "${BASE}/ops/migrate_db.py"; then
+  rollback
+  fail "migrações versionadas falharam"
+fi
 if ! "${BASE}/backend/.venv/bin/python" - <<'PY'
-from app import db, domain_store, ops_store, platform_store, transport_store
-db.init_db(); ops_store.init_ops_db(); platform_store.init_platform_db(); transport_store.init_transport_db(); domain_store.init_domain_db(); domain_store.sync_legacy_generators()
+from app import db, domain_store
+domain_store.sync_legacy_generators()
 with db.connect() as conn:
-    rows=[r[0] for r in conn.execute("PRAGMA quick_check")]
-if rows != ["ok"]: raise SystemExit("SQLite quick_check pós-migração falhou: " + "; ".join(rows))
+    quick=[r[0] for r in conn.execute("PRAGMA quick_check")]
+    integrity=[r[0] for r in conn.execute("PRAGMA integrity_check")]
+    foreign_keys=conn.execute("PRAGMA foreign_key_check").fetchall()
+if quick != ["ok"]: raise SystemExit("SQLite quick_check pós-migração falhou: " + "; ".join(quick))
+if integrity != ["ok"]: raise SystemExit("SQLite integrity_check pós-migração falhou: " + "; ".join(integrity))
+if foreign_keys: raise SystemExit("SQLite foreign_key_check pós-migração falhou: " + repr(foreign_keys[:20]))
 from app.main import app
 print(app.title, app.version, "backend preflight OK")
 PY
-then rollback; fail "backend/migração falhou"; fi
+then rollback; fail "backend pós-migração falhou"; fi
 
 log "TROCA ATÔMICA DO FRONTEND"
 rm -rf "${NEW_OUTPUT}" "${OLD_OUTPUT}"
 cp -a "${STAGE}/.output" "${NEW_OUTPUT}"
-chown -R rcgeradores:rcgeradores "${NEW_OUTPUT}"
+if ! preserve_previous_frontend_assets "${BASE}/.output" "${NEW_OUTPUT}"; then
+  rollback
+  fail "falha ao preservar assets da release anterior"
+fi
+chown -R root:root "${NEW_OUTPUT}"
+chmod -R u=rwX,go=rX "${NEW_OUTPUT}"
 [[ -d "${BASE}/.output" ]] && mv "${BASE}/.output" "${OLD_OUTPUT}"
 mv "${NEW_OUTPUT}" "${BASE}/.output"
 OUTPUT_SWAPPED=1
@@ -326,14 +482,81 @@ source "${ENV_FILE}"
 CONTROL_SOCKET="${RC_RAPID_CONTROL_SOCKET:-${CONTROL_SOCKET}}"
 WEB_TLS_MODE="${RC_WEB_TLS_MODE:-${WEB_TLS_MODE}}"
 
+log "APLICANDO POLÍTICA DE REDE RAPID SCADA"
+if ! bash "${BASE}/ops/configure_rapid_network.sh" --apply; then
+  rollback
+  fail "não foi possível aplicar política de rede do Rapid SCADA"
+fi
+RAPID_NETWORK_APPLIED=1
+
 log "REINICIANDO SERVIÇOS"
-for svc in "${SERVICES[@]}"; do systemctl restart "${svc}" 2>/dev/null || { rollback; fail "falha ao reiniciar ${svc}"; }; done
+START_SERVICES=(rc-geradores-api rc-geradores-provision rc-geradores-bridge rc-geradores-worker rc-geradores-frontend)
+for svc in "${START_SERVICES[@]}"; do
+  systemctl restart "${svc}" 2>/dev/null || { rollback; fail "falha ao reiniciar ${svc}"; }
+done
 sleep 4
 
 log "VALIDAÇÃO DE PRODUÇÃO"
 FAIL=0
 for svc in "${SERVICES[@]}"; do if systemctl is-active --quiet "${svc}"; then echo "${svc}: OK"; else echo "${svc}: FALHOU"; FAIL=1; fi; done
-curl -fsS http://127.0.0.1:3000/ >/dev/null 2>&1 && echo "Frontend interno: OK" || { echo "Frontend interno: FALHOU"; FAIL=1; }
+
+FRONTEND_HEADERS="/tmp/rc-deploy-${STAMP}-frontend.headers"
+FRONTEND_HTML="/tmp/rc-deploy-${STAMP}-frontend.html"
+if curl -fsS -D "${FRONTEND_HEADERS}" -o "${FRONTEND_HTML}" http://127.0.0.1:3000/login; then
+  if grep -qi '^Cache-Control:.*no-store' "${FRONTEND_HEADERS}"; then
+    echo "Frontend HTML no-store: OK"
+  else
+    echo "Frontend HTML no-store: FALHOU"
+    FAIL=1
+  fi
+
+  ASSET_LIST="$(
+    python3 - "${FRONTEND_HTML}" <<'PY'
+import re
+import sys
+
+html = open(sys.argv[1], encoding="utf-8").read()
+assets = sorted(
+    set(
+        re.findall(
+            r"""(?:src|href)=["'](/assets/[^"'?#]+\.(?:js|css))["']""",
+            html,
+            flags=re.IGNORECASE,
+        )
+    )
+)
+if not assets:
+    raise SystemExit("HTML não referencia assets JS/CSS")
+print("\n".join(assets))
+PY
+  )" || {
+    echo "Frontend assets: FALHOU ao extrair referências"
+    FAIL=1
+    ASSET_LIST=""
+  }
+
+  if [[ -n "${ASSET_LIST}" ]]; then
+    ASSET_FAIL=0
+    while IFS= read -r asset; do
+      [[ -n "${asset}" ]] || continue
+      if ! curl -fsS -o /dev/null "http://127.0.0.1:3000${asset}"; then
+        echo "Frontend asset ausente: ${asset}"
+        ASSET_FAIL=1
+      fi
+    done <<<"${ASSET_LIST}"
+    if [[ ${ASSET_FAIL} -eq 0 ]]; then
+      echo "Frontend assets referenciados: OK"
+    else
+      echo "Frontend assets referenciados: FALHOU"
+      FAIL=1
+    fi
+  fi
+else
+  echo "Frontend interno: FALHOU"
+  FAIL=1
+fi
+rm -f "${FRONTEND_HEADERS}" "${FRONTEND_HTML}"
+
 curl -fsS http://127.0.0.1:8090/api/health >/dev/null 2>&1 && echo "API interna: OK" || { echo "API interna: FALHOU"; FAIL=1; }
 if [[ "${WEB_TLS_MODE}" == "external_proxy" ]]; then
   echo "HTTPS: delegado ao Nginx Proxy Manager; nenhuma validação/alteração TLS local executada."

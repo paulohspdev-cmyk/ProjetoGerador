@@ -14,11 +14,18 @@ export class HttpError extends Error {
 
 async function errorMessage(response: Response) {
   let message = `HTTP ${response.status}`;
+  let requestId = response.headers.get("x-request-id")?.trim() || "";
   try {
-    const payload = (await response.json()) as { detail?: unknown };
+    const payload = (await response.json()) as { detail?: unknown; requestId?: unknown };
     if (typeof payload.detail === "string" && payload.detail.trim()) message = payload.detail;
+    if (typeof payload.requestId === "string" && payload.requestId.trim()) {
+      requestId = payload.requestId.trim();
+    }
   } catch {
     // Corpo não JSON: mantém status HTTP sem expor HTML/proxy body ao operador.
+  }
+  if (response.status >= 500 && requestId) {
+    message += ` (ref: ${requestId})`;
   }
   return message;
 }

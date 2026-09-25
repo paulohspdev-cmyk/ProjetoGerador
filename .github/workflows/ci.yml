@@ -158,7 +158,62 @@ jobs:
           bash -n ops/preflight_vm.sh
           bash -n ops/deploy_release.sh
           bash -n ops/deploy_release_v2.sh
+          bash -n ops/test_frontend_asset_retention.sh
+          bash ops/test_frontend_asset_retention.sh
+          bash -n ops/test_release_ref_resolution.sh
+          bash ops/test_release_ref_resolution.sh
+          grep -q 'OFFSITE_STREAM_MAGIC' backend/app/backup_manager.py
+          grep -q '_encrypt_offsite_payload' backend/app/backup_manager.py
+          grep -q '_decrypt_chunked_offsite_payload' backend/app/backup_manager.py
+          if grep -Fq 'cipher.encrypt(payload.read_bytes())' backend/app/backup_manager.py; then
+            echo 'ERRO: backup off-site voltou a carregar payload inteiro na memória.' >&2
+            exit 1
+          fi
+          printf 'RC_RAPID_ADMIN_ALLOWED_CIDRS=\n' >/tmp/rapid-network-loopback.env
+          RC_ENV_FILE=/tmp/rapid-network-loopback.env bash ops/configure_rapid_network.sh --check
+          printf 'RC_RAPID_ADMIN_ALLOWED_CIDRS=10.10.10.0/24\n' >/tmp/rapid-network-good.env
+          RC_ENV_FILE=/tmp/rapid-network-good.env bash ops/configure_rapid_network.sh --check
+          printf 'RC_RAPID_ADMIN_ALLOWED_CIDRS=0.0.0.0/0\n' >/tmp/rapid-network-bad.env
+          if RC_ENV_FILE=/tmp/rapid-network-bad.env bash ops/configure_rapid_network.sh --check >/dev/null 2>&1; then
+            echo 'ERRO: política Rapid aceitou allowlist administrativa global.' >&2
+            exit 1
+          fi
+          python3 -m py_compile ops/ig200_probe_readonly.py
+          grep -q -- '--firmware-version' ops/ig200_probe_readonly.py
+          grep -q 'FW Version 1281..1288' ops/ig200_probe_readonly.py
+          grep -q 'somente FC03/FC04 são permitidas' ops/ig200_probe_readonly.py
           bash -n ops/configure_https.sh
+          bash -n ops/configure_rapid_network.sh
+          grep -q 'time.monotonic() + 30' ops/configure_rapid_network.sh
+          grep -q 'não abriu loopback' ops/configure_rapid_network.sh
+          grep -q 'scadacomm6 não reconectou ao Server loopback:10000' ops/configure_rapid_network.sh
+          grep -q 'ss -tnp state established' ops/configure_rapid_network.sh
+          bash -n ops/configure_external_proxy_network.sh
+          printf 'RC_WEB_TLS_MODE=external_proxy\nRC_EXTERNAL_PROXY_ALLOWED_CIDRS=10.10.10.131/32\nRC_TRUSTED_PROXY_CIDRS=10.10.10.131/32\n' >/tmp/external-proxy-good.env
+          RC_ENV_FILE=/tmp/external-proxy-good.env bash ops/configure_external_proxy_network.sh --check
+          printf 'RC_WEB_TLS_MODE=external_proxy\nRC_EXTERNAL_PROXY_ALLOWED_CIDRS=0.0.0.0/0\nRC_TRUSTED_PROXY_CIDRS=0.0.0.0/0\n' >/tmp/external-proxy-bad.env
+          if RC_ENV_FILE=/tmp/external-proxy-bad.env bash ops/configure_external_proxy_network.sh --check >/dev/null 2>&1; then
+            echo 'ERRO: external proxy aceitou CIDR global.' >&2
+            exit 1
+          fi
+          printf 'RC_WEB_TLS_MODE=external_proxy\nRC_EXTERNAL_PROXY_ALLOWED_CIDRS=10.10.10.131/32\nRC_TRUSTED_PROXY_CIDRS=127.0.0.1/32\n' >/tmp/external-proxy-mismatch.env
+          if RC_ENV_FILE=/tmp/external-proxy-mismatch.env bash ops/configure_external_proxy_network.sh --check >/dev/null 2>&1; then
+            echo 'ERRO: external proxy aceitou peer NPM fora dos proxies confiáveis.' >&2
+            exit 1
+          fi
+          grep -q 'FIREWALL_SERVICE="rc-geradores-web-firewall"' ops/configure_external_proxy_network.sh
+          grep -q 'NFT_PERSIST="/etc/rc-geradores-web.nft"' ops/configure_external_proxy_network.sh
+          grep -q 'BindsTo=.*FIREWALL_SERVICE' ops/configure_external_proxy_network.sh
+          grep -q 'PartOf=.*FIREWALL_SERVICE' ops/configure_external_proxy_network.sh
+          grep -q 'systemctl show.*-p PartOf' ops/configure_external_proxy_network.sh
+          grep -q 'systemctl enable --now.*FIREWALL_SERVICE' ops/configure_external_proxy_network.sh
+          grep -q 'systemctl is-enabled --quiet.*FIREWALL_SERVICE' ops/configure_external_proxy_network.sh
+          grep -q 'systemctl is-active --quiet.*FIREWALL_SERVICE' ops/configure_external_proxy_network.sh
+          grep -q 'firewall persistente não contém peer do NPM' ops/configure_external_proxy_network.sh
+          grep -q '^Environment=NITRO_HOST=0.0.0.0$' ops/configure_external_proxy_network.sh
+          grep -q '^Environment=NITRO_PORT=3000$' ops/configure_external_proxy_network.sh
+          grep -q '^Conflicts=nftables.service$' ops/configure_external_proxy_network.sh
+          grep -q 'nftables.service global está ativo/habilitado' ops/configure_external_proxy_network.sh
           bash -n ops/run_backend_tests.sh
           bash -n ops/run_e2e_isolated.sh
           bash -n rapid/provisioning/provision_ig200.sh
@@ -170,6 +225,13 @@ jobs:
           grep -q -- '--ig200-unit' /tmp/install-help.txt
           grep -q -- '--ig200-device' /tmp/install-help.txt
           grep -q -- '--admin-password-file' /tmp/install-help.txt
+          grep -q -- '--web-tls-mode' /tmp/install-help.txt
+          grep -q -- '--external-proxy-cidrs' /tmp/install-help.txt
+          grep -q -- '--public-base-url' /tmp/install-help.txt
+          grep -q 'RC_WEB_TLS_MODE:-external_proxy' ops/install.sh
+          grep -q 'configure_external_proxy_network.sh.*--apply' ops/install.sh
+          grep -q 'configure_external_proxy_network.sh.*--check-runtime' ops/install.sh
+          grep -q 'nftables' ops/install.sh
           grep -q 'dotnet --list-sdks' ops/install.sh
           grep -q 'dotnet --list-runtimes' ops/install.sh
           grep -q 'provision_generator.py' ops/install.sh
@@ -186,19 +248,73 @@ jobs:
           grep -q 'app.provision_service' ops/systemd/rc-geradores-provision.service
           grep -q '^RuntimeDirectoryPreserve=yes$' ops/systemd/rc-geradores-bridge.service
           grep -q '^RuntimeDirectoryPreserve=yes$' ops/systemd/rc-geradores-provision.service
+          for unit in ops/systemd/rc-geradores-*.service; do
+            grep -q '^UMask=0027$' "$unit"
+            grep -q '^ProtectClock=true$' "$unit"
+            grep -q '^ProtectKernelTunables=true$' "$unit"
+            grep -q '^ProtectKernelModules=true$' "$unit"
+            grep -q '^ProtectKernelLogs=true$' "$unit"
+            grep -q '^ProtectControlGroups=true$' "$unit"
+            grep -q '^ProtectHostname=true$' "$unit"
+            grep -q '^LockPersonality=true$' "$unit"
+            grep -q '^RestrictSUIDSGID=true$' "$unit"
+            grep -q '^RestrictRealtime=true$' "$unit"
+            grep -q '^RestrictNamespaces=true$' "$unit"
+            grep -q '^SystemCallArchitectures=native$' "$unit"
+            grep -q '^RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6$' "$unit"
+            grep -q '^PrivateDevices=true$' "$unit"
+          done
+          for unit in \
+            ops/systemd/rc-geradores-api.service \
+            ops/systemd/rc-geradores-frontend.service \
+            ops/systemd/rc-geradores-bridge.service \
+            ops/systemd/rc-geradores-worker.service; do
+            grep -q '^CapabilityBoundingSet=$' "$unit"
+          done
+          grep -q '^CapabilityBoundingSet=CAP_CHOWN CAP_DAC_OVERRIDE CAP_FOWNER CAP_KILL$' ops/systemd/rc-geradores-provision.service
+          grep -q '^Environment=PYTHONDONTWRITEBYTECODE=1$' ops/systemd/rc-geradores-api.service
+          grep -q '^Environment=PYTHONDONTWRITEBYTECODE=1$' ops/systemd/rc-geradores-bridge.service
+          grep -q '^Environment=PYTHONDONTWRITEBYTECODE=1$' ops/systemd/rc-geradores-worker.service
+          grep -q '^Environment=PYTHONDONTWRITEBYTECODE=1$' ops/systemd/rc-geradores-provision.service
+          grep -q 'chown -R root:root "${NEW_OUTPUT}"' ops/deploy_release_v2.sh
+          grep -q 'chown -R root:root "${BASE}/backend/.venv"' ops/deploy_release_v2.sh
+          grep -q 'chown -R root:root "$BASE/.output"' ops/install.sh
+          if grep -q 'chown -R rcgeradores:rcgeradores "${NEW_OUTPUT}"' ops/deploy_release_v2.sh; then
+            echo 'ERRO: frontend voltou a ser gravável pelo usuário de runtime.' >&2
+            exit 1
+          fi
           grep -q 'rc-geradores-worker.service' ops/install.sh
           grep -q 'rc-geradores-provision.service' ops/install.sh
           grep -q '^RC_PROVISION_SOCKET=' ops/rc-geradores.env.example
           grep -q '^RC_PROVISION_OPERATION_TIMEOUT=' ops/rc-geradores.env.example
           grep -q '^RC_MODBUS_DEVICE_TIMEOUT_MS=' ops/rc-geradores.env.example
           grep -q '^RC_RAPID_READER_TIMEOUT=' ops/rc-geradores.env.example
+          grep -q '^RC_RAPID_ADMIN_ALLOWED_CIDRS=' ops/rc-geradores.env.example
+          grep -q 'configure_rapid_network.sh.*--check' ops/preflight_vm.sh
+          grep -q 'configure_rapid_network.sh.*--apply' ops/install.sh
+          grep -q 'configure_rapid_network.sh.*--apply' ops/deploy_release_v2.sh
+          grep -q 'RAPID_NETWORK_APPLIED=1' ops/deploy_release_v2.sh
+          grep -q 'rapid-network-existing.txt' ops/deploy_release_v2.sh
+          grep -q 'rapid-network-active.txt' ops/deploy_release_v2.sh
+          grep -q 'Frontend HTML no-store' ops/deploy_release_v2.sh
+          grep -q 'Frontend assets referenciados' ops/deploy_release_v2.sh
+          grep -q 'HTML não referencia assets JS/CSS' ops/deploy_release_v2.sh
           grep -q '^RC_LOGIN_MAX_FAILURES=' ops/rc-geradores.env.example
           grep -q '^RC_BACKUP_RETENTION=' ops/rc-geradores.env.example
           grep -q '^RC_RAPID_REQUIRE_ALLOWLIST=' ops/rc-geradores.env.example
           grep -q '^RC_BACKUP_OFFSITE_REQUIRED=' ops/rc-geradores.env.example
           grep -q '^RC_ENVIRONMENT=production$' ops/rc-geradores.env.example
           grep -q '^RC_WEB_TLS_MODE=external_proxy$' ops/rc-geradores.env.example
+          grep -q '^RC_EXTERNAL_PROXY_ALLOWED_CIDRS=' ops/rc-geradores.env.example
+          grep -q '^RC_TRUSTED_PROXY_CIDRS=' ops/rc-geradores.env.example
+          grep -q 'configure_external_proxy_network.sh.*--check-runtime' ops/preflight_vm.sh
+          grep -q 'LEGACY_NGINX_SITE' ops/preflight_vm.sh
+          grep -q 'Valide o NPM direto em 3000/8090' ops/preflight_vm.sh
+          grep -q 'external_proxy exige RC_EXTERNAL_PROXY_ALLOWED_CIDRS' ops/preflight_vm.sh
+          grep -q 'external_proxy exige RC_TRUSTED_PROXY_CIDRS' ops/preflight_vm.sh
           grep -q 'external_proxy' ops/deploy_release_v2.sh
+          grep -q 'external_proxy' ops/preflight_vm.sh
+          grep -q 'external_proxy' ops/vm-smoke.sh
           grep -q 'external_proxy' ops/preflight_vm.sh
           grep -q 'external_proxy' ops/vm-smoke.sh
           if grep -q -E 'rapid_device.*!= *200|device.*!= *200' ops/bootstrap_ig200.py; then

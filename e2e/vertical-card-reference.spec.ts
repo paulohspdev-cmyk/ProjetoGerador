@@ -19,6 +19,7 @@ async function createGenerator(
     listenPort: number;
     modbusUnit: number;
     rapidDeviceNum: number;
+    powerTopology?: "auto" | "mains_genset" | "genset_only";
   },
 ) {
   return page.evaluate(async (body) => {
@@ -36,6 +37,7 @@ async function createGenerator(
         listenPort: body.listenPort,
         modbusUnit: body.modbusUnit,
         rapidDeviceNum: body.rapidDeviceNum,
+        ...(body.powerTopology ? { powerTopology: body.powerTopology } : {}),
       }),
     });
     return response.status;
@@ -68,21 +70,51 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
   await page.goto("/p/geradores");
   await expect(page.getByRole("button", { name: /^Todos$/ })).toBeVisible();
 
-  const comap = page.locator('[data-controller-vendor="comap"]').filter({ hasText: "VERTCOMAP" });
-  const dse = page.locator('[data-controller-vendor="dse"]').filter({ hasText: "VERTDSE" });
+  const comap = page.locator('[data-controller-vendor="comap"]').filter({
+    has: page.getByRole("link", { name: "VERTCOMAP", exact: true }),
+  });
+  const dse = page.locator('[data-controller-vendor="dse"]').filter({
+    has: page.getByRole("link", { name: "VERTDSE", exact: true }),
+  });
 
   await expect(comap).toBeVisible();
   await expect(dse).toBeVisible();
 
   for (const card of [comap, dse]) {
-    await expect(card.getByText("KW", { exact: true })).toBeVisible();
-    await expect(card.getByText("POWER FLOW")).toBeVisible();
+    await expect(card.locator(".vref-gauge-panel-power > h4")).toHaveText("GERADOR");
+    await expect(card.getByText("FLUXO DE POTÊNCIA")).toHaveCount(0);
+    await expect(card.locator(".vref-header-mode")).toContainText("MODO:");
+    await expect(card.locator(".vref-flow-controller-heading")).toHaveCount(0);
     await expect(card.locator(".vref-clock")).toHaveCount(0);
     await expect(card.locator(".vref-power")).not.toContainText("%");
     await expect(card.locator(".vref-flow")).not.toContainText(/RPM/);
-    await expect(card.getByText("ENGINE STATUS")).toBeVisible();
-    await expect(card.getByRole("heading", { name: "RPM" })).toBeVisible();
-    await expect(card.getByText("MAINS / GENERATOR")).toBeVisible();
+    await expect(card.getByText("MOTOR", { exact: true })).toHaveCount(0);
+    await expect(card.getByText("ESTADO DO MOTOR")).toHaveCount(0);
+    await expect(card.locator(".vref-engine-heading")).toHaveCount(0);
+    await expect(card.locator(".vref-motor-gauge")).toHaveCount(4);
+    await expect(card.locator(".vref-motor-gauge .needle")).toHaveCount(0);
+    await expect(card.locator(".vref-mini-bar")).toHaveCount(0);
+    await expect(card.locator(".vref-gauge-panel-rpm > h4")).toHaveText("RPM");
+    await expect(card.locator(".vref-dual-gauges .vref-gauge-panel")).toHaveCount(2);
+    expect(
+      await card.locator(".vref-gauge-panel-power .vref-dial-scale-label").count(),
+    ).toBeGreaterThanOrEqual(2);
+    expect(
+      await card.locator(".vref-gauge-panel-rpm .vref-dial-scale-label").count(),
+    ).toBeGreaterThanOrEqual(2);
+    expect(
+      await card.locator(".vref-gauge-panel-power .vref-dial-tick").count(),
+    ).toBeGreaterThanOrEqual(20);
+    expect(
+      await card.locator(".vref-gauge-panel-rpm .vref-dial-tick").count(),
+    ).toBeGreaterThanOrEqual(20);
+    await expect(card.locator(".vref-kw-nominal")).toHaveCount(0);
+    await expect(card.locator(".vref-gauge-panel-rpm .rpm-unit")).toHaveCount(0);
+    await expect(card.locator(".vref-engine-rpm .vref-rpm")).toHaveCount(0);
+    await expect(card.locator(".vref-flow-icon")).toHaveCount(0);
+    await expect(card.locator(".vref-generator-node")).toHaveCount(1);
+    await expect(card.locator('.vref-breaker[data-source-side="bottom"]')).toHaveCount(1);
+    await expect(card.getByText("REDE / GERADOR")).toBeVisible();
     await expect(card.locator(".vref-summary-grid")).toBeVisible();
     await expect(card.getByText(/ALARM LIST/)).toHaveCount(0);
     await expect(card).toHaveAttribute("data-mains-state", "unknown");
@@ -92,12 +124,25 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
   await expect(comap.getByRole("button", { name: "MAN" })).toBeVisible();
   await expect(comap.getByRole("button", { name: "AUT" })).toBeVisible();
   await expect(comap.getByRole("button", { name: "TEST" })).toBeVisible();
-  await expect(comap.getByText("CONTROL", { exact: true })).toBeVisible();
+  await expect(comap.getByText("CONTROLE", { exact: true })).toHaveCount(0);
 
-  await expect(dse.getByText("CONTROL (DSE STYLE)")).toBeVisible();
-  await expect(dse.getByRole("button", { name: "DSE manual mode" })).toBeVisible();
-  await expect(dse.getByRole("button", { name: "DSE manual mode" }).locator("svg")).toHaveCount(1);
+  await expect(dse.getByText("CONTROLE", { exact: true })).toHaveCount(0);
+  await expect(dse.getByRole("button", { name: "Modo manual DSE" })).toBeVisible();
+  await expect(dse.getByRole("button", { name: "Modo manual DSE" }).locator("svg")).toHaveCount(1);
   await expect(dse.getByRole("button", { name: "AUTO" })).toBeVisible();
+
+  const comapControlHeight = await comap
+    .locator(".vref-control")
+    .evaluate((element) => Math.round(element.getBoundingClientRect().height));
+  const dseControlHeight = await dse
+    .locator(".vref-control")
+    .evaluate((element) => Math.round(element.getBoundingClientRect().height));
+  expect(comapControlHeight).toBeLessThanOrEqual(32);
+  expect(dseControlHeight).toBeLessThanOrEqual(32);
+  await expect(comap.locator(".vref-flow-controller .vref-control")).toHaveCount(1);
+  await expect(dse.locator(".vref-flow-controller .vref-control")).toHaveCount(1);
+  await expect(comap.locator(":scope > .vref-control")).toHaveCount(0);
+  await expect(dse.locator(":scope > .vref-control")).toHaveCount(0);
 
   for (const card of [comap, dse]) {
     await expect(card.getByRole("button", { name: "START" })).toBeVisible();
@@ -106,6 +151,61 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
     await expect(card.getByText("FAULT RESET")).toHaveCount(0);
     await expect(card.locator(".vref-breaker-badge")).toHaveCount(2);
   }
+});
+
+test("vertical sem rede remove somente a topologia da concessionária em ComAp e DSE", async ({
+  page,
+}) => {
+  await login(page);
+
+  expect([201, 409]).toContain(
+    await createGenerator(page, {
+      tag: "VERTCOMAPISO",
+      controller: "ComAp InteliGen 200",
+      listenPort: 15111,
+      modbusUnit: 73,
+      rapidDeviceNum: 393,
+      powerTopology: "genset_only",
+    }),
+  );
+
+  expect([201, 409]).toContain(
+    await createGenerator(page, {
+      tag: "VERTDSEISO",
+      controller: "DSE DSE8620 MKII",
+      listenPort: 15112,
+      modbusUnit: 74,
+      rapidDeviceNum: 394,
+      powerTopology: "genset_only",
+    }),
+  );
+
+  await page.goto("/p/geradores");
+  const search = page.getByLabel("Buscar gerador");
+
+  for (const item of [
+    { vendor: "comap", tag: "VERTCOMAPISO" },
+    { vendor: "dse", tag: "VERTDSEISO" },
+  ]) {
+    await search.fill(item.tag);
+    const card = page
+      .locator(`[data-controller-vendor="${item.vendor}"]`)
+      .filter({ hasText: item.tag });
+    await expect(card).toBeVisible();
+    await expect(card).toHaveAttribute("data-power-topology", "genset_only");
+    await expect(card).toHaveAttribute("data-power-topology-source", "configured");
+    await expect(card.getByText("REDE / GERADOR")).toHaveCount(0);
+    await expect(card.locator(".vref-table-heading h4")).toHaveText("GERADOR");
+    await expect(card.locator('svg[aria-label="Diagrama unifilar sem rede"]')).toBeVisible();
+    await expect(card.locator(".vref-breaker-badge")).toHaveCount(1);
+    await expect(card.getByText("MCB", { exact: true })).toHaveCount(0);
+    await expect(card.getByText("GCB", { exact: true })).toBeVisible();
+    await expect(card.getByText("CARGA", { exact: true })).toBeVisible();
+    await expect(card.locator(".vref-flow-icon")).toHaveCount(0);
+    await expect(card.locator(".vref-generator-node")).toHaveCount(1);
+    await expect(card.locator('.vref-breaker[data-source-side="bottom"]')).toHaveCount(1);
+  }
+  await search.fill("");
 });
 
 test("vertical preserva todo o conteúdo e rola a grade quando a altura é curta", async ({
@@ -128,7 +228,7 @@ test("vertical preserva todo o conteúdo e rola a grade quando a altura é curta
     const page = await context.newPage();
     await login(page);
 
-    for (let index = 1; index <= 8; index += 1) {
+    for (let index = 1; index <= 12; index += 1) {
       const response = await createGenerator(page, {
         tag: "VFIT" + String(index).padStart(2, "0"),
         controller: index % 2 === 0 ? "DSE DSE8620 MKII" : "ComAp InteliGen 200",
@@ -141,6 +241,7 @@ test("vertical preserva todo o conteúdo e rola a grade quando a altura é curta
 
     await page.goto("/p/geradores");
     await expect(page.getByRole("button", { name: /^Todos$/ })).toBeVisible();
+    await page.getByLabel("Buscar gerador").fill("VFIT");
     await expect(page.locator(".vref-card-frame").first()).toBeVisible({
       timeout: 15_000,
     });
@@ -166,6 +267,19 @@ test("vertical preserva todo o conteúdo e rola a grade quando a altura é curta
             height: rect.height,
             cardOverflowHeight: card ? card.scrollHeight - card.clientHeight : 999,
             cardOverflowWidth: card ? card.scrollWidth - card.clientWidth : 999,
+            clippedSections: card
+              ? [...card.querySelectorAll<HTMLElement>(".vref-section")]
+                  .filter(
+                    (section) =>
+                      section.scrollHeight - section.clientHeight > 1 ||
+                      section.scrollWidth - section.clientWidth > 1,
+                  )
+                  .map((section) => ({
+                    className: section.className,
+                    overflowHeight: section.scrollHeight - section.clientHeight,
+                    overflowWidth: section.scrollWidth - section.clientWidth,
+                  }))
+              : ["missing-card"],
           };
         });
       const style = getComputedStyle(grid);
@@ -203,6 +317,7 @@ test("vertical preserva todo o conteúdo e rola a grade quando a altura é curta
       expect(frame.height).toBeGreaterThan(0);
       expect(frame.cardOverflowHeight).toBeLessThanOrEqual(1);
       expect(frame.cardOverflowWidth).toBeLessThanOrEqual(1);
+      expect(frame.clippedSections).toEqual([]);
     }
 
     expect(metrics.declaredColumns).toBeGreaterThan(0);

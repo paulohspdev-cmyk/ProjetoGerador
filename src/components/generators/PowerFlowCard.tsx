@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCommandGuard } from "@/components/scada/ScadaOpsProvider";
-import type { Generator } from "@/data/generators";
+import { generatorDisplayStatus, isGeneratorConnected, type Generator } from "@/data/generators";
 import { rcApi, type IndustrialCommandAction } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -57,7 +57,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     coolantUnit,
     fuel,
     fuelUnit,
-    fuelPercent,
+    fuelOutOfRange,
     battery,
     runHours,
     frequency,
@@ -73,6 +73,9 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
 
   const vendor = controllerVendor(gen);
   const dse = vendor === "dse";
+  // UNKNOWN preserva o card completo. Só escondemos a rede quando a topologia
+  // estável foi resolvida explicitamente como genset_only.
+  const hasMainsSource = gen.powerTopology !== "genset_only";
   const runningKnown = rpm != null && hasFreshMetric(gen, "rpm");
   const running = runningKnown && isPositiveMeasurement(rpm);
   const mcbKnown = hasFreshMetric(gen, "mcb_closed");
@@ -111,44 +114,45 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     ((runningKnown && running) ||
       hasPositiveMeasurement([genL1, genL2, genL3, generatorFrequencyKnown ? frequency : null]));
   const energyKwh = metricNumber(gen, "genset_kwh", undefined);
-  const requiredPower = metricNumber(gen, "required_power_kw", undefined);
+  const numberStarts = metricNumber(gen, "number_starts", undefined);
   const batteryVoltage = metricNumber(gen, "battery_voltage", battery);
-  const genCurrent =
-    [currentL1, currentL2, currentL3]
-      .filter((value): value is number => value != null)
-      .reduce((sum, value) => sum + value, 0) /
-    Math.max(1, [currentL1, currentL2, currentL3].filter((value) => value != null).length);
-  const currentKnown = [currentL1, currentL2, currentL3].some((value) => value != null);
+  const currentValues = [currentL1, currentL2, currentL3].filter(
+    (value): value is number => value != null,
+  );
+  const currentKnown = currentValues.length > 0;
+  const genCurrent = currentKnown
+    ? currentValues.reduce((sum, value) => sum + value, 0) / currentValues.length
+    : null;
 
   const electricalRows = useMemo(
     () => [
       {
-        label: "L1-N Voltage",
+        label: "Tensão L1-N",
         mains: formatUnit(mainsKnown ? mainsL1 : null, "V"),
         generator: formatUnit(genL1, "V"),
       },
       {
-        label: "L2-N Voltage",
+        label: "Tensão L2-N",
         mains: formatUnit(mainsKnown ? mainsL2 : null, "V"),
         generator: formatUnit(genL2, "V"),
       },
       {
-        label: "L3-N Voltage",
+        label: "Tensão L3-N",
         mains: formatUnit(mainsKnown ? mainsL3 : null, "V"),
         generator: formatUnit(genL3, "V"),
       },
       {
-        label: "Frequency",
+        label: "Frequência",
         mains: formatUnit(mainsKnown ? mainsFrequency : null, "Hz", 1),
         generator: formatUnit(frequency, "Hz", 1),
       },
       {
-        label: "Power Factor",
+        label: "Fator de potência",
         mains: formatNumber(mainsPf, 2),
         generator: formatNumber(powerFactor, 2),
       },
       {
-        label: "Current (A)",
+        label: "Corrente",
         mains: formatUnit(mainsCurrent, "A", 0),
         generator: formatUnit(currentKnown ? genCurrent : null, "A", 0),
       },
@@ -172,9 +176,9 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   );
 
   const valueRows = [
-    { icon: "clock" as const, label: "Run Hours", value: formatUnit(runHours, "h", 1) },
-    { icon: "zap" as const, label: "Energy", value: formatUnit(energyKwh, "kWh", 0) },
-    { icon: "gauge" as const, label: "Required Power", value: formatUnit(requiredPower, "kW", 0) },
+    { icon: "clock" as const, label: "Horímetro", value: formatUnit(runHours, "h", 1) },
+    { icon: "zap" as const, label: "Energia", value: formatUnit(energyKwh, "kWh", 0) },
+    { icon: "gauge" as const, label: "Partidas", value: formatNumber(numberStarts, 0) },
   ];
 
   const canOperate =
@@ -201,23 +205,24 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     }
   };
 
-  const online = gen.status === "online" || gen.status === "alerta";
+  const displayStatus = generatorDisplayStatus(gen);
+  const online = isGeneratorConnected(gen);
   const statusText =
-    gen.status === "alerta"
-      ? "ALARM"
-      : gen.status === "online"
-        ? "COMM OK"
-        : gen.status === "nao_configurado"
-          ? "NOT CONFIG"
-          : gen.telemetryStale
-            ? "COMM LOST"
-            : "OFFLINE";
+    displayStatus === "stale"
+      ? "SEM COMUNICAÇÃO"
+      : displayStatus === "alerta"
+        ? "ALARME"
+        : displayStatus === "online"
+          ? "COMUNICAÇÃO OK"
+          : displayStatus === "nao_configurado"
+            ? "NÃO CONFIGURADO"
+            : "FORA DE LINHA";
   const statusClass =
-    gen.status === "alerta"
+    displayStatus === "alerta"
       ? "is-alert"
-      : online
+      : displayStatus === "online"
         ? "is-online"
-        : gen.status === "nao_configurado"
+        : displayStatus === "nao_configurado"
           ? "is-unconfigured"
           : "is-offline";
   const modeLabel = headerMode(gen.mode, modeKnown);
@@ -227,11 +232,12 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       className={cn(
         "vref-card",
         dse ? "is-dse" : "is-comap",
-        mainsPresent ? "has-mains" : "no-mains",
-        gen.status === "alerta" && "has-alert",
-        gen.telemetryStale && "has-stale-telemetry",
+        hasMainsSource ? "has-mains-source" : "no-mains-source",
+        displayStatus === "alerta" && "has-alert",
       )}
       data-controller-vendor={vendor}
+      data-power-topology={gen.powerTopology ?? "unknown"}
+      data-power-topology-source={gen.powerTopologySource ?? "unknown"}
       data-mains-state={!mainsKnown ? "unknown" : mainsPresent ? "present" : "absent"}
       data-telemetry-state={gen.telemetryStale ? "stale" : online ? "live" : "unavailable"}
     >
@@ -245,11 +251,19 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
             <i /> {statusText}
           </span>
         </div>
+        <span className="vref-header-mode">MODO: {modeLabel}</span>
       </header>
 
-      <VerticalPowerGauge powerKw={powerKw} nominalKw={nominalPower} />
+      <VerticalPowerGauge
+        powerKw={powerKw}
+        nominalKw={nominalPower}
+        nominalSource={gen.nominalPowerSource ?? null}
+        rpm={rpm}
+        rpmMax={gen.metricLimits?.["rpm"]?.displayMax ?? null}
+      />
 
       <VerticalPowerFlow
+        hasMainsSource={hasMainsSource}
         mainsPresent={mainsPresent}
         mainsKnown={mainsKnown}
         mainsFrequency={mainsFrequency}
@@ -257,7 +271,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         generatorPowerKw={powerKw}
         generatorKnown={generatorKnown}
         generatorPresent={generatorPresent}
-        modeLabel={modeLabel}
         mcb={gen.mcb}
         mcbKnown={mcbKnown}
         gcb={gen.gcb}
@@ -270,15 +283,16 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         canGcbClose={canAction("gcb_close")}
         busy={commandBusy}
         onCommand={(action) => void runCommand(action)}
-      />
-
-      <VerticalControls
-        gen={gen}
-        dse={dse}
-        modeKnown={modeKnown}
-        canOperate={canOperate}
-        busy={commandBusy}
-        onCommand={(action) => void runCommand(action)}
+        controls={
+          <VerticalControls
+            gen={gen}
+            dse={dse}
+            modeKnown={modeKnown}
+            canOperate={canOperate}
+            busy={commandBusy}
+            onCommand={(action) => void runCommand(action)}
+          />
+        }
       />
       {commandMessage && <p className="vref-command-message">{commandMessage}</p>}
 
@@ -290,15 +304,18 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         fuel={fuel}
         fuelUnit={fuelUnit}
         battery={batteryVoltage}
-        rpm={rpm}
+        batteryPercent={percents.battery}
         oilPercent={percents.oil}
         coolantPercent={percents.coolant}
-        fuelPercent={fuelPercent}
-        runningKnown={runningKnown}
-        running={running}
+        fuelPercent={percents.fuel}
+        fuelOutOfRange={fuelOutOfRange}
       />
 
-      <VerticalTables electricalRows={electricalRows} valueRows={valueRows} />
+      <VerticalTables
+        hasMainsSource={hasMainsSource}
+        electricalRows={electricalRows}
+        valueRows={valueRows}
+      />
     </article>
   );
 }

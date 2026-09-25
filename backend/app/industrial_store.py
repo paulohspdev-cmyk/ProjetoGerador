@@ -185,7 +185,8 @@ def refresh_observed_alarms(generators: list[dict]) -> int:
         if not gid:
             continue
         status = str(generator.get("status") or "")
-        if status == "offline":
+        telemetry_stale = bool(generator.get("telemetryStale"))
+        if status == "offline" or telemetry_stale:
             key, item = _desired_alarm(
                 f"comm:{gid}", generator, "derived.communication", "COMM_LOSS", "fault",
                 str(generator.get("lastError") or "Comunicação/telemetria indisponível"),
@@ -214,6 +215,10 @@ def refresh_observed_alarms(generators: list[dict]) -> int:
     # Alarme e seu evento de transição são gravados na MESMA transação. Isto
     # evita uma segunda conexão escritora concorrendo com o SQLite bloqueado.
     with db.connect() as conn:
+        # Serializa a leitura do estado + transições subsequentes. Sem o lock
+        # antecipado, dois workers podem observar a mesma alarm_key ausente e
+        # ambos tentar INSERT, causando UNIQUE constraint em uma das threads.
+        conn.execute("BEGIN IMMEDIATE")
         rows = conn.execute(
             "SELECT * FROM industrial_alarms WHERE source LIKE 'derived.%' OR source='rapid.metric'"
         ).fetchall()
@@ -538,37 +543,41 @@ def process_escalations(generators: list[dict]) -> int:
                 continue
             if age < int(policy.get("after_seconds") or 0):
                 continue
+            # Reserva + enqueue + contador pertencem à mesma transação. Assim,
+            # mesmo se dois workers avaliarem o mesmo alarme simultaneamente,
+            # somente um deles materializa aquela ocorrência/repetição.
             with db.connect() as conn:
+                conn.execute("BEGIN IMMEDIATE")
                 run = conn.execute(
                     "SELECT sends,last_sent FROM escalation_runs WHERE policy_id=? AND alarm_key=?",
                     (policy["id"], alarm["alarm_key"]),
                 ).fetchone()
-            sends = int(run["sends"]) if run else 0
-            last_sent = int(run["last_sent"] or 0) if run else 0
-            if sends >= int(policy.get("max_repeats") or 1):
-                continue
-            repeat = int(policy.get("repeat_seconds") or 0)
-            if sends > 0 and (repeat <= 0 or now - last_sent < repeat):
-                continue
+                sends = int(run["sends"]) if run else 0
+                last_sent = int(run["last_sent"] or 0) if run else 0
+                if sends >= int(policy.get("max_repeats") or 1):
+                    continue
+                repeat = int(policy.get("repeat_seconds") or 0)
+                if sends > 0 and (repeat <= 0 or now - last_sent < repeat):
+                    continue
 
-            platform_store.enqueue_notification(
-                "industrial.alarm.escalation",
-                policy["channel"],
-                destination=policy.get("destination") or "",
-                subject=f"[{alarm['severity'].upper()}] RC Geradores",
-                body=alarm.get("message") or alarm["alarm_key"],
-                payload={
-                    "alarmKey": alarm["alarm_key"],
-                    "generatorId": alarm.get("generator_id"),
-                    "severity": alarm["severity"],
-                    "policyId": policy["id"],
-                },
-            )
-            with db.connect() as conn:
+                platform_store.enqueue_notification_in_connection(
+                    conn,
+                    "industrial.alarm.escalation",
+                    policy["channel"],
+                    destination=policy.get("destination") or "",
+                    subject=f"[{alarm['severity'].upper()}] RC Geradores",
+                    body=alarm.get("message") or alarm["alarm_key"],
+                    payload={
+                        "alarmKey": alarm["alarm_key"],
+                        "generatorId": alarm.get("generator_id"),
+                        "severity": alarm["severity"],
+                        "policyId": policy["id"],
+                    },
+                )
                 conn.execute(
                     """INSERT INTO escalation_runs(policy_id,alarm_key,sends,last_sent) VALUES (?,?,1,?)
                        ON CONFLICT(policy_id,alarm_key) DO UPDATE SET sends=escalation_runs.sends+1,last_sent=excluded.last_sent""",
                     (policy["id"], alarm["alarm_key"], now),
                 )
-            queued += 1
+                queued += 1
     return queued

@@ -1,24 +1,35 @@
-import type { GenStatus } from "@/data/generators";
-import { statusLabel } from "@/data/generators";
+import type { GeneratorDisplayStatus, GenStatus } from "@/data/generators";
+import { generatorDisplayStatus, statusLabel } from "@/data/generators";
 import { cn } from "@/lib/utils";
 
-const styles: Record<GenStatus, string> = {
+const styles: Record<GeneratorDisplayStatus, string> = {
   online: "bg-online/15 text-online border-online/40",
   alerta: "bg-alert/15 text-alert border-alert/40",
   offline: "bg-offline/15 text-offline border-offline/40",
   nao_configurado: "bg-muted text-muted-foreground border-border",
+  stale: "bg-offline/15 text-offline border-offline/40",
 };
 
-export function StatusPill({ status, className }: { status: GenStatus; className?: string }) {
+export function StatusPill({
+  status,
+  telemetryStale,
+  className,
+}: {
+  status: GenStatus;
+  telemetryStale?: boolean | undefined;
+  className?: string;
+}) {
+  const displayStatus = generatorDisplayStatus({ status, telemetryStale });
+  const label = displayStatus === "stale" ? "SEM COMUNICAÇÃO" : statusLabel[displayStatus];
   return (
     <span
       className={cn(
         "num rounded-sm border px-1.5 py-0.5 text-[9px] font-bold tracking-wider",
-        styles[status],
+        styles[displayStatus],
         className,
       )}
     >
-      {statusLabel[status]}
+      {label}
     </span>
   );
 }

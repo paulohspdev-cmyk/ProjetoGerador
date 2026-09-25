@@ -14,19 +14,8 @@ import { industrialApi } from "@/lib/industrial-api";
 import { rcApi, type GeneratorTransport } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { connectionOptions, GeneratorConnectionFields } from "./GeneratorConnectionFields";
+import { GeneratorIdentityFields, type CatalogController } from "./GeneratorIdentityFields";
 import { useGenerators } from "./GeneratorsProvider";
-
-type CatalogController = {
-  catalogId?: string;
-  manufacturer: string;
-  family?: string;
-  model: string;
-  application?: string;
-  provisionable?: boolean;
-  registerable?: boolean;
-  onboardingMode?: "production" | "lab_read_only" | "inventory";
-  packLifecycle?: string | null;
-};
 
 type LibraryWithCatalog = {
   catalog?: CatalogController[];
@@ -59,6 +48,8 @@ export function RegisterGeneratorButton({
   const [listenPort, setListenPort] = useState("");
   const [modbusUnit, setModbusUnit] = useState("1");
   const [rapidDeviceNum, setRapidDeviceNum] = useState("");
+  const [nominalPower, setNominalPower] = useState("");
+  const [fuelCapacityLiters, setFuelCapacityLiters] = useState("");
   const [baudRate, setBaudRate] = useState("");
   const [parity, setParity] = useState("");
   const [stopBits, setStopBits] = useState("");
@@ -135,6 +126,8 @@ export function RegisterGeneratorButton({
     setListenPort("");
     setModbusUnit("1");
     setRapidDeviceNum("");
+    setNominalPower("");
+    setFuelCapacityLiters("");
     setBaudRate("");
     setParity("");
     setStopBits("");
@@ -156,12 +149,26 @@ export function RegisterGeneratorButton({
   );
   const effectiveUnit = Number(modbusUnit || 1);
   const effectiveBaud = Number(baudRate);
+  const effectiveNominalPower = nominalPower.trim() ? Number(nominalPower) : null;
+  const effectiveFuelCapacity = fuelCapacityLiters.trim() ? Number(fuelCapacityLiters) : null;
+  const nominalPowerValid =
+    effectiveNominalPower == null ||
+    (Number.isFinite(effectiveNominalPower) &&
+      effectiveNominalPower > 0 &&
+      effectiveNominalPower <= 100000);
+  const fuelCapacityValid =
+    effectiveFuelCapacity == null ||
+    (Number.isFinite(effectiveFuelCapacity) &&
+      effectiveFuelCapacity > 0 &&
+      effectiveFuelCapacity <= 100000);
 
   const isLabReadOnly = selectedController?.onboardingMode === "lab_read_only";
   const isCatalogRegistration = Boolean(
     selectedController && !selectedController.provisionable && !isLabReadOnly,
   );
-  const canContinueStep1 = Boolean(site.trim() && controller && selectedController);
+  const canContinueStep1 = Boolean(
+    site.trim() && controller && selectedController && nominalPowerValid && fuelCapacityValid,
+  );
   const canContinueStep2 =
     transport === "reverse_tcp"
       ? effectivePort > 0
@@ -212,6 +219,14 @@ export function RegisterGeneratorButton({
       setError("Escolha a unidade e a controladora.");
       return;
     }
+    if (!nominalPowerValid) {
+      setError("A potência nominal deve ficar entre 0 e 100000 kW.");
+      return;
+    }
+    if (!fuelCapacityValid) {
+      setError("A capacidade do tanque deve ficar entre 0 e 100000 L.");
+      return;
+    }
     if (transport !== "reverse_tcp" && !host.trim()) {
       setError(
         isSerial
@@ -252,6 +267,8 @@ export function RegisterGeneratorButton({
         modbusUnit: effectiveUnit,
         ...(host.trim() ? { ip: host.trim() } : {}),
         ...(rapidDeviceNum ? { rapidDeviceNum: Number(rapidDeviceNum) } : {}),
+        ...(effectiveNominalPower != null ? { nominalPower: effectiveNominalPower } : {}),
+        ...(effectiveFuelCapacity != null ? { fuelCapacityLiters: effectiveFuelCapacity } : {}),
       });
       setCreatedId(created.id);
 
@@ -366,55 +383,21 @@ export function RegisterGeneratorButton({
 
           <form onSubmit={onSubmit} className="space-y-4">
             {step === 1 && (
-              <div className="space-y-4">
-                <label className="block text-sm font-semibold">
-                  Nome do gerador
-                  <input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Ex.: Gerador principal"
-                    className="mt-2 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
-                    maxLength={160}
-                  />
-                </label>
-                <label className="block text-sm font-semibold">
-                  Unidade
-                  <input
-                    list="rc-generator-sites"
-                    value={site}
-                    onChange={(e) => setSite(e.target.value)}
-                    className="mt-2 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
-                    required
-                  />
-                  <datalist id="rc-generator-sites">
-                    {sites.map((siteName) => (
-                      <option key={siteName} value={siteName} />
-                    ))}
-                  </datalist>
-                </label>
-
-                <label className="block text-sm font-semibold">
-                  Controladora
-                  <select
-                    value={controller}
-                    onChange={(e) => setController(e.target.value)}
-                    disabled={loading || !gensetCatalog.length}
-                    className="mt-2 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
-                  >
-                    <option value="">{loading ? "Carregando…" : "Selecione"}</option>
-                    {gensetCatalog.map((item) => (
-                      <option key={item.catalogId || item.model} value={item.model}>
-                        {item.manufacturer} · {item.model}
-                        {item.onboardingMode === "lab_read_only"
-                          ? " · LAB (somente leitura)"
-                          : item.provisionable
-                            ? " · PRODUÇÃO"
-                            : " · CADASTRO LIBERADO"}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
+              <GeneratorIdentityFields
+                name={name}
+                setName={setName}
+                site={site}
+                setSite={setSite}
+                sites={sites}
+                controller={controller}
+                setController={setController}
+                loading={loading}
+                gensetCatalog={gensetCatalog}
+                nominalPower={nominalPower}
+                setNominalPower={setNominalPower}
+                fuelCapacityLiters={fuelCapacityLiters}
+                setFuelCapacityLiters={setFuelCapacityLiters}
+              />
             )}
 
             {step === 2 && (
@@ -459,6 +442,12 @@ export function RegisterGeneratorButton({
                   <div>
                     <dt className="text-xs text-muted-foreground">Unidade</dt>
                     <dd className="font-bold">{site}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Potência nominal</dt>
+                    <dd className="font-bold">
+                      {effectiveNominalPower == null ? "N/D" : `${effectiveNominalPower} kW`}
+                    </dd>
                   </div>
                   <div>
                     <dt className="text-xs text-muted-foreground">Controladora</dt>

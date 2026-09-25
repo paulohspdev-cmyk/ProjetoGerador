@@ -23,6 +23,7 @@ LOGIN_LOCK_SECONDS = int(os.environ.get("RC_LOGIN_LOCK_SECONDS", "900"))
 PASSWORD_RESET_TTL = int(os.environ.get("RC_PASSWORD_RESET_TTL", "1800"))
 PUBLIC_BASE_URL = os.environ.get("RC_PUBLIC_BASE_URL", "").rstrip("/")
 TOTP_KEY_FILE = Path(os.environ.get("RC_TOTP_KEY_FILE", DATA_DIR / ".secrets" / "totp-fernet.key"))
+TWO_FACTOR_ENFORCED = os.environ.get("RC_2FA_ENFORCED", "1").strip() == "1"
 
 ADMIN_NAME = os.environ.get("RC_ADMIN_NAME", "Administrador")
 ADMIN_EMAIL = os.environ.get("RC_ADMIN_EMAIL", "admin@rcgeradores.local").strip().lower()
@@ -50,5 +51,13 @@ RETENTION_NOTIFICATION_DAYS = int(os.environ.get("RC_RETENTION_NOTIFICATION_DAYS
 CORS_ORIGINS = [
     item.strip()
     for item in os.environ.get("RC_CORS_ORIGINS", "http://localhost,http://127.0.0.1").split(",")
+    if item.strip()
+]
+TRUSTED_PROXY_CIDRS = [
+    item.strip()
+    for item in os.environ.get(
+        "RC_TRUSTED_PROXY_CIDRS",
+        "127.0.0.1/32,::1/128",
+    ).split(",")
     if item.strip()
 ]

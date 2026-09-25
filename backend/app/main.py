@@ -1,11 +1,11 @@
 from contextlib import asynccontextmanager
+import logging
 import sqlite3
 import time
-from pathlib import Path
-
+import uuid
 from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from . import db, domain_store, ops_store, platform_store, transport_store
 from .auth import (
@@ -59,7 +59,7 @@ from .ops_schemas import (
 )
 from .rapid import available_metrics, dashboard, load_bindings, overlay_generators, trend_for_generator
 from .production_guard import validate_production_runtime
-from .reporting import generate_report
+from .reporting import generate_report, safe_report_artifact_path
 from .schemas import CommandRequest, GeneratorCreate, GeneratorUpdate, LoginRequest, UserCreate, UserUpdate
 from .security_service import begin_login, totp_required, verify_user_totp
 
@@ -95,12 +95,41 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+_api_log = logging.getLogger("rc-geradores.api")
+
+
+@app.middleware("http")
+async def request_observability(request: Request, call_next):
+    request_id = uuid.uuid4().hex
+    request.state.request_id = request_id
+    try:
+        response = await call_next(request)
+    except Exception:
+        _api_log.exception(
+            "unhandled request failure request_id=%s method=%s path=%s",
+            request_id,
+            request.method,
+            request.url.path,
+        )
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "detail": "Erro interno do servidor",
+                "requestId": request_id,
+            },
+            headers={"X-Request-ID": request_id},
+        )
+    response.headers["X-Request-ID"] = request_id
+    return response
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["X-Request-ID"],
 )
 
 
@@ -110,6 +139,25 @@ def live_generators():
 
 def actor(user: dict) -> str:
     return user.get("email") or user.get("name") or user.get("id") or "unknown"
+
+
+def _generator_integrity_detail(exc: sqlite3.IntegrityError) -> str:
+    detail = str(exc).lower()
+    if (
+        "idx_generators_reverse_identity_unique" in detail
+        or "domain controller_connections reverse identity conflict" in detail
+        or ("generators.listen_port" in detail and "generators.modbus_unit" in detail)
+    ):
+        return "Porta TCP reversa e Modbus Unit já estão em uso por outro gerador/controladora"
+    if (
+        "idx_generators_rapid_device_unique" in detail
+        or "generators.rapid_device_num" in detail
+        or "domain controller_connections rapid_device_num conflict" in detail
+    ):
+        return "Rapid Device já está associado a outro gerador/controladora"
+    if "generators.tag" in detail:
+        return "Tag de gerador já cadastrada"
+    return "Conflito de integridade no cadastro do gerador"
 
 
 def _agenda_public(item: dict) -> dict:
@@ -253,6 +301,8 @@ def users_update(user_id: str, payload: UserUpdate, user: dict = Depends(require
         db_patch["password_hash"] = hash_password(patch["password"])
     try:
         updated = db.update_user(user_id, db_patch, actor=actor(user))
+    except db.LastAdminError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     return public_user(updated)
@@ -267,7 +317,10 @@ def users_delete(user_id: str, user: dict = Depends(require_manage_users)):
         raise HTTPException(status_code=409, detail="Você não pode excluir o próprio usuário")
     if target["role"] == "administrador" and target["active"] and db.count_active_admins() <= 1:
         raise HTTPException(status_code=409, detail="Não é possível excluir o último administrador")
-    db.delete_user(user_id, actor=actor(user))
+    try:
+        db.delete_user(user_id, actor=actor(user))
+    except db.LastAdminError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -292,7 +345,9 @@ def generator_create(payload: GeneratorCreate, user: dict = Depends(require_crea
     try:
         created = db.create_generator(payload.to_db(), actor=actor(user))
     except sqlite3.IntegrityError as exc:
-        raise HTTPException(status_code=409, detail="Tag de gerador já cadastrada") from exc
+        raise HTTPException(status_code=409, detail=_generator_integrity_detail(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     domain_store.sync_legacy_generators()
     return overlay_generators([created])[0]
 
@@ -302,7 +357,9 @@ def generator_update(generator_id: str, payload: GeneratorUpdate, user: dict = D
     try:
         updated = db.update_generator(generator_id, payload.to_db(), actor=actor(user))
     except sqlite3.IntegrityError as exc:
-        raise HTTPException(status_code=409, detail="Conflito no cadastro do gerador") from exc
+        raise HTTPException(status_code=409, detail=_generator_integrity_detail(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     if not updated:
         raise HTTPException(status_code=404, detail="Gerador não encontrado")
     domain_store.sync_legacy_generators()
@@ -444,7 +501,10 @@ def work_orders_list(user: dict = Depends(require_view)):
 
 @app.post("/api/work-orders", status_code=status.HTTP_201_CREATED)
 def work_orders_create(payload: WorkOrderCreate, user: dict = Depends(require_create)):
-    return ops_store.create_work_order(payload.to_db(), actor(user))
+    try:
+        return ops_store.create_work_order(payload.to_db(), actor(user))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @app.patch("/api/work-orders/{item_id}")
@@ -462,7 +522,10 @@ def agenda_list(user: dict = Depends(require_view)):
 
 @app.post("/api/agenda", status_code=status.HTTP_201_CREATED)
 def agenda_create(payload: AgendaCreate, user: dict = Depends(require_create)):
-    return _agenda_public(ops_store.create_agenda(payload.to_db(), actor(user)))
+    try:
+        return _agenda_public(ops_store.create_agenda(payload.to_db(), actor(user)))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @app.get("/api/automation/rules")
@@ -500,8 +563,14 @@ def reports_create(payload: ReportCreate, user: dict = Depends(require_create)):
     if payload.format.upper() not in {"CSV", "XLSX", "PDF"}:
         raise HTTPException(status_code=422, detail="Formato inválido")
     report = ops_store.create_report(payload.model_dump(), actor(user))
-    generate_report(report, live_generators())
-    return report
+    try:
+        generate_report(report, live_generators())
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="Falha ao gerar relatório") from exc
+    return next(
+        (item for item in ops_store.list_reports() if item["id"] == report["id"]),
+        report,
+    )
 
 
 @app.get("/api/reports/{report_id}/download")
@@ -510,12 +579,20 @@ def reports_download(report_id: str, user: dict = Depends(require_view)):
     if not report:
         raise HTTPException(status_code=404, detail="Relatório não encontrado")
     artifact = platform_store.get_report_artifact(report_id)
-    if not artifact or not Path(artifact["path"]).exists():
+    if not artifact:
         raise HTTPException(
             status_code=410,
             detail="Artefato do relatório não está mais disponível. Gere uma nova fotografia operacional.",
         )
-    path = Path(artifact["path"])
+    try:
+        path = safe_report_artifact_path(artifact["path"])
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    if not path.exists() or not path.is_file():
+        raise HTTPException(
+            status_code=410,
+            detail="Artefato do relatório não está mais disponível. Gere uma nova fotografia operacional.",
+        )
     media_type = artifact["media_type"]
     return FileResponse(path, media_type=media_type, filename=path.name)
 
@@ -535,6 +612,8 @@ def webhooks_create(payload: WebhookCreate, user: dict = Depends(require_admin))
 @app.patch("/api/webhooks/{item_id}")
 def webhooks_update(item_id: str, payload: WebhookUpdate, user: dict = Depends(require_admin)):
     patch = payload.model_dump(exclude_unset=True)
+    if "url" in patch and not str(patch["url"]).lower().startswith(("https://", "http://")):
+        raise HTTPException(status_code=422, detail="URL de webhook inválida")
     if "status" in patch and patch["status"] not in {"Ativo", "Pausado"}:
         raise HTTPException(status_code=422, detail="Status de webhook inválido")
     updated = ops_store.update_webhook(item_id, patch, actor(user))
@@ -562,7 +641,13 @@ def backups_list(user: dict = Depends(require_admin)):
 
 @app.post("/api/backups", status_code=status.HTTP_201_CREATED)
 def backups_create(user: dict = Depends(require_admin)):
-    return _backup_public(create_full_backup(actor(user)))
+    result = create_full_backup(actor(user))
+    if result.get("result") != "OK":
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Backup não foi concluído. Consulte o histórico de backups e a auditoria.",
+        )
+    return _backup_public(result)
 
 
 @app.get("/api/alarms/ack")

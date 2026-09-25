@@ -15,6 +15,7 @@ from .config import (
     RAPID_READER_DLL,
 )
 from .controller_library import pack_for_model
+from .power_topology import resolve_power_topology
 from . import db
 
 _cache = {"at": 0.0, "channels": {}, "error": "", "requested": set()}
@@ -162,6 +163,20 @@ def _cache_result(nums, channels, error=""):
     _cache["requested"] = set(nums)
 
 
+def _parse_reader_channels(payload):
+    """Normaliza a resposta do reader sem transformar ausência de valor em zero físico."""
+    channels = {}
+    for item in payload.get("channels", []):
+        defined = bool(item.get("defined", False))
+        has_value = "val" in item and item.get("val") is not None
+        channels[int(item["cnl"])] = {
+            "val": item.get("val"),
+            "stat": int(item.get("stat", 0)),
+            "defined": bool(defined and has_value),
+        }
+    return channels
+
+
 def read_channels(channel_nums):
     """Lê canais em lote, com cache positivo e negativo contra stampede .NET."""
     nums = sorted({int(n) for n in channel_nums})
@@ -210,14 +225,7 @@ def read_channels(channel_nums):
 
         try:
             payload = json.loads(proc.stdout)
-            channels = {
-                int(item["cnl"]): {
-                    "val": item.get("val", 0),
-                    "stat": int(item.get("stat", 0)),
-                    "defined": bool(item.get("defined", False)),
-                }
-                for item in payload.get("channels", [])
-            }
+            channels = _parse_reader_channels(payload)
         except Exception as exc:
             error = f"Resposta inválida do motor de telemetria: {exc}"
             _cache_result(nums, {}, error)
@@ -543,7 +551,17 @@ def _has_controller_health(values, configured):
     preferred = [key for key in _CONTROLLER_HEALTH_KEYS if key in set(configured)]
     if preferred:
         return any(key in values for key in preferred)
-    return bool(values)
+    # Sem uma métrica explicitamente classificada como health, qualquer valor
+    # periférico prova apenas telemetria parcial — nunca comunicação saudável.
+    return False
+
+
+def _positive_finite_number(value):
+    try:
+        number = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return number if math.isfinite(number) and number > 0 else None
 
 
 def _frontend_generator(
@@ -566,6 +584,41 @@ def _frontend_generator(
     configured_metrics = sorted(set(configured_metrics or []))
     stale_metrics = sorted(set(stale_metrics or []))
     units = _metric_units(generator, configured_metrics)
+    live_nominal_power = (
+        _positive_finite_number(values.get("nominal_power_kw"))
+        if not telemetry_stale and "nominal_power_kw" in defined_metrics
+        else None
+    )
+    cadastral_nominal_power = _positive_finite_number(generator.get("nominal_power_kw"))
+    nominal_power = (
+        live_nominal_power if live_nominal_power is not None else cadastral_nominal_power
+    )
+    nominal_power_source = (
+        "telemetry"
+        if live_nominal_power is not None
+        else "cadastral"
+        if cadastral_nominal_power is not None
+        else None
+    )
+    live_fuel_capacity = None
+    if not telemetry_stale:
+        for capacity_key in ("fuel_capacity_l", "fuel_capacity"):
+            if capacity_key not in defined_metrics:
+                continue
+            live_fuel_capacity = _positive_finite_number(values.get(capacity_key))
+            if live_fuel_capacity is not None:
+                break
+    cadastral_fuel_capacity = _positive_finite_number(generator.get("fuel_capacity_l"))
+    fuel_capacity = (
+        live_fuel_capacity if live_fuel_capacity is not None else cadastral_fuel_capacity
+    )
+    fuel_capacity_source = (
+        "telemetry"
+        if live_fuel_capacity is not None
+        else "cadastral"
+        if cadastral_fuel_capacity is not None
+        else None
+    )
     metric_states = {
         key: {
             "configured": True,
@@ -576,6 +629,12 @@ def _frontend_generator(
         }
         for key in configured_metrics
     }
+    power_topology, power_topology_source = resolve_power_topology(
+        generator,
+        configured_metrics,
+        binding_present,
+    )
+
     ui_status = (
         "nao_configurado"
         if not enabled or status == "not_configured"
@@ -593,6 +652,8 @@ def _frontend_generator(
         "customer": generator.get("customer") or "",
         "controller": generator.get("controller_model") or generator.get("controller_type") or "",
         "controllerType": generator.get("controller_type") or "",
+        "powerTopology": power_topology,
+        "powerTopologySource": power_topology_source,
         "site": generator.get("site") or "",
         "enabled": enabled,
         "status": ui_status,
@@ -605,7 +666,12 @@ def _frontend_generator(
         "battery": values.get("battery_voltage"),
         "frequency": values.get("frequency"),
         "mainsFrequency": values.get("mains_frequency"),
-        "nominalPower": values.get("nominal_power_kw"),
+        "nominalPower": nominal_power,
+        "nominalPowerConfigured": cadastral_nominal_power,
+        "nominalPowerSource": nominal_power_source,
+        "fuelCapacityLiters": fuel_capacity,
+        "fuelCapacityConfigured": cadastral_fuel_capacity,
+        "fuelCapacitySource": fuel_capacity_source,
         "rpm": values.get("rpm"),
         "load": values.get("power_kw"),
         "oilPressure": values.get("oil_pressure"),
@@ -643,9 +709,9 @@ def _frontend_generator(
         "metricLimits": _metric_limits(generator),
         "capabilities": _effective_capabilities(generator, status, binding_present),
         "telemetrySource": "last_known"
-        if telemetry_stale
+        if telemetry_stale and values
         else "rapid_scada"
-        if binding_present and status in {"online", "fault", "connected", "partial"}
+        if not telemetry_stale and binding_present and status in {"online", "fault", "connected", "partial"}
         else "none",
         "rapidDeviceNum": generator.get("rapid_device_num"),
         "telemetryStale": bool(telemetry_stale),
@@ -810,7 +876,7 @@ def _overlay_generators(generators):
                     binding_present=True,
                     health=health,
                     telemetry_at=stale_at,
-                    telemetry_stale=bool(stale_values),
+                    telemetry_stale=True,
                 )
             )
         elif values:
@@ -872,7 +938,7 @@ def _overlay_generators(generators):
                     binding_present=True,
                     health=health,
                     telemetry_at=stale_at,
-                    telemetry_stale=bool(stale_values),
+                    telemetry_stale=True,
                 )
             )
         else:
@@ -892,7 +958,7 @@ def _overlay_generators(generators):
                     binding_present=True,
                     health=health,
                     telemetry_at=stale_at,
-                    telemetry_stale=bool(stale_values),
+                    telemetry_stale=True,
                 )
             )
 
@@ -936,12 +1002,20 @@ def _current_metric_keys(generator: dict) -> set[str]:
 
 
 def dashboard(generators):
+    def effective_status(generator):
+        status = generator.get("status")
+        if status == "nao_configurado":
+            return status
+        if generator.get("telemetryStale"):
+            return "offline"
+        return status
+
     return {
         "total": len(generators),
-        "online": sum(g["status"] == "online" for g in generators),
-        "alerts": sum(g["status"] == "alerta" for g in generators),
-        "offline": sum(g["status"] == "offline" for g in generators),
-        "notConfigured": sum(g["status"] == "nao_configurado" for g in generators),
+        "online": sum(effective_status(g) == "online" for g in generators),
+        "alerts": sum(effective_status(g) == "alerta" for g in generators),
+        "offline": sum(effective_status(g) == "offline" for g in generators),
+        "notConfigured": sum(effective_status(g) == "nao_configurado" for g in generators),
         "running": sum(
             "rpm" in _current_metric_keys(g)
             and g.get("rpm") is not None

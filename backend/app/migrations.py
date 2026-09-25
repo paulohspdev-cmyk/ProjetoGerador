@@ -10,7 +10,7 @@ import time
 
 from . import db
 
-LATEST_SCHEMA_VERSION = 1
+LATEST_SCHEMA_VERSION = 5
 
 _REQUIRED_BASELINE_TABLES = {
     "generators",
@@ -32,7 +32,99 @@ def _baseline_v1(conn) -> None:
         raise RuntimeError("Schema base incompleto; tabelas ausentes: " + ", ".join(missing))
 
 
-_MIGRATIONS = {1: _baseline_v1}
+def _operator_role_v2(conn) -> None:
+    """Alinha o CHECK de users.role ao RBAC que já expõe o papel operador."""
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='users'"
+    ).fetchone()
+    schema = str(row[0] or "") if row else ""
+    if "'operador'" in schema:
+        return
+
+    # Não renomeamos a tabela original: as FKs filhas continuam apontando para
+    # "users". Com foreign_keys temporariamente desligado, a troca é atômica no
+    # mesmo arquivo e validada antes de reativar o enforcement.
+    conn.execute("PRAGMA foreign_keys=OFF")
+    try:
+        conn.executescript(
+            """
+            BEGIN IMMEDIATE;
+            CREATE TABLE users_v2 (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+                password_hash TEXT NOT NULL,
+                role TEXT NOT NULL CHECK(role IN ('administrador','operador','cadastro','visualizacao')),
+                active INTEGER NOT NULL DEFAULT 1,
+                last_access INTEGER,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL
+            );
+            INSERT INTO users_v2(
+                id,name,email,password_hash,role,active,last_access,created_at,updated_at
+            )
+            SELECT id,name,email,password_hash,role,active,last_access,created_at,updated_at
+            FROM users;
+            DROP TABLE users;
+            ALTER TABLE users_v2 RENAME TO users;
+            COMMIT;
+            """
+        )
+    except Exception:
+        if conn.in_transaction:
+            conn.rollback()
+        raise
+    finally:
+        conn.execute("PRAGMA foreign_keys=ON")
+
+    violations = conn.execute("PRAGMA foreign_key_check").fetchall()
+    if violations:
+        preview = "; ".join(str(tuple(item)) for item in violations[:20])
+        raise RuntimeError("Migração v2 deixou FKs inválidas: " + preview)
+
+
+def _generator_nominal_power_v3(conn) -> None:
+    """Adiciona rating cadastral opcional sem inferir valor por modelo/nome."""
+    columns = {
+        str(row[1])
+        for row in conn.execute("PRAGMA table_info(generators)").fetchall()
+    }
+    if "nominal_power_kw" in columns:
+        return
+    conn.execute("ALTER TABLE generators ADD COLUMN nominal_power_kw REAL")
+
+
+def _generator_fuel_capacity_v4(conn) -> None:
+    """Adiciona capacidade de tanque opcional sem converter % em litros por suposição."""
+    columns = {
+        str(row[1])
+        for row in conn.execute("PRAGMA table_info(generators)").fetchall()
+    }
+    if "fuel_capacity_l" in columns:
+        return
+    conn.execute("ALTER TABLE generators ADD COLUMN fuel_capacity_l REAL")
+
+
+def _generator_power_topology_v5(conn) -> None:
+    """Persiste somente override estável; 'auto' continua sendo o padrão seguro."""
+    columns = {
+        str(row[1])
+        for row in conn.execute("PRAGMA table_info(generators)").fetchall()
+    }
+    if "power_topology" in columns:
+        return
+    conn.execute(
+        "ALTER TABLE generators ADD COLUMN power_topology TEXT NOT NULL DEFAULT 'auto'"
+    )
+
+
+_MIGRATIONS = {
+    1: _baseline_v1,
+    2: _operator_role_v2,
+    3: _generator_nominal_power_v3,
+    4: _generator_fuel_capacity_v4,
+    5: _generator_power_topology_v5,
+}
 
 
 def run_migrations() -> int:
@@ -54,11 +146,22 @@ def run_migrations() -> int:
             migration = _MIGRATIONS.get(version)
             if migration is None:
                 raise RuntimeError(f"Migração {version} não implementada")
-            migration(conn)
-            conn.execute(
-                "INSERT INTO schema_migrations(version,applied_at,description) VALUES (?,?,?)",
-                (version, int(time.time()), f"RC Geradores schema v{version}"),
-            )
+
+            # Algumas migrações estruturais precisam alterar PRAGMA foreign_keys.
+            # O SQLite ignora essa alteração dentro de uma transação aberta; por
+            # isso nunca carregamos uma transação da versão anterior para a próxima.
+            conn.commit()
+            try:
+                migration(conn)
+                conn.execute(
+                    "INSERT INTO schema_migrations(version,applied_at,description) VALUES (?,?,?)",
+                    (version, int(time.time()), f"RC Geradores schema v{version}"),
+                )
+                conn.commit()
+            except Exception:
+                if conn.in_transaction:
+                    conn.rollback()
+                raise
         conn.execute(f"PRAGMA user_version={LATEST_SCHEMA_VERSION}")
     return LATEST_SCHEMA_VERSION
 

@@ -119,6 +119,16 @@ def create_equipment_bundle(payload: dict, actor: str) -> dict:
             ),
         )
         if connection_data and connection_id:
+            connection_record = domain_store._validate_connection_identity(
+                conn,
+                {
+                    **connection_data,
+                    "transport": transport,
+                    "host": host,
+                    "listen_port": listen_port,
+                    "modbus_unit": modbus_unit,
+                },
+            )
             conn.execute(
                 """
                 INSERT INTO controller_connections(id,controller_id,name,transport,host,listen_port,modbus_unit,rapid_device_num,enabled,config_json,created_at,updated_at)
@@ -128,11 +138,11 @@ def create_equipment_bundle(payload: dict, actor: str) -> dict:
                     connection_id,
                     controller_id,
                     str(connection_data.get("name") or "Principal"),
-                    transport,
-                    host,
-                    listen_port,
-                    modbus_unit,
-                    connection_data.get("rapid_device_num"),
+                    connection_record["transport"],
+                    connection_record["host"],
+                    connection_record["listen_port"],
+                    connection_record["modbus_unit"],
+                    connection_record["rapid_device_num"],
                     1 if connection_data.get("enabled", True) else 0,
                     _dump(connection_data.get("config")),
                     now,

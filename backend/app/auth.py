@@ -12,6 +12,8 @@ from .config import (
     AUTH_COOKIE_NAME,
     AUTH_COOKIE_SECURE,
     AUTH_SESSION_TTL,
+    TRUSTED_PROXY_CIDRS,
+    TWO_FACTOR_ENFORCED,
 )
 from .production_guard import production_mode
 
@@ -25,7 +27,25 @@ ROLE_PERMISSIONS = {
 VALID_ROLES = frozenset(ROLE_PERMISSIONS)
 PRIVILEGED_ROLES = {"administrador", "operador"}
 
-TRUSTED_PROXY_PEERS = {"127.0.0.1", "::1"}
+def _trusted_proxy_networks():
+    networks = []
+    for item in TRUSTED_PROXY_CIDRS:
+        try:
+            networks.append(ipaddress.ip_network(item, strict=False))
+        except ValueError:
+            continue
+    return tuple(networks)
+
+
+TRUSTED_PROXY_NETWORKS = _trusted_proxy_networks()
+
+
+def _peer_is_trusted_proxy(peer: str) -> bool:
+    try:
+        address = ipaddress.ip_address(peer)
+    except ValueError:
+        return False
+    return any(address in network for network in TRUSTED_PROXY_NETWORKS)
 
 
 def normalize_email(email: str) -> str:
@@ -35,12 +55,12 @@ def normalize_email(email: str) -> str:
 def request_remote_ip(request: Request) -> str:
     """Retorna o IP auditável sem confiar em headers enviados pelo cliente.
 
-    A API de produção fica em loopback e recebe tráfego do Nginx. Somente quando
-    o peer TCP é o proxy local aceitamos X-Real-IP; em qualquer outra situação
-    usamos diretamente o endereço do socket.
+    Somente quando o peer TCP pertence a RC_TRUSTED_PROXY_CIDRS aceitamos
+    X-Real-IP. Em qualquer outra situação usamos diretamente o endereço do
+    socket, impedindo spoofing do cabeçalho pelo cliente final.
     """
     peer = request.client.host if request.client else ""
-    if peer not in TRUSTED_PROXY_PEERS:
+    if not _peer_is_trusted_proxy(peer):
         return peer
     candidate = request.headers.get("x-real-ip", "").split(",", 1)[0].strip()
     if not candidate:
@@ -173,7 +193,8 @@ def require(permission: str) -> Callable:
         if not can(user, permission):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permissão insuficiente")
         if (
-            production_mode()
+            TWO_FACTOR_ENFORCED
+            and production_mode()
             and user.get("role") in PRIVILEGED_ROLES
             and permission != "view"
             and not two_factor_enabled(user)

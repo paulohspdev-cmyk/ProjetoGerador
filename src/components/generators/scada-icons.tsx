@@ -131,3 +131,210 @@ export function IconFactory({ color = "#d7e3ee" }: { color?: string | undefined 
     </g>
   );
 }
+
+export function IconGenerator({ size = 24, className, color }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      className={className}
+      aria-hidden
+      style={color ? { color } : undefined}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <text
+        x="12"
+        y="16"
+        textAnchor="middle"
+        fontSize="11"
+        fontFamily="Arial, sans-serif"
+        fontWeight="700"
+        fill="currentColor"
+        stroke="none"
+      >
+        G
+      </text>
+    </svg>
+  );
+}
+
+export function IconMains({ size = 24, className, color }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      className={className}
+      aria-hidden
+      style={color ? { color } : undefined}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M4 19 12 4l8 15" />
+      <path d="M7.2 13h9.6M8.8 16h6.4" />
+    </svg>
+  );
+}
+
+export function IconLoad({ size = 24, className, color }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      className={className}
+      aria-hidden
+      style={color ? { color } : undefined}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 4 21 20H3Z" />
+    </svg>
+  );
+}
+
+export function IconBreakerClosed({ size = 24, className, color }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      className={className}
+      aria-hidden
+      style={color ? { color } : undefined}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 3v5" />
+      <circle cx="12" cy="9.2" r="1.3" />
+      <path d="M12 10.5v3" />
+      <circle cx="12" cy="14.8" r="1.3" />
+      <path d="M12 16v5" />
+    </svg>
+  );
+}
+
+export function IconBreakerOpen({ size = 24, className, color }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      className={className}
+      aria-hidden
+      style={color ? { color } : undefined}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 3v5" />
+      <circle cx="12" cy="9.2" r="1.3" />
+      <path d="m12.7 10.6 4.3 2.6" />
+      <circle cx="12" cy="14.8" r="1.3" />
+      <path d="M12 16v5" />
+    </svg>
+  );
+}
+
+export function IconStart({ size = 24, className, color }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      className={className}
+      aria-hidden
+      style={color ? { color } : undefined}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7.5v9" strokeWidth="2.2" />
+    </svg>
+  );
+}
+
+export function IconStop({ size = 24, className, color }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      className={className}
+      aria-hidden
+      style={color ? { color } : undefined}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="4.2" />
+    </svg>
+  );
+}
+
+export function IconAlarm({ size = 24, className, color }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      className={className}
+      aria-hidden
+      style={color ? { color } : undefined}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 3.5 22 20.5H2Z" />
+      <path d="M12 10v4.5" />
+      <circle cx="12" cy="17.4" r=".9" />
+    </svg>
+  );
+}
+
+export function IconWarning({ size = 24, className, color }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      className={className}
+      aria-hidden
+      style={color ? { color } : undefined}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7.2V13" />
+      <circle cx="12" cy="16.3" r=".95" />
+    </svg>
+  );
+}
