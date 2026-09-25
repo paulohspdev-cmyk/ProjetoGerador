@@ -257,7 +257,8 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
 
       <VerticalPowerGauge
         powerKw={powerKw}
-        nominalKw={gen.nominalPowerSource === "telemetry" ? nominalPower : null}
+        nominalKw={nominalPower}
+        nominalSource={gen.nominalPowerSource ?? null}
         rpm={rpm}
         rpmMax={gen.metricLimits?.["rpm"]?.displayMax ?? null}
       />

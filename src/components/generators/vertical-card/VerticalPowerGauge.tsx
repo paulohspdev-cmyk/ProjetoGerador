@@ -26,16 +26,28 @@ function scaleAnchor(fraction: number): "start" | "end" {
 export function VerticalPowerGauge({
   powerKw,
   nominalKw,
+  nominalSource,
   rpm,
   rpmMax,
 }: {
   powerKw: number | null;
   nominalKw: number | null;
+  nominalSource?: "telemetry" | "cadastral" | null;
   rpm: number | null;
   rpmMax: number | null;
 }) {
   const hasPower = powerKw != null && Number.isFinite(powerKw);
-  const hasNominal = nominalKw != null && Number.isFinite(nominalKw) && nominalKw > 0;
+  const hasNominal =
+    nominalSource === "telemetry" &&
+    nominalKw != null &&
+    Number.isFinite(nominalKw) &&
+    nominalKw > 0;
+  const nominalSourceLabel =
+    nominalSource === "telemetry"
+      ? "CONTROLADORA"
+      : nominalSource === "cadastral"
+        ? "CADASTRO"
+        : "";
   const fraction = hasPower && hasNominal ? Math.min(1, Math.max(0, powerKw / nominalKw)) : 0;
   const angle = fraction * 180 - 90;
   const valueLabel = hasPower ? `${Math.round(powerKw).toLocaleString("pt-BR")} kW` : "—";
@@ -44,6 +56,8 @@ export function VerticalPowerGauge({
     <section
       className={`vref-section vref-power vref-dual-gauges ${hasNominal ? "has-nominal" : "has-no-nominal"}`}
       data-power-scale={hasNominal ? "known" : "unknown"}
+      data-nominal-source={nominalSource ?? "unknown"}
+      data-nominal-source-label={nominalSourceLabel}
     >
       <div className="vref-gauge-panel vref-gauge-panel-power">
         <h4>GERADOR</h4>
