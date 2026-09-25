@@ -26,7 +26,11 @@ from .config import (
     TWO_FACTOR_ENFORCED,
     WHATSAPP_API_URL,
 )
-from .controller_library import pack_for_model, pack_is_production_ready
+from .controller_library import (
+    command_firmware_approval,
+    pack_for_model,
+    pack_is_production_ready,
+)
 from .rapid import load_bindings, overlay_generators
 
 SERVICES = [
@@ -483,10 +487,15 @@ def _production_readiness(
 
         asset = assets_by_generator.get(str(generator.get("id") or ""))
         controllers = controllers_by_asset.get(str((asset or {}).get("id") or ""), [])
-        firmware_missing = not controllers or all(
-            not str(item.get("firmware") or "").strip() for item in controllers
+        firmwares = sorted(
+            {
+                str(item.get("firmware") or "").strip()
+                for item in controllers
+                if str(item.get("firmware") or "").strip()
+            }
         )
-        if pack_ready and firmware_missing:
+        firmware_missing = not firmwares
+        if pack_ready:
             capabilities = (pack or {}).get("capabilities") or {}
             command_capable = any(
                 bool(capabilities.get(action))
@@ -504,8 +513,14 @@ def _production_readiness(
                 )
             )
             if command_capable:
-                missing_command_firmware.append(tag)
-            else:
+                if len(firmwares) != 1:
+                    reason = "não informado" if firmware_missing else "inventário ambíguo"
+                    missing_command_firmware.append(f"{tag} ({reason})")
+                else:
+                    approved, reason = command_firmware_approval(pack, firmwares[0])
+                    if not approved:
+                        missing_command_firmware.append(f"{tag} ({reason})")
+            elif firmware_missing:
                 missing_readonly_firmware.append(tag)
 
         if tag.upper().startswith(("TESTE", "TEST-", "LAB-")):
@@ -632,7 +647,7 @@ def _production_readiness(
         "blocker",
         "Firmware registrado para todas as controladoras com comando habilitado"
         if not missing_command_firmware
-        else "Firmware não informado em controladora com comando: "
+        else "Firmware ausente ou não homologado em controladora com comando: "
         + ", ".join(missing_command_firmware),
     )
     add(

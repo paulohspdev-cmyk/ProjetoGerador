@@ -236,11 +236,41 @@ def _pack_telemetry_state(pack: dict | None) -> dict:
 
 def _firmware_state(pack: dict | None) -> dict:
     firmware = (pack or {}).get("firmware") or {}
-    tested = [str(item) for item in (firmware.get("tested") or []) if str(item).strip()]
+    tested = [str(item).strip() for item in (firmware.get("tested") or []) if str(item).strip()]
     return {
         "testedFirmware": tested,
         "firmwareMatrixComplete": bool(tested),
     }
+
+
+def command_firmware_approval(pack: dict | None, firmware: object) -> tuple[bool, str]:
+    """Autoriza escrita somente para firmware explicitamente homologado no pack.
+
+    Para comandos industriais, ausência de inventário, matriz vazia ou versão fora
+    de firmware.tested são sempre fail-closed. Faixas min/max não substituem
+    evidência de homologação de uma versão exata.
+    """
+    actual = str(firmware or "").strip()
+    if not actual:
+        return False, "firmware da controladora não foi inventariado"
+
+    firmware_contract = (pack or {}).get("firmware") or {}
+    tested = [
+        str(item).strip()
+        for item in (firmware_contract.get("tested") or [])
+        if str(item).strip()
+    ]
+    if not tested:
+        return False, "Controller Pack não possui firmware.tested homologado para comando"
+
+    normalized = actual.casefold()
+    approved = {item.casefold() for item in tested}
+    if normalized not in approved:
+        return (
+            False,
+            f"firmware {actual} não consta na matriz homologada do Controller Pack",
+        )
+    return True, f"firmware {actual} homologado para comando"
 
 
 def _effective_onboarding_mode(

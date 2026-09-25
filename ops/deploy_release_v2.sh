@@ -235,6 +235,10 @@ wait "${TEST_PID}" 2>/dev/null || true
 TEST_PID=""
 
 log "BACKUP TRANSACIONAL DA PRODUÇÃO"
+# O diretório raiz também é usado pelo backup completo executado pelo worker
+# não privilegiado. Se o primeiro deploy o criar como root, os backups
+# agendados falham com EACCES.
+install -d -m 0750 -o rcgeradores -g rcgeradores "${BACKUP_ROOT}"
 install -d -m 0750 -o root -g rcgeradores "${BACKUP}"
 printf '%s\n' "${PREV_HEAD}" >"${BACKUP}/git-head-before"
 printf '%s\n' "${PREV_BRANCH}" >"${BACKUP}/git-branch-before"

@@ -37,6 +37,18 @@ ENV_FILE = Path(os.environ.get("RC_ENV_FILE", "/etc/rc-geradores.env"))
 OFFSITE_STREAM_MAGIC = b"RCG-OFFSITE-FERNET-CHUNKED-V1\n"
 OFFSITE_STREAM_CHUNK_SIZE = 4 * 1024 * 1024
 OFFSITE_STREAM_MAX_TOKEN_SIZE = 8 * 1024 * 1024
+REMOTE_OFFSITE_FS_TYPES = frozenset(
+    {
+        "nfs",
+        "nfs4",
+        "cifs",
+        "smb3",
+        "fuse.sshfs",
+        "fuse.rclone",
+        "davfs",
+        "davfs2",
+    }
+)
 
 
 def _quick_check(path: Path) -> None:
@@ -266,6 +278,54 @@ def _build_offsite_payload(archive: Path, target: Path) -> bool:
     return "product/totp-fernet.key" in member_names
 
 
+def _mount_fstype_for_path(target_dir: Path) -> str:
+    """Retorna o tipo do mount mais específico que contém target_dir."""
+    target = target_dir.resolve()
+    best: tuple[int, str] | None = None
+    try:
+        lines = Path("/proc/self/mountinfo").read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        raise ValueError(f"Não foi possível inspecionar mounts para o off-site: {exc}") from exc
+
+    for line in lines:
+        if " - " not in line:
+            continue
+        left, right = line.split(" - ", 1)
+        left_fields = left.split()
+        right_fields = right.split()
+        if len(left_fields) < 5 or not right_fields:
+            continue
+        mount_point = Path(
+            left_fields[4]
+            .replace(r"\040", " ")
+            .replace(r"\011", "\t")
+            .replace(r"\012", "\n")
+            .replace(r"\134", "\\")
+        )
+        try:
+            resolved_mount = mount_point.resolve()
+        except OSError:
+            continue
+        if target != resolved_mount and resolved_mount not in target.parents:
+            continue
+        candidate = (len(str(resolved_mount)), right_fields[0].lower())
+        if best is None or candidate[0] > best[0]:
+            best = candidate
+    if best is None:
+        raise ValueError(f"Não foi possível identificar o mount do destino off-site: {target}")
+    return best[1]
+
+
+def _validate_remote_offsite_fstype(target_dir: Path) -> str:
+    fstype = _mount_fstype_for_path(target_dir)
+    if fstype not in REMOTE_OFFSITE_FS_TYPES:
+        raise ValueError(
+            "Destino off-site precisa estar em armazenamento remoto homologado "
+            f"(NFS/CIFS/SSHFS/rclone); filesystem detectado: {fstype}"
+        )
+    return fstype
+
+
 def _validate_offsite_target_dir(target_dir: Path) -> None:
     target_dir = target_dir.resolve()
     data_root = DATA_DIR.resolve()
@@ -288,8 +348,9 @@ def _validate_offsite_target_dir(target_dir: Path) -> None:
     if data_device == target_device:
         raise ValueError(
             "Destino off-site está no mesmo filesystem de RC_DATA_DIR; "
-            "use volume/mount remoto ou dispositivo separado."
+            "use um mount remoto dedicado."
         )
+    _validate_remote_offsite_fstype(target_dir)
 
 
 def offsite_storage_status() -> tuple[bool, str]:
@@ -305,7 +366,8 @@ def offsite_storage_status() -> tuple[bool, str]:
         _validate_offsite_target_dir(target_dir)
     except Exception as exc:
         return False, str(exc)
-    return True, f"Destino off-site validado em filesystem separado: {target_dir}"
+    fstype = _mount_fstype_for_path(target_dir)
+    return True, f"Destino off-site remoto validado ({fstype}): {target_dir}"
 
 
 def _offsite_target(archive: Path) -> Path | None:

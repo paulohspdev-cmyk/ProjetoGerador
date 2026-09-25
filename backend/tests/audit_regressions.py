@@ -415,7 +415,16 @@ nominal_readiness = next(
 assert "FW-NOPACK" not in nominal_readiness["detail"], nominal_readiness
 assert "FW-READ" not in nominal_readiness["detail"], nominal_readiness
 
-# F00e: migration v3 adds nullable cadastral nominal power without fabricating a value.
+# F00e: deploy precisa manter o diretório de full backup gravável pelo worker.
+deploy_script = (Path(__file__).resolve().parents[2] / "ops" / "deploy_release_v2.sh").read_text(
+    encoding="utf-8"
+)
+assert (
+    'install -d -m 0750 -o rcgeradores -g rcgeradores "${BACKUP_ROOT}"'
+    in deploy_script
+), "deploy não garante ownership do diretório raiz de backups"
+
+# F00f: migration v3 adds nullable cadastral nominal power without fabricating a value.
 legacy_nominal_path = root / "legacy-nominal.sqlite3"
 legacy_nominal = sqlite3.connect(legacy_nominal_path)
 legacy_nominal.execute(

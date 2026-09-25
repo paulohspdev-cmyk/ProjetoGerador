@@ -99,6 +99,20 @@ except ValueError as exc:
 else:
     raise AssertionError("off-site aceitou diretório no mesmo filesystem")
 
+_original_mount_fstype = backup_manager._mount_fstype_for_path
+try:
+    backup_manager._mount_fstype_for_path = lambda _target: "ext4"
+    try:
+        backup_manager._validate_remote_offsite_fstype(offsite_dir)
+    except ValueError as exc:
+        assert "armazenamento remoto" in str(exc)
+    else:
+        raise AssertionError("off-site aceitou filesystem local separado")
+    backup_manager._mount_fstype_for_path = lambda _target: "nfs4"
+    assert backup_manager._validate_remote_offsite_fstype(offsite_dir) == "nfs4"
+finally:
+    backup_manager._mount_fstype_for_path = _original_mount_fstype
+
 # O ambiente de CI não possui segundo mount. A partir daqui simulamos apenas
 # essa característica física para continuar testando envelope/restore.
 _original_validate_offsite_target_dir = backup_manager._validate_offsite_target_dir
