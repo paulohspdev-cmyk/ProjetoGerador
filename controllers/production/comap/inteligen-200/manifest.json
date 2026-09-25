@@ -124,6 +124,10 @@
     "battery_voltage": {
       "displayMin": 0,
       "displayMax": 36
+    },
+    "rpm": {
+      "displayMin": 0,
+      "displayMax": 3000
     }
   },
   "documentedObjects": {

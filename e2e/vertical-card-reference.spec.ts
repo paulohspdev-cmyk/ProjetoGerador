@@ -96,8 +96,10 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
     await expect(card.locator(".vref-mini-bar")).toHaveCount(0);
     await expect(card.locator(".vref-gauge-panel-rpm > h4")).toHaveText("RPM");
     await expect(card.locator(".vref-dual-gauges .vref-gauge-panel")).toHaveCount(2);
-    await expect(card.locator(".vref-gauge-panel-power .vref-gauge-scale")).toHaveCount(5);
-    await expect(card.locator(".vref-gauge-panel-rpm .rpm-scale-label")).toHaveCount(5);
+    await expect(card.locator(".vref-gauge-panel-power .vref-gauge-scale")).toHaveCount(2);
+    await expect(card.locator(".vref-gauge-panel-rpm .rpm-scale-label")).toHaveCount(2);
+    await expect(card.locator(".vref-kw-nominal")).toHaveCount(0);
+    await expect(card.locator(".vref-gauge-panel-rpm .rpm-unit")).toHaveCount(0);
     await expect(card.locator(".vref-engine-rpm .vref-rpm")).toHaveCount(0);
     await expect(card.getByText("REDE / GERADOR")).toBeVisible();
     await expect(card.locator(".vref-summary-grid")).toBeVisible();

@@ -1,6 +1,9 @@
 import { RpmGauge } from "../RpmGauge";
 
-const SCALE_TICKS = [0, 0.25, 0.5, 0.75, 1] as const;
+const SCALE_TICKS = [0, 1] as const;
+const GAUGE_CX = 110;
+const GAUGE_CY = 102;
+const GAUGE_RADIUS = 72;
 
 function polar(cx: number, cy: number, radius: number, fraction: number) {
   const angle = Math.PI - Math.PI * fraction;
@@ -10,44 +13,32 @@ function polar(cx: number, cy: number, radius: number, fraction: number) {
   };
 }
 
-function arcPath(start: number, end: number, cx = 110, cy = 112, radius = 72) {
-  const a = polar(cx, cy, radius, start);
-  const b = polar(cx, cy, radius, end);
-  return `M ${a.x} ${a.y} A ${radius} ${radius} 0 0 1 ${b.x} ${b.y}`;
+function arcPath(start: number, end: number) {
+  const a = polar(GAUGE_CX, GAUGE_CY, GAUGE_RADIUS, start);
+  const b = polar(GAUGE_CX, GAUGE_CY, GAUGE_RADIUS, end);
+  return `M ${a.x} ${a.y} A ${GAUGE_RADIUS} ${GAUGE_RADIUS} 0 0 1 ${b.x} ${b.y}`;
 }
 
-function scaleAnchor(fraction: number): "start" | "middle" | "end" {
-  if (fraction === 0) return "start";
-  if (fraction === 1) return "end";
-  return "middle";
+function scaleAnchor(fraction: number): "start" | "end" {
+  return fraction === 0 ? "start" : "end";
 }
 
 export function VerticalPowerGauge({
   powerKw,
   nominalKw,
-  nominalSource,
   rpm,
+  rpmMax,
 }: {
   powerKw: number | null;
   nominalKw: number | null;
-  nominalSource?: "telemetry" | "cadastral" | null;
   rpm: number | null;
+  rpmMax: number | null;
 }) {
   const hasPower = powerKw != null && Number.isFinite(powerKw);
   const hasNominal = nominalKw != null && Number.isFinite(nominalKw) && nominalKw > 0;
   const fraction = hasPower && hasNominal ? Math.min(1, Math.max(0, powerKw / nominalKw)) : 0;
   const angle = fraction * 180 - 90;
   const valueLabel = hasPower ? `${Math.round(powerKw).toLocaleString("pt-BR")} kW` : "—";
-  const nominalLabel = hasNominal ? `${Math.round(nominalKw).toLocaleString("pt-BR")} kW` : "—";
-  const nominalSourceLabel =
-    nominalSource === "telemetry"
-      ? "CONTROLADORA"
-      : nominalSource === "cadastral"
-        ? "CADASTRO"
-        : "";
-  const scaleLabel = hasNominal
-    ? `NOMINAL ${nominalLabel}${nominalSourceLabel ? ` · ${nominalSourceLabel}` : ""}`
-    : "ESCALA N/D";
 
   return (
     <section
@@ -58,7 +49,7 @@ export function VerticalPowerGauge({
         <h4>GERADOR</h4>
         <div className="vref-power-gauge">
           <svg
-            viewBox="0 0 220 170"
+            viewBox="0 0 220 148"
             aria-label="Indicador de potência do gerador"
             overflow="visible"
           >
@@ -66,14 +57,11 @@ export function VerticalPowerGauge({
             <path className="vref-gauge-range" d={arcPath(0, 1)} />
 
             {SCALE_TICKS.map((tick) => {
-              const outer = polar(110, 112, 77, tick);
-              const inner = polar(110, 112, tick === 0.5 ? 64 : 67, tick);
-              const label = polar(110, 112, 97, tick);
-              const scaleValue = hasNominal
-                ? Math.round(nominalKw * tick).toLocaleString("pt-BR")
-                : tick === 0
-                  ? "0"
-                  : "—";
+              const outer = polar(GAUGE_CX, GAUGE_CY, 77, tick);
+              const inner = polar(GAUGE_CX, GAUGE_CY, 67, tick);
+              const label = polar(GAUGE_CX, GAUGE_CY, 97, tick);
+              const scaleValue =
+                tick === 0 ? "0" : hasNominal ? Math.round(nominalKw).toLocaleString("pt-BR") : "—";
               return (
                 <g key={tick}>
                   <line
@@ -100,22 +88,19 @@ export function VerticalPowerGauge({
               <g
                 className="vref-kw-needle"
                 style={{
-                  transformOrigin: "110px 112px",
+                  transformOrigin: `${GAUGE_CX}px ${GAUGE_CY}px`,
                   transform: `rotate(${angle}deg)`,
                 }}
               >
-                <path className="vref-kw-needle-floating" d="M110 44 L114 98 L106 98 Z" />
+                <path className="vref-kw-needle-floating" d="M110 34 L114 88 L106 88 Z" />
               </g>
             )}
 
-            <circle cx="110" cy="112" r="8" className="vref-gauge-hub" />
-            <circle cx="110" cy="112" r="3.5" className="vref-gauge-hub-core" />
+            <circle cx={GAUGE_CX} cy={GAUGE_CY} r="8" className="vref-gauge-hub" />
+            <circle cx={GAUGE_CX} cy={GAUGE_CY} r="3.5" className="vref-gauge-hub-core" />
 
-            <text x="110" y="140" textAnchor="middle" className="vref-kw-value">
+            <text x="110" y="136" textAnchor="middle" className="vref-kw-value">
               {valueLabel}
-            </text>
-            <text x="110" y="157" textAnchor="middle" className="vref-kw-nominal">
-              {scaleLabel}
             </text>
           </svg>
         </div>
@@ -124,7 +109,7 @@ export function VerticalPowerGauge({
       <div className="vref-gauge-panel vref-gauge-panel-rpm">
         <h4>RPM</h4>
         <div className="vref-rpm-gauge">
-          <RpmGauge value={rpm} max={4000} />
+          <RpmGauge value={rpm} max={rpmMax} />
         </div>
       </div>
     </section>
