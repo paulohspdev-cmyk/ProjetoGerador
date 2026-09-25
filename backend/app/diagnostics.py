@@ -17,6 +17,7 @@ from .config import (
     BACKUP_OFFSITE_REQUIRED,
     BRIDGE_STATUS_FILE,
     CONTROL_SOCKET,
+    DATA_DIR,
     ENVIRONMENT,
     PROJECT_ROOT,
     RAPID_BINDINGS_FILE,
@@ -47,6 +48,48 @@ RAPID_NATIVE_NETWORK_SERVICES = (
     "scadaagent6.service",
     "scadaweb6.service",
 )
+
+
+def _local_backup_status(max_age_seconds: int = 36 * 3600) -> tuple[bool, str]:
+    backup_dir = Path(DATA_DIR) / "backups"
+    if not backup_dir.is_dir():
+        return False, f"Diretório de backups não existe: {backup_dir}"
+    if not os.access(backup_dir, os.W_OK | os.X_OK):
+        return False, f"Diretório de backups não está gravável pelo serviço: {backup_dir}"
+
+    try:
+        with db.connect() as conn:
+            row = conn.execute(
+                """
+                SELECT created_at,path,size_bytes,result,detail
+                FROM backup_records
+                WHERE type='Completo'
+                ORDER BY created_at DESC
+                LIMIT 1
+                """
+            ).fetchone()
+    except Exception as exc:
+        return False, f"Não foi possível consultar histórico de full backup: {exc}"
+
+    if not row:
+        return False, "Nenhum backup completo registrado"
+
+    created_at = int(row["created_at"] or 0)
+    result = str(row["result"] or "")
+    detail = str(row["detail"] or "").strip()
+    path = Path(str(row["path"] or ""))
+    size = int(row["size_bytes"] or 0)
+    age = max(0, int(time.time()) - created_at)
+
+    if result != "OK":
+        suffix = f": {detail}" if detail else ""
+        return False, f"Último backup completo falhou{suffix}"
+    if age > max_age_seconds:
+        hours = age / 3600
+        return False, f"Último backup completo OK está antigo ({hours:.1f} h)"
+    if not path.is_file() or size <= 0:
+        return False, f"Registro do último backup completo não possui artefato válido: {path}"
+    return True, f"Último backup completo OK há {age / 3600:.1f} h ({path.name})"
 
 
 def _service_names() -> list[str]:
@@ -392,6 +435,15 @@ def _production_readiness(
                 else "Política systemd não aplicada ou incompleta"
             ),
         )
+
+    local_backup_ready, local_backup_detail = _local_backup_status()
+    add(
+        "backup_local",
+        "Backup completo local",
+        local_backup_ready,
+        "blocker",
+        local_backup_detail,
+    )
 
     offsite_ready, offsite_detail = offsite_storage_status()
     add(

@@ -340,7 +340,29 @@ assert "FUEL-PCT-NOCAP" in fuel_conversion_check["detail"], fuel_conversion_chec
 assert "FUEL-PCT-CAP" not in fuel_conversion_check["detail"], fuel_conversion_check
 assert "FUEL-PCT-STALE" not in fuel_conversion_check["detail"], fuel_conversion_check
 
-# F00d: firmware desconhecido só bloqueia packs que podem emitir comando industrial.
+# F00d: readiness também precisa detectar full backup local quebrado/antigo.
+backup_dir = data / "backups"
+backup_dir.mkdir(parents=True, exist_ok=True)
+with db.connect() as conn:
+    conn.execute(
+        "INSERT INTO backup_records(id,created_at,path,size_bytes,type,result,detail) VALUES (?,?,?,?,?,?,?)",
+        ("bk-failed", int(time.time()), str(backup_dir / "failed.tar.gz"), 0, "Completo", "Falha", "EACCES"),
+    )
+local_backup_ok, local_backup_detail = diagnostics._local_backup_status()
+assert local_backup_ok is False
+assert "falhou" in local_backup_detail.lower(), local_backup_detail
+
+ok_backup_path = backup_dir / "ok.tar.gz"
+ok_backup_path.write_bytes(b"backup")
+with db.connect() as conn:
+    conn.execute(
+        "INSERT INTO backup_records(id,created_at,path,size_bytes,type,result,detail) VALUES (?,?,?,?,?,?,?)",
+        ("bk-ok", int(time.time()) + 1, str(ok_backup_path), ok_backup_path.stat().st_size, "Completo", "OK", ""),
+    )
+local_backup_ok, local_backup_detail = diagnostics._local_backup_status()
+assert local_backup_ok is True, local_backup_detail
+
+# F00e: firmware desconhecido só bloqueia packs que podem emitir comando industrial.
 original_load_bindings = diagnostics.load_bindings
 original_list_assets = diagnostics.domain_store.list_assets
 original_list_controllers = diagnostics.domain_store.list_controllers
