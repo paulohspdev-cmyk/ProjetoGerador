@@ -127,8 +127,6 @@ def command_contract(generator: dict, action: str) -> tuple[dict, dict]:
     if pack.get("status") != "field_validated":
         raise ValueError("Controle bloqueado: comandos exigem Controller Pack validado fisicamente em campo")
 
-    _validated_controller_firmware(generator, pack)
-
     capabilities = dict(pack.get("capabilities") or {})
     if not bool(capabilities.get(action)):
         raise ValueError(
@@ -150,6 +148,7 @@ def command_contract(generator: dict, action: str) -> tuple[dict, dict]:
             f"cadastro usa {actual_transport or 'N/D'}"
         )
 
+    _validated_controller_firmware(generator, pack)
     _validated_binding(generator)
     return pack, contract
 
