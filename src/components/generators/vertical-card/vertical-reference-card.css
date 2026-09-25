@@ -573,18 +573,13 @@
 
 /* Mode controls */
 .vref-control {
-  padding: 3px 5px;
-}
-
-.vref-control > h4 {
-  margin-bottom: 2px;
-  line-height: 1;
+  padding: 4px;
 }
 
 .vref-mode-row {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 3px;
+  gap: 4px;
 }
 
 .vref-control button {
@@ -1020,7 +1015,7 @@
   }
 
   .vref-control {
-    padding: 2px 4px;
+    padding: 4px;
   }
 
   .vref-mode-row button,

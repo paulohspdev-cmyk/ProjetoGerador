@@ -104,9 +104,9 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
   await expect(comap.getByRole("button", { name: "MAN" })).toBeVisible();
   await expect(comap.getByRole("button", { name: "AUT" })).toBeVisible();
   await expect(comap.getByRole("button", { name: "TEST" })).toBeVisible();
-  await expect(comap.getByText("CONTROLE", { exact: true })).toBeVisible();
+  await expect(comap.getByText("CONTROLE", { exact: true })).toHaveCount(0);
 
-  await expect(dse.getByText("CONTROLE", { exact: true })).toBeVisible();
+  await expect(dse.getByText("CONTROLE", { exact: true })).toHaveCount(0);
   await expect(dse.getByRole("button", { name: "Modo manual DSE" })).toBeVisible();
   await expect(dse.getByRole("button", { name: "Modo manual DSE" }).locator("svg")).toHaveCount(1);
   await expect(dse.getByRole("button", { name: "AUTO" })).toBeVisible();

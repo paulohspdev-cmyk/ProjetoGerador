@@ -63,8 +63,6 @@ export function VerticalControls({
 
   return (
     <section className="vref-section vref-control">
-      <h4>CONTROLE</h4>
-
       {dse ? (
         <div className="vref-dse-control-row">
           <button
