@@ -51,7 +51,7 @@ function MotorMiniGauge({
   const known = value != null && Number.isFinite(value);
   const pct =
     percent == null || !Number.isFinite(percent) ? null : Math.min(100, Math.max(0, percent));
-  const activeLength = pct == null ? 0 : 78 * (pct / 100);
+  const activeLength = pct == null ? 0 : 82 * (pct / 100);
   const tone = motorGaugeTone(kind, pct, warning);
 
   return (
@@ -70,20 +70,20 @@ function MotorMiniGauge({
           className="vref-motor-gauge-track"
           cx="50"
           cy="50"
-          r="34"
+          r="38"
           pathLength="100"
-          strokeDasharray="78 22"
-          transform="rotate(129 50 50)"
+          strokeDasharray="82 18"
+          transform="rotate(122 50 50)"
         />
         {pct != null && (
           <circle
             className="vref-motor-gauge-progress"
             cx="50"
             cy="50"
-            r="34"
+            r="38"
             pathLength="100"
             strokeDasharray={`${activeLength} ${100 - activeLength}`}
-            transform="rotate(129 50 50)"
+            transform="rotate(122 50 50)"
           />
         )}
         <text

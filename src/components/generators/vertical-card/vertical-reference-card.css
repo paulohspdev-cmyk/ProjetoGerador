@@ -28,8 +28,8 @@
 .vref-card {
   --vref-bg: #000d16;
   --vref-panel: #001521;
-  --vref-line: #18445d;
-  --vref-line-soft: #0d3042;
+  --vref-line: #294b60;
+  --vref-line-soft: #18394b;
   --vref-text: #f5f9fb;
   --vref-muted: #93a8b6;
   --vref-green: #2ee600;
@@ -40,9 +40,9 @@
   display: grid;
   grid-template-rows:
     44px
+    140px
+    minmax(234px, 1.55fr)
     132px
-    minmax(250px, 1.7fr)
-    124px
     minmax(216px, 1fr);
   gap: 4px;
   width: 100%;
@@ -51,8 +51,8 @@
   min-height: 0;
   padding: 4px;
   overflow: hidden;
-  border: 1px solid var(--vref-line);
-  border-radius: 8px;
+  border: 1px solid #294b60;
+  border-radius: 7px;
   background:
     radial-gradient(circle at 50% -8%, rgb(7 52 77 / 22%), transparent 34%),
     linear-gradient(180deg, #00131f 0%, #000a11 100%);
@@ -186,37 +186,33 @@
   color: #9aabb4;
 }
 
-.vref-card.has-stale-telemetry {
-  border-color: #62484a;
-}
-
 /* Generator + RPM gauges */
 .vref-power {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 3px;
+  gap: 0;
   padding: 3px 4px 2px;
 }
 
 .vref-gauge-panel {
   display: grid;
-  grid-template-rows: 16px minmax(0, 1fr);
+  grid-template-rows: 18px minmax(0, 1fr);
   min-width: 0;
   min-height: 0;
 }
 
 .vref-gauge-panel + .vref-gauge-panel {
-  padding-left: 3px;
+  padding-left: 5px;
   border-left: 1px solid var(--vref-line-soft);
 }
 
 .vref-gauge-panel > h4 {
   margin: 0;
-  color: var(--vref-text);
-  font-size: 11px;
+  padding-left: 3px;
+  color: #fff;
+  font-size: 11.5px;
   font-weight: 900;
-  line-height: 14px;
-  padding-left: 2px;
+  line-height: 16px;
   text-align: left;
   letter-spacing: 0.025em;
 }
@@ -225,7 +221,6 @@
 .vref-rpm-gauge {
   min-width: 0;
   min-height: 0;
-  overflow: visible;
 }
 
 .vref-power-gauge > svg,
@@ -233,99 +228,68 @@
   display: block;
   width: 100%;
   height: 100%;
-  margin: 0 auto;
   overflow: visible;
 }
 
 .vref-gauge-base,
-.vref-gauge-range {
+.vref-gauge-range,
+.vref-gauge-panel-rpm .gauge-bg,
+.vref-gauge-panel-rpm .gauge-active {
   fill: none;
-  stroke-width: 12;
+  stroke-width: 10;
+  stroke-linecap: round;
 }
 
 .vref-gauge-base,
 .vref-gauge-panel-rpm .gauge-bg {
-  stroke: #173545;
+  stroke: #405267;
 }
 
 .vref-gauge-range {
-  stroke: #27637f;
+  stroke: #25b9ed;
+  filter: drop-shadow(0 0 2px rgb(37 185 237 / 34%));
 }
 
-.vref-gauge-panel-rpm .gauge-bg,
-.vref-gauge-panel-rpm .gauge-zone {
-  fill: none;
-}
-
-.vref-gauge-panel-rpm .gauge-green {
-  stroke: #25db00;
-}
-
-.vref-gauge-panel-rpm .gauge-yellow {
-  stroke: var(--vref-yellow);
-}
-
-.vref-gauge-panel-rpm .gauge-red {
-  stroke: #ff3126;
-}
-
-.vref-gauge-tick,
-.rpm-gauge-tick {
-  stroke: rgb(226 238 245 / 78%);
-  stroke-width: 1.7;
-  stroke-linecap: round;
+.vref-gauge-panel-rpm .gauge-active {
+  stroke: var(--vref-green);
+  filter: drop-shadow(0 0 2px rgb(46 230 0 / 34%));
 }
 
 .vref-gauge-scale,
 .vref-gauge-panel-rpm .rpm-scale-label {
-  fill: #eef6fa;
-  font-size: 15px;
+  fill: #f4f8fb;
+  font-size: 13px;
   font-weight: 900;
   paint-order: stroke;
-  stroke: #00111e;
+  stroke: #07131d;
   stroke-width: 1.3px;
   stroke-linejoin: round;
 }
 
-.vref-kw-needle-floating,
-.rpm-needle-floating {
-  fill: #fff;
-  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 75%));
+.vref-kw-needle-line,
+.rpm-needle-line {
+  stroke: #fff;
+  stroke-width: 3;
+  stroke-linecap: round;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 68%));
 }
 
 .vref-gauge-hub,
 .rpm-gauge-hub {
-  fill: #071923;
-  stroke: #b8c9d4;
-  stroke-width: 1.6;
-}
-
-.vref-gauge-hub-core,
-.rpm-gauge-hub-core {
   fill: #e9f2f7;
+  stroke: #071923;
+  stroke-width: 2;
 }
 
 .vref-kw-value,
 .vref-gauge-panel-rpm .rpm-percent {
   fill: #fff;
-  font-size: 27px;
+  font-size: 26px;
   font-weight: 900;
   paint-order: stroke;
-  stroke: #00111e;
-  stroke-width: 2.6px;
+  stroke: #06131f;
+  stroke-width: 2.3px;
   stroke-linejoin: round;
-}
-
-.vref-gauge-panel-rpm .rpm-percent {
-  fill: var(--vref-green);
-}
-
-.vref-kw-nominal,
-.vref-gauge-panel-rpm .rpm-unit {
-  fill: #9ab0bd;
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: 0.025em;
 }
 
 /* Power flow */
@@ -337,21 +301,12 @@
 
 .vref-flow-controller-heading {
   display: flex;
-  flex: 0 0 17px;
+  flex: 0 0 18px;
   align-items: center;
-  justify-content: space-between;
-  gap: 6px;
 }
 
 .vref-flow-controller-heading h4 {
   margin: 0;
-}
-
-.vref-flow-controller-heading > span {
-  color: var(--vref-green);
-  font-size: 9px;
-  font-weight: 900;
-  white-space: nowrap;
 }
 
 .vref-flow-controller-body {
@@ -364,7 +319,7 @@
 .vref-flow-mode-controls {
   flex: 0 0 auto;
   margin-top: 3px;
-  padding-top: 3px;
+  padding-top: 4px;
   border-top: 1px solid var(--vref-line-soft);
 }
 
@@ -374,74 +329,103 @@
   left: 50%;
   display: block;
   width: auto;
-  max-width: calc(100% - 16px);
+  max-width: calc(100% - 10px);
   height: 100%;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
   transform: translateX(-50%);
 }
 
-.vref-device {
-  fill: #061722;
-  stroke: #607b8b;
-  stroke-width: 2.4;
-}
-
-.vref-device.is-live {
-  stroke: var(--vref-green);
-  filter: drop-shadow(0 0 5px rgb(46 230 0 / 34%));
-}
-
-.vref-device.is-dead {
-  stroke: #7d909b;
-}
-
-.vref-device.is-idle,
-.vref-device.is-unknown {
-  stroke: #526b79;
-}
-
-.vref-flow-icon {
+.vref-wire,
+.vref-wire-live,
+.vref-bus,
+.vref-bus-live {
   fill: none;
-  stroke: #fff;
-  stroke-width: 1.8;
   stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.vref-flow-reading,
-.vref-flow-frequency {
-  fill: #edf4f8;
-  font-size: 10px;
-  font-weight: 900;
 }
 
 .vref-wire,
 .vref-wire-live {
-  fill: none;
-  stroke-width: 4.4;
-  stroke-linecap: round;
+  stroke-width: 3.5;
 }
 
-.vref-wire {
-  stroke: #617581;
+.vref-bus,
+.vref-bus-live {
+  stroke-width: 5;
 }
 
-.vref-wire-live {
+.vref-wire,
+.vref-bus {
+  stroke: #63747e;
+}
+
+.vref-wire-live,
+.vref-bus-live {
   stroke: transparent;
 }
 
-.vref-wire-live.is-live {
+.vref-wire-live.is-live,
+.vref-bus-live.is-live {
   stroke: var(--vref-green);
-  filter: drop-shadow(0 0 3px rgb(46 230 0 / 42%));
+  filter: drop-shadow(0 0 2px rgb(46 230 0 / 36%));
 }
 
 .vref-junction {
-  fill: #617581;
+  fill: #63747e;
 }
 
 .vref-junction.is-live {
   fill: var(--vref-green);
+}
+
+.vref-bus-label,
+.vref-generator-label {
+  fill: #9db0bc;
+  font-size: 7.5px;
+  font-weight: 900;
+  letter-spacing: 0.035em;
+}
+
+.vref-flow-frequency {
+  fill: #eef4f7;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.vref-source-node > rect,
+.vref-load-node > rect {
+  fill: #071923;
+  stroke: #516978;
+  stroke-width: 1.4;
+}
+
+.vref-source-node .title,
+.vref-load-node .title {
+  fill: #fff;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.vref-source-node .value,
+.vref-load-node .value {
+  fill: #b7c6cf;
+  font-size: 8.5px;
+  font-weight: 900;
+}
+
+.vref-source-node.is-live > rect,
+.vref-load-node.is-live > rect {
+  stroke: var(--vref-green);
+}
+
+.vref-source-node.is-live .value,
+.vref-load-node.is-live .value {
+  fill: var(--vref-green);
+}
+
+.vref-source-node.is-dead > rect,
+.vref-source-node.is-unknown > rect {
+  stroke: #63747e;
 }
 
 .vref-breaker > circle {
@@ -450,8 +434,8 @@
 }
 
 .vref-breaker > line {
-  stroke: #7b8e99;
-  stroke-width: 4.4;
+  stroke: #71848f;
+  stroke-width: 3.8;
   stroke-linecap: round;
 }
 
@@ -462,36 +446,33 @@
 }
 
 .vref-breaker-badge > rect {
-  fill: #e8eef1;
-  stroke: #8298a5;
-  stroke-width: 1;
+  fill: #071923;
+  stroke: #516978;
+  stroke-width: 1.2;
 }
 
 .vref-breaker-badge .label {
-  fill: #a8bac6;
-  font-size: 9px;
+  fill: #b7c7d1;
+  font-size: 8.5px;
   font-weight: 900;
 }
 
 .vref-breaker-badge .state {
-  fill: #0c1c25;
-  font-size: 11px;
+  fill: #fff;
+  font-size: 7.2px;
   font-weight: 900;
 }
 
 .vref-breaker-badge.is-closed > rect {
-  fill: #2dca10;
-  stroke: #5bf33e;
+  border-color: var(--vref-green);
+  stroke: var(--vref-green);
+  fill: rgb(20 62 22 / 72%);
 }
 
-.vref-breaker-badge.is-open > rect {
-  fill: #eef2f4;
-  stroke: #8598a4;
-}
-
+.vref-breaker-badge.is-open > rect,
 .vref-breaker-badge.is-unknown > rect {
-  fill: #dce5e9;
-  stroke: #758b97;
+  fill: #071923;
+  stroke: #516978;
 }
 
 .vref-breaker-badge.is-commandable {
@@ -499,62 +480,56 @@
   outline: none;
 }
 
-.vref-breaker-badge.is-commandable > rect {
+.vref-breaker-badge.is-commandable:focus > rect,
+.vref-breaker-badge.is-commandable:hover > rect {
+  stroke: #d8e6ed;
+}
+
+.vref-generator-node > circle {
+  fill: #071923;
+  stroke: #607987;
   stroke-width: 2;
 }
 
-.vref-breaker-badge.is-commandable:focus > rect,
-.vref-breaker-badge.is-commandable:hover > rect {
-  filter: brightness(1.12);
-}
-
-.vref-load-card {
-  fill: #061824;
-  stroke: #315a71;
-  stroke-width: 1.3;
-}
-
-.vref-load-title {
+.vref-generator-node > text {
   fill: #fff;
-  font-size: 10px;
+  font-size: 24px;
   font-weight: 900;
 }
 
-.vref-load-value {
-  fill: var(--vref-green);
-  font-size: 9.5px;
-  font-weight: 900;
+.vref-generator-node.is-live > circle {
+  stroke: var(--vref-green);
+  filter: drop-shadow(0 0 3px rgb(46 230 0 / 32%));
 }
 
-.vref-generator-letter {
-  fill: #fff;
-  font-size: 31px;
-  font-weight: 900;
+.vref-generator-node.is-idle > circle,
+.vref-generator-node.is-unknown > circle {
+  stroke: #607987;
 }
 
 .vref-flow-command-stack {
   position: absolute;
   right: 0;
-  bottom: 18px;
+  bottom: 12px;
   display: flex;
   width: 46px;
   flex-direction: column;
-  align-items: stretch;
   gap: 5px;
 }
 
 .vref-flow-command-stack button {
   display: inline-flex;
   width: 100%;
-  height: 34px;
+  height: 30px;
   align-items: center;
   justify-content: center;
   gap: 2px;
-  border: 1px solid transparent;
+  border: 1px solid #516978;
   border-radius: 4px;
+  background: #071923;
   color: #fff;
   font-family: inherit;
-  font-size: 8.5px;
+  font-size: 8px;
   font-weight: 900;
 }
 
@@ -563,18 +538,19 @@
   height: 8px;
 }
 
-.vref-flow-command-stack .start {
-  border-color: #4bf12a;
-  background: linear-gradient(180deg, #36d315, #199403);
+.vref-flow-command-stack .start:not(:disabled) {
+  border-color: var(--vref-green);
+  background: rgb(20 62 22 / 72%);
 }
 
-.vref-flow-command-stack .stop {
-  border-color: #ff5c52;
-  background: linear-gradient(180deg, #df372e, #a11d17);
+.vref-flow-command-stack .stop:not(:disabled) {
+  border-color: var(--vref-red);
+  background: rgb(78 26 25 / 76%);
 }
 
 .vref-flow-command-stack button:disabled {
-  opacity: 0.62;
+  color: #7f909a;
+  opacity: 0.72;
   cursor: not-allowed;
 }
 
@@ -691,14 +667,14 @@
 
 .vref-engine {
   display: block;
-  padding: 3px 5px 4px;
+  padding: 4px 5px;
 }
 
 .vref-motor-gauges {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: stretch;
-  gap: 3px;
+  gap: 2px;
   width: 100%;
   height: 100%;
   min-width: 0;
@@ -707,11 +683,9 @@
 
 .vref-motor-gauge {
   display: grid;
-  grid-template-rows: 11px minmax(0, 1fr);
-  align-items: stretch;
+  grid-template-rows: 14px minmax(0, 1fr);
   min-width: 0;
   min-height: 0;
-  overflow: visible;
 }
 
 .vref-motor-gauge + .vref-motor-gauge {
@@ -721,9 +695,9 @@
 .vref-motor-gauge-label {
   overflow: hidden;
   color: #fff;
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 900;
-  line-height: 10px;
+  line-height: 12px;
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -734,22 +708,17 @@
   width: 100%;
   height: 100%;
   min-height: 0;
-  overflow: visible;
 }
 
 .vref-motor-gauge-track,
 .vref-motor-gauge-progress {
   fill: none;
-  stroke-width: 10;
-  stroke-linecap: butt;
+  stroke-width: 9;
+  stroke-linecap: round;
 }
 
 .vref-motor-gauge-track {
-  stroke: #24384b;
-}
-
-.vref-motor-gauge-progress {
-  stroke: #21a7d5;
+  stroke: #263b4c;
 }
 
 .vref-motor-gauge.tone-red .vref-motor-gauge-progress {
@@ -774,7 +743,7 @@
 
 .vref-motor-gauge-value {
   fill: #fff;
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 900;
   paint-order: stroke;
   stroke: #06131f;
@@ -784,8 +753,8 @@
 
 .vref-motor-gauge-unit {
   fill: #fff;
-  font-size: 8px;
-  font-weight: 800;
+  font-size: 9px;
+  font-weight: 900;
 }
 
 /* Measurements */
@@ -829,7 +798,7 @@
   gap: 3px;
   min-height: 20px;
   border-bottom: 1px solid rgb(23 67 91 / 42%);
-  font-size: 10px;
+  font-size: 10.5px;
 }
 
 .vref-data-row:last-child {
@@ -979,9 +948,9 @@
   .vref-card {
     grid-template-rows:
       38px
-      110px
-      minmax(195px, 1.35fr)
-      108px
+      116px
+      minmax(182px, 1.3fr)
+      115px
       minmax(158px, 1fr);
     gap: 3px;
     padding: 3px;
@@ -998,7 +967,7 @@
   }
 
   .vref-gauge-panel {
-    grid-template-rows: 14px minmax(0, 1fr);
+    grid-template-rows: 16px minmax(0, 1fr);
   }
 
   .vref-gauge-panel > h4 {
@@ -1030,16 +999,16 @@
   }
 
   .vref-motor-gauge {
-    grid-template-rows: 9px minmax(0, 1fr);
+    grid-template-rows: 12px minmax(0, 1fr);
   }
 
   .vref-motor-gauge-label {
-    font-size: 7px;
-    line-height: 8px;
+    font-size: 8px;
+    line-height: 10px;
   }
 
   .vref-motor-gauge-value {
-    font-size: 15px;
+    font-size: 16px;
   }
 
   .vref-data-row {

@@ -1,26 +1,24 @@
 import { RpmGauge } from "../RpmGauge";
 
-const SCALE_TICKS = [0, 1] as const;
+const START_ANGLE = 150;
+const SWEEP_ANGLE = 240;
 const GAUGE_CX = 110;
-const GAUGE_CY = 102;
-const GAUGE_RADIUS = 72;
+const GAUGE_CY = 80;
+const GAUGE_RADIUS = 57;
 
-function polar(cx: number, cy: number, radius: number, fraction: number) {
-  const angle = Math.PI - Math.PI * fraction;
+function polar(angleDeg: number, radius: number) {
+  const angle = (angleDeg * Math.PI) / 180;
   return {
-    x: cx + radius * Math.cos(angle),
-    y: cy - radius * Math.sin(angle),
+    x: GAUGE_CX + radius * Math.cos(angle),
+    y: GAUGE_CY + radius * Math.sin(angle),
   };
 }
 
-function arcPath(start: number, end: number) {
-  const a = polar(GAUGE_CX, GAUGE_CY, GAUGE_RADIUS, start);
-  const b = polar(GAUGE_CX, GAUGE_CY, GAUGE_RADIUS, end);
-  return `M ${a.x} ${a.y} A ${GAUGE_RADIUS} ${GAUGE_RADIUS} 0 0 1 ${b.x} ${b.y}`;
-}
-
-function scaleAnchor(fraction: number): "start" | "end" {
-  return fraction === 0 ? "start" : "end";
+function arcPath(startAngle: number, endAngle: number, radius = GAUGE_RADIUS) {
+  const a = polar(startAngle, radius);
+  const b = polar(endAngle, radius);
+  const sweep = endAngle - startAngle;
+  return `M ${a.x} ${a.y} A ${radius} ${radius} 0 ${sweep > 180 ? 1 : 0} 1 ${b.x} ${b.y}`;
 }
 
 export function VerticalPowerGauge({
@@ -49,7 +47,10 @@ export function VerticalPowerGauge({
         ? "CADASTRO"
         : "";
   const fraction = hasPower && hasNominal ? Math.min(1, Math.max(0, powerKw / nominalKw)) : 0;
-  const angle = fraction * 180 - 90;
+  const currentAngle = START_ANGLE + fraction * SWEEP_ANGLE;
+  const needle = polar(currentAngle, 45);
+  const startLabel = polar(START_ANGLE, 75);
+  const endLabel = polar(START_ANGLE + SWEEP_ANGLE, 75);
   const valueLabel = hasPower ? `${Math.round(powerKw).toLocaleString("pt-BR")} kW` : "—";
 
   return (
@@ -62,58 +63,42 @@ export function VerticalPowerGauge({
       <div className="vref-gauge-panel vref-gauge-panel-power">
         <h4>GERADOR</h4>
         <div className="vref-power-gauge">
-          <svg
-            viewBox="0 0 220 148"
-            aria-label="Indicador de potência do gerador"
-            overflow="visible"
-          >
-            <path className="vref-gauge-base" d={arcPath(0, 1)} />
-            <path className="vref-gauge-range" d={arcPath(0, 1)} />
-
-            {SCALE_TICKS.map((tick) => {
-              const outer = polar(GAUGE_CX, GAUGE_CY, 77, tick);
-              const inner = polar(GAUGE_CX, GAUGE_CY, 67, tick);
-              const label = polar(GAUGE_CX, GAUGE_CY, 97, tick);
-              const scaleValue =
-                tick === 0 ? "0" : hasNominal ? Math.round(nominalKw).toLocaleString("pt-BR") : "—";
-              return (
-                <g key={tick}>
-                  <line
-                    className="vref-gauge-tick"
-                    x1={outer.x}
-                    y1={outer.y}
-                    x2={inner.x}
-                    y2={inner.y}
-                  />
-                  <text
-                    x={label.x}
-                    y={label.y}
-                    className="vref-gauge-scale"
-                    textAnchor={scaleAnchor(tick)}
-                    dominantBaseline="middle"
-                  >
-                    {scaleValue}
-                  </text>
-                </g>
-              );
-            })}
-
-            {hasPower && hasNominal && (
-              <g
-                className="vref-kw-needle"
-                style={{
-                  transformOrigin: `${GAUGE_CX}px ${GAUGE_CY}px`,
-                  transform: `rotate(${angle}deg)`,
-                }}
-              >
-                <path className="vref-kw-needle-floating" d="M110 34 L114 88 L106 88 Z" />
-              </g>
+          <svg viewBox="0 0 220 150" aria-label="Indicador de potência do gerador">
+            <path className="vref-gauge-base" d={arcPath(START_ANGLE, START_ANGLE + SWEEP_ANGLE)} />
+            {hasPower && hasNominal && fraction > 0 && (
+              <path className="vref-gauge-range" d={arcPath(START_ANGLE, currentAngle)} />
             )}
 
-            <circle cx={GAUGE_CX} cy={GAUGE_CY} r="8" className="vref-gauge-hub" />
-            <circle cx={GAUGE_CX} cy={GAUGE_CY} r="3.5" className="vref-gauge-hub-core" />
+            <text
+              x={startLabel.x}
+              y={startLabel.y}
+              className="vref-gauge-scale"
+              textAnchor="middle"
+              dominantBaseline="middle"
+            >
+              0
+            </text>
+            <text
+              x={endLabel.x}
+              y={endLabel.y}
+              className="vref-gauge-scale"
+              textAnchor="middle"
+              dominantBaseline="middle"
+            >
+              {hasNominal ? Math.round(nominalKw).toLocaleString("pt-BR") : "—"}
+            </text>
 
-            <text x="110" y="136" textAnchor="middle" className="vref-kw-value">
+            {hasPower && hasNominal && (
+              <line
+                className="vref-kw-needle-line"
+                x1={GAUGE_CX}
+                y1={GAUGE_CY}
+                x2={needle.x}
+                y2={needle.y}
+              />
+            )}
+            <circle cx={GAUGE_CX} cy={GAUGE_CY} r="4.5" className="vref-gauge-hub" />
+            <text x={GAUGE_CX} y="126" textAnchor="middle" className="vref-kw-value">
               {valueLabel}
             </text>
           </svg>

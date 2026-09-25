@@ -101,6 +101,9 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
     await expect(card.locator(".vref-kw-nominal")).toHaveCount(0);
     await expect(card.locator(".vref-gauge-panel-rpm .rpm-unit")).toHaveCount(0);
     await expect(card.locator(".vref-engine-rpm .vref-rpm")).toHaveCount(0);
+    await expect(card.locator(".vref-flow-icon")).toHaveCount(0);
+    await expect(card.locator(".vref-generator-node")).toHaveCount(1);
+    await expect(card.locator('.vref-breaker[data-source-side="bottom"]')).toHaveCount(1);
     await expect(card.getByText("REDE / GERADOR")).toBeVisible();
     await expect(card.locator(".vref-summary-grid")).toBeVisible();
     await expect(card.getByText(/ALARM LIST/)).toHaveCount(0);
@@ -190,6 +193,9 @@ test("vertical sem rede remove somente a topologia da concessionária em ComAp e
     await expect(card.getByText("MCB", { exact: true })).toHaveCount(0);
     await expect(card.getByText("GCB", { exact: true })).toBeVisible();
     await expect(card.getByText("CARGA", { exact: true })).toBeVisible();
+    await expect(card.locator(".vref-flow-icon")).toHaveCount(0);
+    await expect(card.locator(".vref-generator-node")).toHaveCount(1);
+    await expect(card.locator('.vref-breaker[data-source-side="bottom"]')).toHaveCount(1);
   }
   await search.fill("");
 });

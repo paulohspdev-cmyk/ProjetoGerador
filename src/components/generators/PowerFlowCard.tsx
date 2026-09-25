@@ -234,7 +234,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         dse ? "is-dse" : "is-comap",
         hasMainsSource ? "has-mains-source" : "no-mains-source",
         displayStatus === "alerta" && "has-alert",
-        gen.telemetryStale && "has-stale-telemetry",
       )}
       data-controller-vendor={vendor}
       data-power-topology={gen.powerTopology ?? "unknown"}
