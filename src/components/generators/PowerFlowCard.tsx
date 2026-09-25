@@ -252,6 +252,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
             <i /> {statusText}
           </span>
         </div>
+        <span className="vref-header-mode">MODO: {modeLabel}</span>
       </header>
 
       <VerticalPowerGauge
@@ -269,7 +270,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         generatorPowerKw={powerKw}
         generatorKnown={generatorKnown}
         generatorPresent={generatorPresent}
-        modeLabel={modeLabel}
         mcb={gen.mcb}
         mcbKnown={mcbKnown}
         gcb={gen.gcb}

@@ -104,7 +104,6 @@ export function VerticalPowerFlow({
   generatorPowerKw,
   generatorKnown,
   generatorPresent,
-  modeLabel,
   mcb,
   mcbKnown,
   gcb,
@@ -126,7 +125,6 @@ export function VerticalPowerFlow({
   generatorPowerKw: number | null;
   generatorKnown: boolean;
   generatorPresent: boolean;
-  modeLabel: string;
   mcb: boolean;
   mcbKnown: boolean;
   gcb: boolean;
@@ -152,7 +150,6 @@ export function VerticalPowerFlow({
     <section className="vref-section vref-flow vref-flow-controller">
       <div className="vref-flow-controller-heading">
         <h4>FLUXO DE POTÊNCIA</h4>
-        <span>MODO: {modeLabel}</span>
       </div>
 
       <div className="vref-flow-controller-body">

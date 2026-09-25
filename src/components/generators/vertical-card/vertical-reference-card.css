@@ -87,7 +87,7 @@
 /* Header */
 .vref-header {
   display: grid;
-  grid-template-columns: 32px minmax(0, 1fr);
+  grid-template-columns: 32px minmax(0, 1fr) auto;
   align-items: center;
   gap: 5px;
   min-width: 0;
@@ -155,6 +155,16 @@
 
 .vref-header-title > span.is-unconfigured {
   color: #8ca0ac;
+}
+
+.vref-header-mode {
+  align-self: center;
+  color: #dce8ef;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .vref-generator-badge.is-online {
@@ -926,7 +936,7 @@
     font-size: 10px;
   }
 
-  .vref-flow-controller-heading > span,
+  .vref-header-mode,
   .vref-breaker-badge .label,
   .vref-table-heading > span {
     font-size: 9.5px;
