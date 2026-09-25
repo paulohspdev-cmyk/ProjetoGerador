@@ -1,7 +1,6 @@
 import { cn } from "@/lib/utils";
 import { Clock3, Gauge, Zap } from "lucide-react";
 
-import { RpmGauge } from "../RpmGauge";
 import { IconBattery, IconFuelPump, IconOilCan, IconThermometer } from "../scada-icons";
 
 function valueText(value: number | null, unit: string, digits = 0) {
@@ -32,7 +31,6 @@ export function VerticalEngineAndRpm({
   fuel,
   fuelUnit,
   battery,
-  rpm,
   oilPercent,
   coolantPercent,
   fuelPercent,
@@ -47,7 +45,6 @@ export function VerticalEngineAndRpm({
   fuel: number | null;
   fuelUnit: string;
   battery: number | null;
-  rpm: number | null;
   oilPercent: number | null;
   coolantPercent: number | null;
   fuelPercent: number | null;
@@ -98,11 +95,6 @@ export function VerticalEngineAndRpm({
           <MiniBar percent={null} />
           <b>{valueText(battery, "V", 1)}</b>
         </div>
-      </section>
-
-      <section className="vref-section vref-rpm">
-        <h4>RPM</h4>
-        <RpmGauge value={rpm} max={4000} />
       </section>
     </div>
   );

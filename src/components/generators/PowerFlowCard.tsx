@@ -259,6 +259,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         powerKw={powerKw}
         nominalKw={nominalPower}
         nominalSource={gen.nominalPowerSource ?? null}
+        rpm={rpm}
       />
 
       <VerticalPowerFlow
@@ -302,7 +303,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         fuel={fuel}
         fuelUnit={fuelUnit}
         battery={batteryVoltage}
-        rpm={rpm}
         oilPercent={percents.oil}
         coolantPercent={percents.coolant}
         fuelPercent={percents.fuel}

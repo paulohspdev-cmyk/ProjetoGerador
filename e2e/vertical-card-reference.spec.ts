@@ -81,7 +81,7 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
   await expect(dse).toBeVisible();
 
   for (const card of [comap, dse]) {
-    await expect(card.getByText("kW", { exact: true })).toBeVisible();
+    await expect(card.locator(".vref-gauge-panel-power > h4")).toHaveText("GERADOR");
     await expect(card.getByText("FLUXO DE POTÊNCIA")).toBeVisible();
     await expect(card.locator(".vref-header-mode")).toContainText("MODO:");
     await expect(card.locator(".vref-flow-controller-heading")).not.toContainText("MODO:");
@@ -89,7 +89,11 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
     await expect(card.locator(".vref-power")).not.toContainText("%");
     await expect(card.locator(".vref-flow")).not.toContainText(/RPM/);
     await expect(card.getByText("ESTADO DO MOTOR")).toBeVisible();
-    await expect(card.getByRole("heading", { name: "RPM" })).toBeVisible();
+    await expect(card.locator(".vref-gauge-panel-rpm > h4")).toHaveText("RPM");
+    await expect(card.locator(".vref-dual-gauges .vref-gauge-panel")).toHaveCount(2);
+    await expect(card.locator(".vref-gauge-panel-power .vref-gauge-scale")).toHaveCount(5);
+    await expect(card.locator(".vref-gauge-panel-rpm .rpm-scale-label")).toHaveCount(5);
+    await expect(card.locator(".vref-engine-rpm .vref-rpm")).toHaveCount(0);
     await expect(card.getByText("REDE / GERADOR")).toBeVisible();
     await expect(card.locator(".vref-summary-grid")).toBeVisible();
     await expect(card.getByText(/ALARM LIST/)).toHaveCount(0);
@@ -158,7 +162,7 @@ test("vertical sem rede remove somente a topologia da concessionária em ComAp e
     await expect(card).toHaveAttribute("data-power-topology", "genset_only");
     await expect(card).toHaveAttribute("data-power-topology-source", "configured");
     await expect(card.getByText("REDE / GERADOR")).toHaveCount(0);
-    await expect(card.getByRole("heading", { name: "GERADOR", exact: true })).toBeVisible();
+    await expect(card.locator(".vref-table-heading h4")).toHaveText("GERADOR");
     await expect(
       card.locator('svg[aria-label="Fluxo de potência vertical sem rede"]'),
     ).toBeVisible();
