@@ -26,14 +26,14 @@
 }
 
 .vref-card {
-  --vref-bg: #000d16;
-  --vref-panel: #001521;
-  --vref-line: #294b60;
-  --vref-line-soft: #18394b;
+  --vref-bg: #07111a;
+  --vref-panel: #0d1b26;
+  --vref-line: #243947;
+  --vref-line-soft: #18303f;
   --vref-text: #f5f9fb;
   --vref-muted: #93a8b6;
-  --vref-green: #2ee600;
-  --vref-red: #ff3a2f;
+  --vref-green: #35bf68;
+  --vref-red: #e24a4f;
   --vref-yellow: #ffc31a;
 
   position: relative;
@@ -51,11 +51,11 @@
   min-height: 0;
   padding: 4px;
   overflow: hidden;
-  border: 1px solid #294b60;
+  border: 1px solid #243947;
   border-radius: 7px;
   background:
     radial-gradient(circle at 50% -8%, rgb(7 52 77 / 22%), transparent 34%),
-    linear-gradient(180deg, #00131f 0%, #000a11 100%);
+    linear-gradient(180deg, #07131c 0%, #050c12 100%);
   color: var(--vref-text);
   box-shadow:
     inset 0 0 22px rgb(0 39 60 / 16%),
@@ -231,8 +231,8 @@
 }
 
 .vref-dial-face {
-  fill: #0b1823;
-  stroke: #2c4354;
+  fill: #08141d;
+  stroke: #314957;
   stroke-width: 2;
 }
 
@@ -244,26 +244,26 @@
 }
 
 .vref-dial-track {
-  stroke: #3c4e63;
+  stroke: #334754;
 }
 
 .vref-instrument-gauge[data-accent="cyan"] .vref-dial-active {
-  stroke: #24b8e6;
+  stroke: #3a9fc5;
   filter: drop-shadow(0 0 2px rgb(36 184 230 / 42%));
 }
 
 .vref-instrument-gauge[data-accent="green"] .vref-dial-active {
-  stroke: #2dde14;
+  stroke: #35bf68;
   filter: drop-shadow(0 0 2px rgb(45 222 20 / 38%));
 }
 
 .vref-dial-tick {
-  stroke: #8fa2b0;
+  stroke: #8ca0ac;
   stroke-width: 1.1;
 }
 
 .vref-dial-tick.is-major {
-  stroke: #eef5f8;
+  stroke: #e7eef2;
   stroke-width: 1.8;
 }
 
@@ -380,7 +380,7 @@
 }
 
 .vref-utility-node > circle {
-  fill: #0b1823;
+  fill: #08141d;
   stroke: #79909d;
   stroke-width: 1.7;
 }
@@ -493,7 +493,7 @@
 }
 
 .vref-generator-node > circle {
-  fill: #0b1823;
+  fill: #08141d;
   stroke: #738995;
   stroke-width: 2;
 }
@@ -542,13 +542,13 @@
 }
 
 .vref-flow-command-stack .start:not(:disabled) {
-  border-color: #31d817;
-  background: #1dbb06;
+  border-color: #35bf68;
+  background: #278f4f;
 }
 
 .vref-flow-command-stack .stop:not(:disabled) {
-  border-color: #e4312a;
-  background: #be201b;
+  border-color: #e24a4f;
+  background: #a9353a;
 }
 
 .vref-flow-command-stack button:disabled {
@@ -721,27 +721,27 @@
 }
 
 .vref-motor-gauge-track {
-  stroke: #263b4c;
+  stroke: #2c404d;
 }
 
 .vref-motor-gauge.tone-red .vref-motor-gauge-progress {
-  stroke: #ff3a2f;
+  stroke: #e24a4f;
 }
 
 .vref-motor-gauge.tone-orange .vref-motor-gauge-progress {
-  stroke: #ff9f1a;
+  stroke: #d99242;
 }
 
 .vref-motor-gauge.tone-blue .vref-motor-gauge-progress {
-  stroke: #25b9ed;
+  stroke: #3a9fc5;
 }
 
 .vref-motor-gauge.tone-green .vref-motor-gauge-progress {
-  stroke: #2ee600;
+  stroke: #35bf68;
 }
 
 .vref-motor-gauge.tone-neutral .vref-motor-gauge-progress {
-  stroke: #526b79;
+  stroke: #596d79;
 }
 
 .vref-motor-gauge-value {

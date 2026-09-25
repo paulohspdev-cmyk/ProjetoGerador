@@ -39,6 +39,33 @@
  * Green means live/closed/healthy here; red/yellow/brown are fault states only.
  */
 .generator-reference-card-grid {
+  --sc-canvas-bg: #07111a;
+  --sc-surface: #0d1b26;
+  --sc-surface-2: #142632;
+  --sc-surface-3: #061018;
+  --sc-surface-active: #183244;
+  --sc-border: #243947;
+  --sc-border-strong: #405967;
+  --sc-text: #f4f7f9;
+  --sc-text-muted: #a7b6c0;
+  --sc-text-dim: #7f919d;
+  --sc-text-disabled: #6f7d86;
+  --sc-state-active: #35bf68;
+  --sc-state-inactive: #647681;
+  --sc-alarm: #e24a4f;
+  --sc-warning: #e5b34c;
+  --sc-nocomm: #c84d52;
+  --sc-info: #3a9fc5;
+  --sc-ok-light: #48cd78;
+  --sc-ok-mid: #35bf68;
+  --sc-ok-dark: #268d4e;
+  --sc-w1-light: #f0ca64;
+  --sc-w1-mid: #e5b34c;
+  --sc-w1-dark: #ca8639;
+  --sc-w2-light: #e96a6e;
+  --sc-w2-mid: #e24a4f;
+  --sc-w2-dark: #a9353a;
+
   background: var(--sc-canvas-bg) !important;
 }
 
@@ -95,12 +122,8 @@
   color: var(--sc-alarm) !important;
 }
 
-.vref-card.has-stale-telemetry {
-  border-color: var(--sc-nocomm) !important;
-}
-
 .vref-card.has-stale-telemetry .vref-header {
-  box-shadow: inset 3px 0 0 var(--sc-nocomm);
+  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--sc-nocomm) 72%, transparent);
 }
 
 .vref-gauge-base,
