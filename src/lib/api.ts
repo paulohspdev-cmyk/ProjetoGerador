@@ -22,6 +22,7 @@ export type CreateGeneratorPayload = {
   rapidDeviceNum?: number | undefined;
   nominalPower?: number | undefined;
   fuelCapacityLiters?: number | undefined;
+  powerTopology?: "auto" | "mains_genset" | "genset_only" | undefined;
 };
 export type UserCreatePayload = { name: string; email: string; password: string; role: UserRole };
 export type UserUpdatePayload = {

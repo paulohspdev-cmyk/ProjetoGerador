@@ -15,6 +15,7 @@ from .config import (
     RAPID_READER_DLL,
 )
 from .controller_library import pack_for_model
+from .power_topology import resolve_power_topology
 from . import db
 
 _cache = {"at": 0.0, "channels": {}, "error": "", "requested": set()}
@@ -628,6 +629,12 @@ def _frontend_generator(
         }
         for key in configured_metrics
     }
+    power_topology, power_topology_source = resolve_power_topology(
+        generator,
+        configured_metrics,
+        binding_present,
+    )
+
     ui_status = (
         "nao_configurado"
         if not enabled or status == "not_configured"
@@ -645,6 +652,8 @@ def _frontend_generator(
         "customer": generator.get("customer") or "",
         "controller": generator.get("controller_model") or generator.get("controller_type") or "",
         "controllerType": generator.get("controller_type") or "",
+        "powerTopology": power_topology,
+        "powerTopologySource": power_topology_source,
         "site": generator.get("site") or "",
         "enabled": enabled,
         "status": ui_status,

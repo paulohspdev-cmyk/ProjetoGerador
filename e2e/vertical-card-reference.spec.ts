@@ -19,6 +19,7 @@ async function createGenerator(
     listenPort: number;
     modbusUnit: number;
     rapidDeviceNum: number;
+    powerTopology?: "auto" | "mains_genset" | "genset_only";
   },
 ) {
   return page.evaluate(async (body) => {
@@ -36,6 +37,7 @@ async function createGenerator(
         listenPort: body.listenPort,
         modbusUnit: body.modbusUnit,
         rapidDeviceNum: body.rapidDeviceNum,
+        ...(body.powerTopology ? { powerTopology: body.powerTopology } : {}),
       }),
     });
     return response.status;
@@ -68,8 +70,12 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
   await page.goto("/p/geradores");
   await expect(page.getByRole("button", { name: /^Todos$/ })).toBeVisible();
 
-  const comap = page.locator('[data-controller-vendor="comap"]').filter({ hasText: "VERTCOMAP" });
-  const dse = page.locator('[data-controller-vendor="dse"]').filter({ hasText: "VERTDSE" });
+  const comap = page.locator('[data-controller-vendor="comap"]').filter({
+    has: page.getByRole("link", { name: "VERTCOMAP", exact: true }),
+  });
+  const dse = page.locator('[data-controller-vendor="dse"]').filter({
+    has: page.getByRole("link", { name: "VERTDSE", exact: true }),
+  });
 
   await expect(comap).toBeVisible();
   await expect(dse).toBeVisible();
@@ -108,6 +114,60 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
   }
 });
 
+test("vertical sem rede remove somente a topologia da concessionária em ComAp e DSE", async ({
+  page,
+}) => {
+  await login(page);
+
+  expect([201, 409]).toContain(
+    await createGenerator(page, {
+      tag: "VERTCOMAPISO",
+      controller: "ComAp InteliGen 200",
+      listenPort: 15111,
+      modbusUnit: 73,
+      rapidDeviceNum: 393,
+      powerTopology: "genset_only",
+    }),
+  );
+
+  expect([201, 409]).toContain(
+    await createGenerator(page, {
+      tag: "VERTDSEISO",
+      controller: "DSE DSE8620 MKII",
+      listenPort: 15112,
+      modbusUnit: 74,
+      rapidDeviceNum: 394,
+      powerTopology: "genset_only",
+    }),
+  );
+
+  await page.goto("/p/geradores");
+  const search = page.getByLabel("Buscar gerador");
+
+  for (const item of [
+    { vendor: "comap", tag: "VERTCOMAPISO" },
+    { vendor: "dse", tag: "VERTDSEISO" },
+  ]) {
+    await search.fill(item.tag);
+    const card = page
+      .locator(`[data-controller-vendor="${item.vendor}"]`)
+      .filter({ hasText: item.tag });
+    await expect(card).toBeVisible();
+    await expect(card).toHaveAttribute("data-power-topology", "genset_only");
+    await expect(card).toHaveAttribute("data-power-topology-source", "configured");
+    await expect(card.getByText("REDE / GERADOR")).toHaveCount(0);
+    await expect(card.getByRole("heading", { name: "GERADOR", exact: true })).toBeVisible();
+    await expect(
+      card.locator('svg[aria-label="Fluxo de potência vertical sem rede"]'),
+    ).toBeVisible();
+    await expect(card.locator(".vref-breaker-badge")).toHaveCount(1);
+    await expect(card.getByText("MCB", { exact: true })).toHaveCount(0);
+    await expect(card.getByText("GCB", { exact: true })).toBeVisible();
+    await expect(card.getByText("CARGA", { exact: true })).toBeVisible();
+  }
+  await search.fill("");
+});
+
 test("vertical preserva todo o conteúdo e rola a grade quando a altura é curta", async ({
   browser,
 }) => {
@@ -128,7 +188,7 @@ test("vertical preserva todo o conteúdo e rola a grade quando a altura é curta
     const page = await context.newPage();
     await login(page);
 
-    for (let index = 1; index <= 8; index += 1) {
+    for (let index = 1; index <= 12; index += 1) {
       const response = await createGenerator(page, {
         tag: "VFIT" + String(index).padStart(2, "0"),
         controller: index % 2 === 0 ? "DSE DSE8620 MKII" : "ComAp InteliGen 200",
@@ -141,6 +201,7 @@ test("vertical preserva todo o conteúdo e rola a grade quando a altura é curta
 
     await page.goto("/p/geradores");
     await expect(page.getByRole("button", { name: /^Todos$/ })).toBeVisible();
+    await page.getByLabel("Buscar gerador").fill("VFIT");
     await expect(page.locator(".vref-card-frame").first()).toBeVisible({
       timeout: 15_000,
     });

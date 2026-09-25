@@ -129,25 +129,30 @@ const valueIcons = {
 };
 
 export function VerticalTables({
+  hasMainsSource,
   electricalRows,
   valueRows,
 }: {
+  hasMainsSource: boolean;
   electricalRows: ElectricalRow[];
   valueRows: ValueRow[];
 }) {
   return (
     <section className="vref-section vref-measurements">
-      <div className="vref-table-heading">
-        <h4>REDE / GERADOR</h4>
-        <span>REDE</span>
+      <div className={cn("vref-table-heading", !hasMainsSource && "is-generator-only")}>
+        <h4>{hasMainsSource ? "REDE / GERADOR" : "GERADOR"}</h4>
+        {hasMainsSource && <span>REDE</span>}
         <span>GEN</span>
       </div>
 
       <div className="vref-data-table">
         {electricalRows.map((row) => (
-          <div key={row.label} className="vref-data-row">
+          <div
+            key={row.label}
+            className={cn("vref-data-row", !hasMainsSource && "is-generator-only")}
+          >
             <span>{row.label}</span>
-            <b>{row.mains}</b>
+            {hasMainsSource && <b>{row.mains}</b>}
             <b className="generator">{row.generator}</b>
           </div>
         ))}

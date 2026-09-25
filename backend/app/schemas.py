@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field, model_validator
 
 
@@ -35,6 +37,7 @@ class GeneratorCreate(BaseModel):
     rapidDeviceNum: int | None = Field(default=None, ge=1)
     nominalPower: float | None = Field(default=None, gt=0, le=100000)
     fuelCapacityLiters: float | None = Field(default=None, gt=0, le=100000)
+    powerTopology: Literal["auto", "mains_genset", "genset_only"] = "auto"
     enabled: bool = True
 
     @model_validator(mode="after")
@@ -91,6 +94,7 @@ class GeneratorCreate(BaseModel):
             "rapid_device_num": self.rapidDeviceNum,
             "nominal_power_kw": self.nominalPower,
             "fuel_capacity_l": self.fuelCapacityLiters,
+            "power_topology": self.powerTopology,
             "enabled": self.enabled,
         }
 
@@ -107,6 +111,7 @@ class GeneratorUpdate(BaseModel):
     rapidDeviceNum: int | None = Field(default=None, ge=1)
     nominalPower: float | None = Field(default=None, gt=0, le=100000)
     fuelCapacityLiters: float | None = Field(default=None, gt=0, le=100000)
+    powerTopology: Literal["auto", "mains_genset", "genset_only"] | None = None
     enabled: bool | None = None
 
     @model_validator(mode="after")
@@ -130,6 +135,7 @@ class GeneratorUpdate(BaseModel):
             "rapid_device_num": self.rapidDeviceNum,
             "nominal_power_kw": self.nominalPower,
             "fuel_capacity_l": self.fuelCapacityLiters,
+            "power_topology": self.powerTopology,
             "enabled": self.enabled,
         }
         result = {key: value for key, value in mapping.items() if value is not None}

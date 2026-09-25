@@ -40,6 +40,9 @@ export type Generator = {
   customer?: string;
   controller: string;
   controllerType?: string;
+  powerTopology?: "mains_genset" | "genset_only" | "unknown";
+  powerTopologySource?:
+    "configured" | "asset_metadata" | "asset_graph" | "catalog" | "binding" | "unknown";
   site: string;
   enabled?: boolean;
   status: GenStatus;

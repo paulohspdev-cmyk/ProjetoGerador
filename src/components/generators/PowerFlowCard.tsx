@@ -73,6 +73,9 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
 
   const vendor = controllerVendor(gen);
   const dse = vendor === "dse";
+  // UNKNOWN preserva o card completo. Só escondemos a rede quando a topologia
+  // estável foi resolvida explicitamente como genset_only.
+  const hasMainsSource = gen.powerTopology !== "genset_only";
   const runningKnown = rpm != null && hasFreshMetric(gen, "rpm");
   const running = runningKnown && isPositiveMeasurement(rpm);
   const mcbKnown = hasFreshMetric(gen, "mcb_closed");
@@ -229,11 +232,13 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       className={cn(
         "vref-card",
         dse ? "is-dse" : "is-comap",
-        mainsPresent ? "has-mains" : "no-mains",
+        hasMainsSource ? "has-mains-source" : "no-mains-source",
         displayStatus === "alerta" && "has-alert",
         gen.telemetryStale && "has-stale-telemetry",
       )}
       data-controller-vendor={vendor}
+      data-power-topology={gen.powerTopology ?? "unknown"}
+      data-power-topology-source={gen.powerTopologySource ?? "unknown"}
       data-mains-state={!mainsKnown ? "unknown" : mainsPresent ? "present" : "absent"}
       data-telemetry-state={gen.telemetryStale ? "stale" : online ? "live" : "unavailable"}
     >
@@ -256,6 +261,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       />
 
       <VerticalPowerFlow
+        hasMainsSource={hasMainsSource}
         mainsPresent={mainsPresent}
         mainsKnown={mainsKnown}
         mainsFrequency={mainsFrequency}
@@ -305,7 +311,11 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         running={running}
       />
 
-      <VerticalTables electricalRows={electricalRows} valueRows={valueRows} />
+      <VerticalTables
+        hasMainsSource={hasMainsSource}
+        electricalRows={electricalRows}
+        valueRows={valueRows}
+      />
     </article>
   );
 }

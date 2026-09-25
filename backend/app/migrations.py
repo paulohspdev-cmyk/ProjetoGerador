@@ -10,7 +10,7 @@ import time
 
 from . import db
 
-LATEST_SCHEMA_VERSION = 4
+LATEST_SCHEMA_VERSION = 5
 
 _REQUIRED_BASELINE_TABLES = {
     "generators",
@@ -105,11 +105,25 @@ def _generator_fuel_capacity_v4(conn) -> None:
     conn.execute("ALTER TABLE generators ADD COLUMN fuel_capacity_l REAL")
 
 
+def _generator_power_topology_v5(conn) -> None:
+    """Persiste somente override estável; 'auto' continua sendo o padrão seguro."""
+    columns = {
+        str(row[1])
+        for row in conn.execute("PRAGMA table_info(generators)").fetchall()
+    }
+    if "power_topology" in columns:
+        return
+    conn.execute(
+        "ALTER TABLE generators ADD COLUMN power_topology TEXT NOT NULL DEFAULT 'auto'"
+    )
+
+
 _MIGRATIONS = {
     1: _baseline_v1,
     2: _operator_role_v2,
     3: _generator_nominal_power_v3,
     4: _generator_fuel_capacity_v4,
+    5: _generator_power_topology_v5,
 }
 
 

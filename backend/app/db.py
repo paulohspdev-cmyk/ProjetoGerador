@@ -47,6 +47,7 @@ def init_db():
                 rapid_device_num INTEGER,
                 nominal_power_kw REAL,
                 fuel_capacity_l REAL,
+                power_topology TEXT NOT NULL DEFAULT 'auto',
                 enabled INTEGER NOT NULL DEFAULT 1,
                 created_at INTEGER NOT NULL,
                 updated_at INTEGER NOT NULL
@@ -551,10 +552,13 @@ def create_generator(data, actor="system"):
         "rapid_device_num": data.get("rapid_device_num"),
         "nominal_power_kw": _normalize_nominal_power_kw(data.get("nominal_power_kw")),
         "fuel_capacity_l": _normalize_fuel_capacity_l(data.get("fuel_capacity_l")),
+        "power_topology": str(data.get("power_topology") or "auto").strip().lower(),
         "enabled": 1 if data.get("enabled", True) else 0,
         "created_at": now,
         "updated_at": now,
     }
+    if record["power_topology"] not in {"auto", "mains_genset", "genset_only"}:
+        raise ValueError("Topologia elétrica inválida")
     _validate_generator_network_identity(record)
     with connect() as conn:
         conn.execute("BEGIN IMMEDIATE")
@@ -564,11 +568,11 @@ def create_generator(data, actor="system"):
             INSERT INTO generators (
                 id, tag, name, customer, site, controller_type, controller_model,
                 transport, host, listen_port, modbus_unit, rapid_device_num, nominal_power_kw,
-                fuel_capacity_l, enabled, created_at, updated_at
+                fuel_capacity_l, power_topology, enabled, created_at, updated_at
             ) VALUES (
                 :id, :tag, :name, :customer, :site, :controller_type, :controller_model,
                 :transport, :host, :listen_port, :modbus_unit, :rapid_device_num, :nominal_power_kw,
-                :fuel_capacity_l, :enabled, :created_at, :updated_at
+                :fuel_capacity_l, :power_topology, :enabled, :created_at, :updated_at
             )
             """,
             record,
@@ -593,6 +597,11 @@ def _normalized_generator_value(key, value):
         return _normalize_nominal_power_kw(value)
     if key == "fuel_capacity_l":
         return _normalize_fuel_capacity_l(value)
+    if key == "power_topology":
+        text = str(value or "auto").strip().lower()
+        if text not in {"auto", "mains_genset", "genset_only"}:
+            raise ValueError("Topologia elétrica inválida")
+        return text
     if key == "tag":
         return str(value).strip().upper()
     if key == "controller_type":
@@ -615,7 +624,7 @@ def update_generator(
     allowed = {
         "tag", "name", "customer", "site", "controller_type", "controller_model",
         "transport", "host", "listen_port", "modbus_unit", "rapid_device_num",
-        "nominal_power_kw", "fuel_capacity_l", "enabled",
+        "nominal_power_kw", "fuel_capacity_l", "power_topology", "enabled",
     }
     industrial_identity = {
         "tag",
