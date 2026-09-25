@@ -284,15 +284,16 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         canGcbClose={canAction("gcb_close")}
         busy={commandBusy}
         onCommand={(action) => void runCommand(action)}
-      />
-
-      <VerticalControls
-        gen={gen}
-        dse={dse}
-        modeKnown={modeKnown}
-        canOperate={canOperate}
-        busy={commandBusy}
-        onCommand={(action) => void runCommand(action)}
+        controls={
+          <VerticalControls
+            gen={gen}
+            dse={dse}
+            modeKnown={modeKnown}
+            canOperate={canOperate}
+            busy={commandBusy}
+            onCommand={(action) => void runCommand(action)}
+          />
+        }
       />
       {commandMessage && <p className="vref-command-message">{commandMessage}</p>}
 

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { IndustrialCommandAction } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -116,6 +117,7 @@ export function VerticalPowerFlow({
   canGcbClose,
   busy,
   onCommand,
+  controls,
 }: {
   hasMainsSource: boolean;
   mainsPresent: boolean;
@@ -137,6 +139,7 @@ export function VerticalPowerFlow({
   canGcbClose: boolean;
   busy: IndustrialCommandAction | null;
   onCommand: (action: IndustrialCommandAction) => void;
+  controls: ReactNode;
 }) {
   const mainsToBus = hasMainsSource && mainsKnown && mainsPresent && mcbKnown && mcb;
   const genToBus = generatorKnown && generatorPresent && gcbKnown && gcb;
@@ -346,6 +349,8 @@ export function VerticalPowerFlow({
           </button>
         </div>
       </div>
+
+      <div className="vref-flow-mode-controls">{controls}</div>
     </section>
   );
 }

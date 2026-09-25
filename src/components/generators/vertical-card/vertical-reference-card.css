@@ -40,10 +40,9 @@
   display: grid;
   grid-template-rows:
     44px
-    118px
+    132px
     minmax(250px, 1.7fr)
-    auto
-    108px
+    124px
     minmax(216px, 1fr);
   gap: 4px;
   width: 100%;
@@ -116,7 +115,7 @@
   display: block;
   overflow: hidden;
   color: #fff;
-  font-size: 14px;
+  font-size: 17px;
   font-weight: 900;
   line-height: 1.05;
   text-decoration: none;
@@ -362,6 +361,13 @@
   min-height: 0;
 }
 
+.vref-flow-mode-controls {
+  flex: 0 0 auto;
+  margin-top: 3px;
+  padding-top: 3px;
+  border-top: 1px solid var(--vref-line-soft);
+}
+
 .vref-flow-controller-body > svg {
   position: absolute;
   top: 0;
@@ -574,7 +580,7 @@
 
 /* Mode controls */
 .vref-control {
-  padding: 4px;
+  padding: 0;
 }
 
 .vref-mode-row {
@@ -714,7 +720,7 @@
 
 .vref-motor-gauge-label {
   overflow: hidden;
-  color: #b7c7d1;
+  color: #fff;
   font-size: 8px;
   font-weight: 900;
   line-height: 10px;
@@ -746,6 +752,26 @@
   stroke: #21a7d5;
 }
 
+.vref-motor-gauge.tone-red .vref-motor-gauge-progress {
+  stroke: #ff3a2f;
+}
+
+.vref-motor-gauge.tone-orange .vref-motor-gauge-progress {
+  stroke: #ff9f1a;
+}
+
+.vref-motor-gauge.tone-blue .vref-motor-gauge-progress {
+  stroke: #25b9ed;
+}
+
+.vref-motor-gauge.tone-green .vref-motor-gauge-progress {
+  stroke: #2ee600;
+}
+
+.vref-motor-gauge.tone-neutral .vref-motor-gauge-progress {
+  stroke: #526b79;
+}
+
 .vref-motor-gauge-value {
   fill: #fff;
   font-size: 14px;
@@ -760,14 +786,6 @@
   fill: #fff;
   font-size: 8px;
   font-weight: 800;
-}
-
-.vref-motor-gauge.is-warning .vref-motor-gauge-progress {
-  stroke: var(--vref-yellow);
-}
-
-.vref-motor-gauge.is-warning .vref-motor-gauge-label {
-  color: var(--vref-yellow);
 }
 
 /* Measurements */
@@ -961,10 +979,9 @@
   .vref-card {
     grid-template-rows:
       38px
-      96px
+      110px
       minmax(195px, 1.35fr)
-      auto
-      92px
+      108px
       minmax(158px, 1fr);
     gap: 3px;
     padding: 3px;
@@ -991,10 +1008,6 @@
 
   .vref-flow-command-stack button {
     height: 27px;
-  }
-
-  .vref-control {
-    padding: 4px;
   }
 
   .vref-mode-row button,
@@ -1026,7 +1039,7 @@
   }
 
   .vref-motor-gauge-value {
-    font-size: 12px;
+    font-size: 15px;
   }
 
   .vref-data-row {

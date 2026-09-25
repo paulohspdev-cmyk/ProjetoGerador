@@ -62,7 +62,7 @@ export function VerticalControls({
   };
 
   return (
-    <section className="vref-section vref-control">
+    <div className="vref-control">
       {dse ? (
         <div className="vref-dse-control-row">
           <button
@@ -103,6 +103,6 @@ export function VerticalControls({
           {modeButton("TEST", "test")}
         </div>
       )}
-    </section>
+    </div>
   );
 }

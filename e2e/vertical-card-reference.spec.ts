@@ -126,6 +126,10 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
     .evaluate((element) => Math.round(element.getBoundingClientRect().height));
   expect(comapControlHeight).toBeLessThanOrEqual(32);
   expect(dseControlHeight).toBeLessThanOrEqual(32);
+  await expect(comap.locator(".vref-flow-controller .vref-control")).toHaveCount(1);
+  await expect(dse.locator(".vref-flow-controller .vref-control")).toHaveCount(1);
+  await expect(comap.locator(":scope > .vref-control")).toHaveCount(0);
+  await expect(dse.locator(":scope > .vref-control")).toHaveCount(0);
 
   for (const card of [comap, dse]) {
     await expect(card.getByRole("button", { name: "START" })).toBeVisible();

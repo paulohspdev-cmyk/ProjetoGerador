@@ -11,7 +11,26 @@ function valueText(value: number | null, unit: string, digits = 0) {
   });
 }
 
+type MotorGaugeKind = "oil" | "temperature" | "fuel" | "battery";
+
+function motorGaugeTone(kind: MotorGaugeKind, percent: number | null, warning: boolean) {
+  if (warning) return "red";
+  if (percent == null || !Number.isFinite(percent)) return "neutral";
+
+  if (kind === "temperature") {
+    if (percent <= 33) return "blue";
+    if (percent <= 70) return "orange";
+    return "red";
+  }
+
+  if (percent <= 20) return "red";
+  if (percent <= 40) return "orange";
+  if (percent <= 70) return "blue";
+  return "green";
+}
+
 function MotorMiniGauge({
+  kind,
   label,
   value,
   unit,
@@ -20,6 +39,7 @@ function MotorMiniGauge({
   warning = false,
   "data-quality": dataQuality,
 }: {
+  kind: MotorGaugeKind;
   label: string;
   value: number | null;
   unit: string;
@@ -32,11 +52,13 @@ function MotorMiniGauge({
   const pct =
     percent == null || !Number.isFinite(percent) ? null : Math.min(100, Math.max(0, percent));
   const activeLength = pct == null ? 0 : 78 * (pct / 100);
+  const tone = motorGaugeTone(kind, pct, warning);
 
   return (
     <div
-      className={cn("vref-motor-gauge", !known && "is-unknown", warning && "is-warning")}
+      className={cn("vref-motor-gauge", !known && "is-unknown", `tone-${tone}`)}
       data-motor-gauge={label.toLowerCase()}
+      data-tone={tone}
       data-quality={dataQuality}
     >
       <span className="vref-motor-gauge-label">{label}</span>
@@ -113,14 +135,23 @@ export function VerticalEngineAndRpm({
     <div className="vref-engine-rpm">
       <section className="vref-section vref-engine">
         <div className="vref-motor-gauges">
-          <MotorMiniGauge label="ÓLEO" value={oil} unit={oilUnit} digits={1} percent={oilPercent} />
           <MotorMiniGauge
+            kind="oil"
+            label="ÓLEO"
+            value={oil}
+            unit={oilUnit}
+            digits={1}
+            percent={oilPercent}
+          />
+          <MotorMiniGauge
+            kind="temperature"
             label="TEMP."
             value={coolant}
             unit={coolantUnit}
             percent={coolantPercent}
           />
           <MotorMiniGauge
+            kind="fuel"
             label="COMB."
             value={fuel}
             unit={fuelUnit}
@@ -129,6 +160,7 @@ export function VerticalEngineAndRpm({
             data-quality={fuelOutOfRange ? "out-of-range" : "normal"}
           />
           <MotorMiniGauge
+            kind="battery"
             label="BATERIA"
             value={battery}
             unit="V"
