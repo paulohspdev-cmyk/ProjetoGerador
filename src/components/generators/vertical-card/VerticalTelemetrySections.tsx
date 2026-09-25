@@ -90,6 +90,7 @@ export function VerticalEngineAndRpm({
   fuel,
   fuelUnit,
   battery,
+  batteryPercent,
   oilPercent,
   coolantPercent,
   fuelPercent,
@@ -102,6 +103,7 @@ export function VerticalEngineAndRpm({
   fuel: number | null;
   fuelUnit: string;
   battery: number | null;
+  batteryPercent: number | null;
   oilPercent: number | null;
   coolantPercent: number | null;
   fuelPercent: number | null;
@@ -110,9 +112,6 @@ export function VerticalEngineAndRpm({
   return (
     <div className="vref-engine-rpm">
       <section className="vref-section vref-engine">
-        <div className="vref-engine-heading">
-          <h4>MOTOR</h4>
-        </div>
         <div className="vref-motor-gauges">
           <MotorMiniGauge label="ÓLEO" value={oil} unit={oilUnit} digits={1} percent={oilPercent} />
           <MotorMiniGauge
@@ -129,7 +128,13 @@ export function VerticalEngineAndRpm({
             warning={fuelOutOfRange}
             data-quality={fuelOutOfRange ? "out-of-range" : "normal"}
           />
-          <MotorMiniGauge label="BATERIA" value={battery} unit="V" digits={1} percent={null} />
+          <MotorMiniGauge
+            label="BATERIA"
+            value={battery}
+            unit="V"
+            digits={1}
+            percent={batteryPercent}
+          />
         </div>
       </section>
     </div>

@@ -303,6 +303,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         fuel={fuel}
         fuelUnit={fuelUnit}
         battery={batteryVoltage}
+        batteryPercent={percents.battery}
         oilPercent={percents.oil}
         coolantPercent={percents.coolant}
         fuelPercent={percents.fuel}

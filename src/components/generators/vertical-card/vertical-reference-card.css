@@ -683,18 +683,8 @@
 }
 
 .vref-engine {
-  display: grid;
-  grid-template-rows: 14px minmax(0, 1fr);
+  display: block;
   padding: 3px 5px 4px;
-}
-
-.vref-engine-heading {
-  min-width: 0;
-}
-
-.vref-engine-heading h4 {
-  margin: 0;
-  line-height: 1;
 }
 
 .vref-motor-gauges {
@@ -754,7 +744,7 @@
 }
 
 .vref-motor-gauge-value {
-  fill: #27b7e7;
+  fill: #fff;
   font-size: 14px;
   font-weight: 900;
   paint-order: stroke;
@@ -764,7 +754,7 @@
 }
 
 .vref-motor-gauge-unit {
-  fill: #8fa5b3;
+  fill: #fff;
   font-size: 8px;
   font-weight: 800;
 }
@@ -1025,7 +1015,6 @@
   }
 
   .vref-engine {
-    grid-template-rows: 12px minmax(0, 1fr);
     padding: 2px 4px 3px;
   }
 

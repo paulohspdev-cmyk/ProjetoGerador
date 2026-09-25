@@ -188,6 +188,7 @@ export function readGeneratorTelemetry(gen: Generator) {
   const oilMeter = meterState(oil, oilScale);
   const coolantMeter = meterState(coolant, coolantScale);
   const fuelMeter = meterState(rawFuel, fuelScale);
+  const batteryMeter = meterState(battery, limits["battery_voltage"]);
   const alternatorMeter = meterState(
     alternator,
     mergedScale(undefined, limits["alternator_voltage"]),
@@ -237,6 +238,7 @@ export function readGeneratorTelemetry(gen: Generator) {
       oil: visibleMeterPercent(oilMeter.percent, tones.oil),
       coolant: visibleMeterPercent(coolantMeter.percent, tones.coolant),
       fuel: visibleMeterPercent(fuelPercent, tones.fuel),
+      battery: visibleMeterPercent(batteryMeter.percent, batteryMeter.tone),
       alternator: visibleMeterPercent(alternatorMeter.percent, tones.alternator),
       maintenance: visibleMeterPercent(maintenanceMeter.percent, tones.maintenance),
       runHours: percentFromLimit(runHours, limits["run_hours"]),

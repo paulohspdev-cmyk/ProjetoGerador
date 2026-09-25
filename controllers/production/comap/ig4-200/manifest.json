@@ -152,6 +152,10 @@
     "coolant_temperature": {
       "displayMin": -16,
       "displayMax": 120
+    },
+    "battery_voltage": {
+      "displayMin": 0,
+      "displayMax": 36
     }
   },
   "mapping": {
