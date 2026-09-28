@@ -1,11 +1,24 @@
 .compact-generator-grid {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+  box-sizing: border-box;
+  grid-template-columns: repeat(var(--compact-cols, 6), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--compact-rows, 3), minmax(0, 1fr));
+  gap: var(--compact-gap, 6px);
+  padding: var(--compact-padding, 4px);
+  align-content: stretch;
+}
+
+.compact-generator-grid > article {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
 }
 
 .controller-image-area {
   display: flex;
-  width: 105px;
-  height: 72px;
+  width: 100%;
+  max-width: 92px;
+  height: clamp(44px, 20%, 64px);
   flex: none;
   align-items: center;
   justify-content: center;
@@ -19,4 +32,75 @@
   height: 100%;
   object-fit: contain;
   background: transparent;
+}
+
+.compact-kw-gauge {
+  display: grid;
+  width: 100%;
+  max-width: 92px;
+  margin-top: -4px;
+  place-items: center;
+  min-height: 0;
+}
+
+.compact-kw-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 58px;
+}
+
+.compact-kw-base,
+.compact-kw-zone {
+  fill: none;
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+
+.compact-kw-base {
+  stroke: #173545;
+}
+
+.compact-kw-zone.is-green {
+  stroke: #25db00;
+}
+
+.compact-kw-zone.is-yellow {
+  stroke: #ffc31a;
+}
+
+.compact-kw-zone.is-red {
+  stroke: #ff3126;
+}
+
+.compact-kw-scale {
+  fill: #9eb0bb;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.compact-kw-unit {
+  fill: #c5d5e0;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.compact-kw-value {
+  fill: #fff;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.compact-kw-value.is-live {
+  fill: #2ee600;
+}
+
+.compact-kw-needle {
+  fill: #fff;
+}
+
+.compact-kw-hub {
+  fill: #071923;
+  stroke: #b8c9d4;
+  stroke-width: 1;
 }

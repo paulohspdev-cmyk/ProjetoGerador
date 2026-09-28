@@ -13,9 +13,20 @@ import {
 import { cn } from "@/lib/utils";
 import { useScadaOps } from "./ScadaOpsProvider";
 
-export function ScreenBody({ children }: { children: ReactNode }) {
+export function ScreenBody({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string | undefined;
+}) {
   return (
-    <div className="rc-screen-body scroll-slim min-h-0 min-w-0 flex-1 space-y-3 overflow-x-hidden overflow-y-auto overscroll-contain p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-4 lg:p-4 2xl:p-5">
+    <div
+      className={cn(
+        "rc-screen-body scroll-slim min-h-0 min-w-0 flex-1 space-y-3 overflow-x-hidden overflow-y-auto overscroll-contain p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-4 lg:p-4 2xl:p-5",
+        className,
+      )}
+    >
       {children}
     </div>
   );
@@ -26,14 +37,16 @@ export type StatItem = {
   value: string | number;
   sub?: string | undefined;
   tone?: string | undefined;
+  subTone?: string | undefined;
   icon?: LucideIcon | undefined;
+  iconWrap?: string | undefined;
 };
 
 export function Stats({ items }: { items: StatItem[] }) {
   return (
     <div
       className={cn(
-        "grid min-w-0 gap-2.5",
+        "rc-stat-strip grid min-w-0 gap-0 overflow-hidden",
         items.length <= 2 && "grid-cols-1 min-[420px]:grid-cols-2",
         items.length === 3 && "grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-3",
         items.length === 4 && "grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-4",
@@ -44,11 +57,16 @@ export function Stats({ items }: { items: StatItem[] }) {
       {items.map((item) => (
         <div
           key={item.label}
-          className="rc-stat-card flex min-w-0 items-center gap-3 rounded-xl border border-border bg-card p-3.5 shadow-[var(--shadow-panel)]"
+          className="rc-stat-card flex min-w-0 items-center gap-3 bg-transparent p-3"
         >
           {item.icon && (
-            <span className="rc-stat-icon grid size-11 shrink-0 place-items-center rounded-xl bg-secondary">
-              <item.icon className={cn("size-5", item.tone ?? "text-primary")} />
+            <span
+              className={cn(
+                "rc-stat-icon grid size-11 shrink-0 place-items-center rounded-xl",
+                item.iconWrap ?? "bg-secondary text-primary",
+              )}
+            >
+              <item.icon className="size-5" />
             </span>
           )}
           <div className="min-w-0">
@@ -64,7 +82,14 @@ export function Stats({ items }: { items: StatItem[] }) {
               {item.value}
             </p>
             {item.sub && (
-              <p className="rc-stat-sub truncate text-[11px] text-muted-foreground">{item.sub}</p>
+              <p
+                className={cn(
+                  "rc-stat-sub truncate text-[11px]",
+                  item.subTone ?? "text-muted-foreground",
+                )}
+              >
+                {item.sub}
+              </p>
             )}
           </div>
         </div>
@@ -87,7 +112,7 @@ export function Panel({
   return (
     <section
       className={cn(
-        "rc-panel min-w-0 overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-panel)]",
+        "rc-panel min-w-0 overflow-hidden rounded-none border-0 bg-transparent shadow-none",
         className,
       )}
     >

@@ -121,9 +121,6 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
     <ScreenBody>
       <div>
         <h2 className="text-lg font-extrabold">{label}</h2>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          Cadastro dos equipamentos de comunicação instalados em campo.
-        </p>
       </div>
 
       <Stats

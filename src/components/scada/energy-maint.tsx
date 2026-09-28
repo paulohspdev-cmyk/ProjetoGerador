@@ -48,14 +48,6 @@ function supportedCount(generators: Generator[], metric: string) {
   return generators.filter((g) => hasMetric(g, metric)).length;
 }
 
-function InfoNotice({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="rounded-md border border-border bg-secondary/20 px-3 py-2 text-[11px] text-muted-foreground">
-      {children}
-    </p>
-  );
-}
-
 function EnergyTable({
   rows,
 }: {
@@ -98,10 +90,6 @@ export function EnergyRede() {
           { icon: Power, label: "MCB monitorados", value: `${mcb.length}/${generators.length}` },
         ]}
       />
-      <InfoNotice>
-        A tela mostra somente medições de rede realmente disponíveis. Dados do gerador não são
-        reutilizados como se fossem dados da concessionária.
-      </InfoNotice>
       <EnergyTable
         rows={generators.map((g) => ({
           id: g.id,
@@ -145,10 +133,6 @@ export function EnergyGens() {
           },
         ]}
       />
-      <InfoNotice>
-        Potência, GCB, fator de potência e outras grandezas só aparecem quando a controladora
-        realmente fornece essas medições. Valores ausentes permanecem N/D.
-      </InfoNotice>
       <EnergyTable
         rows={generators.map((g) => ({
           id: g.id,
@@ -193,10 +177,6 @@ export function EnergyLoad() {
           },
         ]}
       />
-      <InfoNotice>
-        Fator de potência, pico e histórico não são calculados por estimativa. O histórico só é
-        apresentado quando houver dados reais disponíveis.
-      </InfoNotice>
       <EnergyTable rows={rows} />
     </ScreenBody>
   );
@@ -224,10 +204,6 @@ export function EnergyTransfer() {
           { icon: Fan, label: "GCB monitorados", value: supportedCount(generators, "gcb_closed") },
         ]}
       />
-      <InfoNotice>
-        Estados ATS/MCB/GCB não são inferidos por RPM. Sem informação real disponível, o estado
-        permanece N/D.
-      </InfoNotice>
       <EnergyTable
         rows={generators.map((g) => {
           const mcb = hasMetric(g, "mcb_closed")
@@ -275,10 +251,6 @@ export function EnergyParallel() {
           },
         ]}
       />
-      <InfoNotice>
-        Paralelismo, sincronismo e comandos de disjuntores permanecem indisponíveis nesta versão
-        operacional.
-      </InfoNotice>
       <EnergyTable
         rows={generators.map((g) => ({
           id: g.id,

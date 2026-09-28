@@ -16,6 +16,11 @@ type LayoutContextValue = {
   toggleMobile: () => void;
   fullscreen: boolean;
   toggleFullscreen: () => void;
+  toolsOpen: boolean;
+  setToolsOpen: (open: boolean) => void;
+  toggleTools: () => void;
+  toolsPanel: ReactNode;
+  setToolsPanel: (node: ReactNode) => void;
 };
 
 const LayoutContext = createContext<LayoutContextValue | null>(null);
@@ -26,6 +31,8 @@ export function LayoutProvider({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const [toolsPanel, setToolsPanel] = useState<ReactNode>(null);
 
   useEffect(() => {
     const mql = window.matchMedia(`(min-width: ${DESKTOP_MIN}px)`);
@@ -60,6 +67,7 @@ export function LayoutProvider({ children }: { children: ReactNode }) {
 
   const toggleCollapsed = useCallback(() => setCollapsed((c) => !c), []);
   const toggleMobile = useCallback(() => setMobileOpen((open) => !open), []);
+  const toggleTools = useCallback(() => setToolsOpen((open) => !open), []);
 
   const toggleFullscreen = useCallback(async () => {
     try {
@@ -84,8 +92,23 @@ export function LayoutProvider({ children }: { children: ReactNode }) {
       toggleMobile,
       fullscreen,
       toggleFullscreen,
+      toolsOpen,
+      setToolsOpen,
+      toggleTools,
+      toolsPanel,
+      setToolsPanel,
     }),
-    [collapsed, mobileOpen, fullscreen, toggleCollapsed, toggleMobile, toggleFullscreen],
+    [
+      collapsed,
+      mobileOpen,
+      fullscreen,
+      toolsOpen,
+      toolsPanel,
+      toggleCollapsed,
+      toggleMobile,
+      toggleFullscreen,
+      toggleTools,
+    ],
   );
 
   return <LayoutContext.Provider value={value}>{children}</LayoutContext.Provider>;

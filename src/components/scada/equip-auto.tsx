@@ -17,12 +17,8 @@ export function CommunicationScreen() {
   const { generators } = useGenerators();
   return (
     <ScreenBody>
-      <Panel title="Comunicação industrial">
+      <Panel title="Comunicação de cada gerador">
         <div className="space-y-3 text-[13px]">
-          <p className="rounded-md border border-border p-3">
-            Acompanhe aqui o estado de comunicação de cada gerador. Detalhes de integração ficam
-            restritos às telas de sistema.
-          </p>
           <div className="grid gap-2 sm:grid-cols-2">
             {generators.map((g) => {
               const rapidSource = g.telemetrySource === "rapid_scada";

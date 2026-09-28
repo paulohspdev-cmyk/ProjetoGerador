@@ -104,20 +104,18 @@ export function BackupsV3Screen() {
                 label: "Ações",
                 render: (r) => (
                   <span className="flex gap-1">
-                    {r.result === "OK" && (
-                      <ActionBtn
-                        onClick={() =>
-                          void rcApi.backups
-                            .download(r.id)
-                            .catch((err) =>
-                              setError(err instanceof Error ? err.message : "Falha no download."),
-                            )
-                        }
-                      >
-                        <Download className="mr-1 inline size-3" />
-                        Baixar
-                      </ActionBtn>
-                    )}
+                    <ActionBtn
+                      onClick={() =>
+                        void rcApi.backups
+                          .download(r.id)
+                          .catch((err) =>
+                            setError(err instanceof Error ? err.message : "Falha no download."),
+                          )
+                      }
+                    >
+                      <Download className="mr-1 inline size-3" />
+                      Baixar
+                    </ActionBtn>
                     {admin && (
                       <ActionBtn tone="danger" onClick={() => void remove(r)}>
                         <Trash2 className="mr-1 inline size-3" />

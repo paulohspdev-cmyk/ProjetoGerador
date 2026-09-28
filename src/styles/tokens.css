@@ -12,7 +12,8 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-mono: ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --font-mono:
+    ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -173,9 +174,9 @@
   --sidebar-accent-foreground: oklch(0.96 0.006 240);
   --sidebar-border: oklch(0.27 0.02 240);
   --sidebar-ring: oklch(0.74 0.18 52);
-  --shadow-panel: 0 1px 0 0 oklch(1 0 0 / 4%) inset, 0 8px 24px -12px oklch(0 0 0 / 60%);
-  --glow-online: 0 0 12px color-mix(in oklab, var(--online) 45%, transparent);
-  --glow-info: 0 0 12px color-mix(in oklab, var(--info) 45%, transparent);
-  --glow-alert: 0 0 12px color-mix(in oklab, var(--alert) 45%, transparent);
-  --glow-offline: 0 0 12px color-mix(in oklab, var(--offline) 45%, transparent);
+  --shadow-panel: 0 1px 2px oklch(0 0 0 / 22%);
+  --glow-online: none;
+  --glow-info: none;
+  --glow-alert: none;
+  --glow-offline: none;
 }

@@ -4,6 +4,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { Topbar } from "@/components/layout/Topbar";
 import { GeneratorsBoard } from "@/components/generators/GeneratorsBoard";
 import { MapScreen } from "@/components/scada/MapScreen";
+import { PagePurpose } from "@/components/scada/communication-guide";
 import { screens } from "@/components/scada/registry";
 import { findItem } from "@/data/nav";
 
@@ -53,10 +54,20 @@ function SectionPage() {
     return <GeneratorsBoard showKpis={false} />;
   }
 
+  const purpose =
+    found?.item.purpose && found.item.purposeRole
+      ? { role: found.item.purposeRole, text: found.item.purpose }
+      : null;
+
   if (slug === "mapa") {
     return (
       <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
         <Topbar breadcrumb={[group, label]} title={label} />
+        {purpose && (
+          <div className="shrink-0 px-3 pt-3 sm:px-4">
+            <PagePurpose role={purpose.role} text={purpose.text} />
+          </div>
+        )}
         <MapScreen />
       </div>
     );
@@ -65,13 +76,18 @@ function SectionPage() {
   const Screen = screens[slug];
 
   return (
-    <>
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
       <Topbar breadcrumb={[group, label]} title={label} />
+      {purpose && (
+        <div className="shrink-0 px-3 pt-3 sm:px-4 lg:px-4 2xl:px-5">
+          <PagePurpose role={purpose.role} text={purpose.text} />
+        </div>
+      )}
       {Screen ? (
         <Screen />
       ) : (
         <div className="p-6 text-sm text-muted-foreground">Módulo não encontrado.</div>
       )}
-    </>
+    </div>
   );
 }
