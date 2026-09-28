@@ -10,18 +10,42 @@ if [[ -z "${PYTHON}" ]]; then
     PYTHON="$(command -v python3)"
   fi
 fi
-API_PORT="${E2E_API_PORT:-18090}"
-FRONTEND_PORT="${E2E_FRONTEND_PORT:-13000}"
-PROXY_PORT="${E2E_PROXY_PORT:-13100}"
+pick_port() {
+  "${PYTHON}" - <<'PY'
+import socket
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+    sock.bind(("127.0.0.1", 0))
+    print(sock.getsockname()[1])
+PY
+}
+
+API_PORT="${E2E_API_PORT:-$(pick_port)}"
+FRONTEND_PORT="${E2E_FRONTEND_PORT:-$(pick_port)}"
+PROXY_PORT="${E2E_PROXY_PORT:-$(pick_port)}"
 TMP="$(mktemp -d /tmp/rc-e2e-XXXXXX)"
 RETAINED_ASSET_FIXTURE="${BASE}/.output/public/assets/__retained-release-e2e.js"
 PIDS=()
 
 cleanup() {
+  local status=$?
   for pid in "${PIDS[@]:-}"; do kill "${pid}" 2>/dev/null || true; done
+
+  for _ in $(seq 1 20); do
+    local alive=0
+    for pid in "${PIDS[@]:-}"; do
+      if kill -0 "${pid}" 2>/dev/null; then alive=1; fi
+    done
+    [[ "${alive}" -eq 0 ]] && break
+    sleep 0.1
+  done
+
+  for pid in "${PIDS[@]:-}"; do
+    if kill -0 "${pid}" 2>/dev/null; then kill -KILL "${pid}" 2>/dev/null || true; fi
+  done
   for pid in "${PIDS[@]:-}"; do wait "${pid}" 2>/dev/null || true; done
   rm -f "${RETAINED_ASSET_FIXTURE}" 2>/dev/null || true
   rm -rf "${TMP}"
+  return "${status}"
 }
 trap cleanup EXIT
 
@@ -61,6 +85,10 @@ mkdir -p "${RC_DATA_DIR}" "${RC_RAPID_SCADA_ROOT}/Archive"
 printf '[]\n' >"${RC_RAPID_BINDINGS}"
 printf '{"updatedAt":0,"ports":[]}\n' >"${RC_BRIDGE_STATUS_FILE}"
 
+# Inicializa e migra explicitamente o banco temporário antes de subir a API.
+# Evita corrida entre o lifespan do Uvicorn e o bootstrap dos usuários E2E.
+"${PYTHON}" "${BASE}/ops/migrate_db.py" >"${TMP}/migrate.log" 2>&1
+
 cd "${BASE}"
 NITRO_PRESET=node-server npm run build >"${TMP}/build.log" 2>&1
 printf 'globalThis.__RC_RETAINED_E2E__ = true;\n' >"${RETAINED_ASSET_FIXTURE}"
@@ -92,9 +120,21 @@ if not db.get_user_auth(os.environ["E2E_VIEWER_EMAIL"]):
     )
 PY
 
+# Confirma que os três processos continuam vivos após o bootstrap de usuários.
+for idx in 0 1 2; do
+  if ! kill -0 "${PIDS[$idx]}" 2>/dev/null; then
+    echo "Processo E2E encerrou prematuramente: índice ${idx}" >&2
+    echo "=== api.log ===" >&2; cat "${TMP}/api.log" >&2 || true
+    echo "=== frontend.log ===" >&2; cat "${TMP}/frontend.log" >&2 || true
+    echo "=== proxy.log ===" >&2; cat "${TMP}/proxy.log" >&2 || true
+    exit 1
+  fi
+done
+wait_http "http://127.0.0.1:${PROXY_PORT}/login" || { cat "${TMP}/proxy.log"; exit 1; }
+
 E2E_BASE_URL="http://127.0.0.1:${PROXY_PORT}" \
 E2E_ADMIN_EMAIL="${ADMIN_EMAIL}" E2E_ADMIN_PASSWORD="${ADMIN_PASSWORD}" \
 E2E_VIEWER_EMAIL="${VIEWER_EMAIL}" E2E_VIEWER_PASSWORD="${VIEWER_PASSWORD}" \
-  npx playwright test
+  npx playwright test "$@"
 
 echo "E2E isolado: OK"

@@ -27,6 +27,20 @@ async function contextAt(
   return { context, page };
 }
 
+async function openGeneratorTools(page: Page) {
+  const width = page.viewportSize()?.width ?? 0;
+  if (width < 1024) {
+    const mobileMenu = page.locator('button[aria-label="Abrir menu"]:visible').first();
+    await expect(mobileMenu).toBeVisible();
+    await mobileMenu.click();
+  }
+
+  const opener = page.locator('button[aria-label="Abrir menu da lista"]:visible').first();
+  await expect(opener).toBeVisible();
+  await opener.click();
+  await expect(page.locator('input[aria-label="Buscar gerador"]:visible').first()).toBeVisible();
+}
+
 async function expectNoGlobalOverflow(page: Page) {
   const overflow = await page.evaluate(
     () => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - innerWidth,
@@ -98,10 +112,11 @@ test("touchscreen recebe alvos mínimos de 44px", async ({ browser }) => {
     expect((await theme.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
 
     await page.goto("/p/geradores");
-    const previous = page.getByRole("button", { name: "Anterior" });
+    await openGeneratorTools(page);
+    const previous = page.getByRole("button", { name: "Página anterior" });
     expect((await previous.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
 
-    const search = page.getByLabel("Buscar gerador");
+    const search = page.locator('input[aria-label="Buscar gerador"]:visible').first();
     expect((await search.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
 
     await context.close();
@@ -134,9 +149,19 @@ test("tablet usa cards na lista de geradores e TV aumenta texto compacto", async
   expect([201, 409]).toContain(created);
 
   await page.goto("/p/geradores");
-  await page.getByRole("button", { name: /vertical/i }).click();
+  await openGeneratorTools(page);
+  await page
+    .locator("button:visible")
+    .filter({ hasText: /vertical/i })
+    .first()
+    .click();
   await page.getByRole("menuitemradio", { name: "Lista" }).click();
-  await expect(page.getByRole("button", { name: /^Todos$/ })).toBeVisible();
+  await expect(
+    page
+      .locator("button:visible")
+      .filter({ hasText: /^Todos$/ })
+      .first(),
+  ).toBeVisible();
 
   await expect(page.locator("article").filter({ hasText: "RESP001" })).toBeVisible();
   await expect(page.locator('table[class*="min-w-[2080px]"]')).toBeHidden();
@@ -144,13 +169,14 @@ test("tablet usa cards na lista de geradores e TV aumenta texto compacto", async
 
   const { context: tv, page: tvPage } = await contextAt(browser, 3840, 2160, false);
   await tvPage.goto("/p/geradores");
+  await openGeneratorTools(tvPage);
   const bodyFontSize = await tvPage.evaluate(() =>
     Number.parseFloat(getComputedStyle(document.body).fontSize),
   );
   expect(bodyFontSize).toBeGreaterThanOrEqual(18);
 
   const previousFontSize = await tvPage
-    .getByRole("button", { name: "Anterior" })
+    .getByRole("button", { name: "Página anterior" })
     .evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize));
   expect(previousFontSize).toBeGreaterThanOrEqual(16);
   await tv.close();

@@ -5,6 +5,7 @@ import {
   ChevronRight,
   LayoutGrid,
   List,
+  Menu,
   Maximize2,
   Minimize2,
   RefreshCw,
@@ -120,7 +121,7 @@ const filters: Array<{ id: GenStatus | "todos"; label: string }> = [
 
 export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
   const { generators, ready, error, refresh } = useGenerators();
-  const { fullscreen, toggleFullscreen, toolsOpen, setToolsPanel } = useLayout();
+  const { fullscreen, toggleFullscreen, toolsOpen, setToolsPanel, toggleMobile } = useLayout();
   const [view, setView] = useState<View>("principal");
   const [status, setStatus] = useState<GenStatus | "todos">("todos");
   const [query, setQuery] = useState("");
@@ -381,6 +382,17 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
 
   return (
     <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <div className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-panel px-2 lg:hidden">
+        <button
+          type="button"
+          onClick={toggleMobile}
+          aria-label="Abrir menu"
+          className="grid size-11 shrink-0 place-items-center rounded-lg text-slate-300 transition-colors hover:bg-white/5 hover:text-white"
+        >
+          <Menu className="size-5" />
+        </button>
+        <span className="truncate text-sm font-extrabold text-slate-100">Geradores</span>
+      </div>
       <div
         className={cn(
           "flex min-h-0 min-w-0 flex-1 flex-col gap-1 overflow-hidden p-1",
