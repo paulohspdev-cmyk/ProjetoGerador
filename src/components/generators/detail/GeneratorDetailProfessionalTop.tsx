@@ -1,44 +1,13 @@
-import {
-  Activity,
-  ArrowRight,
-  BatteryCharging,
-  Clock3,
-  Cog,
-  Droplets,
-  Fuel,
-  Gauge,
-  Pencil,
-  Radio,
-  ShieldCheck,
-  Thermometer,
-  Zap,
-} from "lucide-react";
+import { Activity, Cog, Pencil, Play, Power, Zap } from "lucide-react";
 
-import { Pill } from "@/components/scada/kit";
+import { CONTROLLER_IMAGE_FALLBACK, controllerImageSrc } from "@/assets";
 import { generatorDisplayStatus, type Generator } from "@/data/generators";
 import type { IndustrialCommandAction } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 import { GeneratorEditDialog } from "../GeneratorEditDialog";
-import {
-  IconBreakerClosed,
-  IconBreakerOpen,
-  IconGenerator,
-  IconLoad,
-  IconMains,
-  IconStart,
-  IconStop,
-} from "../scada-icons";
-import { readGeneratorTelemetry } from "../generator-health";
 import { formatMetric } from "../generator-metrics";
 import type { GeneratorDetailModel } from "./generator-detail-model";
-import {
-  FlowNode,
-  KpiCard,
-  metricTone,
-  toneClass,
-  type MetricTone,
-} from "./GeneratorDetailProfessionalPrimitives";
 
 type Props = {
   gen: Generator;
@@ -48,6 +17,197 @@ type Props = {
   onCommand: (action: IndustrialCommandAction) => void | Promise<void>;
 };
 
+function hzText(value: number | null) {
+  if (value == null || !Number.isFinite(value)) return "N/D";
+  return `${value.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} Hz`;
+}
+
+function kwText(value: number | null) {
+  if (value == null || !Number.isFinite(value)) return "N/D";
+  return `${Math.round(value).toLocaleString("pt-BR")} kW`;
+}
+
+function HorizontalFlow({
+  hasMainsSource,
+  mainsPresent,
+  mainsKnown: _mainsKnown,
+  mainsHz,
+  generatorHz,
+  loadKw,
+  mcb,
+  mcbKnown,
+  gcb,
+  gcbKnown,
+  mainsToBus,
+  generatorPresent,
+  generatorToBus,
+  busLive,
+}: {
+  hasMainsSource: boolean;
+  mainsPresent: boolean;
+  mainsKnown: boolean;
+  mainsHz: number | null;
+  generatorHz: number | null;
+  loadKw: number | null;
+  mcb: boolean;
+  mcbKnown: boolean;
+  gcb: boolean;
+  gcbKnown: boolean;
+  mainsToBus: boolean;
+  generatorPresent: boolean;
+  generatorToBus: boolean;
+  busLive: boolean;
+}) {
+  const y = 108;
+  const green = "#2ee600";
+  const dead = "#617581";
+  const wire = (x1: number, x2: number, live: boolean) => (
+    <line
+      x1={x1}
+      y1={y}
+      x2={x2}
+      y2={y}
+      stroke={live ? green : dead}
+      strokeWidth="4"
+      strokeLinecap="round"
+    />
+  );
+  const badge = (x: number, label: string, closed: boolean, known: boolean) => {
+    const text = !known ? "—" : closed ? "I" : "O";
+    const fill = !known ? "#dce5e9" : closed ? "#2dca10" : "#eef2f4";
+    return (
+      <g transform={`translate(${x} ${y - 36})`}>
+        <text y="-14" textAnchor="middle" fill="#a8bac6" fontSize="11" fontWeight="800">
+          {label}
+        </text>
+        <rect
+          x="-14"
+          y="-11"
+          width="28"
+          height="18"
+          rx="4"
+          fill={fill}
+          stroke={known && closed ? "#5bf33e" : "#8598a4"}
+        />
+        <text y="2" textAnchor="middle" fill="#0c1c25" fontSize="12" fontWeight="800">
+          {text}
+        </text>
+      </g>
+    );
+  };
+  const contact = (x1: number, x2: number, closed: boolean, known: boolean) => {
+    const color = !known ? "#71848f" : closed ? green : "#8aa0ab";
+    return (
+      <g>
+        <circle cx={x1} cy={y} r="3.4" fill={color} />
+        <circle cx={x2} cy={y} r="3.4" fill={color} />
+        {known ? (
+          <line
+            x1={x1 + 4}
+            y1={y}
+            x2={closed ? x2 - 4 : x2 - 8}
+            y2={closed ? y : y - 16}
+            stroke={color}
+            strokeWidth="3.4"
+            strokeLinecap="round"
+          />
+        ) : (
+          <text
+            x={(x1 + x2) / 2}
+            y={y - 8}
+            textAnchor="middle"
+            fill="#a8bac6"
+            fontSize="11"
+            fontWeight="800"
+          >
+            ?
+          </text>
+        )}
+      </g>
+    );
+  };
+  const machine = (x: number, live: boolean, label: string, caption: string) => (
+    <g transform={`translate(${x} ${y})`}>
+      <text y="-40" textAnchor="middle" fill="#edf4f8" fontSize="12" fontWeight="800">
+        {caption}
+      </text>
+      <circle r="24" fill="#061722" stroke={live ? green : "#7d909b"} strokeWidth="2.4" />
+      {label === "G" ? (
+        <text y="8" textAnchor="middle" fill="#fff" fontSize="22" fontWeight="800">
+          G
+        </text>
+      ) : (
+        <g fill="none" stroke="#fff" strokeWidth="1.6" strokeLinecap="round">
+          <path d="M0-12V11M-5 11 0-12 5 11M-9-4H9M-11 2H11M-13 8H13" />
+        </g>
+      )}
+      <text y="40" textAnchor="middle" fill="#9eb0bb" fontSize="10" fontWeight="700">
+        {label === "G" ? "GERADOR" : "REDE"}
+      </text>
+    </g>
+  );
+  const load = (x: number) => (
+    <g>
+      <line
+        x1={x}
+        y1="62"
+        x2={x}
+        y2={y}
+        stroke={busLive ? green : dead}
+        strokeWidth="4"
+        strokeLinecap="round"
+      />
+      <circle cx={x} cy={y} r="4.5" fill={busLive ? green : dead} />
+      <g transform={`translate(${x} 32)`}>
+        <rect
+          x="-48"
+          y="-22"
+          width="96"
+          height="44"
+          rx="6"
+          fill="#061824"
+          stroke={busLive ? green : "#315a71"}
+        />
+        <text y="-4" textAnchor="middle" fill="#fff" fontSize="10" fontWeight="800">
+          CARGA
+        </text>
+        <text y="14" textAnchor="middle" fill={green} fontSize="14" fontWeight="800">
+          {kwText(loadKw)}
+        </text>
+      </g>
+    </g>
+  );
+
+  if (!hasMainsSource) {
+    return (
+      <svg viewBox="0 0 760 156" className="h-full w-full" aria-label="Fluxo de potência sem rede">
+        {machine(90, generatorPresent, "G", hzText(generatorHz))}
+        {wire(114, 200, generatorPresent)}
+        {badge(250, "GCB", gcb, gcbKnown)}
+        {contact(200, 300, gcb, gcbKnown)}
+        {wire(300, 520, generatorToBus)}
+        {load(520)}
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 760 156" className="h-full w-full" aria-label="Fluxo de potência">
+      {machine(48, mainsPresent, "REDE", hzText(mainsHz))}
+      {wire(72, 130, mainsPresent)}
+      {badge(168, "MCB", mcb, mcbKnown)}
+      {contact(130, 206, mcb, mcbKnown)}
+      {wire(206, 340, mainsToBus)}
+      {load(340)}
+      {wire(340, 470, generatorToBus)}
+      {badge(508, "GCB", gcb, gcbKnown)}
+      {contact(470, 546, gcb, gcbKnown)}
+      {wire(546, 664, generatorPresent)}
+      {machine(688, generatorPresent, "G", hzText(generatorHz))}
+    </svg>
+  );
+}
+
 export function GeneratorDetailProfessionalTop({
   gen,
   model,
@@ -55,433 +215,207 @@ export function GeneratorDetailProfessionalTop({
   commandBusy,
   onCommand,
 }: Props) {
-  const voltage = model.genL12 ?? model.genL1;
-  const telemetry = readGeneratorTelemetry(gen);
-  const fuelUnit = model.fuelUnit;
-  const fuelTone: MetricTone =
-    telemetry.tones.fuel === "critical"
-      ? "err"
-      : telemetry.tones.fuel === "warning"
-        ? "warn"
-        : telemetry.tones.fuel === "good"
-          ? "ok"
-          : "info";
-  const oilUnit = gen.metricUnits?.["oil_pressure"]?.trim() || "";
-  const coolantUnit = gen.metricUnits?.["coolant_temperature"]?.trim() || "";
+  const onMains = model.busEnergySource === "mains" && model.mainsPower != null;
+  const powerValue = onMains ? model.mainsPower : model.load;
   const loadPercent =
-    model.load != null && model.nominalPower != null && model.nominalPower > 0
+    !onMains && model.load != null && model.nominalPower != null && model.nominalPower > 0
       ? Math.max(0, Math.min(100, (model.load / model.nominalPower) * 100))
       : null;
-  const lastTelemetry = gen.lastTelemetryAt
-    ? new Date(gen.lastTelemetryAt * 1000).toLocaleString("pt-BR")
-    : "N/D";
+  const sourceLabel =
+    model.busEnergySource === "mains"
+      ? "Carga na rede"
+      : model.busEnergySource === "generator"
+        ? "Gerador no barramento"
+        : model.busEnergySource === "mains_and_generators"
+          ? "Rede e gerador"
+          : model.busEnergySource === "generators_parallel"
+            ? "Geradores em paralelo"
+            : "Origem N/D";
   const displayStatus = generatorDisplayStatus(gen);
-  const healthTone: MetricTone =
-    displayStatus === "stale" || displayStatus === "offline"
-      ? "err"
-      : displayStatus === "alerta" || (model.alarms ?? 0) > 0
-        ? "warn"
-        : model.comm
-          ? "ok"
-          : "info";
-  const healthLabel =
+  const statusLabel =
     displayStatus === "stale"
-      ? "Comunicação perdida"
-      : displayStatus === "offline"
-        ? "Sem comunicação"
-        : displayStatus === "alerta" || (model.alarms ?? 0) > 0
-          ? "Atenção"
-          : model.comm
-            ? "Operacional"
-            : "N/D";
+      ? "Sem comunicação"
+      : displayStatus === "online"
+        ? "Online"
+        : displayStatus === "alerta"
+          ? "Em alerta"
+          : displayStatus === "offline"
+            ? "Offline"
+            : "Não configurado";
 
   return (
-    <>
-      <header className="mb-3 flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-border/70 bg-card/65 px-4 py-3 backdrop-blur">
-        <div className="flex min-w-0 items-center gap-3">
-          <span className="grid size-12 shrink-0 place-items-center rounded-xl border border-online/20 bg-online/8 text-online">
-            <Cog className="size-7" />
-          </span>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="truncate text-2xl font-black tracking-tight">{gen.tag}</h1>
-              <Pill
-                tone={
-                  displayStatus === "online"
-                    ? "ok"
-                    : displayStatus === "alerta"
-                      ? "warn"
-                      : displayStatus === "offline" || displayStatus === "stale"
-                        ? "err"
-                        : "muted"
-                }
-              >
-                {displayStatus === "stale"
-                  ? "Comunicação perdida"
-                  : displayStatus === "online"
-                    ? "Online"
-                    : displayStatus === "alerta"
-                      ? "Em alerta"
-                      : displayStatus === "offline"
-                        ? "Offline"
-                        : "Não configurado"}
-              </Pill>
-              <Pill tone="info">{model.modeLabel}</Pill>
-              {model.mainsToBus && model.generatorToBus ? (
-                <Pill tone="ok">Em paralelo</Pill>
-              ) : model.generatorToBus ? (
-                <Pill tone="ok">Alimentando barramento</Pill>
-              ) : model.running === true ? (
-                <Pill tone="info">Em rotação</Pill>
-              ) : null}
-            </div>
-            <p className="mt-0.5 truncate text-xs text-muted-foreground">
-              {model.name} · {gen.site || "Sem unidade"} · {gen.controller}
-            </p>
+    <div className="gen-detail-top flex shrink-0 flex-col gap-1.5 overflow-hidden">
+      <header className="flex flex-wrap items-center justify-between gap-1.5">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-xl font-black leading-none tracking-tight">{gen.tag}</h1>
+            <span
+              className={cn(
+                "inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-xs font-semibold",
+                displayStatus === "online"
+                  ? "border-online/40 bg-online/10 text-online"
+                  : displayStatus === "alerta"
+                    ? "border-alert/40 bg-alert/10 text-alert"
+                    : "border-offline/40 bg-offline/10 text-offline",
+              )}
+            >
+              <i className="size-1.5 rounded-full bg-current" />
+              {statusLabel}
+            </span>
+            <span className="inline-flex h-7 items-center gap-1.5 rounded-full border border-border bg-card px-2.5 text-xs font-semibold">
+              <Cog className="size-3.5 text-muted-foreground" />
+              {model.modeKnown ? model.modeLabel : "N/D"}
+            </span>
+            <span className="inline-flex h-7 items-center gap-1.5 rounded-full border border-border bg-card px-2.5 text-xs font-semibold">
+              {gen.controller || "Controlador N/D"}
+            </span>
+            <span className="inline-flex h-7 items-center gap-1.5 rounded-full border border-border bg-card px-2.5 text-xs font-semibold text-muted-foreground">
+              <Activity className="size-3.5" />
+              {sourceLabel}
+            </span>
+            {powerValue != null ? (
+              <span className="inline-flex h-7 items-center gap-1.5 rounded-full border border-border bg-card px-2.5 text-xs font-semibold">
+                <Zap className="size-3.5 text-chart-2" />
+                <span className="num">{formatMetric(powerValue, "kW", 0)}</span>
+                {loadPercent != null ? (
+                  <span className="text-muted-foreground">{loadPercent.toFixed(0)}%</span>
+                ) : null}
+              </span>
+            ) : null}
           </div>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {gen.site || "Sem unidade"}
+            {gen.customer ? ` | ${gen.customer}` : ""}
+          </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="hidden text-right text-[10px] text-muted-foreground sm:block">
-            Última telemetria
-            <br />
-            <b className="num text-foreground">{lastTelemetry}</b>
-          </span>
+        <div className="flex flex-wrap items-center gap-1.5">
           <GeneratorEditDialog
             generator={gen}
             trigger={
               <button
                 type="button"
-                className="inline-flex h-9 items-center gap-2 rounded-lg border border-border px-3 text-xs font-semibold hover:bg-secondary"
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-[11px] font-semibold hover:bg-secondary"
               >
-                <Pencil className="size-4" /> Editar
+                <Pencil className="size-3.5" /> Editar
               </button>
             }
           />
-          <button
-            type="button"
-            disabled={!canAction("start") || commandBusy !== null}
-            onClick={() => void onCommand("start")}
-            className="inline-flex h-9 items-center gap-2 rounded-lg border border-chart-2/45 px-3 text-xs font-semibold text-chart-2 hover:bg-chart-2/10 disabled:opacity-40"
-            title={
-              canAction("start")
-                ? "Partida homologada"
-                : "START indisponível para esta controladora"
-            }
-          >
-            <IconStart size={16} /> {commandBusy === "start" ? "Enviando…" : "Ligar"}
-          </button>
-          <button
-            type="button"
-            data-command="manual"
-            disabled={!canAction("manual") || commandBusy !== null}
-            title={canAction("manual") ? "MANUAL homologado" : "MANUAL ainda não homologado"}
-            onClick={() => void onCommand("manual")}
-            className="hidden h-9 items-center rounded-lg border border-border px-3 text-xs font-semibold text-muted-foreground disabled:opacity-40 2xl:inline-flex"
-          >
-            {commandBusy === "manual" ? "…" : "MAN"}
-          </button>
-          <button
-            type="button"
-            data-command="auto"
-            disabled={!canAction("auto") || commandBusy !== null}
-            title={canAction("auto") ? "AUTO homologado" : "AUTO ainda não homologado"}
-            onClick={() => void onCommand("auto")}
-            className="hidden h-9 items-center rounded-lg border border-border px-3 text-xs font-semibold text-muted-foreground disabled:opacity-40 2xl:inline-flex"
-          >
-            {commandBusy === "auto" ? "…" : "AUTO"}
-          </button>
-          <button
-            type="button"
-            data-command="test"
-            disabled={!canAction("test") || commandBusy !== null}
-            title={canAction("test") ? "TEST homologado" : "TEST ainda não homologado"}
-            onClick={() => void onCommand("test")}
-            className="hidden h-9 items-center rounded-lg border border-border px-3 text-xs font-semibold text-muted-foreground disabled:opacity-40 2xl:inline-flex"
-          >
-            {commandBusy === "test" ? "…" : "TEST"}
-          </button>
-          <button
-            type="button"
-            disabled={!canAction("stop") || commandBusy !== null}
-            onClick={() => void onCommand("stop")}
-            className="inline-flex h-9 items-center gap-2 rounded-lg border border-offline/45 px-3 text-xs font-semibold text-offline hover:bg-offline/10 disabled:opacity-40"
-            title={
-              canAction("stop") ? "Parada homologada" : "STOP indisponível para esta controladora"
-            }
-          >
-            <IconStop size={16} /> {commandBusy === "stop" ? "Enviando…" : "Desligar"}
-          </button>
+          {model.modeControls.length > 0 && (
+            <div
+              className="inline-flex h-8 overflow-hidden rounded-lg border border-border"
+              aria-label="Modo da controladora"
+            >
+              {model.modeControls.map((item) => {
+                const enabled =
+                  item.action != null && canAction(item.action) && commandBusy == null;
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    disabled={!enabled}
+                    data-command={item.action ?? undefined}
+                    title={
+                      enabled
+                        ? `Comandar ${item.label}`
+                        : "Indicação do modo. Comando remoto não homologado."
+                    }
+                    onClick={() => {
+                      if (item.action) void onCommand(item.action);
+                    }}
+                    className={cn(
+                      "px-2 text-[11px] font-black",
+                      item.active
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-card text-muted-foreground",
+                      !enabled && "cursor-default",
+                    )}
+                  >
+                    {item.action && commandBusy === item.action ? "…" : item.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          {gen.capabilities?.start === true && (
+            <button
+              type="button"
+              disabled={!canAction("start") || commandBusy !== null}
+              onClick={() => void onCommand("start")}
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-online/50 bg-online/10 px-2.5 text-[11px] font-semibold text-online hover:bg-online/15 disabled:opacity-40"
+            >
+              <Play className="size-3.5" /> {commandBusy === "start" ? "Enviando…" : "START"}
+            </button>
+          )}
+          {gen.capabilities?.stop === true && (
+            <button
+              type="button"
+              disabled={!canAction("stop") || commandBusy !== null}
+              onClick={() => void onCommand("stop")}
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-offline px-2.5 text-[11px] font-semibold text-white hover:bg-offline/90 disabled:opacity-40"
+            >
+              <Power className="size-3.5" /> {commandBusy === "stop" ? "Enviando…" : "STOP"}
+            </button>
+          )}
+          {(["mcb_open", "mcb_close", "gcb_open", "gcb_close"] as const)
+            .filter((action) => gen.capabilities?.[action] === true)
+            .map((action) => (
+              <button
+                key={action}
+                type="button"
+                disabled={!canAction(action) || commandBusy !== null}
+                onClick={() => void onCommand(action)}
+                className="inline-flex h-8 items-center rounded-lg border border-border bg-card px-2 text-[10px] font-bold disabled:opacity-40"
+              >
+                {commandBusy === action ? "…" : action.replaceAll("_", " ").toUpperCase()}
+              </button>
+            ))}
         </div>
       </header>
 
-      <div className="mb-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
-        <KpiCard
-          icon={<Activity className="size-5" />}
-          label="Potência ativa"
-          value={formatMetric(model.load, "kW", 0)}
-          sub={
-            loadPercent == null ? "Potência nominal N/D" : `${loadPercent.toFixed(0)}% da nominal`
-          }
-          tone={metricTone(model.load, gen.metricLimits?.["power_kw"])}
-        />
-        <KpiCard
-          icon={<Zap className="size-5" />}
-          label="Tensão"
-          value={formatMetric(voltage, "V", 0)}
-          sub={model.genL12 != null ? "L1-L2" : model.genL1 != null ? "L1-N" : "Sem leitura"}
-          tone={metricTone(voltage, gen.metricLimits?.["voltage_l1_l2"])}
-        />
-        <KpiCard
-          icon={<Radio className="size-5" />}
-          label="Frequência"
-          value={formatMetric(model.frequency, "Hz", 2)}
-          sub={model.frequency == null ? "Sem leitura" : "Gerador"}
-          tone={metricTone(model.frequency, gen.metricLimits?.["frequency"])}
-        />
-        <KpiCard
-          icon={<Gauge className="size-5" />}
-          label="Rotação"
-          value={formatMetric(model.rpm, "rpm", 0)}
-          sub={
-            model.running == null ? "Estado N/D" : model.running ? "Rotação detectada" : "Parado"
-          }
-          tone={metricTone(model.rpm, gen.metricLimits?.["rpm"])}
-        />
-        <KpiCard
-          icon={<Fuel className="size-5" />}
-          label="Combustível"
-          value={formatMetric(model.fuel, fuelUnit, 0)}
-          sub={
-            model.fuel == null
-              ? "Sem leitura"
-              : telemetry.fuelOutOfRange
-                ? "Acima da capacidade informada"
-                : telemetry.fuelRawUnit === "%" && telemetry.fuelUnit === "L"
-                  ? "Convertido de percentual com capacidade real do tanque"
-                  : "Nível medido"
-          }
-          tone={fuelTone}
-        />
-        <KpiCard
-          icon={<Clock3 className="size-5" />}
-          label="Horímetro"
-          value={formatMetric(model.runHours, "h", 1)}
-          sub="Total acumulado"
-          tone="info"
-        />
-      </div>
-
-      <div className="grid min-w-0 gap-3 xl:grid-cols-12">
-        <section className="gen-detail-section rounded-xl p-4 xl:col-span-7">
-          <div className="mb-4 flex items-center justify-between gap-2">
-            <h2 className="text-sm font-extrabold">Fluxo de potência</h2>
-            <span className="text-[10px] text-muted-foreground">
-              Estados provenientes da telemetria disponível
-            </span>
-          </div>
-          <div className="scroll-slim flex min-w-0 items-center justify-between gap-2 overflow-x-auto pb-2">
-            <FlowNode
-              icon={<IconMains size={24} />}
-              label="REDE"
-              value={formatMetric(model.mainsL12 ?? model.mainsL1, "V", 0)}
-              sub={model.mainsPresent ? "Presente" : model.mainsKnown ? "Ausente" : "N/D"}
-              active={model.mainsPresent}
-            />
-            <ArrowRight
-              className={cn(
-                "size-5 shrink-0",
-                model.mainsToBus ? "text-online" : "text-muted-foreground",
-              )}
-            />
-            <FlowNode
-              icon={
-                model.mcb && model.gcb ? (
-                  <IconBreakerClosed size={24} />
-                ) : (
-                  <IconBreakerOpen size={24} />
-                )
-              }
-              label="DISJUNTORES"
-              value={model.mcbKnown ? (model.mcb ? "MCB I" : "MCB O") : "MCB N/D"}
-              sub={model.gcbKnown ? (model.gcb ? "GCB fechado" : "GCB aberto") : "GCB N/D"}
-              active={model.mcb || model.gcb}
-            />
-            <ArrowRight
-              className={cn(
-                "size-5 shrink-0",
-                model.generatorToBus ? "text-online" : "text-muted-foreground",
-              )}
-            />
-            <FlowNode
-              icon={<Cog className="size-6" />}
-              label="GERADOR"
-              value={formatMetric(model.load, "kW", 0)}
-              sub={`${formatMetric(model.rpm, "rpm", 0)} · ${formatMetric(model.frequency, "Hz", 1)}`}
-              active={model.generatorPresent}
-            />
-            <ArrowRight
-              className={cn(
-                "size-5 shrink-0",
-                model.busLive ? "text-online" : "text-muted-foreground",
-              )}
-            />
-            <FlowNode
-              icon={<IconLoad size={24} />}
-              label="CARGA"
-              value={formatMetric(model.busLoadKw, "kW", 0)}
-              sub={
-                model.busLoadKw == null
-                  ? model.busLive
-                    ? "Carga total não medida"
-                    : "Barramento sem fonte confirmada"
-                  : "Potência entregue pelo gerador"
-              }
-              active={model.busLive}
+      <div className="grid h-[132px] min-h-0 min-w-0 shrink-0 gap-1.5 xl:grid-cols-12">
+        <section className="gen-detail-section flex min-h-0 flex-col overflow-hidden rounded-xl p-2 xl:col-span-3">
+          <h2 className="mb-1 shrink-0 text-[10px] font-extrabold uppercase tracking-wide text-muted-foreground">
+            Controladora
+          </h2>
+          <div className="grid min-h-0 flex-1 place-items-center overflow-hidden rounded-md bg-black/25 p-1.5">
+            <img
+              src={controllerImageSrc(gen.controller)}
+              alt={gen.controller}
+              className="max-h-full w-full object-contain"
+              onError={(event) => {
+                event.currentTarget.src = CONTROLLER_IMAGE_FALLBACK;
+              }}
             />
           </div>
-          <div className="mt-3 flex flex-wrap gap-2 border-t border-border/55 pt-3">
-            {(
-              [
-                {
-                  label: model.mcbKnown ? (model.mcb ? "Abrir MCB" : "Fechar MCB") : "MCB N/D",
-                  action: model.mcb ? "mcb_open" : "mcb_close",
-                  known: model.mcbKnown,
-                },
-                {
-                  label: model.gcbKnown ? (model.gcb ? "Abrir GCB" : "Fechar GCB") : "GCB N/D",
-                  action: model.gcb ? "gcb_open" : "gcb_close",
-                  known: model.gcbKnown,
-                },
-                {
-                  label: "Paralelismo",
-                  action: "paralleling",
-                  known: true,
-                },
-              ] as const
-            ).map((item) => (
-              <button
-                key={item.action}
-                type="button"
-                disabled={!item.known || !canAction(item.action) || commandBusy !== null}
-                onClick={() => void onCommand(item.action)}
-                title={
-                  canAction(item.action)
-                    ? `${item.label} homologado`
-                    : "Comando ainda não homologado para esta controladora"
-                }
-                className="h-8 rounded-md border border-border px-3 text-[11px] font-semibold disabled:opacity-35"
-              >
-                {commandBusy === item.action ? "Enviando…" : item.label}
-              </button>
-            ))}
-          </div>
+          <p className="mt-1 shrink-0 truncate text-center text-[11px] font-semibold">
+            {gen.controller || "N/D"}
+          </p>
         </section>
 
-        <section className="gen-detail-section rounded-xl p-4 xl:col-span-5">
-          <div className="mb-4 flex items-center justify-between gap-2">
-            <h2 className="text-sm font-extrabold">Saúde do equipamento</h2>
-            <Pill
-              tone={
-                healthTone === "ok"
-                  ? "ok"
-                  : healthTone === "warn"
-                    ? "warn"
-                    : healthTone === "err"
-                      ? "err"
-                      : "muted"
-              }
-            >
-              {healthLabel}
-            </Pill>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-[140px_minmax(0,1fr)]">
-            <div className="grid place-items-center">
-              <div
-                className={cn(
-                  "grid size-28 place-items-center rounded-full border-[10px] bg-background/30",
-                  healthTone === "ok"
-                    ? "border-online"
-                    : healthTone === "warn"
-                      ? "border-alert"
-                      : healthTone === "err"
-                        ? "border-offline"
-                        : "border-muted",
-                )}
-              >
-                <div className="text-center">
-                  <ShieldCheck className={cn("mx-auto size-7", toneClass(healthTone))} />
-                  <b className="mt-1 block text-sm">{healthLabel}</b>
-                </div>
-              </div>
-            </div>
-            <div className="divide-y divide-border/55 text-xs">
-              {[
-                {
-                  icon: Thermometer,
-                  label: "Temperatura do motor",
-                  value: formatMetric(model.temp, coolantUnit, 0),
-                  tone: metricTone(model.temp, gen.metricLimits?.["coolant_temperature"]),
-                },
-                {
-                  icon: Droplets,
-                  label: "Pressão do óleo",
-                  value: formatMetric(model.oil, oilUnit, 1),
-                  tone: metricTone(model.oil, gen.metricLimits?.["oil_pressure"]),
-                },
-                {
-                  icon: BatteryCharging,
-                  label: "Tensão da bateria",
-                  value: formatMetric(model.batt, "V", 1),
-                  tone: metricTone(model.batt, gen.metricLimits?.["battery_voltage"]),
-                },
-                {
-                  icon: Fuel,
-                  label: "Nível de combustível",
-                  value: formatMetric(model.fuel, fuelUnit, 0),
-                  tone: fuelTone,
-                },
-                {
-                  icon: Radio,
-                  label: "Comunicação",
-                  value: model.comm ? "Online" : gen.status === "offline" ? "Offline" : "N/D",
-                  tone: model.comm
-                    ? ("ok" as MetricTone)
-                    : gen.status === "offline"
-                      ? ("err" as MetricTone)
-                      : ("info" as MetricTone),
-                },
-                {
-                  icon: Cog,
-                  label: "Controladora",
-                  value: gen.controller,
-                  tone: model.comm ? ("ok" as MetricTone) : ("info" as MetricTone),
-                },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="grid grid-cols-[20px_minmax(0,1fr)_auto_auto] items-center gap-2 py-2"
-                >
-                  <item.icon className="size-4 text-muted-foreground" />
-                  <span className="truncate text-muted-foreground">{item.label}</span>
-                  <b className="num max-w-44 truncate text-right">{item.value}</b>
-                  <span
-                    className={cn(
-                      "size-2 rounded-full",
-                      item.tone === "ok"
-                        ? "bg-online"
-                        : item.tone === "warn"
-                          ? "bg-alert"
-                          : item.tone === "err"
-                            ? "bg-offline"
-                            : "bg-chart-2",
-                    )}
-                  />
-                </div>
-              ))}
-            </div>
+        <section className="gen-detail-section flex min-h-0 flex-col overflow-hidden rounded-xl p-2 xl:col-span-9">
+          <h2 className="mb-1 flex shrink-0 items-center gap-1.5 text-[12px] font-extrabold">
+            <Zap className="size-3.5 text-primary" /> Fluxo de potência
+          </h2>
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <HorizontalFlow
+              hasMainsSource={model.hasMainsSource}
+              mainsPresent={model.mainsPresent}
+              mainsKnown={model.mainsKnown}
+              mainsHz={model.mainsFrequency}
+              generatorHz={model.frequency}
+              loadKw={model.busLoadKw}
+              mcb={model.mcb}
+              mcbKnown={model.mcbKnown}
+              gcb={model.gcb}
+              gcbKnown={model.gcbKnown}
+              mainsToBus={model.mainsToBus}
+              generatorPresent={model.generatorPresent}
+              generatorToBus={model.generatorToBus}
+              busLive={model.busLive}
+            />
           </div>
         </section>
       </div>
-    </>
+    </div>
   );
 }

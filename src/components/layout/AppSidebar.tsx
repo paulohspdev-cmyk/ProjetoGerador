@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { Link, useRouterState } from "@tanstack/react-router";
-import { ChevronDown, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { ChevronDown, ChevronUp, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { canManageGenerators } from "@/components/generators/DeleteGeneratorButton";
@@ -23,9 +23,11 @@ type NavProps = {
 
 function SidebarNav({ collapsed, onNavigate, onToggle, onClose, touchFriendly }: NavProps) {
   const pathname = useRouterState({ select: (router) => router.location.pathname });
+  const navigate = useNavigate();
   const { can } = useAuth();
-  const { generators, error: generatorsError } = useGenerators();
-  const { isAcked, error: opsError } = useScadaOps();
+  const { generators } = useGenerators();
+  const { isAcked } = useScadaOps();
+  const { toolsOpen, setToolsOpen, toggleTools, toolsPanel } = useLayout();
   const alarmCount = buildAlarms(generators).filter(
     (alarm) => !isAcked(alarm.id, alarm.ack),
   ).length;
@@ -33,7 +35,16 @@ function SidebarNav({ collapsed, onNavigate, onToggle, onClose, touchFriendly }:
   const admin = can("manageUsers");
   const hrefFor = (slug: string) => (slug === "" ? "/" : `/p/${slug}`);
   const isActive = (slug: string) => pathname === hrefFor(slug);
-  const systemHealthy = !generatorsError && !opsError;
+  const onTools = () => {
+    if (pathname !== "/p/geradores") {
+      setToolsOpen(true);
+      if (collapsed && onToggle) onToggle();
+      void navigate({ to: "/p/$slug", params: { slug: "geradores" } });
+      return;
+    }
+    if (collapsed && onToggle && !toolsOpen) onToggle();
+    toggleTools();
+  };
 
   const visibleGroups = useMemo(
     () =>
@@ -182,7 +193,11 @@ function SidebarNav({ collapsed, onNavigate, onToggle, onClose, touchFriendly }:
                         <li>
                           <Link
                             to={hrefFor(item.slug)}
-                            title={collapsed ? item.label : undefined}
+                            title={
+                              collapsed
+                                ? `${item.label}${item.hint ? ` — ${item.hint}` : ""}`
+                                : undefined
+                            }
                             onClick={onNavigate}
                             aria-current={active ? "page" : undefined}
                             className={cn(
@@ -202,7 +217,16 @@ function SidebarNav({ collapsed, onNavigate, onToggle, onClose, touchFriendly }:
                                   : "text-slate-400 group-hover:text-slate-200",
                               )}
                             />
-                            {!collapsed && <span className="truncate pr-8">{item.label}</span>}
+                            {!collapsed && (
+                              <span className="min-w-0 pr-8">
+                                <span className="block truncate">{item.label}</span>
+                                {item.hint && (
+                                  <span className="block truncate text-[10px] font-normal leading-tight text-slate-500">
+                                    {item.hint}
+                                  </span>
+                                )}
+                              </span>
+                            )}
                             {alarmItem && alarmCount > 0 && (
                               <span
                                 className={cn(
@@ -238,45 +262,20 @@ function SidebarNav({ collapsed, onNavigate, onToggle, onClose, touchFriendly }:
       </nav>
 
       <div className={cn("shrink-0 border-t border-white/[0.055]", collapsed ? "p-2" : "p-3")}>
-        <div
+        <button
+          type="button"
+          onClick={onTools}
+          aria-expanded={toolsOpen}
+          aria-label={toolsOpen ? "Fechar menu da lista" : "Abrir menu da lista"}
+          title={toolsOpen ? "Fechar menu da lista" : "Abrir menu da lista"}
           className={cn(
-            "rc-sidebar-status rounded-md border border-white/[0.055] bg-black/10",
-            collapsed ? "grid place-items-center p-2" : "px-3 py-3",
+            "mx-auto grid place-items-center text-slate-400 transition-colors hover:text-white",
+            collapsed ? "size-8" : "h-7 w-full",
           )}
-          title={
-            systemHealthy ? "Dados operacionais disponíveis" : "Há falha na atualização de dados"
-          }
         >
-          {collapsed ? (
-            <span
-              className={cn(
-                "size-2.5 rounded-full",
-                systemHealthy
-                  ? "bg-online shadow-[0_0_12px_var(--online)]"
-                  : "bg-offline shadow-[0_0_12px_var(--offline)]",
-              )}
-            />
-          ) : (
-            <div className="flex items-start gap-3">
-              <span
-                className={cn(
-                  "mt-1 size-2.5 shrink-0 rounded-full",
-                  systemHealthy
-                    ? "bg-online shadow-[0_0_12px_var(--online)]"
-                    : "bg-offline shadow-[0_0_12px_var(--offline)]",
-                )}
-              />
-              <div className="min-w-0">
-                <p className="text-[10px] font-extrabold uppercase tracking-[0.09em] text-slate-400">
-                  Plataforma
-                </p>
-                <p className="mt-0.5 text-[11px] font-bold text-slate-200">
-                  {systemHealthy ? "Serviços disponíveis" : "Atenção na atualização"}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
+          {toolsOpen ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+        </button>
+        {toolsOpen && !collapsed ? <div className="mt-2">{toolsPanel}</div> : null}
       </div>
     </>
   );

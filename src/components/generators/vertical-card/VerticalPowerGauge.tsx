@@ -1,66 +1,92 @@
-import { InstrumentGauge } from "./InstrumentGauge";
-
 export function VerticalPowerGauge({
   powerKw,
   nominalKw,
   nominalSource,
-  rpm,
-  rpmMax,
 }: {
   powerKw: number | null;
   nominalKw: number | null;
   nominalSource?: "telemetry" | "cadastral" | null;
-  rpm: number | null;
-  rpmMax: number | null;
 }) {
   const hasPower = powerKw != null && Number.isFinite(powerKw);
-  const valueLabel = hasPower ? powerKw : "—";
-  const gaugePower = valueLabel === "—" ? null : valueLabel;
-
-  const hasNominal =
-    nominalSource === "telemetry" &&
-    nominalKw != null &&
-    Number.isFinite(nominalKw) &&
-    nominalKw > 0;
+  const hasNominal = nominalKw != null && Number.isFinite(nominalKw) && nominalKw > 0;
+  const fraction = hasPower && hasNominal ? Math.min(1, Math.max(0, powerKw / nominalKw)) : 0;
+  const angle = fraction * 180 - 90;
+  const valueLabel = hasPower ? Math.round(powerKw).toLocaleString("pt-BR") : "—";
+  const cx = 110;
+  const cy = 98;
+  const r = 72;
+  const maxLabel = hasNominal ? Math.round(nominalKw).toLocaleString("pt-BR") : "N/D";
+  const arc = `M${cx - r} ${cy} A${r} ${r} 0 0 1 ${cx + r} ${cy}`;
   const nominalSourceLabel =
     nominalSource === "telemetry"
       ? "CONTROLADORA"
       : nominalSource === "cadastral"
         ? "CADASTRO"
-        : "";
+        : "N/D";
 
   return (
-    <section
-      className={`vref-section vref-power vref-dual-gauges ${hasNominal ? "has-nominal" : "has-no-nominal"}`}
-      data-power-scale={hasNominal ? "known" : "unknown"}
-      data-nominal-source={nominalSource ?? "unknown"}
-      data-nominal-source-label={nominalSourceLabel}
-    >
-      <div className="vref-gauge-panel vref-gauge-panel-power">
-        <h4>GERADOR</h4>
-        <div className="vref-power-gauge" aria-label="Indicador de potência do gerador">
-          <InstrumentGauge
-            value={gaugePower}
-            max={hasNominal ? nominalKw : null}
-            unit="kW"
-            ariaLabel="Indicador de potência do gerador"
-            accent="cyan"
-          />
-        </div>
+    <section className="vref-section vref-power" data-nominal-source={nominalSource ?? "unknown"}>
+      <div className="vref-section-heading">
+        <h4>KW</h4>
+        <span className="vref-nominal-source">{nominalSourceLabel}</span>
       </div>
-
-      <div className="vref-gauge-panel vref-gauge-panel-rpm">
-        <h4>RPM</h4>
-        <div className="vref-rpm-gauge">
-          <InstrumentGauge
-            value={rpm}
-            max={rpmMax}
-            unit="RPM"
-            ariaLabel="Indicador de RPM"
-            accent="green"
-            showUnit={false}
-          />
-        </div>
+      <div className="vref-power-gauge" aria-label="Indicador de potência do gerador">
+        <svg
+          viewBox="0 0 220 168"
+          className="kw-svg"
+          aria-label="Indicador de potência do gerador"
+          overflow="visible"
+        >
+          <path className="vref-gauge-base" pathLength="100" d={arc} />
+          {hasNominal ? (
+            <>
+              <path
+                className="vref-kw-zone vref-kw-zone-green"
+                pathLength="100"
+                strokeDasharray="70 30"
+                d={arc}
+              />
+              <path
+                className="vref-kw-zone vref-kw-zone-yellow"
+                pathLength="100"
+                strokeDasharray="20 80"
+                strokeDashoffset="-70"
+                d={arc}
+              />
+              <path
+                className="vref-kw-zone vref-kw-zone-red"
+                pathLength="100"
+                strokeDasharray="10 90"
+                strokeDashoffset="-90"
+                d={arc}
+              />
+            </>
+          ) : null}
+          <text x={cx - r} y={cy + 28} textAnchor="middle" className="vref-gauge-scale">
+            0
+          </text>
+          <text x={cx + r} y={cy + 28} textAnchor="middle" className="vref-gauge-scale">
+            {maxLabel}
+          </text>
+          {hasPower && hasNominal ? (
+            <g
+              className="vref-kw-needle"
+              style={{ transformOrigin: `${cx}px ${cy}px`, transform: `rotate(${angle}deg)` }}
+            >
+              <path
+                className="vref-kw-needle-floating"
+                d={`M${cx} ${cy - r + 12} L${cx + 5} ${cy - 14} L${cx - 5} ${cy - 14} Z`}
+              />
+            </g>
+          ) : null}
+          <circle cx={cx} cy={cy} r="6" className="vref-gauge-hub" />
+          <text x={cx} y={cy - 18} textAnchor="middle" className="vref-kw-unit">
+            KW
+          </text>
+          <text x={cx} y={cy + 48} textAnchor="middle" className="vref-kw-value">
+            {valueLabel}
+          </text>
+        </svg>
       </div>
     </section>
   );

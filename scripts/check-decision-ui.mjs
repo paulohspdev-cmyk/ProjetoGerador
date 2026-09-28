@@ -11,7 +11,7 @@ const dashboard = [
   read("src/components/scada/overview-dashboard-actions.tsx"),
 ].join("\n");
 for (const marker of [
-  "Resumo operacional",
+  "Painel de decisão",
   "Modems online",
   "Geradores online",
   "Alarmes abertos",
@@ -62,8 +62,10 @@ for (const marker of [
   "<CompactCard",
   "<GeneratorTable",
   "ResizeObserver",
-  "minimumWidth",
-  "minimumHeight",
+  "VERTICAL_MIN_CARD_WIDTH",
+  "VERTICAL_MIN_CARD_HEIGHT",
+  "COMPACT_MIN_CARD_WIDTH",
+  "COMPACT_MIN_CARD_HEIGHT",
   "columns * rows",
   "compact-generator-grid",
 ]) {
@@ -92,26 +94,28 @@ if (!Number.isFinite(verticalMinHeight) || verticalMinHeight > 780) {
 const compact = read("src/components/generators/CompactCard.tsx");
 for (const marker of [
   "controllerImageSrc",
-  "controller-image-area",
-  'label="Endpoint"',
-  'label="Bateria"',
-  'label="Frequência"',
-  'label="Tempo operação"',
-  'label="Manutenção"',
-  'label="Latência"',
+  "CompactKwGauge",
+  "readGeneratorTelemetry",
+  "generatorDisplayStatus",
+  "isGeneratorConnected",
+  "Fuel Level",
+  "Autonomy",
+  "Battery Voltage",
+  "Run Hours",
+  "Maintenance",
+  "electricalRows",
+  "MAINS",
   "Abrir gerador",
 ]) {
-  if (!compact.includes(marker)) failures.push(`card compacto clássico perdeu conteúdo: ${marker}`);
+  if (!compact.includes(marker)) failures.push(`card compacto novo perdeu conteúdo: ${marker}`);
 }
 for (const forbidden of [
-  "CompactPowerGauge",
-  "compact-flow-line",
   "compact-command",
   "rcApi.generators.command",
   "useIndustrialCommandGuard",
 ]) {
   if (compact.includes(forbidden))
-    failures.push(`card compacto voltou ao redesenho operacional rejeitado: ${forbidden}`);
+    failures.push(`card compacto passou a expor comando direto: ${forbidden}`);
 }
 
 const detail = read("src/components/generators/GeneratorDetailScreen.tsx");
@@ -126,9 +130,10 @@ for (const marker of [
   "gen.capabilities?.[action] === true",
   "!gen.telemetryStale",
   'gen.status !== "offline"',
-  'data-command="manual"',
-  'data-command="auto"',
-  'data-command="test"',
+  "data-command={item.action ?? undefined}",
+  'commandAction("manual")',
+  'commandAction("auto")',
+  'commandAction("test")',
 ]) {
   if (!detailControlSurface.includes(marker)) {
     failures.push(`controle perdeu decisão autoritativa/estado seguro: ${marker}`);
@@ -287,7 +292,7 @@ const cardCss = read("src/components/generators/vertical-card/vertical-reference
 for (const marker of [
   ".generator-vertical-grid.generator-reference-card-grid",
   "grid-template-columns: repeat(var(--vref-columns",
-  "grid-auto-rows: var(--vref-card-height",
+  "grid-template-rows: repeat(var(--vref-rows",
   ".vref-card",
   "height: 100%",
   "container-type: size",

@@ -23,7 +23,7 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
   const [maintenanceError, setMaintenanceError] = useState("");
 
   const model = useMemo(() => buildGeneratorDetailModel(gen), [gen]);
-  const { events, eventError, trend, trendError, trendLoading } = useGeneratorDetailData(gen);
+  const { events, eventError } = useGeneratorDetailData(gen);
 
   useEffect(() => {
     let active = true;
@@ -58,9 +58,6 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
     if (action === "stop") return model.runningKnown && model.running === true;
     return true;
   };
-  const canStart = canAction("start");
-  const canStop = canAction("stop");
-
   const command = async (action: IndustrialCommandAction) => {
     const label = action.toUpperCase().replaceAll("_", " ");
     if (!can("operate")) {
@@ -93,9 +90,9 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
   };
 
   return (
-    <article className="gen-detail-professional scroll-slim min-h-0 min-w-0 flex-1 overflow-y-auto p-3 sm:p-4">
+    <article className="gen-detail-professional gen-detail-fit scroll-slim relative min-h-0 min-w-0 flex-1 overflow-hidden">
       {message && (
-        <div className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm">
+        <div className="absolute right-3 top-3 z-20 flex max-w-md items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm">
           <span>{message}</span>
           <button
             type="button"
@@ -116,17 +113,11 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
         onCommand={command}
       />
       <GeneratorDetailProfessionalLower
-        gen={gen}
         model={model}
         events={events}
         eventError={eventError}
-        trend={trend}
-        trendLoading={trendLoading}
-        trendError={trendError}
         plans={plans}
         maintenanceError={maintenanceError}
-        canStart={canStart}
-        canStop={canStop}
       />
     </article>
   );

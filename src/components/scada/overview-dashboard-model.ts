@@ -26,6 +26,10 @@ export type TrafficSummary = {
   monthRx: number;
   monthTx: number;
   monthBytes: number;
+  todaySeries?: number[];
+  monthSeries?: number[];
+  todayQuota?: number | null;
+  monthQuota?: number | null;
   ports: TrafficPort[];
   updatedAt: number;
 };
@@ -39,6 +43,20 @@ export type GeneratorStatusSummary = {
   alert: number;
   offline: number;
   unconfigured: number;
+};
+
+export type SiteDecisionRow = {
+  site: string;
+  total: number;
+  online: number;
+  alert: number;
+  offline: number;
+};
+
+export type LowFuelRow = {
+  tag: string;
+  site: string;
+  value: number;
 };
 
 export type FuelSummary = {
@@ -70,6 +88,7 @@ export type WorkSummary = {
 export type MaintenanceSummary = {
   due: number;
   warning: number;
+  ok: number;
   error: string | null;
 };
 
@@ -100,9 +119,9 @@ export function alarmTone(severity: string) {
 
 export function alarmLabel(severity: string) {
   if (severity === "fault") return "Crítico";
-  if (severity === "alarm") return "Alarme";
-  if (severity === "warning") return "Atenção";
-  return "Informativo";
+  if (severity === "alarm") return "Alto";
+  if (severity === "warning") return "Médio";
+  return "Baixo";
 }
 
 export function friendlyAlarmMessage(alarm: IndustrialAlarm) {
@@ -181,6 +200,8 @@ export function useOverviewDecisionModel() {
     return () => window.clearInterval(timer);
   }, [refreshOperational]);
 
+  const fleet = generators;
+
   const activeAlarms = useMemo(
     () =>
       [...alarms]
@@ -191,18 +212,18 @@ export function useOverviewDecisionModel() {
 
   const generatorStatus = useMemo<GeneratorStatusSummary>(
     () => ({
-      online: generators.filter(isGeneratorOnline).length,
-      alert: generators.filter(isGeneratorAlert).length,
-      offline: generators.filter((generator) =>
+      online: fleet.filter(isGeneratorOnline).length,
+      alert: fleet.filter(isGeneratorAlert).length,
+      offline: fleet.filter((generator) =>
         ["offline", "stale"].includes(generatorDisplayStatus(generator)),
       ).length,
-      unconfigured: generators.filter((generator) => generator.status === "nao_configurado").length,
+      unconfigured: fleet.filter((generator) => generator.status === "nao_configurado").length,
     }),
-    [generators],
+    [fleet],
   );
 
   const fuel = useMemo<FuelSummary>(() => {
-    const measured = generators
+    const measured = fleet
       .map((generator) => {
         const telemetry = readGeneratorTelemetry(generator);
         return telemetry.fuel == null || !telemetry.fuelUnit
@@ -217,7 +238,7 @@ export function useOverviewDecisionModel() {
       unit == null ? [] : measured.filter((row) => row.unit === unit).map((row) => row.value);
     return {
       count: measured.length,
-      totalGenerators: generators.length,
+      totalGenerators: fleet.length,
       average:
         readings.length && !mixedUnits
           ? readings.reduce((sum, value) => sum + value, 0) / readings.length
@@ -227,7 +248,7 @@ export function useOverviewDecisionModel() {
       unit,
       mixedUnits,
     };
-  }, [generators]);
+  }, [fleet]);
 
   const bridgeFresh = diag?.bridge.statusFresh === true;
   const sessions = useMemo(
@@ -271,6 +292,7 @@ export function useOverviewDecisionModel() {
   const maintenanceSummary: MaintenanceSummary = {
     due: maintenance.filter((item) => item.enabled && item.state === "due").length,
     warning: maintenance.filter((item) => item.enabled && item.state === "warning").length,
+    ok: maintenance.filter((item) => item.enabled && item.state === "ok").length,
     error: maintenanceError,
   };
 
@@ -281,17 +303,17 @@ export function useOverviewDecisionModel() {
       tone: "critical",
     },
     {
-      label: "Alarme",
+      label: "Alto",
       value: activeAlarms.filter((item) => item.severity === "alarm").length,
       tone: "alarm",
     },
     {
-      label: "Atenção",
+      label: "Médio",
       value: activeAlarms.filter((item) => item.severity === "warning").length,
       tone: "warning",
     },
     {
-      label: "Informativo",
+      label: "Baixo",
       value: activeAlarms.filter((item) => !["fault", "alarm", "warning"].includes(item.severity))
         .length,
       tone: "info",
@@ -299,14 +321,52 @@ export function useOverviewDecisionModel() {
   ];
   const severityMax = Math.max(1, ...severity.map((item) => item.value));
 
+  const sites = useMemo<SiteDecisionRow[]>(() => {
+    const grouped = new Map<string, SiteDecisionRow>();
+    for (const generator of fleet) {
+      const current = grouped.get(generator.site) ?? {
+        site: generator.site,
+        total: 0,
+        online: 0,
+        alert: 0,
+        offline: 0,
+      };
+      current.total += 1;
+      if (generator.status === "online") current.online += 1;
+      if (generator.status === "alerta") current.alert += 1;
+      if (generator.status === "offline") current.offline += 1;
+      grouped.set(generator.site, current);
+    }
+    return [...grouped.values()].sort((a, b) => b.total - a.total || a.site.localeCompare(b.site));
+  }, [fleet]);
+
+  const lowFuel = useMemo<LowFuelRow[]>(
+    () =>
+      fleet
+        .map((generator) => {
+          const telemetry = readGeneratorTelemetry(generator);
+          if (telemetry.fuel == null || telemetry.fuelUnit !== "%") return null;
+          return { tag: generator.tag, site: generator.site, value: telemetry.fuel };
+        })
+        .filter((row): row is LowFuelRow => row != null)
+        .sort((a, b) => a.value - b.value)
+        .slice(0, 6),
+    [fleet],
+  );
+
+  const siteByGenerator = useMemo(
+    () => Object.fromEntries(fleet.map((generator) => [generator.id, generator.site])),
+    [fleet],
+  );
+
   const sitesWithAttention = useMemo(() => {
-    const generatorSite = new Map(generators.map((generator) => [generator.id, generator.site]));
+    const generatorSite = new Map(fleet.map((generator) => [generator.id, generator.site]));
     return new Set(
       activeAlarms
         .map((alarm) => (alarm.generator_id ? generatorSite.get(alarm.generator_id) : undefined))
         .filter((site): site is string => Boolean(site)),
     ).size;
-  }, [activeAlarms, generators]);
+  }, [activeAlarms, fleet]);
 
   const retryAll = () => {
     void refreshGenerators();
@@ -315,6 +375,7 @@ export function useOverviewDecisionModel() {
   };
 
   return {
+    demo: false,
     updatedAt,
     retryAll,
     hasAnyError: Boolean(
@@ -322,7 +383,7 @@ export function useOverviewDecisionModel() {
     ),
     generatorsReady,
     generatorsError,
-    totalGenerators: generators.length,
+    totalGenerators: fleet.length,
     generatorStatus,
     fuel,
     bridgeFresh,
@@ -334,6 +395,9 @@ export function useOverviewDecisionModel() {
     communicationLoading: !diag && !diagError,
     activeAlarms,
     alarmError,
+    sites,
+    lowFuel,
+    siteByGenerator,
     sitesWithAttention,
     work,
     maintenance: maintenanceSummary,

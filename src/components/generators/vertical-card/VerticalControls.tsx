@@ -1,8 +1,7 @@
-import { Hand } from "lucide-react";
-
 import type { Generator } from "@/data/generators";
 import type { IndustrialCommandAction } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { Hand } from "lucide-react";
 
 function modeShort(mode: Generator["mode"]) {
   if (mode === "MANUAL") return "MAN";
@@ -38,15 +37,68 @@ export function VerticalControls({
   onCommand: (action: IndustrialCommandAction) => void;
 }) {
   const activeMode = modeKnown ? modeShort(gen.mode) : "";
+
+  const canManual = Boolean(canOperate && modeEnabled(gen, "manual"));
+  const canAuto = Boolean(canOperate && modeEnabled(gen, "auto"));
+
+  if (dse) {
+    return (
+      <section className="vref-section vref-control" aria-label="Controle de modo DSE">
+        <div className="vref-mode-row is-dse">
+          <button
+            type="button"
+            className={cn("vref-dse-hand", activeMode === "MAN" && "is-active")}
+            disabled={!canManual || busy !== null}
+            aria-pressed={activeMode === "MAN"}
+            aria-label="Manual"
+            title={
+              canManual
+                ? "Comando Manual homologado para esta controladora"
+                : "Comando ainda não homologado para esta controladora"
+            }
+            onClick={() => canManual && onCommand("manual")}
+          >
+            {busy === "manual" ? "..." : <Hand aria-hidden="true" />}
+          </button>
+          <button
+            type="button"
+            className={cn("vref-dse-auto", activeMode === "AUT" && "is-active")}
+            disabled={!canAuto || busy !== null}
+            aria-pressed={activeMode === "AUT"}
+            aria-label="Automático"
+            title={
+              canAuto
+                ? "Comando Automático homologado para esta controladora"
+                : "Comando ainda não homologado para esta controladora"
+            }
+            onClick={() => canAuto && onCommand("auto")}
+          >
+            {busy === "auto" ? (
+              "..."
+            ) : (
+              <>
+                <span className="vref-auto-badge">A</span>
+                <span>AUTO</span>
+                <i aria-hidden="true" />
+              </>
+            )}
+          </button>
+        </div>
+      </section>
+    );
+  }
+
   const modeButton = (label: "OFF" | "MAN" | "AUT" | "TEST", action?: IndustrialCommandAction) => {
     const available = Boolean(action && canOperate && modeEnabled(gen, action));
+    const active = activeMode === label;
     return (
       <button
         key={label}
         type="button"
         disabled={!available || busy !== null}
-        aria-pressed={activeMode === label}
-        className={cn(activeMode === label && "is-active")}
+        aria-pressed={active}
+        aria-label={label}
+        className={cn(active && "is-active")}
         title={
           available
             ? `Comando ${label} homologado para esta controladora`
@@ -62,47 +114,13 @@ export function VerticalControls({
   };
 
   return (
-    <div className="vref-control">
-      {dse ? (
-        <div className="vref-dse-control-row">
-          <button
-            type="button"
-            disabled={!canOperate || !modeEnabled(gen, "manual") || busy !== null}
-            aria-label="Modo manual DSE"
-            className={cn("vref-dse-hand", modeKnown && gen.mode === "MANUAL" && "is-active")}
-            title={
-              modeEnabled(gen, "manual")
-                ? "Selecionar modo manual homologado"
-                : "MANUAL ainda não homologado para esta controladora"
-            }
-            onClick={() => onCommand("manual")}
-          >
-            <Hand aria-hidden />
-          </button>
-          <button
-            type="button"
-            disabled={!canOperate || !modeEnabled(gen, "auto") || busy !== null}
-            className={cn("vref-dse-auto", modeKnown && gen.mode === "AUTO" && "is-active")}
-            title={
-              modeEnabled(gen, "auto")
-                ? "Selecionar modo AUTO homologado"
-                : "AUTO ainda não homologado para esta controladora"
-            }
-            onClick={() => onCommand("auto")}
-          >
-            <span className="vref-auto-badge">A</span>
-            <span>{busy === "auto" ? "..." : "AUTO"}</span>
-            <i />
-          </button>
-        </div>
-      ) : (
-        <div className="vref-mode-row">
-          {modeButton("OFF")}
-          {modeButton("MAN", "manual")}
-          {modeButton("AUT", "auto")}
-          {modeButton("TEST", "test")}
-        </div>
-      )}
-    </div>
+    <section className="vref-section vref-control" aria-label="Controle de modo">
+      <div className="vref-mode-row">
+        {modeButton("OFF")}
+        {modeButton("MAN", "manual")}
+        {modeButton("AUT", "auto")}
+        {modeButton("TEST", "test")}
+      </div>
+    </section>
   );
 }

@@ -3,6 +3,7 @@ import {
   AlarmPriorityPanel,
   AttentionPanel,
   FuelPanel,
+  LowFuelPanel,
   MaintenancePanel,
   WorkPanel,
 } from "./overview-dashboard-actions";
@@ -11,6 +12,8 @@ import {
   DecisionErrorBanner,
   DecisionHeader,
   DecisionStats,
+  ModemListPanel,
+  SitePanel,
   TrafficPanel,
 } from "./overview-dashboard-summary";
 import { useOverviewDecisionModel } from "./overview-dashboard-model";
@@ -20,8 +23,8 @@ export function OverviewDashboard() {
   const refreshGenerators = model.retryAll;
 
   return (
-    <ScreenBody>
-      <DecisionHeader updatedAt={model.updatedAt} onRefresh={refreshGenerators} />
+    <ScreenBody className="rc-decision-screen">
+      <DecisionHeader updatedAt={model.updatedAt} onRefresh={refreshGenerators} demo={model.demo} />
 
       {model.hasAnyError && <DecisionErrorBanner onRetry={model.retryAll} />}
 
@@ -41,27 +44,33 @@ export function OverviewDashboard() {
         fuel={model.fuel}
       />
 
-      <div className="grid gap-3 xl:grid-cols-12">
+      <div className="rc-decision-mid grid min-h-0 grid-cols-1 items-stretch gap-2 xl:grid-cols-12 xl:grid-rows-[auto_auto]">
         <TrafficPanel
-          loading={model.communicationLoading}
-          rows={model.modemRows}
+          className="xl:col-span-4"
           {...(model.traffic ? { traffic: model.traffic } : {})}
-          maxMonthTraffic={model.maxMonthTraffic}
-          bridgeFresh={model.bridgeFresh}
         />
         <AvailabilityPanel
+          className="xl:col-span-4"
           generatorStatus={model.generatorStatus}
           totalGenerators={model.totalGenerators}
           bridgeFresh={model.bridgeFresh}
           modemCount={model.modemCount}
           connectedModems={model.connectedModems}
         />
-        <div className="min-w-0 xl:col-span-4 [&>section]:h-full">
-          <FuelPanel fuel={model.fuel} />
-        </div>
+        <FuelPanel className="xl:col-span-4" fuel={model.fuel} />
+        <ModemListPanel
+          className="xl:col-span-4"
+          loading={model.communicationLoading}
+          rows={model.modemRows}
+          {...(model.traffic ? { traffic: model.traffic } : {})}
+          maxMonthTraffic={model.maxMonthTraffic}
+          bridgeFresh={model.bridgeFresh}
+        />
+        <SitePanel className="xl:col-span-4" sites={model.sites} />
+        <LowFuelPanel className="xl:col-span-4" rows={model.lowFuel} />
       </div>
 
-      <div className="grid gap-3 xl:grid-cols-4">
+      <div className="rc-decision-bottom grid min-h-0 gap-3 xl:grid-cols-4">
         <AlarmPriorityPanel
           error={model.alarmError}
           alarmsOpen={model.activeAlarms.length}
@@ -70,7 +79,11 @@ export function OverviewDashboard() {
         />
         <WorkPanel work={model.work} />
         <MaintenancePanel maintenance={model.maintenance} />
-        <AttentionPanel error={model.alarmError} alarms={model.activeAlarms} />
+        <AttentionPanel
+          error={model.alarmError}
+          alarms={model.activeAlarms}
+          siteByGenerator={model.siteByGenerator}
+        />
       </div>
     </ScreenBody>
   );

@@ -1,110 +1,36 @@
 import { cn } from "@/lib/utils";
-import { Clock3, Gauge, Zap } from "lucide-react";
-
-import { IconBattery } from "../scada-icons";
+import {
+  Battery,
+  Bell,
+  Clock3,
+  Fuel,
+  Gauge,
+  Thermometer,
+  TriangleAlert,
+  Wrench,
+  Zap,
+} from "lucide-react";
 
 function valueText(value: number | null, unit: string, digits = 0) {
   if (value == null || !Number.isFinite(value)) return "—";
-  return value.toLocaleString("pt-BR", {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  });
-}
-
-type MotorGaugeKind = "oil" | "temperature" | "fuel" | "battery";
-
-function motorGaugeTone(kind: MotorGaugeKind, percent: number | null, warning: boolean) {
-  if (warning) return "red";
-  if (percent == null || !Number.isFinite(percent)) return "neutral";
-
-  if (kind === "temperature") {
-    if (percent <= 33) return "blue";
-    if (percent <= 70) return "orange";
-    return "red";
-  }
-
-  if (percent <= 20) return "red";
-  if (percent <= 40) return "orange";
-  if (percent <= 70) return "blue";
-  return "green";
-}
-
-function MotorMiniGauge({
-  kind,
-  label,
-  value,
-  unit,
-  digits = 0,
-  percent,
-  warning = false,
-  "data-quality": dataQuality,
-}: {
-  kind: MotorGaugeKind;
-  label: string;
-  value: number | null;
-  unit: string;
-  digits?: number;
-  percent: number | null;
-  warning?: boolean;
-  "data-quality"?: "out-of-range" | "normal";
-}) {
-  const known = value != null && Number.isFinite(value);
-  const pct =
-    percent == null || !Number.isFinite(percent) ? null : Math.min(100, Math.max(0, percent));
-  const activeLength = pct == null ? 0 : 82 * (pct / 100);
-  const tone = motorGaugeTone(kind, pct, warning);
-
   return (
-    <div
-      className={cn("vref-motor-gauge", !known && "is-unknown", `tone-${tone}`)}
-      data-motor-gauge={label.toLowerCase()}
-      data-tone={tone}
-      data-quality={dataQuality}
-    >
-      <span className="vref-motor-gauge-label">{label}</span>
-      <svg
-        viewBox="0 0 100 100"
-        aria-label={`${label}: ${known ? valueText(value, unit, digits) : "N/D"}`}
-      >
-        <circle
-          className="vref-motor-gauge-track"
-          cx="50"
-          cy="50"
-          r="38"
-          pathLength="100"
-          strokeDasharray="82 18"
-          transform="rotate(122 50 50)"
-        />
-        {pct != null && (
-          <circle
-            className="vref-motor-gauge-progress"
-            cx="50"
-            cy="50"
-            r="38"
-            pathLength="100"
-            strokeDasharray={`${activeLength} ${100 - activeLength}`}
-            transform="rotate(122 50 50)"
-          />
-        )}
-        <text
-          x="50"
-          y={unit && known ? "48" : "54"}
-          textAnchor="middle"
-          className="vref-motor-gauge-value"
-        >
-          {known ? valueText(value, unit, digits) : "N/D"}
-        </text>
-        {known && unit && (
-          <text x="50" y="62" textAnchor="middle" className="vref-motor-gauge-unit">
-            {unit}
-          </text>
-        )}
-      </svg>
-    </div>
+    value.toLocaleString("pt-BR", {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+    }) + (unit ? " " + unit : "")
   );
 }
 
-export function VerticalEngineAndRpm({
+function autonomyText(hours: number | null) {
+  if (hours == null || !Number.isFinite(hours) || hours < 0) return "N/D";
+  const totalMinutes = Math.round(hours * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (h <= 0) return `${m} min`;
+  return `${h} h ${String(m).padStart(2, "0")} min`;
+}
+
+export function VerticalEngine({
   oil,
   oilUnit,
   coolant,
@@ -112,11 +38,13 @@ export function VerticalEngineAndRpm({
   fuel,
   fuelUnit,
   battery,
-  batteryPercent,
-  oilPercent,
-  coolantPercent,
-  fuelPercent,
+  alternator,
+  maintenance,
+  runHours,
+  autonomyHours,
   fuelOutOfRange,
+  runningKnown,
+  running,
 }: {
   oil: number | null;
   oilUnit: string;
@@ -125,51 +53,63 @@ export function VerticalEngineAndRpm({
   fuel: number | null;
   fuelUnit: string;
   battery: number | null;
-  batteryPercent: number | null;
-  oilPercent: number | null;
-  coolantPercent: number | null;
-  fuelPercent: number | null;
+  alternator: number | null;
+  maintenance: number | null;
+  runHours: number | null;
+  autonomyHours: number | null;
   fuelOutOfRange: boolean;
+  runningKnown: boolean;
+  running: boolean;
 }) {
   return (
-    <div className="vref-engine-rpm">
-      <section className="vref-section vref-engine">
-        <div className="vref-motor-gauges">
-          <MotorMiniGauge
-            kind="oil"
-            label="ÓLEO"
-            value={oil}
-            unit={oilUnit}
-            digits={1}
-            percent={oilPercent}
-          />
-          <MotorMiniGauge
-            kind="temperature"
-            label="TEMP."
-            value={coolant}
-            unit={coolantUnit}
-            percent={coolantPercent}
-          />
-          <MotorMiniGauge
-            kind="fuel"
-            label="COMB."
-            value={fuel}
-            unit={fuelUnit}
-            percent={fuelPercent}
-            warning={fuelOutOfRange}
-            data-quality={fuelOutOfRange ? "out-of-range" : "normal"}
-          />
-          <MotorMiniGauge
-            kind="battery"
-            label="BATERIA"
-            value={battery}
-            unit="V"
-            digits={1}
-            percent={batteryPercent}
-          />
-        </div>
-      </section>
-    </div>
+    <section className="vref-section vref-engine">
+      <div className="vref-engine-heading">
+        <h4>ENGINE STATUS</h4>
+        <span className={cn(!runningKnown ? "is-unknown" : running ? "is-running" : "is-stopped")}>
+          {!runningKnown ? "N/D" : running ? "RUNNING" : "STOPPED"}
+        </span>
+      </div>
+      <div className="vref-engine-row">
+        <Gauge />
+        <span>Oil Pressure</span>
+        <b>{valueText(oil, oilUnit, 1)}</b>
+      </div>
+      <div className="vref-engine-row">
+        <Thermometer />
+        <span>Coolant Temp.</span>
+        <b>{valueText(coolant, coolantUnit, 0)}</b>
+      </div>
+      <div className="vref-engine-row" data-quality={fuelOutOfRange ? "out-of-range" : "normal"}>
+        <Fuel />
+        <span>Fuel Level</span>
+        <b>{valueText(fuel, fuelUnit, 0)}</b>
+      </div>
+      <div className="vref-engine-row">
+        <Battery />
+        <span>Battery Voltage</span>
+        <b>{valueText(battery, "V", 1)}</b>
+      </div>
+      <div className="vref-engine-row">
+        <Zap />
+        <span>Alternator</span>
+        <b>{valueText(alternator, "V", 1)}</b>
+      </div>
+      <div className="vref-engine-row">
+        <Clock3 />
+        <span>Run Hours</span>
+        <b>{valueText(runHours, "h", 1)}</b>
+      </div>
+      <div className="vref-engine-row">
+        <Wrench />
+        <span>Maintenance</span>
+        <b>{valueText(maintenance, "h", 0)}</b>
+      </div>
+      <div className="vref-engine-row">
+        <Fuel />
+        <span>Autonomy</span>
+        <b>{autonomyText(autonomyHours)}</b>
+      </div>
+    </section>
   );
 }
 
@@ -180,61 +120,90 @@ export type ElectricalRow = {
 };
 
 export type ValueRow = {
-  icon: "clock" | "zap" | "gauge" | "battery";
+  icon: "clock" | "zap" | "gauge";
   label: string;
   value: string;
-  active?: boolean;
 };
 
-const valueIcons = {
-  clock: Clock3,
-  zap: Zap,
-  gauge: Gauge,
-  battery: IconBattery,
+export type GeneratorAlarmRow = {
+  key: string;
+  severity: "fault" | "alarm" | "warning" | "info" | string;
+  message: string;
+  code?: string;
 };
 
 export function VerticalTables({
-  hasMainsSource,
   electricalRows,
   valueRows,
+  alarms,
 }: {
-  hasMainsSource: boolean;
   electricalRows: ElectricalRow[];
   valueRows: ValueRow[];
+  alarms: GeneratorAlarmRow[];
 }) {
+  const visible = alarms.slice(0, 3);
+  const extra = Math.max(0, alarms.length - visible.length);
+
   return (
-    <section className="vref-section vref-measurements">
-      <div className={cn("vref-table-heading", !hasMainsSource && "is-generator-only")}>
-        <h4>{hasMainsSource ? "REDE / GERADOR" : "GERADOR"}</h4>
-        {hasMainsSource && <span>REDE</span>}
+    <div className="vref-measurements">
+      <div className="vref-table-heading">
+        <h4>ELECTRICAL</h4>
+        <span>MAINS</span>
         <span>GEN</span>
       </div>
-
       <div className="vref-data-table">
         {electricalRows.map((row) => (
-          <div
-            key={row.label}
-            className={cn("vref-data-row", !hasMainsSource && "is-generator-only")}
-          >
+          <div key={row.label} className="vref-data-row">
             <span>{row.label}</span>
-            {hasMainsSource && <b>{row.mains}</b>}
+            <b>{row.mains}</b>
             <b className="generator">{row.generator}</b>
           </div>
         ))}
       </div>
-
       <div className="vref-summary-grid" aria-label="Valores do gerador">
-        {valueRows.map((row) => {
-          const Icon = valueIcons[row.icon];
-          return (
-            <div key={row.label} className="vref-summary-item">
-              <Icon />
-              <span>{row.label}</span>
-              <b className={cn(row.active && "is-active")}>{row.value}</b>
-            </div>
-          );
-        })}
+        {valueRows.map((row) => (
+          <div key={row.label} className="vref-summary-item">
+            {row.icon === "clock" ? <Clock3 /> : row.icon === "zap" ? <Zap /> : <Gauge />}
+            <span>{row.label}</span>
+            <b>{row.value}</b>
+          </div>
+        ))}
       </div>
-    </section>
+      <div className="vref-alarms" aria-label="Alarmes do gerador">
+        <div className="vref-alarms-heading">
+          <h4>ALARMS</h4>
+          <span className={alarms.length ? "is-active" : "is-clear"}>
+            {alarms.length ? String(alarms.length) : "OK"}
+          </span>
+        </div>
+        {visible.length === 0 ? (
+          <div className="vref-alarm-empty">Sem alarmes ativos</div>
+        ) : (
+          visible.map((alarm) => (
+            <div
+              key={alarm.key}
+              className={cn(
+                "vref-alarm-row",
+                alarm.severity === "fault" || alarm.severity === "alarm"
+                  ? "is-fault"
+                  : alarm.severity === "warning"
+                    ? "is-warn"
+                    : "is-info",
+              )}
+            >
+              <TriangleAlert />
+              <span title={alarm.message}>{alarm.message}</span>
+              <b>{(alarm.code || alarm.severity || "ALM").toUpperCase()}</b>
+            </div>
+          ))
+        )}
+        {extra > 0 ? (
+          <div className="vref-alarm-more">
+            <Bell />
+            <span>+{extra} alarme(s)</span>
+          </div>
+        ) : null}
+      </div>
+    </div>
   );
 }

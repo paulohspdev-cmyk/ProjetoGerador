@@ -1,15 +1,24 @@
-import { Link } from "@tanstack/react-router";
-import { BellRing, Fuel, TriangleAlert } from "lucide-react";
+import {
+  Bell,
+  CalendarDays,
+  CircleCheck,
+  ClipboardList,
+  Fuel,
+  TriangleAlert,
+  Wrench,
+} from "lucide-react";
 
 import type { IndustrialAlarm } from "@/lib/industrial-api";
 import { cn } from "@/lib/utils";
-import { Panel, Pill } from "./kit";
+import { Pill } from "./kit";
+import { DecisionCard, DecisionLink } from "./overview-dashboard-summary";
 import {
   alarmLabel,
   alarmTone,
   friendlyAlarmMessage,
   pct,
   type FuelSummary,
+  type LowFuelRow,
   type MaintenanceSummary,
   type SeverityBucket,
   type WorkSummary,
@@ -29,7 +38,7 @@ function MeterRow({
   tone?: string;
 }) {
   return (
-    <div className="grid grid-cols-[minmax(90px,0.8fr)_minmax(120px,1.8fr)_auto] items-center gap-3 py-2">
+    <div className="grid grid-cols-[minmax(72px,0.8fr)_minmax(80px,1.8fr)_auto] items-center gap-2 py-1">
       <span className="truncate text-sm font-semibold">{label}</span>
       <span className="h-2 overflow-hidden rounded-full bg-secondary">
         <i
@@ -42,9 +51,22 @@ function MeterRow({
   );
 }
 
-export function FuelPanel({ fuel }: { fuel: FuelSummary }) {
+export function FuelPanel({
+  fuel,
+  className,
+}: {
+  fuel: FuelSummary;
+  className?: string | undefined;
+}) {
+  const level =
+    fuel.unit === "%" && fuel.average != null ? Math.min(100, Math.max(0, fuel.average)) : null;
   return (
-    <Panel title="Combustível do parque">
+    <DecisionCard
+      icon={Fuel}
+      title="Combustível do parque"
+      className={className}
+      footer={<DecisionLink slug="geradores">Ver todos os geradores</DecisionLink>}
+    >
       {fuel.average == null ? (
         <div className="py-8 text-center">
           <Fuel className="mx-auto size-8 text-muted-foreground" />
@@ -60,50 +82,95 @@ export function FuelPanel({ fuel }: { fuel: FuelSummary }) {
           </p>
         </div>
       ) : (
-        <div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl bg-secondary/35 p-3">
-              <p className="text-xs text-muted-foreground">Média medida</p>
-              <p className="num mt-1 text-2xl font-extrabold">
-                {fuel.average.toFixed(0)} {fuel.unit}
+        <div className="my-auto">
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div>
+              <p className="text-[11px] text-muted-foreground">Média medida</p>
+              <p className="num text-xl font-extrabold leading-tight text-online">
+                {fuel.average.toFixed(0)}
+                {fuel.unit === "%" ? "%" : ` ${fuel.unit}`}
               </p>
             </div>
-            <div className="rounded-xl bg-secondary/35 p-3">
-              <p className="text-xs text-muted-foreground">Menor leitura</p>
-              <p className="num mt-1 text-2xl font-extrabold">
-                {fuel.min?.toFixed(0)} {fuel.unit}
+            <div>
+              <p className="text-[11px] text-muted-foreground">Menor leitura</p>
+              <p className="num text-xl font-extrabold leading-tight text-offline">
+                {fuel.min?.toFixed(0)}
+                {fuel.unit === "%" ? "%" : ""}
               </p>
             </div>
-            <div className="rounded-xl bg-secondary/35 p-3">
-              <p className="text-xs text-muted-foreground">Maior leitura</p>
-              <p className="num mt-1 text-2xl font-extrabold">
-                {fuel.max?.toFixed(0)} {fuel.unit}
+            <div>
+              <p className="text-[11px] text-muted-foreground">Maior leitura</p>
+              <p className="num text-xl font-extrabold leading-tight text-primary">
+                {fuel.max?.toFixed(0)}
+                {fuel.unit === "%" ? "%" : ""}
               </p>
             </div>
           </div>
-          <div className="mt-4">
-            <div className="mb-1.5 flex justify-between text-xs text-muted-foreground">
-              <span>
-                {fuel.unit === "%" ? "Nível médio do parque" : "Média das leituras compatíveis"}
-              </span>
-              <span>{fuel.count} medição(ões)</span>
-            </div>
-            {fuel.unit === "%" ? (
-              <span className="block h-3 overflow-hidden rounded-full bg-secondary">
+          <div className="mt-2">
+            <p className="mb-2 text-xs text-muted-foreground">Nível médio de combustível</p>
+            <div className="relative h-3 overflow-hidden rounded-full bg-secondary">
+              <span
+                className="block h-full rounded-full"
+                style={{
+                  width: level == null ? "0%" : "100%",
+                  background:
+                    "linear-gradient(90deg, var(--offline) 0%, var(--alert) 45%, var(--online) 100%)",
+                  opacity: level == null ? 0.35 : 1,
+                }}
+              />
+              {level != null && (
                 <i
-                  className="block h-full rounded-full bg-primary"
-                  style={{ width: `${Math.min(100, Math.max(0, fuel.average))}%` }}
+                  className="absolute top-1/2 size-4 -translate-y-1/2 rounded-full border-2 border-white bg-foreground shadow"
+                  style={{ left: `calc(${level}% - 8px)` }}
                 />
+              )}
+            </div>
+            <div className="mt-1 flex justify-between text-[11px] font-bold text-muted-foreground">
+              <span>E</span>
+              <span className="num text-foreground">
+                {level == null ? fuel.unit : `${level.toFixed(0)}%`}
               </span>
-            ) : (
-              <p className="text-[11px] text-muted-foreground">
-                Percentual não é calculado sem capacidade de tanque configurada.
-              </p>
-            )}
+              <span>F</span>
+            </div>
           </div>
         </div>
       )}
-    </Panel>
+    </DecisionCard>
+  );
+}
+
+export function LowFuelPanel({
+  rows,
+  className,
+}: {
+  rows: LowFuelRow[];
+  className?: string | undefined;
+}) {
+  return (
+    <DecisionCard
+      icon={Fuel}
+      title="Menores níveis"
+      className={className}
+      footer={<DecisionLink slug="geradores">Ver todos os geradores</DecisionLink>}
+    >
+      {rows.length === 0 ? (
+        <p className="py-4 text-center text-sm text-muted-foreground">
+          Nenhuma leitura de combustível.
+        </p>
+      ) : (
+        <ul className="space-y-1">
+          {rows.map((row) => (
+            <li key={row.tag} className="flex items-center justify-between gap-2 text-xs">
+              <span className="min-w-0 truncate">
+                <b>{row.tag}</b>
+                <span className="text-muted-foreground"> · {row.site}</span>
+              </span>
+              <b className="num shrink-0 text-offline">{row.value.toFixed(0)}%</b>
+            </li>
+          ))}
+        </ul>
+      )}
+    </DecisionCard>
   );
 }
 
@@ -119,131 +186,141 @@ export function AlarmPriorityPanel({
   severityMax: number;
 }) {
   return (
-    <Panel title="Alarmes por prioridade">
+    <DecisionCard
+      icon={Bell}
+      title="Alarmes por prioridade"
+      footer={<DecisionLink slug="alarmes">Ver todos os alarmes</DecisionLink>}
+    >
       {error ? (
         <p className="py-8 text-center text-sm text-offline">Alarmes indisponíveis.</p>
       ) : alarmsOpen === 0 ? (
         <div className="py-8 text-center">
-          <BellRing className="mx-auto size-8 text-online" />
+          <Bell className="mx-auto size-8 text-online" />
           <p className="mt-2 font-semibold text-online">Nenhum alarme aberto</p>
         </div>
       ) : (
-        <div className="space-y-1">
-          {severity.map((item) => (
-            <MeterRow
-              key={item.label}
-              label={item.label}
-              value={item.value}
-              max={severityMax}
-              display={String(item.value)}
-              tone={
-                item.tone === "critical"
-                  ? "bg-offline"
-                  : item.tone === "alarm" || item.tone === "warning"
-                    ? "bg-alert"
-                    : "bg-chart-2"
-              }
-            />
-          ))}
+        <div className="flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            {severity.map((item) => (
+              <MeterRow
+                key={item.label}
+                label={item.label}
+                value={item.value}
+                max={severityMax}
+                display={`${item.value} (${pct(item.value, alarmsOpen || severityMax).toFixed(0)}%)`}
+                tone={
+                  item.tone === "critical"
+                    ? "bg-offline"
+                    : item.tone === "alarm"
+                      ? "bg-alert"
+                      : item.tone === "warning"
+                        ? "bg-primary"
+                        : "bg-info"
+                }
+              />
+            ))}
+          </div>
+          <div className="shrink-0 px-1 text-center">
+            <p className="num text-4xl font-extrabold leading-none">{alarmsOpen}</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">Total</p>
+          </div>
         </div>
       )}
-    </Panel>
+    </DecisionCard>
   );
 }
 
 export function WorkPanel({ work }: { work: WorkSummary }) {
   return (
-    <Panel
+    <DecisionCard
+      icon={ClipboardList}
       title="Trabalho pendente"
-      actions={
-        <Link
-          to="/p/$slug"
-          params={{ slug: "manutencao" }}
-          className="text-xs font-semibold text-primary hover:underline"
-        >
-          Abrir OS
-        </Link>
-      }
+      footer={<DecisionLink slug="manutencao">Ver todas as OS</DecisionLink>}
     >
-      <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-lg bg-secondary/35 p-3">
-          <p className="text-xs text-muted-foreground">OS abertas</p>
-          <b className="num mt-1 block text-xl">{work.error ? "N/D" : work.open}</b>
-        </div>
-        <div className="rounded-lg bg-secondary/35 p-3">
-          <p className="text-xs text-muted-foreground">Urgentes</p>
-          <b className={cn("num mt-1 block text-xl", work.urgent && "text-offline")}>
-            {work.error ? "N/D" : work.urgent}
-          </b>
-        </div>
-        <div className="rounded-lg bg-secondary/35 p-3">
-          <p className="text-xs text-muted-foreground">Em andamento</p>
-          <b className="num mt-1 block text-xl">{work.error ? "N/D" : work.running}</b>
-        </div>
-        <div className="rounded-lg bg-secondary/35 p-3">
-          <p className="text-xs text-muted-foreground">Planejadas</p>
-          <b className="num mt-1 block text-xl">{work.error ? "N/D" : work.planned}</b>
-        </div>
+      <div className="grid h-full grid-cols-2 content-stretch gap-2">
+        {[
+          { icon: ClipboardList, label: "OS abertas", value: work.open, tone: "text-foreground" },
+          { icon: Bell, label: "Urgentes", value: work.urgent, tone: "text-offline" },
+          { icon: Wrench, label: "Em andamento", value: work.running, tone: "text-info" },
+          { icon: CalendarDays, label: "Planejadas", value: work.planned, tone: "text-primary" },
+        ].map((item) => (
+          <div
+            key={item.label}
+            className="flex items-center justify-between gap-2 rounded-lg border border-border/70 bg-secondary/30 px-2.5 py-2"
+          >
+            <span className="inline-flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
+              <item.icon className={cn("size-4 shrink-0", item.tone)} />
+              <span className="truncate">{item.label}</span>
+            </span>
+            <b className={cn("num text-xl", item.tone)}>{work.error ? "N/D" : item.value}</b>
+          </div>
+        ))}
       </div>
-    </Panel>
+    </DecisionCard>
   );
 }
 
 export function MaintenancePanel({ maintenance }: { maintenance: MaintenanceSummary }) {
   return (
-    <Panel
+    <DecisionCard
+      icon={Wrench}
       title="Manutenção"
-      actions={
-        <Link
-          to="/p/$slug"
-          params={{ slug: "manutencao" }}
-          className="text-xs font-semibold text-primary hover:underline"
-        >
-          Ver manutenção
-        </Link>
-      }
+      footer={<DecisionLink slug="manutencao">Ver plano de manutenção</DecisionLink>}
     >
       {maintenance.error ? (
         <p className="py-7 text-center text-sm text-offline">Manutenção indisponível.</p>
       ) : (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between rounded-lg border border-border p-3">
-            <span className="text-sm font-semibold">Vencidas</span>
-            <b className={cn("num text-xl", maintenance.due && "text-offline")}>
+        <div className="my-auto grid grid-cols-3 gap-2 text-center">
+          <div>
+            <span className="inline-flex items-center justify-center gap-1 text-[11px] text-muted-foreground">
+              <Wrench className="size-3.5 text-offline" />
+              Vencidas
+            </span>
+            <p className="num text-3xl font-extrabold leading-tight text-offline">
               {maintenance.due}
-            </b>
+            </p>
+            <p className="text-[11px] text-muted-foreground">intervenções</p>
           </div>
-          <div className="flex items-center justify-between rounded-lg border border-border p-3">
-            <span className="text-sm font-semibold">Próximas</span>
-            <b className={cn("num text-xl", maintenance.warning && "text-alert")}>
+          <div>
+            <span className="inline-flex items-center justify-center gap-1 text-[11px] text-muted-foreground">
+              <CalendarDays className="size-3.5 text-primary" />
+              Próximas
+            </span>
+            <p className="num text-3xl font-extrabold leading-tight text-primary">
               {maintenance.warning}
-            </b>
+            </p>
+            <p className="text-[11px] text-muted-foreground">próximas</p>
+          </div>
+          <div>
+            <span className="inline-flex items-center justify-center gap-1 text-[11px] text-muted-foreground">
+              <CircleCheck className="size-3.5 text-online" />
+              Em dia
+            </span>
+            <p className="num text-3xl font-extrabold leading-tight text-online">
+              {maintenance.ok}
+            </p>
+            <p className="text-[11px] text-muted-foreground">no prazo</p>
           </div>
         </div>
       )}
-    </Panel>
+    </DecisionCard>
   );
 }
 
 export function AttentionPanel({
   error,
   alarms,
+  siteByGenerator = {},
 }: {
   error: string | null;
   alarms: IndustrialAlarm[];
+  siteByGenerator?: Record<string, string>;
 }) {
   return (
-    <Panel
+    <DecisionCard
+      icon={TriangleAlert}
       title="Requer atenção"
-      actions={
-        <Link
-          to="/p/$slug"
-          params={{ slug: "alarmes" }}
-          className="text-xs font-semibold text-primary hover:underline"
-        >
-          Ver alarmes
-        </Link>
-      }
+      footer={<DecisionLink slug="alarmes">Ver todos os alarmes</DecisionLink>}
     >
       {error ? (
         <p className="py-7 text-center text-sm text-offline">Alarmes indisponíveis.</p>
@@ -253,23 +330,29 @@ export function AttentionPanel({
           <p className="mt-1 text-xs text-muted-foreground">Não há item exigindo ação imediata.</p>
         </div>
       ) : (
-        <ul className="space-y-2">
-          {alarms.slice(0, 5).map((alarm) => (
-            <li key={alarm.alarm_key} className="rounded-lg border border-border p-3">
-              <div className="flex items-center justify-between gap-2">
-                <span className="inline-flex items-center gap-2 text-sm font-bold">
-                  <TriangleAlert className="size-4 text-alert" />
-                  {alarm.code === "COMM_LOSS" ? "Falha de comunicação" : "Ocorrência ativa"}
-                </span>
-                <Pill tone={alarmTone(alarm.severity)}>{alarmLabel(alarm.severity)}</Pill>
+        <ul className="space-y-0.5">
+          {alarms.slice(0, 4).map((alarm) => (
+            <li key={alarm.alarm_key} className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="truncate text-[10px] leading-[13px] text-muted-foreground">
+                  {new Date(alarm.last_seen * 1000).toLocaleTimeString("pt-BR", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                  {alarm.generator_id ? ` · ${alarm.generator_id}` : ""}
+                  {alarm.generator_id && siteByGenerator[alarm.generator_id]
+                    ? ` · ${siteByGenerator[alarm.generator_id]}`
+                    : ""}
+                </p>
+                <p className="truncate text-[11px] font-semibold leading-[14px]">
+                  {friendlyAlarmMessage(alarm)}
+                </p>
               </div>
-              <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-                {friendlyAlarmMessage(alarm)}
-              </p>
+              <Pill tone={alarmTone(alarm.severity)}>{alarmLabel(alarm.severity)}</Pill>
             </li>
           ))}
         </ul>
       )}
-    </Panel>
+    </DecisionCard>
   );
 }

@@ -1,16 +1,16 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   LayoutGrid,
   List,
   Maximize2,
   Minimize2,
-  Moon,
   RefreshCw,
   Rows3,
   Search,
   SlidersHorizontal,
-  Sun,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -21,8 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useLayout } from "@/components/layout/LayoutContext";
-import { useTheme } from "@/components/layout/ThemeProvider";
-import { generatorDisplayStatus, statusLabel, type GenStatus } from "@/data/generators";
+import { statusLabel, type GenStatus } from "@/data/generators";
 import { cn } from "@/lib/utils";
 import { CompactCard } from "./CompactCard";
 import { GeneratorTable } from "./GeneratorTable";
@@ -41,9 +40,32 @@ const views: Array<{ id: View; label: string; icon: typeof List }> = [
 const VERTICAL_GAP = 8;
 const VERTICAL_PADDING = 4;
 const VERTICAL_MIN_CARD_WIDTH = 285;
-const VERTICAL_MAX_CARD_WIDTH = 340;
-const VERTICAL_MIN_CARD_HEIGHT = 700;
-const VERTICAL_MAX_CARD_HEIGHT = 960;
+const VERTICAL_MIN_CARD_HEIGHT = 720;
+
+const COMPACT_GAP = 6;
+const COMPACT_PADDING = 4;
+const COMPACT_MIN_CARD_WIDTH = 160;
+const COMPACT_MIN_CARD_HEIGHT = 156;
+/** Layouts preferidos para ~18 cards/tela, do mais denso ao mais folgado. */
+const COMPACT_LAYOUTS: Array<[number, number]> = [
+  [6, 3],
+  [9, 2],
+  [3, 6],
+  [5, 4],
+  [4, 5],
+  [6, 4],
+  [4, 4],
+  [6, 2],
+  [3, 4],
+  [4, 3],
+  [3, 3],
+  [2, 4],
+  [2, 3],
+  [2, 2],
+  [1, 3],
+  [1, 2],
+  [1, 1],
+];
 
 function verticalColumnCount(width: number) {
   const usableWidth = Math.max(1, width - VERTICAL_PADDING * 2);
@@ -61,6 +83,33 @@ function verticalRowCount(height: number) {
   );
 }
 
+function compactLayout(width: number, height: number) {
+  const usableWidth = Math.max(1, width - COMPACT_PADDING * 2);
+  const usableHeight = Math.max(1, height - COMPACT_PADDING * 2);
+
+  for (const [columns, rows] of COMPACT_LAYOUTS) {
+    const cardWidth = (usableWidth - COMPACT_GAP * Math.max(0, columns - 1)) / Math.max(1, columns);
+    const cardHeight = (usableHeight - COMPACT_GAP * Math.max(0, rows - 1)) / Math.max(1, rows);
+    if (cardWidth >= COMPACT_MIN_CARD_WIDTH && cardHeight >= COMPACT_MIN_CARD_HEIGHT) {
+      return {
+        columns,
+        rows,
+        pageSize: columns * rows,
+        cardWidth,
+        cardHeight,
+      };
+    }
+  }
+
+  return {
+    columns: 1,
+    rows: 1,
+    pageSize: 1,
+    cardWidth: usableWidth,
+    cardHeight: usableHeight,
+  };
+}
+
 const filters: Array<{ id: GenStatus | "todos"; label: string }> = [
   { id: "todos", label: "Todos" },
   { id: "online", label: statusLabel.online },
@@ -71,12 +120,12 @@ const filters: Array<{ id: GenStatus | "todos"; label: string }> = [
 
 export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
   const { generators, ready, error, refresh } = useGenerators();
-  const { fullscreen, toggleFullscreen } = useLayout();
-  const { theme, toggleTheme } = useTheme();
+  const { fullscreen, toggleFullscreen, toolsOpen, setToolsPanel } = useLayout();
   const [view, setView] = useState<View>("principal");
   const [status, setStatus] = useState<GenStatus | "todos">("todos");
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState(0);
+  const [edgeHover, setEdgeHover] = useState<"left" | "right" | null>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
 
@@ -112,66 +161,72 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
 
   const items = useMemo(
     () =>
-      generators.filter((generator) => {
-        const displayStatus = generatorDisplayStatus(generator);
-        const statusMatches =
-          status === "todos" ||
-          (status === "offline"
-            ? displayStatus === "offline" || displayStatus === "stale"
-            : displayStatus === status);
-        return (
-          statusMatches &&
+      generators.filter(
+        (generator) =>
+          (status === "todos" || generator.status === status) &&
           (generator.tag.toLowerCase().includes(query.toLowerCase()) ||
             (generator.name ?? "").toLowerCase().includes(query.toLowerCase()) ||
             (generator.customer ?? "").toLowerCase().includes(query.toLowerCase()) ||
             generator.controller.toLowerCase().includes(query.toLowerCase()) ||
-            generator.site.toLowerCase().includes(query.toLowerCase()))
-        );
-      }),
+            generator.site.toLowerCase().includes(query.toLowerCase())),
+      ),
     [generators, status, query],
+  );
+
+  const compactLayoutState = useMemo(
+    () => compactLayout(Math.max(1, viewport.width || 1200), Math.max(1, viewport.height || 720)),
+    [viewport],
   );
 
   const pageSize = useMemo(() => {
     if (!viewport.width || !viewport.height) {
-      return view === "principal" ? 4 : view === "lista" ? 12 : 8;
+      return view === "principal" ? 4 : view === "lista" ? 12 : 18;
     }
     if (view === "lista") return Math.max(1, Math.floor(viewport.height / 43));
-
     if (view === "principal") return verticalLayout.pageSize;
-
-    const minimumWidth = 250;
-    const minimumHeight = 190;
-    const columns = Math.max(1, Math.floor(viewport.width / minimumWidth));
-    const rows = Math.max(1, Math.floor(viewport.height / minimumHeight));
-    return columns * rows;
-  }, [view, viewport, verticalLayout.pageSize]);
+    return compactLayoutState.pageSize;
+  }, [view, viewport, verticalLayout.pageSize, compactLayoutState.pageSize]);
   const pages = Math.max(1, Math.ceil(items.length / pageSize));
   const page = Math.min(group, pages - 1);
   const visible = items.slice(page * pageSize, page * pageSize + pageSize);
 
+  const compactGridStyle = useMemo(
+    () =>
+      ({
+        "--compact-cols": compactLayoutState.columns,
+        "--compact-rows": compactLayoutState.rows,
+        "--compact-gap": COMPACT_GAP + "px",
+        "--compact-padding": COMPACT_PADDING + "px",
+      }) as CSSProperties,
+    [compactLayoutState],
+  );
+
   const verticalGridStyle = useMemo(() => {
-    const hasFullRow = visible.length >= verticalLayout.columns;
-    const displayColumns = hasFullRow
-      ? verticalLayout.columns
-      : Math.max(1, Math.min(verticalLayout.columns, visible.length || 1));
+    const columns = Math.max(1, verticalLayout.columns);
+    const rows = Math.max(1, verticalLayout.rows);
     const usableWidth = Math.max(1, (viewport.width || 1200) - VERTICAL_PADDING * 2);
-    const naturalWidth =
+    const usableHeight = Math.max(1, (viewport.height || 720) - VERTICAL_PADDING * 2);
+    const hasFullRow = visible.length >= columns;
+    const displayColumns = hasFullRow
+      ? columns
+      : Math.max(1, Math.min(columns, visible.length || 1));
+    const displayRows = Math.max(
+      1,
+      Math.min(rows, Math.ceil(Math.max(1, visible.length) / displayColumns)),
+    );
+    const cardWidth =
       (usableWidth - VERTICAL_GAP * Math.max(0, displayColumns - 1)) / displayColumns;
-    const cardWidth = hasFullRow ? naturalWidth : Math.min(VERTICAL_MAX_CARD_WIDTH, naturalWidth);
+    const cardHeight = (usableHeight - VERTICAL_GAP * Math.max(0, displayRows - 1)) / displayRows;
 
     return {
       "--vref-columns": displayColumns,
-      "--vref-rows": verticalLayout.rows,
-      "--vref-card-width": Math.max(VERTICAL_MIN_CARD_WIDTH, cardWidth) + "px",
-      "--vref-card-height":
-        Math.max(
-          VERTICAL_MIN_CARD_HEIGHT,
-          Math.min(VERTICAL_MAX_CARD_HEIGHT, verticalLayout.cardHeight),
-        ) + "px",
+      "--vref-rows": displayRows,
+      "--vref-card-width": Math.max(1, cardWidth) + "px",
+      "--vref-card-height": Math.max(1, cardHeight) + "px",
       "--vref-gap": VERTICAL_GAP + "px",
       "--vref-padding": VERTICAL_PADDING + "px",
     } as CSSProperties;
-  }, [verticalLayout, viewport.width, visible.length]);
+  }, [verticalLayout, viewport.width, viewport.height, visible.length]);
 
   const trulyEmpty = ready && !error && generators.length === 0;
   const filterEmpty = ready && !error && generators.length > 0 && visible.length === 0;
@@ -183,89 +238,149 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
     setGroup(0);
   };
 
-  const footerControls = (
-    <div className="flex min-w-max items-center gap-2">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            className="inline-flex h-11 items-center gap-1.5 rounded-md border border-border bg-card px-3 text-[11px] font-bold transition-colors hover:bg-secondary sm:h-8 lg:h-7 lg:px-2.5 data-[state=open]:border-primary/50 data-[state=open]:bg-secondary"
-          >
-            <currentView.icon className="size-3.5 text-primary" />
-            <span>{currentView.label}</span>
-            <ChevronDown className="size-3 text-muted-foreground" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-48">
-          <DropdownMenuLabel>Visualização</DropdownMenuLabel>
-          <DropdownMenuRadioGroup
-            value={view}
-            onValueChange={(value) => {
-              setView(value as View);
-              setGroup(0);
-            }}
-          >
-            {views.map((item) => (
-              <DropdownMenuRadioItem key={item.id} value={item.id} className="gap-2">
-                <item.icon className="size-4" />
-                {item.label}
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            className="inline-flex h-11 items-center gap-1.5 rounded-md border border-border bg-card px-3 text-[11px] font-bold transition-colors hover:bg-secondary sm:h-8 lg:h-7 lg:px-2.5 data-[state=open]:border-primary/50 data-[state=open]:bg-secondary"
-          >
-            <SlidersHorizontal className="size-3.5 text-primary" />
-            <span>{currentFilter.label}</span>
-            <ChevronDown className="size-3 text-muted-foreground" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-52">
-          <DropdownMenuLabel>Filtrar por status</DropdownMenuLabel>
-          <DropdownMenuRadioGroup
-            value={status}
-            onValueChange={(value) => setFilter(value as GenStatus | "todos")}
-          >
-            {filters.map((item) => (
-              <DropdownMenuRadioItem key={item.id} value={item.id}>
-                {item.label}
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <span className="mx-0.5 h-5 w-px bg-border" aria-hidden />
-      <button
-        type="button"
-        onClick={toggleTheme}
-        title={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
-        aria-label={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
-        className="grid size-11 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:size-8 lg:size-7"
-      >
-        {theme === "dark" ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
-      </button>
-      <button
-        type="button"
-        onClick={toggleFullscreen}
-        title={fullscreen ? "Sair da tela cheia" : "Tela cheia"}
-        aria-label={fullscreen ? "Sair da tela cheia" : "Tela cheia"}
-        aria-pressed={fullscreen}
-        className="grid size-11 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:size-8 lg:size-7"
-      >
-        {fullscreen ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
-      </button>
-    </div>
+  const turnPage = useCallback(
+    (delta: number) => {
+      setGroup((current) => Math.min(pages - 1, Math.max(0, current + delta)));
+    },
+    [pages],
   );
 
+  useEffect(() => {
+    if (!toolsOpen) {
+      setToolsPanel(null);
+      return;
+    }
+
+    setToolsPanel(
+      <div className="flex flex-col gap-1.5">
+        <div className="grid grid-cols-1 gap-1.5">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex h-8 w-full items-center gap-1.5 rounded-md border border-white/10 bg-black/25 px-2.5 text-[11px] font-bold text-slate-100"
+              >
+                <currentView.icon className="size-3.5 text-primary" />
+                <span className="min-w-0 flex-1 truncate text-left">{currentView.label}</span>
+                <ChevronDown className="size-3 text-slate-400" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuLabel>Visualização</DropdownMenuLabel>
+              <DropdownMenuRadioGroup
+                value={view}
+                onValueChange={(value) => {
+                  setView(value as View);
+                  setGroup(0);
+                }}
+              >
+                {views.map((item) => (
+                  <DropdownMenuRadioItem key={item.id} value={item.id} className="gap-2">
+                    <item.icon className="size-4" />
+                    {item.label}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex h-8 w-full items-center gap-1.5 rounded-md border border-white/10 bg-black/25 px-2.5 text-[11px] font-bold text-slate-100"
+              >
+                <SlidersHorizontal className="size-3.5 text-primary" />
+                <span className="min-w-0 flex-1 truncate text-left">{currentFilter.label}</span>
+                <ChevronDown className="size-3 text-slate-400" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-52">
+              <DropdownMenuLabel>Filtrar por status</DropdownMenuLabel>
+              <DropdownMenuRadioGroup
+                value={status}
+                onValueChange={(value) => setFilter(value as GenStatus | "todos")}
+              >
+                {filters.map((item) => (
+                  <DropdownMenuRadioItem key={item.id} value={item.id}>
+                    {item.label}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        <div className="flex h-8 items-center justify-between gap-1 rounded-md border border-white/10 bg-black/25 px-1">
+          <button
+            type="button"
+            aria-label="Página anterior"
+            disabled={page === 0}
+            onClick={() => turnPage(-1)}
+            className="grid size-7 place-items-center rounded text-slate-200 disabled:opacity-30"
+          >
+            <ChevronLeft className="size-4" />
+          </button>
+          <span className="num truncate text-[11px] font-semibold text-slate-200">
+            Página {page + 1} de {pages}
+          </span>
+          <button
+            type="button"
+            aria-label="Próxima página"
+            disabled={page >= pages - 1}
+            onClick={() => turnPage(1)}
+            className="grid size-7 place-items-center rounded text-slate-200 disabled:opacity-30"
+          >
+            <ChevronRight className="size-4" />
+          </button>
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => void toggleFullscreen()}
+            title={fullscreen ? "Sair da tela cheia" : "Tela cheia"}
+            aria-label={fullscreen ? "Sair da tela cheia" : "Tela cheia"}
+            aria-pressed={fullscreen}
+            className="grid size-8 shrink-0 place-items-center rounded-md border border-white/10 bg-black/25 text-slate-200"
+          >
+            {fullscreen ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
+          </button>
+          <label className="flex h-8 min-w-0 flex-1 items-center gap-1.5 rounded-md border border-white/10 bg-black/25 px-2">
+            <Search className="size-3.5 shrink-0 text-slate-400" />
+            <input
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setGroup(0);
+              }}
+              placeholder="Buscar"
+              aria-label="Buscar gerador"
+              className="min-w-0 w-full bg-transparent text-xs text-slate-100 outline-none placeholder:text-slate-500"
+            />
+          </label>
+        </div>
+      </div>,
+    );
+
+    return () => setToolsPanel(null);
+  }, [
+    toolsOpen,
+    view,
+    status,
+    page,
+    pages,
+    query,
+    fullscreen,
+    currentView,
+    currentFilter,
+    setToolsPanel,
+    toggleFullscreen,
+    turnPage,
+  ]);
+
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+    <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       <div
         className={cn(
           "flex min-h-0 min-w-0 flex-1 flex-col gap-1 overflow-hidden p-1",
@@ -297,10 +412,10 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
           </div>
         )}
 
-        <div ref={viewportRef} className="min-h-0 min-w-0 flex-1 overflow-hidden">
+        <div ref={viewportRef} className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
           {view === "principal" && (
             <div
-              className="generator-vertical-grid generator-reference-card-grid scroll-slim grid h-full min-h-0 min-w-0 overflow-auto rounded-md bg-panel"
+              className="generator-vertical-grid generator-reference-card-grid scroll-slim grid h-full min-h-0 min-w-0 overflow-hidden rounded-md bg-panel"
               style={verticalGridStyle}
             >
               {visible.map((generator) => (
@@ -322,19 +437,71 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
           )}
 
           {view === "compacto" && (
-            <div className="compact-generator-grid scroll-slim grid h-full min-h-0 min-w-0 content-start gap-2 overflow-auto p-0.5">
+            <div
+              className="compact-generator-grid scroll-slim grid h-full min-h-0 min-w-0 overflow-hidden"
+              style={compactGridStyle}
+            >
               {visible.map((generator) => (
                 <CompactCard key={generator.id} gen={generator} />
               ))}
               {trulyEmpty && (
-                <p className="p-6 text-sm text-muted-foreground">Nenhum gerador cadastrado.</p>
+                <p className="col-span-full p-6 text-sm text-muted-foreground">
+                  Nenhum gerador cadastrado.
+                </p>
               )}
               {filterEmpty && (
-                <p className="p-6 text-sm text-muted-foreground">
+                <p className="col-span-full p-6 text-sm text-muted-foreground">
                   Nenhum gerador corresponde ao filtro atual.
                 </p>
               )}
             </div>
+          )}
+
+          {pages > 1 && (
+            <>
+              <div
+                className="absolute left-0 top-[8%] z-40 flex h-20 w-10 items-center justify-center"
+                onMouseEnter={() => setEdgeHover("left")}
+                onMouseLeave={() => setEdgeHover(null)}
+              >
+                <button
+                  type="button"
+                  aria-label="Página anterior"
+                  title="Página anterior"
+                  disabled={page === 0}
+                  onClick={() => turnPage(-1)}
+                  className={cn(
+                    "grid size-8 place-items-center rounded-md border border-border bg-card text-foreground transition-opacity",
+                    edgeHover === "left" && page > 0
+                      ? "opacity-100"
+                      : "pointer-events-none opacity-0",
+                  )}
+                >
+                  <ChevronLeft className="size-5" />
+                </button>
+              </div>
+              <div
+                className="absolute right-0 top-[8%] z-40 flex h-20 w-10 items-center justify-center"
+                onMouseEnter={() => setEdgeHover("right")}
+                onMouseLeave={() => setEdgeHover(null)}
+              >
+                <button
+                  type="button"
+                  aria-label="Próxima página"
+                  title="Próxima página"
+                  disabled={page >= pages - 1}
+                  onClick={() => turnPage(1)}
+                  className={cn(
+                    "grid size-8 place-items-center rounded-md border border-border bg-card text-foreground transition-opacity",
+                    edgeHover === "right" && page < pages - 1
+                      ? "opacity-100"
+                      : "pointer-events-none opacity-0",
+                  )}
+                >
+                  <ChevronRight className="size-5" />
+                </button>
+              </div>
+            </>
           )}
 
           {view === "lista" && (
@@ -350,48 +517,6 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
               )}
             </div>
           )}
-        </div>
-
-        <div className="flex shrink-0 flex-wrap items-center gap-2 border-t border-border/60 py-1.5 text-[11px] text-muted-foreground lg:flex-nowrap lg:gap-1.5 lg:py-0.5">
-          <div className="scroll-slim order-2 w-full min-w-0 overflow-x-auto sm:order-1 sm:w-auto sm:flex-1">
-            {footerControls}
-          </div>
-
-          <div className="order-1 flex w-full items-center justify-center gap-2 sm:order-2 sm:w-auto sm:gap-3">
-            <button
-              type="button"
-              disabled={page === 0}
-              onClick={() => setGroup((current) => Math.max(0, current - 1))}
-              className="h-11 rounded-md border border-border px-3 text-[11px] font-semibold text-foreground disabled:opacity-40 sm:h-8 lg:h-6 lg:px-2.5"
-            >
-              Anterior
-            </button>
-            <span className="num whitespace-nowrap font-semibold">
-              Página {page + 1} de {pages}
-            </span>
-            <button
-              type="button"
-              disabled={page >= pages - 1}
-              onClick={() => setGroup((current) => Math.min(pages - 1, current + 1))}
-              className="h-11 rounded-md border border-border px-3 text-[11px] font-semibold text-foreground disabled:opacity-40 sm:h-8 lg:h-6 lg:px-2.5"
-            >
-              Próxima
-            </button>
-          </div>
-
-          <label className="order-3 flex h-11 w-full min-w-0 items-center gap-1.5 rounded-md border border-input bg-background px-3 focus-within:border-primary sm:ml-auto sm:w-48 sm:max-w-48 xl:h-7 xl:px-2">
-            <Search className="size-3.5 shrink-0 text-muted-foreground" />
-            <input
-              value={query}
-              onChange={(event) => {
-                setQuery(event.target.value);
-                setGroup(0);
-              }}
-              placeholder="Buscar"
-              aria-label="Buscar gerador"
-              className="min-w-0 w-full bg-transparent text-xs outline-none placeholder:text-muted-foreground"
-            />
-          </label>
         </div>
       </div>
     </div>
