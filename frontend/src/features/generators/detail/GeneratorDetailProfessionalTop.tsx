@@ -27,6 +27,24 @@ function kwText(value: number | null) {
   return `${Math.round(value).toLocaleString("pt-BR")} kW`;
 }
 
+function telemetrySourceText(source: Generator["telemetrySource"]) {
+  if (source === "rapid_scada") return "Rapid SCADA";
+  if (source === "last_known") return "Último valor conhecido";
+  if (!source || source === "none") return "N/D";
+  return source;
+}
+
+function lastReadingText(value: number | null | undefined) {
+  if (value == null || !Number.isFinite(value)) return "N/D";
+  return new Date(value * 1000).toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
 function HorizontalFlow({
   hasMainsSource,
   mainsPresent,
@@ -287,6 +305,45 @@ export function GeneratorDetailProfessionalTop({
             {gen.site || "Sem unidade"}
             {gen.customer ? ` | ${gen.customer}` : ""}
           </p>
+          <div
+            className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-muted-foreground"
+            aria-label="Qualidade e origem da telemetria"
+          >
+            <span>
+              Origem:{" "}
+              <b className="font-semibold text-foreground">
+                {telemetrySourceText(gen.telemetrySource)}
+              </b>
+            </span>
+            <span>
+              Última leitura:{" "}
+              <b className="num font-semibold text-foreground">
+                {lastReadingText(gen.lastTelemetryAt)}
+              </b>
+            </span>
+            <span>
+              Qualidade:{" "}
+              <b
+                className={cn(
+                  "font-semibold",
+                  gen.telemetryStale
+                    ? "text-alert"
+                    : gen.telemetrySource === "rapid_scada"
+                      ? "text-online"
+                      : "text-foreground",
+                )}
+              >
+                {gen.telemetryStale
+                  ? "STALE"
+                  : gen.telemetrySource === "rapid_scada"
+                    ? "ATUAL"
+                    : "N/D"}
+              </b>
+            </span>
+            <span>
+              Firmware: <b className="font-semibold text-foreground">N/D</b>
+            </span>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
           <GeneratorEditDialog
