@@ -19,7 +19,8 @@ AVAILABILITY_COUNT = 8
 MODE_ADDRESS = 772
 STATUS_FLAGS_ADDRESS = 774
 RPM_ADDRESS = 1030
-CRITICAL_STATUS_MASK = 0x3C00
+WARNING_STATUS_MASK = 0x0400
+BLOCKING_STATUS_MASK = 0x3800
 KEY_STOP = 35700
 KEY_AUTO = 35701
 KEY_MANUAL = 35702
@@ -150,72 +151,94 @@ async def send_command(generator: dict, action: str) -> dict:
     if not host:
         raise ValueError("Gerador DSE sem host TCP")
 
+    expected_modes = {"stop": 0, "off": 0, "auto": 1, "manual": 2, "test": 3}
+
     async with _ModbusTcp(host, port, unit) as client:
         mode = (await client.read_holding(MODE_ADDRESS, 1))[0]
         status_flags = (await client.read_holding(STATUS_FLAGS_ADDRESS, 1))[0]
         rpm_before = (await client.read_holding(RPM_ADDRESS, 1))[0]
         availability = await client.read_holding(AVAILABILITY_ADDRESS, AVAILABILITY_COUNT)
         if all(reg in {0, 0xFFFF} for reg in availability):
-            raise PermissionError(
-                "Página 16 sem funções de controle declaradas; escrita bloqueada"
-            )
+            raise PermissionError("Página 16 sem funções de controle declaradas; escrita bloqueada")
         if action == "start" and rpm_before > MAX_START_RPM:
             return {
-                "ok": False,
-                "accepted": False,
-                "action": "start",
+                "ok": False, "accepted": False, "action": "start",
                 "reason": f"partida bloqueada: motor já apresenta {rpm_before} rpm",
-                "rpm_before": rpm_before,
-                "mode_before": mode,
-                "status_flags": status_flags,
-                "availability": availability,
+                "rpm_before": rpm_before, "mode_before": mode,
+                "status_flags": status_flags, "availability": availability,
             }
-        if action == "start" and (status_flags & CRITICAL_STATUS_MASK):
+        if action == "start" and (status_flags & BLOCKING_STATUS_MASK):
             return {
-                "ok": False,
-                "accepted": False,
-                "action": "start",
+                "ok": False, "accepted": False, "action": "start",
                 "reason": (
-                    "partida bloqueada: status DSE indica warning/trip/shutdown/"
+                    "partida bloqueada: status DSE indica electrical trip/shutdown/"
                     f"falha de unidade (0x{status_flags:04X})"
                 ),
-                "rpm_before": rpm_before,
-                "mode_before": mode,
-                "status_flags": status_flags,
-                "availability": availability,
+                "rpm_before": rpm_before, "mode_before": mode,
+                "status_flags": status_flags, "availability": availability,
             }
 
         key = select_key(action, mode, availability)
         await client.write_multiple(CONTROL_ADDRESS, [key, complement(key)])
-        await asyncio.sleep(0.4)
-        mode_after = (await client.read_holding(MODE_ADDRESS, 1))[0]
-        rpm_after = (await client.read_holding(RPM_ADDRESS, 1))[0]
 
-    reason = (
-        "FC16 GenComm aceito pela controladora; acompanhe partida/parada no painel e na telemetria Rapid"
-    )
+        deadline = asyncio.get_running_loop().time() + (
+            15.0 if action == "start" else 30.0 if action == "stop" else 3.0
+        )
+        mode_after = mode
+        rpm_after = rpm_before
+        accepted = False
+        while True:
+            await asyncio.sleep(0.25)
+            mode_after = (await client.read_holding(MODE_ADDRESS, 1))[0]
+            rpm_after = (await client.read_holding(RPM_ADDRESS, 1))[0]
+            if action == "start":
+                accepted = rpm_after > MAX_START_RPM
+            elif action == "stop":
+                accepted = rpm_after <= MAX_START_RPM
+            else:
+                accepted = mode_after == expected_modes[action]
+            if accepted or asyncio.get_running_loop().time() >= deadline:
+                break
+
+    warning_active = bool(status_flags & WARNING_STATUS_MASK)
+    if accepted:
+        if action == "start":
+            reason = f"START confirmado pela telemetria: {rpm_after} rpm"
+        elif action == "stop":
+            reason = f"STOP confirmado pela telemetria: {rpm_after} rpm"
+        else:
+            reason = f"{action.upper()} confirmado pela DSE: modo {mode}->{mode_after}"
+    else:
+        reason = (
+            f"FC16 recebido pela DSE, mas {action.upper()} não foi confirmado; "
+            f"modo={mode}->{mode_after}, rpm={rpm_before}->{rpm_after}. "
+            "Verifique Panel Lock, Protected Start e permissivos/configuração do módulo."
+        )
+
     result = {
-        "ok": True,
-        "accepted": True,
+        "ok": accepted,
+        "accepted": accepted,
         "action": action,
         "reason": reason,
         "key": key,
         "mode_before": mode,
         "mode_after": mode_after,
-        "mode_name": MODE_NAMES.get(int(mode), "desconhecido"),
+        "mode_name": MODE_NAMES.get(int(mode_after), "desconhecido"),
         "rpm_before": rpm_before,
         "rpm_after": rpm_after,
         "availability": availability,
         "status_flags": status_flags,
+        "warning_active": warning_active,
         "lab": False,
     }
     try:
         db.add_event(
             generator["id"],
-            "WARN",
+            "WARN" if accepted else "ERROR",
             (
                 f"Controle DSE {action.upper()} {generator.get('tag')}: key={key} "
-                f"modo={mode}->{mode_after} rpm={rpm_before}->{rpm_after}"
+                f"aceito={accepted} modo={mode}->{mode_after} rpm={rpm_before}->{rpm_after} "
+                f"status=0x{status_flags:04X}"
             ),
         )
     except Exception:
