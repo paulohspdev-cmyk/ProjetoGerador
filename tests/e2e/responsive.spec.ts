@@ -58,6 +58,7 @@ test("rotas críticas não estouram a viewport", async ({ browser }) => {
     { width: 1024, height: 768, touch: true },
     { width: 1366, height: 768, touch: false },
     { width: 1920, height: 1080, touch: false },
+    { width: 2560, height: 1440, touch: false },
     { width: 3840, height: 2160, touch: false },
   ];
   const routes = [
@@ -113,7 +114,8 @@ test("touchscreen recebe alvos mínimos de 44px", async ({ browser }) => {
 
     await page.goto("/p/geradores");
     await openGeneratorTools(page);
-    const previous = page.getByRole("button", { name: "Página anterior" });
+    const previous = page.locator('button[aria-label="Página anterior"]:visible').first();
+    await expect(previous).toBeVisible();
     expect((await previous.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
 
     const search = page.locator('input[aria-label="Buscar gerador"]:visible').first();
@@ -123,7 +125,7 @@ test("touchscreen recebe alvos mínimos de 44px", async ({ browser }) => {
   }
 });
 
-test("tablet usa cards na lista de geradores e TV aumenta texto compacto", async ({ browser }) => {
+test("tablet usa cards e TV 4K preserva densidade do console", async ({ browser }) => {
   test.setTimeout(180_000);
   const { context: tablet, page } = await contextAt(browser, 1024, 768, true);
 
@@ -170,14 +172,30 @@ test("tablet usa cards na lista de geradores e TV aumenta texto compacto", async
   const { context: tv, page: tvPage } = await contextAt(browser, 3840, 2160, false);
   await tvPage.goto("/p/geradores");
   await openGeneratorTools(tvPage);
-  const bodyFontSize = await tvPage.evaluate(() =>
-    Number.parseFloat(getComputedStyle(document.body).fontSize),
-  );
-  expect(bodyFontSize).toBeGreaterThanOrEqual(18);
+  const density = await tvPage.evaluate(() => {
+    const rootFont = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
+    const bodyFont = Number.parseFloat(getComputedStyle(document.body).fontSize);
+    const topbar = document.querySelector<HTMLElement>(".rc-topbar");
+    const sidebar = document.querySelector<HTMLElement>(".rc-sidebar");
+    return {
+      rootFont,
+      bodyFont,
+      topbarHeight: topbar?.getBoundingClientRect().height ?? 0,
+      sidebarWidth: sidebar?.getBoundingClientRect().width ?? 0,
+    };
+  });
+  expect(density.rootFont).toBeLessThanOrEqual(17.5);
+  expect(density.bodyFont).toBeLessThanOrEqual(16.5);
+  expect(density.topbarHeight).toBeLessThanOrEqual(100);
+  expect(density.sidebarWidth).toBeLessThanOrEqual(360);
 
-  const previousFontSize = await tvPage
-    .getByRole("button", { name: "Página anterior" })
-    .evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize));
-  expect(previousFontSize).toBeGreaterThanOrEqual(16);
+  const previousTv = tvPage.locator('button[aria-label="Página anterior"]:visible').first();
+  await expect(previousTv).toBeVisible();
+  const previousFontSize = await previousTv.evaluate((element) =>
+    Number.parseFloat(getComputedStyle(element).fontSize),
+  );
+  expect(previousFontSize).toBeGreaterThanOrEqual(12);
+  expect(previousFontSize).toBeLessThanOrEqual(17);
+  await expectNoGlobalOverflow(tvPage);
   await tv.close();
 });
