@@ -106,6 +106,7 @@ export function buildGeneratorDetailModel(gen: Generator) {
   const genL2 = metricNumber(gen, "voltage_l2", gen.gen.l2);
   const genL3 = metricNumber(gen, "voltage_l3", gen.gen.l3);
   const genL12 = metricNumber(gen, "voltage_l1_l2", gen.gen.l12);
+  const genL23 = metricNumber(gen, "voltage_l2_l3", undefined);
   const genL13 = metricNumber(gen, "voltage_l3_l1", undefined);
   const genI1 = metricNumber(gen, "current_l1", undefined);
   const genI2 = metricNumber(gen, "current_l2", undefined);
@@ -122,6 +123,7 @@ export function buildGeneratorDetailModel(gen: Generator) {
   const mainsL2 = metricNumber(gen, "mains_voltage_l2", gen.mains.l2);
   const mainsL3 = metricNumber(gen, "mains_voltage_l3", gen.mains.l3);
   const mainsL12 = metricNumber(gen, "mains_voltage_l1_l2", gen.mains.l12);
+  const mainsL23 = metricNumber(gen, "mains_voltage_l2_l3", undefined);
   const mainsL13 = metricNumber(gen, "mains_voltage_l3_l1", undefined);
   const load = metricNumber(gen, "power_kw", gen.load);
   const telemetry = readGeneratorTelemetry(gen);
@@ -196,6 +198,7 @@ export function buildGeneratorDetailModel(gen: Generator) {
             : "unknown";
   const fuelRate = telemetry.fuelRate;
   const powerKva = metricNumber(gen, "power_kva", undefined);
+  const powerKvar = metricNumber(gen, "power_kvar", undefined);
   const powerFactor = metricNumber(gen, "power_factor", undefined);
   const mainsPowerFactor = metricNumber(gen, "mains_power_factor", undefined);
   const numberStarts = metricNumber(gen, "number_starts", undefined);
@@ -452,6 +455,7 @@ export function buildGeneratorDetailModel(gen: Generator) {
     genL2,
     genL3,
     genL12,
+    genL23,
     genL13,
     genI1,
     genI2,
@@ -465,6 +469,7 @@ export function buildGeneratorDetailModel(gen: Generator) {
     mainsL2,
     mainsL3,
     mainsL12,
+    mainsL23,
     mainsL13,
     load,
     nominalPower,
@@ -511,6 +516,7 @@ export function buildGeneratorDetailModel(gen: Generator) {
     fuelLiters,
     autonomyLabel: formatAutonomy(autonomyMinutes),
     powerKva,
+    powerKvar,
     powerFactor,
     mainsPowerFactor,
     gensetKwh,
