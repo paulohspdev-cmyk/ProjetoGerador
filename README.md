@@ -117,8 +117,8 @@ Alarmes nativos individuais da controladora só são exibidos quando seus códig
 ## Estrutura
 
 ```text
-src/                         frontend React/TanStack
-public/                      ativos visuais
+frontend/src/                         frontend React/TanStack
+frontend/public/                      ativos visuais
 backend/                     API FastAPI, auth, RBAC, worker e integrações
 controllers/catalog/         catálogo alvo, sem poder industrial
 controllers/production/      Controller Packs homologados
@@ -126,8 +126,8 @@ controllers/lab/             controladoras em investigação
 rapid/reader/                leitor oficial do Rapid SCADA Server
 rapid/templates/             templates do Communicator
 rapid/provisioning/          provisionamento/reconcile/deprovision seguro
-ops/systemd/                 serviços Linux
-ops/nginx/                   proxy da aplicação
+infrastructure/systemd/                 serviços Linux
+infrastructure/nginx/                   proxy da aplicação
 ops/install.sh               instalação/reaplicação da VM
 ops/deploy_release.sh         deploy controlado por commit
 ops/status.sh                diagnóstico detalhado
@@ -200,7 +200,7 @@ sudo bash ops/install.sh \
 O instalador não cria TLS local nesse modo. Ele expõe 3000/8090 somente após
 aplicar uma tabela nftables que aceita loopback e o(s) CIDR(s) do NPM. O
 procedimento de migração de uma VM já existente está em
-`ops/NPM_EXTERNAL_PROXY.md`.
+`infrastructure/docs/NPM_EXTERNAL_PROXY.md`.
 
 ### Instalar sem gerador inicial
 
@@ -315,7 +315,7 @@ sudo /opt/rc-geradores/ops/status.sh
 ```
 
 Para instalações com Nginx Proxy Manager, siga o cutover em
-`ops/NPM_EXTERNAL_PROXY.md` antes de remover/desabilitar qualquer proxy local.
+`infrastructure/docs/NPM_EXTERNAL_PROXY.md` antes de remover/desabilitar qualquer proxy local.
 
 ## Runtime e dados persistentes
 
@@ -350,7 +350,7 @@ O banco SQLite guarda cadastro, alarmes/estado e dados do produto; **não substi
 - bindings divergentes não são reutilizados silenciosamente;
 - retirada de equipamento preserva canais/histórico antes de excluir cadastro;
 - SMTP, WhatsApp e acesso público devem receber credenciais/configuração reais antes do uso;
-- quando HTTPS estiver no Nginx Proxy Manager, use `RC_WEB_TLS_MODE=external_proxy`, configure `RC_TRUSTED_PROXY_CIDRS` com o IP/CIDR real do NPM e não mantenha uma segunda terminação TLS local; veja `ops/NPM_EXTERNAL_PROXY.md`. Mantenha `RC_AUTH_COOKIE_SECURE=1` no acesso público HTTPS.
+- quando HTTPS estiver no Nginx Proxy Manager, use `RC_WEB_TLS_MODE=external_proxy`, configure `RC_TRUSTED_PROXY_CIDRS` com o IP/CIDR real do NPM e não mantenha uma segunda terminação TLS local; veja `infrastructure/docs/NPM_EXTERNAL_PROXY.md`. Mantenha `RC_AUTH_COOKIE_SECURE=1` no acesso público HTTPS.
 
 ## Desenvolvimento
 

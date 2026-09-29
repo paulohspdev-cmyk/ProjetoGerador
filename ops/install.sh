@@ -279,14 +279,14 @@ install -d -m 0770 -o root -g rcgeradores /run/rc-geradores
 chmod +x \
   "$BASE/ops/install.sh" "$BASE/ops/status.sh" "$BASE/ops/vm-smoke.sh" \
   "$BASE/ops/configure_external_proxy_network.sh" \
-  "$BASE/ops/bootstrap_admin.py" "$BASE/ops/bootstrap_ig200.py" \
+  "$BASE/ops/bootstrap_admin.py" "$BASE/controllers/tools/bootstrap_ig200.py" \
   "$BASE/rapid/provisioning/provision_ig200.sh" \
   "$BASE/rapid/provisioning/provision_generator.py" \
   "$BASE/rapid/provisioning/rapid_dat.py"
 
 echo "[4/15] Configuração do ambiente..."
 if [[ ! -f "$ENV_FILE" ]]; then
-  cp "$BASE/ops/rc-geradores.env.example" "$ENV_FILE"
+  cp "$BASE/infrastructure/env/rc-geradores.env.example" "$ENV_FILE"
 fi
 
 set_env() {
@@ -361,7 +361,7 @@ fi
 "$BASE/backend/.venv/bin/python" "$BASE/ops/bootstrap_admin.py" "${ADMIN_ARGS[@]}"
 
 if (( SKIP_INITIAL_GENERATOR == 0 )); then
-  "$BASE/backend/.venv/bin/python" "$BASE/ops/bootstrap_ig200.py" \
+  "$BASE/backend/.venv/bin/python" "$BASE/controllers/tools/bootstrap_ig200.py" \
     --tag "$IG200_TAG" --name "$IG200_NAME" --site "$IG200_SITE" \
     --port "$IG200_PORT" --unit "$IG200_UNIT" --rapid-device "$IG200_DEVICE"
 
@@ -424,7 +424,7 @@ for unit in \
   rc-geradores-bridge.service \
   rc-geradores-worker.service \
   rc-geradores-provision.service; do
-  cp "$BASE/ops/systemd/$unit" "/etc/systemd/system/$unit"
+  cp "$BASE/infrastructure/systemd/$unit" "/etc/systemd/system/$unit"
 done
 systemctl daemon-reload
 
@@ -496,7 +496,7 @@ else
 
   openssl x509 -in "$TLS_CERT" -noout -subject -dates
   openssl pkey -in "$TLS_KEY" -noout -check >/dev/null
-  cp "$BASE/ops/nginx/rc-geradores.conf" /etc/nginx/sites-available/rc-geradores
+  cp "$BASE/infrastructure/nginx/rc-geradores.conf" /etc/nginx/sites-available/rc-geradores
   ln -sfn /etc/nginx/sites-available/rc-geradores /etc/nginx/sites-enabled/rc-geradores
   rm -f /etc/nginx/sites-enabled/default /etc/nginx/sites-enabled/rc-scada
   nginx -t

@@ -1,0 +1,5 @@
+/* Agregador único dos design tokens do RC Geradores. */
+@import "./spacing.css";
+@import "./typography.css";
+@import "./colors.css";
+@import "./shadows.css";

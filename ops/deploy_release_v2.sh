@@ -193,13 +193,13 @@ mkdir -p "${STAGE}"
 git -c safe.directory="${BASE}" -C "${BASE}" archive "${COMMIT}" | tar -x -C "${STAGE}"
 cd "${STAGE}"
 
-test -f scripts/check-architecture.mjs || fail "release sem guardrail de arquitetura"
-test -f scripts/check-functional-surfaces.mjs || fail "release sem guardrail funcional"
+test -f scripts/validation/check-architecture.mjs || fail "release sem guardrail de arquitetura"
+test -f scripts/validation/check-functional-surfaces.mjs || fail "release sem guardrail funcional"
 test -f backend/requirements.txt || fail "release sem requirements do backend"
 test -f rapid/reader/RcRapidReader.csproj || fail "release sem projeto do leitor Rapid"
-test -f ops/systemd/rc-geradores-api.service || fail "release sem unidades systemd"
+test -f infrastructure/systemd/rc-geradores-api.service || fail "release sem unidades systemd"
 if [[ "${WEB_TLS_MODE}" != "external_proxy" ]]; then
-  test -f ops/nginx/rc-geradores.conf || fail "release sem configuração Nginx"
+  test -f infrastructure/nginx/rc-geradores.conf || fail "release sem configuração Nginx"
   test -f ops/configure_https.sh || fail "release sem hardening HTTPS"
 fi
 test -f ops/preflight_vm.sh || fail "release sem preflight seguro da VM"
@@ -248,7 +248,7 @@ if [[ -f /var/lib/rc-geradores/deployed-commit ]]; then cp -a /var/lib/rc-gerado
 
 mkdir -p "${BACKUP}/systemd" "${BACKUP}/web"
 : >"${BACKUP}/systemd-existing.txt"
-for unit in "${STAGE}"/ops/systemd/*.service; do
+for unit in "${STAGE}"/infrastructure/systemd/*.service; do
   name="$(basename "${unit}")"
   if [[ -f "/etc/systemd/system/${name}" ]]; then
     cp -a "/etc/systemd/system/${name}" "${BACKUP}/systemd/${name}"
@@ -304,7 +304,7 @@ rollback() {
   git -c safe.directory="${BASE}" -C "${BASE}" reset --hard "${PREV_HEAD}" || true
   tar -C "${BASE}" -xzf "${BACKUP}/source-before.tgz" || true
 
-  for unit in "${STAGE}"/ops/systemd/*.service; do rm -f "/etc/systemd/system/$(basename "${unit}")"; done
+  for unit in "${STAGE}"/infrastructure/systemd/*.service; do rm -f "/etc/systemd/system/$(basename "${unit}")"; done
   if [[ -d "${BACKUP}/systemd" ]]; then cp -a "${BACKUP}/systemd"/*.service /etc/systemd/system/ 2>/dev/null || true; fi
 
   if [[ ${RAPID_NETWORK_APPLIED} -eq 1 ]]; then
@@ -428,7 +428,7 @@ chown -R root:root "${BASE}/.rapid-reader"
 chmod -R u=rwX,go=rX "${BASE}/.rapid-reader"
 
 log "INSTALANDO UNIDADES SYSTEMD VERSIONADAS"
-for unit in "${BASE}"/ops/systemd/*.service; do install -m 0644 "${unit}" "/etc/systemd/system/$(basename "${unit}")"; done
+for unit in "${BASE}"/infrastructure/systemd/*.service; do install -m 0644 "${unit}" "/etc/systemd/system/$(basename "${unit}")"; done
 systemctl daemon-reload
 
 log "EXECUTANDO MIGRAÇÕES/INICIALIZAÇÃO COM SNAPSHOT PRÉVIO"

@@ -5,7 +5,13 @@ import { nitro } from "nitro/vite";
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  plugins: [tanstackStart({ server: { entry: "server" } }), viteReact(), tailwindcss(), nitro()],
+  publicDir: "frontend/public",
+  plugins: [
+    tanstackStart({ srcDirectory: "frontend/src", server: { entry: "server" } }),
+    viteReact(),
+    tailwindcss(),
+    nitro(),
+  ],
   resolve: {
     tsconfigPaths: true,
     dedupe: ["react", "react-dom", "@tanstack/react-router"],

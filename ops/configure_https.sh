@@ -21,7 +21,7 @@ fail() {
 }
 
 [[ $EUID -eq 0 ]] || fail "execute como root"
-[[ -f "$BASE/ops/nginx/rc-geradores.conf" ]] || fail "configuração Nginx não encontrada no release"
+[[ -f "$BASE/infrastructure/nginx/rc-geradores.conf" ]] || fail "configuração Nginx não encontrada no release"
 [[ -f "$ENV_FILE" ]] || fail "arquivo de ambiente não encontrado: $ENV_FILE"
 
 for cmd in nginx openssl curl sed cp install hostname systemctl ln rm awk readlink grep chmod chown mkdir; do
@@ -137,7 +137,7 @@ fi
 openssl x509 -in "$TLS_CERT" -noout -checkend 86400 >/dev/null || fail "certificado TLS inválido ou expira em menos de 24h"
 openssl pkey -in "$TLS_KEY" -noout -check >/dev/null || fail "chave TLS inválida"
 
-cp "$BASE/ops/nginx/rc-geradores.conf" "$NGINX_SITE"
+cp "$BASE/infrastructure/nginx/rc-geradores.conf" "$NGINX_SITE"
 ln -sfn "$NGINX_SITE" "$NGINX_ENABLED_DIR/rc-geradores"
 rm -f "$NGINX_ENABLED_DIR/default" "$NGINX_ENABLED_DIR/rc-scada"
 nginx -t

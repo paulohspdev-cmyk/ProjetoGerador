@@ -34,5 +34,5 @@ Este documento congela a linguagem visual do produto a partir do Industrial Cons
 
 ## Implementação
 
-A camada autoritativa está em `src/styles/industrial-console.css`, importada por último em `src/styles.css`.
+A camada autoritativa está em `frontend/src/theme/industrial-console.css`, importada por último em `frontend/src/styles.css`.
 Componentes compartilhados usam classes `rc-*`; novas telas devem reutilizar `ScreenBody`, `Panel`, `Stats`, `Pill`, `ScadaTable` e `ActionBtn` antes de criar estilos próprios.

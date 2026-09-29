@@ -52,7 +52,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ["src/components/scada/scada-lib.tsx"],
+    files: ["frontend/src/features/scada/scada-lib.tsx"],
     rules: {
       // useRemote é deliberadamente mount-only e todos os loaders atuais são endpoints rcApi
       // estáticos. check:functional impede a introdução de novos useEffect neste arquivo sem

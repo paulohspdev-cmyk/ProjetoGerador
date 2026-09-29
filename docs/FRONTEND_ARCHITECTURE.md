@@ -7,7 +7,7 @@ Manter o frontend previsível, componentizado e seguro para evolução do SCADA,
 ## Estrutura oficial
 
 ```text
-src/
+frontend/src/
 ├── assets/        # catálogo e resolução de assets visuais usados pela aplicação
 ├── components/    # componentes React reutilizáveis e telas compostas
 │   ├── auth/
@@ -29,19 +29,19 @@ src/
 
 scripts/           # automação de engenharia/qualidade executada no repositório
 ops/               # instalação, deploy, restore e operação da VM de produção
-public/            # arquivos estáticos servidos por URL pública
+frontend/public/            # arquivos estáticos servidos por URL pública
 ```
 
 ## Regras obrigatórias
 
-1. **Design tokens semânticos**: cor, tipografia, raio, sombra, superfície e estado operacional globais pertencem a `src/styles/tokens.css`. Componentes pedem significado (`info`, `online`, `alert`, `offline`, `industrial-*`) em vez de repetir cores brutas.
-2. **Estilo global**: reset/base em `src/styles/base.css`; utilitários globais em `src/styles/utilities.css`; `src/styles.css` é somente o entrypoint.
+1. **Design tokens semânticos**: cor, tipografia, raio, sombra, superfície e estado operacional globais pertencem a `frontend/src/theme/tokens.css`. Componentes pedem significado (`info`, `online`, `alert`, `offline`, `industrial-*`) em vez de repetir cores brutas.
+2. **Estilo global**: reset/base em `frontend/src/theme/base.css`; utilitários globais em `frontend/src/theme/utilities.css`; `frontend/src/styles.css` é somente o entrypoint.
 3. **CSS específico de componente**: permanece colocalizado quando não é reutilizável globalmente. Não mover CSS local para `styles/` apenas por aparência de organização.
-4. **Assets**: referências e resolução pertencem a `src/assets/`. Binários que precisam de URL pública permanecem em `public/`. Imports por `src/data/controller-images.ts` são proibidos.
-5. **Componentes de negócio**: limite de 20 KiB por arquivo em `src/components/`, exceto primitives da biblioteca `ui`. Arquivos maiores devem ser divididos por responsabilidade.
-6. **UI primitives**: `src/components/ui/` pode chegar a 30 KiB por primitive quando a biblioteca exigir; telas e regras de negócio não devem ser implementadas ali.
+4. **Assets**: referências e resolução pertencem a `frontend/src/assets/`. Binários que precisam de URL pública permanecem em `frontend/public/`. Imports por `frontend/src/data/controller-images.ts` são proibidos.
+5. **Componentes de negócio**: limite de 20 KiB por arquivo em `frontend/src/features/`, exceto primitives da biblioteca `ui`. Arquivos maiores devem ser divididos por responsabilidade.
+6. **UI primitives**: `frontend/src/design-system/ui/` pode chegar a 30 KiB por primitive quando a biblioteca exigir; telas e regras de negócio não devem ser implementadas ali.
 7. **Separação por responsabilidade**: carregamento remoto, transformação de telemetria, primitives visuais e composição de tela devem ser separados quando crescerem. `GeneratorDetailScreen` é composição; seu modelo, hook, power-flow, overview, elétrica e histórico ficam separados.
-8. **Integração**: chamadas HTTP e contratos externos ficam em `src/lib/`; componentes não duplicam clientes de API.
+8. **Integração**: chamadas HTTP e contratos externos ficam em `frontend/src/lib/`; componentes não duplicam clientes de API.
 9. **Métricas**: leitura, verificação de disponibilidade e formatação reutilizável de métricas pertencem aos utilitários do domínio de geradores, evitando implementações paralelas.
 10. **Dados industriais**: nenhum token, componente ou stylesheet pode inventar telemetria, nominal, escala, estado, alarme ou limite industrial. Limites operacionais só podem vir de Controller Pack/configuração homologada.
 11. **kW**: sem canal real e potência nominal homologada, a interface mostra `N/D`; não cria valor nem escala automática.

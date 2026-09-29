@@ -1,0 +1,6 @@
+/* Tipografia central do produto. */
+
+@theme inline {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono:
+}

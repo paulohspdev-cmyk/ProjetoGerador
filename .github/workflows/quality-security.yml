@@ -57,41 +57,41 @@ jobs:
             echo 'ERRO: workflow CI contém comandos grep concatenados/corrompidos.' >&2
             exit 1
           fi
-          if grep -q '^ ops/rc-geradores.env.example$' .github/workflows/ci.yml; then
+          if grep -q '^ infrastructure/env/rc-geradores.env.example$' .github/workflows/ci.yml; then
             echo 'ERRO: workflow CI contém bloco residual duplicado.' >&2
             exit 1
           fi
           grep -q 'require_remove = require_remove_permission' backend/app/auth.py
           grep -q 'Exclusão direta de gerador bloqueada' backend/app/auth.py
           grep -q 'POST /api/generators/{id}/retire' backend/app/auth.py
-          grep -q 'industrialApi.lifecycle.retire' src/components/generators/DeleteGeneratorButton.tsx
+          grep -q 'industrialApi.lifecycle.retire' frontend/src/features/generators/DeleteGeneratorButton.tsx
           grep -q 'operation.*deprovision' backend/app/domain_routes.py
           grep -q 'historyPreserved' rapid/provisioning/deprovision_generator.py
 
           grep -q 'request_remote_ip' backend/app/security_service.py
           grep -q 'TRUSTED_PROXY_CIDRS' backend/app/auth.py
           grep -q '_peer_is_trusted_proxy' backend/app/auth.py
-          grep -q '^RC_TRUSTED_PROXY_CIDRS=' ops/rc-geradores.env.example
-          grep -q 'proxy_set_header X-Real-IP \$remote_addr' ops/nginx/rc-geradores.conf
-          grep -q 'proxy_set_header X-Forwarded-For \$remote_addr' ops/nginx/rc-geradores.conf
+          grep -q '^RC_TRUSTED_PROXY_CIDRS=' infrastructure/env/rc-geradores.env.example
+          grep -q 'proxy_set_header X-Real-IP \$remote_addr' infrastructure/nginx/rc-geradores.conf
+          grep -q 'proxy_set_header X-Forwarded-For \$remote_addr' infrastructure/nginx/rc-geradores.conf
 
-          grep -q '^RC_AUTH_COOKIE_SECURE=1' ops/rc-geradores.env.example
-          grep -q '^RC_BACKUP_INCLUDE_SECRETS=0' ops/rc-geradores.env.example
-          grep -q '^RC_RAPID_REQUIRE_ALLOWLIST=' ops/rc-geradores.env.example
-          grep -q '^RC_RAPID_ADMIN_ALLOWED_CIDRS=' ops/rc-geradores.env.example
+          grep -q '^RC_AUTH_COOKIE_SECURE=1' infrastructure/env/rc-geradores.env.example
+          grep -q '^RC_BACKUP_INCLUDE_SECRETS=0' infrastructure/env/rc-geradores.env.example
+          grep -q '^RC_RAPID_REQUIRE_ALLOWLIST=' infrastructure/env/rc-geradores.env.example
+          grep -q '^RC_RAPID_ADMIN_ALLOWED_CIDRS=' infrastructure/env/rc-geradores.env.example
           grep -q 'configure_rapid_network.sh.*--check' ops/preflight_vm.sh
           grep -q 'configure_rapid_network.sh.*--apply' ops/deploy_release_v2.sh
-          grep -q '^RC_BACKUP_OFFSITE_REQUIRED=' ops/rc-geradores.env.example
-          grep -q 'listen 443 ssl' ops/nginx/rc-geradores.conf
-          grep -q 'return 301 https://' ops/nginx/rc-geradores.conf
-          grep -q 'Strict-Transport-Security' ops/nginx/rc-geradores.conf
-          grep -q 'Content-Security-Policy' ops/nginx/rc-geradores.conf
-          grep -q 'Permissions-Policy' ops/nginx/rc-geradores.conf
+          grep -q '^RC_BACKUP_OFFSITE_REQUIRED=' infrastructure/env/rc-geradores.env.example
+          grep -q 'listen 443 ssl' infrastructure/nginx/rc-geradores.conf
+          grep -q 'return 301 https://' infrastructure/nginx/rc-geradores.conf
+          grep -q 'Strict-Transport-Security' infrastructure/nginx/rc-geradores.conf
+          grep -q 'Content-Security-Policy' infrastructure/nginx/rc-geradores.conf
+          grep -q 'Permissions-Policy' infrastructure/nginx/rc-geradores.conf
           grep -q 'https://127.0.0.1/api/health' ops/vm-smoke.sh
 
-          grep -q 'needsOtp' src/components/auth/LoginScreen.tsx
-          grep -q 'one-time-code' src/components/auth/LoginScreen.tsx
-          grep -q 'otp?: string' src/components/auth/AuthProvider.tsx
+          grep -q 'needsOtp' frontend/src/features/auth/LoginScreen.tsx
+          grep -q 'one-time-code' frontend/src/features/auth/LoginScreen.tsx
+          grep -q 'otp?: string' frontend/src/features/auth/AuthProvider.tsx
           grep -q 'protect_secret' backend/app/security_service.py
           grep -q 'reveal_secret' backend/app/security_service.py
           grep -q 'PREFIX = "fernet:"' backend/app/secret_box.py
@@ -110,16 +110,16 @@ jobs:
           grep -q 'LATEST_SCHEMA_VERSION' backend/app/migrations.py
           grep -q 'schema_migrations' backend/app/migrations.py
           grep -q 'run_migrations' ops/migrate_db.py
-          grep -q 'ExecStartPre=.*migrate_db.py' ops/systemd/rc-geradores-api.service
+          grep -q 'ExecStartPre=.*migrate_db.py' infrastructure/systemd/rc-geradores-api.service
 
           grep -q 'RC_RAPID_REQUIRE_ALLOWLIST' backend/app/bridge_runtime.py
           grep -q 'HardenedBridgePort' backend/app/bridge_runtime.py
           grep -q 'limite de conexões por minuto excedido' backend/app/bridge_runtime.py
 
-          grep -q 'httpRequest' src/lib/api.ts
-          grep -q 'httpDownload' src/lib/api.ts
-          grep -q 'confirmation: "PROVISION"' src/lib/api.ts
-          if grep -R -n '^async function request' src/lib/api.ts src/lib/domain-api.ts src/lib/industrial-api.ts; then
+          grep -q 'httpRequest' frontend/src/lib/api.ts
+          grep -q 'httpDownload' frontend/src/lib/api.ts
+          grep -q 'confirmation: "PROVISION"' frontend/src/lib/api.ts
+          if grep -R -n '^async function request' frontend/src/lib/api.ts frontend/src/lib/domain-api.ts frontend/src/lib/industrial-api.ts; then
             echo 'ERRO: cliente HTTP duplicado voltou ao frontend.' >&2
             exit 1
           fi
@@ -142,10 +142,10 @@ jobs:
           set -euo pipefail
           grep -q 'command_contract' backend/app/control.py
           grep -q 'pack.get("status") != "field_validated"' backend/app/control.py
-          python -m py_compile backend/app/homologation.py ops/controller_homologation.py ops/controller_readonly_homologation_probe.py
-          grep -Fq 'READ_FUNCTIONS = {3, 4}' ops/controller_readonly_homologation_probe.py
-          grep -Fq 'if function not in READ_FUNCTIONS:' ops/controller_readonly_homologation_probe.py
-          grep -Fq 'contrato read-only FC03/04' ops/controller_readonly_homologation_probe.py
+          python -m py_compile backend/app/homologation.py controllers/homologation/controller_homologation.py controllers/homologation/controller_readonly_homologation_probe.py
+          grep -Fq 'READ_FUNCTIONS = {3, 4}' controllers/homologation/controller_readonly_homologation_probe.py
+          grep -Fq 'if function not in READ_FUNCTIONS:' controllers/homologation/controller_readonly_homologation_probe.py
+          grep -Fq 'contrato read-only FC03/04' controllers/homologation/controller_readonly_homologation_probe.py
           if grep -q -E 'dse_lab|ig4_lab' backend/app/control.py; then
             echo 'ERRO: caminho LAB voltou ao roteador de comandos de produção.' >&2
             exit 1

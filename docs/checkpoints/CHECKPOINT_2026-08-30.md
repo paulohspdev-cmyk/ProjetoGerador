@@ -184,7 +184,7 @@ Identificar o registrador real de potência ativa em condição de carga real us
 
 Ferramenta preparada:
 
-- `ops/ig200_probe_readonly.py`
+- `controllers/tools/ig200_probe_readonly.py`
 
 Usar somente FC03/FC04.
 
@@ -326,11 +326,11 @@ A PR #26 corrigiu exatamente isso.
 
 CSS principal:
 
-- `src/components/generators/generator-six-card.css`
+- `frontend/src/features/generators/generator-six-card.css`
 
 Board:
 
-- `src/components/generators/GeneratorsBoard.tsx`
+- `frontend/src/features/generators/GeneratorsBoard.tsx`
 
 A correção mais recente também recuperou aproximadamente 20–25 px de altura reduzindo apenas espaços internos para tentar eliminar o pequeno scroll vertical residual em fullscreen.
 
@@ -349,9 +349,9 @@ O objetivo é que o card inteiro caiba sem exigir rolagem para visualizar o fina
 
 ## 9. Arquivos de frontend mais relevantes neste momento
 
-- `src/components/generators/GeneratorsBoard.tsx`
-- `src/components/generators/PowerFlowCard.tsx`
-- `src/components/generators/generator-six-card.css`
+- `frontend/src/features/generators/GeneratorsBoard.tsx`
+- `frontend/src/features/generators/PowerFlowCard.tsx`
+- `frontend/src/features/generators/generator-six-card.css`
 - CSS base do painel ComAp relacionado ao card
 
 Não reescrever o card do zero. O layout atual foi ajustado iterativamente e está próximo do desejado. Fazer correções pequenas e verificáveis.

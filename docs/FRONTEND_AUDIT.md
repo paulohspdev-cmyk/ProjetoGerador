@@ -54,7 +54,7 @@ O primeiro Controller Pack de produção é o **ComAp InteliGen 200**. Telemetri
 
 ## Dados legados
 
-`src/data/scada.ts` ainda exporta algumas coleções vazias para manter compatibilidade com telas antigas durante a migração. Elas não contêm dados demonstrativos e não são fonte de telemetria.
+`frontend/src/data/scada.ts` ainda exporta algumas coleções vazias para manter compatibilidade com telas antigas durante a migração. Elas não contêm dados demonstrativos e não são fonte de telemetria.
 
 ## Critério para produção
 

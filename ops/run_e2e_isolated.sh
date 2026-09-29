@@ -96,7 +96,7 @@ printf 'globalThis.__RC_RETAINED_E2E__ = true;\n' >"${RETAINED_ASSET_FIXTURE}"
 PIDS+=("$!")
 PORT="${FRONTEND_PORT}" HOST=127.0.0.1 node .output/server/index.mjs >"${TMP}/frontend.log" 2>&1 &
 PIDS+=("$!")
-E2E_API_PORT="${API_PORT}" E2E_FRONTEND_PORT="${FRONTEND_PORT}" E2E_PROXY_PORT="${PROXY_PORT}" node e2e/reverse-proxy.mjs >"${TMP}/proxy.log" 2>&1 &
+E2E_API_PORT="${API_PORT}" E2E_FRONTEND_PORT="${FRONTEND_PORT}" E2E_PROXY_PORT="${PROXY_PORT}" node tests/e2e/reverse-proxy.mjs >"${TMP}/proxy.log" 2>&1 &
 PIDS+=("$!")
 
 wait_http "http://127.0.0.1:${API_PORT}/api/health" || { cat "${TMP}/api.log"; exit 1; }
