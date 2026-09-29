@@ -1391,7 +1391,11 @@ print("Audit regressions: OK")
 # F12: production Controller Packs use schema v4 and every enabled command has a contract.
 from app.controller_library import list_controller_packs  # noqa: E402
 
-for pack in list_controller_packs():
+controller_packs_first = list_controller_packs()
+controller_packs_second = list_controller_packs()
+assert controller_packs_first is controller_packs_second, "controller pack cache não foi reutilizado"
+
+for pack in controller_packs_first:
     if pack.get("lifecycle") != "production":
         continue
     assert pack.get("schema") == 4, pack.get("packId")
