@@ -127,6 +127,17 @@ def command_contract(generator: dict, action: str) -> tuple[dict, dict]:
     if pack.get("status") != "field_validated":
         raise ValueError("Controle bloqueado: comandos exigem Controller Pack validado fisicamente em campo")
 
+    allowed_tags = {
+        str(item).strip().upper()
+        for item in (pack.get("commandAllowlistTags") or [])
+        if str(item).strip()
+    }
+    if allowed_tags and str(generator.get("tag") or "").strip().upper() not in allowed_tags:
+        raise ValueError(
+            "Controle bloqueado: este equipamento não consta na allowlist de comandos "
+            "do Controller Pack"
+        )
+
     capabilities = dict(pack.get("capabilities") or {})
     if not bool(capabilities.get(action)):
         raise ValueError(
@@ -175,6 +186,22 @@ async def send_homologated_command(generator: dict, action: str) -> dict:
         result = await _send_socket_command(
             Path(CONTROL_SOCKET),
             {
+                "device": rapid_device,
+                "action": action,
+                "confirm": "REMOTE_CONTROL_CONFIRMED",
+            },
+            timeout=timeout,
+        )
+    elif executor == "comap_privileged":
+        if action != "start":
+            raise ValueError(
+                f"Controle bloqueado: executor IG4 atual não implementa {action.upper()} em produção"
+            )
+        result = await _send_socket_command(
+            Path(CONTROL_SOCKET),
+            {
+                "controller": "ig4",
+                "generator_id": generator.get("id"),
                 "device": rapid_device,
                 "action": action,
                 "confirm": "REMOTE_CONTROL_CONFIRMED",
