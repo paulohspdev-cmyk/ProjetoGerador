@@ -2,8 +2,8 @@
 
 O executor permanece fail-closed: relê modo, RPM, status e disponibilidade da
 control key antes de qualquer FC16. A autorização por modelo/firmware/binding é
-feita em control.command_contract. Neste release somente START é promovido
-para produção no DSE4520 MKII 4.8; demais ações continuam bloqueadas.
+feita em control.command_contract. Neste release START, STOP/OFF, AUTO, MANUAL e TEST são promovidos
+somente para o DSE4520 MKII 4.8.
 """
 
 from __future__ import annotations
@@ -21,6 +21,9 @@ STATUS_FLAGS_ADDRESS = 774
 RPM_ADDRESS = 1030
 CRITICAL_STATUS_MASK = 0x3C00
 KEY_STOP = 35700
+KEY_AUTO = 35701
+KEY_MANUAL = 35702
+KEY_TEST = 35703
 KEY_START_MANUAL_OR_TEST = 35705
 KEY_REMOTE_START_AUTO = 35732
 KEY_BASE = 35700
@@ -43,12 +46,20 @@ def availability_has_key(registers: list[int], key: int) -> bool:
 
 def select_key(action: str, mode: int, registers: list[int]) -> int:
     action = str(action or "").strip().lower()
-    if action == "stop":
-        if not availability_has_key(registers, KEY_STOP):
-            raise PermissionError("STOP não está disponível na página 16 desta controladora")
-        return KEY_STOP
+    direct = {
+        "stop": (KEY_STOP, "STOP"),
+        "off": (KEY_STOP, "OFF/STOP"),
+        "auto": (KEY_AUTO, "AUTO"),
+        "manual": (KEY_MANUAL, "MANUAL"),
+        "test": (KEY_TEST, "TEST"),
+    }
+    if action in direct:
+        key, label = direct[action]
+        if not availability_has_key(registers, key):
+            raise PermissionError(f"{label} não está disponível na página 16 desta controladora")
+        return key
     if action != "start":
-        raise ValueError("Somente START e STOP são suportados pelo executor GenComm")
+        raise ValueError(f"Ação DSE não suportada pelo executor GenComm: {action or '-'}")
 
     mode_name = MODE_NAMES.get(int(mode), "desconhecido")
     if int(mode) in {2, 3, 4}:
