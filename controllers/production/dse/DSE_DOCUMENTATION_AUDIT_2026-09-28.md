@@ -35,3 +35,9 @@ Cada novo pack deve manter mapa, unidades, sentinelas, transporte, lifecycle e e
 ## Regra para comandos
 
 Documentação oficial de control keys é evidência de que a função existe no protocolo; não é autorização automática para escrever em qualquer unidade instalada. A promoção de START/STOP/AUTO/MAN/TEST/transferência exige modelo, firmware, função disponível, permissivos e ensaio físico controlado.
+
+## Segunda rodada — legacy e 52xx
+
+A varredura oficial também encontrou DSE402, DSE4110, DSE550, DSE6010/DSE6020, DSE6110/DSE6120, DSE6110/DSE6120 MKII, DSE7110/DSE7120 e variantes marine DSE5310M/DSE5510M. Esses produtos entram no catálogo como inventory-only quando a documentação pública não comprova o mapa GenComm necessário para provisionamento.
+
+O DSE5220 é a exceção desta rodada: o protocolo GenComm v1.29 usado pelo pack legacy cita explicitamente DSE5210 e DSE5220. Por isso o `dse5210-gencomm-v1` passa a reconhecer DSE5220 como alias e continua estritamente read-only.

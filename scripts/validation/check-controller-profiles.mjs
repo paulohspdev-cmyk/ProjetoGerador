@@ -305,8 +305,10 @@ const catalogRows = load("controllers/catalog/catalog-v1.json").controllers ?? [
 const dseGensets = catalogRows.filter(
   (item) => item.manufacturer === "DSE" && item.application === "genset",
 );
-if (dseGensets.length !== 48) {
-  failures.push(`DSE: catálogo deve manter 48 modelos genset, encontrado ${dseGensets.length}`);
+if (dseGensets.length < 48) {
+  failures.push(
+    `DSE: catálogo perdeu cobertura de modelos genset, encontrado ${dseGensets.length}`,
+  );
 }
 const registrationOnlyDse = new Set([
   "DSE3110",
@@ -321,6 +323,19 @@ const registrationOnlyDse = new Set([
   "DSE5520",
   "DSE7450",
   "DSE8710",
+  "DSE402",
+  "DSE4110",
+  "DSE550",
+  "DSE5310M",
+  "DSE5510M",
+  "DSE6010",
+  "DSE6020",
+  "DSE6110",
+  "DSE6120",
+  "DSE6110 MKII",
+  "DSE6120 MKII",
+  "DSE7110",
+  "DSE7120",
 ]);
 const newlyDocumentedDse = new Set([
   "DSE4210",

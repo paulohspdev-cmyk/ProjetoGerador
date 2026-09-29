@@ -1,25 +1,25 @@
-# DSE5210 — production read-only evidence
+# DSE5210 / DSE5220 — production read-only evidence
 
 ## Decision
 
-DSE5210 is admitted for automatic Rapid SCADA provisioning **only for read-only telemetry** through a dedicated legacy GenComm v1 pack.
+DSE5210 e DSE5220 são admitidos para provisionamento automático no Rapid SCADA **somente para telemetria read-only**, por um pack dedicado à geração legacy GenComm v1.
 
 ## Evidence
 
-- Official DSE product/download page: https://www.deepseaelectronics.com/genset/manual-auto-start-control-modules/dse5210/downloads
-- Official DSE datasheet confirms DSE5210 generator voltage, current, frequency, speed, oil pressure, fuel level, engine temperature, battery voltage, run hours and remote communications.
-- Public copy of the DSE GenComm Communications Protocol v1.29: https://manualzz.com/doc/66262772/deep-sea-electronics-plc-5210--5220--555-manual
-- The protocol explicitly states that it describes GenComm used by DSE 550, 555, **5210 and 5220**, uses Modbus RTU, and defines address = page * 256 + offset.
-- The dedicated `modbus/source-registers.txt` contains only factual addresses accepted for this production pack and is SHA-256 pinned by `manifest.json`.
+- DSE5210 official product/download page: https://www.deepseaelectronics.com/genset/manual-auto-start-control-modules/dse5210/downloads
+- DSE5220 official product/download page: https://www.deepseaelectronics.com/genset/auto-mains-utility-failure-control-modules/dse5220/downloads
+- Public copy of DSE GenComm Communications Protocol v1.29: https://manualzz.com/doc/66262772/deep-sea-electronics-plc-5210--5220--555-manual
+- O protocolo declara explicitamente uso de GenComm pelos DSE 550, 555, **5210 e 5220**, via Modbus RTU, com endereço = page * 256 + offset.
+- `modbus/source-registers.txt` contém somente os endereços comuns aceitos para este pack e permanece SHA-256 pinned no manifest.
 
 ## Deliberate omissions
 
-The DSE5210 pack does **not** inherit the newer shared DSE template. It does not poll `oil_temperature`, `power_kw`, `power_factor`, `engine_load`, `maintenance_hours` or `genset_kwh` because the legacy protocol marks some positions as reserved or makes derived/accumulated power data conditional. These can be added later only with model-specific evidence or field validation.
+O pack legacy não herda o template DSE moderno. Ele não presume `oil_temperature`, `power_kw`, `power_factor`, `engine_load`, `maintenance_hours` ou `genset_kwh` quando o protocolo legacy não garante esses pontos comuns.
 
 ## Command boundary
 
-All write capabilities are disabled. No GenComm system-control key is materialized. START, STOP, AUTO, MANUAL, TEST, transfer, breaker and paralleling commands remain blocked until physical homologation.
+Todas as capacidades de escrita permanecem desabilitadas. START, STOP, AUTO, MANUAL, TEST, transferências, disjuntores e paralelismo só podem ser promovidos após homologação física específica.
 
 ## Remaining legacy candidates
 
-DSE5310, DSE5510, DSE5520, DSE7510 and DSE7520 have strong evidence of Modbus/GenComm communication, but the available manuals direct integrators to obtain the model-specific GenComm register table from DSE Technical Support. They remain registration-only until the exact map is obtained or independently verified against an authoritative source.
+DSE5310, DSE5510, DSE5520, DSE7510 e DSE7520 têm evidência de comunicação, mas os materiais disponíveis direcionam o integrador ao mapa GenComm específico. Permanecem registration-only até obtermos tabela autoritativa ou validação independente suficiente.

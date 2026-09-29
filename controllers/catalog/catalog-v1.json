@@ -1226,6 +1226,146 @@
       "status": "inventory_only",
       "provisionable": false,
       "notes": "ATS controller atual. Manter fora do pack de gerador; mapear em pack ATS específico."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE Legacy 4xx",
+      "model": "DSE402",
+      "application": "genset",
+      "category": "legacy_key_start",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Waterproof Key Start Control Module. Produto oficial/obsoleto; sem GenComm aceito para provisionamento remoto."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE Legacy 4xxx",
+      "model": "DSE4110",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Auto Start Control Module oficial/obsoleto. Página pública não apresenta Gencomm Control Keys; cadastro somente."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE Legacy 5xx",
+      "model": "DSE550",
+      "application": "genset",
+      "category": "legacy_paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Auto Start Synchronising/Load Share Control Module. Software Link500/810; sem mapa GenComm aceito nesta auditoria."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 52xx Legacy GenComm",
+      "model": "DSE5220",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "GenComm v1.29 cobre explicitamente 5210/5220. Provisionamento efetivo resolvido pelo pack production dse5210-gencomm-v1."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 53xx Marine",
+      "model": "DSE5310M",
+      "application": "genset",
+      "category": "marine",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Auto Start Marine Control Module com RS232/RS485; mapa GenComm model-specific ainda não aceito."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 55xx Marine",
+      "model": "DSE5510M",
+      "application": "genset",
+      "category": "marine",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Synchronising & Load Sharing Marine Control Module; legacy, cadastro somente até mapa autoritativo."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 60xx MKI",
+      "model": "DSE6010",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Auto Start MKI obsoleto. DSE mantém manual/software, sem GenComm público aceito nesta auditoria."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 60xx MKI",
+      "model": "DSE6020",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Auto Mains Failure MKI obsoleto; cadastro somente até protocolo autoritativo."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 61xx MKI",
+      "model": "DSE6110",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Auto Start MKI obsoleto; cadastro somente até protocolo autoritativo."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 61xx MKI",
+      "model": "DSE6120",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Auto Mains Failure MKI obsoleto; cadastro somente até protocolo autoritativo."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 61xx MKII",
+      "model": "DSE6110 MKII",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Geração MKII oficial/obsoleta; página pública não apresenta Gencomm Control Keys nesta auditoria."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 61xx MKII",
+      "model": "DSE6120 MKII",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Geração MKII oficial/obsoleta; cadastro somente até mapa autoritativo."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 71xx Legacy",
+      "model": "DSE7110",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Auto Start legacy. Página oficial não publica Gencomm Control Keys para esta geração; cadastro somente."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 71xx Legacy",
+      "model": "DSE7120",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Auto Mains Failure legacy. Página oficial não publica Gencomm Control Keys para esta geração; cadastro somente."
     }
   ]
 }
