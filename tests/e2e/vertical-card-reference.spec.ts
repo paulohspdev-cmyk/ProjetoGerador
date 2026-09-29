@@ -204,8 +204,20 @@ test("vertical preserva todo o conteúdo e rola a grade quando a altura é curta
       modbusUnit: 80 + index,
       rapidDeviceNum: 410 + index,
     });
-    expect(response).toBe(201);
+    expect([201, 409]).toContain(response);
   }
+  await expect
+    .poll(
+      () =>
+        setupPage.evaluate(async (searchPrefix) => {
+          const response = await fetch("/api/generators", { credentials: "include" });
+          if (!response.ok) return 0;
+          const rows = (await response.json()) as Array<{ tag?: string }>;
+          return rows.filter((item) => String(item.tag || "").startsWith(searchPrefix)).length;
+        }, prefix),
+      { timeout: 15_000 },
+    )
+    .toBe(12);
   await setupContext.close();
 
   for (const viewport of [
@@ -223,7 +235,7 @@ test("vertical preserva todo o conteúdo e rola a grade quando a altura é curta
     const page = await context.newPage();
     await login(page);
 
-    await page.goto("/p/geradores");
+    await page.goto("/p/geradores", { waitUntil: "networkidle" });
     await openGeneratorTools(page);
     await expect(
       page
