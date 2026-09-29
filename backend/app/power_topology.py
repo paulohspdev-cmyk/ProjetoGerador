@@ -190,6 +190,16 @@ def resolve_power_topology(
     if implemented:
         return implemented
 
+    # Em DSE GenComm, mains_* e bus_* podem existir no template como opcionais
+    # e retornar apenas sentinela quando a função não está implementada no módulo.
+    # Não use esses canais opcionais para inventar uma rede elétrica no card.
+    if (
+        binding_present
+        and defined_metrics is not None
+        and str(generator.get("controller_type") or "").strip().upper() == "DSE"
+    ):
+        return POWER_TOPOLOGY_UNKNOWN, "telemetry_capability"
+
     binding = topology_from_configured_metrics(configured_metrics, binding_present)
     if binding:
         return binding
