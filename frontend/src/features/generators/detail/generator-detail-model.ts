@@ -62,7 +62,6 @@ function formatAutonomy(minutes: number | null) {
   return `${hours} h ${String(rest).padStart(2, "0")} min`;
 }
 
-
 function statusText(gen: Generator, rotating: boolean | null) {
   if (gen.status === "nao_configurado") return "Não configurado";
   if (gen.status === "offline") return "Offline";
