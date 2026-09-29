@@ -162,7 +162,7 @@ async def send_homologated_command(generator: dict, action: str) -> dict:
     timeout = float(contract.get("timeoutSeconds") or 20)
 
     if executor == "dse_gencomm_privileged":
-        if action != "start":
+        if action not in {"start", "stop", "off", "auto", "manual", "test"}:
             raise ValueError(
                 f"Controle bloqueado: executor DSE atual não implementa {action.upper()} em produção"
             )
