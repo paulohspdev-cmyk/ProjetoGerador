@@ -113,7 +113,8 @@ test("touchscreen recebe alvos mínimos de 44px", async ({ browser }) => {
 
     await page.goto("/p/geradores");
     await openGeneratorTools(page);
-    const previous = page.getByRole("button", { name: "Página anterior" });
+    const previous = page.locator('button[aria-label="Página anterior"]:visible').first();
+    await expect(previous).toBeVisible();
     expect((await previous.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
 
     const search = page.locator('input[aria-label="Buscar gerador"]:visible').first();
