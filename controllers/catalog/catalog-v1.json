@@ -1166,6 +1166,66 @@
       "status": "inventory_only",
       "provisionable": false,
       "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 7xxx Hybrid",
+      "model": "DSE7450",
+      "application": "genset",
+      "category": "dc_hybrid_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Modelo oficial DSE com Gencomm Control Keys 056-051. Requer mapa GenComm específico de DC/Hybrid antes de entrar no pack de produção."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 87xx",
+      "model": "DSE8710",
+      "application": "genset",
+      "category": "rear_mounted_paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Rear Mounted Synchronising & Load Sharing Controller. Gencomm Control Keys oficialmente publicado; mapa read-only específico ainda deve ser formalizado."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 87xx Mains",
+      "model": "DSE8760",
+      "application": "ats",
+      "category": "rear_mounted_mains_utility_controller",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Rear Mounted ATS/Mains controller. GenComm documentado; não usar o pack de gerador."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 88xx Mains",
+      "model": "DSE8860",
+      "application": "ats",
+      "category": "mains_utility_controller",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "ATS/Mains graphical controller. GenComm documentado; requer pack de rede/ATS separado."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 86xx Mains",
+      "model": "DSE8661",
+      "application": "ats",
+      "category": "two_part_mains_utility_controller",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Two-Part ATS/Mains controller. GenComm documentado; requer pack de rede/ATS separado."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE ATS",
+      "model": "DSE335 MKII",
+      "application": "ats",
+      "category": "ats",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "ATS controller atual. Manter fora do pack de gerador; mapear em pack ATS específico."
     }
   ]
 }

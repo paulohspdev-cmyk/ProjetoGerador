@@ -305,8 +305,8 @@ const catalogRows = load("controllers/catalog/catalog-v1.json").controllers ?? [
 const dseGensets = catalogRows.filter(
   (item) => item.manufacturer === "DSE" && item.application === "genset",
 );
-if (dseGensets.length !== 46) {
-  failures.push(`DSE: catálogo deve manter 46 modelos genset, encontrado ${dseGensets.length}`);
+if (dseGensets.length !== 48) {
+  failures.push(`DSE: catálogo deve manter 48 modelos genset, encontrado ${dseGensets.length}`);
 }
 const registrationOnlyDse = new Set([
   "DSE3110",
@@ -319,6 +319,8 @@ const registrationOnlyDse = new Set([
   "DSE5310",
   "DSE5510",
   "DSE5520",
+  "DSE7450",
+  "DSE8710",
 ]);
 const newlyDocumentedDse = new Set([
   "DSE4210",
@@ -365,6 +367,10 @@ const excludedDse = new Map([
   ["DSE7570", "sync_lock"],
   ["DSE8660 MKII", "ats"],
   ["DSE8680", "bus_tie"],
+  ["DSE8760", "ats"],
+  ["DSE8860", "ats"],
+  ["DSE8661", "ats"],
+  ["DSE335 MKII", "ats"],
 ]);
 for (const [model, application] of excludedDse) {
   const item = catalogRows.find((row) => row.model === model);
