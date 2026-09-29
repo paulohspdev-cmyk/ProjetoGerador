@@ -646,6 +646,7 @@ def _frontend_generator(
         generator,
         configured_metrics,
         binding_present,
+        defined_metrics,
     )
 
     ui_status = (
@@ -679,6 +680,7 @@ def _frontend_generator(
         "battery": values.get("battery_voltage"),
         "frequency": values.get("frequency"),
         "mainsFrequency": values.get("mains_frequency"),
+        "busFrequency": values.get("bus_frequency"),
         "nominalPower": nominal_power,
         "nominalPowerConfigured": cadastral_nominal_power,
         "nominalPowerSource": nominal_power_source,
@@ -706,6 +708,12 @@ def _frontend_generator(
             "l2": values.get("mains_voltage_l2"),
             "l3": values.get("mains_voltage_l3"),
             "l12": values.get("mains_voltage_l1_l2"),
+        },
+        "bus": {
+            "l1": values.get("bus_voltage_l1"),
+            "l2": values.get("bus_voltage_l2"),
+            "l3": values.get("bus_voltage_l3"),
+            "l12": values.get("bus_voltage_l1_l2"),
         },
         "gen": {
             "l1": values.get("voltage_l1"),
