@@ -98,8 +98,22 @@ test("detalhe usa layout de tendência e mantém N/D quando não existe históri
     await expect(page.getByText("Gráfico Rede — L1 L2 L3")).toHaveCount(0);
     await expect(page.getByText("Gráfico Gerador — L1 L2 L3")).toHaveCount(0);
 
-    const box = await trends.boundingBox();
-    expect(box?.height ?? 0).toBeLessThan(430);
+    for (const viewport of [
+      { width: 1366, height: 768 },
+      { width: 1920, height: 1080 },
+      { width: 2560, height: 1440 },
+      { width: 3840, height: 2160 },
+    ]) {
+      await page.setViewportSize(viewport);
+      const overflow = await page.evaluate(
+        () =>
+          Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - innerWidth,
+      );
+      expect(overflow).toBeLessThanOrEqual(1);
+      const box = await trends.boundingBox();
+      expect(box?.width ?? 0).toBeGreaterThan(0);
+      expect(box?.height ?? 0).toBeLessThan(500);
+    }
 
     await page.getByRole("button", { name: "7d", exact: true }).click();
     await expect(page.getByLabel("Tendências elétricas 7 dias")).toBeVisible();
