@@ -124,9 +124,9 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
 
   const vendor = controllerVendor(gen);
   const dse = vendor === "dse";
-  // UNKNOWN preserva o diagrama completo. Só omitimos a rede quando a
-  // topologia cadastrada foi explicitamente homologada como genset_only.
-  const hasMainsSource = gen.powerTopology !== "genset_only";
+  // Rede só é desenhada quando a topologia foi efetivamente identificada como mains_genset.
+  // "unknown" nunca cria uma concessionária fictícia no card.
+  const hasMainsSource = gen.powerTopology === "mains_genset";
   const runningKnown = rpm != null && hasFreshMetric(gen, "rpm");
   const running = runningKnown && isPositiveMeasurement(rpm);
   const mcbKnown = hasFreshMetric(gen, "mcb_closed");
@@ -150,6 +150,25 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       mainsL2,
       mainsL3,
       mainsFrequencyKnown ? mainsFrequency : null,
+    ]);
+
+  const busFrequency = metricNumber(gen, "bus_frequency", gen.busFrequency);
+  const busL1 = metricNumber(gen, "bus_voltage_l1", gen.bus?.l1);
+  const busL2 = metricNumber(gen, "bus_voltage_l2", gen.bus?.l2);
+  const busL3 = metricNumber(gen, "bus_voltage_l3", gen.bus?.l3);
+  const busL13 = metricNumber(gen, "bus_voltage_l3_l1", undefined);
+  const busVoltageKnown = ["bus_voltage_l1", "bus_voltage_l2", "bus_voltage_l3"].some(
+    (key) => hasFreshMetric(gen, key),
+  );
+  const busFrequencyKnown = hasFreshMetric(gen, "bus_frequency");
+  const busKnown = busVoltageKnown || busFrequencyKnown;
+  const busPresent =
+    busKnown &&
+    hasPositiveMeasurement([
+      busL1,
+      busL2,
+      busL3,
+      busFrequencyKnown ? busFrequency : null,
     ]);
 
   const genL1 = metricNumber(gen, "voltage_l1", gen.gen.l1);
@@ -182,40 +201,53 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       {
         label: "L1-N Voltage",
         mains: formatUnit(mainsKnown ? mainsL1 : null, "V"),
+        bus: formatUnit(busKnown ? busL1 : null, "V"),
         generator: formatUnit(genL1, "V"),
       },
       {
         label: "L2-N Voltage",
         mains: formatUnit(mainsKnown ? mainsL2 : null, "V"),
+        bus: formatUnit(busKnown ? busL2 : null, "V"),
         generator: formatUnit(genL2, "V"),
       },
       {
         label: "L3-N Voltage",
         mains: formatUnit(mainsKnown ? mainsL3 : null, "V"),
+        bus: formatUnit(busKnown ? busL3 : null, "V"),
         generator: formatUnit(genL3, "V"),
       },
       {
         label: "L1-L3 Voltage",
         mains: formatUnit(mainsKnown ? mainsL13 : null, "V"),
+        bus: formatUnit(busKnown ? busL13 : null, "V"),
         generator: formatUnit(genL13, "V"),
       },
       {
         label: "Frequency",
         mains: formatUnit(mainsKnown ? mainsFrequency : null, "Hz", 1),
+        bus: formatUnit(busKnown ? busFrequency : null, "Hz", 1),
         generator: formatUnit(frequency, "Hz", 1),
       },
       {
         label: "Power Factor",
         mains: formatNumber(mainsPf, 2),
+        bus: "N/D",
         generator: formatNumber(powerFactor, 2),
       },
       {
         label: "Current (A)",
         mains: formatUnit(mainsCurrent, "A", 0),
+        bus: "N/D",
         generator: formatUnit(currentKnown ? genCurrent : null, "A", 0),
       },
     ],
     [
+      busFrequency,
+      busKnown,
+      busL1,
+      busL2,
+      busL3,
+      busL13,
       currentKnown,
       frequency,
       genCurrent,
@@ -340,6 +372,10 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         mainsPresent={mainsPresent}
         mainsKnown={mainsKnown}
         mainsFrequency={mainsFrequency}
+        busKnown={busKnown}
+        busPresent={busPresent}
+        busFrequency={busFrequency}
+        busVoltage={busL13 ?? busL1}
         generatorFrequency={frequency}
         generatorPowerKw={powerKw}
         mainsPowerKw={metricNumber(gen, "mains_power_kw", undefined)}
