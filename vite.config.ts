@@ -10,7 +10,7 @@ export default defineConfig({
     tanstackStart({ srcDirectory: "frontend/src", server: { entry: "server" } }),
     viteReact(),
     tailwindcss(),
-    nitro(),
+    nitro({ publicAssets: [{ dir: "frontend/public", maxAge: 0 }] }),
   ],
   resolve: {
     tsconfigPaths: true,

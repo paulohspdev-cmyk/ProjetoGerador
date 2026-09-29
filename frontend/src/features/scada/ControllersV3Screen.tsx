@@ -17,7 +17,10 @@ const emptyTopology: TopologyV3 = {
   counts: { assets: 0, controllers: 0, connections: 0, links: 0 },
 };
 
-export function ControllersV3Screen({ embedded = false }: { embedded?: boolean } = {}) {
+export function ControllersV3Screen({
+  embedded = false,
+  onChanged,
+}: { embedded?: boolean; onChanged?: () => void | Promise<void> } = {}) {
   const { can } = useAuth();
   const [topology, setTopology] = useState<TopologyV3>(emptyTopology);
   const [catalog, setCatalog] = useState<CatalogController[]>([]);
@@ -99,6 +102,7 @@ export function ControllersV3Screen({ embedded = false }: { embedded?: boolean }
       await domainApi.createLink(linkFrom, linkTo, relation);
       setMessage("Relação de topologia cadastrada.");
       await load();
+      await onChanged?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha ao cadastrar relação.");
     } finally {
@@ -133,7 +137,10 @@ export function ControllersV3Screen({ embedded = false }: { embedded?: boolean }
       <ControllersV3CreatePanel
         catalog={catalog}
         sites={sites}
-        onCreated={load}
+        onCreated={async () => {
+          await load();
+          await onChanged?.();
+        }}
         onError={setError}
         onMessage={setMessage}
       />

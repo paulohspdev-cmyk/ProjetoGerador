@@ -1460,3 +1460,24 @@ duplicates = {key: names for key, names in contracts.items() if len(names) > 1}
 assert not duplicates, duplicates
 
 print("Production hardening regressions: OK")
+
+
+# Fxx: external API tokens must persist scopes/allowlists, enforce rate limiting and revoke cleanly.
+raw_token, token_item = platform_store.create_api_token(
+    "audit read token",
+    ["ops.read"],
+    rate_limit=10,
+    allowed_generators=["GEN-AUDIT"],
+    allowed_cidrs=["127.0.0.1/32"],
+)
+assert raw_token.startswith("rcg_"), raw_token
+authenticated = platform_store.authenticate_api_token(raw_token)
+assert authenticated is not None, token_item
+assert authenticated["scopes"] == ["ops.read"], authenticated
+assert authenticated["allowed_generators"] == ["GEN-AUDIT"], authenticated
+assert authenticated["allowed_cidrs"] == ["127.0.0.1/32"], authenticated
+assert _token_allows_generator(authenticated, {"id": "id-audit", "tag": "GEN-AUDIT"}) is True
+assert _token_allows_generator(authenticated, {"id": "id-other", "tag": "GEN-OTHER"}) is False
+assert platform_store.revoke_api_token(token_item["id"]) is True
+assert platform_store.authenticate_api_token(raw_token) is None
+print("API token lifecycle regression: OK")

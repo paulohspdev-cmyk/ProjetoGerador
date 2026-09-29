@@ -88,13 +88,12 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
       .first(),
   ).toBeVisible();
 
-  const comap = page.locator('[data-controller-vendor="comap"]').filter({ hasText: "VERTCOMAP" });
-  const dse = page.locator('[data-controller-vendor="dse"]').filter({ hasText: "VERTDSE" });
+  const search = page.locator('input[aria-label="Buscar gerador"]:visible').first();
 
-  await expect(comap).toBeVisible();
-  await expect(dse).toBeVisible();
-
-  for (const card of [comap, dse]) {
+  async function assertCommonCard(vendor: "comap" | "dse", tag: string) {
+    await search.fill(tag);
+    const card = page.locator(`[data-controller-vendor="${vendor}"]`).filter({ hasText: tag });
+    await expect(card).toBeVisible();
     await expect(card.getByRole("heading", { name: "KW", exact: true })).toBeVisible();
     await expect(card.getByText("POWER FLOW")).toBeVisible();
     await expect(card.locator(".vref-clock")).toHaveCount(0);
@@ -106,23 +105,23 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
     await expect(card.locator(".vref-summary-grid")).toBeVisible();
     await expect(card.getByText(/ALARM LIST/)).toHaveCount(0);
     await expect(card).toHaveAttribute("data-mains-state", "unknown");
+    await expect(card.getByRole("button", { name: "START" })).toBeVisible();
+    await expect(card.getByRole("button", { name: "STOP" })).toBeVisible();
+    await expect(card.getByText("HORN RESET")).toHaveCount(0);
+    await expect(card.getByText("FAULT RESET")).toHaveCount(0);
+    return card;
   }
 
+  const comap = await assertCommonCard("comap", "VERTCOMAP");
   await expect(comap.getByRole("button", { name: "OFF" })).toBeVisible();
   await expect(comap.getByRole("button", { name: "MAN" })).toBeVisible();
   await expect(comap.getByRole("button", { name: "AUT" })).toBeVisible();
   await expect(comap.getByRole("button", { name: "TEST" })).toBeVisible();
 
+  const dse = await assertCommonCard("dse", "VERTDSE");
   await expect(dse.getByRole("button", { name: "Manual" })).toBeVisible();
   await expect(dse.getByRole("button", { name: "Manual" }).locator("svg")).toHaveCount(1);
   await expect(dse.getByRole("button", { name: "Automático" })).toBeVisible();
-
-  for (const card of [comap, dse]) {
-    await expect(card.getByRole("button", { name: "START" })).toBeVisible();
-    await expect(card.getByRole("button", { name: "STOP" })).toBeVisible();
-    await expect(card.getByText("HORN RESET")).toHaveCount(0);
-    await expect(card.getByText("FAULT RESET")).toHaveCount(0);
-  }
 });
 
 test("vertical sem rede remove a concessionária do fluxo em ComAp e DSE", async ({ page }) => {
@@ -193,6 +192,22 @@ test("vertical preserva todo o conteúdo e rola a grade quando a altura é curta
 }) => {
   test.setTimeout(180_000);
 
+  const prefix = "VFIT";
+  const setupContext = await browser.newContext({ viewport: { width: 1366, height: 768 } });
+  const setupPage = await setupContext.newPage();
+  await login(setupPage);
+  for (let index = 1; index <= 12; index += 1) {
+    const response = await createGenerator(setupPage, {
+      tag: prefix + String(index).padStart(2, "0"),
+      controller: index % 2 === 0 ? "DSE DSE8620 MKII" : "ComAp InteliGen 200",
+      listenPort: 15200 + index,
+      modbusUnit: 80 + index,
+      rapidDeviceNum: 410 + index,
+    });
+    expect(response).toBe(201);
+  }
+  await setupContext.close();
+
   for (const viewport of [
     { width: 390, height: 844 },
     { width: 1024, height: 768 },
@@ -208,26 +223,15 @@ test("vertical preserva todo o conteúdo e rola a grade quando a altura é curta
     const page = await context.newPage();
     await login(page);
 
-    for (let index = 1; index <= 12; index += 1) {
-      const response = await createGenerator(page, {
-        tag: "VFIT" + String(index).padStart(2, "0"),
-        controller: index % 2 === 0 ? "DSE DSE8620 MKII" : "ComAp InteliGen 200",
-        listenPort: 15200 + index,
-        modbusUnit: 80 + index,
-        rapidDeviceNum: 410 + index,
-      });
-      expect([201, 409]).toContain(response);
-    }
-
     await page.goto("/p/geradores");
     await openGeneratorTools(page);
     await expect(
       page
         .locator("button:visible")
-        .filter({ hasText: /^Todos$/ })
+        .filter({ hasText: /^Vertical$/ })
         .first(),
     ).toBeVisible();
-    await page.locator('input[aria-label="Buscar gerador"]:visible').first().fill("VFIT");
+    await page.locator('input[aria-label="Buscar gerador"]:visible').first().fill(prefix);
     await expect(page.locator(".vref-card-frame").first()).toBeVisible({
       timeout: 15_000,
     });

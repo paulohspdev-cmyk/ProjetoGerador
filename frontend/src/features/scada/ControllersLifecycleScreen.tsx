@@ -177,7 +177,7 @@ export function ControllersLifecycleScreen() {
 
   return (
     <ScreenBody>
-      <ControllersV3Screen embedded />
+      <ControllersV3Screen embedded onChanged={load} />
       <Stats
         items={[
           { icon: Layers, label: "Assets", value: topology.counts.assets },
@@ -331,6 +331,7 @@ export function ControllersLifecycleScreen() {
                   <span className="flex flex-wrap gap-1">
                     {can("edit") && (
                       <ActionBtn
+                        disabled={busy}
                         onClick={() =>
                           void run(
                             () => domainApi.updateAsset(r.id, { enabled: !r.enabled }),
@@ -344,7 +345,7 @@ export function ControllersLifecycleScreen() {
                     {can("remove") && (
                       <ActionBtn
                         tone="danger"
-                        disabled={r.enabled}
+                        disabled={busy || r.enabled}
                         onClick={() => void removeAsset(r)}
                       >
                         Excluir
@@ -404,9 +405,14 @@ export function ControllersLifecycleScreen() {
                   "Lifecycle do gerador"
                 ) : (
                   <span className="flex flex-wrap gap-1">
-                    {can("edit") && <ActionBtn onClick={() => editController(r)}>Editar</ActionBtn>}
+                    {can("edit") && (
+                      <ActionBtn disabled={busy} onClick={() => editController(r)}>
+                        Editar
+                      </ActionBtn>
+                    )}
                     {can("edit") && (
                       <ActionBtn
+                        disabled={busy}
                         onClick={() =>
                           void run(
                             () => domainApi.updateController(r.id, { enabled: !r.enabled }),
@@ -420,7 +426,7 @@ export function ControllersLifecycleScreen() {
                     {can("remove") && (
                       <ActionBtn
                         tone="danger"
-                        disabled={r.enabled || (r.connections ?? []).some((c) => c.enabled)}
+                        disabled={busy || r.enabled || (r.connections ?? []).some((c) => c.enabled)}
                         onClick={() => {
                           if (window.confirm(`Excluir ${r.model}?`))
                             void run(
@@ -478,9 +484,14 @@ export function ControllersLifecycleScreen() {
                   "Lifecycle do gerador"
                 ) : (
                   <span className="flex flex-wrap gap-1">
-                    {can("edit") && <ActionBtn onClick={() => editConnection(r)}>Editar</ActionBtn>}
+                    {can("edit") && (
+                      <ActionBtn disabled={busy} onClick={() => editConnection(r)}>
+                        Editar
+                      </ActionBtn>
+                    )}
                     {can("edit") && (
                       <ActionBtn
+                        disabled={busy}
                         onClick={() =>
                           void run(
                             () => domainApi.updateConnection(r.id, { enabled: !r.enabled }),
@@ -494,7 +505,7 @@ export function ControllersLifecycleScreen() {
                     {can("remove") && (
                       <ActionBtn
                         tone="danger"
-                        disabled={r.enabled}
+                        disabled={busy || r.enabled}
                         onClick={() => {
                           if (window.confirm(`Excluir conexão ${r.name}?`))
                             void run(() => domainApi.removeConnection(r.id), "Conexão removida.");
@@ -523,6 +534,7 @@ export function ControllersLifecycleScreen() {
                 can("remove") ? (
                   <ActionBtn
                     tone="danger"
+                    disabled={busy}
                     onClick={() => {
                       if (window.confirm("Excluir esta relação de topologia?"))
                         void run(() => domainApi.removeLink(r.id), "Relação removida.");

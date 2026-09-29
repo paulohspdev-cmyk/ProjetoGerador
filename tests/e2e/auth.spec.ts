@@ -158,6 +158,45 @@ test("gestor consegue ativar e desativar 2FA pela tela Usuários", async ({ brow
   }
 });
 
+test("gestor faz CRUD de usuário pela própria tela", async ({ page }) => {
+  await login(page, adminEmail, adminPassword);
+  await expect(page).not.toHaveURL(/\/login$/);
+  await page.goto("/p/usuarios");
+
+  const unique = Date.now();
+  const email = `ui-crud-${unique}@example.invalid`;
+  const form = page.locator("form:visible").first();
+  await form.locator("input").nth(0).fill("Usuário UI Audit");
+  await form.locator("input").nth(1).fill(email);
+  await form.locator("input").nth(2).fill(viewerPassword);
+  await form.locator("select").selectOption("visualizacao");
+  await form.locator('button[type="submit"]').click();
+
+  let row = page.locator("tr").filter({ hasText: email }).first();
+  await expect(row).toBeVisible();
+  await row.getByRole("button", { name: "Editar" }).click();
+
+  const editForm = page.locator("form:visible").first();
+  await editForm.locator("input").nth(0).fill("Usuário UI Audit Editado");
+  await editForm.locator('button[type="submit"]').click();
+
+  row = page.locator("tr").filter({ hasText: email }).first();
+  await expect(row).toContainText("Usuário UI Audit Editado");
+  await row.getByRole("button", { name: "Desativar" }).click();
+  await expect(page.locator("tr").filter({ hasText: email }).first()).toContainText("Inativo");
+  await page
+    .locator("tr")
+    .filter({ hasText: email })
+    .first()
+    .getByRole("button", { name: "Ativar" })
+    .click();
+
+  row = page.locator("tr").filter({ hasText: email }).first();
+  page.once("dialog", (dialog) => void dialog.accept());
+  await row.getByRole("button", { name: "Excluir" }).click();
+  await expect(page.locator("tr").filter({ hasText: email })).toHaveCount(0);
+});
+
 test("rota de recuperação é renderizada", async ({ page }) => {
   await page.goto("/reset-password?token=e2e-invalid-token");
   await expect(page.getByRole("heading", { name: "Redefinir senha" })).toBeVisible();

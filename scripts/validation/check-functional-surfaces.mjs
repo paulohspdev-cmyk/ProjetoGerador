@@ -130,7 +130,7 @@ if (!rootShell.includes('if (can("manageUsers")) void refreshUsers()')) {
 const controllersLifecycle = read("frontend/src/features/scada/ControllersLifecycleScreen.tsx");
 const controllersV3 = read("frontend/src/features/scada/ControllersV3Screen.tsx");
 if (
-  !controllersLifecycle.includes("<ControllersV3Screen embedded />") ||
+  !controllersLifecycle.includes("<ControllersV3Screen embedded") ||
   (controllersLifecycle.match(/<ScreenBody/g) ?? []).length !== 1 ||
   !controllersV3.includes("embedded = false") ||
   !controllersV3.includes("return embedded ? content : <ScreenBody>{content}</ScreenBody>")
