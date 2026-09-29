@@ -166,6 +166,19 @@ export function buildGeneratorDetailModel(gen: Generator) {
       mainsL12,
       hasFreshMetric(gen, "mains_frequency") ? mainsFrequency : null,
     ]);
+  const busKnown =
+    ["bus_voltage_l1", "bus_voltage_l2", "bus_voltage_l3", "bus_voltage_l1_l2"].some(
+      (key) => hasFreshMetric(gen, key),
+    ) || hasFreshMetric(gen, "bus_frequency");
+  const busPresent =
+    busKnown &&
+    hasPositiveMeasurement([
+      busL1,
+      busL2,
+      busL3,
+      busL12,
+      hasFreshMetric(gen, "bus_frequency") ? busFrequency : null,
+    ]);
   const generatorKnown = runningKnown || generatorVoltageKnown || generatorFrequencyKnown;
   const generatorPresent =
     generatorKnown &&
@@ -177,10 +190,10 @@ export function buildGeneratorDetailModel(gen: Generator) {
         genL12,
         generatorFrequencyKnown ? frequency : null,
       ]));
-  const hasMainsSource = gen.powerTopology !== "genset_only";
+  const hasMainsSource = gen.powerTopology === "mains_genset";
   const mainsToBus = hasMainsSource && mainsKnown && mainsPresent && mcbKnown && mcb;
   const generatorToBus = generatorKnown && generatorPresent && gcbKnown && gcb;
-  const busLive = mainsToBus || generatorToBus;
+  const busLive = busPresent || mainsToBus || generatorToBus;
   const busLoadKw = generatorToBus ? load : mainsToBus ? mainsPower : null;
   const onUtility = mainsToBus && !generatorToBus;
   const mainsOk = mainsPresent;
