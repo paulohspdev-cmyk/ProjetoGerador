@@ -349,6 +349,20 @@ export function buildGeneratorDetailModel(gen: Generator) {
       });
     }
   }
+  if (busPresent) {
+    const phases = livePhases([
+      ["L1", busL1],
+      ["L2", busL2],
+      ["L3", busL3],
+    ]);
+    if (phases.length) {
+      phaseCharts.push({
+        title: "Fases do barramento",
+        phases,
+        caption: reading(busFrequency, "Hz", 1) || "Barramento energizado",
+      });
+    }
+  }
   if (generatorPresent) {
     const phases = livePhases([
       ["L1", genL1],
@@ -406,6 +420,20 @@ export function buildGeneratorDetailModel(gen: Generator) {
         powerFactor: mainsPowerFactor == null ? "" : reading(mainsPowerFactor, "", 2),
       }
     : null;
+  const busElectrical: ElectricalReadings | null = busPresent
+    ? {
+        title: "Barramento",
+        voltages: joinReadings([
+          reading(busL1, "V", 0) && `L1 ${reading(busL1, "V", 0)}`,
+          reading(busL2, "V", 0) && `L2 ${reading(busL2, "V", 0)}`,
+          reading(busL3, "V", 0) && `L3 ${reading(busL3, "V", 0)}`,
+        ]),
+        currents: "N/D",
+        frequency: reading(busFrequency, "Hz", 1) || "N/D",
+        power: "N/D",
+        powerFactor: "",
+      }
+    : null;
   const parameters: DetailParameter[] = [
     {
       label: family === "DSE" ? "Modo atual" : "Modo de operação",
@@ -431,6 +459,18 @@ export function buildGeneratorDetailModel(gen: Generator) {
       value: mainsPresent ? "Presente" : mainsKnown ? "Ausente" : "N/D",
     });
   }
+  if (busKnown) {
+    parameters.push({
+      label: "Estado do barramento",
+      value: busPresent ? "Energizado" : "Sem tensão",
+    });
+  }
+  if (busPresent && busFrequency != null) {
+    parameters.push({
+      label: "Frequência do barramento",
+      value: reading(busFrequency, "Hz", 1),
+    });
+  }
   if (family !== "COMAP")
     parameters.push({ label: "Origem do barramento", value: sourceLabel(busEnergySource) });
   parameters.push({ label: "GCB", value: breakerLabel(gcbKnown, gcb) });
@@ -439,7 +479,9 @@ export function buildGeneratorDetailModel(gen: Generator) {
     ? (genL12 ?? genL1)
     : mainsPresent
       ? (mainsL12 ?? mainsL1)
-      : (genL12 ?? genL1);
+      : busPresent
+        ? (busL12 ?? busL1)
+        : (genL12 ?? genL1);
   if (liveVoltage != null)
     parameters.push({ label: "Tensão", value: reading(liveVoltage, "V", 0) });
   if (mainsPresent && mainsFrequency != null) {
@@ -466,6 +508,11 @@ export function buildGeneratorDetailModel(gen: Generator) {
     rpm,
     frequency,
     mainsFrequency,
+    busFrequency,
+    busL1,
+    busL2,
+    busL3,
+    busL12,
     genL1,
     genL2,
     genL3,
@@ -514,6 +561,8 @@ export function buildGeneratorDetailModel(gen: Generator) {
     gcb,
     mainsKnown,
     mainsPresent,
+    busKnown,
+    busPresent,
     mainsToBus,
     generatorKnown,
     generatorPresent,
@@ -537,6 +586,7 @@ export function buildGeneratorDetailModel(gen: Generator) {
     sensors,
     generatorElectrical,
     mainsElectrical,
+    busElectrical,
     phaseCharts,
     parameters,
     ready: statusText(gen, running),
