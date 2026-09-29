@@ -211,7 +211,7 @@ async def send_command(generator: dict, action: str) -> dict:
                     STATE_MACHINE_TIMER_ADDRESS, STATE_MACHINE_TIMER_COUNT
                 )
                 start_pending = key == KEY_REMOTE_START_AUTO and any(
-                    int(after) > 0 and int(after) != int(before)
+                    int(before) in {0, 0xFFFF} and 0 < int(after) < 0xFFFF
                     for before, after in zip(timers_before, timers_after)
                 )
                 accepted = rpm_after > MAX_START_RPM or start_pending
