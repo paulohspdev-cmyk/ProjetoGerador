@@ -36,6 +36,8 @@ RAPID_NETWORK_DROPIN="50-rc-geradores-network.conf"
 RAPID_NETWORK_SERVICES=(scadaserver6 scadaagent6 scadaweb6)
 
 SERVICES=(rc-geradores-provision rc-geradores-worker rc-geradores-bridge rc-geradores-api rc-geradores-frontend)
+SWAP_SERVICES=("${SERVICES[@]}")
+BRIDGE_RESTART_NEEDED=1
 
 log() { printf '\n=== %s ===\n' "$*"; }
 fail() { echo "ERRO: $*" >&2; exit 1; }
@@ -188,6 +190,20 @@ COMMIT="$(resolve_release_commit "${REF}")" || fail "não foi possível resolver
 [[ -n "${COMMIT}" ]] || fail "release ${REF} resolveu para SHA vazio"
 echo "Commit: ${COMMIT}"
 
+# Conexões de modem reverse TCP são iniciadas pelo equipamento remoto. Reiniciar
+# a bridge em um deploy puramente visual/API derruba essas sessões e alguns DTUs
+# demoram minutos para reconectar. Preservamos a bridge quando nenhum arquivo
+# do seu runtime/dependências mudou; alterações relevantes continuam forçando
+# restart normalmente.
+CHANGED_FILES="$(git -c safe.directory="${BASE}" -C "${BASE}" diff --name-only "${PREV_HEAD}" "${COMMIT}")"
+if ! grep -Eq '^(backend/app/(bridge|bridge_runtime|config|controller_library|db|domain_store|ig4_lab|production_guard|traffic_store)\.py|rapid/|infrastructure/systemd/rc-geradores-bridge\.service|ops/configure_rapid_network\.sh)' <<<"${CHANGED_FILES}"; then
+  BRIDGE_RESTART_NEEDED=0
+  SWAP_SERVICES=(rc-geradores-provision rc-geradores-worker rc-geradores-api rc-geradores-frontend)
+  log "BRIDGE PRESERVADA — RELEASE SEM ALTERAÇÃO NO RUNTIME DE COMUNICAÇÃO"
+else
+  log "BRIDGE SERÁ REINICIADA — RELEASE ALTERA RUNTIME/DEPENDÊNCIAS DE COMUNICAÇÃO"
+fi
+
 log "CRIANDO STAGING LIMPO"
 mkdir -p "${STAGE}"
 git -c safe.directory="${BASE}" -C "${BASE}" archive "${COMMIT}" | tar -x -C "${STAGE}"
@@ -294,7 +310,7 @@ rollback() {
   trap - ERR
   set +e
   echo; echo "========================================="; echo " FALHA - ROLLBACK TRANSACIONAL"; echo "========================================="
-  systemctl stop "${SERVICES[@]}" 2>/dev/null || true
+  systemctl stop "${SWAP_SERVICES[@]}" 2>/dev/null || true
 
   if [[ ${OUTPUT_SWAPPED} -eq 1 ]]; then rm -rf "${BASE}/.output"; [[ -d "${OLD_OUTPUT}" ]] && mv "${OLD_OUTPUT}" "${BASE}/.output"; fi
   if [[ ${VENV_SWAPPED} -eq 1 ]]; then rm -rf "${BASE}/backend/.venv"; [[ -d "${OLD_VENV}" ]] && mv "${OLD_VENV}" "${BASE}/backend/.venv"; fi
@@ -382,7 +398,7 @@ PY
 trap 'rc=$?; rollback; exit "$rc"' ERR
 
 log "PARANDO SERVIÇOS RC PARA TROCA DE RUNTIME"
-systemctl stop "${SERVICES[@]}" 2>/dev/null || true
+systemctl stop "${SWAP_SERVICES[@]}" 2>/dev/null || true
 
 log "CRIANDO SNAPSHOT AUTORITATIVO APÓS INTERROMPER ESCRITAS"
 if [[ -f "${DB_FILE}" ]]; then
@@ -490,7 +506,10 @@ fi
 RAPID_NETWORK_APPLIED=1
 
 log "REINICIANDO SERVIÇOS"
-START_SERVICES=(rc-geradores-api rc-geradores-provision rc-geradores-bridge rc-geradores-worker rc-geradores-frontend)
+START_SERVICES=(rc-geradores-api rc-geradores-provision rc-geradores-worker rc-geradores-frontend)
+if [[ ${BRIDGE_RESTART_NEEDED} -eq 1 ]]; then
+  START_SERVICES=(rc-geradores-api rc-geradores-provision rc-geradores-bridge rc-geradores-worker rc-geradores-frontend)
+fi
 for svc in "${START_SERVICES[@]}"; do
   systemctl restart "${svc}" 2>/dev/null || { rollback; fail "falha ao reiniciar ${svc}"; }
 done

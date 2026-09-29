@@ -118,14 +118,22 @@ class FakeWriter:
         return None
 
 
-# O pack real ainda não possui firmware.tested: comando precisa falhar fechado
-# antes de alcançar o socket de controle.
+# Firmware não homologado continua fail-closed.
 try:
     control.command_contract(generator, "start")
 except ValueError as exc:
     assert "firmware" in str(exc).lower(), exc
 else:
-    raise AssertionError("comando foi aceito sem firmware homologado")
+    raise AssertionError("comando foi aceito com firmware não homologado")
+
+# O firmware 1.8.1.1 foi capturado em campo e possui histórico posterior de
+# START/STOP aceitos; o contrato deve ficar disponível sem executar o comando.
+domain_store.update_controller(controller["id"], {"firmware": "1.8.1.1"}, actor="test")
+pack, contract = control.command_contract(generator, "start")
+assert pack["model"] == "InteliGen 200"
+assert contract["executor"] == "ig200_privileged"
+_, stop_contract = control.command_contract(generator, "stop")
+assert stop_contract["executor"] == "ig200_privileged"
 
 
 async def validate_payload():

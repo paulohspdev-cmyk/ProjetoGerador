@@ -21,15 +21,22 @@
     }
   }
 
+  /*
+   * Em TVs/4K o viewport pode ser reportado em 3840 CSS px com DPR 1.
+   * Aumentar o rem global para 18–20 px ampliava paddings, gaps, sidebars e
+   * formulários junto com o texto e desmontava a geometria das telas.
+   * Mantemos a escala estrutural estável; a legibilidade específica fica em
+   * readability.css e nos componentes que realmente precisam crescer.
+   */
   @media (min-width: 2560px) {
     html {
-      font-size: 18px;
+      font-size: 17px;
     }
   }
 
   @media (min-width: 3200px) {
     html {
-      font-size: 20px;
+      font-size: 17px;
     }
   }
 }
