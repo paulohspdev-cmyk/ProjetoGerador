@@ -976,7 +976,7 @@
 .vref-table-heading {
   display: grid;
   flex: 0 0 auto;
-  grid-template-columns: var(--vref-m-label) var(--vref-m-val) var(--vref-m-val);
+  grid-template-columns: var(--vref-m-label) var(--vref-m-val) var(--vref-m-val) var(--vref-m-val);
   align-items: end;
   gap: 4px;
   min-height: 13px;
@@ -1044,6 +1044,10 @@
   text-align: right;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+}
+
+.vref-data-row > b.bus {
+  color: #50c8ff;
 }
 
 .vref-data-row > b.generator {
