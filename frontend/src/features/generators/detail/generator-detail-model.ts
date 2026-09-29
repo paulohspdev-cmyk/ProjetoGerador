@@ -167,8 +167,8 @@ export function buildGeneratorDetailModel(gen: Generator) {
       hasFreshMetric(gen, "mains_frequency") ? mainsFrequency : null,
     ]);
   const busKnown =
-    ["bus_voltage_l1", "bus_voltage_l2", "bus_voltage_l3", "bus_voltage_l1_l2"].some(
-      (key) => hasFreshMetric(gen, key),
+    ["bus_voltage_l1", "bus_voltage_l2", "bus_voltage_l3", "bus_voltage_l1_l2"].some((key) =>
+      hasFreshMetric(gen, key),
     ) || hasFreshMetric(gen, "bus_frequency");
   const busPresent =
     busKnown &&
