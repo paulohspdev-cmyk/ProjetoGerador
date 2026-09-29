@@ -246,6 +246,116 @@ else {
   }
 }
 
+const comapCatalogRows = load("controllers/catalog/catalog-v1.json").controllers ?? [];
+const comapCatalog = comapCatalogRows.filter((item) => item.manufacturer === "ComAp");
+const comapGensets = comapCatalog.filter((item) => item.application === "genset");
+if (comapCatalog.length < 75) {
+  failures.push(
+    `ComAp: catálogo perdeu cobertura ampla, encontrado ${comapCatalog.length} modelos/variantes`,
+  );
+}
+
+const comapProductionPacks = productionPaths
+  .map((path) => load(path))
+  .filter((profile) => profile.manufacturer === "ComAp");
+const comapProductionNames = new Map();
+for (const profile of comapProductionPacks) {
+  const packPath = productionPaths.find((path) => load(path).packId === profile.packId);
+  for (const name of [profile.model, ...(profile.aliases ?? [])]) {
+    if (name) comapProductionNames.set(name, { profile, packPath });
+  }
+}
+const allowedComapSupportStates = new Set([
+  "production_field_validated",
+  "production_read_only",
+  "registration_only",
+  "classified_non_genset",
+]);
+for (const item of comapCatalog) {
+  if (!allowedComapSupportStates.has(item.supportState)) {
+    failures.push(`ComAp: ${item.model} sem supportState válido`);
+    continue;
+  }
+  const production = comapProductionNames.get(item.model);
+  if (item.supportState === "production_field_validated") {
+    if (!production || production.profile.status !== "field_validated" || !item.supportPack) {
+      failures.push(`ComAp: ${item.model} marcado field-validated sem pack field-validated real`);
+    }
+  } else if (item.supportState === "production_read_only") {
+    if (!production || !documentedReadOnlyProduction(production.profile) || !item.supportPack) {
+      failures.push(`ComAp: ${item.model} marcado production_read_only sem pack documental real`);
+    }
+  } else if (item.supportState === "registration_only") {
+    if (item.application !== "genset") {
+      failures.push(`ComAp: ${item.model} registration_only precisa ser genset`);
+    }
+    if (production) {
+      failures.push(`ComAp: ${item.model} registration_only não pode estar em pack de produção`);
+    }
+  } else if (item.supportState === "classified_non_genset") {
+    if (item.application === "genset") {
+      failures.push(`ComAp: ${item.model} genset não pode ser classified_non_genset`);
+    }
+    if (production) {
+      failures.push(`ComAp: ${item.model} não-genset não pode usar pack de gerador`);
+    }
+  }
+}
+
+const comapCoveragePath = "controllers/catalog/COMAP_COVERAGE_MATRIX.json";
+if (!existsSync(join(root, comapCoveragePath))) {
+  failures.push("ComAp: matriz de cobertura ausente");
+} else {
+  const coverage = load(comapCoveragePath);
+  if ((coverage.controllers ?? []).length !== comapCatalog.length) {
+    failures.push("ComAp: matriz de cobertura não representa todo o catálogo ComAp");
+  }
+  const matrixModels = new Set((coverage.controllers ?? []).map((item) => item.model));
+  for (const item of comapCatalog) {
+    if (!matrixModels.has(item.model))
+      failures.push(`ComAp: ${item.model} ausente da matriz de cobertura`);
+  }
+}
+
+for (const requiredModel of [
+  "InteliLite 4 AMF 25",
+  "InteliLite 4 MRS 16",
+  "InteliGen 1000",
+  "InteliGen 1000 SC",
+  "InteliGen 500 G2",
+  "InteliGen4 200",
+  "InteliGen NT GC",
+  "InteliGen NTC GC",
+  "InteliGen NTC BaseBox",
+  "InteliSys 2000",
+  "InteliMains 1010",
+  "InteliMains 1010 SC",
+  "InteliMains 510",
+  "InteliATS2 70",
+  "InteliNeo 530 BESS",
+]) {
+  if (!comapCatalog.some((item) => item.model === requiredModel)) {
+    failures.push(`ComAp: modelo oficial ausente do catálogo: ${requiredModel}`);
+  }
+}
+
+const igNt = load("controllers/production/comap/ig-nt/manifest.json");
+const igNtAliases = new Set(igNt.aliases ?? []);
+for (const requiredAlias of ["InteliGen NT GC", "IG-NT GC"]) {
+  if (!igNtAliases.has(requiredAlias))
+    failures.push(`IG-NT: alias oficial ausente: ${requiredAlias}`);
+}
+for (const forbiddenAlias of [
+  "InteliGen NTC GC",
+  "InteliGen NTC BaseBox",
+  "InteliGen NT BaseBox",
+]) {
+  if (igNtAliases.has(forbiddenAlias)) {
+    failures.push(
+      `IG-NT: ${forbiddenAlias} não pode herdar mapa field-validated sem evidência própria`,
+    );
+  }
+}
 const dse8610Path = "controllers/lab/dse/dse8610-mkii/manifest.json";
 if (!labPaths.includes(dse8610Path)) failures.push("DSE8610 MKII documental não está em LAB");
 const dse8610 = load(dse8610Path);

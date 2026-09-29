@@ -1,0 +1,694 @@
+{
+  "schema": 1,
+  "manufacturer": "ComAp",
+  "generatedFrom": "controllers/catalog/catalog-v1.json + controllers/production/comap/*/manifest.json",
+  "policy": {
+    "production_field_validated": "Modelo/alias coberto por Controller Pack field-validated. Capacidades de comando dependem do próprio pack e firmware.",
+    "production_read_only": "Modelo coberto por Controller Pack de produção documental somente leitura.",
+    "registration_only": "Modelo conhecido, mas sem pack exato/protocolo suficientemente comprovado para provisionamento automático.",
+    "classified_non_genset": "Mains/ATS/BESS/engine/gateway/light-tower/microgrid ou outra função fora do pack de gerador."
+  },
+  "counts": {
+    "production_field_validated": 3,
+    "production_read_only": 0,
+    "registration_only": 40,
+    "classified_non_genset": 32
+  },
+  "controllers": [
+    {
+      "model": "InteliATS NT",
+      "family": "InteliATS",
+      "application": "ats",
+      "category": "ats",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliATS2 50",
+      "family": "InteliATS",
+      "application": "ats",
+      "category": "ats",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliATS2 70",
+      "family": "InteliATS",
+      "application": "ats",
+      "category": "ats",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliNeo 530 BESS",
+      "family": "InteliNeo",
+      "application": "bess",
+      "category": "microgrid_bess",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliNeo 5500",
+      "family": "InteliNeo",
+      "application": "bess",
+      "category": "microgrid_bess",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliNeo 6000",
+      "family": "InteliNeo",
+      "application": "bess",
+      "category": "microgrid_bess",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliBifuel INCON 12",
+      "family": "InteliBifuel",
+      "application": "engine",
+      "category": "bifuel",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliBifuel INCON 6",
+      "family": "InteliBifuel",
+      "application": "engine",
+      "category": "bifuel",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliBifuel Lite 100 Set",
+      "family": "InteliBifuel",
+      "application": "engine",
+      "category": "bifuel",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliBifuel Mobile Set",
+      "family": "InteliBifuel",
+      "application": "engine",
+      "category": "bifuel",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliDrive DCU Industrial",
+      "family": "InteliDrive",
+      "application": "engine",
+      "category": "engine_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliDrive FLX",
+      "family": "InteliDrive",
+      "application": "engine",
+      "category": "engine_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliDrive IPC",
+      "family": "InteliDrive",
+      "application": "engine",
+      "category": "engine_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliDrive Lite",
+      "family": "InteliDrive",
+      "application": "engine",
+      "category": "engine_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliDrive Marine",
+      "family": "InteliDrive Legacy",
+      "application": "engine",
+      "category": "legacy_marine_engine_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Engine controller marine legado; descontinuado, sucedido por linhas DCU/700 Marine."
+    },
+    {
+      "model": "InteliDrive WP",
+      "family": "InteliDrive Legacy",
+      "application": "engine",
+      "category": "legacy_engine_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Engine controller legacy de pequeno form factor; descontinuado."
+    },
+    {
+      "model": "InteliField",
+      "family": "InteliField",
+      "application": "field_gateway",
+      "category": "microgrid_bess",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliCompact NT MINT",
+      "family": "InteliCompact",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliCompact NT SPtM",
+      "family": "InteliCompact",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliGen 1000",
+      "family": "InteliGen",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliGen 1000 SC",
+      "family": "InteliGen",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliGen 200",
+      "family": "InteliGen",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "supportState": "production_field_validated",
+      "supportPack": "inteligen-200",
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliGen 500",
+      "family": "InteliGen",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliGen 500 G2",
+      "family": "InteliGen",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliGen NT BaseBox",
+      "family": "InteliGen",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliGen NT GeSys",
+      "family": "InteliGen",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliGen4 200",
+      "family": "InteliGen",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "supportState": "production_field_validated",
+      "supportPack": "ig4-200",
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliGen NT GC",
+      "family": "InteliGen NT",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "supportState": "production_field_validated",
+      "supportPack": "ig-nt",
+      "notes": "Produto oficial IG-NT GC; geração anterior do InteliGen 500 G2. Candidato ao pack field-validated ig-nt."
+    },
+    {
+      "model": "InteliGen NTC BaseBox",
+      "family": "InteliGen NTC",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "BaseBox oficial, predecessor do InteliGen 1000. Requer mapa/pack próprio ou evidência específica."
+    },
+    {
+      "model": "InteliGen NTC GC",
+      "family": "InteliGen NTC",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Produto oficial IG-NTC GC; geração anterior do InteliGen 500 G2. Não herdar mapa IG-NT sem evidência específica."
+    },
+    {
+      "model": "InteliLite AMF 20",
+      "family": "InteliLite",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Geração anterior do InteliLite 4 AMF 20; descontinuado."
+    },
+    {
+      "model": "InteliLite AMF 25",
+      "family": "InteliLite",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Geração anterior do InteliLite 4 AMF 25; descontinuado, remote monitoring e InteliConfig documentados."
+    },
+    {
+      "model": "InteliLite MRS 16",
+      "family": "InteliLite",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Geração anterior do InteliLite 4 MRS 16; descontinuado, remote monitoring documentado."
+    },
+    {
+      "model": "InteliLite 4 AMF 20",
+      "family": "InteliLite 4",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliLite 4 AMF 25",
+      "family": "InteliLite 4",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliLite 4 AMF 8",
+      "family": "InteliLite 4",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliLite 4 AMF 9",
+      "family": "InteliLite 4",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliLite 4 MRS 16",
+      "family": "InteliLite 4",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "IL-NT AMF 20",
+      "family": "InteliLite NT / II",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "IL-NT AMF 25",
+      "family": "InteliLite NT / II",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "IL-NT AMF 8",
+      "family": "InteliLite NT / II",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "IL-NT AMF 9",
+      "family": "InteliLite NT / II",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Auto Mains Failure gen-set controller oficial/descontinuado; Communication Guide IL-NT/IA-NT/IC-NT publicado pela ComAp."
+    },
+    {
+      "model": "IL-NT MRS 10",
+      "family": "InteliLite NT / II",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "IL-NT MRS 11",
+      "family": "InteliLite NT / II",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Manual Remote Start controller oficial/descontinuado; Communication Guide IL-NT/IA-NT/IC-NT publicado pela ComAp."
+    },
+    {
+      "model": "IL-NT MRS 15",
+      "family": "InteliLite NT / II",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Manual Remote Start controller oficial/descontinuado; Communication Guide IL-NT/IA-NT/IC-NT publicado pela ComAp."
+    },
+    {
+      "model": "IL-NT MRS 16",
+      "family": "InteliLite NT / II",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliLite 9",
+      "family": "InteliLite NT / II",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliLite AMF 25 G2",
+      "family": "InteliLite NT / II",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliLite NT MRS 19",
+      "family": "InteliLite NT / II",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Manual Remote Start controller oficial, descontinuado; sucessor InteliLite 4 AMF 9. Communication Guide IL-NT/IA-NT/IC-NT publicado pela ComAp."
+    },
+    {
+      "model": "InteliNano AMF 5",
+      "family": "InteliNano",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliNano MRS 3",
+      "family": "InteliNano",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliNano NT Plus",
+      "family": "InteliNano",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Controlador single genset obsoleto; AMF/MRS e proteção documentados pela ComAp."
+    },
+    {
+      "model": "InteliSys 2000",
+      "family": "InteliSys",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliSys Gas",
+      "family": "InteliSys",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliSys NT BaseBox",
+      "family": "InteliSys",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliSys NTC BaseBox",
+      "family": "InteliSys",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliSys CU",
+      "family": "InteliSys Legacy",
+      "application": "genset",
+      "category": "legacy_chp_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Expandable Gen-set Controller with CHP support, descontinuado."
+    },
+    {
+      "model": "InteliDrive 700 Marine",
+      "family": "Marine",
+      "application": "genset",
+      "category": "marine",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliDrive DCU Marine",
+      "family": "Marine",
+      "application": "genset",
+      "category": "marine",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliGen 1000 Marine",
+      "family": "Marine",
+      "application": "genset",
+      "category": "marine",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliLTC 10",
+      "family": "InteliLTC",
+      "application": "light_tower",
+      "category": "light_tower",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliLite LTC 80",
+      "family": "InteliLite 4 LTC",
+      "application": "light_tower",
+      "category": "light_tower_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Controlador oficial de light tower, com remote monitoring; não usar pack de genset convencional."
+    },
+    {
+      "model": "InteliLite LTC 90",
+      "family": "InteliLite 4 LTC",
+      "application": "light_tower",
+      "category": "light_tower_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Controlador oficial de light tower para baixa temperatura; não usar pack de genset convencional."
+    },
+    {
+      "model": "InteliMains 1000",
+      "family": "InteliMains",
+      "application": "mains",
+      "category": "mains_switchgear",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliMains 1010",
+      "family": "InteliMains",
+      "application": "mains",
+      "category": "mains_switchgear",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliMains 1010 SC",
+      "family": "InteliMains",
+      "application": "mains",
+      "category": "mains_utility_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Utility/tie breaker synchronising controller; não usar pack de genset."
+    },
+    {
+      "model": "InteliMains 210",
+      "family": "InteliMains",
+      "application": "mains",
+      "category": "mains_switchgear",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliMains 210 G2",
+      "family": "InteliMains",
+      "application": "mains",
+      "category": "mains_switchgear",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliMains 510",
+      "family": "InteliMains",
+      "application": "mains",
+      "category": "mains_utility_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Mains supervision controller, sucessor do InteliMains NT-GC; não usar pack de genset."
+    },
+    {
+      "model": "InteliMains GSC",
+      "family": "InteliMains",
+      "application": "mains",
+      "category": "mains_switchgear",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliMains NT BaseBox",
+      "family": "InteliMains",
+      "application": "mains",
+      "category": "mains_switchgear",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliMains NT GC",
+      "family": "InteliMains",
+      "application": "mains",
+      "category": "mains_switchgear",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "InteliMains 1010 Marine",
+      "family": "Marine",
+      "application": "mains",
+      "category": "marine_breaker_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Marine breaker controller atual para AC/DC power management; compatibilidade Modbus documentada, não usar pack de genset."
+    },
+    {
+      "model": "InteliGen 500 Microgrid",
+      "family": "Microgrid",
+      "application": "microgrid",
+      "category": "legacy_microgrid_solution",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Solução descontinuada baseada em InteliGen 500 + firmware/key microgrid + gateway; não tratar como pack convencional de genset."
+    },
+    {
+      "model": "InteliSys Hybrid",
+      "family": "Microgrid",
+      "application": "microgrid",
+      "category": "hybrid_microgrid_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Controller para aplicações hybrid microgrid; manter fora do pack convencional de genset."
+    }
+  ]
+}

@@ -15,7 +15,9 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     },
     {
       "manufacturer": "ComAp",
@@ -25,7 +27,9 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     },
     {
       "manufacturer": "ComAp",
@@ -35,7 +39,9 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     },
     {
       "manufacturer": "ComAp",
@@ -45,7 +51,9 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     },
     {
       "manufacturer": "ComAp",
@@ -55,7 +63,9 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     },
     {
       "manufacturer": "ComAp",
@@ -65,7 +75,9 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     },
     {
       "manufacturer": "ComAp",
@@ -75,7 +87,9 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     },
     {
       "manufacturer": "ComAp",
@@ -85,7 +99,9 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     },
     {
       "manufacturer": "ComAp",
@@ -95,7 +111,9 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     },
     {
       "manufacturer": "ComAp",
@@ -105,7 +123,9 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     },
     {
       "manufacturer": "ComAp",
@@ -115,7 +135,9 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     },
     {
       "manufacturer": "ComAp",
@@ -125,7 +147,9 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     },
     {
       "manufacturer": "ComAp",
@@ -135,7 +159,9 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     },
     {
       "manufacturer": "ComAp",
@@ -145,7 +171,9 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     },
     {
       "manufacturer": "ComAp",
@@ -155,7 +183,9 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     },
     {
       "manufacturer": "ComAp",
@@ -165,7 +195,9 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     },
     {
       "manufacturer": "ComAp",
@@ -175,7 +207,9 @@
       "category": "paralleling_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     },
     {
       "manufacturer": "ComAp",
@@ -185,7 +219,9 @@
       "category": "paralleling_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     },
     {
       "manufacturer": "ComAp",
@@ -195,7 +231,9 @@
       "category": "paralleling_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     },
     {
       "manufacturer": "ComAp",
@@ -205,7 +243,9 @@
       "category": "paralleling_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     },
     {
       "manufacturer": "ComAp",
@@ -215,7 +255,10 @@
       "category": "paralleling_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportPack": "ig4-200",
+      "supportState": "production_field_validated",
+      "supportNotes": "Controller Pack de produção existente. Telemetria de produção sem comandos industriais habilitados."
     },
     {
       "manufacturer": "ComAp",
@@ -225,7 +268,10 @@
       "category": "paralleling_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportPack": "inteligen-200",
+      "supportState": "production_field_validated",
+      "supportNotes": "Controller Pack de produção existente. Comandos atualmente habilitados pelo pack: start, stop."
     },
     {
       "manufacturer": "ComAp",
@@ -235,7 +281,9 @@
       "category": "paralleling_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     },
     {
       "manufacturer": "ComAp",
@@ -245,7 +293,9 @@
       "category": "paralleling_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     },
     {
       "manufacturer": "ComAp",
@@ -255,7 +305,9 @@
       "category": "paralleling_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     },
     {
       "manufacturer": "ComAp",
@@ -265,7 +317,9 @@
       "category": "paralleling_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     },
     {
       "manufacturer": "ComAp",
@@ -275,7 +329,9 @@
       "category": "paralleling_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     },
     {
       "manufacturer": "ComAp",
@@ -285,7 +341,9 @@
       "category": "paralleling_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     },
     {
       "manufacturer": "ComAp",
@@ -295,7 +353,9 @@
       "category": "mains_switchgear",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
     },
     {
       "manufacturer": "ComAp",
@@ -305,7 +365,9 @@
       "category": "mains_switchgear",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
     },
     {
       "manufacturer": "ComAp",
@@ -315,7 +377,9 @@
       "category": "mains_switchgear",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
     },
     {
       "manufacturer": "ComAp",
@@ -325,7 +389,9 @@
       "category": "mains_switchgear",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
     },
     {
       "manufacturer": "ComAp",
@@ -335,7 +401,9 @@
       "category": "mains_switchgear",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
     },
     {
       "manufacturer": "ComAp",
@@ -345,7 +413,9 @@
       "category": "mains_switchgear",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
     },
     {
       "manufacturer": "ComAp",
@@ -355,7 +425,9 @@
       "category": "mains_switchgear",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
     },
     {
       "manufacturer": "ComAp",
@@ -365,7 +437,9 @@
       "category": "microgrid_bess",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
     },
     {
       "manufacturer": "ComAp",
@@ -375,7 +449,9 @@
       "category": "microgrid_bess",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
     },
     {
       "manufacturer": "ComAp",
@@ -385,7 +461,9 @@
       "category": "microgrid_bess",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
     },
     {
       "manufacturer": "ComAp",
@@ -395,7 +473,9 @@
       "category": "microgrid_bess",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
     },
     {
       "manufacturer": "ComAp",
@@ -405,7 +485,9 @@
       "category": "engine_controller",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
     },
     {
       "manufacturer": "ComAp",
@@ -415,7 +497,9 @@
       "category": "engine_controller",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
     },
     {
       "manufacturer": "ComAp",
@@ -425,7 +509,9 @@
       "category": "engine_controller",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
     },
     {
       "manufacturer": "ComAp",
@@ -435,7 +521,9 @@
       "category": "engine_controller",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
     },
     {
       "manufacturer": "ComAp",
@@ -445,7 +533,9 @@
       "category": "bifuel",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
     },
     {
       "manufacturer": "ComAp",
@@ -455,7 +545,9 @@
       "category": "bifuel",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
     },
     {
       "manufacturer": "ComAp",
@@ -465,7 +557,9 @@
       "category": "bifuel",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
     },
     {
       "manufacturer": "ComAp",
@@ -475,7 +569,9 @@
       "category": "bifuel",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
     },
     {
       "manufacturer": "ComAp",
@@ -485,7 +581,9 @@
       "category": "marine",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     },
     {
       "manufacturer": "ComAp",
@@ -495,7 +593,9 @@
       "category": "marine",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     },
     {
       "manufacturer": "ComAp",
@@ -505,7 +605,9 @@
       "category": "marine",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     },
     {
       "manufacturer": "ComAp",
@@ -515,7 +617,9 @@
       "category": "ats",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
     },
     {
       "manufacturer": "ComAp",
@@ -525,7 +629,9 @@
       "category": "ats",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
     },
     {
       "manufacturer": "ComAp",
@@ -535,7 +641,9 @@
       "category": "ats",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
     },
     {
       "manufacturer": "ComAp",
@@ -545,7 +653,9 @@
       "category": "light_tower",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
     },
     {
       "manufacturer": "DSE",
@@ -2231,6 +2341,259 @@
       "notes": "Auto Mains Failure Control Module obsoleto; documentação oficial disponível, sem GenComm público aceito nesta auditoria.",
       "supportState": "registration_only",
       "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliLite NT / II",
+      "model": "InteliLite NT MRS 19",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Manual Remote Start controller oficial, descontinuado; sucessor InteliLite 4 AMF 9. Communication Guide IL-NT/IA-NT/IC-NT publicado pela ComAp.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliLite",
+      "model": "InteliLite MRS 16",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Geração anterior do InteliLite 4 MRS 16; descontinuado, remote monitoring documentado.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliLite",
+      "model": "InteliLite AMF 20",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Geração anterior do InteliLite 4 AMF 20; descontinuado.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliNano",
+      "model": "InteliNano NT Plus",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Controlador single genset obsoleto; AMF/MRS e proteção documentados pela ComAp.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliLite 4 LTC",
+      "model": "InteliLite LTC 80",
+      "application": "light_tower",
+      "category": "light_tower_controller",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Controlador oficial de light tower, com remote monitoring; não usar pack de genset convencional.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliLite 4 LTC",
+      "model": "InteliLite LTC 90",
+      "application": "light_tower",
+      "category": "light_tower_controller",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Controlador oficial de light tower para baixa temperatura; não usar pack de genset convencional.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliGen NT",
+      "model": "InteliGen NT GC",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Produto oficial IG-NT GC; geração anterior do InteliGen 500 G2. Candidato ao pack field-validated ig-nt.",
+      "supportPack": "ig-nt",
+      "supportState": "production_field_validated",
+      "supportNotes": "Controller Pack de produção existente. Telemetria de produção sem comandos industriais habilitados."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliGen NTC",
+      "model": "InteliGen NTC GC",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Produto oficial IG-NTC GC; geração anterior do InteliGen 500 G2. Não herdar mapa IG-NT sem evidência específica.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliGen NTC",
+      "model": "InteliGen NTC BaseBox",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "BaseBox oficial, predecessor do InteliGen 1000. Requer mapa/pack próprio ou evidência específica.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliSys Legacy",
+      "model": "InteliSys CU",
+      "application": "genset",
+      "category": "legacy_chp_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Expandable Gen-set Controller with CHP support, descontinuado.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliMains",
+      "model": "InteliMains 1010 SC",
+      "application": "mains",
+      "category": "mains_utility_controller",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Utility/tie breaker synchronising controller; não usar pack de genset.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliMains",
+      "model": "InteliMains 510",
+      "application": "mains",
+      "category": "mains_utility_controller",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Mains supervision controller, sucessor do InteliMains NT-GC; não usar pack de genset.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "Marine",
+      "model": "InteliMains 1010 Marine",
+      "application": "mains",
+      "category": "marine_breaker_controller",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Marine breaker controller atual para AC/DC power management; compatibilidade Modbus documentada, não usar pack de genset.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "Microgrid",
+      "model": "InteliGen 500 Microgrid",
+      "application": "microgrid",
+      "category": "legacy_microgrid_solution",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Solução descontinuada baseada em InteliGen 500 + firmware/key microgrid + gateway; não tratar como pack convencional de genset.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "Microgrid",
+      "model": "InteliSys Hybrid",
+      "application": "microgrid",
+      "category": "hybrid_microgrid_controller",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Controller para aplicações hybrid microgrid; manter fora do pack convencional de genset.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliDrive Legacy",
+      "model": "InteliDrive WP",
+      "application": "engine",
+      "category": "legacy_engine_controller",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Engine controller legacy de pequeno form factor; descontinuado.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliDrive Legacy",
+      "model": "InteliDrive Marine",
+      "application": "engine",
+      "category": "legacy_marine_engine_controller",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Engine controller marine legado; descontinuado, sucedido por linhas DCU/700 Marine.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto ComAp classificado fora do pack de controladora primária de gerador."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliLite NT / II",
+      "model": "IL-NT AMF 9",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Auto Mains Failure gen-set controller oficial/descontinuado; Communication Guide IL-NT/IA-NT/IC-NT publicado pela ComAp.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliLite NT / II",
+      "model": "IL-NT MRS 11",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Manual Remote Start controller oficial/descontinuado; Communication Guide IL-NT/IA-NT/IC-NT publicado pela ComAp.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliLite NT / II",
+      "model": "IL-NT MRS 15",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Manual Remote Start controller oficial/descontinuado; Communication Guide IL-NT/IA-NT/IC-NT publicado pela ComAp.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
+    },
+    {
+      "manufacturer": "ComAp",
+      "family": "InteliLite",
+      "model": "InteliLite AMF 25",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Geração anterior do InteliLite 4 AMF 25; descontinuado, remote monitoring e InteliConfig documentados.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
     }
   ]
 }
