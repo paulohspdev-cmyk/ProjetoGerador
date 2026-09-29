@@ -125,9 +125,14 @@ dse_evidence = {
     },
     "notes": "synthetic unit-test evidence only",
 }
+dse_pack = pack_for_model("DSE4520 MKII")
+assert dse_pack["packId"] == "dse/dse-4520-mkii"
+assert dse_pack["status"] == "field_validated"
+assert dse_pack["firmware"]["tested"] == ["4.8"]
+assert dse_pack["capabilities"]["start"] is True
+dse_evidence["firmware"] = "4.8"
 dse_proposal = promotion_proposal(dse_evidence)
-assert dse_proposal["requiresModelSpecificPack"] is True
-assert dse_proposal["packId"] == "dse/dse-gencomm-v1"
-assert dse_proposal["proposedChanges"]["createModelSpecificProductionPackFor"] == "DSE4520 MKII"
+assert dse_proposal["packId"] == "dse/dse-4520-mkii"
+assert dse_proposal["proposedChanges"]["capabilities.start"] is True
 
 print("Homologation evidence gates: OK")
