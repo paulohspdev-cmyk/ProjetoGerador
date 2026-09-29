@@ -157,19 +157,14 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const busL2 = metricNumber(gen, "bus_voltage_l2", gen.bus?.l2);
   const busL3 = metricNumber(gen, "bus_voltage_l3", gen.bus?.l3);
   const busL13 = metricNumber(gen, "bus_voltage_l3_l1", undefined);
-  const busVoltageKnown = ["bus_voltage_l1", "bus_voltage_l2", "bus_voltage_l3"].some(
-    (key) => hasFreshMetric(gen, key),
+  const busVoltageKnown = ["bus_voltage_l1", "bus_voltage_l2", "bus_voltage_l3"].some((key) =>
+    hasFreshMetric(gen, key),
   );
   const busFrequencyKnown = hasFreshMetric(gen, "bus_frequency");
   const busKnown = busVoltageKnown || busFrequencyKnown;
   const busPresent =
     busKnown &&
-    hasPositiveMeasurement([
-      busL1,
-      busL2,
-      busL3,
-      busFrequencyKnown ? busFrequency : null,
-    ]);
+    hasPositiveMeasurement([busL1, busL2, busL3, busFrequencyKnown ? busFrequency : null]);
 
   const genL1 = metricNumber(gen, "voltage_l1", gen.gen.l1);
   const genL2 = metricNumber(gen, "voltage_l2", gen.gen.l2);
