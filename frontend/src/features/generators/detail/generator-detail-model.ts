@@ -102,6 +102,7 @@ export function buildGeneratorDetailModel(gen: Generator) {
   const rpm = metricNumber(gen, "rpm", gen.rpm);
   const frequency = metricNumber(gen, "frequency", gen.frequency);
   const mainsFrequency = metricNumber(gen, "mains_frequency", gen.mainsFrequency);
+  const busFrequency = metricNumber(gen, "bus_frequency", gen.busFrequency);
   const genL1 = metricNumber(gen, "voltage_l1", gen.gen.l1);
   const genL2 = metricNumber(gen, "voltage_l2", gen.gen.l2);
   const genL3 = metricNumber(gen, "voltage_l3", gen.gen.l3);
@@ -123,6 +124,10 @@ export function buildGeneratorDetailModel(gen: Generator) {
   const mainsL3 = metricNumber(gen, "mains_voltage_l3", gen.mains.l3);
   const mainsL12 = metricNumber(gen, "mains_voltage_l1_l2", gen.mains.l12);
   const mainsL13 = metricNumber(gen, "mains_voltage_l3_l1", undefined);
+  const busL1 = metricNumber(gen, "bus_voltage_l1", gen.bus?.l1);
+  const busL2 = metricNumber(gen, "bus_voltage_l2", gen.bus?.l2);
+  const busL3 = metricNumber(gen, "bus_voltage_l3", gen.bus?.l3);
+  const busL12 = metricNumber(gen, "bus_voltage_l1_l2", gen.bus?.l12);
   const load = metricNumber(gen, "power_kw", gen.load);
   const telemetry = readGeneratorTelemetry(gen);
   const nominalPower = nominalPowerNumber(gen);
