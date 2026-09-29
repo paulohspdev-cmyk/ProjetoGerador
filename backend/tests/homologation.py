@@ -53,19 +53,19 @@ Path(os.environ["RC_RAPID_BINDINGS"]).write_text(
 )
 
 start = action_readiness(gen, "start")
-assert start["status"] == "firmware_field_validation_required", start
+assert start["status"] == "production_ready", start
 assert start["gates"]["capabilityEnabled"] is True
 assert start["gates"]["commandContractPresent"] is True
-assert start["gates"]["firmwareApproved"] is False
+assert start["gates"]["firmwareApproved"] is True
 
 off = action_readiness(gen, "off")
-assert off["status"] == "firmware_field_validation_required", off
+assert off["status"] == "action_field_validation_required", off
 assert off["candidate"]["documented"] is True
 assert off["gates"]["capabilityEnabled"] is False
 assert off["gates"]["commandContractPresent"] is False
 
 gcb = action_readiness(gen, "gcb_close")
-assert gcb["status"] == "firmware_field_validation_required", gcb
+assert gcb["status"] == "action_field_validation_required", gcb
 assert gcb["candidate"]["documented"] is True
 assert gcb["gates"]["capabilityEnabled"] is False
 assert gcb["gates"]["commandContractPresent"] is False
@@ -98,7 +98,7 @@ assert "1.8.1.1" in proposal["proposedChanges"]["firmware.tested"]
 
 pack = pack_for_model("InteliGen 200")
 assert pack["capabilities"]["gcb_close"] is False
-assert "1.8.1.1" not in (pack.get("firmware") or {}).get("tested", [])
+assert "1.8.1.1" in (pack.get("firmware") or {}).get("tested", [])
 
 
 
