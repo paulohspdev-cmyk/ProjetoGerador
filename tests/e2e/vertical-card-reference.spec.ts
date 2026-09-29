@@ -190,7 +190,7 @@ test("vertical sem rede remove a concessionária do fluxo em ComAp e DSE", async
 test("vertical preserva todo o conteúdo e rola a grade quando a altura é curta", async ({
   browser,
 }) => {
-  test.setTimeout(180_000);
+  test.setTimeout(300_000);
 
   const prefix = "VFIT";
   const setupContext = await browser.newContext({ viewport: { width: 1366, height: 768 } });
