@@ -14,6 +14,7 @@ from .config import DATA_DIR, LOGIN_LOCK_SECONDS, LOGIN_MAX_FAILURES
 from .controller_library import channel_catalog, library_summary
 from .control import send_homologated_command
 from .diagnostics import system_diagnostics, version_info
+from .homologation import build_matrix as controller_homologation_matrix
 from .notifications import process_due_notifications
 from .rapid import load_bindings, overlay_generators
 from .reporting import generate_report, safe_report_artifact_path
@@ -144,6 +145,12 @@ def diagnostics(user: dict = Depends(require_view)):
 @router.get("/api/system/version")
 def version(user: dict = Depends(require_view)):
     return version_info()
+
+
+@router.get("/api/system/controller-homologation")
+def controller_homologation(user: dict = Depends(require_admin)):
+    """Matriz somente leitura dos gates por gerador/ação; nunca envia comandos."""
+    return {"items": controller_homologation_matrix()}
 
 
 @router.get("/api/system/bridge-peers")
@@ -378,6 +385,7 @@ def scope(token: dict, required: str):
 COMMAND_SCOPE = {
     "start": "generator.start",
     "stop": "generator.stop",
+    "off": "generator.mode",
     "auto": "generator.mode",
     "manual": "generator.mode",
     "test": "generator.mode",

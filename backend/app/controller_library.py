@@ -16,6 +16,7 @@ SUPPORTED_PACK_SCHEMAS = frozenset(PACK_SCHEMA_FILES)
 COMMAND_CAPABILITIES = (
     "start",
     "stop",
+    "off",
     "auto",
     "manual",
     "test",

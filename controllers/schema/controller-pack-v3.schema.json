@@ -109,6 +109,7 @@
         "telemetry": { "type": "boolean" },
         "start": { "type": "boolean" },
         "stop": { "type": "boolean" },
+        "off": { "type": "boolean" },
         "auto": { "type": "boolean" },
         "manual": { "type": "boolean" },
         "test": { "type": "boolean" },

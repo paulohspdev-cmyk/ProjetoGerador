@@ -142,6 +142,10 @@ jobs:
           set -euo pipefail
           grep -q 'command_contract' backend/app/control.py
           grep -q 'pack.get("status") != "field_validated"' backend/app/control.py
+          python -m py_compile backend/app/homologation.py ops/controller_homologation.py ops/controller_readonly_homologation_probe.py
+          grep -Fq 'READ_FUNCTIONS = {3, 4}' ops/controller_readonly_homologation_probe.py
+          grep -Fq 'if function not in READ_FUNCTIONS:' ops/controller_readonly_homologation_probe.py
+          grep -Fq 'contrato read-only FC03/04' ops/controller_readonly_homologation_probe.py
           if grep -q -E 'dse_lab|ig4_lab' backend/app/control.py; then
             echo 'ERRO: caminho LAB voltou ao roteador de comandos de produção.' >&2
             exit 1
@@ -154,7 +158,7 @@ jobs:
           contracts = data.get('commands') or {}
           assert caps['start'] and caps['stop']
           assert set(contracts) == {'start', 'stop'}
-          for key in ('auto','manual','test','mcb_open','mcb_close','gcb_open','gcb_close','paralleling'):
+          for key in ('off','auto','manual','test','mcb_open','mcb_close','gcb_open','gcb_close','paralleling'):
               assert caps[key] is False, key
               assert key not in contracts, key
           print('Política industrial v4: OK')

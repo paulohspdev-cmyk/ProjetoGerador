@@ -34,6 +34,7 @@ export type UserUpdatePayload = {
 export type IndustrialCommandAction =
   | "start"
   | "stop"
+  | "off"
   | "auto"
   | "manual"
   | "test"

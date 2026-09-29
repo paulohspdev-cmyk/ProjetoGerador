@@ -15,6 +15,7 @@ export function headerMode(mode: Generator["mode"], known: boolean) {
 }
 
 function modeEnabled(gen: Generator, action: IndustrialCommandAction) {
+  if (action === "off") return gen.capabilities?.off === true;
   if (action === "manual") return gen.capabilities?.manual === true;
   if (action === "auto") return gen.capabilities?.auto === true;
   if (action === "test") return gen.capabilities?.test === true;
@@ -102,9 +103,7 @@ export function VerticalControls({
         title={
           available
             ? `Comando ${label} homologado para esta controladora`
-            : label === "OFF"
-              ? "OFF permanece indicação de modo; parada usa STOP"
-              : "Comando ainda não homologado para esta controladora"
+            : "Comando ainda não homologado para esta controladora"
         }
         onClick={() => action && available && onCommand(action)}
       >
@@ -116,7 +115,7 @@ export function VerticalControls({
   return (
     <section className="vref-section vref-control" aria-label="Controle de modo">
       <div className="vref-mode-row">
-        {modeButton("OFF")}
+        {modeButton("OFF", "off")}
         {modeButton("MAN", "manual")}
         {modeButton("AUT", "auto")}
         {modeButton("TEST", "test")}

@@ -102,7 +102,7 @@ assert dse8610["validatedTelemetry"] == []
 assert dse8610["documentedTelemetry"]
 assert not any(
     dse8610["capabilities"].get(name)
-    for name in ("start", "stop", "auto", "manual", "test", "mcb_open", "mcb_close", "gcb_open", "gcb_close", "paralleling")
+    for name in ("start", "stop", "off", "auto", "manual", "test", "mcb_open", "mcb_close", "gcb_open", "gcb_close", "paralleling")
 )
 
 dse_pack = pack_for_model("DSE7310 MKII")
@@ -138,7 +138,7 @@ for model in (
     assert not any(
         item["capabilities"].get(name)
         for name in (
-            "start", "stop", "auto", "manual", "test",
+            "start", "stop", "off", "auto", "manual", "test",
             "mcb_open", "mcb_close", "gcb_open", "gcb_close", "paralleling",
         )
     ), model
@@ -170,7 +170,7 @@ assert dse5210_pack["mapping"]["registers"]["run_hours"]["address"] == 1798
 assert not any(
     dse5210_pack["capabilities"].get(name)
     for name in (
-        "start", "stop", "auto", "manual", "test",
+        "start", "stop", "off", "auto", "manual", "test",
         "mcb_open", "mcb_close", "gcb_open", "gcb_close", "paralleling",
     )
 )

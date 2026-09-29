@@ -23,6 +23,7 @@ export type GeneratorCapabilities = {
   telemetry?: boolean;
   start?: boolean;
   stop?: boolean;
+  off?: boolean;
   auto?: boolean;
   manual?: boolean;
   test?: boolean;

@@ -554,6 +554,7 @@ def _production_readiness(
                 for action in (
                     "start",
                     "stop",
+                    "off",
                     "auto",
                     "manual",
                     "test",

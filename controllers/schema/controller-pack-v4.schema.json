@@ -224,6 +224,9 @@
         "stop": {
           "type": "boolean"
         },
+        "off": {
+          "type": "boolean"
+        },
         "auto": {
           "type": "boolean"
         },
@@ -363,6 +366,9 @@
           "$ref": "#/$defs/commandContract"
         },
         "stop": {
+          "$ref": "#/$defs/commandContract"
+        },
+        "off": {
           "$ref": "#/$defs/commandContract"
         },
         "auto": {

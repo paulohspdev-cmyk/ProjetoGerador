@@ -12,7 +12,7 @@ from .controller_library import (
 )
 
 COMMAND_ACTIONS = frozenset({
-    "start", "stop", "auto", "manual", "test",
+    "start", "stop", "off", "auto", "manual", "test",
     "mcb_open", "mcb_close", "gcb_open", "gcb_close", "paralleling",
 })
 

@@ -94,6 +94,7 @@ export function GeneratorsProvider({ children }: { children: ReactNode }) {
                 ...generator.capabilities,
                 start: false,
                 stop: false,
+                off: false,
                 auto: false,
                 manual: false,
                 test: false,

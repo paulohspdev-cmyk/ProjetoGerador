@@ -483,6 +483,7 @@ def _effective_capabilities(generator, status: str, binding_present: bool) -> di
     for action in (
         "start",
         "stop",
+        "off",
         "auto",
         "manual",
         "test",

@@ -22,6 +22,7 @@
     "telemetry": false,
     "start": false,
     "stop": false,
+    "off": false,
     "auto": false,
     "manual": false,
     "test": false,
@@ -37,5 +38,117 @@
     "field": false,
     "commandSafety": "Nenhum comando industrial homologado."
   },
-  "notes": "Modelo ainda não homologado. Não promover para production sem endereço Modbus, parâmetros seriais, mapa/firmware e telemetria confirmados em campo."
+  "notes": "Modelo ainda não homologado. Não promover para production sem endereço Modbus, parâmetros seriais, mapa/firmware e telemetria confirmados em campo.",
+  "homologationCandidates": {
+    "start": {
+      "documented": false,
+      "fieldState": "blocked_missing_authoritative_model_specific_command_map",
+      "remaining": [
+        "capture exact model/application variant",
+        "capture exact firmware",
+        "retain authoritative communication export",
+        "validate read-only identity before any write test"
+      ]
+    },
+    "stop": {
+      "documented": false,
+      "fieldState": "blocked_missing_authoritative_model_specific_command_map",
+      "remaining": [
+        "capture exact model/application variant",
+        "capture exact firmware",
+        "retain authoritative communication export",
+        "validate read-only identity before any write test"
+      ]
+    },
+    "auto": {
+      "documented": false,
+      "fieldState": "blocked_missing_authoritative_model_specific_command_map",
+      "remaining": [
+        "capture exact model/application variant",
+        "capture exact firmware",
+        "retain authoritative communication export",
+        "validate read-only identity before any write test"
+      ]
+    },
+    "manual": {
+      "documented": false,
+      "fieldState": "blocked_missing_authoritative_model_specific_command_map",
+      "remaining": [
+        "capture exact model/application variant",
+        "capture exact firmware",
+        "retain authoritative communication export",
+        "validate read-only identity before any write test"
+      ]
+    },
+    "test": {
+      "documented": false,
+      "fieldState": "blocked_missing_authoritative_model_specific_command_map",
+      "remaining": [
+        "capture exact model/application variant",
+        "capture exact firmware",
+        "retain authoritative communication export",
+        "validate read-only identity before any write test"
+      ]
+    },
+    "mcb_open": {
+      "documented": false,
+      "fieldState": "blocked_missing_authoritative_model_specific_command_map",
+      "remaining": [
+        "capture exact model/application variant",
+        "capture exact firmware",
+        "retain authoritative communication export",
+        "validate read-only identity before any write test"
+      ]
+    },
+    "mcb_close": {
+      "documented": false,
+      "fieldState": "blocked_missing_authoritative_model_specific_command_map",
+      "remaining": [
+        "capture exact model/application variant",
+        "capture exact firmware",
+        "retain authoritative communication export",
+        "validate read-only identity before any write test"
+      ]
+    },
+    "gcb_open": {
+      "documented": false,
+      "fieldState": "blocked_missing_authoritative_model_specific_command_map",
+      "remaining": [
+        "capture exact model/application variant",
+        "capture exact firmware",
+        "retain authoritative communication export",
+        "validate read-only identity before any write test"
+      ]
+    },
+    "gcb_close": {
+      "documented": false,
+      "fieldState": "blocked_missing_authoritative_model_specific_command_map",
+      "remaining": [
+        "capture exact model/application variant",
+        "capture exact firmware",
+        "retain authoritative communication export",
+        "validate read-only identity before any write test"
+      ]
+    },
+    "paralleling": {
+      "documented": false,
+      "fieldState": "blocked_missing_authoritative_model_specific_command_map",
+      "remaining": [
+        "capture exact model/application variant",
+        "capture exact firmware",
+        "retain authoritative communication export",
+        "validate read-only identity before any write test"
+      ]
+    },
+    "off": {
+      "documented": false,
+      "fieldState": "blocked_missing_authoritative_model_specific_command_map",
+      "remaining": [
+        "capture exact model/application variant",
+        "capture exact firmware",
+        "retain authoritative communication export",
+        "validate read-only identity before any write test"
+      ]
+    }
+  }
 }

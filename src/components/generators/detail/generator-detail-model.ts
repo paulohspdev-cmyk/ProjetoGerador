@@ -211,7 +211,12 @@ export function buildGeneratorDetailModel(gen: Generator) {
   let modeControls: ModeControl[] = [];
   if (family === "COMAP") {
     modeControls = [
-      { key: "off", label: "OFF", active: mode === "OFF" || mode === "STOP", action: null },
+      {
+        key: "off",
+        label: "OFF",
+        active: mode === "OFF" || mode === "STOP",
+        action: commandAction("off"),
+      },
       { key: "man", label: "MAN", active: mode === "MANUAL", action: commandAction("manual") },
       { key: "aut", label: "AUT", active: mode === "AUTO", action: commandAction("auto") },
       { key: "test", label: "TEST", active: mode === "TESTE", action: commandAction("test") },

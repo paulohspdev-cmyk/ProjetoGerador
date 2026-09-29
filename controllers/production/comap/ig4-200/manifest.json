@@ -35,6 +35,7 @@
     "telemetry": true,
     "start": false,
     "stop": false,
+    "off": false,
     "auto": false,
     "manual": false,
     "test": false,
@@ -790,5 +791,102 @@
     "commandSafety": "Perfil de produção somente leitura. START/STOP/AUTO/MANUAL/TEST/MCB/GCB/paralelismo permanecem bloqueados. O mapa fornecido não contém setpoints de comando utilizáveis."
   },
   "notes": "Telemetria read-only promovida após validação de campo. Óleo e temperatura permanecem documentados, mas não entram em validatedTelemetry enquanto retornarem sentinela/valor inválido. Diesel instantâneo (registro 1055, unidade L) foi validado em campo nos GEN203/GEN204 e confirmado no GEN152 Unit 15 com leitura FC03 de 591 L em 2026-09-23; é materializado como fuel_level. O máximo 682 presente no export Modbus de origem não é tratado como capacidade universal de tanque; percentual de combustível só pode ser derivado quando houver capacidade explícita do equipamento. Estados GCB/MCB da interface são derivados de Breaker State até validação dedicada dos binaries FC01/02.",
-  "commands": {}
+  "commands": {},
+  "homologationCandidates": {
+    "start": {
+      "documented": true,
+      "mechanism": "reserved_command",
+      "commandCode": 1,
+      "argument": "0x01FE0000",
+      "expectedReturn": "0x000001FF",
+      "implementation": "ig4_lab_start_exists",
+      "feedback": {
+        "metric": "rpm",
+        "operator": "gt",
+        "value": 100
+      },
+      "fieldState": "lab_path_prepared_field_validation_pending"
+    },
+    "stop": {
+      "documented": true,
+      "mechanism": "reserved_command",
+      "commandCode": 1,
+      "argument": "0x02FD0000",
+      "expectedReturn": "0x000002FE",
+      "feedback": {
+        "metric": "rpm",
+        "operator": "lte",
+        "value": 100
+      },
+      "fieldState": "pending"
+    },
+    "gcb_close": {
+      "documented": true,
+      "mechanism": "reserved_command",
+      "commandCode": 2,
+      "argument": "0x11EF0000",
+      "expectedReturn": "0x000011F0",
+      "feedback": {
+        "metric": "gcb_closed",
+        "expected": true
+      },
+      "fieldState": "pending"
+    },
+    "gcb_open": {
+      "documented": true,
+      "mechanism": "reserved_command",
+      "commandCode": 2,
+      "argument": "0x11F00000",
+      "expectedReturn": "0x000011F1",
+      "feedback": {
+        "metric": "gcb_closed",
+        "expected": false
+      },
+      "fieldState": "pending"
+    },
+    "mcb_close": {
+      "documented": true,
+      "mechanism": "reserved_command",
+      "commandCode": 2,
+      "argument": "0x12EE0000",
+      "expectedReturn": "0x000012EF",
+      "feedback": {
+        "metric": "mcb_closed",
+        "expected": true
+      },
+      "fieldState": "pending"
+    },
+    "mcb_open": {
+      "documented": true,
+      "mechanism": "reserved_command",
+      "commandCode": 2,
+      "argument": "0x12EF0000",
+      "expectedReturn": "0x000012F0",
+      "feedback": {
+        "metric": "mcb_closed",
+        "expected": false
+      },
+      "fieldState": "pending"
+    },
+    "manual": {
+      "documented": false,
+      "fieldState": "write_address_not_proven_in_retained_export"
+    },
+    "auto": {
+      "documented": false,
+      "fieldState": "write_address_not_proven_in_retained_export"
+    },
+    "test": {
+      "documented": false,
+      "fieldState": "write_address_not_proven_in_retained_export"
+    },
+    "paralleling": {
+      "documented": false,
+      "fieldState": "not_a_universal_direct_command"
+    },
+    "off": {
+      "documented": false,
+      "fieldState": "write_address_not_proven_in_retained_export"
+    }
+  }
 }

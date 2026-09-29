@@ -39,6 +39,7 @@ TESTS=(
   industrial_v3.py
   power_topology.py
   control_multi_device.py
+  homologation.py
   production_hardening.py
   provision_timeout.py
   audit_regressions.py

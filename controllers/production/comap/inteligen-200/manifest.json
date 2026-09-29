@@ -733,6 +733,7 @@
     "telemetry": true,
     "start": true,
     "stop": true,
+    "off": false,
     "auto": false,
     "manual": false,
     "test": false,
@@ -834,6 +835,169 @@
       },
       "timeoutSeconds": 35,
       "notes": "Comando homologado em produção; escrita somente pelo socket Unix privilegiado da bridge."
+    }
+  },
+  "homologationCandidates": {
+    "start": {
+      "documented": true,
+      "implementation": "existing_ig200_privileged",
+      "contract": {
+        "executor": "ig200_privileged",
+        "transport": "reverse_tcp",
+        "confirmation": "START",
+        "preconditions": [
+          "generator_enabled",
+          "field_validated_pack",
+          "binding_match",
+          "controller_online",
+          "engine_stopped"
+        ],
+        "feedback": {
+          "metric": "rpm",
+          "operator": "gt",
+          "value": 100,
+          "timeoutSeconds": 15
+        },
+        "timeoutSeconds": 20,
+        "notes": "Comando homologado em produção; escrita somente pelo socket Unix privilegiado da bridge."
+      },
+      "fieldState": "historically_validated_without_firmware_capture",
+      "remaining": [
+        "capture exact firmware during a witnessed successful START",
+        "add exact firmware to firmware.tested"
+      ]
+    },
+    "stop": {
+      "documented": true,
+      "implementation": "existing_ig200_privileged",
+      "contract": {
+        "executor": "ig200_privileged",
+        "transport": "reverse_tcp",
+        "confirmation": "STOP",
+        "preconditions": [
+          "generator_enabled",
+          "field_validated_pack",
+          "binding_match",
+          "controller_online"
+        ],
+        "feedback": {
+          "metric": "rpm",
+          "operator": "lte",
+          "value": 100,
+          "timeoutSeconds": 30
+        },
+        "timeoutSeconds": 35,
+        "notes": "Comando homologado em produção; escrita somente pelo socket Unix privilegiado da bridge."
+      },
+      "fieldState": "historically_validated_without_firmware_capture",
+      "remaining": [
+        "capture exact firmware during a witnessed successful STOP",
+        "add exact firmware to firmware.tested"
+      ]
+    },
+    "manual": {
+      "documented": true,
+      "mechanism": "setpoint",
+      "address": 3041,
+      "value": 1,
+      "feedback": {
+        "metric": "controller_mode_raw",
+        "expected": 1
+      },
+      "source": "source-export.txt / Com.Obj 8315 Controller Mode",
+      "fieldState": "pending"
+    },
+    "auto": {
+      "documented": true,
+      "mechanism": "setpoint",
+      "address": 3041,
+      "value": 2,
+      "feedback": {
+        "metric": "controller_mode_raw",
+        "expected": 2
+      },
+      "source": "source-export.txt / Com.Obj 8315 Controller Mode",
+      "fieldState": "pending"
+    },
+    "test": {
+      "documented": true,
+      "mechanism": "setpoint",
+      "address": 3041,
+      "value": 3,
+      "feedback": {
+        "metric": "controller_mode_raw",
+        "expected": 3
+      },
+      "source": "source-export.txt / Com.Obj 8315 Controller Mode",
+      "fieldState": "pending"
+    },
+    "gcb_close": {
+      "documented": true,
+      "mechanism": "reserved_command",
+      "commandCode": 2,
+      "argument": "0x11EF0000",
+      "expectedReturn": "0x000011F0",
+      "feedback": {
+        "metric": "gcb_closed",
+        "expected": true
+      },
+      "fieldState": "pending"
+    },
+    "gcb_open": {
+      "documented": true,
+      "mechanism": "reserved_command",
+      "commandCode": 2,
+      "argument": "0x11F00000",
+      "expectedReturn": "0x000011F1",
+      "feedback": {
+        "metric": "gcb_closed",
+        "expected": false
+      },
+      "fieldState": "pending"
+    },
+    "mcb_close": {
+      "documented": true,
+      "mechanism": "reserved_command",
+      "commandCode": 2,
+      "argument": "0x12EE0000",
+      "expectedReturn": "0x000012EF",
+      "feedback": {
+        "metric": "mcb_closed",
+        "expected": true
+      },
+      "fieldState": "pending"
+    },
+    "mcb_open": {
+      "documented": true,
+      "mechanism": "reserved_command",
+      "commandCode": 2,
+      "argument": "0x12EF0000",
+      "expectedReturn": "0x000012F0",
+      "feedback": {
+        "metric": "mcb_closed",
+        "expected": false
+      },
+      "fieldState": "pending"
+    },
+    "paralleling": {
+      "documented": false,
+      "mechanism": "application_sequence",
+      "fieldState": "not_a_universal_direct_command",
+      "remaining": [
+        "validate application-specific synchronization sequence and feedback before exposing an explicit paralleling action"
+      ]
+    },
+    "off": {
+      "documented": true,
+      "mechanism": "setpoint",
+      "address": 3041,
+      "value": 0,
+      "feedback": {
+        "metric": "controller_mode_raw",
+        "expected": 0
+      },
+      "source": "source-export.txt / Com.Obj 8315 Controller Mode",
+      "fieldState": "pending"
     }
   }
 }

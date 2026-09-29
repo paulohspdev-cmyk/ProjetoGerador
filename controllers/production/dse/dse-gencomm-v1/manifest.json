@@ -69,6 +69,7 @@
     "telemetry": true,
     "start": false,
     "stop": false,
+    "off": false,
     "auto": false,
     "manual": false,
     "test": false,
@@ -702,5 +703,76 @@
     "commandSafety": "Produção estritamente somente leitura. FC16/control keys are deliberately not materialized; START, STOP, modes and breaker commands remain blocked until model-specific physical validation."
   },
   "notes": "Pack compartilhado para controladoras DSE de GERADOR com GenComm/Modbus documentado. Produção significa TELEMETRIA SOMENTE LEITURA por especificação, não field_validated. Equipamentos DSE de rede/ATS, bus-tie, sync-lock e modelos sem evidência GenComm específica ficam fora deste pack. Comandos permanecem bloqueados até validação física por modelo.",
-  "commands": {}
+  "commands": {},
+  "homologationCandidates": {
+    "stop": {
+      "documented": true,
+      "mechanism": "gencomm_control_key",
+      "key": 35700,
+      "complement": 29835,
+      "fieldState": "pending"
+    },
+    "auto": {
+      "documented": true,
+      "mechanism": "gencomm_control_key",
+      "key": 35701,
+      "complement": 29834,
+      "fieldState": "pending"
+    },
+    "manual": {
+      "documented": true,
+      "mechanism": "gencomm_control_key",
+      "key": 35702,
+      "complement": 29833,
+      "fieldState": "pending"
+    },
+    "test": {
+      "documented": true,
+      "mechanism": "gencomm_control_key",
+      "key": 35703,
+      "complement": 29832,
+      "fieldState": "pending"
+    },
+    "start": {
+      "documented": true,
+      "mechanism": "gencomm_control_key",
+      "key": 35705,
+      "complement": 29830,
+      "fieldState": "lab_path_prepared_field_validation_pending"
+    },
+    "transfer_to_generator": {
+      "documented": true,
+      "mechanism": "gencomm_control_key",
+      "key": 35708,
+      "complement": 29827,
+      "fieldState": "pending_model_specific"
+    },
+    "transfer_to_mains": {
+      "documented": true,
+      "mechanism": "gencomm_control_key",
+      "key": 35709,
+      "complement": 29826,
+      "fieldState": "pending_model_specific"
+    },
+    "mcb_open": {
+      "documented": false,
+      "fieldState": "generic_mcb_semantics_do_not_match_gencomm_transfer_key"
+    },
+    "mcb_close": {
+      "documented": false,
+      "fieldState": "generic_mcb_semantics_do_not_match_gencomm_transfer_key"
+    },
+    "gcb_open": {
+      "documented": false,
+      "fieldState": "generic_gcb_semantics_do_not_match_gencomm_transfer_key"
+    },
+    "gcb_close": {
+      "documented": false,
+      "fieldState": "generic_gcb_semantics_do_not_match_gencomm_transfer_key"
+    },
+    "paralleling": {
+      "documented": false,
+      "fieldState": "model_specific_sequence_required"
+    }
+  }
 }
