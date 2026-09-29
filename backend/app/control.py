@@ -2,7 +2,7 @@ import asyncio
 import json
 from pathlib import Path
 
-from . import domain_store
+from . import domain_store, dse_control
 from .binding_store import load_runtime_bindings
 from .config import CONTROL_SOCKET
 from .controller_library import (
@@ -159,26 +159,33 @@ async def send_homologated_command(generator: dict, action: str) -> dict:
     executor = str(contract.get("executor") or "")
     rapid_device = int(generator.get("rapid_device_num") or 0)
 
-    if executor != "ig200_privileged":
+    timeout = float(contract.get("timeoutSeconds") or 20)
+
+    if executor == "dse_gencomm_privileged":
+        if action != "start":
+            raise ValueError(
+                f"Controle bloqueado: executor DSE atual não implementa {action.upper()} em produção"
+            )
+        result = await dse_control.send_command(generator, action)
+    elif executor == "ig200_privileged":
+        if action not in {"start", "stop"}:
+            raise ValueError(
+                f"Controle bloqueado: executor IG200 atual não implementa {action.upper()} em produção"
+            )
+        result = await _send_socket_command(
+            Path(CONTROL_SOCKET),
+            {
+                "device": rapid_device,
+                "action": action,
+                "confirm": "REMOTE_CONTROL_CONFIRMED",
+            },
+            timeout=timeout,
+        )
+    else:
         raise ValueError(
             f"Controle bloqueado: executor {executor or 'N/D'} ainda não possui implementação "
             "de produção homologada"
         )
-    if action not in {"start", "stop"}:
-        raise ValueError(
-            f"Controle bloqueado: executor IG200 atual não implementa {action.upper()} em produção"
-        )
-
-    timeout = float(contract.get("timeoutSeconds") or 20)
-    result = await _send_socket_command(
-        Path(CONTROL_SOCKET),
-        {
-            "device": rapid_device,
-            "action": action,
-            "confirm": "REMOTE_CONTROL_CONFIRMED",
-        },
-        timeout=timeout,
-    )
     return {
         **result,
         "contract": {
