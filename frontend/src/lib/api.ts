@@ -479,10 +479,14 @@ export const rcApi = {
         body: JSON.stringify(payload),
       }),
     command: (id: string, action: IndustrialCommandAction) =>
-      request<CommandResult>(`/api/generators/${encodeURIComponent(id)}/commands/${action}`, {
-        method: "POST",
-        body: JSON.stringify({ confirmation: action.toUpperCase() }),
-      }),
+      request<CommandResult>(
+        `/api/generators/${encodeURIComponent(id)}/commands/${action}`,
+        {
+          method: "POST",
+          body: JSON.stringify({ confirmation: action.toUpperCase() }),
+        },
+        45_000,
+      ),
     metrics: (id: string) =>
       request<RapidMetric[]>(`/api/generators/${encodeURIComponent(id)}/metrics`),
     trend: (id: string, metric: string, hours = 24, archiveBit = 1) =>
