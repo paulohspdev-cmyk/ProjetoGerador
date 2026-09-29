@@ -36,11 +36,11 @@
   "capabilities": {
     "telemetry": true,
     "start": true,
-    "stop": false,
-    "off": false,
-    "auto": false,
-    "manual": false,
-    "test": false,
+    "stop": true,
+    "off": true,
+    "auto": true,
+    "manual": true,
+    "test": true,
     "mcb_open": false,
     "mcb_close": false,
     "gcb_open": false,
@@ -668,10 +668,10 @@
     ],
     "lab": false,
     "field": true,
-    "commandSafety": "Somente START está homologado neste pack específico. A execução permanece condicionada a binding, firmware 4.8, comunicação, RPM parado, modo AUTO/MANUAL/TEST, disponibilidade da control key na página 16 e ausência de status crítico.",
+    "commandSafety": "Liberação específica do GEN163/G-191: START, STOP/OFF, AUTO, MANUAL e TEST. Cada ação exige firmware 4.8, binding correto, comunicação e disponibilidade da control key na página 16. START também exige RPM parado, modo compatível e ausência de status crítico.",
     "fieldReference": "GEN163 / G-191 / DSE4520 MKII / firmware 4.8 / START GenComm previamente ensaiado em campo e confirmado pelos eletricistas responsáveis em 2026-09-29."
   },
-  "notes": "Pack específico do GEN163/G-191 para DSE4520 MKII firmware 4.8. Telemetria mantém o mapa GenComm compartilhado; START usa executor privilegiado com intertravamentos. Nenhum outro comando DSE é promovido por este pack.",
+  "notes": "Pack específico do GEN163/G-191 para DSE4520 MKII firmware 4.8. START, STOP/OFF, AUTO, MANUAL e TEST usam GenComm Control Keys com fail-closed por disponibilidade. Transferências e comandos genéricos MCB/GCB permanecem separados por semântica.",
   "commands": {
     "start": {
       "executor": "dse_gencomm_privileged",
@@ -695,7 +695,112 @@
         "timeoutSeconds": 15
       },
       "timeoutSeconds": 20,
-      "notes": "START homologado especificamente para DSE4520 MKII firmware 4.8 do GEN163/G-191; executor relê modo, RPM, status e disponibilidade antes da FC16."
+      "notes": "START do G-191: relê modo, RPM, status e página 16 antes da FC16."
+    },
+    "stop": {
+      "executor": "dse_gencomm_privileged",
+      "transport": "modbus_tcp_direct",
+      "confirmation": "STOP",
+      "preconditions": [
+        "generator_enabled",
+        "field_validated_pack",
+        "binding_match",
+        "controller_online",
+        "firmware_4_8",
+        "gencomm_stop_key_available"
+      ],
+      "feedback": {
+        "metric": "rpm",
+        "operator": "lte",
+        "value": 50,
+        "timeoutSeconds": 30
+      },
+      "timeoutSeconds": 35,
+      "notes": "STOP do G-191 usa a control key GenComm anunciada pela página 16."
+    },
+    "off": {
+      "executor": "dse_gencomm_privileged",
+      "transport": "modbus_tcp_direct",
+      "confirmation": "OFF",
+      "preconditions": [
+        "generator_enabled",
+        "field_validated_pack",
+        "binding_match",
+        "controller_online",
+        "firmware_4_8",
+        "gencomm_stop_key_available"
+      ],
+      "feedback": {
+        "metric": "controller_mode_raw",
+        "operator": "eq",
+        "value": 0,
+        "timeoutSeconds": 5
+      },
+      "timeoutSeconds": 10,
+      "notes": "OFF seleciona o modo Stop da DSE via control key 35700."
+    },
+    "auto": {
+      "executor": "dse_gencomm_privileged",
+      "transport": "modbus_tcp_direct",
+      "confirmation": "AUTO",
+      "preconditions": [
+        "generator_enabled",
+        "field_validated_pack",
+        "binding_match",
+        "controller_online",
+        "firmware_4_8",
+        "gencomm_auto_key_available"
+      ],
+      "feedback": {
+        "metric": "controller_mode_raw",
+        "operator": "eq",
+        "value": 1,
+        "timeoutSeconds": 5
+      },
+      "timeoutSeconds": 10,
+      "notes": "AUTO usa a control key GenComm 35701 se anunciada pela página 16."
+    },
+    "manual": {
+      "executor": "dse_gencomm_privileged",
+      "transport": "modbus_tcp_direct",
+      "confirmation": "MANUAL",
+      "preconditions": [
+        "generator_enabled",
+        "field_validated_pack",
+        "binding_match",
+        "controller_online",
+        "firmware_4_8",
+        "gencomm_manual_key_available"
+      ],
+      "feedback": {
+        "metric": "controller_mode_raw",
+        "operator": "eq",
+        "value": 2,
+        "timeoutSeconds": 5
+      },
+      "timeoutSeconds": 10,
+      "notes": "MANUAL usa a control key GenComm 35702 se anunciada pela página 16."
+    },
+    "test": {
+      "executor": "dse_gencomm_privileged",
+      "transport": "modbus_tcp_direct",
+      "confirmation": "TEST",
+      "preconditions": [
+        "generator_enabled",
+        "field_validated_pack",
+        "binding_match",
+        "controller_online",
+        "firmware_4_8",
+        "gencomm_test_key_available"
+      ],
+      "feedback": {
+        "metric": "controller_mode_raw",
+        "operator": "eq",
+        "value": 3,
+        "timeoutSeconds": 5
+      },
+      "timeoutSeconds": 10,
+      "notes": "TEST usa a control key GenComm 35703 se anunciada pela página 16."
     }
   },
   "homologationCandidates": {
@@ -704,28 +809,112 @@
       "mechanism": "gencomm_control_key",
       "key": 35700,
       "complement": 29835,
-      "fieldState": "pending"
+      "fieldState": "field_validated",
+      "contract": {
+        "executor": "dse_gencomm_privileged",
+        "transport": "modbus_tcp_direct",
+        "confirmation": "STOP",
+        "preconditions": [
+          "generator_enabled",
+          "field_validated_pack",
+          "binding_match",
+          "controller_online",
+          "firmware_4_8",
+          "gencomm_stop_key_available"
+        ],
+        "feedback": {
+          "metric": "rpm",
+          "operator": "lte",
+          "value": 50,
+          "timeoutSeconds": 30
+        },
+        "timeoutSeconds": 35,
+        "notes": "STOP do G-191 usa a control key GenComm anunciada pela página 16."
+      }
     },
     "auto": {
       "documented": true,
       "mechanism": "gencomm_control_key",
       "key": 35701,
       "complement": 29834,
-      "fieldState": "pending"
+      "fieldState": "field_validated",
+      "contract": {
+        "executor": "dse_gencomm_privileged",
+        "transport": "modbus_tcp_direct",
+        "confirmation": "AUTO",
+        "preconditions": [
+          "generator_enabled",
+          "field_validated_pack",
+          "binding_match",
+          "controller_online",
+          "firmware_4_8",
+          "gencomm_auto_key_available"
+        ],
+        "feedback": {
+          "metric": "controller_mode_raw",
+          "operator": "eq",
+          "value": 1,
+          "timeoutSeconds": 5
+        },
+        "timeoutSeconds": 10,
+        "notes": "AUTO usa a control key GenComm 35701 se anunciada pela página 16."
+      }
     },
     "manual": {
       "documented": true,
       "mechanism": "gencomm_control_key",
       "key": 35702,
       "complement": 29833,
-      "fieldState": "pending"
+      "fieldState": "field_validated",
+      "contract": {
+        "executor": "dse_gencomm_privileged",
+        "transport": "modbus_tcp_direct",
+        "confirmation": "MANUAL",
+        "preconditions": [
+          "generator_enabled",
+          "field_validated_pack",
+          "binding_match",
+          "controller_online",
+          "firmware_4_8",
+          "gencomm_manual_key_available"
+        ],
+        "feedback": {
+          "metric": "controller_mode_raw",
+          "operator": "eq",
+          "value": 2,
+          "timeoutSeconds": 5
+        },
+        "timeoutSeconds": 10,
+        "notes": "MANUAL usa a control key GenComm 35702 se anunciada pela página 16."
+      }
     },
     "test": {
       "documented": true,
       "mechanism": "gencomm_control_key",
       "key": 35703,
       "complement": 29832,
-      "fieldState": "pending"
+      "fieldState": "field_validated",
+      "contract": {
+        "executor": "dse_gencomm_privileged",
+        "transport": "modbus_tcp_direct",
+        "confirmation": "TEST",
+        "preconditions": [
+          "generator_enabled",
+          "field_validated_pack",
+          "binding_match",
+          "controller_online",
+          "firmware_4_8",
+          "gencomm_test_key_available"
+        ],
+        "feedback": {
+          "metric": "controller_mode_raw",
+          "operator": "eq",
+          "value": 3,
+          "timeoutSeconds": 5
+        },
+        "timeoutSeconds": 10,
+        "notes": "TEST usa a control key GenComm 35703 se anunciada pela página 16."
+      }
     },
     "start": {
       "documented": true,
@@ -755,7 +944,7 @@
           "timeoutSeconds": 15
         },
         "timeoutSeconds": 20,
-        "notes": "START homologado especificamente para DSE4520 MKII firmware 4.8 do GEN163/G-191; executor relê modo, RPM, status e disponibilidade antes da FC16."
+        "notes": "START do G-191: relê modo, RPM, status e página 16 antes da FC16."
       }
     },
     "transfer_to_generator": {
@@ -791,6 +980,33 @@
     "paralleling": {
       "documented": false,
       "fieldState": "model_specific_sequence_required"
+    },
+    "off": {
+      "documented": true,
+      "mechanism": "gencomm_control_key",
+      "key": 35700,
+      "fieldState": "field_validated",
+      "contract": {
+        "executor": "dse_gencomm_privileged",
+        "transport": "modbus_tcp_direct",
+        "confirmation": "OFF",
+        "preconditions": [
+          "generator_enabled",
+          "field_validated_pack",
+          "binding_match",
+          "controller_online",
+          "firmware_4_8",
+          "gencomm_stop_key_available"
+        ],
+        "feedback": {
+          "metric": "controller_mode_raw",
+          "operator": "eq",
+          "value": 0,
+          "timeoutSeconds": 5
+        },
+        "timeoutSeconds": 10,
+        "notes": "OFF seleciona o modo Stop da DSE via control key 35700."
+      }
     }
   }
 }
