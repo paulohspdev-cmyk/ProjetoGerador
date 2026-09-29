@@ -19,9 +19,15 @@ import type { EventItemApi } from "@/lib/api";
 import type { MaintenancePlan } from "@/lib/industrial-api";
 import { cn } from "@/lib/utils";
 
-import { formatMetric } from "../generator-metrics";
 import type { GeneratorDetailModel } from "./generator-detail-model";
 import { NeedleGauge } from "./GeneratorDetailProfessionalPrimitives";
+import {
+  HistoryPanel,
+  MiniTrendCard,
+  type TrendSeriesSpec,
+  unitText,
+} from "./GeneratorDetailTrendPanels";
+import type { GeneratorDetailTrendMap } from "./useGeneratorDetailData";
 
 type Props = {
   model: GeneratorDetailModel;
@@ -29,18 +35,11 @@ type Props = {
   eventError: string;
   plans: MaintenancePlan[];
   maintenanceError: string;
+  trends: GeneratorDetailTrendMap;
+  trendErrors: Record<string, string>;
+  trendsLoading: boolean;
+  configuredTrendMetrics: Set<string>;
 };
-
-const PHASE_TONE = {
-  L1: "var(--info)",
-  L2: "var(--online)",
-  L3: "var(--primary)",
-} as const;
-
-function unitText(value: number | null | undefined, unit: string, digits = 0) {
-  if (value == null || !Number.isFinite(value)) return "—";
-  return formatMetric(value, unit, digits);
-}
 
 function EngineRow({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
@@ -54,136 +53,23 @@ function EngineRow({ icon, label, value }: { icon: ReactNode; label: string; val
   );
 }
 
-function PhaseColumn({
-  name,
-  volts,
-  amps,
-  maxVolts,
-  live,
-}: {
-  name: keyof typeof PHASE_TONE;
-  volts: number | null;
-  amps: number | null;
-  maxVolts: number | null;
-  live: boolean;
-}) {
-  const hasV = live && volts != null && volts > 0;
-  const pct =
-    hasV && maxVolts != null && maxVolts > 0
-      ? Math.max(4, Math.min(100, (volts / maxVolts) * 100))
-      : 0;
-  return (
-    <div className="flex min-h-0 flex-1 flex-col items-center gap-1">
-      <span
-        className="text-[11px] font-extrabold tracking-wide"
-        style={{ color: PHASE_TONE[name] }}
-      >
-        {name}
-      </span>
-      <div className="relative flex min-h-0 w-full flex-1 justify-center">
-        <div className="relative h-full w-7 overflow-hidden rounded-sm border border-border/60 bg-black/35">
-          <div
-            className="absolute inset-x-0 bottom-0 transition-[height] duration-300"
-            style={{
-              height: `${pct}%`,
-              background: PHASE_TONE[name],
-              opacity: hasV ? 0.85 : 0.2,
-            }}
-          />
-        </div>
-      </div>
-      <b className="num text-[13px] font-black leading-none">{hasV ? unitText(volts, "V") : "—"}</b>
-      <span className="num text-[10px] text-muted-foreground">
-        {live ? unitText(amps, "A") : "—"}
-      </span>
-    </div>
-  );
-}
-
-function SidePhaseCard({
-  title,
-  live,
-  emptyHint,
-  accent,
-  l1,
-  l2,
-  l3,
-  i1,
-  i2,
-  i3,
-  ll,
-  hz,
-  kw,
-  pf,
-}: {
-  title: string;
-  live: boolean;
-  emptyHint?: string;
-  accent?: boolean;
-  l1: number | null;
-  l2: number | null;
-  l3: number | null;
-  i1: number | null;
-  i2: number | null;
-  i3: number | null;
-  ll: number | null;
-  hz: number | null;
-  kw: number | null;
-  pf: string;
-}) {
-  const measuredVoltages = [l1, l2, l3].filter(
-    (value): value is number => value != null && Number.isFinite(value) && value > 0,
-  );
-  const phaseScaleMax = measuredVoltages.length > 0 ? Math.max(...measuredVoltages) * 1.05 : null;
-
-  return (
-    <section className="gen-detail-section flex min-h-0 flex-col overflow-hidden rounded-xl p-2">
-      <div className="mb-1 flex shrink-0 items-center justify-between gap-2">
-        <h2 className={cn("text-[12px] font-extrabold", accent && "text-online")}>{title}</h2>
-        <span className="num truncate text-[10px] text-muted-foreground">
-          {[
-            unitText(live ? hz : null, "Hz", 1),
-            unitText(live ? kw : null, "kW"),
-            pf ? `FP ${pf}` : "",
-          ]
-            .filter((part) => part && part !== "—")
-            .join(" · ") ||
-            (emptyHint ?? "—")}
-        </span>
-      </div>
-      <div className="flex min-h-0 flex-1 gap-2">
-        <PhaseColumn name="L1" volts={l1} amps={i1} maxVolts={phaseScaleMax} live={live} />
-        <PhaseColumn name="L2" volts={l2} amps={i2} maxVolts={phaseScaleMax} live={live} />
-        <PhaseColumn name="L3" volts={l3} amps={i3} maxVolts={phaseScaleMax} live={live} />
-      </div>
-      <div className="mt-1 flex shrink-0 justify-between border-t border-border/40 pt-1 text-[10px] text-muted-foreground">
-        <span>
-          L-L <b className="num text-foreground">{unitText(live ? ll : null, "V")}</b>
-        </span>
-        <span>
-          Hz <b className="num text-foreground">{unitText(live ? hz : null, "Hz", 1)}</b>
-        </span>
-        <span>
-          kW <b className="num text-foreground">{unitText(live ? kw : null, "kW")}</b>
-        </span>
-      </div>
-    </section>
-  );
-}
-
 export function GeneratorDetailProfessionalLower({
   model,
   events,
   eventError,
   plans,
   maintenanceError,
+  trends,
+  trendErrors,
+  trendsLoading,
+  configuredTrendMetrics,
 }: Props) {
   const visiblePlans = plans.slice(0, 2).map((plan) => ({
     name: plan.name,
     next:
       [
-        plan.hour_remaining != null ? `Em ${plan.hour_remaining.toFixed(0)} h` : "",
-        plan.day_remaining != null ? `Em ${plan.day_remaining.toFixed(0)} d` : "",
+        plan.hour_remaining != null ? "Em " + plan.hour_remaining.toFixed(0) + " h" : "",
+        plan.day_remaining != null ? "Em " + plan.day_remaining.toFixed(0) + " d" : "",
       ]
         .filter(Boolean)
         .join(" · ") || "N/D",
@@ -219,17 +105,123 @@ export function GeneratorDetailProfessionalLower({
   ]);
   const uniqueParams = model.parameters
     .filter((row) => !paramSkip.has(row.label.toLowerCase()))
-    .slice(0, 4);
+    .slice(0, 6);
 
-  const mainsLive = Boolean(model.mainsPresent && model.mainsKnown);
-  const genLive = Boolean(model.generatorPresent);
+  const showMainsHistory = [
+    "mains_voltage_l1",
+    "mains_voltage_l2",
+    "mains_voltage_l3",
+    "mains_frequency",
+    "mains_power_kw",
+  ].some((key) => configuredTrendMetrics.has(key));
+
+  const historyPanels: Array<{
+    title: string;
+    subtitle?: string;
+    series: TrendSeriesSpec[];
+  }> = [
+    {
+      title: "Tensão do gerador · L1 L2 L3",
+      series: [
+        { key: "voltage_l1", label: "L1", unit: "V", current: model.genL1, tone: "var(--info)" },
+        { key: "voltage_l2", label: "L2", unit: "V", current: model.genL2, tone: "var(--online)" },
+        { key: "voltage_l3", label: "L3", unit: "V", current: model.genL3, tone: "var(--primary)" },
+      ],
+    },
+    {
+      title: "Corrente do gerador · I1 I2 I3",
+      series: [
+        { key: "current_l1", label: "I1", unit: "A", current: model.genI1, tone: "var(--info)" },
+        { key: "current_l2", label: "I2", unit: "A", current: model.genI2, tone: "var(--online)" },
+        { key: "current_l3", label: "I3", unit: "A", current: model.genI3, tone: "var(--primary)" },
+      ],
+    },
+    {
+      title: "Potência ativa",
+      series: [
+        {
+          key: "power_kw",
+          label: "Potência",
+          unit: "kW",
+          current: model.load,
+          tone: "var(--online)",
+        },
+      ],
+    },
+    {
+      title: "Frequência do gerador",
+      series: [
+        {
+          key: "frequency",
+          label: "Frequência",
+          unit: "Hz",
+          current: model.frequency,
+          digits: 1,
+          tone: "var(--chart-2)",
+        },
+      ],
+    },
+  ];
+
+  if (showMainsHistory) {
+    historyPanels.push(
+      {
+        title: "Tensão da rede · L1 L2 L3",
+        subtitle: "Histórico real da concessionária · 24 horas",
+        series: [
+          {
+            key: "mains_voltage_l1",
+            label: "L1",
+            unit: "V",
+            current: model.mainsL1,
+            tone: "var(--info)",
+          },
+          {
+            key: "mains_voltage_l2",
+            label: "L2",
+            unit: "V",
+            current: model.mainsL2,
+            tone: "var(--online)",
+          },
+          {
+            key: "mains_voltage_l3",
+            label: "L3",
+            unit: "V",
+            current: model.mainsL3,
+            tone: "var(--primary)",
+          },
+        ],
+      },
+      {
+        title: "Frequência / potência da rede",
+        subtitle: "Histórico real da concessionária · 24 horas",
+        series: [
+          {
+            key: "mains_frequency",
+            label: "Hz",
+            unit: "Hz",
+            current: model.mainsFrequency,
+            digits: 1,
+            tone: "var(--chart-2)",
+          },
+          {
+            key: "mains_power_kw",
+            label: "kW",
+            unit: "kW",
+            current: model.mainsPower,
+            tone: "var(--online)",
+          },
+        ],
+      },
+    );
+  }
 
   return (
-    <div className="gen-detail-lower grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1.15fr)_auto] gap-1.5 overflow-hidden">
+    <div className="gen-detail-lower grid min-h-0 flex-1 grid-rows-[auto_minmax(178px,1fr)_112px_auto] gap-1.5 overflow-hidden">
       <div className="grid min-h-0 gap-1.5 xl:grid-cols-12">
         <section className="gen-detail-section min-h-0 overflow-hidden rounded-xl p-1.5 xl:col-span-7">
           <h2 className="mb-0.5 flex items-center gap-1.5 text-[11px] font-extrabold">
-            <Gauge className="size-3 text-primary" /> Relógios
+            <Gauge className="size-3 text-primary" /> Instantâneo
           </h2>
           <div className="grid grid-cols-4 gap-1">
             <NeedleGauge label="KW" unit="kW" value={model.load} max={model.nominalPower} />
@@ -307,37 +299,92 @@ export function GeneratorDetailProfessionalLower({
         </section>
       </div>
 
-      <div className="grid min-h-0 gap-1.5 xl:grid-cols-2">
-        <SidePhaseCard
-          title="Gráfico Rede — L1 L2 L3"
-          live={mainsLive}
-          emptyHint="Rede ausente"
-          l1={model.mainsL1}
-          l2={model.mainsL2}
-          l3={model.mainsL3}
-          i1={model.mainsI1}
-          i2={model.mainsI2}
-          i3={model.mainsI3}
-          ll={model.mainsL12 ?? model.mainsL13}
-          hz={model.mainsFrequency}
-          kw={model.mainsPower}
-          pf={model.mainsElectrical?.powerFactor || ""}
+      <div
+        className={cn(
+          "grid min-h-0 gap-1.5",
+          historyPanels.length > 4 ? "xl:grid-cols-3" : "xl:grid-cols-4",
+        )}
+        aria-label="Tendências elétricas 24h"
+      >
+        {historyPanels.map((panel) => (
+          <HistoryPanel
+            key={panel.title}
+            title={panel.title}
+            subtitle={panel.subtitle}
+            series={panel.series}
+            trends={trends}
+            configuredTrendMetrics={configuredTrendMetrics}
+            trendErrors={trendErrors}
+            loading={trendsLoading}
+          />
+        ))}
+      </div>
+
+      <div
+        className="grid min-h-0 grid-cols-3 gap-1.5 xl:grid-cols-6"
+        aria-label="Tendências do motor 24h"
+      >
+        <MiniTrendCard
+          title="RPM"
+          metric="rpm"
+          unit="rpm"
+          value={model.rpm}
+          tone="var(--info)"
+          trends={trends}
+          configuredTrendMetrics={configuredTrendMetrics}
+          loading={trendsLoading}
         />
-        <SidePhaseCard
-          title="Gráfico Gerador — L1 L2 L3"
-          live={genLive}
-          emptyHint="Gerador parado"
-          accent
-          l1={model.genL1}
-          l2={model.genL2}
-          l3={model.genL3}
-          i1={model.genI1}
-          i2={model.genI2}
-          i3={model.genI3}
-          ll={model.genL12 ?? model.genL13}
-          hz={model.frequency}
-          kw={model.load}
-          pf={model.generatorElectrical?.powerFactor || ""}
+        <MiniTrendCard
+          title="Pressão de óleo"
+          metric="oil_pressure"
+          unit={model.oilUnit}
+          value={model.oil}
+          digits={1}
+          tone="var(--primary)"
+          trends={trends}
+          configuredTrendMetrics={configuredTrendMetrics}
+          loading={trendsLoading}
+        />
+        <MiniTrendCard
+          title="Temp. motor"
+          metric="coolant_temperature"
+          unit={model.tempUnit}
+          value={model.temp}
+          tone="var(--chart-2)"
+          trends={trends}
+          configuredTrendMetrics={configuredTrendMetrics}
+          loading={trendsLoading}
+        />
+        <MiniTrendCard
+          title="Combustível"
+          metric="fuel_level"
+          unit={model.fuelUnit}
+          value={model.fuel}
+          tone="var(--online)"
+          trends={trends}
+          configuredTrendMetrics={configuredTrendMetrics}
+          loading={trendsLoading}
+        />
+        <MiniTrendCard
+          title="Bateria"
+          metric="battery_voltage"
+          unit="V"
+          value={model.batt}
+          digits={1}
+          tone="var(--alert)"
+          trends={trends}
+          configuredTrendMetrics={configuredTrendMetrics}
+          loading={trendsLoading}
+        />
+        <MiniTrendCard
+          title="Carga do motor"
+          metric="engine_load"
+          unit="%"
+          value={model.engineLoad}
+          tone="var(--online)"
+          trends={trends}
+          configuredTrendMetrics={configuredTrendMetrics}
+          loading={trendsLoading}
         />
       </div>
 
@@ -345,7 +392,7 @@ export function GeneratorDetailProfessionalLower({
         <section className="gen-detail-section min-h-0 overflow-hidden rounded-xl p-1.5 xl:col-span-3">
           <div className="mb-0.5 flex items-center justify-between">
             <h2 className="flex items-center gap-1.5 text-[11px] font-extrabold">
-              <Bell className="size-3 text-primary" /> ALARMS
+              <Bell className="size-3 text-primary" /> ALARMES
             </h2>
             {alarmsOk ? (
               <span className="rounded-sm border border-online/40 bg-online/15 px-1.5 py-0.5 text-[9px] font-bold text-online">
@@ -362,7 +409,7 @@ export function GeneratorDetailProfessionalLower({
             <ul className="space-y-0.5 overflow-hidden">
               {eventRows.map((event) => (
                 <li
-                  key={`${event.time}-${event.message}`}
+                  key={event.time + "-" + event.message}
                   className="flex items-start gap-1 text-[10px]"
                 >
                   <span
@@ -390,7 +437,7 @@ export function GeneratorDetailProfessionalLower({
           )}
         </section>
 
-        <section className="gen-detail-section min-h-0 overflow-hidden rounded-xl p-1.5 xl:col-span-4">
+        <section className="gen-detail-section min-h-0 overflow-hidden rounded-xl p-1.5 xl:col-span-3">
           <h2 className="mb-0.5 flex items-center gap-1.5 text-[11px] font-extrabold">
             <Wrench className="size-3 text-primary" /> Manutenção
           </h2>
@@ -421,12 +468,12 @@ export function GeneratorDetailProfessionalLower({
           </Link>
         </section>
 
-        <section className="gen-detail-section min-h-0 overflow-hidden rounded-xl p-1.5 xl:col-span-5">
+        <section className="gen-detail-section min-h-0 overflow-hidden rounded-xl p-1.5 xl:col-span-6">
           <h2 className="mb-0.5 flex items-center gap-1.5 text-[11px] font-extrabold">
-            <Settings2 className="size-3 text-primary" /> Parâmetros
+            <Settings2 className="size-3 text-primary" /> Parâmetros e acumulados
           </h2>
           {uniqueParams.length ? (
-            <div className="grid gap-x-3 overflow-hidden sm:grid-cols-2">
+            <div className="grid gap-x-3 overflow-hidden sm:grid-cols-3">
               {uniqueParams.map(({ label, value }) => (
                 <div
                   key={label}

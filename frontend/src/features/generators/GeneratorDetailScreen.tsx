@@ -23,7 +23,8 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
   const [maintenanceError, setMaintenanceError] = useState("");
 
   const model = useMemo(() => buildGeneratorDetailModel(gen), [gen]);
-  const { events, eventError } = useGeneratorDetailData(gen);
+  const { events, eventError, trends, trendErrors, trendsLoading, configuredTrendMetrics } =
+    useGeneratorDetailData(gen);
 
   useEffect(() => {
     let active = true;
@@ -118,6 +119,10 @@ export function GeneratorDetailScreen({ gen }: { gen: Generator }) {
         eventError={eventError}
         plans={plans}
         maintenanceError={maintenanceError}
+        trends={trends}
+        trendErrors={trendErrors}
+        trendsLoading={trendsLoading}
+        configuredTrendMetrics={configuredTrendMetrics}
       />
     </article>
   );

@@ -199,6 +199,7 @@ export function buildGeneratorDetailModel(gen: Generator) {
   const powerFactor = metricNumber(gen, "power_factor", undefined);
   const mainsPowerFactor = metricNumber(gen, "mains_power_factor", undefined);
   const numberStarts = metricNumber(gen, "number_starts", undefined);
+  const gensetKwh = metricNumber(gen, "genset_kwh", undefined);
   const fuelLiters = fuelUnit === "L" ? fuel : null;
   const autonomyMinutes =
     telemetry.autonomyHours != null && telemetry.autonomyHours >= 0
@@ -435,6 +436,10 @@ export function buildGeneratorDetailModel(gen: Generator) {
     parameters.push({ label: "Potência nominal", value: reading(nominalPower, "kW", 0) });
   if (powerKva != null)
     parameters.push({ label: "Potência aparente", value: reading(powerKva, "kVA", 0) });
+  if (powerFactor != null)
+    parameters.push({ label: "Fator de potência", value: reading(powerFactor, "", 2) });
+  if (gensetKwh != null)
+    parameters.push({ label: "Energia acumulada", value: reading(gensetKwh, "kWh", 1) });
   if (numberStarts != null)
     parameters.push({ label: "Partidas totais", value: String(Math.round(numberStarts)) });
 
@@ -506,6 +511,9 @@ export function buildGeneratorDetailModel(gen: Generator) {
     fuelLiters,
     autonomyLabel: formatAutonomy(autonomyMinutes),
     powerKva,
+    powerFactor,
+    mainsPowerFactor,
+    gensetKwh,
     numberStarts,
     modeControls,
     sensors,
