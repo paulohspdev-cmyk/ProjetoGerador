@@ -150,10 +150,12 @@ def _is_undefined_raw(generator, key, raw_value):
 def _cache_hit(nums, now):
     if now - _cache["at"] >= RAPID_CACHE_TTL:
         return False
+    # O reader pode omitir canais sem valor definido. Isso também é uma
+    # resposta válida para a consulta e deve permanecer em cache; exigir que
+    # todos os canais apareçam em _cache["channels"] causa relançamento
+    # contínuo do processo .NET quando existe qualquer canal ausente.
     requested = set(_cache.get("requested") or set())
-    if _cache.get("error"):
-        return set(nums).issubset(requested)
-    return all(n in _cache["channels"] for n in nums)
+    return set(nums).issubset(requested)
 
 
 def _cache_result(nums, channels, error=""):
