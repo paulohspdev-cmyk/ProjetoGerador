@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DeviceTemplate>
+  <Options><ZeroAddr>true</ZeroAddr><DecAddr>true</DecAddr><DefByteOrder2 /><DefByteOrder4 /><DefByteOrder8 /></Options>
+  <ElemGroups>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="772" name="DSE5xx GenComm - mode"><Elem type="ushort" readOnly="true" isBitMask="false" tagCode="controller_mode_raw" name="Controller Mode" /></ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="774" name="DSE5xx GenComm - alarms"><Elem type="ushort" readOnly="true" isBitMask="false" tagCode="alarm_class_raw" name="Alarm Class" /></ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1024" name="DSE5xx GenComm - engine"><Elem type="ushort" readOnly="true" isBitMask="false" tagCode="oil_pressure" name="Oil Pressure" /><Elem type="short" readOnly="true" isBitMask="false" tagCode="coolant_temperature" name="Coolant Temperature" /></ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1027" name="DSE5xx GenComm - basic instrumentation"><Elem type="ushort" readOnly="true" isBitMask="false" tagCode="fuel_level" name="Fuel Level" /><Elem type="ushort" readOnly="true" isBitMask="false" tagCode="alternator_voltage" name="Charge Alternator Voltage" /><Elem type="ushort" readOnly="true" isBitMask="false" tagCode="battery_voltage" name="Battery Voltage" /><Elem type="ushort" readOnly="true" isBitMask="false" tagCode="rpm" name="Engine Speed" /><Elem type="ushort" readOnly="true" isBitMask="false" tagCode="frequency" name="Generator Frequency" /></ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1798" name="DSE5xx GenComm - hours"><Elem type="uint" readOnly="true" isBitMask="false" tagCode="run_hours" name="Engine Run Time" /></ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1808" name="DSE5xx GenComm - starts"><Elem type="uint" readOnly="true" isBitMask="false" tagCode="number_starts" name="Number of Starts" /></ElemGroup>
+  </ElemGroups>
+  <Cmds />
+</DeviceTemplate>

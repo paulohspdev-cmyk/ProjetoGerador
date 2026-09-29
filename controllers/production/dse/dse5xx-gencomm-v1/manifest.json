@@ -1,0 +1,241 @@
+{
+  "schema": 4,
+  "manufacturer": "DSE",
+  "family": "DSE 5xx Legacy GenComm",
+  "model": "DSE5xx GenComm Serial",
+  "aliases": [
+    "DSE550 (Basic) (RS232)",
+    "DSE550 (Basic) (RS485)",
+    "DSE555 (Basic) (RS232)",
+    "DSE555 (Basic) (RS485)"
+  ],
+  "status": "production",
+  "application": "genset",
+  "category": "documented_read_only_gencomm_legacy_5xx",
+  "firmware": {
+    "tested": [],
+    "minimum": null,
+    "maximum": null,
+    "notes": "Produção documental read-only para variantes DSE550/DSE555 explicitamente identificadas com RS232/RS485."
+  },
+  "protocols": [
+    "dse_gencomm_v1",
+    "modbus_rtu"
+  ],
+  "transports": [
+    "reverse_tcp",
+    "rtu_over_tcp",
+    "modbus_rtu_serial"
+  ],
+  "reverseTcpFraming": "modbus_rtu",
+  "defaults": {
+    "batteryNominalVoltage": null,
+    "modbusUnit": null,
+    "tcpPort": null
+  },
+  "capabilities": {
+    "telemetry": true,
+    "start": false,
+    "stop": false,
+    "off": false,
+    "auto": false,
+    "manual": false,
+    "test": false,
+    "mcb_open": false,
+    "mcb_close": false,
+    "gcb_open": false,
+    "gcb_close": false,
+    "paralleling": false
+  },
+  "validatedTelemetry": [],
+  "documentedTelemetry": [
+    "controller_mode_raw",
+    "alarm_class_raw",
+    "oil_pressure",
+    "coolant_temperature",
+    "fuel_level",
+    "alternator_voltage",
+    "battery_voltage",
+    "rpm",
+    "frequency",
+    "run_hours",
+    "number_starts"
+  ],
+  "metricUnits": {
+    "oil_pressure": "kPa",
+    "coolant_temperature": "°C",
+    "fuel_level": "%",
+    "alternator_voltage": "V",
+    "battery_voltage": "V",
+    "rpm": "rpm",
+    "frequency": "Hz",
+    "run_hours": "h"
+  },
+  "mapping": {
+    "kind": "modbus_register_export",
+    "readOnly": true,
+    "sourceFile": "modbus/source-registers.txt",
+    "sourceSha256": "db050ffbd67ee2f362d920767cc4db2ffa9a040987b617ca9e1e15ed47b135be",
+    "addressFormula": "page * 256 + offset",
+    "readFunctions": [
+      3
+    ],
+    "wordOrder": "most_significant_register_first",
+    "registers": {
+      "controller_mode_raw": {
+        "address": 772,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1
+      },
+      "alarm_class_raw": {
+        "address": 774,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1
+      },
+      "oil_pressure": {
+        "address": 1024,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "kPa"
+      },
+      "coolant_temperature": {
+        "address": 1025,
+        "count": 1,
+        "type": "int16",
+        "scale": 1,
+        "unit": "°C"
+      },
+      "fuel_level": {
+        "address": 1027,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "%"
+      },
+      "alternator_voltage": {
+        "address": 1028,
+        "count": 1,
+        "type": "uint16",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "battery_voltage": {
+        "address": 1029,
+        "count": 1,
+        "type": "uint16",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "rpm": {
+        "address": 1030,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "rpm"
+      },
+      "frequency": {
+        "address": 1031,
+        "count": 1,
+        "type": "uint16",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      "run_hours": {
+        "address": 1798,
+        "count": 2,
+        "type": "uint32",
+        "scale": 0.0002777777777777778,
+        "unit": "h"
+      },
+      "number_starts": {
+        "address": 1808,
+        "count": 2,
+        "type": "uint32",
+        "scale": 1
+      }
+    }
+  },
+  "rapid": {
+    "template": "rapid/templates/DrvModbus_RC_DSE5xx_GenComm.xml",
+    "driver": "DrvModbus",
+    "channels": [
+      {
+        "key": "controller_mode_raw",
+        "tagCode": "controller_mode_raw",
+        "scale": 1
+      },
+      {
+        "key": "alarm_class_raw",
+        "tagCode": "alarm_class_raw",
+        "scale": 1
+      },
+      {
+        "key": "oil_pressure",
+        "tagCode": "oil_pressure",
+        "scale": 1,
+        "unit": "kPa"
+      },
+      {
+        "key": "coolant_temperature",
+        "tagCode": "coolant_temperature",
+        "scale": 1,
+        "unit": "°C"
+      },
+      {
+        "key": "fuel_level",
+        "tagCode": "fuel_level",
+        "scale": 1,
+        "unit": "%"
+      },
+      {
+        "key": "alternator_voltage",
+        "tagCode": "alternator_voltage",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "battery_voltage",
+        "tagCode": "battery_voltage",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "rpm",
+        "tagCode": "rpm",
+        "scale": 1,
+        "unit": "rpm"
+      },
+      {
+        "key": "frequency",
+        "tagCode": "frequency",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      {
+        "key": "run_hours",
+        "tagCode": "run_hours",
+        "scale": 0.0002777777777777778,
+        "unit": "h"
+      },
+      {
+        "key": "number_starts",
+        "tagCode": "number_starts",
+        "scale": 1
+      }
+    ]
+  },
+  "validation": {
+    "documentation": [
+      "DSE GenComm Communications Protocol v1.29 covers DSE 550/555/5210/5220",
+      "Official DSE obsolescence matrix distinguishes DSE550/DSE555 communication variants"
+    ],
+    "lab": false,
+    "field": false,
+    "commandSafety": "Read-only. No system-control key or write function is materialized."
+  },
+  "notes": "Conservative common read-only pack for explicitly identified serial communication variants of DSE550/DSE555. Generic or No-Comms variants remain registration-only.",
+  "commands": {}
+}

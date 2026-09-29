@@ -1,0 +1,14 @@
+# DSE5xx GenComm v1 conservative common read-only map
+# Source basis: GenComm Communications Protocol v1.29 for DSE 550/555/5210/5220.
+# Only the conservative common instrumentation subset is materialized.
+772 controller_mode_raw uint16 scale=1 page=3 offset=4
+774 alarm_class_raw uint16 scale=1 page=3 offset=6
+1024 oil_pressure uint16 scale=1 unit=kPa page=4 offset=0
+1025 coolant_temperature int16 scale=1 unit=C page=4 offset=1
+1027 fuel_level uint16 scale=1 unit=percent page=4 offset=3
+1028 alternator_voltage uint16 scale=0.1 unit=V page=4 offset=4
+1029 battery_voltage uint16 scale=0.1 unit=V page=4 offset=5
+1030 rpm uint16 scale=1 unit=rpm page=4 offset=6
+1031 frequency uint16 scale=0.1 unit=Hz page=4 offset=7
+1798 run_hours uint32 scale=0.0002777777777777778 unit=h page=7 offset=6
+1808 number_starts uint32 scale=1 page=7 offset=16

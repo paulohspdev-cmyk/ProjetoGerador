@@ -1,0 +1,1250 @@
+{
+  "schema": 1,
+  "manufacturer": "DSE",
+  "generatedFrom": "controllers/catalog/catalog-v1.json + controllers/production/dse/*/manifest.json",
+  "policy": {
+    "production_read_only": "Modelo coberto por Controller Pack de produção para telemetria somente leitura; isso não libera comandos.",
+    "registration_only": "Modelo conhecido, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático.",
+    "classified_non_genset": "ATS/mains/bus-tie/display/engine/light-tower ou outra função que não deve usar pack de gerador."
+  },
+  "counts": {
+    "production_read_only": 41,
+    "registration_only": 60,
+    "classified_non_genset": 36
+  },
+  "controllers": [
+    {
+      "model": "DSE5560",
+      "family": "DSE 55xx Mains",
+      "application": "ats",
+      "category": "legacy_mains_utility_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Auto Transfer Switch & Mains Control; não usar pack de gerador."
+    },
+    {
+      "model": "DSE7560",
+      "family": "DSE 75xx Mains",
+      "application": "ats",
+      "category": "mains_utility_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Controladora ATS/rede usada com DSE7510; não é controladora primária de gerador."
+    },
+    {
+      "model": "DSE8661",
+      "family": "DSE 86xx Mains",
+      "application": "ats",
+      "category": "two_part_mains_utility_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Two-Part ATS/Mains controller. GenComm documentado; requer pack de rede/ATS separado."
+    },
+    {
+      "model": "DSE8760",
+      "family": "DSE 87xx Mains",
+      "application": "ats",
+      "category": "rear_mounted_mains_utility_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Rear Mounted ATS/Mains controller. GenComm documentado; não usar o pack de gerador."
+    },
+    {
+      "model": "DSE8860",
+      "family": "DSE 88xx Mains",
+      "application": "ats",
+      "category": "mains_utility_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "ATS/Mains graphical controller. GenComm documentado; requer pack de rede/ATS separado."
+    },
+    {
+      "model": "DSE8660 MKII",
+      "family": "DSE 8xxx Mains",
+      "application": "ats",
+      "category": "mains_utility_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Controladora de rede/ATS; não é controladora primária de gerador."
+    },
+    {
+      "model": "DSE331",
+      "family": "DSE ATS",
+      "application": "ats",
+      "category": "ats",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Auto Transfer Switch Control Module atual; manter em pack ATS separado."
+    },
+    {
+      "model": "DSE334",
+      "family": "DSE ATS",
+      "application": "ats",
+      "category": "ats",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE335",
+      "family": "DSE ATS",
+      "application": "ats",
+      "category": "ats",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE335 MKII",
+      "family": "DSE ATS",
+      "application": "ats",
+      "category": "ats",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "ATS controller atual. Manter fora do pack de gerador; mapear em pack ATS específico."
+    },
+    {
+      "model": "DSE327",
+      "family": "DSE ATS Legacy",
+      "application": "ats",
+      "category": "legacy_ats",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Automatic Transfer Switch Controller obsoleto listado pela DSE; cadastro somente."
+    },
+    {
+      "model": "DSE330",
+      "family": "DSE ATS Legacy",
+      "application": "ats",
+      "category": "legacy_ats",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Auto Transfer Switch Control Module obsoleto; substituído por DSE331."
+    },
+    {
+      "model": "DSE332",
+      "family": "DSE ATS Legacy",
+      "application": "ats",
+      "category": "legacy_ats",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Auto Transfer Switch Control Module obsoleto; substituído por DSE334."
+    },
+    {
+      "model": "DSE333",
+      "family": "DSE ATS Legacy",
+      "application": "ats",
+      "category": "legacy_ats",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Auto Transfer Switch Control Module obsoleto; substituído por DSE334."
+    },
+    {
+      "model": "DSE530",
+      "family": "DSE ATS Legacy",
+      "application": "ats",
+      "category": "legacy_ats",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Auto Transfer Switch obsoleto; substituído por DSE334."
+    },
+    {
+      "model": "DSE556",
+      "family": "DSE ATS Legacy",
+      "application": "ats",
+      "category": "legacy_mains_utility_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Auto Transfer Switch/Mains controller obsoleto; substituído por DSE335/DSE8660 MKII conforme documentação DSE."
+    },
+    {
+      "model": "DSE705",
+      "family": "DSE ATS Legacy",
+      "application": "ats",
+      "category": "legacy_ats",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Legacy ATS controller; substituído por DSE331/DSE334."
+    },
+    {
+      "model": "DSEG8660",
+      "family": "DSE G8 Advanced Mains",
+      "application": "ats",
+      "category": "advanced_mains_utility_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Mains/Utility Controller da plataforma G8; não usar pack de gerador."
+    },
+    {
+      "model": "DSE8680",
+      "family": "DSE 8xxx Bus Tie",
+      "application": "bus_tie",
+      "category": "bus_tie_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Controladora de disjuntor de acoplamento de barras; não é controladora primária de gerador."
+    },
+    {
+      "model": "DSEG8680",
+      "family": "DSE G8 Advanced Bus",
+      "application": "bus_tie",
+      "category": "advanced_bus_tie_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Bus-Tie Controller da plataforma G8; não usar pack de gerador."
+    },
+    {
+      "model": "DSE E050",
+      "family": "DSE E-Series",
+      "application": "engine",
+      "category": "engine_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE E100",
+      "family": "DSE E-Series",
+      "application": "engine",
+      "category": "engine_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE E400",
+      "family": "DSE E-Series",
+      "application": "engine",
+      "category": "engine_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE E800",
+      "family": "DSE E-Series",
+      "application": "engine",
+      "category": "engine_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE M640",
+      "family": "DSE M-Series",
+      "application": "engine",
+      "category": "engine_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE M643",
+      "family": "DSE M-Series",
+      "application": "engine",
+      "category": "engine_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE M840",
+      "family": "DSE M-Series",
+      "application": "engine",
+      "category": "engine_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE M870",
+      "family": "DSE M-Series",
+      "application": "engine",
+      "category": "engine_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE8721",
+      "family": "DSE 87xx Display",
+      "application": "field_gateway",
+      "category": "remote_display",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Graphical Colour Remote Display. GenComm Control Keys publicado, mas não é controladora primária do gerador."
+    },
+    {
+      "model": "DSEG8007",
+      "family": "DSE G8 Display",
+      "application": "field_gateway",
+      "category": "remote_display",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "7-inch Graphical Colour Remote Overview Display; não é controladora primária."
+    },
+    {
+      "model": "DSEG8015",
+      "family": "DSE G8 Display",
+      "application": "field_gateway",
+      "category": "scada_panel_pc",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "15-inch Panel PC with DSE SCADA; não é controladora primária."
+    },
+    {
+      "model": "DSEG8021",
+      "family": "DSE G8 Display",
+      "application": "field_gateway",
+      "category": "scada_panel_pc",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "21-inch Panel PC with DSE SCADA; não é controladora primária."
+    },
+    {
+      "model": "DSEG810",
+      "family": "DSE G8 Display",
+      "application": "field_gateway",
+      "category": "scada_display",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "DSESCADA 10-inch Display; não é controladora primária."
+    },
+    {
+      "model": "DSE3110",
+      "family": "DSE 3xxx",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE4120",
+      "family": "DSE 41xx",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Auto Mains Failure Control Module obsoleto; documentação oficial disponível, sem GenComm público aceito nesta auditoria."
+    },
+    {
+      "model": "DSE4310",
+      "family": "DSE 43xx",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Auto Start Control Module. DSE mantém software/manual; sem GenComm público aceito nesta auditoria."
+    },
+    {
+      "model": "DSE4320",
+      "family": "DSE 43xx",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Auto Mains Failure Control Module. DSE mantém software/manual; sem GenComm público aceito nesta auditoria."
+    },
+    {
+      "model": "DSE4410",
+      "family": "DSE 44xx",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Auto Start Control Module obsoleto; documentação oficial disponível, sem GenComm aceito."
+    },
+    {
+      "model": "DSE4410 Single Phase",
+      "family": "DSE 44xx",
+      "application": "genset",
+      "category": "legacy_single_phase_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Versão single-phase oficial/obsoleta; cadastro somente."
+    },
+    {
+      "model": "DSE4420",
+      "family": "DSE 44xx",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Auto Mains Failure Control Module obsoleto; documentação oficial disponível, sem GenComm aceito."
+    },
+    {
+      "model": "DSE4210",
+      "family": "DSE 4xxx",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+    },
+    {
+      "model": "DSE4220",
+      "family": "DSE 4xxx",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+    },
+    {
+      "model": "DSE4510",
+      "family": "DSE 4xxx",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+    },
+    {
+      "model": "DSE4510 MKII",
+      "family": "DSE 4xxx",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE4520",
+      "family": "DSE 4xxx",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+    },
+    {
+      "model": "DSE4520 MKII",
+      "family": "DSE 4xxx",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE4610",
+      "family": "DSE 4xxx",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE4620",
+      "family": "DSE 4xxx",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE5120",
+      "family": "DSE 51xx",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Auto Mains Failure legacy; software DSE51xx oficial, mapa remoto não homologado."
+    },
+    {
+      "model": "DSE5220",
+      "family": "DSE 52xx Legacy GenComm",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse5210-gencomm-v1",
+      "notes": "GenComm v1.29 cobre explicitamente 5210/5220. Provisionamento efetivo resolvido pelo pack production dse5210-gencomm-v1."
+    },
+    {
+      "model": "DSE5320",
+      "family": "DSE 53xx",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Auto Mains Failure legacy; DSE52xx/53xx software oficial, mapa GenComm específico pendente."
+    },
+    {
+      "model": "DSE5310M",
+      "family": "DSE 53xx Marine",
+      "application": "genset",
+      "category": "marine",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Auto Start Marine Control Module com RS232/RS485; mapa GenComm model-specific ainda não aceito."
+    },
+    {
+      "model": "DSE5510M",
+      "family": "DSE 55xx Marine",
+      "application": "genset",
+      "category": "marine",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Synchronising & Load Sharing Marine Control Module; legacy, cadastro somente até mapa autoritativo."
+    },
+    {
+      "model": "DSE555",
+      "family": "DSE 5xx",
+      "application": "genset",
+      "category": "legacy_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Auto Mains Failure/Instrumentation legacy. Protocolo GenComm v1.29 cita DSE555, mas variantes Basic/Enhanced/Autosync/Load Share exigem identificação antes de provisionar."
+    },
+    {
+      "model": "DSE550 (Autosync)",
+      "family": "DSE 5xx Legacy",
+      "application": "genset",
+      "category": "legacy_gencomm_variant",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Variante legacy reconhecida; interface/protocolo específico deve ser confirmado."
+    },
+    {
+      "model": "DSE550 (Basic) (No Comms)",
+      "family": "DSE 5xx Legacy",
+      "application": "genset",
+      "category": "legacy_gencomm_variant",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Sem interface de comunicação; não provisionar."
+    },
+    {
+      "model": "DSE550 (Basic) (RS232)",
+      "family": "DSE 5xx Legacy",
+      "application": "genset",
+      "category": "legacy_gencomm_variant",
+      "supportState": "production_read_only",
+      "supportPack": "dse5xx-gencomm-v1",
+      "notes": "Variante com comunicação serial coberta pelo protocolo GenComm v1.29."
+    },
+    {
+      "model": "DSE550 (Basic) (RS485)",
+      "family": "DSE 5xx Legacy",
+      "application": "genset",
+      "category": "legacy_gencomm_variant",
+      "supportState": "production_read_only",
+      "supportPack": "dse5xx-gencomm-v1",
+      "notes": "Variante com comunicação serial coberta pelo protocolo GenComm v1.29."
+    },
+    {
+      "model": "DSE550 (Enhanced)",
+      "family": "DSE 5xx Legacy",
+      "application": "genset",
+      "category": "legacy_gencomm_variant",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Variante legacy reconhecida; interface exata deve ser confirmada antes de provisionar."
+    },
+    {
+      "model": "DSE550 (Load Share)",
+      "family": "DSE 5xx Legacy",
+      "application": "genset",
+      "category": "legacy_gencomm_variant",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Variante legacy reconhecida; interface/protocolo específico deve ser confirmado."
+    },
+    {
+      "model": "DSE555 (Autosync)",
+      "family": "DSE 5xx Legacy",
+      "application": "genset",
+      "category": "legacy_gencomm_variant",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Variante legacy reconhecida; interface/protocolo específico deve ser confirmado."
+    },
+    {
+      "model": "DSE555 (Basic)",
+      "family": "DSE 5xx Legacy",
+      "application": "genset",
+      "category": "legacy_gencomm_variant",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Variante legacy reconhecida; interface exata deve ser confirmada antes de provisionar."
+    },
+    {
+      "model": "DSE555 (Basic) (RS232)",
+      "family": "DSE 5xx Legacy",
+      "application": "genset",
+      "category": "legacy_gencomm_variant",
+      "supportState": "production_read_only",
+      "supportPack": "dse5xx-gencomm-v1",
+      "notes": "Variante com comunicação serial coberta pelo protocolo GenComm v1.29."
+    },
+    {
+      "model": "DSE555 (Basic) (RS485)",
+      "family": "DSE 5xx Legacy",
+      "application": "genset",
+      "category": "legacy_gencomm_variant",
+      "supportState": "production_read_only",
+      "supportPack": "dse5xx-gencomm-v1",
+      "notes": "Variante com comunicação serial coberta pelo protocolo GenComm v1.29."
+    },
+    {
+      "model": "DSE555 (Enhanced)",
+      "family": "DSE 5xx Legacy",
+      "application": "genset",
+      "category": "legacy_gencomm_variant",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Variante legacy reconhecida; interface exata deve ser confirmada antes de provisionar."
+    },
+    {
+      "model": "DSE555 (Load Share)",
+      "family": "DSE 5xx Legacy",
+      "application": "genset",
+      "category": "legacy_gencomm_variant",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Variante legacy reconhecida; interface/protocolo específico deve ser confirmado."
+    },
+    {
+      "model": "DSE557",
+      "family": "DSE 5xx Legacy",
+      "application": "genset",
+      "category": "legacy_paralleling_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Controlador legacy substituído por DSE8620 MKII; protocolo/mapeamento específico não homologado."
+    },
+    {
+      "model": "DSE560",
+      "family": "DSE 5xx Legacy",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Controlador legacy listado pela DSE; substituição por 45xx/46xx/61xx, cadastro somente."
+    },
+    {
+      "model": "DSE6010",
+      "family": "DSE 60xx MKI",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Auto Start MKI obsoleto. DSE mantém manual/software, sem GenComm público aceito nesta auditoria."
+    },
+    {
+      "model": "DSE6020",
+      "family": "DSE 60xx MKI",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Auto Mains Failure MKI obsoleto; cadastro somente até protocolo autoritativo."
+    },
+    {
+      "model": "DSE6110",
+      "family": "DSE 61xx MKI",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Auto Start MKI obsoleto; cadastro somente até protocolo autoritativo."
+    },
+    {
+      "model": "DSE6120",
+      "family": "DSE 61xx MKI",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Auto Mains Failure MKI obsoleto; cadastro somente até protocolo autoritativo."
+    },
+    {
+      "model": "DSE6110 MKII",
+      "family": "DSE 61xx MKII",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Geração MKII oficial/obsoleta; página pública não apresenta Gencomm Control Keys nesta auditoria."
+    },
+    {
+      "model": "DSE6120 MKII",
+      "family": "DSE 61xx MKII",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Geração MKII oficial/obsoleta; cadastro somente até mapa autoritativo."
+    },
+    {
+      "model": "DSE6610",
+      "family": "DSE 66xx Legacy",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Legacy DSE; substituído por DSE6110 MKIII, cadastro somente."
+    },
+    {
+      "model": "DSE6620",
+      "family": "DSE 66xx Legacy",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Legacy DSE; substituído por DSE6020 MKII/DSE6120 MKIII, cadastro somente."
+    },
+    {
+      "model": "DSE6010 MKII",
+      "family": "DSE 6xxx",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE6020 MKII",
+      "family": "DSE 6xxx",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE6110 MKIII",
+      "family": "DSE 6xxx",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE6120 MKIII",
+      "family": "DSE 6xxx",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE7110",
+      "family": "DSE 71xx Legacy",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Auto Start legacy. Página oficial não publica Gencomm Control Keys para esta geração; cadastro somente."
+    },
+    {
+      "model": "DSE7120",
+      "family": "DSE 71xx Legacy",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Auto Mains Failure legacy. Página oficial não publica Gencomm Control Keys para esta geração; cadastro somente."
+    },
+    {
+      "model": "DSE7510",
+      "family": "DSE 75xx",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE7520",
+      "family": "DSE 75xx",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE701",
+      "family": "DSE 7xx Legacy",
+      "application": "genset",
+      "category": "legacy_key_start",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Legacy key-switch controller; substituído por DSE3110."
+    },
+    {
+      "model": "DSE701 MKII",
+      "family": "DSE 7xx Legacy",
+      "application": "genset",
+      "category": "legacy_key_start",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Legacy key-switch controller; substituído por DSE3110."
+    },
+    {
+      "model": "DSE702",
+      "family": "DSE 7xx Legacy",
+      "application": "genset",
+      "category": "legacy_key_start",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Legacy key-switch controller; substituído por DSE3110."
+    },
+    {
+      "model": "DSE703",
+      "family": "DSE 7xx Legacy",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Legacy controller; substituição indicada pela DSE por DSE4520 MKII/DSEG4500."
+    },
+    {
+      "model": "DSE704",
+      "family": "DSE 7xx Legacy",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Legacy controller; substituição indicada pela DSE por DSE4520 MKII/DSEG4500."
+    },
+    {
+      "model": "DSE7210",
+      "family": "DSE 7xxx",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+    },
+    {
+      "model": "DSE7220",
+      "family": "DSE 7xxx",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+    },
+    {
+      "model": "DSE7310",
+      "family": "DSE 7xxx",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+    },
+    {
+      "model": "DSE7320",
+      "family": "DSE 7xxx",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+    },
+    {
+      "model": "DSE7410",
+      "family": "DSE 7xxx",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+    },
+    {
+      "model": "DSE7420",
+      "family": "DSE 7xxx",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+    },
+    {
+      "model": "DSE7450",
+      "family": "DSE 7xxx Hybrid",
+      "application": "genset",
+      "category": "dc_hybrid_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Modelo oficial DSE com Gencomm Control Keys 056-051. Requer mapa GenComm específico de DC/Hybrid antes de entrar no pack de produção."
+    },
+    {
+      "model": "DSE7110 MKII",
+      "family": "DSE 7xxx MKII",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE7120 MKII",
+      "family": "DSE 7xxx MKII",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE7310 MKII",
+      "family": "DSE 7xxx MKII",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE7320 MKII",
+      "family": "DSE 7xxx MKII",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE7410 MKII",
+      "family": "DSE 7xxx MKII",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE7420 MKII",
+      "family": "DSE 7xxx MKII",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE8710",
+      "family": "DSE 87xx",
+      "application": "genset",
+      "category": "rear_mounted_paralleling_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Rear Mounted Synchronising & Load Sharing Controller. Gencomm Control Keys oficialmente publicado; mapa read-only específico ainda deve ser formalizado."
+    },
+    {
+      "model": "DSE8610",
+      "family": "DSE 8xxx",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+    },
+    {
+      "model": "DSE8610 MKII",
+      "family": "DSE 8xxx",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE8620",
+      "family": "DSE 8xxx",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+    },
+    {
+      "model": "DSE8620 MKII",
+      "family": "DSE 8xxx",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE8810",
+      "family": "DSE 8xxx",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "Modelo oficial DSE8810; GenComm documentado. Telemetria somente leitura até validação física."
+    },
+    {
+      "model": "DSE8910",
+      "family": "DSE 8xxx",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE8920",
+      "family": "DSE 8xxx",
+      "application": "genset",
+      "category": "paralleling_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSEG4500",
+      "family": "DSE G-Series",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSEG4501",
+      "family": "DSE G-Series",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSEG7300",
+      "family": "DSE G-Series",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSEG7400",
+      "family": "DSE G-Series",
+      "application": "genset",
+      "category": "single_genset",
+      "supportState": "production_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSEG8600",
+      "family": "DSE G8 Advanced",
+      "application": "genset",
+      "category": "advanced_paralleling_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Parallel Genset Controller with Integral Heater. Suporta single-set/multi-set/mains/group applications; integração remota específica G8/DSE SCADA, sem GenComm homologado no RC."
+    },
+    {
+      "model": "DSEG8900",
+      "family": "DSE G8 Advanced",
+      "application": "genset",
+      "category": "advanced_paralleling_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "7-inch Colour Parallel Genset Controller. Integração específica G8/DSE SCADA; sem mapa GenComm homologado no RC."
+    },
+    {
+      "model": "DSE501",
+      "family": "DSE Legacy",
+      "application": "genset",
+      "category": "legacy",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE5110",
+      "family": "DSE Legacy",
+      "application": "genset",
+      "category": "legacy",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE5210",
+      "family": "DSE Legacy",
+      "application": "genset",
+      "category": "legacy",
+      "supportState": "production_read_only",
+      "supportPack": "dse5210-gencomm-v1",
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE5310",
+      "family": "DSE Legacy",
+      "application": "genset",
+      "category": "legacy",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE5510",
+      "family": "DSE Legacy",
+      "application": "genset",
+      "category": "legacy",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE5520",
+      "family": "DSE Legacy",
+      "application": "genset",
+      "category": "legacy",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE601D",
+      "family": "DSE Legacy",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Legacy part listado pela DSE; cadastro somente até protocolo autoritativo."
+    },
+    {
+      "model": "DSE602D",
+      "family": "DSE Legacy",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Legacy part listado pela DSE; cadastro somente até protocolo autoritativo."
+    },
+    {
+      "model": "DSE602DS",
+      "family": "DSE Legacy",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Legacy part listado pela DSE; cadastro somente até protocolo autoritativo."
+    },
+    {
+      "model": "DSE603",
+      "family": "DSE Legacy",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Legacy part listado pela DSE; cadastro somente."
+    },
+    {
+      "model": "DSE604",
+      "family": "DSE Legacy",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Legacy part listado pela DSE; cadastro somente."
+    },
+    {
+      "model": "DSE606",
+      "family": "DSE Legacy",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Legacy part listado pela DSE; cadastro somente."
+    },
+    {
+      "model": "DSE607",
+      "family": "DSE Legacy",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Legacy part listado pela DSE; cadastro somente."
+    },
+    {
+      "model": "DSE710",
+      "family": "DSE Legacy",
+      "application": "genset",
+      "category": "legacy",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE720",
+      "family": "DSE Legacy",
+      "application": "genset",
+      "category": "legacy",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE402",
+      "family": "DSE Legacy 4xx",
+      "application": "genset",
+      "category": "legacy_key_start",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Waterproof Key Start Control Module. Produto oficial/obsoleto; sem GenComm aceito para provisionamento remoto."
+    },
+    {
+      "model": "DSE4110",
+      "family": "DSE Legacy 4xxx",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Auto Start Control Module oficial/obsoleto. Página pública não apresenta Gencomm Control Keys; cadastro somente."
+    },
+    {
+      "model": "DSE550",
+      "family": "DSE Legacy 5xx",
+      "application": "genset",
+      "category": "legacy_paralleling_genset",
+      "supportState": "registration_only",
+      "supportPack": null,
+      "notes": "Auto Start Synchronising/Load Share Control Module. Software Link500/810; sem mapa GenComm aceito nesta auditoria."
+    },
+    {
+      "model": "DSE L400",
+      "family": "DSE L-Series",
+      "application": "light_tower",
+      "category": "light_tower",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE L401 MKII",
+      "family": "DSE L-Series",
+      "application": "light_tower",
+      "category": "light_tower",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+    },
+    {
+      "model": "DSE7570",
+      "family": "DSE 75xx Sync",
+      "application": "sync_lock",
+      "category": "sync_lock_controller",
+      "supportState": "classified_non_genset",
+      "supportPack": null,
+      "notes": "Controladora remota Sync Lock; não é controladora primária de gerador."
+    }
+  ]
+}

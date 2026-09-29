@@ -41,3 +41,18 @@ Documentação oficial de control keys é evidência de que a função existe no
 A varredura oficial também encontrou DSE402, DSE4110, DSE550, DSE6010/DSE6020, DSE6110/DSE6120, DSE6110/DSE6120 MKII, DSE7110/DSE7120 e variantes marine DSE5310M/DSE5510M. Esses produtos entram no catálogo como inventory-only quando a documentação pública não comprova o mapa GenComm necessário para provisionamento.
 
 O DSE5220 é a exceção desta rodada: o protocolo GenComm v1.29 usado pelo pack legacy cita explicitamente DSE5210 e DSE5220. Por isso o `dse5210-gencomm-v1` passa a reconhecer DSE5220 como alias e continua estritamente read-only.
+
+## Rodada final — cobertura ampla DSE
+
+A auditoria passou a manter uma matriz automática em `controllers/catalog/DSE_COVERAGE_MATRIX.json`.
+
+Estados possíveis:
+- `production_read_only`: há Controller Pack de produção somente leitura.
+- `registration_only`: modelo reconhecido, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático.
+- `classified_non_genset`: ATS, mains, bus-tie, display, engine, light-tower ou outra função fora do pack de gerador.
+
+A linha G8 atual foi adicionada ao catálogo: DSEG8600, DSEG8660, DSEG8680, DSEG8900, DSEG8007, DSEG810, DSEG8015 e DSEG8021.
+
+A matriz oficial de obsolescência DSE também foi usada para incorporar gerações legacy 5xx, 6xx, 7xx e ATS antigas sem promover comunicação inexistente.
+
+Foi criado `dse5xx-gencomm-v1` para as variantes DSE550/DSE555 explicitamente RS232/RS485. O pack usa apenas um subconjunto conservador de instrumentação comum do GenComm v1.29 e não materializa comandos.

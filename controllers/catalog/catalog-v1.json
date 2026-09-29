@@ -555,7 +555,10 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -565,7 +568,10 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -575,7 +581,10 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -585,7 +594,10 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -595,7 +607,10 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -605,7 +620,10 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -615,7 +633,10 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -625,7 +646,10 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -635,7 +659,10 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -645,7 +672,10 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -655,7 +685,10 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -665,7 +698,10 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -675,7 +711,10 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -685,7 +724,10 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -695,7 +737,10 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -705,7 +750,10 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -715,7 +763,10 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -725,7 +776,10 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -735,7 +789,9 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
     },
     {
       "manufacturer": "DSE",
@@ -745,7 +801,10 @@
       "category": "paralleling_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -755,7 +814,10 @@
       "category": "paralleling_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -765,7 +827,10 @@
       "category": "paralleling_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -775,7 +840,10 @@
       "category": "paralleling_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -785,7 +853,9 @@
       "category": "mains_utility_controller",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Controladora de rede/ATS; não é controladora primária de gerador."
+      "notes": "Controladora de rede/ATS; não é controladora primária de gerador.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
     },
     {
       "manufacturer": "DSE",
@@ -795,7 +865,9 @@
       "category": "bus_tie_controller",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Controladora de disjuntor de acoplamento de barras; não é controladora primária de gerador."
+      "notes": "Controladora de disjuntor de acoplamento de barras; não é controladora primária de gerador.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
     },
     {
       "manufacturer": "DSE",
@@ -805,7 +877,10 @@
       "category": "paralleling_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Modelo oficial DSE8810; GenComm documentado. Telemetria somente leitura até validação física."
+      "notes": "Modelo oficial DSE8810; GenComm documentado. Telemetria somente leitura até validação física.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -815,7 +890,9 @@
       "category": "paralleling_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
     },
     {
       "manufacturer": "DSE",
@@ -825,7 +902,9 @@
       "category": "paralleling_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
     },
     {
       "manufacturer": "DSE",
@@ -835,7 +914,9 @@
       "category": "mains_utility_controller",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Controladora ATS/rede usada com DSE7510; não é controladora primária de gerador."
+      "notes": "Controladora ATS/rede usada com DSE7510; não é controladora primária de gerador.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
     },
     {
       "manufacturer": "DSE",
@@ -845,7 +926,9 @@
       "category": "sync_lock_controller",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Controladora remota Sync Lock; não é controladora primária de gerador."
+      "notes": "Controladora remota Sync Lock; não é controladora primária de gerador.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
     },
     {
       "manufacturer": "DSE",
@@ -855,7 +938,9 @@
       "category": "ats",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
     },
     {
       "manufacturer": "DSE",
@@ -865,7 +950,9 @@
       "category": "ats",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
     },
     {
       "manufacturer": "DSE",
@@ -875,7 +962,9 @@
       "category": "engine_controller",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
     },
     {
       "manufacturer": "DSE",
@@ -885,7 +974,9 @@
       "category": "engine_controller",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
     },
     {
       "manufacturer": "DSE",
@@ -895,7 +986,9 @@
       "category": "engine_controller",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
     },
     {
       "manufacturer": "DSE",
@@ -905,7 +998,9 @@
       "category": "engine_controller",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
     },
     {
       "manufacturer": "DSE",
@@ -915,7 +1010,9 @@
       "category": "engine_controller",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
     },
     {
       "manufacturer": "DSE",
@@ -925,7 +1022,9 @@
       "category": "engine_controller",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
     },
     {
       "manufacturer": "DSE",
@@ -935,7 +1034,9 @@
       "category": "engine_controller",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
     },
     {
       "manufacturer": "DSE",
@@ -945,7 +1046,9 @@
       "category": "engine_controller",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
     },
     {
       "manufacturer": "DSE",
@@ -955,7 +1058,9 @@
       "category": "light_tower",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
     },
     {
       "manufacturer": "DSE",
@@ -965,7 +1070,9 @@
       "category": "light_tower",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
     },
     {
       "manufacturer": "DSE",
@@ -975,7 +1082,9 @@
       "category": "legacy",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
     },
     {
       "manufacturer": "DSE",
@@ -985,7 +1094,9 @@
       "category": "legacy",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
     },
     {
       "manufacturer": "DSE",
@@ -995,7 +1106,9 @@
       "category": "legacy",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
     },
     {
       "manufacturer": "DSE",
@@ -1005,7 +1118,10 @@
       "category": "legacy",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportPack": "dse5210-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -1015,7 +1131,9 @@
       "category": "legacy",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
     },
     {
       "manufacturer": "DSE",
@@ -1025,7 +1143,9 @@
       "category": "legacy",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
     },
     {
       "manufacturer": "DSE",
@@ -1035,7 +1155,9 @@
       "category": "legacy",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
     },
     {
       "manufacturer": "DSE",
@@ -1045,7 +1167,9 @@
       "category": "legacy",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial."
+      "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
     },
     {
       "manufacturer": "DSE",
@@ -1055,7 +1179,10 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -1065,7 +1192,10 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -1075,7 +1205,10 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -1085,7 +1218,10 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -1095,7 +1231,10 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -1105,7 +1244,10 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -1115,7 +1257,10 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -1125,7 +1270,10 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -1135,7 +1283,10 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -1145,7 +1296,10 @@
       "category": "single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -1155,7 +1309,10 @@
       "category": "paralleling_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -1165,7 +1322,10 @@
       "category": "paralleling_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only."
+      "notes": "GenComm documentado pela DSE. Provisionamento efetivo é resolvido pelo Controller Pack read-only.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -1175,7 +1335,9 @@
       "category": "dc_hybrid_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Modelo oficial DSE com Gencomm Control Keys 056-051. Requer mapa GenComm específico de DC/Hybrid antes de entrar no pack de produção."
+      "notes": "Modelo oficial DSE com Gencomm Control Keys 056-051. Requer mapa GenComm específico de DC/Hybrid antes de entrar no pack de produção.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
     },
     {
       "manufacturer": "DSE",
@@ -1185,7 +1347,9 @@
       "category": "rear_mounted_paralleling_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Rear Mounted Synchronising & Load Sharing Controller. Gencomm Control Keys oficialmente publicado; mapa read-only específico ainda deve ser formalizado."
+      "notes": "Rear Mounted Synchronising & Load Sharing Controller. Gencomm Control Keys oficialmente publicado; mapa read-only específico ainda deve ser formalizado.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
     },
     {
       "manufacturer": "DSE",
@@ -1195,7 +1359,9 @@
       "category": "rear_mounted_mains_utility_controller",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Rear Mounted ATS/Mains controller. GenComm documentado; não usar o pack de gerador."
+      "notes": "Rear Mounted ATS/Mains controller. GenComm documentado; não usar o pack de gerador.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
     },
     {
       "manufacturer": "DSE",
@@ -1205,7 +1371,9 @@
       "category": "mains_utility_controller",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "ATS/Mains graphical controller. GenComm documentado; requer pack de rede/ATS separado."
+      "notes": "ATS/Mains graphical controller. GenComm documentado; requer pack de rede/ATS separado.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
     },
     {
       "manufacturer": "DSE",
@@ -1215,7 +1383,9 @@
       "category": "two_part_mains_utility_controller",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Two-Part ATS/Mains controller. GenComm documentado; requer pack de rede/ATS separado."
+      "notes": "Two-Part ATS/Mains controller. GenComm documentado; requer pack de rede/ATS separado.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
     },
     {
       "manufacturer": "DSE",
@@ -1225,7 +1395,9 @@
       "category": "ats",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "ATS controller atual. Manter fora do pack de gerador; mapear em pack ATS específico."
+      "notes": "ATS controller atual. Manter fora do pack de gerador; mapear em pack ATS específico.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
     },
     {
       "manufacturer": "DSE",
@@ -1235,7 +1407,9 @@
       "category": "legacy_key_start",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Waterproof Key Start Control Module. Produto oficial/obsoleto; sem GenComm aceito para provisionamento remoto."
+      "notes": "Waterproof Key Start Control Module. Produto oficial/obsoleto; sem GenComm aceito para provisionamento remoto.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
     },
     {
       "manufacturer": "DSE",
@@ -1245,7 +1419,9 @@
       "category": "legacy_single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Auto Start Control Module oficial/obsoleto. Página pública não apresenta Gencomm Control Keys; cadastro somente."
+      "notes": "Auto Start Control Module oficial/obsoleto. Página pública não apresenta Gencomm Control Keys; cadastro somente.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
     },
     {
       "manufacturer": "DSE",
@@ -1255,7 +1431,9 @@
       "category": "legacy_paralleling_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Auto Start Synchronising/Load Share Control Module. Software Link500/810; sem mapa GenComm aceito nesta auditoria."
+      "notes": "Auto Start Synchronising/Load Share Control Module. Software Link500/810; sem mapa GenComm aceito nesta auditoria.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
     },
     {
       "manufacturer": "DSE",
@@ -1265,7 +1443,10 @@
       "category": "legacy_single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "GenComm v1.29 cobre explicitamente 5210/5220. Provisionamento efetivo resolvido pelo pack production dse5210-gencomm-v1."
+      "notes": "GenComm v1.29 cobre explicitamente 5210/5220. Provisionamento efetivo resolvido pelo pack production dse5210-gencomm-v1.",
+      "supportPack": "dse5210-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
     },
     {
       "manufacturer": "DSE",
@@ -1275,7 +1456,9 @@
       "category": "marine",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Auto Start Marine Control Module com RS232/RS485; mapa GenComm model-specific ainda não aceito."
+      "notes": "Auto Start Marine Control Module com RS232/RS485; mapa GenComm model-specific ainda não aceito.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
     },
     {
       "manufacturer": "DSE",
@@ -1285,7 +1468,9 @@
       "category": "marine",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Synchronising & Load Sharing Marine Control Module; legacy, cadastro somente até mapa autoritativo."
+      "notes": "Synchronising & Load Sharing Marine Control Module; legacy, cadastro somente até mapa autoritativo.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
     },
     {
       "manufacturer": "DSE",
@@ -1295,7 +1480,9 @@
       "category": "legacy_single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Auto Start MKI obsoleto. DSE mantém manual/software, sem GenComm público aceito nesta auditoria."
+      "notes": "Auto Start MKI obsoleto. DSE mantém manual/software, sem GenComm público aceito nesta auditoria.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
     },
     {
       "manufacturer": "DSE",
@@ -1305,7 +1492,9 @@
       "category": "legacy_single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Auto Mains Failure MKI obsoleto; cadastro somente até protocolo autoritativo."
+      "notes": "Auto Mains Failure MKI obsoleto; cadastro somente até protocolo autoritativo.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
     },
     {
       "manufacturer": "DSE",
@@ -1315,7 +1504,9 @@
       "category": "legacy_single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Auto Start MKI obsoleto; cadastro somente até protocolo autoritativo."
+      "notes": "Auto Start MKI obsoleto; cadastro somente até protocolo autoritativo.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
     },
     {
       "manufacturer": "DSE",
@@ -1325,7 +1516,9 @@
       "category": "legacy_single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Auto Mains Failure MKI obsoleto; cadastro somente até protocolo autoritativo."
+      "notes": "Auto Mains Failure MKI obsoleto; cadastro somente até protocolo autoritativo.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
     },
     {
       "manufacturer": "DSE",
@@ -1335,7 +1528,9 @@
       "category": "legacy_single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Geração MKII oficial/obsoleta; página pública não apresenta Gencomm Control Keys nesta auditoria."
+      "notes": "Geração MKII oficial/obsoleta; página pública não apresenta Gencomm Control Keys nesta auditoria.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
     },
     {
       "manufacturer": "DSE",
@@ -1345,7 +1540,9 @@
       "category": "legacy_single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Geração MKII oficial/obsoleta; cadastro somente até mapa autoritativo."
+      "notes": "Geração MKII oficial/obsoleta; cadastro somente até mapa autoritativo.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
     },
     {
       "manufacturer": "DSE",
@@ -1355,7 +1552,9 @@
       "category": "legacy_single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Auto Start legacy. Página oficial não publica Gencomm Control Keys para esta geração; cadastro somente."
+      "notes": "Auto Start legacy. Página oficial não publica Gencomm Control Keys para esta geração; cadastro somente.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
     },
     {
       "manufacturer": "DSE",
@@ -1365,7 +1564,673 @@
       "category": "legacy_single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Auto Mains Failure legacy. Página oficial não publica Gencomm Control Keys para esta geração; cadastro somente."
+      "notes": "Auto Mains Failure legacy. Página oficial não publica Gencomm Control Keys para esta geração; cadastro somente.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 43xx",
+      "model": "DSE4310",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Auto Start Control Module. DSE mantém software/manual; sem GenComm público aceito nesta auditoria.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 43xx",
+      "model": "DSE4320",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Auto Mains Failure Control Module. DSE mantém software/manual; sem GenComm público aceito nesta auditoria.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 44xx",
+      "model": "DSE4410",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Auto Start Control Module obsoleto; documentação oficial disponível, sem GenComm aceito.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 44xx",
+      "model": "DSE4420",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Auto Mains Failure Control Module obsoleto; documentação oficial disponível, sem GenComm aceito.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 44xx",
+      "model": "DSE4410 Single Phase",
+      "application": "genset",
+      "category": "legacy_single_phase_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Versão single-phase oficial/obsoleta; cadastro somente.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 51xx",
+      "model": "DSE5120",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Auto Mains Failure legacy; software DSE51xx oficial, mapa remoto não homologado.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 53xx",
+      "model": "DSE5320",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Auto Mains Failure legacy; DSE52xx/53xx software oficial, mapa GenComm específico pendente.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 5xx",
+      "model": "DSE555",
+      "application": "genset",
+      "category": "legacy_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Auto Mains Failure/Instrumentation legacy. Protocolo GenComm v1.29 cita DSE555, mas variantes Basic/Enhanced/Autosync/Load Share exigem identificação antes de provisionar.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 55xx Mains",
+      "model": "DSE5560",
+      "application": "ats",
+      "category": "legacy_mains_utility_controller",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Auto Transfer Switch & Mains Control; não usar pack de gerador.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 87xx Display",
+      "model": "DSE8721",
+      "application": "field_gateway",
+      "category": "remote_display",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Graphical Colour Remote Display. GenComm Control Keys publicado, mas não é controladora primária do gerador.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE ATS Legacy",
+      "model": "DSE327",
+      "application": "ats",
+      "category": "legacy_ats",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Automatic Transfer Switch Controller obsoleto listado pela DSE; cadastro somente.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE ATS Legacy",
+      "model": "DSE330",
+      "application": "ats",
+      "category": "legacy_ats",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Auto Transfer Switch Control Module obsoleto; substituído por DSE331.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE ATS",
+      "model": "DSE331",
+      "application": "ats",
+      "category": "ats",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Auto Transfer Switch Control Module atual; manter em pack ATS separado.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE ATS Legacy",
+      "model": "DSE332",
+      "application": "ats",
+      "category": "legacy_ats",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Auto Transfer Switch Control Module obsoleto; substituído por DSE334.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE ATS Legacy",
+      "model": "DSE333",
+      "application": "ats",
+      "category": "legacy_ats",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Auto Transfer Switch Control Module obsoleto; substituído por DSE334.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE ATS Legacy",
+      "model": "DSE530",
+      "application": "ats",
+      "category": "legacy_ats",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Auto Transfer Switch obsoleto; substituído por DSE334.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE ATS Legacy",
+      "model": "DSE556",
+      "application": "ats",
+      "category": "legacy_mains_utility_controller",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Auto Transfer Switch/Mains controller obsoleto; substituído por DSE335/DSE8660 MKII conforme documentação DSE.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 5xx Legacy",
+      "model": "DSE557",
+      "application": "genset",
+      "category": "legacy_paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Controlador legacy substituído por DSE8620 MKII; protocolo/mapeamento específico não homologado.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 5xx Legacy",
+      "model": "DSE560",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Controlador legacy listado pela DSE; substituição por 45xx/46xx/61xx, cadastro somente.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE Legacy",
+      "model": "DSE601D",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Legacy part listado pela DSE; cadastro somente até protocolo autoritativo.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE Legacy",
+      "model": "DSE602D",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Legacy part listado pela DSE; cadastro somente até protocolo autoritativo.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE Legacy",
+      "model": "DSE602DS",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Legacy part listado pela DSE; cadastro somente até protocolo autoritativo.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE Legacy",
+      "model": "DSE603",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Legacy part listado pela DSE; cadastro somente.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE Legacy",
+      "model": "DSE604",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Legacy part listado pela DSE; cadastro somente.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE Legacy",
+      "model": "DSE606",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Legacy part listado pela DSE; cadastro somente.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE Legacy",
+      "model": "DSE607",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Legacy part listado pela DSE; cadastro somente.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 66xx Legacy",
+      "model": "DSE6610",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Legacy DSE; substituído por DSE6110 MKIII, cadastro somente.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 66xx Legacy",
+      "model": "DSE6620",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Legacy DSE; substituído por DSE6020 MKII/DSE6120 MKIII, cadastro somente.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 7xx Legacy",
+      "model": "DSE701",
+      "application": "genset",
+      "category": "legacy_key_start",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Legacy key-switch controller; substituído por DSE3110.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 7xx Legacy",
+      "model": "DSE701 MKII",
+      "application": "genset",
+      "category": "legacy_key_start",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Legacy key-switch controller; substituído por DSE3110.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 7xx Legacy",
+      "model": "DSE702",
+      "application": "genset",
+      "category": "legacy_key_start",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Legacy key-switch controller; substituído por DSE3110.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 7xx Legacy",
+      "model": "DSE703",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Legacy controller; substituição indicada pela DSE por DSE4520 MKII/DSEG4500.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 7xx Legacy",
+      "model": "DSE704",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Legacy controller; substituição indicada pela DSE por DSE4520 MKII/DSEG4500.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE ATS Legacy",
+      "model": "DSE705",
+      "application": "ats",
+      "category": "legacy_ats",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Legacy ATS controller; substituído por DSE331/DSE334.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE G8 Advanced",
+      "model": "DSEG8600",
+      "application": "genset",
+      "category": "advanced_paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Parallel Genset Controller with Integral Heater. Suporta single-set/multi-set/mains/group applications; integração remota específica G8/DSE SCADA, sem GenComm homologado no RC.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE G8 Advanced",
+      "model": "DSEG8900",
+      "application": "genset",
+      "category": "advanced_paralleling_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "7-inch Colour Parallel Genset Controller. Integração específica G8/DSE SCADA; sem mapa GenComm homologado no RC.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE G8 Advanced Mains",
+      "model": "DSEG8660",
+      "application": "ats",
+      "category": "advanced_mains_utility_controller",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Mains/Utility Controller da plataforma G8; não usar pack de gerador.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE G8 Advanced Bus",
+      "model": "DSEG8680",
+      "application": "bus_tie",
+      "category": "advanced_bus_tie_controller",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Bus-Tie Controller da plataforma G8; não usar pack de gerador.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE G8 Display",
+      "model": "DSEG8007",
+      "application": "field_gateway",
+      "category": "remote_display",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "7-inch Graphical Colour Remote Overview Display; não é controladora primária.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE G8 Display",
+      "model": "DSEG810",
+      "application": "field_gateway",
+      "category": "scada_display",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "DSESCADA 10-inch Display; não é controladora primária.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE G8 Display",
+      "model": "DSEG8015",
+      "application": "field_gateway",
+      "category": "scada_panel_pc",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "15-inch Panel PC with DSE SCADA; não é controladora primária.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE G8 Display",
+      "model": "DSEG8021",
+      "application": "field_gateway",
+      "category": "scada_panel_pc",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "21-inch Panel PC with DSE SCADA; não é controladora primária.",
+      "supportState": "classified_non_genset",
+      "supportNotes": "Produto DSE classificado, porém não usa o pack de controladora primária de gerador."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 5xx Legacy",
+      "model": "DSE550 (Basic) (No Comms)",
+      "application": "genset",
+      "category": "legacy_gencomm_variant",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Sem interface de comunicação; não provisionar.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 5xx Legacy",
+      "model": "DSE550 (Basic) (RS232)",
+      "application": "genset",
+      "category": "legacy_gencomm_variant",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Variante com comunicação serial coberta pelo protocolo GenComm v1.29.",
+      "supportPack": "dse5xx-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 5xx Legacy",
+      "model": "DSE550 (Basic) (RS485)",
+      "application": "genset",
+      "category": "legacy_gencomm_variant",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Variante com comunicação serial coberta pelo protocolo GenComm v1.29.",
+      "supportPack": "dse5xx-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 5xx Legacy",
+      "model": "DSE550 (Enhanced)",
+      "application": "genset",
+      "category": "legacy_gencomm_variant",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Variante legacy reconhecida; interface exata deve ser confirmada antes de provisionar.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 5xx Legacy",
+      "model": "DSE550 (Autosync)",
+      "application": "genset",
+      "category": "legacy_gencomm_variant",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Variante legacy reconhecida; interface/protocolo específico deve ser confirmado.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 5xx Legacy",
+      "model": "DSE550 (Load Share)",
+      "application": "genset",
+      "category": "legacy_gencomm_variant",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Variante legacy reconhecida; interface/protocolo específico deve ser confirmado.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 5xx Legacy",
+      "model": "DSE555 (Basic)",
+      "application": "genset",
+      "category": "legacy_gencomm_variant",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Variante legacy reconhecida; interface exata deve ser confirmada antes de provisionar.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 5xx Legacy",
+      "model": "DSE555 (Basic) (RS232)",
+      "application": "genset",
+      "category": "legacy_gencomm_variant",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Variante com comunicação serial coberta pelo protocolo GenComm v1.29.",
+      "supportPack": "dse5xx-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 5xx Legacy",
+      "model": "DSE555 (Basic) (RS485)",
+      "application": "genset",
+      "category": "legacy_gencomm_variant",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Variante com comunicação serial coberta pelo protocolo GenComm v1.29.",
+      "supportPack": "dse5xx-gencomm-v1",
+      "supportState": "production_read_only",
+      "supportNotes": "Cobertura de telemetria read-only por Controller Pack de produção; comandos permanecem sujeitos aos gates do pack/firmware."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 5xx Legacy",
+      "model": "DSE555 (Enhanced)",
+      "application": "genset",
+      "category": "legacy_gencomm_variant",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Variante legacy reconhecida; interface exata deve ser confirmada antes de provisionar.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 5xx Legacy",
+      "model": "DSE555 (Autosync)",
+      "application": "genset",
+      "category": "legacy_gencomm_variant",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Variante legacy reconhecida; interface/protocolo específico deve ser confirmado.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 5xx Legacy",
+      "model": "DSE555 (Load Share)",
+      "application": "genset",
+      "category": "legacy_gencomm_variant",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Variante legacy reconhecida; interface/protocolo específico deve ser confirmado.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+    },
+    {
+      "manufacturer": "DSE",
+      "family": "DSE 41xx",
+      "model": "DSE4120",
+      "application": "genset",
+      "category": "legacy_single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Auto Mains Failure Control Module obsoleto; documentação oficial disponível, sem GenComm público aceito nesta auditoria.",
+      "supportState": "registration_only",
+      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
     }
   ]
 }
