@@ -290,6 +290,17 @@ async def validate_ig4_production_gate():
             "enabled": True,
         }
     )
+    domain_store.sync_legacy_generators()
+    asset = next(
+        item for item in domain_store.list_assets()
+        if item.get("legacy_generator_id") == ig4["id"]
+    )
+    controller = next(
+        item for item in domain_store.list_controllers(asset["id"])
+        if item.get("model") == "IG4 200"
+    )
+    domain_store.update_controller(controller["id"], {"firmware": "2.1.0.15"}, actor="test")
+
     bindings_path = Path(os.environ["RC_RAPID_BINDINGS"])
     bindings = json.loads(bindings_path.read_text(encoding="utf-8"))
     bindings.append(
@@ -302,27 +313,42 @@ async def validate_ig4_production_gate():
             "modbus_unit": 4,
             "rapid_line_num": 103,
             "rapid_device_num": 206,
+            "status": "field_validated",
         }
     )
     bindings_path.write_text(json.dumps(bindings), encoding="utf-8")
 
     caps = rapid._effective_capabilities(ig4, "online", True)
-    assert caps["start"] is False
-    assert caps["stop"] is False
+    assert caps["start"] is True, caps
+    assert caps["stop"] is False, caps
+    pack, contract = control.command_contract(ig4, "start")
+    assert pack["model"] == "IG4 200"
+    assert contract["executor"] == "comap_privileged"
+    assert "2.1.0.15" in pack["firmware"]["tested"]
 
-    # Variáveis LAB não podem mais promover capability no caminho de produção.
+    resolved, port, unit = bridge_runtime.resolve_ig4_bound_device(ig4["id"], 206)
+    assert resolved["id"] == ig4["id"]
+    assert port == 15003
+    assert unit == 4
+
+    # O capability é restrito aos tags explicitamente autorizados no pack.
+    not_allowlisted = {**ig4, "tag": "GEN999"}
+    blocked_caps = rapid._effective_capabilities(not_allowlisted, "online", True)
+    assert blocked_caps["start"] is False, blocked_caps
+    try:
+        control.command_contract(not_allowlisted, "start")
+    except ValueError as exc:
+        assert "allowlist" in str(exc).lower(), exc
+    else:
+        raise AssertionError("IG4 fora da allowlist recebeu contrato START")
+
+    # Variáveis LAB não ampliam nem substituem a autorização production.
     os.environ["RC_ENABLE_IG4_LAB_CONTROL"] = "1"
     os.environ["RC_IG4_LAB_ALLOWLIST"] = "GEN204"
     try:
         caps = rapid._effective_capabilities(ig4, "online", True)
-        assert caps["start"] is False
+        assert caps["start"] is True
         assert caps["stop"] is False
-        try:
-            await control.send_homologated_command(ig4, "start")
-        except ValueError as exc:
-            assert "homologado" in str(exc) or "contrato" in str(exc) or "comando" in str(exc).lower()
-        else:
-            raise AssertionError("IG4 sem contrato production aceitou START")
     finally:
         os.environ.pop("RC_ENABLE_IG4_LAB_CONTROL", None)
         os.environ.pop("RC_IG4_LAB_ALLOWLIST", None)
