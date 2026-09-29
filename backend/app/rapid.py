@@ -478,6 +478,15 @@ def _effective_capabilities(generator, status: str, binding_present: bool) -> di
     field_validated = bool(production_pack and pack.get("status") == "field_validated")
     online = status == "online"
     commands = dict((pack or {}).get("commands") or {})
+    allowed_tags = {
+        str(item).strip().upper()
+        for item in ((pack or {}).get("commandAllowlistTags") or [])
+        if str(item).strip()
+    }
+    command_target_allowed = (
+        not allowed_tags
+        or str(generator.get("tag") or "").strip().upper() in allowed_tags
+    )
 
     result = {
         "telemetry": bool(production_pack and binding_present and declared.get("telemetry")),
@@ -499,6 +508,7 @@ def _effective_capabilities(generator, status: str, binding_present: bool) -> di
             field_validated
             and online
             and binding_present
+            and command_target_allowed
             and declared.get(action)
             and isinstance(commands.get(action), dict)
         )
