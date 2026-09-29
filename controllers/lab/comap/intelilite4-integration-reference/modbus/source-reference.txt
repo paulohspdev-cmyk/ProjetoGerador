@@ -1,0 +1,29 @@
+# InteliLite 4 integration reference (LAB only)
+# Factual register/object table cross-referenced from Victron GX integration documentation.
+# IMPORTANT: Victron documents that mappings may require adjustment in InteliConfig and are not universally valid.
+# ComAp official InteliLite 4 pages confirm remote communication/InteliConfig but do not expose a public universal server map.
+# Sources:
+# https://www.victronenergy.com/media/pg/Cerbo_GX/pt/appendix.html
+# https://www.comap-control.com/products/controllers/single-gen-set-controllers/intelilite/intelilite-4-amf-25/
+# No write/coil definitions are materialized in this LAB pack.
+01004 10123 rpm int16 count=1 scale=1 unit=rpm
+01006 9152 coolant_temperature int16 count=1 scale=1 unit=°C
+01008 9151 oil_pressure int16 count=1 scale=0.1 unit=bar
+01013 8206 run_hours int32 count=2 scale=0.1 unit=h
+01020 8202 power_kw int16 count=1 scale=1 unit=kW
+01036 8210 frequency uint16 count=1 scale=0.1 unit=Hz
+01037 8192 voltage_l1 uint16 count=1 scale=1 unit=V
+01038 8193 voltage_l2 uint16 count=1 scale=1 unit=V
+01039 8194 voltage_l3 uint16 count=1 scale=1 unit=V
+01043 8198 current_l1 uint16 count=1 scale=1 unit=A
+01044 8199 current_l2 uint16 count=1 scale=1 unit=A
+01045 8200 current_l3 uint16 count=1 scale=1 unit=A
+01053 8213 battery_voltage int16 count=1 scale=0.1 unit=V
+01055 9153 fuel_level int16 count=1 scale=1 unit=%
+01263 8205 genset_kwh int32 count=2 scale=1 unit=kWh
+01298 9244 engine_state_raw uint16 count=1 scale=1
+01301 12944 connection_type_raw uint16 count=1 scale=1
+01307 24501 id_string_raw string count=16 scale=1
+01323 24339 firmware_version_raw string count=8 scale=1
+01382 9887 controller_mode_raw uint16 count=1 scale=1
+03000 8637 genset_name_raw string count=8 scale=1

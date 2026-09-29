@@ -1,0 +1,122 @@
+{
+  "schema": 3,
+  "manufacturer": "ComAp",
+  "family": "InteliGen",
+  "model": "InteliGen 500 G2",
+  "aliases": [],
+  "status": "documented",
+  "application": "genset",
+  "category": "paralleling_genset_protocol_reference",
+  "protocols": [
+    "modbus",
+    "modbus_tcp"
+  ],
+  "transports": [
+    "modbus_tcp_direct",
+    "reverse_tcp",
+    "rtu_over_tcp",
+    "modbus_rtu_serial"
+  ],
+  "capabilities": {
+    "telemetry": true,
+    "start": false,
+    "stop": false,
+    "auto": false,
+    "manual": false,
+    "test": false,
+    "mcb_open": false,
+    "mcb_close": false,
+    "gcb_open": false,
+    "gcb_close": false,
+    "paralleling": false
+  },
+  "validatedTelemetry": [],
+  "documentedTelemetry": [],
+  "documentedProtocol": {
+    "configurableMap": true,
+    "mapExportTool": "InteliConfig",
+    "areas": {
+      "binaries": "0000-0999",
+      "values": "1000-2999",
+      "setpoints": "3000-3999",
+      "reserved": "4200-7167"
+    },
+    "readFunctions": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "writeFunctions": [
+      5,
+      6,
+      16
+    ]
+  },
+  "homologationCandidates": {
+    "start": {
+      "documented": true,
+      "mechanism": "reserved_command",
+      "commandCode": 1,
+      "argument": "0x01FE0000",
+      "expectedReturn": "0x000001FF",
+      "fieldState": "pending"
+    },
+    "stop": {
+      "documented": true,
+      "mechanism": "reserved_command",
+      "commandCode": 1,
+      "argument": "0x02FD0000",
+      "expectedReturn": "0x000002FE",
+      "fieldState": "pending"
+    },
+    "gcb_close": {
+      "documented": true,
+      "mechanism": "reserved_command",
+      "commandCode": 2,
+      "argument": "0x11EF0000",
+      "expectedReturn": "0x000011F0",
+      "fieldState": "pending"
+    },
+    "gcb_open": {
+      "documented": true,
+      "mechanism": "reserved_command",
+      "commandCode": 2,
+      "argument": "0x11F00000",
+      "expectedReturn": "0x000011F1",
+      "fieldState": "pending"
+    },
+    "mcb_close": {
+      "documented": true,
+      "mechanism": "reserved_command",
+      "commandCode": 2,
+      "argument": "0x12EE0000",
+      "expectedReturn": "0x000012EF",
+      "fieldState": "pending"
+    },
+    "mcb_open": {
+      "documented": true,
+      "mechanism": "reserved_command",
+      "commandCode": 2,
+      "argument": "0x12EF0000",
+      "expectedReturn": "0x000012F0",
+      "fieldState": "pending"
+    },
+    "remote_start_stop": {
+      "documented": true,
+      "mechanism": "coil",
+      "address": 4700,
+      "fieldState": "pending"
+    }
+  },
+  "validation": {
+    "documentation": [
+      "ComAp official InteliGen 500 G2 product page",
+      "InteliGen 500 G2 Global Guide: configurable Modbus map/export via InteliConfig and reserved command mechanism"
+    ],
+    "lab": false,
+    "field": false,
+    "commandSafety": "Protocol reference only. No write executor/capability is enabled and no universal telemetry map is materialized."
+  },
+  "notes": "LAB protocol profile. Capture the actual InteliConfig Modbus export from each deployed archive before creating a production telemetry pack."
+}

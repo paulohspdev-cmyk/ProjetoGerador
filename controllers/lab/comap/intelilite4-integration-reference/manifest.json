@@ -1,0 +1,347 @@
+{
+  "schema": 3,
+  "manufacturer": "ComAp",
+  "family": "InteliLite 4",
+  "model": "InteliLite 4 Integration Reference",
+  "aliases": [
+    "InteliLite 4 AMF 8",
+    "InteliLite 4 AMF 9",
+    "InteliLite 4 AMF 20",
+    "InteliLite 4 AMF 25",
+    "InteliLite 4 MRS 16"
+  ],
+  "status": "documented",
+  "application": "genset",
+  "category": "single_genset_integration_reference",
+  "protocols": [
+    "modbus"
+  ],
+  "transports": [
+    "modbus_tcp_direct",
+    "reverse_tcp",
+    "rtu_over_tcp",
+    "modbus_rtu_serial"
+  ],
+  "capabilities": {
+    "telemetry": true,
+    "start": false,
+    "stop": false,
+    "auto": false,
+    "manual": false,
+    "test": false,
+    "mcb_open": false,
+    "mcb_close": false,
+    "gcb_open": false,
+    "gcb_close": false,
+    "paralleling": false
+  },
+  "validatedTelemetry": [],
+  "documentedTelemetry": [
+    "rpm",
+    "coolant_temperature",
+    "oil_pressure",
+    "run_hours",
+    "power_kw",
+    "frequency",
+    "voltage_l1",
+    "voltage_l2",
+    "voltage_l3",
+    "current_l1",
+    "current_l2",
+    "current_l3",
+    "battery_voltage",
+    "fuel_level",
+    "genset_kwh",
+    "engine_state_raw",
+    "connection_type_raw",
+    "id_string_raw",
+    "firmware_version_raw",
+    "controller_mode_raw",
+    "genset_name_raw"
+  ],
+  "metricUnits": {
+    "rpm": "rpm",
+    "coolant_temperature": "°C",
+    "oil_pressure": "bar",
+    "run_hours": "h",
+    "power_kw": "kW",
+    "frequency": "Hz",
+    "voltage_l1": "V",
+    "voltage_l2": "V",
+    "voltage_l3": "V",
+    "current_l1": "A",
+    "current_l2": "A",
+    "current_l3": "A",
+    "battery_voltage": "V",
+    "fuel_level": "%",
+    "genset_kwh": "kWh"
+  },
+  "mapping": {
+    "kind": "modbus_register_export",
+    "readOnly": true,
+    "sourceFile": "modbus/source-reference.txt",
+    "sourceSha256": "1bd49c72453e08cbc9cb2b0688c5d839b568b98ed43cbee36e1706808fbf785f",
+    "readFunctions": [
+      3
+    ],
+    "registers": {
+      "rpm": {
+        "address": 1004,
+        "count": 1,
+        "type": "int16",
+        "scale": 1,
+        "object": 10123,
+        "sourceName": "RPM",
+        "readFunctions": [
+          3
+        ],
+        "unit": "rpm"
+      },
+      "coolant_temperature": {
+        "address": 1006,
+        "count": 1,
+        "type": "int16",
+        "scale": 1,
+        "object": 9152,
+        "sourceName": "T-Coolant",
+        "readFunctions": [
+          3
+        ],
+        "unit": "°C"
+      },
+      "oil_pressure": {
+        "address": 1008,
+        "count": 1,
+        "type": "int16",
+        "scale": 0.1,
+        "object": 9151,
+        "sourceName": "P-Oil",
+        "readFunctions": [
+          3
+        ],
+        "unit": "bar"
+      },
+      "run_hours": {
+        "address": 1013,
+        "count": 2,
+        "type": "int32",
+        "scale": 0.1,
+        "object": 8206,
+        "sourceName": "Running Hours",
+        "readFunctions": [
+          3
+        ],
+        "unit": "h"
+      },
+      "power_kw": {
+        "address": 1020,
+        "count": 1,
+        "type": "int16",
+        "scale": 1,
+        "object": 8202,
+        "sourceName": "Load P",
+        "readFunctions": [
+          3
+        ],
+        "unit": "kW"
+      },
+      "frequency": {
+        "address": 1036,
+        "count": 1,
+        "type": "uint16",
+        "scale": 0.1,
+        "object": 8210,
+        "sourceName": "Generator Frequency",
+        "readFunctions": [
+          3
+        ],
+        "unit": "Hz"
+      },
+      "voltage_l1": {
+        "address": 1037,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "object": 8192,
+        "sourceName": "Generator Voltage L1-N",
+        "readFunctions": [
+          3
+        ],
+        "unit": "V"
+      },
+      "voltage_l2": {
+        "address": 1038,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "object": 8193,
+        "sourceName": "Generator Voltage L2-N",
+        "readFunctions": [
+          3
+        ],
+        "unit": "V"
+      },
+      "voltage_l3": {
+        "address": 1039,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "object": 8194,
+        "sourceName": "Generator Voltage L3-N",
+        "readFunctions": [
+          3
+        ],
+        "unit": "V"
+      },
+      "current_l1": {
+        "address": 1043,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "object": 8198,
+        "sourceName": "Load Current L1",
+        "readFunctions": [
+          3
+        ],
+        "unit": "A"
+      },
+      "current_l2": {
+        "address": 1044,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "object": 8199,
+        "sourceName": "Load Current L2",
+        "readFunctions": [
+          3
+        ],
+        "unit": "A"
+      },
+      "current_l3": {
+        "address": 1045,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "object": 8200,
+        "sourceName": "Load Current L3",
+        "readFunctions": [
+          3
+        ],
+        "unit": "A"
+      },
+      "battery_voltage": {
+        "address": 1053,
+        "count": 1,
+        "type": "int16",
+        "scale": 0.1,
+        "object": 8213,
+        "sourceName": "Battery Volts",
+        "readFunctions": [
+          3
+        ],
+        "unit": "V"
+      },
+      "fuel_level": {
+        "address": 1055,
+        "count": 1,
+        "type": "int16",
+        "scale": 1,
+        "object": 9153,
+        "sourceName": "Fuel Level",
+        "readFunctions": [
+          3
+        ],
+        "unit": "%"
+      },
+      "genset_kwh": {
+        "address": 1263,
+        "count": 2,
+        "type": "int32",
+        "scale": 1,
+        "object": 8205,
+        "sourceName": "Generator kWh",
+        "readFunctions": [
+          3
+        ],
+        "unit": "kWh"
+      },
+      "engine_state_raw": {
+        "address": 1298,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "object": 9244,
+        "sourceName": "Engine State",
+        "readFunctions": [
+          3
+        ]
+      },
+      "connection_type_raw": {
+        "address": 1301,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "object": 12944,
+        "sourceName": "Connection Type",
+        "readFunctions": [
+          3
+        ]
+      },
+      "id_string_raw": {
+        "address": 1307,
+        "count": 16,
+        "type": "string",
+        "scale": 1,
+        "object": 24501,
+        "sourceName": "ID String",
+        "readFunctions": [
+          3
+        ]
+      },
+      "firmware_version_raw": {
+        "address": 1323,
+        "count": 8,
+        "type": "string",
+        "scale": 1,
+        "object": 24339,
+        "sourceName": "FW Version",
+        "readFunctions": [
+          3
+        ]
+      },
+      "controller_mode_raw": {
+        "address": 1382,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "object": 9887,
+        "sourceName": "Controller Mode",
+        "readFunctions": [
+          3
+        ]
+      },
+      "genset_name_raw": {
+        "address": 3000,
+        "count": 8,
+        "type": "string",
+        "scale": 1,
+        "object": 8637,
+        "sourceName": "Gen-Set Name",
+        "readFunctions": [
+          3
+        ]
+      }
+    }
+  },
+  "validation": {
+    "documentation": [
+      "ComAp InteliLite 4 AMF25 official product/resource page",
+      "Victron GX Appendix: Modbus holding registers for ComAp InteliLite 4",
+      "Victron integration note: mappings can require InteliConfig adjustment"
+    ],
+    "lab": false,
+    "field": false,
+    "commandSafety": "Somente leitura documental. Coil 4700 citado pela integração externa NÃO é materializado nem habilitado."
+  },
+  "notes": "LAB only. Mapeamento de referência de integração, não universal. Antes de promover um modelo real, capturar/exportar o mapa InteliConfig ou validar identidade + registradores em campo."
+}

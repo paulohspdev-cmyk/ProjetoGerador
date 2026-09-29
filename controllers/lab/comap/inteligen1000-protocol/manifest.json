@@ -1,0 +1,79 @@
+{
+  "schema": 3,
+  "manufacturer": "ComAp",
+  "family": "InteliGen",
+  "model": "InteliGen 1000",
+  "aliases": [
+    "InteliGen 1000 SC"
+  ],
+  "status": "documented",
+  "application": "genset",
+  "category": "paralleling_genset_protocol_reference",
+  "protocols": [
+    "modbus",
+    "modbus_tcp"
+  ],
+  "transports": [
+    "modbus_tcp_direct",
+    "modbus_rtu_serial"
+  ],
+  "capabilities": {
+    "telemetry": true,
+    "start": false,
+    "stop": false,
+    "auto": false,
+    "manual": false,
+    "test": false,
+    "mcb_open": false,
+    "mcb_close": false,
+    "gcb_open": false,
+    "gcb_close": false,
+    "paralleling": false
+  },
+  "validatedTelemetry": [],
+  "documentedTelemetry": [],
+  "documentedProtocol": {
+    "configurableMap": true,
+    "mapExportTool": "InteliConfig Generate Cfg Image (MODBUS)",
+    "areas": {
+      "binaries": "0000-0999",
+      "values": "1000-2999",
+      "setpoints": "3000-3999",
+      "reserved": "4200-7167"
+    },
+    "readFunctions": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "writeFunctions": [
+      6,
+      16
+    ]
+  },
+  "homologationCandidates": {
+    "start": {
+      "documented": false,
+      "fieldState": "reserved_command_requires_exact_generation_review"
+    },
+    "stop": {
+      "documented": false,
+      "fieldState": "reserved_command_requires_exact_generation_review"
+    },
+    "paralleling": {
+      "documented": false,
+      "fieldState": "application_sequence_requires_archive_specific_validation"
+    }
+  },
+  "validation": {
+    "documentation": [
+      "ComAp official InteliGen 1000 / InteliGen 1000 SC product pages",
+      "InteliGen 1000 Global Guide: Modbus map depends on configuration and is exportable from InteliConfig"
+    ],
+    "lab": false,
+    "field": false,
+    "commandSafety": "Protocol reference only. No write executor/capability is enabled."
+  },
+  "notes": "LAB protocol profile for InteliGen 1000 family. InteliGen 1000 SC is retained as an alias for protocol research only; its application semantics differ and production mapping must use its own archive."
+}
