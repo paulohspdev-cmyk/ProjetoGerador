@@ -39,8 +39,10 @@ export function VerticalControls({
 }) {
   const activeMode = modeKnown ? modeShort(gen.mode) : "";
 
+  const canOff = Boolean(canOperate && modeEnabled(gen, "off"));
   const canManual = Boolean(canOperate && modeEnabled(gen, "manual"));
   const canAuto = Boolean(canOperate && modeEnabled(gen, "auto"));
+  const canTest = Boolean(canOperate && modeEnabled(gen, "test"));
 
   if (dse) {
     return (
@@ -48,15 +50,22 @@ export function VerticalControls({
         <div className="vref-mode-row is-dse">
           <button
             type="button"
+            disabled={!canOff || busy !== null}
+            aria-pressed={activeMode === "OFF"}
+            aria-label="OFF"
+            className={cn(activeMode === "OFF" && "is-active")}
+            title={canOff ? "Comando OFF homologado para esta controladora" : "Comando ainda não homologado"}
+            onClick={() => canOff && onCommand("off")}
+          >
+            {busy === "off" ? "..." : "OFF"}
+          </button>
+          <button
+            type="button"
             className={cn("vref-dse-hand", activeMode === "MAN" && "is-active")}
             disabled={!canManual || busy !== null}
             aria-pressed={activeMode === "MAN"}
             aria-label="Manual"
-            title={
-              canManual
-                ? "Comando Manual homologado para esta controladora"
-                : "Comando ainda não homologado para esta controladora"
-            }
+            title={canManual ? "Comando Manual homologado para esta controladora" : "Comando ainda não homologado"}
             onClick={() => canManual && onCommand("manual")}
           >
             {busy === "manual" ? "..." : <Hand aria-hidden="true" />}
@@ -67,11 +76,7 @@ export function VerticalControls({
             disabled={!canAuto || busy !== null}
             aria-pressed={activeMode === "AUT"}
             aria-label="Automático"
-            title={
-              canAuto
-                ? "Comando Automático homologado para esta controladora"
-                : "Comando ainda não homologado para esta controladora"
-            }
+            title={canAuto ? "Comando Automático homologado para esta controladora" : "Comando ainda não homologado"}
             onClick={() => canAuto && onCommand("auto")}
           >
             {busy === "auto" ? (
@@ -83,6 +88,17 @@ export function VerticalControls({
                 <i aria-hidden="true" />
               </>
             )}
+          </button>
+          <button
+            type="button"
+            disabled={!canTest || busy !== null}
+            aria-pressed={activeMode === "TEST"}
+            aria-label="TEST"
+            className={cn(activeMode === "TEST" && "is-active")}
+            title={canTest ? "Comando TEST homologado para esta controladora" : "Comando ainda não homologado"}
+            onClick={() => canTest && onCommand("test")}
+          >
+            {busy === "test" ? "..." : "TEST"}
           </button>
         </div>
       </section>
