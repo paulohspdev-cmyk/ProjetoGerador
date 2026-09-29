@@ -196,7 +196,7 @@ echo "Commit: ${COMMIT}"
 # do seu runtime/dependências mudou; alterações relevantes continuam forçando
 # restart normalmente.
 CHANGED_FILES="$(git -c safe.directory="${BASE}" -C "${BASE}" diff --name-only "${PREV_HEAD}" "${COMMIT}")"
-if ! grep -Eq '^(backend/app/(bridge|bridge_runtime|config|controller_library|db|domain_store|ig4_lab|production_guard|traffic_store)\.py|controllers/|rapid/|infrastructure/systemd/rc-geradores-bridge\.service|ops/configure_rapid_network\.sh)' <<<"${CHANGED_FILES}"; then
+if ! grep -Eq '^(backend/app/(bridge|bridge_runtime|config|controller_library|db|domain_store|ig4_lab|production_guard|traffic_store)\.py|rapid/|infrastructure/systemd/rc-geradores-bridge\.service|ops/configure_rapid_network\.sh)' <<<"${CHANGED_FILES}"; then
   BRIDGE_RESTART_NEEDED=0
   SWAP_SERVICES=(rc-geradores-provision rc-geradores-worker rc-geradores-api rc-geradores-frontend)
   log "BRIDGE PRESERVADA — RELEASE SEM ALTERAÇÃO NO RUNTIME DE COMUNICAÇÃO"
