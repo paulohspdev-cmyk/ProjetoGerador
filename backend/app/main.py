@@ -399,7 +399,7 @@ async def generator_command(generator_id: str, action: str, payload: CommandRequ
         raise HTTPException(status_code=409, detail="Gerador desabilitado")
     try:
         result = await send_homologated_command(generator, action)
-    except (ValueError, ConnectionError, TimeoutError) as exc:
+    except (ValueError, PermissionError, ConnectionError, TimeoutError) as exc:
         db.add_audit(actor(user), f"command_{action}_failed", "generator", generator["id"], str(exc))
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except Exception as exc:
