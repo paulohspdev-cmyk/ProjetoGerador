@@ -106,6 +106,10 @@ function formatKw(value: number | null) {
   if (value == null || !Number.isFinite(value)) return "N/D";
   return `${Math.round(value).toLocaleString("pt-BR")} kW`;
 }
+function formatVolts(value: number | null) {
+  if (value == null || !Number.isFinite(value)) return "N/D";
+  return `${Math.round(value).toLocaleString("pt-BR")} V`;
+}
 
 /** Fluxo lento dentro do fio (sem bolinhas). */
 const FlowEnergy = memo(function FlowEnergy({ d, active }: { d: string; active: boolean }) {
@@ -118,6 +122,10 @@ export function VerticalPowerFlow({
   mainsPresent,
   mainsKnown,
   mainsFrequency,
+  busKnown,
+  busPresent,
+  busFrequency,
+  busVoltage,
   generatorFrequency,
   generatorPowerKw,
   mainsPowerKw: _mainsPowerKw,
@@ -141,6 +149,10 @@ export function VerticalPowerFlow({
   mainsPresent: boolean;
   mainsKnown: boolean;
   mainsFrequency: number | null;
+  busKnown: boolean;
+  busPresent: boolean;
+  busFrequency: number | null;
+  busVoltage: number | null;
   generatorFrequency: number | null;
   generatorPowerKw: number | null;
   mainsPowerKw: number | null;
@@ -162,14 +174,25 @@ export function VerticalPowerFlow({
 }) {
   const mainsToBus = hasMainsSource && mainsKnown && mainsPresent && mcbKnown && mcb;
   const genToBus = generatorKnown && generatorPresent && gcbKnown && gcb;
-  const busLive = mainsToBus || genToBus;
+  const busLive = busPresent || mainsToBus || genToBus;
   const mainsSideLive = Boolean(hasMainsSource && mainsKnown && mainsPresent);
   const genSideLive = Boolean(generatorKnown && generatorPresent);
   const isolatedGeneratorLoad = genToBus && !mainsToBus;
   const powerBlockLabel =
     !hasMainsSource || isolatedGeneratorLoad || generatorPowerKw == null ? "CARGA" : "POT. GER.";
   const powerBlockKw = generatorPowerKw;
-  const sourceLabel = genToBus ? "GERADOR" : mainsToBus ? "REDE" : "—";
+  const busStateLabel = !busKnown
+    ? "BARRAMENTO N/D"
+    : busPresent
+      ? `BARRAMENTO ${formatHz(busFrequency)} · ${formatVolts(busVoltage)}`
+      : "BARRAMENTO SEM TENSÃO";
+  const sourceLabel = genToBus
+    ? `GERADOR → ${busStateLabel}`
+    : mainsToBus
+      ? `REDE → ${busStateLabel}`
+      : busPresent
+        ? busStateLabel
+        : "SEM FONTE CONFIRMADA";
 
   const mcbBusy = busy === "mcb_open" || busy === "mcb_close";
   const gcbBusy = busy === "gcb_open" || busy === "gcb_close";
@@ -241,7 +264,7 @@ export function VerticalPowerFlow({
             </>
           ) : null}
 
-          {/* Barramento + LOAD */}
+          {/* Barramento: grandeza própria, nunca confundida com REDE. */}
           <circle cx="112" cy={y} r="5" className={cn("vref-junction", busLive && "is-live")} />
           <path d={`M112 ${y} V20`} className="vref-wire" />
           <path d={`M112 ${y} V20`} className={cn("vref-wire-live", busLive && "is-live")} />
