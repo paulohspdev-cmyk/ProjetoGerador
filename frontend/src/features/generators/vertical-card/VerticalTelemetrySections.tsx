@@ -116,6 +116,7 @@ export function VerticalEngine({
 export type ElectricalRow = {
   label: string;
   mains: string;
+  bus: string;
   generator: string;
 };
 
@@ -148,7 +149,8 @@ export function VerticalTables({
     <div className="vref-measurements">
       <div className="vref-table-heading">
         <h4>ELECTRICAL</h4>
-        <span>MAINS</span>
+        <span>REDE</span>
+        <span>BUS</span>
         <span>GEN</span>
       </div>
       <div className="vref-data-table">
@@ -156,6 +158,7 @@ export function VerticalTables({
           <div key={row.label} className="vref-data-row">
             <span>{row.label}</span>
             <b>{row.mains}</b>
+            <b className="bus">{row.bus}</b>
             <b className="generator">{row.generator}</b>
           </div>
         ))}
