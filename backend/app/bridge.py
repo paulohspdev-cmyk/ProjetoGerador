@@ -109,6 +109,13 @@ def resolve_ig200(device_num):
         "execute app.bridge_runtime"
     )
 
+def resolve_ig4(generator_id, device_num):
+    """Fail-closed: bridge_runtime injeta o resolver IG4 production."""
+    raise RuntimeError(
+        f"resolver IG4 canônico não instalado para {generator_id}/{int(device_num or 0)}; "
+        "execute app.bridge_runtime"
+    )
+
 
 class BridgePort:
     def __init__(self, remote_port):
@@ -399,34 +406,100 @@ async def handle_control(reader, writer):
     response = {"ok": False, "error": "requisição inválida"}
     generator = None
     action = ""
+    controller_kind = ""
     try:
         raw = await asyncio.wait_for(reader.readline(), 5)
         if not raw or len(raw) > 4096:
             raise ValueError("requisição vazia ou grande demais")
         req = json.loads(raw.decode("utf-8"))
-        if not ENABLE_IG200_CONTROL:
-            raise PermissionError("controle IG200 desabilitado; execute o instalador de controle")
         if req.get("confirm") != "REMOTE_CONTROL_CONFIRMED":
             raise PermissionError("confirmação explícita ausente")
         action = str(req.get("action", "")).strip().lower()
-        if action not in ("start", "stop"):
-            raise ValueError("somente start e stop são permitidos")
-        generator, port, unit = resolve_ig200(int(req.get("device") or 0))
-        bridge = bridges.get(port)
-        if bridge is None:
-            raise ConnectionError(f"ponte da porta {port} não está ativa")
-        if bridge.remote_writer is None:
-            raise ConnectionError(f"modem da porta {port} está desconectado")
-        result = await bridge.ig200_command(unit, action, password=req.get("password"))
-        response = {**result, "device": int(req.get("device")), "generator": generator.get("tag"), "port": port, "unit": unit}
-        level = "WARN" if result.get("accepted") else "ERROR"
-        db.add_event(generator["id"], level, f"Controle remoto IG200 {action.upper()}: {result.get('reason', '')}; retorno={result.get('return_value', '-')}; rpm={result.get('rpm_before', '-')}")
-        log(f"controle IG200 {action}: gerador={generator.get('tag')} unit={unit} aceito={result.get('accepted')} retorno={result.get('return_value')}")
+        controller_kind = str(req.get("controller") or "ig200").strip().lower()
+
+        if controller_kind == "ig4":
+            if action != "start":
+                raise ValueError("IG4 production permite somente START neste release")
+            generator, port, unit = resolve_ig4(
+                req.get("generator_id"),
+                int(req.get("device") or 0),
+            )
+            port_bridge = bridges.get(port)
+            if port_bridge is None or not hasattr(port_bridge, "ig4_lab_start"):
+                raise ConnectionError(f"ponte IG4 RTU da porta {port} não está ativa")
+            if port_bridge.remote_writer is None or port_bridge.remote_writer.is_closing():
+                raise ConnectionError(f"modem da porta {port} está desconectado")
+            result = await port_bridge.ig4_lab_start(unit)
+            if result.get("accepted") and not result.get("running_confirmed"):
+                result = {
+                    **result,
+                    "ok": False,
+                    "accepted": False,
+                    "reason": (
+                        "START aceito pelo IG4, mas Running/RPM não confirmou a partida; "
+                        "o comando não é considerado concluído"
+                    ),
+                }
+            response = {
+                **result,
+                "device": int(req.get("device") or 0),
+                "generator": generator.get("tag"),
+                "port": port,
+                "unit": unit,
+                "lab": False,
+            }
+            level = "WARN" if result.get("accepted") else "ERROR"
+            db.add_event(
+                generator["id"],
+                level,
+                "Controle remoto IG4 START: "
+                f"{result.get('reason', '')}; retorno={result.get('return_value', '-')}; "
+                f"running_confirmed={result.get('running_confirmed', False)}",
+            )
+            log(
+                f"controle IG4 production START: gerador={generator.get('tag')} "
+                f"unit={unit} aceito={result.get('accepted')} "
+                f"running={result.get('running_confirmed')}"
+            )
+        else:
+            if not ENABLE_IG200_CONTROL:
+                raise PermissionError("controle IG200 desabilitado; execute o instalador de controle")
+            if action not in ("start", "stop"):
+                raise ValueError("somente start e stop são permitidos")
+            generator, port, unit = resolve_ig200(int(req.get("device") or 0))
+            port_bridge = bridges.get(port)
+            if port_bridge is None:
+                raise ConnectionError(f"ponte da porta {port} não está ativa")
+            if port_bridge.remote_writer is None:
+                raise ConnectionError(f"modem da porta {port} está desconectado")
+            result = await port_bridge.ig200_command(unit, action, password=req.get("password"))
+            response = {
+                **result,
+                "device": int(req.get("device")),
+                "generator": generator.get("tag"),
+                "port": port,
+                "unit": unit,
+            }
+            level = "WARN" if result.get("accepted") else "ERROR"
+            db.add_event(
+                generator["id"],
+                level,
+                f"Controle remoto IG200 {action.upper()}: {result.get('reason', '')}; "
+                f"retorno={result.get('return_value', '-')}; rpm={result.get('rpm_before', '-')}",
+            )
+            log(
+                f"controle IG200 {action}: gerador={generator.get('tag')} unit={unit} "
+                f"aceito={result.get('accepted')} retorno={result.get('return_value')}"
+            )
     except Exception as exc:
         response = {"ok": False, "accepted": False, "error": str(exc), "action": action}
         if generator:
             try:
-                db.add_event(generator["id"], "ERROR", f"Controle remoto IG200 falhou: {exc}")
+                db.add_event(
+                    generator["id"],
+                    "ERROR",
+                    f"Controle remoto {controller_kind.upper() or 'industrial'} falhou: {exc}",
+                )
             except Exception:
                 pass
         log(f"controle privilegiado recusado/falhou: {exc}")
@@ -441,7 +514,6 @@ async def handle_control(reader, writer):
             await writer.wait_closed()
         except Exception:
             pass
-
 
 async def start_control_server():
     global control_server
