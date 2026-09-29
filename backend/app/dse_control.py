@@ -19,6 +19,9 @@ AVAILABILITY_COUNT = 8
 MODE_ADDRESS = 772
 STATUS_FLAGS_ADDRESS = 774
 RPM_ADDRESS = 1030
+STATE_MACHINE_TIMER_ADDRESS = 778
+STATE_MACHINE_TIMER_COUNT = 3
+NAMED_ALARM_HIGH_FUEL_ADDRESS = 154 * 256 + 10
 WARNING_STATUS_MASK = 0x0400
 BLOCKING_STATUS_MASK = 0x3800
 KEY_STOP = 35700
@@ -158,6 +161,16 @@ async def send_command(generator: dict, action: str) -> dict:
         status_flags = (await client.read_holding(STATUS_FLAGS_ADDRESS, 1))[0]
         rpm_before = (await client.read_holding(RPM_ADDRESS, 1))[0]
         availability = await client.read_holding(AVAILABILITY_ADDRESS, AVAILABILITY_COUNT)
+        timers_before = (
+            await client.read_holding(STATE_MACHINE_TIMER_ADDRESS, STATE_MACHINE_TIMER_COUNT)
+            if action == "start"
+            else [0, 0, 0]
+        )
+        try:
+            named_alarm_word = (await client.read_holding(NAMED_ALARM_HIGH_FUEL_ADDRESS, 1))[0]
+            high_fuel_warning = ((named_alarm_word >> 4) & 0xF) == 2
+        except Exception:
+            high_fuel_warning = False
         if all(reg in {0, 0xFFFF} for reg in availability):
             raise PermissionError("Página 16 sem funções de controle declaradas; escrita bloqueada")
         if action == "start" and rpm_before > MAX_START_RPM:
@@ -186,13 +199,22 @@ async def send_command(generator: dict, action: str) -> dict:
         )
         mode_after = mode
         rpm_after = rpm_before
+        timers_after = list(timers_before)
+        start_pending = False
         accepted = False
         while True:
             await asyncio.sleep(0.25)
             mode_after = (await client.read_holding(MODE_ADDRESS, 1))[0]
             rpm_after = (await client.read_holding(RPM_ADDRESS, 1))[0]
             if action == "start":
-                accepted = rpm_after > MAX_START_RPM
+                timers_after = await client.read_holding(
+                    STATE_MACHINE_TIMER_ADDRESS, STATE_MACHINE_TIMER_COUNT
+                )
+                start_pending = key == KEY_REMOTE_START_AUTO and any(
+                    int(after) > 0 and int(after) != int(before)
+                    for before, after in zip(timers_before, timers_after)
+                )
+                accepted = rpm_after > MAX_START_RPM or start_pending
             elif action == "stop":
                 accepted = rpm_after <= MAX_START_RPM
             else:
@@ -202,7 +224,13 @@ async def send_command(generator: dict, action: str) -> dict:
 
     warning_active = bool(status_flags & WARNING_STATUS_MASK)
     if accepted:
-        if action == "start":
+        if action == "start" and start_pending and rpm_after <= MAX_START_RPM:
+            active_timer = max((int(value) for value in timers_after), default=0)
+            reason = (
+                "Pedido START aceito pela DSE; temporização interna ativa "
+                f"({active_timer}s), aguardando partida/RPM"
+            )
+        elif action == "start":
             reason = f"START confirmado pela telemetria: {rpm_after} rpm"
         elif action == "stop":
             reason = f"STOP confirmado pela telemetria: {rpm_after} rpm"
@@ -229,6 +257,11 @@ async def send_command(generator: dict, action: str) -> dict:
         "availability": availability,
         "status_flags": status_flags,
         "warning_active": warning_active,
+        "warnings": ["High fuel level"] if high_fuel_warning else [],
+        "state_machine_timers_before": timers_before,
+        "state_machine_timers_after": timers_after,
+        "start_pending": start_pending,
+        "running_confirmed": action == "start" and rpm_after > MAX_START_RPM,
         "lab": False,
     }
     try:
