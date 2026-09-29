@@ -124,6 +124,58 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
   await expect(dse.getByRole("button", { name: "Automático" })).toBeVisible();
 });
 
+test("um único gerador permanece na primeira coluna à esquerda", async ({ page }) => {
+  await page.setViewportSize({ width: 1600, height: 900 });
+  await login(page);
+
+  expect([201, 409]).toContain(
+    await createGenerator(page, {
+      tag: "VERTSINGLELEFT",
+      controller: "ComAp InteliGen 200",
+      listenPort: 15121,
+      modbusUnit: 75,
+      rapidDeviceNum: 395,
+    }),
+  );
+
+  await page.goto("/p/geradores");
+  await openGeneratorTools(page);
+  await page.locator('input[aria-label="Buscar gerador"]:visible').first().fill("VERTSINGLELEFT");
+
+  await expect(page.locator(".vref-card-frame")).toHaveCount(1);
+  await expect(page.locator(".vref-card-frame").first()).toBeVisible();
+
+  const layout = await page.evaluate(() => {
+    const grid = document.querySelector<HTMLElement>(".generator-reference-card-grid");
+    const frame = grid?.querySelector<HTMLElement>(".vref-card-frame");
+    if (!grid || !frame) throw new Error("grade/card vertical não encontrado");
+
+    const gridRect = grid.getBoundingClientRect();
+    const frameRect = frame.getBoundingClientRect();
+    const style = getComputedStyle(grid);
+    const columns = Number.parseInt(style.getPropertyValue("--vref-columns").trim(), 10);
+    const gap = Number.parseFloat(style.getPropertyValue("--vref-gap")) || 0;
+    const padding = Number.parseFloat(style.getPropertyValue("--vref-padding")) || 0;
+    const expectedWidth =
+      (grid.clientWidth - padding * 2 - gap * Math.max(0, columns - 1)) / columns;
+
+    return {
+      columns,
+      gridLeft: gridRect.left,
+      gridWidth: gridRect.width,
+      frameLeft: frameRect.left,
+      frameWidth: frameRect.width,
+      expectedWidth,
+      padding,
+    };
+  });
+
+  expect(layout.columns).toBeGreaterThan(1);
+  expect(Math.abs(layout.frameLeft - (layout.gridLeft + layout.padding))).toBeLessThanOrEqual(2);
+  expect(Math.abs(layout.frameWidth - layout.expectedWidth)).toBeLessThanOrEqual(2);
+  expect(layout.frameWidth).toBeLessThan(layout.gridWidth / 2);
+});
+
 test("vertical sem rede remove a concessionária do fluxo em ComAp e DSE", async ({ page }) => {
   await login(page);
 
