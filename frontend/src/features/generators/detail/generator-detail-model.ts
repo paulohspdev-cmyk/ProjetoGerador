@@ -9,6 +9,15 @@ import {
   nominalPowerNumber,
 } from "../generator-metrics";
 import { hasPositiveMeasurement, isPositiveMeasurement } from "../generator-presence";
+import {
+  captionOf,
+  joinReadings,
+  livePhases,
+  reading,
+  type DetailSensor,
+  type ElectricalReadings,
+  type PhaseChart,
+} from "./generator-detail-format";
 
 export type ControllerFamily = "COMAP" | "DSE" | "UNKNOWN";
 export type BusEnergySource =
@@ -22,28 +31,6 @@ export type ModeControl = {
 };
 
 export type DetailParameter = { label: string; value: string };
-export type DetailSensor = {
-  label: string;
-  value: number;
-  unit: string;
-  min: number;
-  max: number | null;
-  digits: number;
-  color: string;
-};
-export type ElectricalReadings = {
-  title: string;
-  voltages: string;
-  currents: string;
-  frequency: string;
-  power: string;
-  powerFactor: string;
-};
-export type PhaseChart = {
-  title: string;
-  phases: { name: string; value: number }[];
-  caption: string;
-};
 
 export type GeneratorDetailModel = ReturnType<typeof buildGeneratorDetailModel>;
 
@@ -75,19 +62,6 @@ function formatAutonomy(minutes: number | null) {
   return `${hours} h ${String(rest).padStart(2, "0")} min`;
 }
 
-function reading(value: number | null, unit: string, digits: number) {
-  if (value == null || !Number.isFinite(value)) return "";
-  const formatted = value.toLocaleString("pt-BR", {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  });
-  return unit ? `${formatted} ${unit}` : formatted;
-}
-
-function joinReadings(parts: string[]) {
-  const text = parts.filter(Boolean).join(" · ");
-  return text || "N/D";
-}
 
 function statusText(gen: Generator, rotating: boolean | null) {
   if (gen.status === "nao_configurado") return "Não configurado";
@@ -322,12 +296,6 @@ export function buildGeneratorDetailModel(gen: Generator) {
         }
       : null,
   ].filter((item): item is DetailSensor => item != null);
-  const livePhases = (pairs: [string, number | null][]) =>
-    pairs
-      .filter((pair): pair is [string, number] => pair[1] != null && pair[1] > 0)
-      .map(([name, value]) => ({ name, value }));
-  const captionOf = (...parts: Array<string | false>) =>
-    parts.filter((part): part is string => Boolean(part) && part !== "N/D").join(" · ");
   const phaseCharts: PhaseChart[] = [];
   if (mainsPresent) {
     const phases = livePhases([
