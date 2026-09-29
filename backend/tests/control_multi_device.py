@@ -212,6 +212,69 @@ async def validate_disconnect_backoff():
     assert snapshot["unitHealth"]["2"]["backoffRemainingSeconds"] > 0
 
 
+def validate_dse4520_production_contract():
+    dse = db.create_generator(
+        {
+            "tag": "GEN163-TEST",
+            "name": "G-191 test fixture",
+            "site": "Campo",
+            "controller_type": "DSE",
+            "controller_model": "DSE4520 MKII",
+            "transport": "modbus_tcp_direct",
+            "host": "192.0.2.10",
+            "listen_port": 502,
+            "modbus_unit": 1,
+            "rapid_device_num": 207,
+            "enabled": True,
+        }
+    )
+    domain_store.sync_legacy_generators()
+    asset = next(
+        item for item in domain_store.list_assets()
+        if item.get("legacy_generator_id") == dse["id"]
+    )
+    controller = next(
+        item for item in domain_store.list_controllers(asset["id"])
+        if item.get("model") == "DSE4520 MKII"
+    )
+    domain_store.update_controller(controller["id"], {"firmware": "4.8"}, actor="test")
+
+    bindings = json.loads(bindings_path.read_text(encoding="utf-8"))
+    bindings.append(
+        {
+            "generator_id": dse["id"],
+            "controller_type": "DSE",
+            "controller_model": "DSE4520 MKII",
+            "transport": "modbus_tcp_direct",
+            "listen_port": 502,
+            "modbus_unit": 1,
+            "rapid_line_num": 103,
+            "rapid_device_num": 207,
+            "status": "field_validated",
+        }
+    )
+    bindings_path.write_text(json.dumps(bindings), encoding="utf-8")
+
+    for action in ("start", "stop", "off", "auto", "manual", "test"):
+        pack, contract = control.command_contract(dse, action)
+        assert pack["model"] == "DSE4520 MKII"
+        assert pack["firmware"]["tested"] == ["4.8"]
+        assert contract["executor"] == "dse_gencomm_privileged"
+
+    caps = rapid._effective_capabilities(dse, "online", True)
+    for action in ("start", "stop", "off", "auto", "manual", "test"):
+        assert caps[action] is True, (action, caps)
+    for action in ("mcb_open", "mcb_close", "gcb_open", "gcb_close", "paralleling"):
+        assert caps[action] is False, (action, caps)
+
+    domain_store.update_controller(controller["id"], {"firmware": "4.9"}, actor="test")
+    try:
+        control.command_contract(dse, "start")
+    except ValueError as exc:
+        assert "firmware" in str(exc).lower(), exc
+    else:
+        raise AssertionError("DSE4520 com firmware fora da matriz aceitou START")
+
 async def validate_ig4_production_gate():
     ig4 = db.create_generator(
         {
@@ -330,6 +393,7 @@ async def validate_ig4_lab_start_interlock():
 asyncio.run(validate_payload())
 asyncio.run(validate_unit_backoff())
 asyncio.run(validate_disconnect_backoff())
+validate_dse4520_production_contract()
 asyncio.run(validate_ig4_production_gate())
 asyncio.run(validate_ig4_lab_start_interlock())
 print("RC Geradores multi-device control smoke: OK")
