@@ -12,10 +12,12 @@
   "application": "genset",
   "category": "paralleling_genset",
   "firmware": {
-    "tested": [],
+    "tested": [
+      "1.8.1.1"
+    ],
     "minimum": null,
     "maximum": null,
-    "notes": "Registrar a versão exata do firmware em cada homologação de campo."
+    "notes": "Firmware 1.8.1.1 lido em campo por registrador Modbus nos GEN153/GEN154/GEN167 em 2026-09-22; START/STOP aceitos em campo após essa captura nos GEN153 e GEN167."
   },
   "protocols": [
     "modbus"
@@ -861,11 +863,8 @@
         "timeoutSeconds": 20,
         "notes": "Comando homologado em produção; escrita somente pelo socket Unix privilegiado da bridge."
       },
-      "fieldState": "historically_validated_without_firmware_capture",
-      "remaining": [
-        "capture exact firmware during a witnessed successful START",
-        "add exact firmware to firmware.tested"
-      ]
+      "fieldState": "field_validated",
+      "remaining": []
     },
     "stop": {
       "documented": true,
@@ -889,11 +888,8 @@
         "timeoutSeconds": 35,
         "notes": "Comando homologado em produção; escrita somente pelo socket Unix privilegiado da bridge."
       },
-      "fieldState": "historically_validated_without_firmware_capture",
-      "remaining": [
-        "capture exact firmware during a witnessed successful STOP",
-        "add exact firmware to firmware.tested"
-      ]
+      "fieldState": "field_validated",
+      "remaining": []
     },
     "manual": {
       "documented": true,
