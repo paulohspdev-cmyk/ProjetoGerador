@@ -1,4 +1,5 @@
 import json
+import threading
 from collections import Counter
 from functools import lru_cache
 from pathlib import Path
@@ -158,15 +159,40 @@ def _read_manifest(path: Path, lifecycle: str) -> dict:
     }
 
 
-def list_controller_packs() -> list[dict]:
-    result: list[dict] = []
+_PACKS_CACHE_LOCK = threading.Lock()
+_PACKS_CACHE_SIGNATURE: tuple[tuple[str, str, int, int], ...] | None = None
+_PACKS_CACHE_VALUE: list[dict] | None = None
+
+
+def _controller_pack_inventory() -> list[tuple[str, Path, int, int]]:
+    inventory: list[tuple[str, Path, int, int]] = []
     for lifecycle in ("production", "lab"):
         root = PROJECT_ROOT / "controllers" / lifecycle
         if not root.exists():
             continue
         for path in sorted(root.rglob("manifest.json")):
-            result.append(_read_manifest(path, lifecycle))
-    return result
+            stat = path.stat()
+            inventory.append((lifecycle, path, stat.st_mtime_ns, stat.st_size))
+    return inventory
+
+
+def list_controller_packs() -> list[dict]:
+    global _PACKS_CACHE_SIGNATURE, _PACKS_CACHE_VALUE
+
+    inventory = _controller_pack_inventory()
+    signature = tuple(
+        (lifecycle, path.as_posix(), mtime_ns, size)
+        for lifecycle, path, mtime_ns, size in inventory
+    )
+
+    with _PACKS_CACHE_LOCK:
+        if _PACKS_CACHE_VALUE is not None and signature == _PACKS_CACHE_SIGNATURE:
+            return _PACKS_CACHE_VALUE
+
+        result = [_read_manifest(path, lifecycle) for lifecycle, path, _mtime, _size in inventory]
+        _PACKS_CACHE_SIGNATURE = signature
+        _PACKS_CACHE_VALUE = result
+        return result
 
 
 def list_controller_catalog() -> list[dict]:

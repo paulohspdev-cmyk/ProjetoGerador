@@ -4,7 +4,7 @@ import type { Generator } from "@/data/generators";
 import { rcApi, type EventItemApi, type RapidMetric, type RapidTrend } from "@/lib/api";
 
 const DETAIL_REFRESH_MS = 10_000;
-const DETAIL_TREND_REFRESH_MS = 60_000;
+const DETAIL_TREND_REFRESH_MS = 300_000;
 
 const DETAIL_TREND_PRIORITY = [
   "voltage_l1",

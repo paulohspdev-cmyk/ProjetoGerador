@@ -16,7 +16,7 @@ import { httpRequest } from "@/lib/http-client";
 import { industrialApi } from "@/lib/industrial-api";
 
 // Atualização operacional do inventário/overlay; não altera a cadência de comunicação do controlador.
-const GENERATOR_REFRESH_MS = 1000;
+const GENERATOR_REFRESH_MS = 5_000;
 
 type CreateInput = {
   tag?: string | undefined;
