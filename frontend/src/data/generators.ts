@@ -43,7 +43,13 @@ export type Generator = {
   controllerType?: string;
   powerTopology?: "mains_genset" | "genset_only" | "unknown";
   powerTopologySource?:
-    "configured" | "asset_metadata" | "asset_graph" | "catalog" | "binding" | "unknown";
+    | "configured"
+    | "asset_metadata"
+    | "asset_graph"
+    | "catalog"
+    | "binding"
+    | "telemetry_capability"
+    | "unknown";
   site: string;
   enabled?: boolean;
   status: GenStatus;
@@ -55,6 +61,7 @@ export type Generator = {
   battery: number | null;
   frequency: number | null;
   mainsFrequency?: number | null;
+  busFrequency?: number | null;
   nominalPower?: number | null;
   nominalPowerConfigured?: number | null;
   nominalPowerSource?: "telemetry" | "cadastral" | null;
@@ -74,6 +81,7 @@ export type Generator = {
   mcb: boolean;
   gcb: boolean;
   mains: { l1: number | null; l2: number | null; l3: number | null; l12: number | null };
+  bus?: { l1: number | null; l2: number | null; l3: number | null; l12: number | null };
   gen: { l1: number | null; l2: number | null; l3: number | null; l12: number | null };
   metrics?: Record<string, number>;
   /** Valores realmente definidos na leitura atual. */
