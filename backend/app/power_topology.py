@@ -48,6 +48,29 @@ def topology_from_configured_metrics(
         return POWER_TOPOLOGY_MAINS, "binding"
     return POWER_TOPOLOGY_GENSET_ONLY, "binding"
 
+def topology_from_defined_metrics(
+    defined_metrics: list[str] | tuple[str, ...] | set[str] | None,
+    binding_present: bool,
+) -> tuple[str, str] | None:
+    """Usa apenas suporte realmente implementado, nunca tensão instantânea.
+
+    Em DSE GenComm, canais opcionais de rede podem existir no template e retornar
+    sentinela 0xFFFF quando a função não está implementada. Nesse caso um
+    barramento válido NÃO pode ser promovido para "rede".
+    """
+    if not binding_present:
+        return None
+    metrics = {str(key).strip() for key in (defined_metrics or []) if str(key).strip()}
+    if not metrics:
+        return None
+    has_mains = any(key == "mcb_closed" or key.startswith("mains_") for key in metrics)
+    has_bus = any(key.startswith("bus_") for key in metrics)
+    if has_mains:
+        return POWER_TOPOLOGY_MAINS, "telemetry_capability"
+    if has_bus:
+        return POWER_TOPOLOGY_GENSET_ONLY, "telemetry_capability"
+    return None
+
 
 def _catalog_topology(generator: dict) -> tuple[str, str] | None:
     item = catalog_for_model(str(generator.get("controller_model") or ""))
@@ -148,6 +171,7 @@ def resolve_power_topology(
     generator: dict,
     configured_metrics: list[str] | tuple[str, ...] | set[str] | None,
     binding_present: bool,
+    defined_metrics: list[str] | tuple[str, ...] | set[str] | None = None,
 ) -> tuple[str, str]:
     """Retorna (topologia_resolvida, origem_da_decisão)."""
     configured = str(generator.get("power_topology") or POWER_TOPOLOGY_AUTO).strip().lower()
@@ -161,6 +185,10 @@ def resolve_power_topology(
     catalog = _catalog_topology(generator)
     if catalog:
         return catalog
+
+    implemented = topology_from_defined_metrics(defined_metrics, binding_present)
+    if implemented:
+        return implemented
 
     binding = topology_from_configured_metrics(configured_metrics, binding_present)
     if binding:
