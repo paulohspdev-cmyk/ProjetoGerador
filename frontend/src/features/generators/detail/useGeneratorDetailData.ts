@@ -14,7 +14,13 @@ const DETAIL_TREND_PRIORITY = [
   "current_l2",
   "current_l3",
   "power_kw",
+  "power_kva",
+  "power_kvar",
+  "power_factor",
   "frequency",
+  "voltage_l1_l2",
+  "voltage_l2_l3",
+  "voltage_l3_l1",
   "rpm",
   "oil_pressure",
   "coolant_temperature",
@@ -25,11 +31,20 @@ const DETAIL_TREND_PRIORITY = [
   "mains_voltage_l1",
   "mains_voltage_l2",
   "mains_voltage_l3",
+  "mains_voltage_l1_l2",
+  "mains_voltage_l2_l3",
+  "mains_voltage_l3_l1",
   "mains_frequency",
   "mains_power_kw",
+  "mains_power_factor",
 ] as const;
 
 export type GeneratorDetailTrendMap = Record<string, RapidTrend>;
+export type GeneratorDetailTrendHours = 1 | 6 | 24 | 168;
+
+function archiveBitForHours(hours: GeneratorDetailTrendHours) {
+  return hours <= 24 ? 1 : 2;
+}
 
 export function useGeneratorDetailData(gen: Generator) {
   const [events, setEvents] = useState<EventItemApi[]>([]);
@@ -38,6 +53,7 @@ export function useGeneratorDetailData(gen: Generator) {
   const [trends, setTrends] = useState<GeneratorDetailTrendMap>({});
   const [trendErrors, setTrendErrors] = useState<Record<string, string>>({});
   const [trendsLoading, setTrendsLoading] = useState(true);
+  const [trendHours, setTrendHours] = useState<GeneratorDetailTrendHours>(24);
 
   useEffect(() => {
     let active = true;
@@ -91,7 +107,16 @@ export function useGeneratorDetailData(gen: Generator) {
           const batch = keys.slice(offset, offset + 4);
           const results = await Promise.allSettled(
             batch.map(
-              async (key) => [key, await rcApi.generators.trend(gen.id, key, 24, 1)] as const,
+              async (key) =>
+                [
+                  key,
+                  await rcApi.generators.trend(
+                    gen.id,
+                    key,
+                    trendHours,
+                    archiveBitForHours(trendHours),
+                  ),
+                ] as const,
             ),
           );
           if (!active) return;
@@ -135,7 +160,7 @@ export function useGeneratorDetailData(gen: Generator) {
       active = false;
       if (timer) window.clearTimeout(timer);
     };
-  }, [gen.id]);
+  }, [gen.id, trendHours]);
 
   const configuredTrendMetrics = useMemo(
     () => new Set(trendMetrics.map((item) => item.key)),
@@ -149,5 +174,7 @@ export function useGeneratorDetailData(gen: Generator) {
     trendErrors,
     trendsLoading,
     configuredTrendMetrics,
+    trendHours,
+    setTrendHours,
   };
 }
