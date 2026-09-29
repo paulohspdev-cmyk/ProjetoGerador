@@ -124,7 +124,7 @@ export function HistoryPanel({
   const error = series.map((item) => trendErrors[item.key]).find(Boolean);
 
   return (
-    <section className="gen-detail-section flex h-full min-h-0 flex-col overflow-hidden rounded-xl p-2">
+    <section className="gen-detail-section flex h-[clamp(150px,18vh,210px)] min-h-0 flex-col overflow-hidden rounded-xl p-2">
       <div className="mb-1 flex shrink-0 items-start justify-between gap-2">
         <div className="min-w-0">
           <h2 className="truncate text-[11px] font-extrabold">{title}</h2>
