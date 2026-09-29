@@ -33,7 +33,7 @@
   "reverseTcpFraming": "modbus_rtu",
   "capabilities": {
     "telemetry": true,
-    "start": false,
+    "start": true,
     "stop": false,
     "off": false,
     "auto": false,
@@ -176,7 +176,7 @@
           3,
           4
         ],
-        "scale": 1.0,
+        "scale": 1,
         "sourceName": "RPM",
         "unit": "rpm",
         "object": 10123
@@ -188,7 +188,7 @@
           3,
           4
         ],
-        "scale": 1.0,
+        "scale": 1,
         "sourceName": "Generator P",
         "unit": "kW",
         "object": 8202
@@ -223,7 +223,7 @@
           3,
           4
         ],
-        "scale": 1.0,
+        "scale": 1,
         "sourceName": "Generator Voltage L1-N",
         "unit": "V",
         "object": 8192
@@ -235,7 +235,7 @@
           3,
           4
         ],
-        "scale": 1.0,
+        "scale": 1,
         "sourceName": "Generator Voltage L2-N",
         "unit": "V",
         "object": 8193
@@ -247,7 +247,7 @@
           3,
           4
         ],
-        "scale": 1.0,
+        "scale": 1,
         "sourceName": "Generator Voltage L3-N",
         "unit": "V",
         "object": 8194
@@ -259,7 +259,7 @@
           3,
           4
         ],
-        "scale": 1.0,
+        "scale": 1,
         "sourceName": "Generator Voltage L1-L2",
         "unit": "V",
         "object": 9628
@@ -271,7 +271,7 @@
           3,
           4
         ],
-        "scale": 1.0,
+        "scale": 1,
         "sourceName": "Generator Voltage L2-L3",
         "unit": "V",
         "object": 9629
@@ -283,7 +283,7 @@
           3,
           4
         ],
-        "scale": 1.0,
+        "scale": 1,
         "sourceName": "Generator Voltage L3-L1",
         "unit": "V",
         "object": 9630
@@ -295,7 +295,7 @@
           3,
           4
         ],
-        "scale": 1.0,
+        "scale": 1,
         "sourceName": "Generator Current L1",
         "unit": "A",
         "object": 8198
@@ -307,7 +307,7 @@
           3,
           4
         ],
-        "scale": 1.0,
+        "scale": 1,
         "sourceName": "Generator Current L2",
         "unit": "A",
         "object": 8199
@@ -319,7 +319,7 @@
           3,
           4
         ],
-        "scale": 1.0,
+        "scale": 1,
         "sourceName": "Generator Current L3",
         "unit": "A",
         "object": 8200
@@ -343,7 +343,7 @@
           3,
           4
         ],
-        "scale": 1.0,
+        "scale": 1,
         "sourceName": "Mains/Bus Voltage L1-N",
         "unit": "V",
         "object": 8195
@@ -355,7 +355,7 @@
           3,
           4
         ],
-        "scale": 1.0,
+        "scale": 1,
         "sourceName": "Mains/Bus Voltage L2-N",
         "unit": "V",
         "object": 8196
@@ -367,7 +367,7 @@
           3,
           4
         ],
-        "scale": 1.0,
+        "scale": 1,
         "sourceName": "Mains/Bus Voltage L3-N",
         "unit": "V",
         "object": 8197
@@ -379,7 +379,7 @@
           3,
           4
         ],
-        "scale": 1.0,
+        "scale": 1,
         "sourceName": "Mains/Bus Voltage L1-L2",
         "unit": "V",
         "object": 9631
@@ -391,7 +391,7 @@
           3,
           4
         ],
-        "scale": 1.0,
+        "scale": 1,
         "sourceName": "Mains/Bus Voltage L2-L3",
         "unit": "V",
         "object": 9632
@@ -403,7 +403,7 @@
           3,
           4
         ],
-        "scale": 1.0,
+        "scale": 1,
         "sourceName": "Mains/Bus Voltage L3-L1",
         "unit": "V",
         "object": 9633
@@ -457,7 +457,7 @@
           3,
           4
         ],
-        "scale": 1.0,
+        "scale": 1,
         "sourceName": "Analog coolant-temperature channel",
         "unit": "°C",
         "validMin": -16,
@@ -471,7 +471,7 @@
           3,
           4
         ],
-        "scale": 1.0,
+        "scale": 1,
         "sourceName": "Diesel",
         "unit": "L",
         "validMin": 0,
@@ -485,7 +485,7 @@
           3,
           4
         ],
-        "scale": 1.0,
+        "scale": 1,
         "sourceName": "Nominal Power",
         "unit": "kW",
         "object": 9018
@@ -497,7 +497,7 @@
           3,
           4
         ],
-        "scale": 1.0,
+        "scale": 1,
         "sourceName": "Genset kWh",
         "unit": "kWh",
         "object": 8205
@@ -521,7 +521,7 @@
           3,
           4
         ],
-        "scale": 1.0,
+        "scale": 1,
         "sourceName": "Num Starts",
         "object": 8207
       },
@@ -532,7 +532,7 @@
           3,
           4
         ],
-        "scale": 1.0,
+        "scale": 1,
         "sourceName": "Total Fuel Consumption",
         "unit": "L",
         "object": 9040
@@ -544,7 +544,7 @@
           3,
           4
         ],
-        "scale": 1.0,
+        "scale": 1,
         "sourceName": "Controller Mode",
         "object": 9887
       },
@@ -555,7 +555,7 @@
           3,
           4
         ],
-        "scale": 1.0,
+        "scale": 1,
         "sourceName": "Engine state",
         "object": 9244
       },
@@ -566,7 +566,7 @@
           3,
           4
         ],
-        "scale": 1.0,
+        "scale": 1,
         "sourceName": "Breaker state",
         "object": 9245
       },
@@ -577,7 +577,7 @@
           1,
           2
         ],
-        "scale": 1.0,
+        "scale": 1,
         "sourceName": "GCB Feedback",
         "object": 8235
       },
@@ -588,7 +588,7 @@
           1,
           2
         ],
-        "scale": 1.0,
+        "scale": 1,
         "sourceName": "MCB Feedback",
         "object": 8235
       }
@@ -601,13 +601,13 @@
       {
         "key": "rpm",
         "tagCode": "rpm",
-        "scale": 1.0,
+        "scale": 1,
         "unit": "rpm"
       },
       {
         "key": "power_kw",
         "tagCode": "power_kw",
-        "scale": 1.0,
+        "scale": 1,
         "unit": "kW"
       },
       {
@@ -624,55 +624,55 @@
       {
         "key": "voltage_l1",
         "tagCode": "voltage_l1",
-        "scale": 1.0,
+        "scale": 1,
         "unit": "V"
       },
       {
         "key": "voltage_l2",
         "tagCode": "voltage_l2",
-        "scale": 1.0,
+        "scale": 1,
         "unit": "V"
       },
       {
         "key": "voltage_l3",
         "tagCode": "voltage_l3",
-        "scale": 1.0,
+        "scale": 1,
         "unit": "V"
       },
       {
         "key": "voltage_l1_l2",
         "tagCode": "voltage_l1_l2",
-        "scale": 1.0,
+        "scale": 1,
         "unit": "V"
       },
       {
         "key": "voltage_l2_l3",
         "tagCode": "voltage_l2_l3",
-        "scale": 1.0,
+        "scale": 1,
         "unit": "V"
       },
       {
         "key": "voltage_l3_l1",
         "tagCode": "voltage_l3_l1",
-        "scale": 1.0,
+        "scale": 1,
         "unit": "V"
       },
       {
         "key": "current_l1",
         "tagCode": "current_l1",
-        "scale": 1.0,
+        "scale": 1,
         "unit": "A"
       },
       {
         "key": "current_l2",
         "tagCode": "current_l2",
-        "scale": 1.0,
+        "scale": 1,
         "unit": "A"
       },
       {
         "key": "current_l3",
         "tagCode": "current_l3",
-        "scale": 1.0,
+        "scale": 1,
         "unit": "A"
       },
       {
@@ -684,37 +684,37 @@
       {
         "key": "mains_voltage_l1",
         "tagCode": "mains_voltage_l1",
-        "scale": 1.0,
+        "scale": 1,
         "unit": "V"
       },
       {
         "key": "mains_voltage_l2",
         "tagCode": "mains_voltage_l2",
-        "scale": 1.0,
+        "scale": 1,
         "unit": "V"
       },
       {
         "key": "mains_voltage_l3",
         "tagCode": "mains_voltage_l3",
-        "scale": 1.0,
+        "scale": 1,
         "unit": "V"
       },
       {
         "key": "mains_voltage_l1_l2",
         "tagCode": "mains_voltage_l1_l2",
-        "scale": 1.0,
+        "scale": 1,
         "unit": "V"
       },
       {
         "key": "mains_voltage_l2_l3",
         "tagCode": "mains_voltage_l2_l3",
-        "scale": 1.0,
+        "scale": 1,
         "unit": "V"
       },
       {
         "key": "mains_voltage_l3_l1",
         "tagCode": "mains_voltage_l3_l1",
-        "scale": 1.0,
+        "scale": 1,
         "unit": "V"
       },
       {
@@ -732,19 +732,19 @@
       {
         "key": "fuel_level",
         "tagCode": "fuel_level",
-        "scale": 1.0,
+        "scale": 1,
         "unit": "L"
       },
       {
         "key": "nominal_power_kw",
         "tagCode": "nominal_power_kw",
-        "scale": 1.0,
+        "scale": 1,
         "unit": "kW"
       },
       {
         "key": "genset_kwh",
         "tagCode": "genset_kwh",
-        "scale": 1.0,
+        "scale": 1,
         "unit": "kWh"
       },
       {
@@ -756,28 +756,28 @@
       {
         "key": "number_starts",
         "tagCode": "number_starts",
-        "scale": 1.0
+        "scale": 1
       },
       {
         "key": "total_fuel_consumption",
         "tagCode": "total_fuel_consumption",
-        "scale": 1.0,
+        "scale": 1,
         "unit": "L"
       },
       {
         "key": "controller_mode_raw",
         "tagCode": "controller_mode_raw",
-        "scale": 1.0
+        "scale": 1
       },
       {
         "key": "engine_state_raw",
         "tagCode": "engine_state_raw",
-        "scale": 1.0
+        "scale": 1
       },
       {
         "key": "breaker_state_raw",
         "tagCode": "breaker_state_raw",
-        "scale": 1.0
+        "scale": 1
       }
     ]
   },
@@ -788,10 +788,36 @@
     "lab": true,
     "field": true,
     "fieldReference": "GEN152 / Unit 15 / FW 2.0.3.1, IG4-U3 / Unit 3 / FW 2.1.4.1 e IG4-U4 / Unit 4 / FW 2.1.0.15; Nominal Power HR1280 validado em leitura FC03; GEN152 Unit 15 confirmou Fuel Level HR1055=591 L por FC03 em 2026-09-23; reverse TCP; leituras sem escrita de comando.",
-    "commandSafety": "Perfil de produção somente leitura. START/STOP/AUTO/MANUAL/TEST/MCB/GCB/paralelismo permanecem bloqueados. O mapa fornecido não contém setpoints de comando utilizáveis."
+    "commandSafety": "START habilitado somente para GEN203/GEN204, com firmware inventariado na matriz tested, binding exato, MAN, Engine Ready, BrksOff, RPM 0, ausência de Alarm, retorno do comando e confirmação Running/RPM. Demais comandos seguem bloqueados."
   },
-  "notes": "Telemetria read-only promovida após validação de campo. Óleo e temperatura permanecem documentados, mas não entram em validatedTelemetry enquanto retornarem sentinela/valor inválido. Diesel instantâneo (registro 1055, unidade L) foi validado em campo nos GEN203/GEN204 e confirmado no GEN152 Unit 15 com leitura FC03 de 591 L em 2026-09-23; é materializado como fuel_level. O máximo 682 presente no export Modbus de origem não é tratado como capacidade universal de tanque; percentual de combustível só pode ser derivado quando houver capacidade explícita do equipamento. Estados GCB/MCB da interface são derivados de Breaker State até validação dedicada dos binaries FC01/02.",
-  "commands": {},
+  "notes": "Telemetria read-only promovida após validação de campo. Óleo e temperatura permanecem documentados, mas não entram em validatedTelemetry enquanto retornarem sentinela/valor inválido. Diesel instantâneo (registro 1055, unidade L) foi validado em campo nos GEN203/GEN204 e confirmado no GEN152 Unit 15 com leitura FC03 de 591 L em 2026-09-23; é materializado como fuel_level. O máximo 682 presente no export Modbus de origem não é tratado como capacidade universal de tanque; percentual de combustível só pode ser derivado quando houver capacidade explícita do equipamento. Estados GCB/MCB da interface são derivados de Breaker State até validação dedicada dos binaries FC01/02. START de produção restrito por tag a GEN203/GEN204 e protegido pelos intertravamentos do executor IG4; nenhum STOP, modo, MCB, GCB ou paralelismo é promovido.",
+  "commands": {
+    "start": {
+      "executor": "comap_privileged",
+      "transport": "reverse_tcp",
+      "confirmation": "START",
+      "preconditions": [
+        "generator_enabled",
+        "field_validated_pack",
+        "binding_match",
+        "controller_online",
+        "firmware_exactly_tested",
+        "mode_manual",
+        "engine_ready",
+        "breakers_off",
+        "rpm_zero",
+        "no_active_alarm"
+      ],
+      "feedback": {
+        "metric": "rpm",
+        "operator": "gt",
+        "value": 100,
+        "timeoutSeconds": 8
+      },
+      "timeoutSeconds": 15,
+      "notes": "START liberado somente para GEN203 e GEN204. O executor relê duas vezes modo/engine/breaker/RPM/alarm antes da escrita, exige retorno reservado 0x000001FF e só confirma sucesso com Running/RPM."
+    }
+  },
   "homologationCandidates": {
     "start": {
       "documented": true,
@@ -805,7 +831,32 @@
         "operator": "gt",
         "value": 100
       },
-      "fieldState": "lab_path_prepared_field_validation_pending"
+      "fieldState": "field_commissioning_enabled_runtime_feedback_required",
+      "contract": {
+        "executor": "comap_privileged",
+        "transport": "reverse_tcp",
+        "confirmation": "START",
+        "preconditions": [
+          "generator_enabled",
+          "field_validated_pack",
+          "binding_match",
+          "controller_online",
+          "firmware_exactly_tested",
+          "mode_manual",
+          "engine_ready",
+          "breakers_off",
+          "rpm_zero",
+          "no_active_alarm"
+        ],
+        "feedback": {
+          "metric": "rpm",
+          "operator": "gt",
+          "value": 100,
+          "timeoutSeconds": 8
+        },
+        "timeoutSeconds": 15,
+        "notes": "START liberado somente para GEN203 e GEN204. O executor relê duas vezes modo/engine/breaker/RPM/alarm antes da escrita, exige retorno reservado 0x000001FF e só confirma sucesso com Running/RPM."
+      }
     },
     "stop": {
       "documented": true,
@@ -888,5 +939,9 @@
       "documented": false,
       "fieldState": "write_address_not_proven_in_retained_export"
     }
-  }
+  },
+  "commandAllowlistTags": [
+    "GEN203",
+    "GEN204"
+  ]
 }
