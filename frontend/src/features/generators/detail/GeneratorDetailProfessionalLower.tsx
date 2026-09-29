@@ -242,7 +242,7 @@ export function GeneratorDetailProfessionalLower({
     historyPanels.push(
       {
         title: "Tensão da rede · L1 L2 L3",
-        subtitle: "Histórico real da concessionária · 24 horas",
+        subtitle: `Histórico real da concessionária · ${periodLabel}`,
         series: [
           {
             key: "mains_voltage_l1",
@@ -269,7 +269,7 @@ export function GeneratorDetailProfessionalLower({
       },
       {
         title: "Frequência / potência da rede",
-        subtitle: "Histórico real da concessionária · 24 horas",
+        subtitle: `Histórico real da concessionária · ${periodLabel}`,
         series: [
           {
             key: "mains_frequency",
@@ -321,7 +321,7 @@ export function GeneratorDetailProfessionalLower({
   }
 
   return (
-    <div className="gen-detail-lower grid min-h-0 flex-1 grid-rows-[auto_minmax(178px,1fr)_112px_auto] gap-1.5 overflow-hidden">
+    <div className="gen-detail-lower grid min-h-0 flex-1 auto-rows-max content-start gap-1.5 overflow-x-hidden overflow-y-auto">
       <div className="grid min-h-0 gap-1.5 xl:grid-cols-12">
         <section className="gen-detail-section min-h-0 overflow-hidden rounded-xl p-1.5 xl:col-span-7">
           <h2 className="mb-0.5 flex items-center gap-1.5 text-[11px] font-extrabold">
@@ -435,12 +435,7 @@ export function GeneratorDetailProfessionalLower({
             ))}
           </div>
         </div>
-        <div
-          className={cn(
-            "grid min-h-0 flex-1 gap-1.5",
-            historyPanels.length > 4 ? "xl:grid-cols-3" : "xl:grid-cols-4",
-          )}
-        >
+        <div className="grid min-h-0 gap-1.5 md:grid-cols-2 2xl:grid-cols-3">
           {historyPanels.map((panel) => (
             <HistoryPanel
               key={panel.title}
@@ -458,8 +453,8 @@ export function GeneratorDetailProfessionalLower({
       </section>
 
       <div
-        className="grid min-h-0 grid-cols-3 gap-1.5 xl:grid-cols-6"
-        aria-label="Tendências do motor 24h"
+        className="grid h-[112px] min-h-0 grid-cols-3 gap-1.5 xl:grid-cols-6"
+        aria-label={`Tendências do motor ${periodLabel}`}
       >
         <MiniTrendCard
           title="RPM"
