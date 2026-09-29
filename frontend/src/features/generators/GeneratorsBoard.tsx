@@ -207,10 +207,11 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
     const rows = Math.max(1, verticalLayout.rows);
     const usableWidth = Math.max(1, (viewport.width || 1200) - VERTICAL_PADDING * 2);
     const usableHeight = Math.max(1, (viewport.height || 720) - VERTICAL_PADDING * 2);
-    const hasFullRow = visible.length >= columns;
-    const displayColumns = hasFullRow
-      ? columns
-      : Math.max(1, Math.min(columns, visible.length || 1));
+    // Preserve the normal grid even when the current page/filter has only a
+    // partial row. This keeps cards at their standard width and always places
+    // the first generator in the left-most column instead of stretching a
+    // single card across the entire viewport.
+    const displayColumns = columns;
     const displayRows = Math.max(
       1,
       Math.min(rows, Math.ceil(Math.max(1, visible.length) / displayColumns)),
