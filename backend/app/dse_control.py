@@ -1,7 +1,9 @@
-"""Comando GenComm START/STOP somente leitura da disponibilidade + FC16 atômico.
+"""Executor GenComm para comandos DSE homologados em Controller Pack específico.
 
-Usa as chaves documentadas no pack LAB DSE8610 / GenComm v2.38. A escrita só
-ocorre depois de ler a página 16. Não envia AUTO, transferência nem disjuntores.
+O executor permanece fail-closed: relê modo, RPM, status e disponibilidade da
+control key antes de qualquer FC16. A autorização por modelo/firmware/binding é
+feita em control.command_contract. Neste release somente START é promovido
+para produção no DSE4520 MKII 4.8; demais ações continuam bloqueadas.
 """
 
 from __future__ import annotations
@@ -15,7 +17,9 @@ CONTROL_ADDRESS = 4104
 AVAILABILITY_ADDRESS = 4096
 AVAILABILITY_COUNT = 8
 MODE_ADDRESS = 772
+STATUS_FLAGS_ADDRESS = 774
 RPM_ADDRESS = 1030
+CRITICAL_STATUS_MASK = 0x3C00
 KEY_STOP = 35700
 KEY_START_MANUAL_OR_TEST = 35705
 KEY_REMOTE_START_AUTO = 35732
@@ -44,7 +48,7 @@ def select_key(action: str, mode: int, registers: list[int]) -> int:
             raise PermissionError("STOP não está disponível na página 16 desta controladora")
         return KEY_STOP
     if action != "start":
-        raise ValueError("Somente START e STOP estão liberados neste ensaio")
+        raise ValueError("Somente START e STOP são suportados pelo executor GenComm")
 
     mode_name = MODE_NAMES.get(int(mode), "desconhecido")
     if int(mode) in {2, 3, 4}:
@@ -137,6 +141,7 @@ async def send_command(generator: dict, action: str) -> dict:
 
     async with _ModbusTcp(host, port, unit) as client:
         mode = (await client.read_holding(MODE_ADDRESS, 1))[0]
+        status_flags = (await client.read_holding(STATUS_FLAGS_ADDRESS, 1))[0]
         rpm_before = (await client.read_holding(RPM_ADDRESS, 1))[0]
         availability = await client.read_holding(AVAILABILITY_ADDRESS, AVAILABILITY_COUNT)
         if all(reg in {0, 0xFFFF} for reg in availability):
@@ -151,6 +156,21 @@ async def send_command(generator: dict, action: str) -> dict:
                 "reason": f"partida bloqueada: motor já apresenta {rpm_before} rpm",
                 "rpm_before": rpm_before,
                 "mode_before": mode,
+                "status_flags": status_flags,
+                "availability": availability,
+            }
+        if action == "start" and (status_flags & CRITICAL_STATUS_MASK):
+            return {
+                "ok": False,
+                "accepted": False,
+                "action": "start",
+                "reason": (
+                    "partida bloqueada: status DSE indica warning/trip/shutdown/"
+                    f"falha de unidade (0x{status_flags:04X})"
+                ),
+                "rpm_before": rpm_before,
+                "mode_before": mode,
+                "status_flags": status_flags,
                 "availability": availability,
             }
 
@@ -175,14 +195,15 @@ async def send_command(generator: dict, action: str) -> dict:
         "rpm_before": rpm_before,
         "rpm_after": rpm_after,
         "availability": availability,
-        "lab": True,
+        "status_flags": status_flags,
+        "lab": False,
     }
     try:
         db.add_event(
             generator["id"],
             "WARN",
             (
-                f"Controle DSE LAB {action.upper()} {generator.get('tag')}: key={key} "
+                f"Controle DSE {action.upper()} {generator.get('tag')}: key={key} "
                 f"modo={mode}->{mode_after} rpm={rpm_before}->{rpm_after}"
             ),
         )
