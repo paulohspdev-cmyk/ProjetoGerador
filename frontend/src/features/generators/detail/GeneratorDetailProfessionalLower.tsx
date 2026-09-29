@@ -27,7 +27,7 @@ import {
   type TrendSeriesSpec,
   unitText,
 } from "./GeneratorDetailTrendPanels";
-import type { GeneratorDetailTrendMap } from "./useGeneratorDetailData";
+import type { GeneratorDetailTrendHours, GeneratorDetailTrendMap } from "./useGeneratorDetailData";
 
 type Props = {
   model: GeneratorDetailModel;
@@ -39,6 +39,8 @@ type Props = {
   trendErrors: Record<string, string>;
   trendsLoading: boolean;
   configuredTrendMetrics: Set<string>;
+  trendHours: GeneratorDetailTrendHours;
+  onTrendHoursChange: (hours: GeneratorDetailTrendHours) => void;
 };
 
 function EngineRow({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
@@ -63,6 +65,8 @@ export function GeneratorDetailProfessionalLower({
   trendErrors,
   trendsLoading,
   configuredTrendMetrics,
+  trendHours,
+  onTrendHoursChange,
 }: Props) {
   const visiblePlans = plans.slice(0, 2).map((plan) => ({
     name: plan.name,
@@ -91,6 +95,22 @@ export function GeneratorDetailProfessionalLower({
   }));
 
   const alarmsOk = !eventRows.length && (model.alarms == null || model.alarms <= 0);
+  const periodLabel =
+    trendHours === 1
+      ? "1 hora"
+      : trendHours === 6
+        ? "6 horas"
+        : trendHours === 24
+          ? "24 horas"
+          : "7 dias";
+  const showGeneratorLineToLine = ["voltage_l1_l2", "voltage_l2_l3", "voltage_l3_l1"].some((key) =>
+    configuredTrendMetrics.has(key),
+  );
+  const showMainsLineToLine = [
+    "mains_voltage_l1_l2",
+    "mains_voltage_l2_l3",
+    "mains_voltage_l3_l1",
+  ].some((key) => configuredTrendMetrics.has(key));
 
   const paramSkip = new Set([
     "modo de operação",
@@ -111,8 +131,12 @@ export function GeneratorDetailProfessionalLower({
     "mains_voltage_l1",
     "mains_voltage_l2",
     "mains_voltage_l3",
+    "mains_voltage_l1_l2",
+    "mains_voltage_l2_l3",
+    "mains_voltage_l3_l1",
     "mains_frequency",
     "mains_power_kw",
+    "mains_power_factor",
   ].some((key) => configuredTrendMetrics.has(key));
 
   const historyPanels: Array<{
@@ -137,14 +161,36 @@ export function GeneratorDetailProfessionalLower({
       ],
     },
     {
-      title: "Potência ativa",
+      title: "Potência e fator de potência",
       series: [
         {
           key: "power_kw",
-          label: "Potência",
+          label: "kW",
           unit: "kW",
           current: model.load,
           tone: "var(--online)",
+        },
+        {
+          key: "power_kva",
+          label: "kVA",
+          unit: "kVA",
+          current: model.powerKva,
+          tone: "var(--info)",
+        },
+        {
+          key: "power_kvar",
+          label: "kvar",
+          unit: "kvar",
+          current: model.powerKvar,
+          tone: "var(--primary)",
+        },
+        {
+          key: "power_factor",
+          label: "FP",
+          unit: "",
+          current: model.powerFactor,
+          digits: 2,
+          tone: "var(--chart-2)",
         },
       ],
     },
@@ -162,6 +208,35 @@ export function GeneratorDetailProfessionalLower({
       ],
     },
   ];
+
+  if (showGeneratorLineToLine) {
+    historyPanels.splice(1, 0, {
+      title: "Tensão do gerador · L-L",
+      series: [
+        {
+          key: "voltage_l1_l2",
+          label: "L1-L2",
+          unit: "V",
+          current: model.genL12,
+          tone: "var(--info)",
+        },
+        {
+          key: "voltage_l2_l3",
+          label: "L2-L3",
+          unit: "V",
+          current: model.genL23,
+          tone: "var(--online)",
+        },
+        {
+          key: "voltage_l3_l1",
+          label: "L3-L1",
+          unit: "V",
+          current: model.genL13,
+          tone: "var(--primary)",
+        },
+      ],
+    });
+  }
 
   if (showMainsHistory) {
     historyPanels.push(
@@ -214,6 +289,35 @@ export function GeneratorDetailProfessionalLower({
         ],
       },
     );
+  }
+
+  if (showMainsLineToLine) {
+    historyPanels.push({
+      title: "Tensão da rede · L-L",
+      series: [
+        {
+          key: "mains_voltage_l1_l2",
+          label: "L1-L2",
+          unit: "V",
+          current: model.mainsL12,
+          tone: "var(--info)",
+        },
+        {
+          key: "mains_voltage_l2_l3",
+          label: "L2-L3",
+          unit: "V",
+          current: model.mainsL23,
+          tone: "var(--online)",
+        },
+        {
+          key: "mains_voltage_l3_l1",
+          label: "L3-L1",
+          unit: "V",
+          current: model.mainsL13,
+          tone: "var(--primary)",
+        },
+      ],
+    });
   }
 
   return (
@@ -299,26 +403,59 @@ export function GeneratorDetailProfessionalLower({
         </section>
       </div>
 
-      <div
-        className={cn(
-          "grid min-h-0 gap-1.5",
-          historyPanels.length > 4 ? "xl:grid-cols-3" : "xl:grid-cols-4",
-        )}
-        aria-label="Tendências elétricas 24h"
+      <section
+        className="flex min-h-0 flex-col gap-1"
+        aria-label={`Tendências elétricas ${periodLabel}`}
       >
-        {historyPanels.map((panel) => (
-          <HistoryPanel
-            key={panel.title}
-            title={panel.title}
-            subtitle={panel.subtitle}
-            series={panel.series}
-            trends={trends}
-            configuredTrendMetrics={configuredTrendMetrics}
-            trendErrors={trendErrors}
-            loading={trendsLoading}
-          />
-        ))}
-      </div>
+        <div className="flex shrink-0 items-center justify-between gap-2 px-0.5">
+          <div>
+            <h2 className="text-[11px] font-extrabold">Tendências históricas reais</h2>
+            <p className="text-[9px] text-muted-foreground">
+              Somente canais provisionados para esta controladora
+            </p>
+          </div>
+          <div
+            className="inline-flex h-7 shrink-0 overflow-hidden rounded-lg border border-border bg-card"
+            aria-label="Período das tendências"
+          >
+            {([1, 6, 24, 168] as const).map((hours) => (
+              <button
+                key={hours}
+                type="button"
+                onClick={() => onTrendHoursChange(hours)}
+                className={cn(
+                  "px-2 text-[10px] font-bold transition-colors",
+                  trendHours === hours
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-secondary",
+                )}
+              >
+                {hours === 168 ? "7d" : `${hours}h`}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div
+          className={cn(
+            "grid min-h-0 flex-1 gap-1.5",
+            historyPanels.length > 4 ? "xl:grid-cols-3" : "xl:grid-cols-4",
+          )}
+        >
+          {historyPanels.map((panel) => (
+            <HistoryPanel
+              key={panel.title}
+              title={panel.title}
+              series={panel.series}
+              trends={trends}
+              configuredTrendMetrics={configuredTrendMetrics}
+              trendErrors={trendErrors}
+              loading={trendsLoading}
+              periodHours={trendHours}
+              periodLabel={periodLabel}
+            />
+          ))}
+        </div>
+      </section>
 
       <div
         className="grid min-h-0 grid-cols-3 gap-1.5 xl:grid-cols-6"
@@ -333,6 +470,7 @@ export function GeneratorDetailProfessionalLower({
           trends={trends}
           configuredTrendMetrics={configuredTrendMetrics}
           loading={trendsLoading}
+          periodHours={trendHours}
         />
         <MiniTrendCard
           title="Pressão de óleo"
@@ -344,6 +482,7 @@ export function GeneratorDetailProfessionalLower({
           trends={trends}
           configuredTrendMetrics={configuredTrendMetrics}
           loading={trendsLoading}
+          periodHours={trendHours}
         />
         <MiniTrendCard
           title="Temp. motor"
@@ -354,6 +493,7 @@ export function GeneratorDetailProfessionalLower({
           trends={trends}
           configuredTrendMetrics={configuredTrendMetrics}
           loading={trendsLoading}
+          periodHours={trendHours}
         />
         <MiniTrendCard
           title="Combustível"
@@ -364,6 +504,7 @@ export function GeneratorDetailProfessionalLower({
           trends={trends}
           configuredTrendMetrics={configuredTrendMetrics}
           loading={trendsLoading}
+          periodHours={trendHours}
         />
         <MiniTrendCard
           title="Bateria"
@@ -375,6 +516,7 @@ export function GeneratorDetailProfessionalLower({
           trends={trends}
           configuredTrendMetrics={configuredTrendMetrics}
           loading={trendsLoading}
+          periodHours={trendHours}
         />
         <MiniTrendCard
           title="Carga do motor"
@@ -385,6 +527,7 @@ export function GeneratorDetailProfessionalLower({
           trends={trends}
           configuredTrendMetrics={configuredTrendMetrics}
           loading={trendsLoading}
+          periodHours={trendHours}
         />
       </div>
 
