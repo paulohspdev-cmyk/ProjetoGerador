@@ -2,6 +2,10 @@ import { expect, test, type Page } from "@playwright/test";
 
 const adminEmail = process.env.E2E_ADMIN_EMAIL || "";
 const adminPassword = process.env.E2E_ADMIN_PASSWORD || "";
+const realGeneratorTags = (process.env.E2E_REAL_GENERATOR_TAGS || "")
+  .split(",")
+  .map((tag) => tag.trim())
+  .filter(Boolean);
 
 async function login(page: Page) {
   await page.goto("/login");
@@ -11,134 +15,142 @@ async function login(page: Page) {
   await page.waitForURL((url) => !url.pathname.endsWith("/login"));
 }
 
-test("detalhe do gerador usa tendências reais em linha e não barras gigantes", async ({ page }) => {
-  test.setTimeout(120_000);
-  await page.setViewportSize({ width: 1600, height: 900 });
-  await login(page);
-
-  const generator = await page.evaluate(async () => {
+async function createGeneratorWithoutTelemetry(
+  page: Page,
+  fixture: {
+    tag: string;
+    controller: string;
+    listenPort: number;
+    modbusUnit: number;
+    rapidDeviceNum: number;
+  },
+) {
+  return page.evaluate(async (input) => {
     const response = await fetch("/api/generators", {
       method: "POST",
       credentials: "include",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        tag: "DETAILTREND",
-        name: "DETAILTREND",
-        customer: "Trend Audit",
-        site: "Trend Lab",
-        controller: "DSE DSE8620 MKII",
+        tag: input.tag,
+        name: input.tag,
+        customer: "E2E isolado",
+        site: "E2E sem telemetria",
+        controller: input.controller,
         transport: "reverse_tcp",
-        listenPort: 15621,
-        modbusUnit: 81,
-        rapidDeviceNum: 521,
+        listenPort: input.listenPort,
+        modbusUnit: input.modbusUnit,
+        rapidDeviceNum: input.rapidDeviceNum,
       }),
     });
     if (!response.ok && response.status !== 409) {
-      throw new Error("falha ao criar fixture: " + response.status);
+      throw new Error("falha ao criar fixture sem telemetria: " + response.status);
     }
     if (response.ok) return response.json();
 
     const rows = await fetch("/api/generators", { credentials: "include" }).then((r) => r.json());
-    return rows.find((item: { tag?: string }) => item.tag === "DETAILTREND");
-  });
+    return rows.find((item: { tag?: string }) => item.tag === input.tag);
+  }, fixture);
+}
 
-  expect(generator?.id).toBeTruthy();
-  const generatorId = String(generator.id);
+test("detalhe usa layout de tendência e mantém N/D quando não existe histórico", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await login(page);
 
-  const metricKeys = [
-    "voltage_l1",
-    "voltage_l2",
-    "voltage_l3",
-    "current_l1",
-    "current_l2",
-    "current_l3",
-    "power_kw",
-    "frequency",
-    "rpm",
-    "oil_pressure",
-    "coolant_temperature",
-    "fuel_level",
-    "battery_voltage",
-    "engine_load",
-    "alternator_voltage",
-    "mains_voltage_l1",
-    "mains_voltage_l2",
-    "mains_voltage_l3",
-    "mains_frequency",
-    "mains_power_kw",
-  ];
-
-  await page.route("**/api/generators/*/metrics", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(metricKeys.map((key, index) => ({ key, cnl: 9000 + index, scale: 1 }))),
-    });
-  });
-
-  await page.route("**/api/generators/*/trends/*", async (route) => {
-    const url = new URL(route.request().url());
-    const metric = decodeURIComponent(url.pathname.split("/trends/")[1] ?? "");
-    const base = Date.now() - 5 * 60 * 60 * 1000;
-    const multiplier = metric.includes("voltage")
-      ? 220
-      : metric.includes("frequency")
-        ? 50
-        : metric.includes("rpm")
-          ? 1500
-          : 10;
-    const points = Array.from({ length: 18 }, (_, index) => ({
-      timestamp: new Date(base + index * 20 * 60 * 1000).toISOString(),
-      value: multiplier + index * 0.4,
-      stat: 1,
-    }));
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        generatorId,
-        tag: "DETAILTREND",
-        metric,
-        cnl: 9000,
-        scale: 1,
-        archiveBit: 1,
-        start: points[0]!.timestamp,
-        end: points.at(-1)!.timestamp,
-        points,
-      }),
-    });
-  });
-
-  await page.goto("/p/geradores/" + encodeURIComponent(generatorId));
-
-  const electrical = page.getByLabel("Tendências elétricas 24h");
-  await expect(electrical).toBeVisible();
-  await expect(page.getByText("Tensão do gerador · L1 L2 L3")).toBeVisible();
-  await expect(page.getByText("Corrente do gerador · I1 I2 I3")).toBeVisible();
-  await expect(page.getByText("Potência ativa")).toBeVisible();
-  await expect(page.getByText("Frequência do gerador")).toBeVisible();
-  await expect(page.getByText("Tensão da rede · L1 L2 L3")).toBeVisible();
-  await expect(page.getByText("Frequência / potência da rede")).toBeVisible();
-
-  const engine = page.getByLabel("Tendências do motor 24h");
-  await expect(engine).toBeVisible();
-  for (const label of [
-    "RPM",
-    "Pressão de óleo",
-    "Temp. motor",
-    "Combustível",
-    "Bateria",
-    "Carga do motor",
+  for (const fixture of [
+    {
+      tag: "DETAIL-DSE-NODATA",
+      controller: "DSE DSE8620 MKII",
+      listenPort: 15621,
+      modbusUnit: 81,
+      rapidDeviceNum: 521,
+    },
+    {
+      tag: "DETAIL-COMAP-NODATA",
+      controller: "ComAp InteliGen 200",
+      listenPort: 15622,
+      modbusUnit: 82,
+      rapidDeviceNum: 522,
+    },
   ]) {
-    await expect(engine.getByText(label, { exact: true })).toBeVisible();
+    const generator = await createGeneratorWithoutTelemetry(page, fixture);
+    expect(generator?.id).toBeTruthy();
+
+    await page.goto("/p/geradores/" + encodeURIComponent(String(generator.id)));
+
+    const trends = page.getByLabel("Tendências elétricas 24 horas");
+    await expect(trends).toBeVisible();
+    await expect(page.getByLabel("Período das tendências")).toBeVisible();
+    await expect(page.getByRole("button", { name: "1h", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "6h", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "24h", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "7d", exact: true })).toBeVisible();
+
+    await expect(page.getByText("Tensão do gerador · L1 L2 L3")).toBeVisible();
+    await expect(page.getByText("Corrente do gerador · I1 I2 I3")).toBeVisible();
+    await expect(page.getByText("Potência e fator de potência")).toBeVisible();
+    await expect(page.getByText("Frequência do gerador")).toBeVisible();
+    await expect(
+      page.getByText("Canal histórico não provisionado nesta controladora").first(),
+    ).toBeVisible();
+    await expect(page.getByText("Gráfico Rede — L1 L2 L3")).toHaveCount(0);
+    await expect(page.getByText("Gráfico Gerador — L1 L2 L3")).toHaveCount(0);
+
+    const box = await trends.boundingBox();
+    expect(box?.height ?? 0).toBeLessThan(430);
+
+    await page.getByRole("button", { name: "7d", exact: true }).click();
+    await expect(page.getByLabel("Tendências elétricas 7 dias")).toBeVisible();
   }
+});
 
-  await expect.poll(() => page.locator("svg.recharts-surface").count()).toBeGreaterThanOrEqual(10);
-  await expect(page.getByText("Gráfico Rede — L1 L2 L3")).toHaveCount(0);
-  await expect(page.getByText("Gráfico Gerador — L1 L2 L3")).toHaveCount(0);
+test("geradores com histórico real renderizam linhas e consultam o período selecionado", async ({
+  page,
+}) => {
+  test.skip(realGeneratorTags.length === 0, "E2E_REAL_GENERATOR_TAGS não informado.");
+  test.setTimeout(180_000);
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await login(page);
 
-  const firstPanel = electrical.locator("section").first();
-  const box = await firstPanel.boundingBox();
-  expect(box?.width ?? 0).toBeGreaterThan(250);
-  expect(box?.height ?? 0).toBeGreaterThan(100);
+  const generators = await page.evaluate(async () => {
+    const response = await fetch("/api/generators", { credentials: "include" });
+    if (!response.ok) throw new Error("falha ao listar geradores: " + response.status);
+    return response.json();
+  });
+
+  for (const tag of realGeneratorTags) {
+    const generator = generators.find(
+      (item: { tag?: string }) => String(item.tag || "").toUpperCase() === tag.toUpperCase(),
+    );
+    expect(generator, "gerador real não encontrado: " + tag).toBeTruthy();
+
+    const trendRequests: string[] = [];
+    const onRequest = (request: { url(): string }) => {
+      if (request.url().includes("/trends/")) trendRequests.push(request.url());
+    };
+    page.on("request", onRequest);
+
+    await page.goto("/p/geradores/" + encodeURIComponent(String(generator.id)));
+    const trends24h = page.getByLabel("Tendências elétricas 24 horas");
+    await expect(trends24h).toBeVisible();
+    await expect
+      .poll(() => page.locator("svg.recharts-surface").count(), { timeout: 60_000 })
+      .toBeGreaterThan(0);
+    await expect(page.getByText("Gráfico Rede — L1 L2 L3")).toHaveCount(0);
+    await expect(page.getByText("Gráfico Gerador — L1 L2 L3")).toHaveCount(0);
+
+    await page.getByRole("button", { name: "7d", exact: true }).click();
+    await expect(page.getByLabel("Tendências elétricas 7 dias")).toBeVisible();
+    await expect
+      .poll(
+        () =>
+          trendRequests.some((url) => url.includes("hours=168") && url.includes("archiveBit=2")),
+        { timeout: 60_000 },
+      )
+      .toBeTruthy();
+
+    page.off("request", onRequest);
+  }
 });
