@@ -1008,5 +1008,11 @@
         "notes": "OFF seleciona o modo Stop da DSE via control key 35700."
       }
     }
+  },
+  "metricLimits": {
+    "rpm": {
+      "displayMin": 0,
+      "displayMax": 3000
+    }
   }
 }
