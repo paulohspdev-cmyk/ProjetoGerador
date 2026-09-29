@@ -54,7 +54,11 @@ export function VerticalControls({
             aria-pressed={activeMode === "OFF"}
             aria-label="OFF"
             className={cn(activeMode === "OFF" && "is-active")}
-            title={canOff ? "Comando OFF homologado para esta controladora" : "Comando ainda não homologado"}
+            title={
+              canOff
+                ? "Comando OFF homologado para esta controladora"
+                : "Comando ainda não homologado"
+            }
             onClick={() => canOff && onCommand("off")}
           >
             {busy === "off" ? "..." : "OFF"}
@@ -65,7 +69,11 @@ export function VerticalControls({
             disabled={!canManual || busy !== null}
             aria-pressed={activeMode === "MAN"}
             aria-label="Manual"
-            title={canManual ? "Comando Manual homologado para esta controladora" : "Comando ainda não homologado"}
+            title={
+              canManual
+                ? "Comando Manual homologado para esta controladora"
+                : "Comando ainda não homologado"
+            }
             onClick={() => canManual && onCommand("manual")}
           >
             {busy === "manual" ? "..." : <Hand aria-hidden="true" />}
@@ -76,7 +84,11 @@ export function VerticalControls({
             disabled={!canAuto || busy !== null}
             aria-pressed={activeMode === "AUT"}
             aria-label="Automático"
-            title={canAuto ? "Comando Automático homologado para esta controladora" : "Comando ainda não homologado"}
+            title={
+              canAuto
+                ? "Comando Automático homologado para esta controladora"
+                : "Comando ainda não homologado"
+            }
             onClick={() => canAuto && onCommand("auto")}
           >
             {busy === "auto" ? (
@@ -95,7 +107,11 @@ export function VerticalControls({
             aria-pressed={activeMode === "TEST"}
             aria-label="TEST"
             className={cn(activeMode === "TEST" && "is-active")}
-            title={canTest ? "Comando TEST homologado para esta controladora" : "Comando ainda não homologado"}
+            title={
+              canTest
+                ? "Comando TEST homologado para esta controladora"
+                : "Comando ainda não homologado"
+            }
             onClick={() => canTest && onCommand("test")}
           >
             {busy === "test" ? "..." : "TEST"}
