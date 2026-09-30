@@ -93,6 +93,23 @@ with TestClient(app) as client:
     ).json()
     assert viewer["role"] == "visualizacao"
 
+    modem = expect(
+        client.post(
+            "/api/field-devices",
+            json={
+                "kind": "modem",
+                "name": "MDM-TEST-15001",
+                "status": "approved_unlinked",
+                "metadata": {
+                    "admissionPort": 15001,
+                    "admissionIp": "10.0.0.10",
+                },
+            },
+        ),
+        201,
+    ).json()
+    assert modem["status"] == "approved_unlinked"
+
     generator = expect(
         client.post(
             "/api/generators",
