@@ -314,6 +314,160 @@ def _validate_rtu_crc(frame: bytes) -> None:
         )
 
 
+class ModemAdmissionPort:
+    """Listener passivo para modem ainda não vinculado a gerador."""
+
+    def __init__(self, remote_port: int):
+        self.remote_port = int(remote_port)
+        self.allowed_networks, self.allowlist_source = _networks_for_port(self.remote_port)
+        self.server = None
+        self._writers: set = set()
+        self._peers: dict[int, dict] = {}
+        self._attempts = defaultdict(deque)
+
+    @staticmethod
+    def _peer_ip(peer):
+        if not isinstance(peer, (tuple, list)) or not peer:
+            return None
+        try:
+            return ipaddress.ip_address(str(peer[0]))
+        except ValueError:
+            return None
+
+    def _allowed(self, address) -> bool:
+        if address is None:
+            return False
+        if not self.allowed_networks:
+            return not REQUIRE_ALLOWLIST
+        return any(address in network for network in self.allowed_networks)
+
+    def _rate_allowed(self, address, now: float) -> bool:
+        key = str(address)
+        bucket = self._attempts[key]
+        cutoff = now - 60.0
+        while bucket and bucket[0] < cutoff:
+            bucket.popleft()
+        if len(bucket) >= CONNECT_RATE_LIMIT:
+            return False
+        bucket.append(now)
+        return True
+
+    async def start(self):
+        self.server = await asyncio.start_server(
+            self.accept_remote,
+            bridge.REMOTE_BIND,
+            self.remote_port,
+        )
+        bridge.log(f"porta {self.remote_port}: admissão passiva de modem ativa")
+
+    async def stop(self):
+        if self.server:
+            self.server.close()
+            await self.server.wait_closed()
+            self.server = None
+        writers = list(self._writers)
+        self._writers.clear()
+        self._peers.clear()
+        for writer in writers:
+            try:
+                writer.close()
+                await writer.wait_closed()
+            except Exception:
+                pass
+
+    async def _reject(self, writer, peer, reason: str):
+        address = self._peer_ip(peer)
+        if address is not None:
+            traffic_store.record_bridge_peer(
+                self.remote_port,
+                str(address),
+                accepted=False,
+                reason=reason,
+            )
+        try:
+            writer.close()
+            await writer.wait_closed()
+        except Exception:
+            pass
+
+    async def accept_remote(self, reader, writer):
+        peer = writer.get_extra_info("peername")
+        address = self._peer_ip(peer)
+        now_mono = time.monotonic()
+        if not self._allowed(address):
+            await self._reject(writer, peer, "origem fora da allowlist")
+            return
+        if not self._rate_allowed(address, now_mono):
+            await self._reject(writer, peer, "limite de conexões por minuto excedido")
+            return
+
+        now_epoch = int(time.time())
+        key = id(writer)
+        self._writers.add(writer)
+        self._peers[key] = {
+            "remoteIp": str(address),
+            "connectedAt": now_epoch,
+            "lastSeenAt": now_epoch,
+            "bytesRx": 0,
+        }
+        traffic_store.record_bridge_peer(
+            self.remote_port,
+            str(address),
+            accepted=True,
+            reason="admission_connected",
+        )
+
+        try:
+            while True:
+                try:
+                    data = await asyncio.wait_for(reader.read(4096), timeout=10.0)
+                except TimeoutError:
+                    data = None
+                now_epoch = int(time.time())
+                current = self._peers.get(key)
+                if current is not None:
+                    current["lastSeenAt"] = now_epoch
+                traffic_store.touch_bridge_peer(
+                    self.remote_port,
+                    str(address),
+                    reason="admission_waiting",
+                    now=now_epoch,
+                )
+                if data is None:
+                    continue
+                if not data:
+                    break
+                if current is not None:
+                    current["bytesRx"] = int(current.get("bytesRx") or 0) + len(data)
+        except (ConnectionError, asyncio.IncompleteReadError):
+            pass
+        finally:
+            self._writers.discard(writer)
+            self._peers.pop(key, None)
+            try:
+                writer.close()
+                await writer.wait_closed()
+            except Exception:
+                pass
+
+    def snapshot(self) -> dict:
+        peers = sorted(
+            (dict(item) for item in self._peers.values()),
+            key=lambda item: (item.get("remoteIp") or "", item.get("connectedAt") or 0),
+        )
+        return {
+            "remotePort": self.remote_port,
+            "listening": bool(self.server is not None),
+            "connectedPeers": len(peers),
+            "peers": peers,
+            "peerAllowlistEnabled": bool(self.allowed_networks),
+            "peerAllowlistSource": self.allowlist_source,
+        }
+
+
+admission_ports: dict[int, ModemAdmissionPort] = {}
+
+
 class HardenedBridgePort(bridge.BridgePort):
     """Protege peer e impede um Unit em timeout de monopolizar a linha compartilhada."""
 
