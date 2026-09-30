@@ -43,9 +43,19 @@ O PR #86 está aberto/não integrado à `main`.
 - `frontend/src/features/generators/vertical-card/vertical-reference-card.css`
 - `frontend/src/lib/api.ts`
 
-## Limitação
+## Verificação Git direta
 
-O diretório implantado não possui `.git`. Portanto não é tecnicamente correto afirmar que o checkout local tem um SHA Git. O que está comprovado é equivalência integral dos 22 arquivos que compõem o delta do PR #86.
+Uma inspeção inicial do gerenciador não mostrou `.git`, mas a verificação direta posterior confirmou que o checkout Git existe.
+
+Estado observado:
+
+- `git rev-parse HEAD = 20a68c2d0e146addcca708290a1564c63ffa305e`;
+- `/var/lib/rc-geradores/deployed-commit` contém o mesmo SHA;
+- checkout detached;
+- `git status --porcelain` sem alterações locais;
+- origin aponta para o repositório esperado.
+
+Portanto a identidade da release está comprovada tanto pelo Git quanto pelo marcador de deploy.
 
 ## Impacto
 

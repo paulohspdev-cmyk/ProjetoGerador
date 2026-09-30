@@ -9,7 +9,9 @@
 - Esse SHA é o head atual do PR #86, ainda aberto.
 - Todos os 22 arquivos do delta entre `main@903716e` e esse head foram comparados com a VM e coincidem integralmente.
 
-A pasta implantada não contém `.git`. Isso é aceitável para um artefato de release desde que o marcador `deployed-commit` seja tratado como fonte de versão. O diagnóstico atual, porém, ainda tenta usar `git rev-parse` e precisa ser corrigido para consultar o marcador.
+Verificação direta posterior confirmou que a pasta implantada **contém checkout Git válido**. O HEAD está detached em `20a68c2d0e146addcca708290a1564c63ffa305e`, o working tree está limpo e o marcador `deployed-commit` contém exatamente o mesmo SHA. `diagnostics.version_info()` retorna corretamente `gitSha=20a68c2d0e14`.
+
+Uma hipótese anterior de ausência de `.git` foi causada pela listagem do gerenciador não exibir esse diretório e foi formalmente descartada.
 
 ## Serviços observados
 
@@ -111,4 +113,4 @@ Este é um achado confirmado de "card não corresponde à realidade".
 2. O smoke pós-deploy deve comparar `pack rapid channels` x `runtime binding channels`.
 3. Estado utilizado pelo executor de comando e estado mostrado no card precisam vir do mesmo contrato de telemetria ou ter reconciliação explícita.
 4. Um warning observado na controladora não pode desaparecer silenciosamente por ausência de canal no binding.
-5. `deployed-commit` deve ser exposto pelo diagnóstico/version endpoint.
+5. A identidade da release deve continuar sendo validada por duas evidências: HEAD Git limpo + `deployed-commit` coincidente.
