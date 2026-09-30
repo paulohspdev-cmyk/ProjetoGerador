@@ -51,7 +51,7 @@ test("autenticação e RBAC funcionam no navegador", async ({ browser }) => {
   const admin = await browser.newContext();
   const adminPage = await admin.newPage();
   await login(adminPage, adminEmail, adminPassword);
-  await expect(adminPage).not.toHaveURL(/\/login$/);
+  await expect(adminPage).toHaveURL(/\/p\/geradores$/);
   const adminMe = await adminPage.evaluate(async () => {
     const response = await fetch("/api/auth/me", { credentials: "include" });
     return { status: response.status, body: await response.json() };
