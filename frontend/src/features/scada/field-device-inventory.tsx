@@ -198,7 +198,7 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
     setBusy(true);
     setError("");
     try {
-      await rcApi.fieldDevices.create({
+      const rejected = await rcApi.fieldDevices.create({
         kind: "modem",
         name: "Rejeitado " + peer.remoteIp + ":" + String(peer.remotePort),
         model: "",
@@ -208,7 +208,6 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
         sim_iccid: "",
         carrier: "",
         status: "rejected",
-        active: false,
         metadata: {
           admissionPort: peer.remotePort,
           admissionIp: peer.remoteIp,
@@ -216,6 +215,7 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
           admissionLastSeenAt: peer.lastSeenAt,
         },
       });
+      await rcApi.fieldDevices.update(rejected.id, { active: false });
       await load();
     } catch (rejectError) {
       setError(errText(rejectError));
