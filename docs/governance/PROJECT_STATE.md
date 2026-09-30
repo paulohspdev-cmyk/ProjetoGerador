@@ -1,55 +1,72 @@
 # Estado oficial do projeto
 
-Atualizado em: 2026-09-29  
-Baseline inicial da Auditoria Zero: `903716ec7463bee84a54856cdd27b94e78531fe4`  
-Branch de governança: `audit/zero-baseline-governance`  
-Produção observada: `deployed-commit=20a68c2d0e146addcca708290a1564c63ffa305e` — head do PR #86 ainda aberto.  
-Contexto operacional de continuidade: `sentinelx_context_sxc_5D0D875Z`
+Atualizado em: 2026-09-30  
+Baseline de governança integrada: `a3991670a78564d514de95fa1d500b53a32f6f7e`  
+Produção observada durante a Auditoria Zero: `20a68c2d0e146addcca708290a1564c63ffa305e`  
+Fotografia congelada: `production/observed-2026-09-29`  
+PR de fechamento da Auditoria Zero: #105  
+Contexto operacional privado mais recente: `sentinelx_context_sxc_48T4HH71`
 
-## Objetivo atual
+## Estado da Auditoria Zero
 
-Interromper o ciclo de correção/regressão e estabelecer uma base verificável para evoluir o RC Geradores. Nenhuma funcionalidade nova deve ser promovida antes de a Auditoria Zero definir o comportamento real e seus testes.
+**CONCLUÍDA COMO FASE DE DIAGNÓSTICO.**
 
-## Estado conhecido
+A auditoria mapeou o sistema atual, a produção observada, os gaps de contrato, a arquitetura de frontend, Rapid, comandos, banco, backup, bridge, segurança e testes.
 
-- Rapid SCADA continua sendo a fonte industrial de telemetria/histórico.
-- A aplicação possui CI, E2E e validações de Controller Packs.
-- A baseline `903716e` passou CI, E2E e Quality/Security.
-- **Drift de produção confirmado:** o marcador da VM aponta `20a68c2`, head do PR #86, e os 22 arquivos do delta foram confirmados idênticos.
-- O PR #86 permanece aberto/não integrado à `main`.
-- A VM possui 11 geradores e 10 bindings Rapid. GEN132 não possui binding de produção.
-- Banco operacional passou `PRAGMA quick_check=ok`.
-- Todos os serviços RC Geradores e Rapid SCADA observados estão ativos/habilitados.
-- O GEN163/DSE4520 MKII 4.8 possui pack específico e comandos habilitados na produção observada.
-- O binding runtime do GEN163 está desatualizado em relação ao pack implantado: 26 canais contra 40; faltam 15, inclusive `controller_status_flags_raw`.
-- O executor de comando do GEN163 lê `status=0x0400` (warning) em tentativas recentes, enquanto o payload normal mostra `alarms=0`. Este é um caso comprovado de divergência entre card e realidade observada pelo próprio controlador.
-- GEN205 e GEN206 têm telemetria ativa/running, mas seus packs permanecem read-only. Isso não é automaticamente erro: escrita requer homologação separada.
-- GEN153/154/167 têm START/STOP habilitados; modos continuam bloqueados.
-- GEN203/204 têm somente START habilitado no estado observado.
-- GEN157 está offline/stale e sem firmware inventariado; comandos efetivos ficam bloqueados.
+Isto não significa que os bugs estejam corrigidos. A próxima fase é **Remediação Controlada**, um domínio por PR.
 
-## Problemas prioritários
+Relatório de fechamento:
 
-1. Mensagem de comando no Vertical sem TTL.
-2. Estado `accepted/pending/confirmed` de comando precisa ser modelado explicitamente.
-3. Reconciliar pack/binding Rapid do GEN163 antes de confiar no card para warnings/bus/mains.
-4. Corrigir semântica de cor: valor presente não significa saudável/online.
-5. Separar algoritmos/layouts Vertical e Compacto.
-6. Fazer o endpoint de versão usar `deployed-commit`.
-7. Impedir deploy parcialmente reconciliado.
-8. Substituir PRs multissistema por um domínio por PR.
+`docs/audit/AUDIT_ZERO_FINAL_2026-09-30.md`
 
-## Próxima sequência obrigatória
+## Estado conhecido de maior impacto
 
-1. **Concluir AZ-01:** inventário/drift e regras de release.
-2. **AZ-06/AZ-09:** fechar a divergência de telemetria/binding DSE sem escrever na controladora.
-3. Capturar fixtures reais sanitizadas de API/telemetria.
-4. Fechar AZ-02..AZ-16 por domínio.
-5. Transformar cada problema em teste de regressão.
-6. Corrigir um domínio por PR.
-7. Criar release candidate por SHA exato.
-8. Validar antes de qualquer novo deploy.
+- produção observada estava em SHA de PR ainda aberto, diferente da main consolidada;
+- GEN163/DSE4520 possuía Controller Pack com 40 canais e binding runtime com 26;
+- sinais de warning observados pelo executor não chegavam integralmente ao card;
+- contrato genérico ainda mistura accepted/pending/confirmed em alguns caminhos;
+- IG200 não aplica integralmente o feedback RPM declarado no pack;
+- DSE/IG4 possuem timeouts de executor divergentes dos contratos declarados;
+- mensagem de comando do Vertical não possui TTL;
+- Vertical muda geometria conforme quantidade de cards visíveis;
+- filtro de status e status exibido podem divergir quando stale;
+- Compacto e gauges possuem semântica de cor não totalmente fundamentada em estado industrial;
+- backup/restore é tecnicamente robusto, mas a política periódica observada requer restauração operacional;
+- deploy possui rollback/SHA/smoke, mas falta gate exato Controller Pack x binding;
+- bridge possui proteção e deploy preserva sessões em mudanças não relacionadas à comunicação;
+- segurança possui controles técnicos relevantes e hardenings operacionais pendentes, com detalhes mantidos fora do repositório público.
+
+## Artefatos canônicos
+
+- `AGENTS.md`
+- `docs/governance/PRODUCTION_CONTRACT.md`
+- `docs/governance/CHANGE_BOUNDARIES.md`
+- `docs/governance/REGRESSION_MATRIX.md`
+- `docs/governance/BUG_LEDGER.md`
+- `docs/governance/AI_HANDOFF.md`
+- `docs/audit/AUDIT_ZERO_FINAL_2026-09-30.md`
+
+## Próxima fase obrigatória — Remediação Controlada
+
+Ordem:
+
+1. checker read-only pack x binding;
+2. gate de deploy para mismatch;
+3. dry-run de reconcile Rapid;
+4. restaurar política de backup periódico;
+5. fixtures reais read-only;
+6. separar submitted/accepted/pending/confirmed/failed;
+7. corrigir feedback IG200;
+8. alinhar timeouts DSE/IG4 ao pack;
+9. TTL visual de ~2 s;
+10. corrigir semântica de cores/status;
+11. estabilizar e separar layouts Vertical/Compacto;
+12. reconciliar GEN163 em procedimento controlado;
+13. homologações adicionais somente depois;
+14. hardening final de segurança/operação.
 
 ## Regra de continuidade
 
-Este arquivo é a memória operacional canônica do projeto. Qualquer agente deve começar por `AGENTS.md`, este arquivo e o PR/issue mestre. O contexto SentinelX é auxiliar; o GitHub continua sendo a fonte durável.
+Qualquer agente deve iniciar por `AGENTS.md`, este arquivo e o relatório final.
+
+Se uma tarefa não declarar um único domínio primário, ela não deve começar.
