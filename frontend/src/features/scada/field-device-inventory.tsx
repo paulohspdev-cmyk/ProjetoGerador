@@ -1,12 +1,31 @@
 import { Network, Router, Signal } from "lucide-react";
-import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "@/features/auth/AuthProvider";
-import { rcApi, type FieldDevice } from "@/lib/api";
+import { rcApi, type BridgePeerObservation, type FieldDevice } from "@/lib/api";
 import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats } from "./kit";
 
 function errText(error: unknown) {
   return error instanceof Error ? error.message : "Falha na operação";
+}
+
+function admissionKey(remotePort: number, remoteIp: string) {
+  return String(remotePort) + "|" + remoteIp.trim();
+}
+
+function metadataText(metadata: Record<string, unknown> | undefined, key: string) {
+  const value = metadata?.[key];
+  return typeof value === "string" ? value : "";
+}
+
+function metadataNumber(metadata: Record<string, unknown> | undefined, key: string) {
+  const value = metadata?.[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function dateTime(epoch: number | null | undefined) {
+  if (!epoch) return "—";
+  return new Date(epoch * 1000).toLocaleString("pt-BR");
 }
 
 function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
