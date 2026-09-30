@@ -119,12 +119,6 @@ export type ElectricalRow = {
   generator: string;
 };
 
-export type ValueRow = {
-  icon: "clock" | "zap" | "gauge";
-  label: string;
-  value: string;
-};
-
 export type GeneratorAlarmRow = {
   key: string;
   severity: "fault" | "alarm" | "warning" | "info" | string;
@@ -134,11 +128,9 @@ export type GeneratorAlarmRow = {
 
 export function VerticalTables({
   electricalRows,
-  valueRows,
   alarms,
 }: {
   electricalRows: ElectricalRow[];
-  valueRows: ValueRow[];
   alarms: GeneratorAlarmRow[];
 }) {
   const visible = alarms.slice(0, 3);
@@ -157,15 +149,6 @@ export function VerticalTables({
             <span>{row.label}</span>
             <b>{row.mains}</b>
             <b className="generator">{row.generator}</b>
-          </div>
-        ))}
-      </div>
-      <div className="vref-summary-grid" aria-label="Valores do gerador">
-        {valueRows.map((row) => (
-          <div key={row.label} className="vref-summary-item">
-            {row.icon === "clock" ? <Clock3 /> : row.icon === "zap" ? <Zap /> : <Gauge />}
-            <span>{row.label}</span>
-            <b>{row.value}</b>
           </div>
         ))}
       </div>
