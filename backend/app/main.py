@@ -327,6 +327,32 @@ def users_delete(user_id: str, user: dict = Depends(require_manage_users)):
 # ---------------------------------------------------------------------------
 # Geradores e dados industriais
 # ---------------------------------------------------------------------------
+
+def _approved_modem_for_reverse_port(remote_port: int) -> dict | None:
+    port = int(remote_port or 0)
+    matches = []
+    for item in platform_store.list_field_devices("modem"):
+        if not item.get("active"):
+            continue
+        if str(item.get("status") or "").strip().lower() not in {
+            "approved_unlinked",
+            "approved_linked",
+        }:
+            continue
+        metadata = item.get("metadata") or {}
+        try:
+            admission_port = int(metadata.get("admissionPort") or 0)
+        except (TypeError, ValueError):
+            continue
+        if admission_port == port:
+            matches.append(item)
+    if len(matches) > 1:
+        raise ValueError(
+            f"Mais de um modem aprovado está associado à porta TCP {port}; "
+            "corrija o inventário antes de cadastrar o gerador"
+        )
+    return matches[0] if matches else None
+
 @app.get("/api/generators")
 def generators_list(user: dict = Depends(require_view)):
     return live_generators()
@@ -342,12 +368,35 @@ def generator_get(generator_id: str, user: dict = Depends(require_view)):
 
 @app.post("/api/generators", status_code=status.HTTP_201_CREATED)
 def generator_create(payload: GeneratorCreate, user: dict = Depends(require_create)):
+    record = payload.to_db()
+    approved_modem = None
+    if record.get("transport") == "reverse_tcp":
+        try:
+            approved_modem = _approved_modem_for_reverse_port(record.get("listen_port") or 0)
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        if not approved_modem:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "Cadastre e aprove primeiro o modem que chegou ao servidor. "
+                    f"Nenhum modem aprovado está associado à porta TCP {record.get('listen_port')}."
+                ),
+            )
     try:
-        created = db.create_generator(payload.to_db(), actor=actor(user))
+        created = db.create_generator(record, actor=actor(user))
     except sqlite3.IntegrityError as exc:
         raise HTTPException(status_code=409, detail=_generator_integrity_detail(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    if approved_modem:
+        db.add_audit(
+            actor(user),
+            "link_candidate",
+            "modem",
+            approved_modem["id"],
+            f"generator={created['id']};port={record.get('listen_port')}",
+        )
     domain_store.sync_legacy_generators()
     return overlay_generators([created])[0]
 

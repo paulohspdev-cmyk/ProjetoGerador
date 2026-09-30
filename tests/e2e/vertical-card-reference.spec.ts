@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { ensureApprovedModem } from "./modem-fixture";
+
 const adminEmail = process.env.E2E_ADMIN_EMAIL || "";
 const adminPassword = process.env.E2E_ADMIN_PASSWORD || "";
 
@@ -35,6 +37,7 @@ async function createGenerator(
     rapidDeviceNum: number;
   },
 ) {
+  await ensureApprovedModem(page, payload.listenPort);
   return page.evaluate(async (body) => {
     const response = await fetch("/api/generators", {
       method: "POST",
@@ -195,6 +198,7 @@ test("vertical sem rede remove a concessionária do fluxo em ComAp e DSE", async
       rapidDeviceNum: 394,
     },
   ]) {
+    await ensureApprovedModem(page, spec.listenPort);
     const status = await page.evaluate(async (body) => {
       const response = await fetch("/api/generators", {
         method: "POST",

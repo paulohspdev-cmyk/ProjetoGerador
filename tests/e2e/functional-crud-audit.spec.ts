@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { ensureApprovedModem } from "./modem-fixture";
+
 const adminEmail = process.env.E2E_ADMIN_EMAIL || "";
 const adminPassword = process.env.E2E_ADMIN_PASSWORD || "";
 
@@ -20,6 +22,7 @@ async function acceptDialog(page: Page, action: () => Promise<unknown>) {
 }
 
 async function createFixtureGenerator(page: Page) {
+  await ensureApprovedModem(page, 15555);
   const status = await page.evaluate(async () => {
     const response = await fetch("/api/generators", {
       method: "POST",
@@ -345,6 +348,16 @@ test("backup e cadastro técnico de controladora funcionam sem comando industria
 test("cadastro registration-only salva e mantém comandos bloqueados", async ({ page }) => {
   test.setTimeout(120_000);
   await login(page);
+  const nextReversePort = await page.evaluate(async () => {
+    const response = await fetch("/api/generators", { credentials: "include" });
+    const rows = (await response.json()) as Array<{ transport?: string; listenPort?: number }>;
+    const used = rows
+      .filter((item) => item.transport === "reverse_tcp")
+      .map((item) => Number(item.listenPort || 0))
+      .filter((value) => value >= 15001 && value <= 65535);
+    return Math.max(15000, ...used) + 1;
+  });
+  await ensureApprovedModem(page, nextReversePort);
   await page.goto("/p/geradores");
 
   await page
