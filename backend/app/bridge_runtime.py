@@ -1115,6 +1115,13 @@ async def reconcile_reverse_tcp():
                 continue
             wanted[port] = next(iter(framings))
 
+        claimed_ports = set(wanted)
+        for port in sorted(claimed_ports):
+            admission = admission_ports.pop(port, None)
+            if admission is not None:
+                await admission.stop()
+                bridge.log(f"porta {port}: admissão encerrada; operação industrial assumirá a porta")
+
         for port, framing in wanted.items():
             current = bridge.bridges.get(port)
             if current is not None and getattr(current, "remote_framing", None) == framing:
