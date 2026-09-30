@@ -1146,6 +1146,27 @@ async def reconcile_reverse_tcp():
             await item.stop()
             bridge.log(f"porta {port}: ponte removida")
 
+        desired_admission = ADMISSION_PORTS - claimed_ports
+        for port in sorted(desired_admission):
+            if port in admission_ports:
+                continue
+            allowed_networks, _ = _networks_for_port(port)
+            if REQUIRE_ALLOWLIST and not allowed_networks:
+                bridge.log(
+                    f"porta {port}: admissão bloqueada; allowlist obrigatória não configurada"
+                )
+                continue
+            item = ModemAdmissionPort(port)
+            await item.start()
+            admission_ports[port] = item
+
+        for port in list(admission_ports):
+            if port in desired_admission:
+                continue
+            item = admission_ports.pop(port)
+            await item.stop()
+            bridge.log(f"porta {port}: admissão removida")
+
         try:
             write_status(enabled)
         except Exception as exc:
