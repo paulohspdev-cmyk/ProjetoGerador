@@ -100,8 +100,38 @@ def _port_allowed_networks() -> dict[int, list]:
     return configured
 
 
+def _parse_admission_ports(raw: str) -> set[int]:
+    ports: set[int] = set()
+    for chunk in str(raw or "").split(","):
+        token = chunk.strip()
+        if not token:
+            continue
+        if "-" in token:
+            start_text, end_text = token.split("-", 1)
+            if not start_text.isdigit() or not end_text.isdigit():
+                raise RuntimeError(f"Faixa de portas de admissão inválida: {token}")
+            start, end = int(start_text), int(end_text)
+            if start > end:
+                raise RuntimeError(f"Faixa de portas de admissão invertida: {token}")
+            if end - start > 255:
+                raise RuntimeError(f"Faixa de portas de admissão ampla demais: {token}")
+            candidates = range(start, end + 1)
+        else:
+            if not token.isdigit():
+                raise RuntimeError(f"Porta de admissão inválida: {token}")
+            candidates = (int(token),)
+        for port in candidates:
+            if not 1 <= port <= 65535:
+                raise RuntimeError(f"Porta de admissão fora da faixa: {port}")
+            ports.add(port)
+    if len(ports) > 256:
+        raise RuntimeError("No máximo 256 portas de admissão podem ser configuradas")
+    return ports
+
+
 REMOTE_ALLOWED_NETWORKS = _allowed_networks()
 PORT_ALLOWED_NETWORKS = _port_allowed_networks()
+ADMISSION_PORTS = _parse_admission_ports(os.environ.get("RC_MODEM_ADMISSION_PORTS", ""))
 if REQUIRE_ALLOWLIST and not REMOTE_ALLOWED_NETWORKS and not PORT_ALLOWED_NETWORKS:
     raise RuntimeError(
         "RC_RAPID_REQUIRE_ALLOWLIST=1 exige RC_RAPID_REMOTE_ALLOWED_CIDRS "
