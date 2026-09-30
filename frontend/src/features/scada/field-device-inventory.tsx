@@ -92,6 +92,14 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
       ),
     [peers, registeredAdmissionKeys],
   );
+  const pendingRows = useMemo(
+    () =>
+      pendingPeers.map((peer) => ({
+        ...peer,
+        id: admissionKey(peer.remotePort, peer.remoteIp),
+      })),
+    [pendingPeers],
+  );
 
   const registeredRows = useMemo(() => rows.filter((row) => row.status !== "rejected"), [rows]);
   const rejectedRows = useMemo(() => rows.filter((row) => row.status === "rejected"), [rows]);
@@ -286,7 +294,7 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
             </p>
           ) : (
             <ScadaTable
-              rows={pendingPeers}
+              rows={pendingRows}
               columns={[
                 { label: "Entrada", render: (peer) => <b>TCP {peer.remotePort}</b> },
                 { label: "Origem", render: (peer) => peer.remoteIp },
