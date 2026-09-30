@@ -326,12 +326,20 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
       {admin && (
         <Panel
           title={
-            editing
-              ? `Editar ${kind === "modem" ? "modem" : "gateway"}`
-              : `Adicionar ${kind === "modem" ? "modem" : "gateway"}`
+            approvalPeer
+              ? "Aprovar modem · TCP " + String(approvalPeer.remotePort)
+              : editing
+                ? `Editar ${kind === "modem" ? "modem" : "gateway"}`
+                : `Adicionar ${kind === "modem" ? "modem" : "gateway"}`
           }
         >
           <form onSubmit={save} className="space-y-3">
+            {approvalPeer && (
+              <p className="rounded-lg border border-online/30 bg-online/8 p-3 text-xs text-muted-foreground">
+                Conexão detectada em {approvalPeer.remoteIp}:{approvalPeer.remotePort}. Aprovar não
+                cria gerador, não cria Rapid Device e não libera comandos.
+              </p>
+            )}
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               <label className="text-sm font-semibold">
                 Nome
@@ -342,6 +350,16 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
                   className="mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
                 />
               </label>
+              {kind === "modem" && (
+                <label className="text-sm font-semibold">
+                  Fabricante
+                  <input
+                    value={manufacturer}
+                    onChange={(event) => setManufacturer(event.target.value)}
+                    className="mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
+                  />
+                </label>
+              )}
               <label className="text-sm font-semibold">
                 Modelo
                 <input
@@ -355,7 +373,8 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
                 <input
                   value={host}
                   onChange={(event) => setHost(event.target.value)}
-                  className="mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
+                  readOnly={!!approvalPeer}
+                  className="mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm read-only:opacity-70"
                 />
               </label>
             </div>
