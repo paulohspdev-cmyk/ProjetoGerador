@@ -107,13 +107,15 @@ export function GeneratorDetailProfessionalLower({
     .filter((row) => !paramSkip.has(row.label.toLowerCase()))
     .slice(0, 6);
 
-  const showMainsHistory = [
-    "mains_voltage_l1",
-    "mains_voltage_l2",
-    "mains_voltage_l3",
-    "mains_frequency",
-    "mains_power_kw",
-  ].some((key) => configuredTrendMetrics.has(key));
+  const showMainsHistory =
+    model.hasMainsSource &&
+    [
+      "mains_voltage_l1",
+      "mains_voltage_l2",
+      "mains_voltage_l3",
+      "mains_frequency",
+      "mains_power_kw",
+    ].some((key) => configuredTrendMetrics.has(key));
 
   const historyPanels: Array<{
     title: string;
