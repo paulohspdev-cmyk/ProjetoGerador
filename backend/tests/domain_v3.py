@@ -11,7 +11,7 @@ os.environ["RC_DATA_DIR"] = tmp.name
 os.environ["RC_DB_FILE"] = str(Path(tmp.name) / "domain-v3.db")
 os.environ["RC_ENABLE_IG200_CONTROL"] = "0"
 
-from app import db, domain_bundle, domain_store  # noqa: E402
+from app import db, domain_bundle, domain_store, platform_store, traffic_store  # noqa: E402
 from app.controller_library import catalog_for_model, library_summary, pack_for_model  # noqa: E402
 from app.domain_routes import (  # noqa: E402
     asset_delete,
@@ -25,6 +25,7 @@ from app.domain_routes import (  # noqa: E402
 
 db.init_db()
 domain_store.init_domain_db()
+platform_store.init_platform_db()
 user = {"email": "test@local", "role": "administrador"}
 
 library = library_summary()
@@ -455,6 +456,88 @@ except sqlite3.IntegrityError:
 else:
     raise AssertionError("cadastro legacy aceitou identidade industrial já usada no domínio v3")
 assert db.get_generator("CONFLICT-LEGACY") is None
+
+
+# Modem-first: chegada observada -> aprovação -> cadastro -> vínculo com gerador.
+traffic_store.record_bridge_peer(
+    15110,
+    "10.20.30.40",
+    accepted=True,
+    reason="admission_connected",
+    now=10_000,
+)
+pending = next(
+    item for item in platform_store.list_modem_admissions()
+    if item["remotePort"] == 15110
+)
+assert pending["state"] == "pending"
+assert pending["remoteIp"] == "10.20.30.40"
+
+rejected = platform_store.reject_modem_admission(
+    15110,
+    "não reconhecido",
+    actor="test",
+)
+assert rejected["state"] == "rejected"
+reopened = platform_store.reopen_modem_admission(15110, actor="test")
+assert reopened and reopened["state"] == "pending"
+
+approved = platform_store.approve_modem_admission(
+    15110,
+    {
+        "name": "MDM-15110",
+        "manufacturer": "Teltonika",
+        "model": "RUT",
+        "serial": "SN-TEST",
+        "imei": "000000000000001",
+        "sim_phone": "+5500000000000",
+        "sim_iccid": "8955000000000000001",
+        "carrier": "Teste",
+        "apn": "internet",
+    },
+    actor="test",
+)
+assert approved["state"] == "approved"
+modem_id = approved["fieldDeviceId"]
+modem = next(
+    item for item in platform_store.list_field_devices("modem")
+    if item["id"] == modem_id
+)
+assert modem["listen_port"] == 15110
+assert modem["sim_phone"] == "+5500000000000"
+assert modem["linked_generator_ids"] == []
+
+generator = db.create_generator(
+    {
+        "tag": "MODEM-FIRST-01",
+        "name": "Modem First",
+        "customer": "",
+        "site": "Lab",
+        "controller_type": "COMAP",
+        "controller_model": "InteliGen 200",
+        "transport": "reverse_tcp",
+        "host": "",
+        "listen_port": 15110,
+        "modbus_unit": 1,
+        "rapid_device_num": None,
+        "enabled": True,
+    },
+    actor="test",
+)
+assert platform_store.require_approved_modem(modem_id, 15110)["id"] == modem_id
+platform_store.link_modem_to_generator(modem_id, generator["id"], actor="test")
+modem = next(
+    item for item in platform_store.list_field_devices("modem")
+    if item["id"] == modem_id
+)
+assert modem["linked_generator_ids"] == [generator["id"]]
+
+try:
+    platform_store.delete_field_device(modem_id, actor="test")
+except ValueError as exc:
+    assert "vinculado" in str(exc).lower()
+else:
+    raise AssertionError("modem vinculado foi excluído")
 
 print("RC Geradores domain v3 smoke: OK")
 tmp.cleanup()

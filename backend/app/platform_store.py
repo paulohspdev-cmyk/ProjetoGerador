@@ -5,7 +5,7 @@ import secrets
 import time
 import uuid
 
-from . import db
+from . import db, traffic_store
 
 
 def _now() -> int:
@@ -43,12 +43,16 @@ def init_platform_db() -> None:
                 name TEXT NOT NULL,
                 site_id TEXT,
                 generator_id TEXT,
+                manufacturer TEXT NOT NULL DEFAULT '',
                 model TEXT NOT NULL DEFAULT '',
                 serial TEXT NOT NULL DEFAULT '',
                 imei TEXT NOT NULL DEFAULT '',
+                sim_phone TEXT NOT NULL DEFAULT '',
                 sim_iccid TEXT NOT NULL DEFAULT '',
                 carrier TEXT NOT NULL DEFAULT '',
+                apn TEXT NOT NULL DEFAULT '',
                 host TEXT NOT NULL DEFAULT '',
+                listen_port INTEGER,
                 rssi REAL,
                 status TEXT NOT NULL DEFAULT 'unknown',
                 last_seen INTEGER,
@@ -60,6 +64,32 @@ def init_platform_db() -> None:
             );
             CREATE INDEX IF NOT EXISTS idx_field_devices_kind ON field_devices(kind);
             CREATE INDEX IF NOT EXISTS idx_field_devices_generator ON field_devices(generator_id);
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_field_devices_modem_port
+                ON field_devices(listen_port)
+                WHERE kind='modem' AND listen_port IS NOT NULL AND active=1;
+
+            CREATE TABLE IF NOT EXISTS field_device_links (
+                field_device_id TEXT NOT NULL,
+                generator_id TEXT NOT NULL,
+                relation TEXT NOT NULL DEFAULT 'transport',
+                created_at INTEGER NOT NULL,
+                PRIMARY KEY(field_device_id,generator_id,relation),
+                FOREIGN KEY(field_device_id) REFERENCES field_devices(id) ON DELETE CASCADE,
+                FOREIGN KEY(generator_id) REFERENCES generators(id) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_field_device_links_generator
+                ON field_device_links(generator_id);
+
+            CREATE TABLE IF NOT EXISTS modem_admission_decisions (
+                remote_port INTEGER PRIMARY KEY,
+                state TEXT NOT NULL CHECK(state IN ('approved','rejected')),
+                field_device_id TEXT,
+                actor TEXT NOT NULL DEFAULT '',
+                reason TEXT NOT NULL DEFAULT '',
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL,
+                FOREIGN KEY(field_device_id) REFERENCES field_devices(id) ON DELETE SET NULL
+            );
 
             CREATE TABLE IF NOT EXISTS notification_queue (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -214,6 +244,23 @@ def init_platform_db() -> None:
         conn.commit()
         conn.execute("BEGIN IMMEDIATE")
 
+        field_device_columns = {
+            str(row["name"]) for row in conn.execute("PRAGMA table_info(field_devices)").fetchall()
+        }
+        for column, ddl in (
+            ("manufacturer", "TEXT NOT NULL DEFAULT ''"),
+            ("sim_phone", "TEXT NOT NULL DEFAULT ''"),
+            ("apn", "TEXT NOT NULL DEFAULT ''"),
+            ("listen_port", "INTEGER"),
+        ):
+            if column not in field_device_columns:
+                conn.execute(f"ALTER TABLE field_devices ADD COLUMN {column} {ddl}")
+        conn.execute(
+            """CREATE UNIQUE INDEX IF NOT EXISTS idx_field_devices_modem_port
+               ON field_devices(listen_port)
+               WHERE kind='modem' AND listen_port IS NOT NULL AND active=1"""
+        )
+
         api_token_columns = {
             str(row["name"]) for row in conn.execute("PRAGMA table_info(api_tokens)").fetchall()
         }
@@ -356,13 +403,40 @@ def queue_health() -> dict:
 
 # ----------------------------- inventory ----------------------------------
 
+def _field_device_port(value) -> int | None:
+    if value in (None, ""):
+        return None
+    try:
+        port = int(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("Porta do modem inválida") from exc
+    if not 1 <= port <= 65535:
+        raise ValueError("Porta do modem deve ficar entre 1 e 65535")
+    return port
+
+
 def list_field_devices(kind: str | None = None):
+    init_platform_db()
     with db.connect() as conn:
         if kind:
-            rows = conn.execute("SELECT * FROM field_devices WHERE kind=? ORDER BY name", (kind,)).fetchall()
+            rows = conn.execute(
+                "SELECT * FROM field_devices WHERE kind=? ORDER BY name",
+                (kind,),
+            ).fetchall()
         else:
             rows = conn.execute("SELECT * FROM field_devices ORDER BY kind,name").fetchall()
-    return [_row(r) for r in rows]
+        links = conn.execute(
+            "SELECT field_device_id,generator_id FROM field_device_links ORDER BY created_at"
+        ).fetchall()
+    by_device: dict[str, list[str]] = {}
+    for link in links:
+        by_device.setdefault(str(link["field_device_id"]), []).append(str(link["generator_id"]))
+    result = []
+    for row in rows:
+        item = _row(row)
+        item["linked_generator_ids"] = by_device.get(str(item["id"]), [])
+        result.append(item)
+    return result
 
 
 def _validate_field_device_refs(*, site_id=None, generator_id=None) -> None:
@@ -375,28 +449,52 @@ def _validate_field_device_refs(*, site_id=None, generator_id=None) -> None:
             raise ValueError("Unidade/site vinculada ao equipamento não existe")
 
 
+def _validate_modem_port(item_id: str | None, port: int | None, active: bool = True) -> None:
+    if port is None or not active:
+        return
+    with db.connect() as conn:
+        params: list = [port]
+        suffix = ""
+        if item_id:
+            suffix = " AND id<>?"
+            params.append(item_id)
+        conflict = conn.execute(
+            "SELECT id FROM field_devices "
+            "WHERE kind='modem' AND active=1 AND listen_port=?" + suffix,
+            tuple(params),
+        ).fetchone()
+    if conflict:
+        raise ValueError(f"Porta {port} já pertence a outro modem ativo")
+
+
 def create_field_device(data: dict, actor: str):
+    init_platform_db()
     kind = str(data.get("kind") or "").strip().lower()
     if kind not in {"modem", "gateway"}:
         raise ValueError("Tipo de equipamento inválido")
     now = _now()
+    listen_port = _field_device_port(data.get("listen_port")) if kind == "modem" else None
     item = {
         "id": _id("dev"),
         "kind": kind,
         "name": str(data.get("name") or "").strip(),
         "site_id": data.get("site_id") or None,
         "generator_id": data.get("generator_id") or None,
+        "manufacturer": str(data.get("manufacturer") or "").strip(),
         "model": str(data.get("model") or "").strip(),
         "serial": str(data.get("serial") or "").strip(),
         "imei": str(data.get("imei") or "").strip(),
+        "sim_phone": str(data.get("sim_phone") or "").strip(),
         "sim_iccid": str(data.get("sim_iccid") or "").strip(),
         "carrier": str(data.get("carrier") or "").strip(),
+        "apn": str(data.get("apn") or "").strip(),
         "host": str(data.get("host") or "").strip(),
+        "listen_port": listen_port,
         "rssi": data.get("rssi"),
         "status": str(data.get("status") or "unknown").strip().lower(),
         "last_seen": data.get("last_seen"),
         "metadata_json": json.dumps(data.get("metadata") or {}, ensure_ascii=False),
-        "active": 1,
+        "active": 1 if data.get("active", True) else 0,
         "created_at": now,
         "updated_at": now,
     }
@@ -406,10 +504,18 @@ def create_field_device(data: dict, actor: str):
         site_id=item.get("site_id"),
         generator_id=item.get("generator_id"),
     )
+    _validate_modem_port(None, listen_port, bool(item["active"]))
     with db.connect() as conn:
         conn.execute(
-            """INSERT INTO field_devices(id,kind,name,site_id,generator_id,model,serial,imei,sim_iccid,carrier,host,rssi,status,last_seen,metadata_json,active,created_at,updated_at)
-               VALUES (:id,:kind,:name,:site_id,:generator_id,:model,:serial,:imei,:sim_iccid,:carrier,:host,:rssi,:status,:last_seen,:metadata_json,:active,:created_at,:updated_at)""",
+            """INSERT INTO field_devices(
+                   id,kind,name,site_id,generator_id,manufacturer,model,serial,imei,
+                   sim_phone,sim_iccid,carrier,apn,host,listen_port,rssi,status,last_seen,
+                   metadata_json,active,created_at,updated_at
+               ) VALUES (
+                   :id,:kind,:name,:site_id,:generator_id,:manufacturer,:model,:serial,:imei,
+                   :sim_phone,:sim_iccid,:carrier,:apn,:host,:listen_port,:rssi,:status,:last_seen,
+                   :metadata_json,:active,:created_at,:updated_at
+               )""",
             item,
         )
     db.add_audit(actor, "create", kind, item["id"], item["name"])
@@ -417,29 +523,57 @@ def create_field_device(data: dict, actor: str):
 
 
 def update_field_device(item_id: str, patch: dict, actor: str):
-    allowed = {"name", "site_id", "generator_id", "model", "serial", "imei", "sim_iccid", "carrier", "host", "rssi", "status", "last_seen", "metadata", "active"}
+    init_platform_db()
+    allowed = {
+        "name",
+        "site_id",
+        "generator_id",
+        "manufacturer",
+        "model",
+        "serial",
+        "imei",
+        "sim_phone",
+        "sim_iccid",
+        "carrier",
+        "apn",
+        "host",
+        "listen_port",
+        "rssi",
+        "status",
+        "last_seen",
+        "metadata",
+        "active",
+    }
     current = next((x for x in list_field_devices() if x["id"] == item_id), None)
     if not current:
         return None
     prospective_site = patch.get("site_id", current.get("site_id"))
     prospective_generator = patch.get("generator_id", current.get("generator_id"))
+    prospective_active = bool(patch.get("active", current.get("active")))
+    prospective_port = current.get("listen_port")
+    if "listen_port" in patch:
+        prospective_port = _field_device_port(patch.get("listen_port"))
     _validate_field_device_refs(
         site_id=prospective_site,
         generator_id=prospective_generator,
     )
+    if current.get("kind") == "modem":
+        _validate_modem_port(item_id, prospective_port, prospective_active)
     fields, values = [], []
     for key, value in patch.items():
-        if key not in allowed or value is None:
+        if key not in allowed:
             continue
         db_key = "metadata_json" if key == "metadata" else key
         if key == "metadata":
             value = json.dumps(value or {}, ensure_ascii=False)
-        if key == "active":
+        elif key == "active":
             value = 1 if bool(value) else 0
+        elif key == "listen_port":
+            value = _field_device_port(value)
         fields.append(f"{db_key}=?")
         values.append(value)
     if not fields:
-        return next((x for x in list_field_devices() if x["id"] == item_id), None)
+        return current
     fields.append("updated_at=?")
     values.extend([_now(), item_id])
     with db.connect() as conn:
@@ -447,16 +581,265 @@ def update_field_device(item_id: str, patch: dict, actor: str):
         if cur.rowcount == 0:
             return None
     db.add_audit(actor, "update", "field_device", item_id, ",".join(patch.keys()))
-    return next((x for x in list_field_devices() if x["id"] == item_id), None)
+    return next(x for x in list_field_devices() if x["id"] == item_id)
 
 
 def delete_field_device(item_id: str, actor: str) -> bool:
+    init_platform_db()
     with db.connect() as conn:
+        linked = conn.execute(
+            "SELECT COUNT(*) FROM field_device_links WHERE field_device_id=?",
+            (item_id,),
+        ).fetchone()[0]
+        if int(linked):
+            raise ValueError("Modem/gateway vinculado a gerador não pode ser excluído")
         cur = conn.execute("DELETE FROM field_devices WHERE id=?", (item_id,))
     if cur.rowcount:
         db.add_audit(actor, "delete", "field_device", item_id, "")
         return True
     return False
+
+
+def list_modem_admissions() -> list[dict]:
+    init_platform_db()
+    traffic_store.init_traffic_db()
+    with db.connect() as conn:
+        observations = conn.execute(
+            """SELECT remote_port,
+                      MIN(first_seen_at) AS first_seen_at,
+                      MAX(last_seen_at) AS last_seen_at,
+                      SUM(accepted_count) AS accepted_count,
+                      SUM(rejected_count) AS rejected_count,
+                      COUNT(*) AS peer_count
+               FROM bridge_peer_observations
+               GROUP BY remote_port
+               ORDER BY last_seen_at DESC"""
+        ).fetchall()
+        latest = {
+            int(row["remote_port"]): row["remote_ip"]
+            for row in conn.execute(
+                """SELECT p.remote_port,p.remote_ip
+                   FROM bridge_peer_observations p
+                   WHERE p.last_seen_at=(
+                       SELECT MAX(p2.last_seen_at)
+                       FROM bridge_peer_observations p2
+                       WHERE p2.remote_port=p.remote_port
+                   )"""
+            ).fetchall()
+        }
+        decisions = {
+            int(row["remote_port"]): dict(row)
+            for row in conn.execute("SELECT * FROM modem_admission_decisions").fetchall()
+        }
+        devices = {
+            int(row["listen_port"]): dict(row)
+            for row in conn.execute(
+                """SELECT id,name,listen_port,status,active
+                   FROM field_devices
+                   WHERE kind='modem' AND listen_port IS NOT NULL"""
+            ).fetchall()
+        }
+    result = []
+    seen: set[int] = set()
+    for row in observations:
+        port = int(row["remote_port"])
+        seen.add(port)
+        decision = decisions.get(port)
+        device = devices.get(port)
+        result.append(
+            {
+                "remotePort": port,
+                "remoteIp": latest.get(port, ""),
+                "firstSeenAt": int(row["first_seen_at"] or 0),
+                "lastSeenAt": int(row["last_seen_at"] or 0),
+                "acceptedCount": int(row["accepted_count"] or 0),
+                "rejectedCount": int(row["rejected_count"] or 0),
+                "peerCount": int(row["peer_count"] or 0),
+                "state": str((decision or {}).get("state") or "pending"),
+                "fieldDeviceId": (decision or {}).get("field_device_id"),
+                "fieldDeviceName": str((device or {}).get("name") or ""),
+                "reason": str((decision or {}).get("reason") or ""),
+            }
+        )
+    for port, decision in sorted(decisions.items()):
+        if port in seen:
+            continue
+        device = devices.get(port)
+        result.append(
+            {
+                "remotePort": port,
+                "remoteIp": "",
+                "firstSeenAt": 0,
+                "lastSeenAt": 0,
+                "acceptedCount": 0,
+                "rejectedCount": 0,
+                "peerCount": 0,
+                "state": str(decision.get("state") or "pending"),
+                "fieldDeviceId": decision.get("field_device_id"),
+                "fieldDeviceName": str((device or {}).get("name") or ""),
+                "reason": str(decision.get("reason") or ""),
+            }
+        )
+    return sorted(result, key=lambda item: (-int(item["lastSeenAt"]), int(item["remotePort"])))
+
+
+def _admission_by_port(remote_port: int) -> dict | None:
+    port = _field_device_port(remote_port)
+    return next((item for item in list_modem_admissions() if item["remotePort"] == port), None)
+
+
+def approve_modem_admission(remote_port: int, data: dict, actor: str) -> dict:
+    admission = _admission_by_port(remote_port)
+    if not admission or not admission.get("lastSeenAt"):
+        raise ValueError("Nenhuma chegada de modem foi observada nesta porta")
+    port = int(admission["remotePort"])
+    payload = {
+        **data,
+        "kind": "modem",
+        "listen_port": port,
+        "host": admission.get("remoteIp") or "",
+        "status": "approved",
+        "last_seen": admission.get("lastSeenAt"),
+        "active": True,
+    }
+    metadata = dict(data.get("metadata") or {})
+    metadata["admission"] = {
+        "remotePort": port,
+        "firstSeenAt": admission.get("firstSeenAt"),
+        "lastSeenAt": admission.get("lastSeenAt"),
+    }
+    payload["metadata"] = metadata
+
+    existing = next(
+        (
+            item
+            for item in list_field_devices("modem")
+            if int(item.get("listen_port") or 0) == port
+        ),
+        None,
+    )
+    if existing:
+        device = update_field_device(existing["id"], payload, actor)
+    else:
+        device = create_field_device(payload, actor)
+
+    now = _now()
+    with db.connect() as conn:
+        conn.execute(
+            """INSERT INTO modem_admission_decisions(
+                   remote_port,state,field_device_id,actor,reason,created_at,updated_at
+               ) VALUES (?,'approved',?,?,?, ?,?)
+               ON CONFLICT(remote_port) DO UPDATE SET
+                   state='approved',
+                   field_device_id=excluded.field_device_id,
+                   actor=excluded.actor,
+                   reason='',
+                   updated_at=excluded.updated_at""",
+            (port, device["id"], actor, "", now, now),
+        )
+    db.add_audit(actor, "approve", "modem_admission", str(port), device["id"])
+    return _admission_by_port(port)
+
+
+def reject_modem_admission(remote_port: int, reason: str, actor: str) -> dict:
+    admission = _admission_by_port(remote_port)
+    if not admission:
+        raise ValueError("Porta de admissão não observada")
+    if admission.get("fieldDeviceId"):
+        raise ValueError("Modem já aprovado; desative o cadastro antes de rejeitar a porta")
+    port = int(admission["remotePort"])
+    now = _now()
+    clean_reason = str(reason or "").strip()[:500]
+    with db.connect() as conn:
+        conn.execute(
+            """INSERT INTO modem_admission_decisions(
+                   remote_port,state,field_device_id,actor,reason,created_at,updated_at
+               ) VALUES (?,'rejected',NULL,?,?,?,?)
+               ON CONFLICT(remote_port) DO UPDATE SET
+                   state='rejected',
+                   field_device_id=NULL,
+                   actor=excluded.actor,
+                   reason=excluded.reason,
+                   updated_at=excluded.updated_at""",
+            (port, actor, clean_reason, now, now),
+        )
+    db.add_audit(actor, "reject", "modem_admission", str(port), clean_reason)
+    return _admission_by_port(port)
+
+
+def reopen_modem_admission(remote_port: int, actor: str) -> dict | None:
+    port = _field_device_port(remote_port)
+    with db.connect() as conn:
+        row = conn.execute(
+            "SELECT state,field_device_id FROM modem_admission_decisions WHERE remote_port=?",
+            (port,),
+        ).fetchone()
+        if row and row["field_device_id"]:
+            raise ValueError("Modem aprovado não pode voltar para pendente")
+        conn.execute("DELETE FROM modem_admission_decisions WHERE remote_port=?", (port,))
+    db.add_audit(actor, "reopen", "modem_admission", str(port), "")
+    return _admission_by_port(port)
+
+
+def require_approved_modem(modem_id: str | None, remote_port: int) -> dict:
+    init_platform_db()
+    port = _field_device_port(remote_port)
+    if not modem_id:
+        raise ValueError("Selecione um modem aprovado antes de cadastrar o gerador")
+    with db.connect() as conn:
+        row = conn.execute(
+            """SELECT fd.*
+               FROM field_devices fd
+               JOIN modem_admission_decisions d
+                 ON d.field_device_id=fd.id
+                AND d.remote_port=fd.listen_port
+                AND d.state='approved'
+               WHERE fd.id=? AND fd.kind='modem' AND fd.active=1 AND fd.listen_port=?""",
+            (str(modem_id), port),
+        ).fetchone()
+    if not row:
+        raise ValueError("Modem não aprovado para a porta reverse TCP informada")
+    return _row(row)
+
+
+def approved_modem_for_port(remote_port: int) -> dict | None:
+    port = _field_device_port(remote_port)
+    with db.connect() as conn:
+        row = conn.execute(
+            """SELECT fd.*
+               FROM field_devices fd
+               JOIN modem_admission_decisions d
+                 ON d.field_device_id=fd.id
+                AND d.remote_port=fd.listen_port
+                AND d.state='approved'
+               WHERE fd.kind='modem' AND fd.active=1 AND fd.listen_port=?""",
+            (port,),
+        ).fetchone()
+    return _row(row)
+
+
+def link_modem_to_generator(modem_id: str, generator_id: str, actor: str) -> None:
+    generator = db.get_generator(generator_id)
+    if not generator:
+        raise ValueError("Gerador não encontrado para vínculo do modem")
+    if str(generator.get("transport") or "") != "reverse_tcp":
+        raise ValueError("Vínculo de modem só se aplica a gerador reverse TCP")
+    modem = require_approved_modem(modem_id, int(generator.get("listen_port") or 0))
+    now = _now()
+    with db.connect() as conn:
+        conn.execute(
+            """INSERT OR IGNORE INTO field_device_links(
+                   field_device_id,generator_id,relation,created_at
+               ) VALUES (?,?,'transport',?)""",
+            (modem["id"], generator["id"], now),
+        )
+    db.add_audit(
+        actor,
+        "link",
+        "field_device",
+        modem["id"],
+        f"generator={generator['id']};relation=transport",
+    )
 
 
 # ---------------------------- notifications -------------------------------
