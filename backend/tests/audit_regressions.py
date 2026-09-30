@@ -103,7 +103,12 @@ with db.connect() as conn:
     migrated_field_device_columns = {
         str(row["name"]) for row in conn.execute("PRAGMA table_info(field_devices)").fetchall()
     }
+    migrated_field_device_indexes = {
+        str(row["name"])
+        for row in conn.execute("PRAGMA index_list(field_devices)").fetchall()
+    }
 assert {"manufacturer", "sim_phone", "apn", "listen_port"} <= migrated_field_device_columns
+assert "idx_field_devices_modem_port" in migrated_field_device_indexes
 
 # F00: external TLS proxy mode must not report local nginx as a failed product service,
 # but readiness must surface a legacy local TLS terminator that remains active on 443.
