@@ -11,22 +11,16 @@ import {
 } from "@/design-system/ui/dialog";
 import { nextGeneratorTag } from "@/data/generators";
 import { industrialApi } from "@/lib/industrial-api";
-import { rcApi, type GeneratorTransport } from "@/lib/api";
+import { rcApi, type FieldDevice, type GeneratorTransport } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { connectionOptions, GeneratorConnectionFields } from "./GeneratorConnectionFields";
+import { GeneratorEquipmentFields, type CatalogController } from "./GeneratorEquipmentFields";
+import {
+  approvedModems as selectApprovedModems,
+  markModemLinked,
+  modemAdmissionPort,
+} from "./generator-modem-onboarding";
 import { useGenerators } from "./GeneratorsProvider";
-
-type CatalogController = {
-  catalogId?: string;
-  manufacturer: string;
-  family?: string;
-  model: string;
-  application?: string;
-  provisionable?: boolean;
-  registerable?: boolean;
-  onboardingMode?: "production" | "lab_read_only" | "inventory";
-  packLifecycle?: string | null;
-};
 
 type LibraryWithCatalog = {
   catalog?: CatalogController[];
@@ -65,20 +59,14 @@ export function RegisterGeneratorButton({
   const [advanced, setAdvanced] = useState(false);
   const [catalog, setCatalog] = useState<CatalogController[]>([]);
   const [sites, setSites] = useState<string[]>([]);
+  const [modems, setModems] = useState<FieldDevice[]>([]);
+  const [selectedModemId, setSelectedModemId] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdId, setCreatedId] = useState<string | null>(null);
 
   const preview = useMemo(() => nextGeneratorTag(generators), [generators]);
-  const suggestedPort = useMemo(() => {
-    const used = generators
-      .filter((generator) => generator.transport === "reverse_tcp")
-      .map((generator) => Number(generator.listenPort || 0))
-      .filter((value) => value >= 15001 && value <= 65535);
-    return Math.max(15000, ...used) + 1;
-  }, [generators]);
-
   const gensetCatalog = useMemo(
     () => catalog.filter((item) => !item.application || item.application === "genset"),
     [catalog],
@@ -87,20 +75,30 @@ export function RegisterGeneratorButton({
     () => gensetCatalog.find((item) => item.model === controller),
     [controller, gensetCatalog],
   );
+  const approvedModems = useMemo(() => selectApprovedModems(modems), [modems]);
+  const selectedModem = useMemo(
+    () => approvedModems.find((modem) => modem.id === selectedModemId),
+    [approvedModems, selectedModemId],
+  );
 
   useEffect(() => {
     if (!open) return;
     let active = true;
     setLoading(true);
     setError(null);
-    void Promise.all([rcApi.library.get(), rcApi.sites.list()])
-      .then(([library, siteRows]) => {
+    void Promise.all([rcApi.library.get(), rcApi.sites.list(), rcApi.fieldDevices.list("modem")])
+      .then(([library, siteRows, modemRows]) => {
         if (!active) return;
         const rows = ((library as typeof library & LibraryWithCatalog).catalog ?? []).filter(
           (item): item is CatalogController => !!item?.model && !!item?.manufacturer,
         );
         setCatalog(rows);
         setSites(siteRows.map((item) => item.name).filter(Boolean));
+        setModems(modemRows);
+        const approved = selectApprovedModems(modemRows);
+        setSelectedModemId(
+          (current) => current || (approved.length === 1 ? approved[0]?.id || "" : ""),
+        );
         const first =
           rows.find((item) => item.application === "genset" && item.provisionable) ??
           rows.find((item) => item.application === "genset") ??
@@ -113,7 +111,7 @@ export function RegisterGeneratorButton({
           setError(
             loadError instanceof Error
               ? loadError.message
-              : "Não foi possível carregar unidades e controladoras.",
+              : "Não foi possível carregar unidades, controladoras e modems.",
           );
       })
       .finally(() => {
@@ -130,6 +128,7 @@ export function RegisterGeneratorButton({
     setName("");
     setController("");
     setTransport("reverse_tcp");
+    setSelectedModemId("");
     setHost("");
     setTag("");
     setListenPort("");
@@ -147,12 +146,9 @@ export function RegisterGeneratorButton({
   const effectiveTag = (tag.trim() || preview.tag).toUpperCase();
   const isSerial = transport === "modbus_rtu_serial";
   const effectivePort = Number(
-    listenPort ||
-      (transport === "reverse_tcp"
-        ? suggestedPort
-        : transport === "modbus_tcp_direct" || transport === "rtu_over_tcp"
-          ? 502
-          : 0),
+    transport === "reverse_tcp"
+      ? modemAdmissionPort(selectedModem)
+      : listenPort || (transport === "modbus_tcp_direct" || transport === "rtu_over_tcp" ? 502 : 0),
   );
   const effectiveUnit = Number(modbusUnit || 1);
   const effectiveBaud = Number(baudRate);
@@ -164,7 +160,7 @@ export function RegisterGeneratorButton({
   const canContinueStep1 = Boolean(site.trim() && controller && selectedController);
   const canContinueStep2 =
     transport === "reverse_tcp"
-      ? effectivePort > 0
+      ? Boolean(selectedModem && effectivePort > 0)
       : isSerial
         ? Boolean(
             host.trim() &&
@@ -212,6 +208,10 @@ export function RegisterGeneratorButton({
       setError("Escolha a unidade e a controladora.");
       return;
     }
+    if (transport === "reverse_tcp" && !selectedModem) {
+      setError("Selecione um modem aprovado antes de cadastrar o gerador.");
+      return;
+    }
     if (transport !== "reverse_tcp" && !host.trim()) {
       setError(
         isSerial
@@ -250,10 +250,27 @@ export function RegisterGeneratorButton({
         transport,
         listenPort: isSerial ? 0 : effectivePort,
         modbusUnit: effectiveUnit,
-        ...(host.trim() ? { ip: host.trim() } : {}),
+        ...(transport !== "reverse_tcp" && host.trim() ? { ip: host.trim() } : {}),
         ...(rapidDeviceNum ? { rapidDeviceNum: Number(rapidDeviceNum) } : {}),
       });
       setCreatedId(created.id);
+
+      if (transport === "reverse_tcp" && selectedModem) {
+        try {
+          await markModemLinked(selectedModem, created.id);
+        } catch (modemLinkError) {
+          await refresh();
+          setError(
+            modemLinkError instanceof Error
+              ? [
+                  "Gerador cadastrado, mas o vínculo visual do modem falhou: ",
+                  modemLinkError.message,
+                ].join("")
+              : "Gerador cadastrado, mas o vínculo visual do modem falhou.",
+          );
+          return;
+        }
+      }
 
       try {
         await applyTransportConfig(created.id);
@@ -328,8 +345,9 @@ export function RegisterGeneratorButton({
           <DialogHeader>
             <DialogTitle>Adicionar gerador</DialogTitle>
             <DialogDescription>
-              Todas as controladoras de gerador do catálogo podem ser cadastradas. A configuração
-              automática só é aplicada quando o Controller Pack estiver homologado.
+              Para Modem / 4G, aprove primeiro o modem recebido em Comunicação → Modems. Depois
+              escolha a controladora e o Unit ID. A configuração automática só é aplicada quando o
+              Controller Pack estiver homologado.
             </DialogDescription>
           </DialogHeader>
 
@@ -366,61 +384,26 @@ export function RegisterGeneratorButton({
 
           <form onSubmit={onSubmit} className="space-y-4">
             {step === 1 && (
-              <div className="space-y-4">
-                <label className="block text-sm font-semibold">
-                  Nome do gerador
-                  <input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Ex.: Gerador principal"
-                    className="mt-2 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
-                    maxLength={160}
-                  />
-                </label>
-                <label className="block text-sm font-semibold">
-                  Unidade
-                  <input
-                    list="rc-generator-sites"
-                    value={site}
-                    onChange={(e) => setSite(e.target.value)}
-                    className="mt-2 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
-                    required
-                  />
-                  <datalist id="rc-generator-sites">
-                    {sites.map((siteName) => (
-                      <option key={siteName} value={siteName} />
-                    ))}
-                  </datalist>
-                </label>
-
-                <label className="block text-sm font-semibold">
-                  Controladora
-                  <select
-                    value={controller}
-                    onChange={(e) => setController(e.target.value)}
-                    disabled={loading || !gensetCatalog.length}
-                    className="mt-2 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
-                  >
-                    <option value="">{loading ? "Carregando…" : "Selecione"}</option>
-                    {gensetCatalog.map((item) => (
-                      <option key={item.catalogId || item.model} value={item.model}>
-                        {item.manufacturer} · {item.model}
-                        {item.onboardingMode === "lab_read_only"
-                          ? " · LAB (somente leitura)"
-                          : item.provisionable
-                            ? " · PRODUÇÃO"
-                            : " · CADASTRO LIBERADO"}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
+              <GeneratorEquipmentFields
+                name={name}
+                setName={setName}
+                site={site}
+                setSite={setSite}
+                sites={sites}
+                controller={controller}
+                setController={setController}
+                controllers={gensetCatalog}
+                loading={loading}
+              />
             )}
 
             {step === 2 && (
               <GeneratorConnectionFields
                 transport={transport}
                 setTransport={setTransport}
+                approvedModems={approvedModems}
+                selectedModemId={selectedModemId}
+                setSelectedModemId={setSelectedModemId}
                 host={host}
                 setHost={setHost}
                 tag={tag}
@@ -438,7 +421,6 @@ export function RegisterGeneratorButton({
                 stopBits={stopBits}
                 setStopBits={setStopBits}
                 suggestedTag={preview.tag}
-                suggestedPort={suggestedPort}
                 advanced={advanced}
                 setAdvanced={setAdvanced}
                 canScan={user?.role === "administrador"}
@@ -470,6 +452,14 @@ export function RegisterGeneratorButton({
                       {connectionOptions.find((option) => option.id === transport)?.title}
                     </dd>
                   </div>
+                  {transport === "reverse_tcp" && selectedModem && (
+                    <div>
+                      <dt className="text-xs text-muted-foreground">Modem / Unit ID</dt>
+                      <dd className="font-bold">
+                        {selectedModem.name} · TCP {effectivePort} · Unit {effectiveUnit}
+                      </dd>
+                    </div>
+                  )}
                   {isSerial && (
                     <div className="sm:col-span-2">
                       <dt className="text-xs text-muted-foreground">Serial</dt>
