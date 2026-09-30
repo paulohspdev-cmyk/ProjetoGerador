@@ -150,6 +150,47 @@ def record_bridge_peer(
     return _peer_public(row)
 
 
+def touch_bridge_peer(
+    remote_port: int,
+    remote_ip: str,
+    reason: str = "seen",
+    now: int | None = None,
+) -> dict:
+    """Atualiza presença sem inflar accepted_count/rejected_count."""
+    init_traffic_db()
+    port = int(remote_port)
+    if not 1 <= port <= 65535:
+        raise ValueError("porta reverse TCP inválida")
+    try:
+        address = str(ipaddress.ip_address(str(remote_ip).strip()))
+    except ValueError as exc:
+        raise ValueError("IP do peer inválido") from exc
+    timestamp = int(now or _now())
+    clean_reason = str(reason or "seen").strip()[:240]
+    with db.connect() as conn:
+        row = conn.execute(
+            "SELECT 1 FROM bridge_peer_observations WHERE remote_port=? AND remote_ip=?",
+            (port, address),
+        ).fetchone()
+        if row is None:
+            return record_bridge_peer(port, address, accepted=True, reason=clean_reason, now=timestamp)
+        conn.execute(
+            """UPDATE bridge_peer_observations
+               SET last_seen_at=?, last_reason=?
+               WHERE remote_port=? AND remote_ip=?""",
+            (timestamp, clean_reason, port, address),
+        )
+        updated = conn.execute(
+            """SELECT remote_port,remote_ip,first_seen_at,last_seen_at,
+                      accepted_count,rejected_count,last_accepted_at,last_rejected_at,
+                      last_decision,last_reason
+               FROM bridge_peer_observations
+               WHERE remote_port=? AND remote_ip=?""",
+            (port, address),
+        ).fetchone()
+    return _peer_public(updated)
+
+
 def _peer_public(row) -> dict:
     return {
         "remotePort": int(row["remote_port"]),
