@@ -2,114 +2,83 @@
 
 Data de início: 2026-09-29  
 Baseline de referência: `903716ec7463bee84a54856cdd27b94e78531fe4`  
-Produção observada em 2026-09-29: delta idêntico ao head `20a68c2d0e146addcca708290a1564c63ffa305e` do PR #86.
+Produção observada: `deployed-commit=20a68c2d0e146addcca708290a1564c63ffa305e` (head do PR #86).
 
 ## Propósito
 
-Auditar o sistema inteiro a partir da realidade observável e criar uma base que possa evoluir sem regressões cruzadas. Esta auditoria não considera "CI verde" como prova suficiente de comportamento de produção.
+Auditar o sistema inteiro a partir da realidade observável e criar uma base que possa evoluir sem regressões cruzadas. "CI verde" não é prova suficiente de comportamento de produção.
 
 ## Escopo
 
-- frontend e todas as visualizações;
-- semântica de estado/cor;
-- API e normalização;
-- banco/persistência;
-- alarmes/eventos/histórico;
-- comandos e permissivos;
-- Controller Packs e firmware;
-- DSE/ComAp;
-- Rapid SCADA, templates, channels e bindings;
-- bridge e transportes;
-- deploy/systemd/rede;
-- segurança/RBAC;
-- testes e CI;
-- observabilidade da VM;
-- continuidade para agentes de IA.
+Frontend, semântica de estado/cor, API, banco, alarmes/eventos, comandos/permissivos, Controller Packs/firmware, DSE/ComAp, Rapid SCADA/bindings, bridge/transportes, deploy/systemd/rede, segurança/RBAC, testes/CI, observabilidade e continuidade de IA.
 
-## Achados iniciais confirmados
+## Achados confirmados
 
-### A0-001 — a baseline e a produção possuem executores DSE diferentes
-
-Na baseline `main`, `backend/app/dse_control.py` é um executor limitado e `control.py` não o usa como executor homologado de produção.
-
-Na VM, os mesmos arquivos correspondem ao PR #86: o executor DSE suporta START, STOP/OFF, AUTO, MANUAL e TEST para um pack específico DSE4520 MKII 4.8.
-
-Impacto: qualquer diagnóstico feito apenas contra `main` poderia concluir errado sobre o comportamento real da VM.
+### A0-001 — baseline e produção têm comportamentos industriais diferentes
+A `main` baseline não contém o caminho DSE de produção que está implantado. A VM usa o head do PR #86.
 
 ### A0-002 — mensagem do card não possui expiração
-
-`PowerFlowCard.tsx` mantém `commandMessage` em estado local e não possui timer de expiração, tanto na baseline quanto no conteúdo do PR #86 implantado.
-
-Impacto: mensagem informativa pode ficar indefinidamente no card. Requisito: feedback informativo ~2 s; falhas/alarmes persistem em superfícies próprias.
+`PowerFlowCard.tsx` mantém `commandMessage` sem TTL. Requisito: mensagens informativas ~2 s; falhas reais continuam no histórico/auditoria.
 
 ### A0-003 — drift de produção confirmado
-
-O PR #86 está aberto e não integrado à `main`. Foram comparados os **22 arquivos** que diferem entre `903716e` e o head `20a68c2`; os 22 são idênticos aos arquivos correspondentes em `/opt/rc-geradores`.
-
-A instalação não contém `.git`, portanto não há SHA local via `git rev-parse`. A equivalência foi estabelecida por conteúdo do delta completo do PR.
-
-Impacto: produção está à frente da `main` com código não integrado. Este é um problema de release/governança, não apenas um bug de UI.
+O marcador `/var/lib/rc-geradores/deployed-commit` contém `20a68c2...`. Os 22 arquivos alterados por esse head em relação à baseline são idênticos à VM.
 
 ### A0-004 — leitura de modo não implica permissão de escrita
+Cada modelo/firmware precisa homologar OFF/MAN/AUTO/TEST separadamente. GEN205/206 exemplificam telemetria ativa com pack read-only.
 
-A baseline tem packs DSE de produção read-only, embora leia `controller_mode_raw`. No conteúdo implantado do PR #86 existe um pack específico DSE4520 MKII 4.8 que habilita alguns comandos.
-
-Regra: nunca promover OFF/MAN/AUTO/TEST por inferência a partir da leitura. Cada modelo/firmware precisa de evidência, mecanismo, permissivos e feedback próprios.
-
-### A0-005 — cor verde usada como sinônimo de valor presente no Compacto
-
-`CompactCard.tsx` aplica `text-online` a valor elétrico do gerador quando o valor apenas existe (`row.generator !== "—"`).
-
-Presença de número não é prova de estado saudável. Deve ser neutro ou derivado de contrato/limite homologado.
+### A0-005 — cor verde usada como sinônimo de valor presente
+`CompactCard.tsx` usa `text-online` quando um valor elétrico existe. Presença de número não comprova saúde.
 
 ### A0-006 — risco de regressão cruzada no board
-
-`GeneratorsBoard.tsx` contém simultaneamente algoritmos de layout Vertical e Compacto.
-
-Deve ser decomposto em layouts independentes, sem mudança visual, antes de novas evoluções relevantes.
+`GeneratorsBoard.tsx` contém algoritmos de layout Vertical e Compacto no mesmo arquivo.
 
 ### A0-007 — CSS Vertical monolítico
-
-`vertical-reference-card.css` concentra mais de mil linhas e múltiplas seções visuais.
-
-A divisão deve ser estrutural, com regressão visual antes/depois, em PR próprio.
+`vertical-reference-card.css` concentra múltiplas seções e deve ser decomposto sem mudança visual, com regressão.
 
 ### A0-008 — auditoria funcional existente não prova campo
-
-`docs/FUNCTIONAL_AUDIT_2026-09-29.md` declara explicitamente que não envia comandos reais a equipamentos.
-
-Portanto ela é útil para software, mas não fecha homologação industrial.
+A auditoria existente não envia comandos reais; ela não fecha homologação industrial.
 
 ### A0-009 — PR #86 mistura domínios demais
+41 commits/22 arquivos atravessam DSE, IG4/bridge, packs, telemetria/topologia, frontend e API. Esse formato deixa de ser aceito.
 
-O PR #86 possui 41 commits e 22 arquivos alterados, atravessando DSE, IG4/bridge, Controller Packs, topologia/telemetria, card Vertical/detalhe e API.
+### A0-010 — `accepted` precisa ser separado de `confirmed`
+START pendente pode ficar `accepted=true` com `running_confirmed=false`. A UI não deve traduzir isso em sucesso físico.
 
-Impacto: um defeito posterior não possui isolamento causal. A partir da Auditoria Zero, mudanças desse tipo devem ser divididas por domínio.
+### A0-011 — marcador de release existe, mas o diagnóstico não o usa
+O deploy grava `deployed-commit`, porém `diagnostics.version_info()` usa `git rev-parse`. Como a release não tem `.git`, a versão da aplicação pode aparecer `N/D`.
 
-### A0-010 — "accepted" ainda precisa ser separado de "confirmed"
+### A0-012 — GEN163 foi implantado sem reconcile completo do Rapid
+Pack DSE4520 implantado: 40 canais. Binding runtime: 26; 15 esperados faltam e `alarm_class_raw` sobra do perfil anterior.
 
-Na produção, o executor DSE já aguarda feedback. Porém START com temporização interna ativa pode ser marcado `accepted=true` enquanto `running_confirmed=false`. O wrapper de controle traduz qualquer `accepted` para estado `controller_accepted`.
+### A0-013 — warning DSE existe no caminho de controle e some no card
+Tentativas recentes no GEN163 registram `status=0x0400` (warning), mas o payload normal está `online`, `alarms=0`. `controller_status_flags_raw` está ausente do binding runtime, apesar de existir no pack/template.
 
-O contrato definitivo precisa modelar estados distintos: `submitted/accepted/pending/confirmed/failed`, sem mostrar sucesso físico antes do feedback.
+### A0-014 — DB e serviços estão operacionais, mas isso não garante coerência
+`PRAGMA quick_check=ok`; serviços principais ativos. O caso GEN163 prova que saúde de processo não substitui verificação de coerência entre release, pack, binding e telemetria.
 
-## Trilhas da auditoria
+## Trilhas
 
-- AZ-01 Inventário e drift de produção — **em andamento; drift confirmado**
+- AZ-01 Inventário e drift de produção — **em andamento; release identificada**
 - AZ-02 Frontend/Vertical
 - AZ-03 Frontend/Compacto
 - AZ-04 Frontend/Lista e navegação
 - AZ-05 Semântica de estado/cor
-- AZ-06 Telemetria/API/Rapid
+- AZ-06 Telemetria/API/Rapid — **mismatch GEN163 confirmado**
 - AZ-07 Alarmes/eventos e TTL de mensagens
 - AZ-08 Comandos/feedback/permissivos
-- AZ-09 DSE
+- AZ-09 DSE — **warning/control mismatch confirmado**
 - AZ-10 ComAp
-- AZ-11 Banco/migrações
+- AZ-11 Banco/migrações — **integridade inicial OK**
 - AZ-12 Bridge/transportes
 - AZ-13 Deploy/systemd/rede/rollback
 - AZ-14 Segurança/RBAC
 - AZ-15 Testes/CI/release
-- AZ-16 Continuidade/documentação/IA
+- AZ-16 Continuidade/documentação/IA — **fundação criada**
+
+## Evidências detalhadas
+
+- `docs/audit/PRODUCTION_DRIFT_2026-09-29.md`
+- `docs/audit/PRODUCTION_INVENTORY_2026-09-29.md`
 
 ## Critério de encerramento
 
