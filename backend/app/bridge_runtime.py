@@ -1187,6 +1187,7 @@ async def main():
         "framing remoto definido por Controller Pack; "
         f"allowlist_global={'ativa' if REMOTE_ALLOWED_NETWORKS else 'não configurada'}; "
         f"allowlists_por_porta={sorted(PORT_ALLOWED_NETWORKS)}; "
+        f"portas_admissao={sorted(ADMISSION_PORTS)}; "
         f"require_allowlist={'sim' if REQUIRE_ALLOWLIST else 'não'}; "
         f"IG4_LAB={'ativo' if ig4_lab.enabled() else 'desabilitado'}"
     )
