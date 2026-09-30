@@ -1,25 +1,50 @@
 import { Network, Router, Signal } from "lucide-react";
-import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "@/features/auth/AuthProvider";
-import { rcApi, type FieldDevice } from "@/lib/api";
+import { rcApi, type BridgePeerObservation, type FieldDevice } from "@/lib/api";
 import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats } from "./kit";
+import { ModemAdmissionPanel } from "./ModemAdmissionPanel";
 
 function errText(error: unknown) {
   return error instanceof Error ? error.message : "Falha na operação";
+}
+
+function admissionKey(remotePort: number, remoteIp: string) {
+  return String(remotePort) + "|" + remoteIp.trim();
+}
+
+function metadataText(metadata: Record<string, unknown> | undefined, key: string) {
+  const value = metadata?.[key];
+  return typeof value === "string" ? value : "";
+}
+
+function metadataNumber(metadata: Record<string, unknown> | undefined, key: string) {
+  const value = metadata?.[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function dateTime(epoch: number | null | undefined) {
+  if (!epoch) return "—";
+  return new Date(epoch * 1000).toLocaleString("pt-BR");
 }
 
 function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
   const { can } = useAuth();
   const admin = can("manageUsers");
   const [rows, setRows] = useState<FieldDevice[]>([]);
+  const [peers, setPeers] = useState<BridgePeerObservation[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
+  const [approvalPeer, setApprovalPeer] = useState<BridgePeerObservation | null>(null);
+  const [metadataBase, setMetadataBase] = useState<Record<string, unknown>>({});
   const [name, setName] = useState("");
+  const [manufacturer, setManufacturer] = useState("");
   const [model, setModel] = useState("");
   const [host, setHost] = useState("");
   const [serial, setSerial] = useState("");
   const [imei, setImei] = useState("");
   const [sim, setSim] = useState("");
+  const [simPhone, setSimPhone] = useState("");
   const [carrier, setCarrier] = useState("");
   const [advanced, setAdvanced] = useState(false);
   const [error, setError] = useState("");
@@ -27,37 +52,96 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
 
   const load = useCallback(async () => {
     try {
-      setRows(await rcApi.fieldDevices.list(kind));
+      if (kind === "modem" && admin) {
+        const [deviceRows, peerRows] = await Promise.all([
+          rcApi.fieldDevices.list(kind),
+          rcApi.system.bridgePeers(200),
+        ]);
+        setRows(deviceRows);
+        setPeers(peerRows.filter((peer) => String(peer.lastReason || "").startsWith("admission_")));
+      } else {
+        setRows(await rcApi.fieldDevices.list(kind));
+        setPeers([]);
+      }
       setError("");
     } catch (loadError) {
       setError(errText(loadError));
     }
-  }, [kind]);
+  }, [admin, kind]);
 
   useEffect(() => {
     void load();
-  }, [load]);
+    if (kind !== "modem" || !admin) return;
+    const timer = window.setInterval(() => void load(), 5000);
+    return () => window.clearInterval(timer);
+  }, [admin, kind, load]);
+
+  const registeredAdmissionKeys = useMemo(() => {
+    const keys = new Set<string>();
+    for (const row of rows) {
+      const port = metadataNumber(row.metadata, "admissionPort");
+      const ip = metadataText(row.metadata, "admissionIp");
+      if (port && ip) keys.add(admissionKey(port, ip));
+    }
+    return keys;
+  }, [rows]);
+
+  const pendingPeers = useMemo(
+    () =>
+      peers.filter(
+        (peer) => !registeredAdmissionKeys.has(admissionKey(peer.remotePort, peer.remoteIp)),
+      ),
+    [peers, registeredAdmissionKeys],
+  );
+  const pendingRows = useMemo(
+    () =>
+      pendingPeers.map((peer) => ({
+        ...peer,
+        id: admissionKey(peer.remotePort, peer.remoteIp),
+      })),
+    [pendingPeers],
+  );
+
+  const registeredRows = useMemo(() => rows.filter((row) => row.status !== "rejected"), [rows]);
+  const rejectedRows = useMemo(() => rows.filter((row) => row.status === "rejected"), [rows]);
 
   const reset = () => {
     setEditing(null);
+    setApprovalPeer(null);
+    setMetadataBase({});
     setName("");
+    setManufacturer("");
     setModel("");
     setHost("");
     setSerial("");
     setImei("");
     setSim("");
+    setSimPhone("");
     setCarrier("");
     setAdvanced(false);
   };
 
+  const beginApprove = (peer: BridgePeerObservation) => {
+    reset();
+    setApprovalPeer(peer);
+    setName("MDM-" + String(peer.remotePort));
+    setHost(peer.remoteIp);
+    setAdvanced(true);
+    setError("");
+  };
+
   const beginEdit = (row: FieldDevice) => {
     setEditing(row.id);
+    setApprovalPeer(null);
+    setMetadataBase(row.metadata || {});
     setName(row.name);
+    setManufacturer(metadataText(row.metadata, "manufacturer"));
     setModel(row.model || "");
     setHost(row.host || "");
     setSerial(row.serial || "");
     setImei(row.imei || "");
     setSim(row.sim_iccid || "");
+    setSimPhone(metadataText(row.metadata, "simPhone"));
     setCarrier(row.carrier || "");
     setAdvanced(true);
     setError("");
@@ -68,6 +152,19 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
     setBusy(true);
     setError("");
     try {
+      const metadata: Record<string, unknown> = {
+        ...metadataBase,
+        ...(manufacturer.trim() ? { manufacturer: manufacturer.trim() } : {}),
+        ...(simPhone.trim() ? { simPhone: simPhone.trim() } : {}),
+        ...(approvalPeer
+          ? {
+              admissionPort: approvalPeer.remotePort,
+              admissionIp: approvalPeer.remoteIp,
+              admissionFirstSeenAt: approvalPeer.firstSeenAt,
+              admissionLastSeenAt: approvalPeer.lastSeenAt,
+            }
+          : {}),
+      };
       const payload = {
         name: name.trim(),
         model: model.trim(),
@@ -76,19 +173,53 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
         imei: imei.trim(),
         sim_iccid: sim.trim(),
         carrier: carrier.trim(),
+        metadata,
       };
-      if (editing) await rcApi.fieldDevices.update(editing, payload);
-      else
+      if (editing) {
+        await rcApi.fieldDevices.update(editing, payload);
+      } else {
         await rcApi.fieldDevices.create({
           kind,
           ...payload,
-          status: "unknown",
-          metadata: {},
+          status: kind === "modem" && approvalPeer ? "approved_unlinked" : "unknown",
         });
+      }
       reset();
       await load();
     } catch (saveError) {
       setError(errText(saveError));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const rejectPeer = async (peer: BridgePeerObservation) => {
+    if (!window.confirm("Rejeitar modem em " + peer.remoteIp + ":" + String(peer.remotePort) + "?"))
+      return;
+    setBusy(true);
+    setError("");
+    try {
+      const rejected = await rcApi.fieldDevices.create({
+        kind: "modem",
+        name: "Rejeitado " + peer.remoteIp + ":" + String(peer.remotePort),
+        model: "",
+        host: peer.remoteIp,
+        serial: "",
+        imei: "",
+        sim_iccid: "",
+        carrier: "",
+        status: "rejected",
+        metadata: {
+          admissionPort: peer.remotePort,
+          admissionIp: peer.remoteIp,
+          admissionFirstSeenAt: peer.firstSeenAt,
+          admissionLastSeenAt: peer.lastSeenAt,
+        },
+      });
+      await rcApi.fieldDevices.update(rejected.id, { active: false });
+      await load();
+    } catch (rejectError) {
+      setError(errText(rejectError));
     } finally {
       setBusy(false);
     }
@@ -121,15 +252,30 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
     <ScreenBody>
       <div>
         <h2 className="text-lg font-extrabold">{label}</h2>
+        {kind === "modem" && (
+          <p className="mt-1 text-sm text-muted-foreground">
+            Primeiro aprove o modem que chegou ao servidor. O gerador será vinculado somente depois.
+          </p>
+        )}
       </div>
 
       <Stats
         items={[
-          { icon, label: "Cadastrados", value: rows.length },
+          { icon, label: "Cadastrados", value: registeredRows.length },
+          ...(kind === "modem" && admin
+            ? [
+                {
+                  icon: Signal,
+                  label: "Aguardando",
+                  value: pendingPeers.length,
+                  tone: "text-alert",
+                },
+              ]
+            : []),
           {
             icon: Signal,
             label: "Ativos",
-            value: rows.filter((row) => row.active).length,
+            value: registeredRows.filter((row) => row.active).length,
             tone: "text-online",
           },
         ]}
@@ -141,15 +287,31 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
         </p>
       )}
 
+      {kind === "modem" && admin && (
+        <ModemAdmissionPanel
+          rows={pendingRows}
+          onApprove={beginApprove}
+          onReject={(peer) => void rejectPeer(peer)}
+        />
+      )}
+
       {admin && (
         <Panel
           title={
-            editing
-              ? `Editar ${kind === "modem" ? "modem" : "gateway"}`
-              : `Adicionar ${kind === "modem" ? "modem" : "gateway"}`
+            approvalPeer
+              ? "Aprovar modem · TCP " + String(approvalPeer.remotePort)
+              : editing
+                ? `Editar ${kind === "modem" ? "modem" : "gateway"}`
+                : `Adicionar ${kind === "modem" ? "modem" : "gateway"}`
           }
         >
           <form onSubmit={save} className="space-y-3">
+            {approvalPeer && (
+              <p className="rounded-lg border border-online/30 bg-online/8 p-3 text-xs text-muted-foreground">
+                Conexão detectada em {approvalPeer.remoteIp}:{approvalPeer.remotePort}. Aprovar não
+                cria gerador, não cria Rapid Device e não libera comandos.
+              </p>
+            )}
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               <label className="text-sm font-semibold">
                 Nome
@@ -160,6 +322,16 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
                   className="mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
                 />
               </label>
+              {kind === "modem" && (
+                <label className="text-sm font-semibold">
+                  Fabricante
+                  <input
+                    value={manufacturer}
+                    onChange={(event) => setManufacturer(event.target.value)}
+                    className="mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
+                  />
+                </label>
+              )}
               <label className="text-sm font-semibold">
                 Modelo
                 <input
@@ -173,7 +345,8 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
                 <input
                   value={host}
                   onChange={(event) => setHost(event.target.value)}
-                  className="mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
+                  readOnly={!!approvalPeer}
+                  className="mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm read-only:opacity-70"
                 />
               </label>
             </div>
@@ -188,7 +361,7 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
                   {advanced ? "Ocultar identificação do modem" : "Identificação do modem"}
                 </button>
                 {advanced && (
-                  <div className="grid gap-3 rounded-xl border border-border bg-background/35 p-3 md:grid-cols-2 xl:grid-cols-4">
+                  <div className="grid gap-3 rounded-xl border border-border bg-background/35 p-3 md:grid-cols-2 xl:grid-cols-3">
                     <label className="text-xs font-semibold">
                       IMEI
                       <input
@@ -202,6 +375,14 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
                       <input
                         value={sim}
                         onChange={(event) => setSim(event.target.value)}
+                        className="mt-1.5 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                      />
+                    </label>
+                    <label className="text-xs font-semibold">
+                      Número do chip
+                      <input
+                        value={simPhone}
+                        onChange={(event) => setSimPhone(event.target.value)}
                         className="mt-1.5 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                       />
                     </label>
@@ -243,9 +424,15 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
                 disabled={busy}
                 className="h-10 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"
               >
-                {busy ? "Salvando…" : editing ? "Salvar alterações" : "Adicionar"}
+                {busy
+                  ? "Salvando…"
+                  : approvalPeer
+                    ? "Aprovar modem"
+                    : editing
+                      ? "Salvar alterações"
+                      : "Adicionar"}
               </button>
-              {editing && (
+              {(editing || approvalPeer) && (
                 <button
                   type="button"
                   onClick={reset}
@@ -259,26 +446,41 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
         </Panel>
       )}
 
-      <Panel title={`${label} cadastrados`}>
-        {!rows.length ? (
+      <Panel title={label + " cadastrados"}>
+        {!registeredRows.length ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
             Nenhum equipamento cadastrado.
           </p>
         ) : (
           <ScadaTable
-            rows={rows}
+            rows={registeredRows}
             columns={[
               { label: "Nome", render: (row) => <b>{row.name}</b> },
-              { label: "Modelo", render: (row) => row.model || "—" },
+              {
+                label: "Fabricante / Modelo",
+                render: (row) =>
+                  [metadataText(row.metadata, "manufacturer"), row.model]
+                    .filter(Boolean)
+                    .join(" · ") || "—",
+              },
               { label: "IMEI / Série", render: (row) => row.imei || row.serial || "—" },
               {
-                label: "SIM / Operadora",
-                render: (row) => [row.sim_iccid, row.carrier].filter(Boolean).join(" · ") || "—",
+                label: "SIM",
+                render: (row) =>
+                  [row.sim_iccid, metadataText(row.metadata, "simPhone"), row.carrier]
+                    .filter(Boolean)
+                    .join(" · ") || "—",
               },
               {
                 label: "Cadastro",
                 render: (row) => (
-                  <Pill tone={row.active ? "ok" : "muted"}>{row.active ? "Ativo" : "Inativo"}</Pill>
+                  <Pill tone={row.active ? "ok" : "muted"}>
+                    {row.status === "approved_unlinked"
+                      ? "Aprovado · sem gerador"
+                      : row.active
+                        ? "Ativo"
+                        : "Inativo"}
+                  </Pill>
                 ),
               },
               {
@@ -302,6 +504,39 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
           />
         )}
       </Panel>
+
+      {kind === "modem" && rejectedRows.length > 0 && (
+        <Panel title="Rejeitados">
+          <ScadaTable
+            rows={rejectedRows}
+            columns={[
+              {
+                label: "Entrada",
+                render: (row) => metadataNumber(row.metadata, "admissionPort") || "—",
+              },
+              {
+                label: "Origem",
+                render: (row) => metadataText(row.metadata, "admissionIp") || row.host || "—",
+              },
+              {
+                label: "Primeiro acesso",
+                render: (row) => dateTime(metadataNumber(row.metadata, "admissionFirstSeenAt")),
+              },
+              {
+                label: "Ações",
+                render: (row) =>
+                  admin ? (
+                    <ActionBtn tone="danger" onClick={() => void remove(row)}>
+                      Excluir registro
+                    </ActionBtn>
+                  ) : (
+                    "—"
+                  ),
+              },
+            ]}
+          />
+        </Panel>
+      )}
     </ScreenBody>
   );
 }
