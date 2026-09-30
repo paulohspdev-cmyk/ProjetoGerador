@@ -232,7 +232,7 @@ npm run check:architecture
 npm run check:functional
 npm run lint
 npm run typecheck
-NITRO_PRESET=node-server npm run build
+RC_FRONTEND_RELEASE_ID="${COMMIT}" NITRO_PRESET=node-server npm run build
 npm prune --omit=dev
 [[ -f .output/server/index.mjs ]] || fail "build não gerou .output/server/index.mjs"
 
