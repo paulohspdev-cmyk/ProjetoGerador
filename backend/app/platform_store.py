@@ -64,9 +64,6 @@ def init_platform_db() -> None:
             );
             CREATE INDEX IF NOT EXISTS idx_field_devices_kind ON field_devices(kind);
             CREATE INDEX IF NOT EXISTS idx_field_devices_generator ON field_devices(generator_id);
-            CREATE UNIQUE INDEX IF NOT EXISTS idx_field_devices_modem_port
-                ON field_devices(listen_port)
-                WHERE kind='modem' AND listen_port IS NOT NULL AND active=1;
 
             CREATE TABLE IF NOT EXISTS field_device_links (
                 field_device_id TEXT NOT NULL,
