@@ -19,4 +19,10 @@ assert topology_from_configured_metrics(["mcb_closed", "gcb_closed"], True) == (
     "binding",
 )
 
+assert topology_from_configured_metrics(
+    ["rpm", "mains_frequency", "mains_voltage_l1"],
+    True,
+    mains_bus_ambiguous=True,
+) is None
+
 print("power topology: ok")
