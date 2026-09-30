@@ -4,6 +4,7 @@ import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react
 import { useAuth } from "@/features/auth/AuthProvider";
 import { rcApi, type BridgePeerObservation, type FieldDevice } from "@/lib/api";
 import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats } from "./kit";
+import { ModemAdmissionPanel } from "./ModemAdmissionPanel";
 
 function errText(error: unknown) {
   return error instanceof Error ? error.message : "Falha na operação";
@@ -287,47 +288,11 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
       )}
 
       {kind === "modem" && admin && (
-        <Panel title="Aguardando aprovação">
-          {!pendingPeers.length ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">
-              Nenhum modem novo aguardando aprovação.
-            </p>
-          ) : (
-            <ScadaTable
-              rows={pendingRows}
-              columns={[
-                { label: "Entrada", render: (peer) => <b>TCP {peer.remotePort}</b> },
-                { label: "Origem", render: (peer) => peer.remoteIp },
-                { label: "Primeiro acesso", render: (peer) => dateTime(peer.firstSeenAt) },
-                {
-                  label: "Último acesso",
-                  render: (peer) => {
-                    const connected = Date.now() / 1000 - peer.lastSeenAt <= 30;
-                    return (
-                      <span className="flex flex-wrap items-center gap-2">
-                        <Pill tone={connected ? "ok" : "muted"}>
-                          {connected ? "Conectado" : "Sem atividade"}
-                        </Pill>
-                        <span>{dateTime(peer.lastSeenAt)}</span>
-                      </span>
-                    );
-                  },
-                },
-                {
-                  label: "Ações",
-                  render: (peer) => (
-                    <span className="flex flex-wrap gap-1">
-                      <ActionBtn onClick={() => beginApprove(peer)}>Aceitar</ActionBtn>
-                      <ActionBtn tone="danger" onClick={() => void rejectPeer(peer)}>
-                        Rejeitar
-                      </ActionBtn>
-                    </span>
-                  ),
-                },
-              ]}
-            />
-          )}
-        </Panel>
+        <ModemAdmissionPanel
+          rows={pendingRows}
+          onApprove={beginApprove}
+          onReject={(peer) => void rejectPeer(peer)}
+        />
       )}
 
       {admin && (
