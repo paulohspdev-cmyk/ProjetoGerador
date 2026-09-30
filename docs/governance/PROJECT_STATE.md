@@ -70,3 +70,57 @@ Ordem:
 Qualquer agente deve iniciar por `AGENTS.md`, este arquivo e o relatório final.
 
 Se uma tarefa não declarar um único domínio primário, ela não deve começar.
+
+## Implantação modem-first em produção — 2026-09-30
+
+Estado funcional implantado: `76d241eb08f2dc9c386fdff31837f3a1e5e08d4a`  
+PR de correção do gate de migração: #117
+
+### Resultado do deploy
+
+- fluxo modem-first dos PRs #113, #114, #115 e #116 implantado na VM;
+- primeiro deploy de `d00e53aa424257b9bcb4dde8063f350a7b0f37d1` foi abortado e revertido transacionalmente porque o banco legado de produção ainda não possuía `field_devices.listen_port`;
+- PR #117 corrigiu a ordem da migração: colunas legadas são adicionadas antes da criação de `idx_field_devices_modem_port`;
+- regressão específica de schema legado passou;
+- a correção também foi validada contra uma cópia consistente do banco real antes do segundo deploy;
+- segundo deploy via `ops/deploy_release_v2.sh` concluído com sucesso;
+- `vm-smoke.sh` pós-deploy: APROVADO;
+- banco pós-deploy: `quick_check=ok`, zero violações de FK.
+
+### Admissão de modems
+
+- `RC_MODEM_ADMISSION_PORTS=15001-15020`;
+- `RC_RAPID_REQUIRE_ALLOWLIST=1`;
+- allowlist global continua configurada; CIDRs não são publicados neste documento;
+- bridge expõe 20 portas de admissão passiva e zero listeners industriais reverse-TCP neste momento;
+- admissão continua passiva: não cria gerador, Rapid Device, binding ou comando industrial;
+- inventário de `field_devices` continuava vazio imediatamente após o deploy.
+
+### Preservação do gerador existente
+
+O gerador serial cadastrado após o reset foi preservado sem alteração de binding:
+
+- id `gen-cdbb775a2bed`;
+- tag `TESTE`;
+- nome `G-152`;
+- controladora `InteliGen 200`;
+- transporte `modbus_rtu_serial`;
+- Unit ID `16`;
+- Rapid line/device `100/200`;
+- binding runtime preservado e conferente com o cadastro.
+
+Nenhum comando START/STOP/MAN/AUTO/TEST, FC03/FC06/FC16 de validação de campo ou reprovisionamento deliberado foi executado nesta implantação.
+
+### Próximo passo operacional
+
+Aguardar um modem real conectar em uma porta de admissão. A sequência esperada é:
+
+1. chegada aparece em Comunicação → Modems → Aguardando aprovação;
+2. operador aprova ou rejeita;
+3. dados como serial/IMEI/ICCID são preenchidos apenas quando conhecidos;
+4. modem aprovado permanece sem gerador até o cadastro explícito;
+5. cadastro `reverse_tcp` seleciona modem aprovado, herda a porta e exige Unit ID;
+6. provisionamento industrial só ocorre depois de Controller Pack/homologação aplicáveis.
+
+Observação separada: o smoke de infraestrutura preservou o binding do gerador serial, mas o device Rapid não estava em estado Normal no momento da validação. Isso não foi tratado neste deploy e deve ser investigado em domínio separado se o equipamento deveria estar online.
+
