@@ -37,6 +37,7 @@ RAPID_NETWORK_SERVICES=(scadaserver6 scadaagent6 scadaweb6)
 
 SERVICES=(rc-geradores-provision rc-geradores-worker rc-geradores-bridge rc-geradores-api rc-geradores-frontend)
 SWAP_SERVICES=("${SERVICES[@]}")
+QUIESCE_SERVICES=(rc-geradores-provision rc-geradores-worker rc-geradores-bridge rc-geradores-api)
 BRIDGE_RESTART_NEEDED=1
 
 log() { printf '\n=== %s ===\n' "$*"; }
@@ -199,6 +200,7 @@ CHANGED_FILES="$(git -c safe.directory="${BASE}" -C "${BASE}" diff --name-only "
 if ! grep -Eq '^(backend/app/(bridge|bridge_runtime|config|controller_library|db|domain_store|ig4_lab|production_guard|traffic_store)\.py|rapid/|infrastructure/systemd/rc-geradores-bridge\.service|ops/configure_rapid_network\.sh)' <<<"${CHANGED_FILES}"; then
   BRIDGE_RESTART_NEEDED=0
   SWAP_SERVICES=(rc-geradores-provision rc-geradores-worker rc-geradores-api rc-geradores-frontend)
+  QUIESCE_SERVICES=(rc-geradores-provision rc-geradores-worker rc-geradores-api)
   log "BRIDGE PRESERVADA — RELEASE SEM ALTERAÇÃO NO RUNTIME DE COMUNICAÇÃO"
 else
   log "BRIDGE SERÁ REINICIADA — RELEASE ALTERA RUNTIME/DEPENDÊNCIAS DE COMUNICAÇÃO"
@@ -397,8 +399,8 @@ PY
 # A partir daqui qualquer erro inesperado também restaura a produção anterior.
 trap 'rc=$?; rollback; exit "$rc"' ERR
 
-log "PARANDO SERVIÇOS RC PARA TROCA DE RUNTIME"
-systemctl stop "${SWAP_SERVICES[@]}" 2>/dev/null || true
+log "QUIESCENDO ESCRITAS SEM DERRUBAR O FRONTEND"
+systemctl stop "${QUIESCE_SERVICES[@]}" 2>/dev/null || true
 
 log "CRIANDO SNAPSHOT AUTORITATIVO APÓS INTERROMPER ESCRITAS"
 if [[ -f "${DB_FILE}" ]]; then
