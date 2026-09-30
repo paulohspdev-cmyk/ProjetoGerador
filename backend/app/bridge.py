@@ -59,6 +59,10 @@ IG4_STOP_RETURN = 0x000002FE
 IG4_MODE_MAN = 1
 IG4_ENGINE_READY = 1
 IG4_BREAKERS_OFF = 1
+# Estados elétricos estáveis documentados nos quais o STOP em MAN pode iniciar
+# a sequência normal de parada. Em estados carregados o próprio IG4 executa
+# soft-unload e abre o GCB antes da parada.
+IG4_STOP_BREAKER_STATES = {1, 2, 3, 4, 10, 11}
 IG4_ALARM_MASK = 0x0400
 IG4_RUNNING_STATES = {7, 8}
 
@@ -410,9 +414,9 @@ class BridgePort:
         failures = []
         if state["mode"] != IG4_MODE_MAN:
             failures.append(f"mode={state['mode']} (esperado MAN=1)")
-        if state["breaker"] != IG4_BREAKERS_OFF:
-            failures.append(f"breaker={state['breaker']} (esperado BrksOff=1)")
         if action == "start":
+            if state["breaker"] != IG4_BREAKERS_OFF:
+                failures.append(f"breaker={state['breaker']} (esperado BrksOff=1)")
             if state["engine"] != IG4_ENGINE_READY:
                 failures.append(f"engine={state['engine']} (esperado Ready=1)")
             if state["rpm"] != 0:
@@ -422,6 +426,14 @@ class BridgePort:
                     f"LogBout1=0x{state['log_bout_1']:04X} indica alarme impeditivo"
                 )
         elif action == "stop":
+            if state["breaker"] not in IG4_STOP_BREAKER_STATES:
+                failures.append(
+                    f"breaker={state['breaker']} (estado elétrico não estável para STOP remoto)"
+                )
+            if state["engine"] not in IG4_RUNNING_STATES:
+                failures.append(
+                    f"engine={state['engine']} (esperado Running/Loaded)"
+                )
             if state["rpm"] <= 100:
                 failures.append(f"rpm={state['rpm']} (motor já parado/abaixo de 100 rpm)")
         else:
@@ -444,9 +456,12 @@ class BridgePort:
             immediate = await self._ig4_snapshot_locked(unit)
             self._require_ig4_state(action, immediate)
 
-            critical = ("mode", "breaker", "rpm")
+            # RPM varia naturalmente alguns rpm entre leituras com o motor em
+            # funcionamento. Para STOP ele é revalidado por faixa (>100), não por
+            # igualdade exata. START permanece estrito em rpm=0.
+            critical = ("mode", "breaker")
             if action == "start":
-                critical = critical + ("engine", "log_bout_1")
+                critical = critical + ("engine", "log_bout_1", "rpm")
             if any(before[key] != immediate[key] for key in critical):
                 raise PermissionError(
                     f"{action.upper()} IG4 recusado: estado crítico mudou entre validações"
