@@ -1057,6 +1057,9 @@ def write_status(enabled: list[dict]) -> None:
             "ig4LabControlEnabled": ig4_lab.enabled(),
             "ig4LabAllowlistConfigured": bool(ig4_lab.allowlist()),
         },
+        "admissionPorts": [
+            item.snapshot() for _, item in sorted(admission_ports.items())
+        ],
         "ports": [
             {
                 **item.snapshot(),
