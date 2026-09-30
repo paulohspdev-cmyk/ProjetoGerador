@@ -1,7 +1,9 @@
 import { execFileSync } from "node:child_process";
 
 function normalize(path) {
-  return String(path || "").trim().replaceAll("\\", "/");
+  return String(path || "")
+    .trim()
+    .replaceAll("\\", "/");
 }
 
 function isAuxiliary(path) {
@@ -25,19 +27,25 @@ export function changeDomain(input) {
     path === "frontend/src/features/generators/PowerFlowCard.tsx" ||
     path.startsWith("frontend/src/features/generators/vertical-card/") ||
     /\/Vertical[^/]*\.(tsx?|css)$/.test(path)
-  ) return "frontend:generator-vertical";
+  ) {
+    return "frontend:generator-vertical";
+  }
 
   if (
     path === "frontend/src/features/generators/CompactCard.tsx" ||
     path === "frontend/src/features/generators/compact-card.css" ||
     /\/Compact[^/]*\.(tsx?|css)$/.test(path)
-  ) return "frontend:generator-compact";
+  ) {
+    return "frontend:generator-compact";
+  }
 
-  if (path === "frontend/src/features/generators/GeneratorTable.tsx")
+  if (path === "frontend/src/features/generators/GeneratorTable.tsx") {
     return "frontend:generator-list";
+  }
 
-  if (path === "frontend/src/features/generators/GeneratorsBoard.tsx")
+  if (path === "frontend/src/features/generators/GeneratorsBoard.tsx") {
     return "frontend:generator-board";
+  }
 
   if (
     [
@@ -46,16 +54,19 @@ export function changeDomain(input) {
       "frontend/src/features/generators/generator-metrics.ts",
       "frontend/src/data/generators.ts",
     ].includes(path)
-  ) return "frontend:generator-semantics";
+  ) {
+    return "frontend:generator-semantics";
+  }
 
-  if (path === "frontend/src/features/generators/GeneratorsProvider.tsx")
+  if (path === "frontend/src/features/generators/GeneratorsProvider.tsx") {
     return "frontend:generator-provider";
+  }
 
-  if (path.startsWith("frontend/src/features/generators/detail/"))
+  if (path.startsWith("frontend/src/features/generators/detail/")) {
     return "frontend:generator-detail";
+  }
 
-  if (path.startsWith("frontend/src/features/generators/"))
-    return "frontend:generator-shared";
+  if (path.startsWith("frontend/src/features/generators/")) return "frontend:generator-shared";
 
   if (path.startsWith("frontend/src/theme/")) return "frontend:theme";
   if (path.startsWith("frontend/src/lib/")) return "frontend:lib-api";
@@ -82,7 +93,9 @@ export function changeDomain(input) {
     path === "backend/app/control.py" ||
     path === "backend/app/dse_control.py" ||
     path === "backend/app/ig4_lab.py"
-  ) return "backend:industrial-command";
+  ) {
+    return "backend:industrial-command";
+  }
 
   if (
     path === "backend/app/bridge.py" ||
@@ -90,29 +103,35 @@ export function changeDomain(input) {
     path === "backend/app/bridge_runtime_port_override.py" ||
     path === "backend/app/transport_store.py" ||
     path === "backend/app/traffic_store.py"
-  ) return "backend:bridge-transport";
+  ) {
+    return "backend:bridge-transport";
+  }
 
   if (
     path === "backend/app/rapid.py" ||
     path === "backend/app/binding_store.py" ||
     path.startsWith("rapid/")
-  ) return "rapid";
+  ) {
+    return "rapid";
+  }
 
   if (
     path === "backend/app/db.py" ||
     path === "backend/app/migrations.py" ||
     path.endsWith("_store.py")
-  ) return "backend:database";
+  ) {
+    return "backend:database";
+  }
 
   if (path.startsWith("backend/app/")) return "backend:product";
 
-  if (path.startsWith("ops/") || path.startsWith("infrastructure/"))
+  if (path.startsWith("ops/") || path.startsWith("infrastructure/")) {
     return "deploy-infrastructure";
+  }
 
-  if (
-    path.startsWith("scripts/validation/") ||
-    path.startsWith(".github/workflows/")
-  ) return "governance-ci";
+  if (path.startsWith("scripts/validation/") || path.startsWith(".github/workflows/")) {
+    return "governance-ci";
+  }
 
   if (
     path === "package.json" ||
@@ -121,7 +140,9 @@ export function changeDomain(input) {
     path === "vite.config.ts" ||
     path === "playwright.config.ts" ||
     path === "eslint.config.js"
-  ) return "tooling";
+  ) {
+    return "tooling";
+  }
 
   return "repository-other";
 }
@@ -151,7 +172,9 @@ function validate(files) {
   }
 
   const primary = primaries[0] || "docs/tests-only";
-  process.stdout.write(`Fronteira OK: ${primary}; ${files.length} arquivo(s) alterado(s).\n`);
+  process.stdout.write(
+    `Fronteira OK: ${primary}; ${files.length} arquivo(s) alterado(s).\n`,
+  );
 }
 
 function changedFiles() {
@@ -186,7 +209,9 @@ if (process.argv.includes("--self-test")) {
   } catch {
     rejected = true;
   }
-  if (!rejected) throw new Error("self-test: mistura Vertical+Compacto deveria ser rejeitada");
+  if (!rejected) {
+    throw new Error("self-test: mistura Vertical+Compacto deveria ser rejeitada");
+  }
   process.stdout.write("Self-test de fronteiras: OK\n");
 } else {
   validate(changedFiles());
