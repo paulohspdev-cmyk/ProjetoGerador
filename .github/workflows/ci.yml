@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Higiene do repositório
         run: |
@@ -21,6 +23,13 @@ jobs:
             echo "$BAD" >&2
             exit 1
           fi
+
+      - name: Fronteiras de mudança
+        env:
+          CHANGE_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          node scripts/validation/check-change-boundaries.mjs --self-test
+          node scripts/validation/check-change-boundaries.mjs
 
       - name: Node
         uses: actions/setup-node@v7
