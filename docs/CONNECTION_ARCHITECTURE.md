@@ -63,3 +63,19 @@ diretamente. Para equipamento provisionado, o fluxo é transacional:
    sem fingir que o gerador está operacional.
 
 Nome e unidade são dados cadastrais e não exigem reinício da comunicação.
+
+
+## Admissão de modem antes do gerador
+
+Para instalações reverse TCP, o fluxo novo é **modem primeiro**:
+
+1. `RC_MODEM_ADMISSION_PORTS` define uma lista/faixa limitada de portas de entrada;
+2. enquanto uma porta não pertence a nenhum gerador, a bridge abre um listener passivo;
+3. o listener aplica a mesma allowlist e o mesmo rate limit do reverse TCP;
+4. a chegada é registrada em `bridge_peer_observations`;
+5. nenhum byte é enviado ao modem e nenhum Rapid Device é criado;
+6. quando um gerador passa a usar aquela porta, a admissão é encerrada e a mesma porta é assumida pela bridge industrial.
+
+Exemplo: `RC_MODEM_ADMISSION_PORTS=15001-15020`.
+
+Uma porta de admissão não identifica fabricante, IMEI, ICCID ou número do chip. Esses dados só podem vir de protocolo/API homologado do modem ou do cadastro feito pelo operador durante a aprovação.
