@@ -33,8 +33,15 @@ def normalize_power_topology(value: object, *, allow_auto: bool = True) -> str:
 def topology_from_configured_metrics(
     configured_metrics: list[str] | tuple[str, ...] | set[str] | None,
     binding_present: bool,
+    *,
+    mains_bus_ambiguous: bool = False,
 ) -> tuple[str, str] | None:
-    """Infere pela configuração estável do binding, nunca pelo valor instantâneo."""
+    """Infere pela configuração estável do binding, nunca pelo valor instantâneo.
+
+    Em controladoras cujo mapa documenta canais como Mains/Bus, a mera
+    existência de mains_* não comprova concessionária. Nesses casos exigimos
+    evidência explícita de cadastro/topologia.
+    """
     if not binding_present:
         return None
     metrics = {str(key).strip() for key in (configured_metrics or []) if str(key).strip()}
@@ -45,6 +52,8 @@ def topology_from_configured_metrics(
         for key in metrics
     )
     if has_mains_channel:
+        if mains_bus_ambiguous:
+            return None
         return POWER_TOPOLOGY_MAINS, "binding"
     return POWER_TOPOLOGY_GENSET_ONLY, "binding"
 
@@ -162,7 +171,12 @@ def resolve_power_topology(
     if catalog:
         return catalog
 
-    binding = topology_from_configured_metrics(configured_metrics, binding_present)
+    controller_type = str(generator.get("controller_type") or "").strip().upper()
+    binding = topology_from_configured_metrics(
+        configured_metrics,
+        binding_present,
+        mains_bus_ambiguous=controller_type == "COMAP",
+    )
     if binding:
         return binding
 
