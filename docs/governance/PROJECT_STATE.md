@@ -19,6 +19,36 @@ Relatório de fechamento:
 
 `docs/audit/AUDIT_ZERO_FINAL_2026-09-30.md`
 
+## Reset operacional da frota — 2026-09-30
+
+Por solicitação explícita do operador, todos os geradores cadastrados foram retirados para reiniciar a configuração do zero.
+
+Procedimento aplicado:
+
+- backup completo criado e validado antes da mudança;
+- equipamentos provisionados foram retirados pelo deprovisionador seguro do Rapid;
+- canais históricos foram preservados/desativados em vez de renumerados;
+- bindings retirados foram arquivados;
+- cadastros e espelhos de domínio foram removidos;
+- nenhum comando industrial foi enviado às controladoras;
+- a bridge foi reiniciada ao final para eliminar estado runtime antigo.
+
+Estado final validado:
+
+- 0 geradores cadastrados;
+- 0 assets espelhados;
+- 0 controller instances;
+- 0 controller connections;
+- 0 bindings Rapid ativos;
+- 0 portas ativas na bridge;
+- nenhum alarme industrial ativo órfão;
+- SQLite quick check e foreign keys íntegros;
+- serviços RC e Rapid ativos.
+
+Histórico/auditoria e bindings retirados permanecem preservados. O reset não apaga a evidência anterior.
+
+A release de software não foi alterada por esse reset; apenas o estado operacional da frota foi zerado.
+
 ## Estado conhecido de maior impacto
 
 - produção observada estava em SHA de PR ainda aberto, diferente da main consolidada;
