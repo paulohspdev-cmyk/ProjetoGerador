@@ -8,9 +8,28 @@ os.environ["RC_DATA_DIR"] = str(data_dir)
 os.environ["RC_DB_FILE"] = str(data_dir / "test.db")
 
 from app import db, traffic_store  # noqa: E402
+from app.bridge_runtime import _parse_admission_ports  # noqa: E402
 from app.diagnostics import _connection_diagnosis  # noqa: E402
 
 db.init_db()
+
+assert _parse_admission_ports("") == set()
+assert _parse_admission_ports("15001-15003,15100") == {15001, 15002, 15003, 15100}
+try:
+    _parse_admission_ports("15010-15001")
+    raise AssertionError("faixa invertida deveria falhar")
+except RuntimeError:
+    pass
+
+peer = traffic_store.record_bridge_peer(
+    15001, "10.0.0.10", True, "admission_connected", now=900
+)
+touched = traffic_store.touch_bridge_peer(
+    15001, "10.0.0.10", "admission_waiting", now=950
+)
+assert touched["acceptedCount"] == peer["acceptedCount"] == 1
+assert touched["lastSeenAt"] == 950
+assert touched["lastReason"] == "admission_waiting"
 
 
 def session(connected: bool):

@@ -100,8 +100,38 @@ def _port_allowed_networks() -> dict[int, list]:
     return configured
 
 
+def _parse_admission_ports(raw: str) -> set[int]:
+    ports: set[int] = set()
+    for chunk in str(raw or "").split(","):
+        token = chunk.strip()
+        if not token:
+            continue
+        if "-" in token:
+            start_text, end_text = token.split("-", 1)
+            if not start_text.isdigit() or not end_text.isdigit():
+                raise RuntimeError(f"Faixa de portas de admissão inválida: {token}")
+            start, end = int(start_text), int(end_text)
+            if start > end:
+                raise RuntimeError(f"Faixa de portas de admissão invertida: {token}")
+            if end - start > 255:
+                raise RuntimeError(f"Faixa de portas de admissão ampla demais: {token}")
+            candidates = range(start, end + 1)
+        else:
+            if not token.isdigit():
+                raise RuntimeError(f"Porta de admissão inválida: {token}")
+            candidates = (int(token),)
+        for port in candidates:
+            if not 1 <= port <= 65535:
+                raise RuntimeError(f"Porta de admissão fora da faixa: {port}")
+            ports.add(port)
+    if len(ports) > 256:
+        raise RuntimeError("No máximo 256 portas de admissão podem ser configuradas")
+    return ports
+
+
 REMOTE_ALLOWED_NETWORKS = _allowed_networks()
 PORT_ALLOWED_NETWORKS = _port_allowed_networks()
+ADMISSION_PORTS = _parse_admission_ports(os.environ.get("RC_MODEM_ADMISSION_PORTS", ""))
 if REQUIRE_ALLOWLIST and not REMOTE_ALLOWED_NETWORKS and not PORT_ALLOWED_NETWORKS:
     raise RuntimeError(
         "RC_RAPID_REQUIRE_ALLOWLIST=1 exige RC_RAPID_REMOTE_ALLOWED_CIDRS "
@@ -282,6 +312,160 @@ def _validate_rtu_crc(frame: bytes) -> None:
         raise ValueError(
             f"CRC RTU inválido: recebido=0x{received:04X} calculado=0x{calculated:04X}"
         )
+
+
+class ModemAdmissionPort:
+    """Listener passivo para modem ainda não vinculado a gerador."""
+
+    def __init__(self, remote_port: int):
+        self.remote_port = int(remote_port)
+        self.allowed_networks, self.allowlist_source = _networks_for_port(self.remote_port)
+        self.server = None
+        self._writers: set = set()
+        self._peers: dict[int, dict] = {}
+        self._attempts = defaultdict(deque)
+
+    @staticmethod
+    def _peer_ip(peer):
+        if not isinstance(peer, (tuple, list)) or not peer:
+            return None
+        try:
+            return ipaddress.ip_address(str(peer[0]))
+        except ValueError:
+            return None
+
+    def _allowed(self, address) -> bool:
+        if address is None:
+            return False
+        if not self.allowed_networks:
+            return not REQUIRE_ALLOWLIST
+        return any(address in network for network in self.allowed_networks)
+
+    def _rate_allowed(self, address, now: float) -> bool:
+        key = str(address)
+        bucket = self._attempts[key]
+        cutoff = now - 60.0
+        while bucket and bucket[0] < cutoff:
+            bucket.popleft()
+        if len(bucket) >= CONNECT_RATE_LIMIT:
+            return False
+        bucket.append(now)
+        return True
+
+    async def start(self):
+        self.server = await asyncio.start_server(
+            self.accept_remote,
+            bridge.REMOTE_BIND,
+            self.remote_port,
+        )
+        bridge.log(f"porta {self.remote_port}: admissão passiva de modem ativa")
+
+    async def stop(self):
+        if self.server:
+            self.server.close()
+            await self.server.wait_closed()
+            self.server = None
+        writers = list(self._writers)
+        self._writers.clear()
+        self._peers.clear()
+        for writer in writers:
+            try:
+                writer.close()
+                await writer.wait_closed()
+            except Exception:
+                pass
+
+    async def _reject(self, writer, peer, reason: str):
+        address = self._peer_ip(peer)
+        if address is not None:
+            traffic_store.record_bridge_peer(
+                self.remote_port,
+                str(address),
+                accepted=False,
+                reason=reason,
+            )
+        try:
+            writer.close()
+            await writer.wait_closed()
+        except Exception:
+            pass
+
+    async def accept_remote(self, reader, writer):
+        peer = writer.get_extra_info("peername")
+        address = self._peer_ip(peer)
+        now_mono = time.monotonic()
+        if not self._allowed(address):
+            await self._reject(writer, peer, "origem fora da allowlist")
+            return
+        if not self._rate_allowed(address, now_mono):
+            await self._reject(writer, peer, "limite de conexões por minuto excedido")
+            return
+
+        now_epoch = int(time.time())
+        key = id(writer)
+        self._writers.add(writer)
+        self._peers[key] = {
+            "remoteIp": str(address),
+            "connectedAt": now_epoch,
+            "lastSeenAt": now_epoch,
+            "bytesRx": 0,
+        }
+        traffic_store.record_bridge_peer(
+            self.remote_port,
+            str(address),
+            accepted=True,
+            reason="admission_connected",
+        )
+
+        try:
+            while True:
+                try:
+                    data = await asyncio.wait_for(reader.read(4096), timeout=10.0)
+                except TimeoutError:
+                    data = None
+                now_epoch = int(time.time())
+                current = self._peers.get(key)
+                if current is not None:
+                    current["lastSeenAt"] = now_epoch
+                traffic_store.touch_bridge_peer(
+                    self.remote_port,
+                    str(address),
+                    reason="admission_waiting",
+                    now=now_epoch,
+                )
+                if data is None:
+                    continue
+                if not data:
+                    break
+                if current is not None:
+                    current["bytesRx"] = int(current.get("bytesRx") or 0) + len(data)
+        except (ConnectionError, asyncio.IncompleteReadError):
+            pass
+        finally:
+            self._writers.discard(writer)
+            self._peers.pop(key, None)
+            try:
+                writer.close()
+                await writer.wait_closed()
+            except Exception:
+                pass
+
+    def snapshot(self) -> dict:
+        peers = sorted(
+            (dict(item) for item in self._peers.values()),
+            key=lambda item: (item.get("remoteIp") or "", item.get("connectedAt") or 0),
+        )
+        return {
+            "remotePort": self.remote_port,
+            "listening": bool(self.server is not None),
+            "connectedPeers": len(peers),
+            "peers": peers,
+            "peerAllowlistEnabled": bool(self.allowed_networks),
+            "peerAllowlistSource": self.allowlist_source,
+        }
+
+
+admission_ports: dict[int, ModemAdmissionPort] = {}
 
 
 class HardenedBridgePort(bridge.BridgePort):
@@ -873,6 +1057,9 @@ def write_status(enabled: list[dict]) -> None:
             "ig4LabControlEnabled": ig4_lab.enabled(),
             "ig4LabAllowlistConfigured": bool(ig4_lab.allowlist()),
         },
+        "admissionPorts": [
+            item.snapshot() for _, item in sorted(admission_ports.items())
+        ],
         "ports": [
             {
                 **item.snapshot(),
@@ -928,6 +1115,13 @@ async def reconcile_reverse_tcp():
                 continue
             wanted[port] = next(iter(framings))
 
+        claimed_ports = set(wanted)
+        for port in sorted(claimed_ports):
+            admission = admission_ports.pop(port, None)
+            if admission is not None:
+                await admission.stop()
+                bridge.log(f"porta {port}: admissão encerrada; operação industrial assumirá a porta")
+
         for port, framing in wanted.items():
             current = bridge.bridges.get(port)
             if current is not None and getattr(current, "remote_framing", None) == framing:
@@ -952,6 +1146,27 @@ async def reconcile_reverse_tcp():
             await item.stop()
             bridge.log(f"porta {port}: ponte removida")
 
+        desired_admission = ADMISSION_PORTS - claimed_ports
+        for port in sorted(desired_admission):
+            if port in admission_ports:
+                continue
+            allowed_networks, _ = _networks_for_port(port)
+            if REQUIRE_ALLOWLIST and not allowed_networks:
+                bridge.log(
+                    f"porta {port}: admissão bloqueada; allowlist obrigatória não configurada"
+                )
+                continue
+            item = ModemAdmissionPort(port)
+            await item.start()
+            admission_ports[port] = item
+
+        for port in list(admission_ports):
+            if port in desired_admission:
+                continue
+            item = admission_ports.pop(port)
+            await item.stop()
+            bridge.log(f"porta {port}: admissão removida")
+
         try:
             write_status(enabled)
         except Exception as exc:
@@ -972,6 +1187,7 @@ async def main():
         "framing remoto definido por Controller Pack; "
         f"allowlist_global={'ativa' if REMOTE_ALLOWED_NETWORKS else 'não configurada'}; "
         f"allowlists_por_porta={sorted(PORT_ALLOWED_NETWORKS)}; "
+        f"portas_admissao={sorted(ADMISSION_PORTS)}; "
         f"require_allowlist={'sim' if REQUIRE_ALLOWLIST else 'não'}; "
         f"IG4_LAB={'ativo' if ig4_lab.enabled() else 'desabilitado'}"
     )
@@ -984,8 +1200,10 @@ async def main():
         await bridge.stop_control_server()
         await asyncio.gather(
             *(item.stop() for item in list(bridge.bridges.values())),
+            *(item.stop() for item in list(admission_ports.values())),
             return_exceptions=True,
         )
+        admission_ports.clear()
         try:
             STATUS_FILE.unlink(missing_ok=True)
         except Exception:
