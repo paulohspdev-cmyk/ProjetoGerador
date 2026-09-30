@@ -342,8 +342,26 @@ def generator_get(generator_id: str, user: dict = Depends(require_view)):
 
 @app.post("/api/generators", status_code=status.HTTP_201_CREATED)
 def generator_create(payload: GeneratorCreate, user: dict = Depends(require_create)):
+    actor_name = actor(user)
+    record = payload.to_db()
     try:
-        created = db.create_generator(payload.to_db(), actor=actor(user))
+        if record["transport"] == "reverse_tcp":
+            platform_store.require_approved_modem(
+                payload.modemId,
+                int(record["listen_port"]),
+            )
+        created = db.create_generator(record, actor=actor_name)
+        if record["transport"] == "reverse_tcp":
+            try:
+                platform_store.link_modem_to_generator(
+                    str(payload.modemId),
+                    created["id"],
+                    actor=actor_name,
+                )
+            except Exception:
+                db.delete_generator(created["id"], actor=actor_name)
+                domain_store.remove_legacy_generator(created["id"])
+                raise
     except sqlite3.IntegrityError as exc:
         raise HTTPException(status_code=409, detail=_generator_integrity_detail(exc)) from exc
     except ValueError as exc:
@@ -354,8 +372,28 @@ def generator_create(payload: GeneratorCreate, user: dict = Depends(require_crea
 
 @app.patch("/api/generators/{generator_id}")
 def generator_update(generator_id: str, payload: GeneratorUpdate, user: dict = Depends(require_edit)):
+    current = db.get_generator(generator_id)
+    if not current:
+        raise HTTPException(status_code=404, detail="Gerador não encontrado")
+    patch = payload.to_db()
+    actor_name = actor(user)
+    target_transport = str(patch.get("transport", current.get("transport") or ""))
+    target_port = int(patch.get("listen_port", current.get("listen_port") or 0))
     try:
-        updated = db.update_generator(generator_id, payload.to_db(), actor=actor(user))
+        if target_transport == "reverse_tcp":
+            if payload.modemId:
+                platform_store.require_approved_modem(payload.modemId, target_port)
+            elif not platform_store.approved_modem_for_port(target_port):
+                raise ValueError(
+                    "Porta reverse TCP precisa estar vinculada a um modem aprovado"
+                )
+        updated = db.update_generator(generator_id, patch, actor=actor_name)
+        if updated and target_transport == "reverse_tcp" and payload.modemId:
+            platform_store.link_modem_to_generator(
+                payload.modemId,
+                updated["id"],
+                actor=actor_name,
+            )
     except sqlite3.IntegrityError as exc:
         raise HTTPException(status_code=409, detail=_generator_integrity_detail(exc)) from exc
     except ValueError as exc:

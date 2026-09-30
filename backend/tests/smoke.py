@@ -24,7 +24,7 @@ os.environ["RC_ENABLE_IG200_CONTROL"] = "0"
 
 from fastapi.testclient import TestClient  # noqa: E402
 
-from app import db  # noqa: E402
+from app import db, traffic_store  # noqa: E402
 from app.auth import hash_password  # noqa: E402
 from app.main import app  # noqa: E402
 
@@ -35,6 +35,30 @@ def expect(response, code):
             f"esperado HTTP {code}, recebido {response.status_code}: {response.text}"
         )
     return response
+
+
+def approve_modem(client, port: int, suffix: int) -> str:
+    traffic_store.record_bridge_peer(
+        port,
+        f"10.10.0.{suffix}",
+        accepted=True,
+        reason="admission_connected",
+    )
+    approved = expect(
+        client.post(
+            f"/api/modem-admissions/{port}/approve",
+            json={
+                "name": f"MDM-{port}",
+                "manufacturer": "Teste",
+                "model": "DTU",
+                "serial": f"SN-{port}",
+                "sim_phone": f"+550000{port}",
+                "carrier": "Teste",
+            },
+        ),
+        200,
+    ).json()
+    return str(approved["fieldDeviceId"])
 
 
 db.init_db()
@@ -93,6 +117,24 @@ with TestClient(app) as client:
     ).json()
     assert viewer["role"] == "visualizacao"
 
+    # Reverse TCP agora é fail-closed: sem modem aprovado, o gerador não nasce.
+    expect(
+        client.post(
+            "/api/generators",
+            json={
+                "tag": "GEN-BLOCKED",
+                "name": "Bloqueado",
+                "site": "Teste",
+                "controller": "ComAp InteliGen 200",
+                "transport": "reverse_tcp",
+                "listenPort": 15001,
+                "modbusUnit": 2,
+            },
+        ),
+        422,
+    )
+    modem_15001 = approve_modem(client, 15001, 1)
+
     generator = expect(
         client.post(
             "/api/generators",
@@ -105,6 +147,7 @@ with TestClient(app) as client:
                 "listenPort": 15001,
                 "modbusUnit": 2,
                 "rapidDeviceNum": 200,
+                "modemId": modem_15001,
             },
         ),
         201,
@@ -133,6 +176,7 @@ with TestClient(app) as client:
     )
 
     # F10: o contrato HTTP de ciclo de vida deve ser assíncrono e rastreável.
+    modem_15009 = approve_modem(client, 15009, 9)
     queued_generator = expect(
         client.post(
             "/api/generators",
@@ -144,6 +188,7 @@ with TestClient(app) as client:
                 "transport": "reverse_tcp",
                 "listenPort": 15009,
                 "modbusUnit": 1,
+                "modemId": modem_15009,
             },
         ),
         201,

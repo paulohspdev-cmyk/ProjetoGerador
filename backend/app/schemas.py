@@ -31,6 +31,7 @@ class GeneratorCreate(BaseModel):
     controller: str = Field(min_length=1, max_length=160)
     controllerType: str | None = None
     transport: str = "reverse_tcp"
+    modemId: str | None = Field(default=None, max_length=80)
     ip: str | None = None
     listenPort: int = Field(default=0, ge=0, le=65535)
     modbusUnit: int = Field(default=1, ge=1, le=247)
@@ -105,6 +106,7 @@ class GeneratorUpdate(BaseModel):
     customer: str | None = Field(default=None, max_length=160)
     site: str | None = Field(default=None, min_length=1, max_length=160)
     transport: str | None = None
+    modemId: str | None = Field(default=None, max_length=80)
     ip: str | None = None
     listenPort: int | None = Field(default=None, ge=1, le=65535)
     modbusUnit: int | None = Field(default=None, ge=1, le=247)

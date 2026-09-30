@@ -136,6 +136,7 @@ class RetireRequest(BaseModel):
 class GeneratorReconfigureRequest(BaseModel):
     operationId: str | None = Field(default=None, min_length=8, max_length=120)
     transport: str
+    modemId: str | None = Field(default=None, max_length=80)
     ip: str = Field(default="", max_length=255)
     listenPort: int = Field(default=0, ge=0, le=65535)
     modbusUnit: int = Field(ge=1, le=247)
@@ -389,6 +390,15 @@ async def _execute_generator_reconfigure(
     else:
         listen_port = 0
 
+    if transport == "reverse_tcp":
+        try:
+            if payload.modemId:
+                platform_store.require_approved_modem(payload.modemId, listen_port)
+            elif not platform_store.approved_modem_for_port(listen_port):
+                raise ValueError("Porta reverse TCP sem modem aprovado")
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
     target_enabled = bool(generator.get("enabled")) if payload.enabled is None else bool(payload.enabled)
     identity = {
         "transport": transport,
@@ -467,6 +477,13 @@ async def _execute_generator_reconfigure(
                 "Equipamento mantido bloqueado para intervenção administrativa."
             )
         raise HTTPException(status_code=502, detail=detail) from exc
+
+    if transport == "reverse_tcp" and payload.modemId:
+        platform_store.link_modem_to_generator(
+            payload.modemId,
+            generator["id"],
+            actor=actor(user),
+        )
 
     db.add_audit(
         actor(user),
@@ -636,6 +653,14 @@ def generator_reconfigure(
     expected = f"RECONFIGURAR {generator['tag']}"
     if payload.confirmation.strip().upper() != expected.upper():
         raise HTTPException(status_code=422, detail=f"Confirmação deve ser {expected}")
+    if payload.transport.strip() == "reverse_tcp":
+        try:
+            if payload.modemId:
+                platform_store.require_approved_modem(payload.modemId, payload.listenPort)
+            elif not platform_store.approved_modem_for_port(payload.listenPort):
+                raise ValueError("Selecione um modem aprovado para a nova porta reverse TCP")
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
     return _queue_lifecycle_operation(generator_id, "reconfigure", payload, user)
 
 

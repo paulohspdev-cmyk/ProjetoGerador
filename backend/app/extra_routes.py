@@ -42,12 +42,16 @@ class FieldDeviceCreate(BaseModel):
     name: str = Field(min_length=1, max_length=160)
     site_id: str | None = None
     generator_id: str | None = None
+    manufacturer: str = ""
     model: str = ""
     serial: str = ""
     imei: str = ""
+    sim_phone: str = ""
     sim_iccid: str = ""
     carrier: str = ""
+    apn: str = ""
     host: str = ""
+    listen_port: int | None = Field(default=None, ge=1, le=65535)
     rssi: float | None = None
     status: str = "unknown"
     metadata: dict = Field(default_factory=dict)
@@ -57,17 +61,39 @@ class FieldDeviceUpdate(BaseModel):
     name: str | None = None
     site_id: str | None = None
     generator_id: str | None = None
+    manufacturer: str | None = None
     model: str | None = None
     serial: str | None = None
     imei: str | None = None
+    sim_phone: str | None = None
     sim_iccid: str | None = None
     carrier: str | None = None
+    apn: str | None = None
     host: str | None = None
+    listen_port: int | None = Field(default=None, ge=1, le=65535)
     rssi: float | None = None
     status: str | None = None
     last_seen: int | None = None
     metadata: dict | None = None
     active: bool | None = None
+
+
+class ModemAdmissionApprove(BaseModel):
+    name: str = Field(min_length=1, max_length=160)
+    manufacturer: str = Field(default="", max_length=160)
+    model: str = Field(default="", max_length=160)
+    serial: str = Field(default="", max_length=160)
+    imei: str = Field(default="", max_length=40)
+    sim_phone: str = Field(default="", max_length=40)
+    sim_iccid: str = Field(default="", max_length=64)
+    carrier: str = Field(default="", max_length=120)
+    apn: str = Field(default="", max_length=160)
+    site_id: str | None = None
+    metadata: dict = Field(default_factory=dict)
+
+
+class ModemAdmissionReject(BaseModel):
+    reason: str = Field(default="", max_length=500)
 
 
 class TransportConfigPayload(BaseModel):
@@ -165,6 +191,51 @@ def bridge_peers(
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
+@router.get("/api/modem-admissions")
+def modem_admissions(user: dict = Depends(require_admin)):
+    return platform_store.list_modem_admissions()
+
+
+@router.post("/api/modem-admissions/{remote_port}/approve")
+def modem_admission_approve(
+    remote_port: int,
+    payload: ModemAdmissionApprove,
+    user: dict = Depends(require_admin),
+):
+    try:
+        return platform_store.approve_modem_admission(
+            remote_port,
+            payload.model_dump(),
+            actor(user),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/api/modem-admissions/{remote_port}/reject")
+def modem_admission_reject(
+    remote_port: int,
+    payload: ModemAdmissionReject,
+    user: dict = Depends(require_admin),
+):
+    try:
+        return platform_store.reject_modem_admission(
+            remote_port,
+            payload.reason,
+            actor(user),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post("/api/modem-admissions/{remote_port}/reopen")
+def modem_admission_reopen(remote_port: int, user: dict = Depends(require_admin)):
+    try:
+        return platform_store.reopen_modem_admission(remote_port, actor(user))
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
 @router.get("/api/field-devices")
 def field_devices(kind: str | None = None, user: dict = Depends(require_view)):
     return platform_store.list_field_devices(kind)
@@ -172,6 +243,11 @@ def field_devices(kind: str | None = None, user: dict = Depends(require_view)):
 
 @router.post("/api/field-devices", status_code=201)
 def field_device_create(payload: FieldDeviceCreate, user: dict = Depends(require_admin)):
+    if payload.kind.strip().lower() == "modem":
+        raise HTTPException(
+            status_code=409,
+            detail="Modem deve ser cadastrado pela fila de admissão após conexão observada.",
+        )
     try:
         return platform_store.create_field_device(payload.model_dump(), actor(user))
     except ValueError as exc:
@@ -195,7 +271,11 @@ def field_device_update(item_id: str, payload: FieldDeviceUpdate, user: dict = D
 
 @router.delete("/api/field-devices/{item_id}", status_code=204)
 def field_device_delete(item_id: str, user: dict = Depends(require_admin)):
-    if not platform_store.delete_field_device(item_id, actor(user)):
+    try:
+        deleted = platform_store.delete_field_device(item_id, actor(user))
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    if not deleted:
         raise HTTPException(status_code=404, detail="Equipamento não encontrado")
 
 
