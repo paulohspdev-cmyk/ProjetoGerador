@@ -803,7 +803,6 @@ def require_approved_modem(modem_id: str | None, remote_port: int) -> dict:
 
 
 def approved_modem_for_port(remote_port: int) -> dict | None:
-    init_platform_db()
     port = _field_device_port(remote_port)
     with db.connect() as conn:
         row = conn.execute(
