@@ -30,6 +30,7 @@ TIMEOUT = float(os.environ.get("RC_RAPID_BRIDGE_TIMEOUT", "4"))
 RECONCILE_SECONDS = float(os.environ.get("RC_RAPID_RECONCILE_SECONDS", "5"))
 CONTROL_SOCKET = os.environ.get("RC_RAPID_CONTROL_SOCKET", "/run/rc-geradores/control.sock")
 ENABLE_IG200_CONTROL = os.environ.get("RC_ENABLE_IG200_CONTROL", "0").strip() == "1"
+ENABLE_IG4_PROD_CONTROL = os.environ.get("RC_ENABLE_IG4_PROD_CONTROL", "0").strip() == "1"
 
 READ_FUNCTIONS = {3, 4}
 IG200_RPM_ADDRESS = 1000
@@ -42,6 +43,24 @@ IG200_COMMAND_CODE = 0x0001
 IG200_START_RETURN = 0x000001FF
 IG200_STOP_RETURN = 0x000002FE
 IG200_MAX_START_RPM = 100
+
+IG4_RPM_ADDRESS = 1000
+IG4_MODE_ADDRESS = 1320
+IG4_ENGINE_ADDRESS = 1322
+IG4_BREAKER_ADDRESS = 1323
+IG4_LOG_BOUT_1_ADDRESS = 1387
+IG4_COMMAND_ARGUMENT_ADDRESS = 4207
+IG4_COMMAND_CODE_ADDRESS = 4209
+IG4_START_ARGUMENT = 0x01FE0000
+IG4_STOP_ARGUMENT = 0x02FD0000
+IG4_COMMAND_CODE = 0x0001
+IG4_START_RETURN = 0x000001FF
+IG4_STOP_RETURN = 0x000002FE
+IG4_MODE_MAN = 1
+IG4_ENGINE_READY = 1
+IG4_BREAKERS_OFF = 1
+IG4_ALARM_MASK = 0x0400
+IG4_RUNNING_STATES = {7, 8}
 
 
 def log(message):
@@ -106,6 +125,14 @@ def resolve_ig200(device_num):
     """Fail-closed: bridge_runtime injeta o resolver baseado em binding/cadastro."""
     raise RuntimeError(
         f"resolver canônico não instalado para Rapid Device {int(device_num or 0)}; "
+        "execute app.bridge_runtime"
+    )
+
+
+def resolve_ig4_prod(generator_id, device_num):
+    """Fail-closed: bridge_runtime injeta o resolver IG4 de produção."""
+    raise RuntimeError(
+        f"resolver IG4 de produção não instalado para Rapid Device {int(device_num or 0)}; "
         "execute app.bridge_runtime"
     )
 
@@ -365,6 +392,153 @@ class BridgePort:
             "rpm_after": rpm_after,
         }
 
+    async def _ig4_snapshot_locked(self, unit):
+        async def reg(address):
+            pdu = await self.request_locked(unit, read_holding_pdu(address, 1))
+            return parse_registers(pdu, 1)[0]
+
+        return {
+            "mode": await reg(IG4_MODE_ADDRESS),
+            "engine": await reg(IG4_ENGINE_ADDRESS),
+            "breaker": await reg(IG4_BREAKER_ADDRESS),
+            "rpm": await reg(IG4_RPM_ADDRESS),
+            "log_bout_1": await reg(IG4_LOG_BOUT_1_ADDRESS),
+        }
+
+    @staticmethod
+    def _require_ig4_state(action, state):
+        failures = []
+        if state["mode"] != IG4_MODE_MAN:
+            failures.append(f"mode={state['mode']} (esperado MAN=1)")
+        if state["breaker"] != IG4_BREAKERS_OFF:
+            failures.append(f"breaker={state['breaker']} (esperado BrksOff=1)")
+        if action == "start":
+            if state["engine"] != IG4_ENGINE_READY:
+                failures.append(f"engine={state['engine']} (esperado Ready=1)")
+            if state["rpm"] != 0:
+                failures.append(f"rpm={state['rpm']} (esperado 0)")
+            if state["log_bout_1"] & IG4_ALARM_MASK:
+                failures.append(
+                    f"LogBout1=0x{state['log_bout_1']:04X} indica alarme impeditivo"
+                )
+        elif action == "stop":
+            if state["rpm"] <= 100:
+                failures.append(f"rpm={state['rpm']} (motor já parado/abaixo de 100 rpm)")
+        else:
+            failures.append(f"ação inválida {action}")
+        if failures:
+            raise PermissionError(
+                f"{action.upper()} IG4 recusado: " + "; ".join(failures)
+            )
+
+    async def ig4_command(self, unit, action):
+        if action not in ("start", "stop"):
+            raise ValueError("ação IG4 inválida")
+        argument = IG4_START_ARGUMENT if action == "start" else IG4_STOP_ARGUMENT
+        expected_return = IG4_START_RETURN if action == "start" else IG4_STOP_RETURN
+
+        async with self.remote_lock:
+            before = await self._ig4_snapshot_locked(unit)
+            self._require_ig4_state(action, before)
+            await asyncio.sleep(0.15)
+            immediate = await self._ig4_snapshot_locked(unit)
+            self._require_ig4_state(action, immediate)
+
+            critical = ("mode", "breaker", "rpm")
+            if action == "start":
+                critical = critical + ("engine", "log_bout_1")
+            if any(before[key] != immediate[key] for key in critical):
+                raise PermissionError(
+                    f"{action.upper()} IG4 recusado: estado crítico mudou entre validações"
+                )
+
+            arg_resp = await self.request_locked(
+                unit,
+                write_multiple_u32_pdu(IG4_COMMAND_ARGUMENT_ADDRESS, argument),
+            )
+            ensure_write_ok(arg_resp, 16)
+            if len(arg_resp) != 5:
+                raise ValueError(f"eco FC16 inválido: {arg_resp.hex()}")
+            _, arg_address, arg_count = struct.unpack(">BHH", arg_resp)
+            if arg_address != IG4_COMMAND_ARGUMENT_ADDRESS or arg_count != 2:
+                raise ValueError(
+                    f"eco FC16 inválido: address={arg_address} count={arg_count}"
+                )
+
+            await asyncio.sleep(0.10)
+            cmd_resp = await self.request_locked(
+                unit,
+                write_single_pdu(IG4_COMMAND_CODE_ADDRESS, IG4_COMMAND_CODE),
+            )
+            ensure_write_ok(cmd_resp, 6)
+            if len(cmd_resp) != 5:
+                raise ValueError(f"eco FC06 inválido: {cmd_resp.hex()}")
+            _, cmd_address, cmd_value = struct.unpack(">BHH", cmd_resp)
+            if cmd_address != IG4_COMMAND_CODE_ADDRESS or cmd_value != IG4_COMMAND_CODE:
+                raise ValueError(
+                    f"eco FC06 inválido: address={cmd_address} value=0x{cmd_value:04X}"
+                )
+
+            await asyncio.sleep(0.35)
+            ret_pdu = await self.request_locked(
+                unit, read_holding_pdu(IG4_COMMAND_ARGUMENT_ADDRESS, 2)
+            )
+            regs = parse_registers(ret_pdu, 2)
+            return_value = (regs[0] << 16) | regs[1]
+
+        if return_value != expected_return:
+            if return_value == 0x00000001:
+                reason = "controlador recusou: argumento inválido"
+            elif return_value == 0x00000002:
+                reason = "controlador recusou o comando (modo, acesso ou intertravamento)"
+            else:
+                reason = f"retorno inesperado 0x{return_value:08X}"
+            return {
+                "ok": False,
+                "accepted": False,
+                "action": action,
+                "reason": reason,
+                "return_value": f"0x{return_value:08X}",
+                "state_before": before,
+                "feedback_confirmed": False,
+            }
+
+        feedback_confirmed = False
+        last_state = None
+        timeout = 15.0 if action == "start" else 30.0
+        deadline = asyncio.get_running_loop().time() + timeout
+        while asyncio.get_running_loop().time() < deadline:
+            await asyncio.sleep(0.5)
+            try:
+                async with self.remote_lock:
+                    last_state = await self._ig4_snapshot_locked(unit)
+            except Exception:
+                continue
+            if action == "start":
+                feedback_confirmed = bool(
+                    last_state["rpm"] > 100
+                    and last_state["engine"] in IG4_RUNNING_STATES
+                )
+            else:
+                feedback_confirmed = bool(last_state["rpm"] <= 100)
+            if feedback_confirmed:
+                break
+
+        return {
+            "ok": bool(feedback_confirmed),
+            "accepted": True,
+            "action": action,
+            "reason": (
+                f"{action.upper()} aceito e feedback por RPM confirmado"
+                if feedback_confirmed
+                else f"{action.upper()} aceito, mas feedback por RPM não confirmou no prazo"
+            ),
+            "return_value": f"0x{return_value:08X}",
+            "state_before": before,
+            "state_after": last_state,
+            "feedback_confirmed": bool(feedback_confirmed),
+        }
+
     async def accept_local(self, reader, writer):
         peer = writer.get_extra_info("peername")
         log(f"porta local {self.local_port}: Rapid SCADA conectado de {peer}")
@@ -404,24 +578,61 @@ async def handle_control(reader, writer):
         if not raw or len(raw) > 4096:
             raise ValueError("requisição vazia ou grande demais")
         req = json.loads(raw.decode("utf-8"))
-        if not ENABLE_IG200_CONTROL:
-            raise PermissionError("controle IG200 desabilitado; execute o instalador de controle")
         if req.get("confirm") != "REMOTE_CONTROL_CONFIRMED":
             raise PermissionError("confirmação explícita ausente")
         action = str(req.get("action", "")).strip().lower()
         if action not in ("start", "stop"):
             raise ValueError("somente start e stop são permitidos")
-        generator, port, unit = resolve_ig200(int(req.get("device") or 0))
-        bridge = bridges.get(port)
-        if bridge is None:
+        executor = str(req.get("executor") or "ig200_privileged").strip()
+
+        if executor == "ig200_privileged":
+            if not ENABLE_IG200_CONTROL:
+                raise PermissionError("controle IG200 desabilitado")
+            generator, port, unit = resolve_ig200(int(req.get("device") or 0))
+        elif executor == "comap_privileged":
+            if not ENABLE_IG4_PROD_CONTROL:
+                raise PermissionError("controle IG4 de produção desabilitado")
+            generator, port, unit = resolve_ig4_prod(
+                req.get("generator_id"),
+                int(req.get("device") or 0),
+            )
+        else:
+            raise PermissionError(f"executor não permitido no socket: {executor or 'N/D'}")
+
+        port_bridge = bridges.get(port)
+        if port_bridge is None:
             raise ConnectionError(f"ponte da porta {port} não está ativa")
-        if bridge.remote_writer is None:
+        if port_bridge.remote_writer is None:
             raise ConnectionError(f"modem da porta {port} está desconectado")
-        result = await bridge.ig200_command(unit, action, password=req.get("password"))
-        response = {**result, "device": int(req.get("device")), "generator": generator.get("tag"), "port": port, "unit": unit}
+
+        if executor == "ig200_privileged":
+            result = await port_bridge.ig200_command(
+                unit, action, password=req.get("password")
+            )
+            controller_label = "IG200"
+        else:
+            result = await port_bridge.ig4_command(unit, action)
+            controller_label = "IG4"
+
+        response = {
+            **result,
+            "device": int(req.get("device")),
+            "generator": generator.get("tag"),
+            "port": port,
+            "unit": unit,
+            "executor": executor,
+        }
         level = "WARN" if result.get("accepted") else "ERROR"
-        db.add_event(generator["id"], level, f"Controle remoto IG200 {action.upper()}: {result.get('reason', '')}; retorno={result.get('return_value', '-')}; rpm={result.get('rpm_before', '-')}")
-        log(f"controle IG200 {action}: gerador={generator.get('tag')} unit={unit} aceito={result.get('accepted')} retorno={result.get('return_value')}")
+        db.add_event(
+            generator["id"],
+            level,
+            f"Controle remoto {controller_label} {action.upper()}: "
+            f"{result.get('reason', '')}; retorno={result.get('return_value', '-')}",
+        )
+        log(
+            f"controle {controller_label} {action}: gerador={generator.get('tag')} "
+            f"unit={unit} aceito={result.get('accepted')} retorno={result.get('return_value')}"
+        )
     except Exception as exc:
         response = {"ok": False, "accepted": False, "error": str(exc), "action": action}
         if generator:
@@ -453,7 +664,12 @@ async def start_control_server():
         pass
     control_server = await asyncio.start_unix_server(handle_control, path=str(socket_path))
     os.chmod(socket_path, 0o660)
-    mode = "ATIVO: start/stop IG200 restritos" if ENABLE_IG200_CONTROL else "DESABILITADO"
+    modes = []
+    if ENABLE_IG200_CONTROL:
+        modes.append("IG200 start/stop")
+    if ENABLE_IG4_PROD_CONTROL:
+        modes.append("IG4 allowlist start/stop")
+    mode = "ATIVO: " + ", ".join(modes) if modes else "DESABILITADO"
     log(f"socket de controle local {socket_path} ({mode})")
 
 
