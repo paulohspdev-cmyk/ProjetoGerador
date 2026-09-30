@@ -17,6 +17,7 @@ export type CreateGeneratorPayload = {
   site: string;
   ip?: string | undefined;
   transport?: GeneratorTransport | undefined;
+  modemId?: string | undefined;
   listenPort?: number | undefined;
   modbusUnit?: number | undefined;
   rapidDeviceNum?: number | undefined;
@@ -163,17 +164,36 @@ export type FieldDevice = {
   name: string;
   site_id?: string | null | undefined;
   generator_id?: string | null | undefined;
+  manufacturer?: string | undefined;
   model: string;
   serial: string;
   imei: string;
+  sim_phone?: string | undefined;
   sim_iccid: string;
   carrier: string;
+  apn?: string | undefined;
   host: string;
+  listen_port?: number | null | undefined;
+  linked_generator_ids?: string[] | undefined;
   rssi?: number | null | undefined;
   status: string;
   last_seen?: number | null | undefined;
   metadata?: Record<string, unknown> | undefined;
   active: boolean;
+};
+
+export type ModemAdmission = {
+  remotePort: number;
+  remoteIp: string;
+  firstSeenAt: number;
+  lastSeenAt: number;
+  acceptedCount: number;
+  rejectedCount: number;
+  peerCount: number;
+  state: "pending" | "approved" | "rejected" | string;
+  fieldDeviceId?: string | null | undefined;
+  fieldDeviceName?: string | undefined;
+  reason?: string | undefined;
 };
 export type NotificationItem = {
   id: number;
@@ -693,6 +713,38 @@ export const rcApi = {
       }),
     remove: (id: string) =>
       request<void>(`/api/field-devices/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  },
+  modemAdmissions: {
+    list: () => request<ModemAdmission[]>("/api/modem-admissions"),
+    approve: (
+      remotePort: number,
+      payload: {
+        name: string;
+        manufacturer?: string | undefined;
+        model?: string | undefined;
+        serial?: string | undefined;
+        imei?: string | undefined;
+        sim_phone?: string | undefined;
+        sim_iccid?: string | undefined;
+        carrier?: string | undefined;
+        apn?: string | undefined;
+        site_id?: string | null | undefined;
+        metadata?: Record<string, unknown> | undefined;
+      },
+    ) =>
+      request<ModemAdmission>(`/api/modem-admissions/${remotePort}/approve`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    reject: (remotePort: number, reason = "") =>
+      request<ModemAdmission>(`/api/modem-admissions/${remotePort}/reject`, {
+        method: "POST",
+        body: JSON.stringify({ reason }),
+      }),
+    reopen: (remotePort: number) =>
+      request<ModemAdmission | null>(`/api/modem-admissions/${remotePort}/reopen`, {
+        method: "POST",
+      }),
   },
   notifications: {
     list: (limit = 200) => request<NotificationItem[]>(`/api/notifications?limit=${limit}`),
