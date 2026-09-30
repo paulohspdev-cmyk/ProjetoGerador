@@ -251,15 +251,23 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
     <ScreenBody>
       <div>
         <h2 className="text-lg font-extrabold">{label}</h2>
+        {kind === "modem" && (
+          <p className="mt-1 text-sm text-muted-foreground">
+            Primeiro aprove o modem que chegou ao servidor. O gerador será vinculado somente depois.
+          </p>
+        )}
       </div>
 
       <Stats
         items={[
-          { icon, label: "Cadastrados", value: rows.length },
+          { icon, label: "Cadastrados", value: registeredRows.length },
+          ...(kind === "modem" && admin
+            ? [{ icon: Signal, label: "Aguardando", value: pendingPeers.length, tone: "text-alert" }]
+            : []),
           {
             icon: Signal,
             label: "Ativos",
-            value: rows.filter((row) => row.active).length,
+            value: registeredRows.filter((row) => row.active).length,
             tone: "text-online",
           },
         ]}
