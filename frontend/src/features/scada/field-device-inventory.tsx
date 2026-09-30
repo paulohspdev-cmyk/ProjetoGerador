@@ -32,13 +32,18 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
   const { can } = useAuth();
   const admin = can("manageUsers");
   const [rows, setRows] = useState<FieldDevice[]>([]);
+  const [peers, setPeers] = useState<BridgePeerObservation[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
+  const [approvalPeer, setApprovalPeer] = useState<BridgePeerObservation | null>(null);
+  const [metadataBase, setMetadataBase] = useState<Record<string, unknown>>({});
   const [name, setName] = useState("");
+  const [manufacturer, setManufacturer] = useState("");
   const [model, setModel] = useState("");
   const [host, setHost] = useState("");
   const [serial, setSerial] = useState("");
   const [imei, setImei] = useState("");
   const [sim, setSim] = useState("");
+  const [simPhone, setSimPhone] = useState("");
   const [carrier, setCarrier] = useState("");
   const [advanced, setAdvanced] = useState(false);
   const [error, setError] = useState("");
@@ -46,16 +51,58 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
 
   const load = useCallback(async () => {
     try {
-      setRows(await rcApi.fieldDevices.list(kind));
+      if (kind === "modem" && admin) {
+        const [deviceRows, peerRows] = await Promise.all([
+          rcApi.fieldDevices.list(kind),
+          rcApi.system.bridgePeers(200),
+        ]);
+        setRows(deviceRows);
+        setPeers(
+          peerRows.filter((peer) => String(peer.lastReason || "").startsWith("admission_")),
+        );
+      } else {
+        setRows(await rcApi.fieldDevices.list(kind));
+        setPeers([]);
+      }
       setError("");
     } catch (loadError) {
       setError(errText(loadError));
     }
-  }, [kind]);
+  }, [admin, kind]);
 
   useEffect(() => {
     void load();
-  }, [load]);
+    if (kind !== "modem" || !admin) return;
+    const timer = window.setInterval(() => void load(), 5000);
+    return () => window.clearInterval(timer);
+  }, [admin, kind, load]);
+
+  const registeredAdmissionKeys = useMemo(() => {
+    const keys = new Set<string>();
+    for (const row of rows) {
+      const port = metadataNumber(row.metadata, "admissionPort");
+      const ip = metadataText(row.metadata, "admissionIp");
+      if (port && ip) keys.add(admissionKey(port, ip));
+    }
+    return keys;
+  }, [rows]);
+
+  const pendingPeers = useMemo(
+    () =>
+      peers.filter(
+        (peer) => !registeredAdmissionKeys.has(admissionKey(peer.remotePort, peer.remoteIp)),
+      ),
+    [peers, registeredAdmissionKeys],
+  );
+
+  const registeredRows = useMemo(
+    () => rows.filter((row) => row.status !== "rejected"),
+    [rows],
+  );
+  const rejectedRows = useMemo(
+    () => rows.filter((row) => row.status === "rejected"),
+    [rows],
+  );
 
   const reset = () => {
     setEditing(null);
