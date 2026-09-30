@@ -172,9 +172,7 @@ function validate(files) {
   }
 
   const primary = primaries[0] || "docs/tests-only";
-  process.stdout.write(
-    `Fronteira OK: ${primary}; ${files.length} arquivo(s) alterado(s).\n`,
-  );
+  process.stdout.write(`Fronteira OK: ${primary}; ${files.length} arquivo(s) alterado(s).\n`);
 }
 
 function changedFiles() {
