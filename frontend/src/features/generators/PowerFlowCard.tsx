@@ -166,8 +166,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     generatorKnown &&
     ((runningKnown && running) ||
       hasPositiveMeasurement([genL1, genL2, genL3, generatorFrequencyKnown ? frequency : null]));
-  const energyKwh = metricNumber(gen, "genset_kwh", undefined);
-  const numberStarts = metricNumber(gen, "number_starts", undefined);
   const batteryVoltage = metricNumber(gen, "battery_voltage", battery);
   const currentValues = [currentL1, currentL2, currentL3].filter(
     (value): value is number => value != null,
@@ -239,12 +237,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     () => alarmsForGenerator(gen, industrialAlarms),
     [gen, industrialAlarms],
   );
-
-  const valueRows = [
-    { icon: "clock" as const, label: "Horímetro", value: formatUnit(runHours, "h", 1) },
-    { icon: "zap" as const, label: "Energia", value: formatUnit(energyKwh, "kWh", 0) },
-    { icon: "gauge" as const, label: "Partidas", value: formatNumber(numberStarts, 0) },
-  ];
 
   const canOperate =
     can("operate") && !gen.telemetryStale && (gen.status === "online" || gen.status === "alerta");
@@ -387,7 +379,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         running={running}
       />
 
-      <VerticalTables electricalRows={electricalRows} valueRows={valueRows} alarms={alarmRows} />
+      <VerticalTables electricalRows={electricalRows} alarms={alarmRows} />
     </article>
   );
 }
