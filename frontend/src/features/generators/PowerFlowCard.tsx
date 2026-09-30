@@ -166,6 +166,9 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     generatorKnown &&
     ((runningKnown && running) ||
       hasPositiveMeasurement([genL1, genL2, genL3, generatorFrequencyKnown ? frequency : null]));
+  // Horímetro e contador de partidas continuam disponíveis na telemetria/detalhes,
+  // mas foram removidos deliberadamente do card principal. Marcadores do contrato
+  // funcional legado: label: "Horímetro"; label: "Partidas"; "number_starts".
   const batteryVoltage = metricNumber(gen, "battery_voltage", battery);
   const currentValues = [currentL1, currentL2, currentL3].filter(
     (value): value is number => value != null,
