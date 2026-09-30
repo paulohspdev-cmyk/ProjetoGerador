@@ -106,24 +106,41 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
 
   const reset = () => {
     setEditing(null);
+    setApprovalPeer(null);
+    setMetadataBase({});
     setName("");
+    setManufacturer("");
     setModel("");
     setHost("");
     setSerial("");
     setImei("");
     setSim("");
+    setSimPhone("");
     setCarrier("");
     setAdvanced(false);
   };
 
+  const beginApprove = (peer: BridgePeerObservation) => {
+    reset();
+    setApprovalPeer(peer);
+    setName("MDM-" + String(peer.remotePort));
+    setHost(peer.remoteIp);
+    setAdvanced(true);
+    setError("");
+  };
+
   const beginEdit = (row: FieldDevice) => {
     setEditing(row.id);
+    setApprovalPeer(null);
+    setMetadataBase(row.metadata || {});
     setName(row.name);
+    setManufacturer(metadataText(row.metadata, "manufacturer"));
     setModel(row.model || "");
     setHost(row.host || "");
     setSerial(row.serial || "");
     setImei(row.imei || "");
     setSim(row.sim_iccid || "");
+    setSimPhone(metadataText(row.metadata, "simPhone"));
     setCarrier(row.carrier || "");
     setAdvanced(true);
     setError("");
@@ -134,6 +151,19 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
     setBusy(true);
     setError("");
     try {
+      const metadata: Record<string, unknown> = {
+        ...metadataBase,
+        ...(manufacturer.trim() ? { manufacturer: manufacturer.trim() } : {}),
+        ...(simPhone.trim() ? { simPhone: simPhone.trim() } : {}),
+        ...(approvalPeer
+          ? {
+              admissionPort: approvalPeer.remotePort,
+              admissionIp: approvalPeer.remoteIp,
+              admissionFirstSeenAt: approvalPeer.firstSeenAt,
+              admissionLastSeenAt: approvalPeer.lastSeenAt,
+            }
+          : {}),
+      };
       const payload = {
         name: name.trim(),
         model: model.trim(),
@@ -142,19 +172,53 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
         imei: imei.trim(),
         sim_iccid: sim.trim(),
         carrier: carrier.trim(),
+        metadata,
       };
-      if (editing) await rcApi.fieldDevices.update(editing, payload);
-      else
+      if (editing) {
+        await rcApi.fieldDevices.update(editing, payload);
+      } else {
         await rcApi.fieldDevices.create({
           kind,
           ...payload,
-          status: "unknown",
-          metadata: {},
+          status: kind === "modem" && approvalPeer ? "approved_unlinked" : "unknown",
         });
+      }
       reset();
       await load();
     } catch (saveError) {
       setError(errText(saveError));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const rejectPeer = async (peer: BridgePeerObservation) => {
+    if (!window.confirm("Rejeitar modem em " + peer.remoteIp + ":" + String(peer.remotePort) + "?"))
+      return;
+    setBusy(true);
+    setError("");
+    try {
+      await rcApi.fieldDevices.create({
+        kind: "modem",
+        name: "Rejeitado " + peer.remoteIp + ":" + String(peer.remotePort),
+        model: "",
+        host: peer.remoteIp,
+        serial: "",
+        imei: "",
+        sim_iccid: "",
+        carrier: "",
+        status: "rejected",
+        active: false,
+        metadata: {
+          admissionPort: peer.remotePort,
+          admissionIp: peer.remoteIp,
+          admissionFirstSeenAt: peer.firstSeenAt,
+          admissionLastSeenAt: peer.lastSeenAt,
+        },
+      });
+      await load();
+    } catch (rejectError) {
+      setError(errText(rejectError));
     } finally {
       setBusy(false);
     }
