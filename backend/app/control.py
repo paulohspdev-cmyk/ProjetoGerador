@@ -2,7 +2,7 @@ import asyncio
 import json
 from pathlib import Path
 
-from . import domain_store
+from . import domain_store, ig4_prod
 from .binding_store import load_runtime_bindings
 from .config import CONTROL_SOCKET
 from .controller_library import (
@@ -128,17 +128,20 @@ def command_contract(generator: dict, action: str) -> tuple[dict, dict]:
         raise ValueError("Controle bloqueado: comandos exigem Controller Pack validado fisicamente em campo")
 
     capabilities = dict(pack.get("capabilities") or {})
-    if not bool(capabilities.get(action)):
-        raise ValueError(
-            f"Controle bloqueado: comando {action.upper()} não está homologado neste Controller Pack"
-        )
-
     commands = dict(pack.get("commands") or {})
-    contract = commands.get(action)
-    if not isinstance(contract, dict):
-        raise ValueError(
-            f"Controle bloqueado: capability {action.upper()} sem contrato de comando no Controller Pack"
-        )
+
+    if action in ig4_prod.ACTIONS and ig4_prod.is_target(generator):
+        contract = ig4_prod.command_contract(pack, action)
+    else:
+        if not bool(capabilities.get(action)):
+            raise ValueError(
+                f"Controle bloqueado: comando {action.upper()} não está homologado neste Controller Pack"
+            )
+        contract = commands.get(action)
+        if not isinstance(contract, dict):
+            raise ValueError(
+                f"Controle bloqueado: capability {action.upper()} sem contrato de comando no Controller Pack"
+            )
 
     expected_transport = str(contract.get("transport") or "")
     actual_transport = str(generator.get("transport") or "")
@@ -159,24 +162,30 @@ async def send_homologated_command(generator: dict, action: str) -> dict:
     executor = str(contract.get("executor") or "")
     rapid_device = int(generator.get("rapid_device_num") or 0)
 
-    if executor != "ig200_privileged":
+    if executor not in {"ig200_privileged", "comap_privileged"}:
         raise ValueError(
             f"Controle bloqueado: executor {executor or 'N/D'} ainda não possui implementação "
             "de produção homologada"
         )
     if action not in {"start", "stop"}:
         raise ValueError(
-            f"Controle bloqueado: executor IG200 atual não implementa {action.upper()} em produção"
+            f"Controle bloqueado: executor atual não implementa {action.upper()} em produção"
         )
+    if executor == "comap_privileged" and not ig4_prod.is_target(generator):
+        raise ValueError("Controle bloqueado: IG4 fora da allowlist de produção")
 
     timeout = float(contract.get("timeoutSeconds") or 20)
+    payload = {
+        "device": rapid_device,
+        "action": action,
+        "executor": executor,
+        "confirm": "REMOTE_CONTROL_CONFIRMED",
+    }
+    if executor == "comap_privileged":
+        payload["generator_id"] = str(generator.get("id") or "")
     result = await _send_socket_command(
         Path(CONTROL_SOCKET),
-        {
-            "device": rapid_device,
-            "action": action,
-            "confirm": "REMOTE_CONTROL_CONFIRMED",
-        },
+        payload,
         timeout=timeout,
     )
     return {
