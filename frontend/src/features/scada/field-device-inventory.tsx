@@ -474,26 +474,41 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
         </Panel>
       )}
 
-      <Panel title={`${label} cadastrados`}>
-        {!rows.length ? (
+      <Panel title={label + " cadastrados"}>
+        {!registeredRows.length ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
             Nenhum equipamento cadastrado.
           </p>
         ) : (
           <ScadaTable
-            rows={rows}
+            rows={registeredRows}
             columns={[
               { label: "Nome", render: (row) => <b>{row.name}</b> },
-              { label: "Modelo", render: (row) => row.model || "—" },
+              {
+                label: "Fabricante / Modelo",
+                render: (row) =>
+                  [metadataText(row.metadata, "manufacturer"), row.model]
+                    .filter(Boolean)
+                    .join(" · ") || "—",
+              },
               { label: "IMEI / Série", render: (row) => row.imei || row.serial || "—" },
               {
-                label: "SIM / Operadora",
-                render: (row) => [row.sim_iccid, row.carrier].filter(Boolean).join(" · ") || "—",
+                label: "SIM",
+                render: (row) =>
+                  [row.sim_iccid, metadataText(row.metadata, "simPhone"), row.carrier]
+                    .filter(Boolean)
+                    .join(" · ") || "—",
               },
               {
                 label: "Cadastro",
                 render: (row) => (
-                  <Pill tone={row.active ? "ok" : "muted"}>{row.active ? "Ativo" : "Inativo"}</Pill>
+                  <Pill tone={row.active ? "ok" : "muted"}>
+                    {row.status === "approved_unlinked"
+                      ? "Aprovado · sem gerador"
+                      : row.active
+                        ? "Ativo"
+                        : "Inativo"}
+                  </Pill>
                 ),
               },
               {
@@ -517,6 +532,41 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
           />
         )}
       </Panel>
+
+      {kind === "modem" && rejectedRows.length > 0 && (
+        <Panel title="Rejeitados">
+          <ScadaTable
+            rows={rejectedRows}
+            columns={[
+              {
+                label: "Entrada",
+                render: (row) => metadataNumber(row.metadata, "admissionPort") || "—",
+              },
+              {
+                label: "Origem",
+                render: (row) =>
+                  metadataText(row.metadata, "admissionIp") || row.host || "—",
+              },
+              {
+                label: "Primeiro acesso",
+                render: (row) =>
+                  dateTime(metadataNumber(row.metadata, "admissionFirstSeenAt")),
+              },
+              {
+                label: "Ações",
+                render: (row) =>
+                  admin ? (
+                    <ActionBtn tone="danger" onClick={() => void remove(row)}>
+                      Excluir registro
+                    </ActionBtn>
+                  ) : (
+                    "—"
+                  ),
+              },
+            ]}
+          />
+        </Panel>
+      )}
     </ScreenBody>
   );
 }
