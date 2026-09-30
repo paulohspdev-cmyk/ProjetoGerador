@@ -9,10 +9,11 @@ tmp = tempfile.TemporaryDirectory(prefix="rc-reconfigure-transaction-")
 os.environ["RC_DATA_DIR"] = tmp.name
 os.environ["RC_DB_FILE"] = str(Path(tmp.name) / "reconfigure.db")
 
-from app import db, domain_routes, domain_store  # noqa: E402
+from app import db, domain_routes, domain_store, platform_store, traffic_store  # noqa: E402
 
 db.init_db()
 domain_store.init_domain_db()
+platform_store.init_platform_db()
 generator = db.create_generator(
     {
         "tag": "GEN901",
@@ -52,6 +53,13 @@ domain_routes._active_binding = active_binding
 domain_routes._privileged_deprovision = deprovision
 domain_routes._privileged_operation = provision
 
+traffic_store.record_bridge_peer(15006, "10.0.0.6", True, "admission_connected")
+platform_store.approve_modem_admission(
+    15006,
+    {"name": "MDM-15006", "model": "DTU"},
+    actor="test",
+)
+
 payload = domain_routes.GeneratorReconfigureRequest(
     transport="reverse_tcp",
     ip="",
@@ -74,6 +82,12 @@ async def fail_then_restore(_generator_id, operation):
 
 
 domain_routes._privileged_operation = fail_then_restore
+traffic_store.record_bridge_peer(15007, "10.0.0.7", True, "admission_connected")
+platform_store.approve_modem_admission(
+    15007,
+    {"name": "MDM-15007", "model": "DTU"},
+    actor="test",
+)
 payload = domain_routes.GeneratorReconfigureRequest(
     transport="reverse_tcp",
     ip="",
