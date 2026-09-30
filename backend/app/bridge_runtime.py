@@ -1200,8 +1200,10 @@ async def main():
         await bridge.stop_control_server()
         await asyncio.gather(
             *(item.stop() for item in list(bridge.bridges.values())),
+            *(item.stop() for item in list(admission_ports.values())),
             return_exceptions=True,
         )
+        admission_ports.clear()
         try:
             STATUS_FILE.unlink(missing_ok=True)
         except Exception:
