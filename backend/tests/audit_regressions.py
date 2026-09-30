@@ -58,14 +58,57 @@ from app.secret_box import protect_secret  # noqa: E402
 from app.security_service import disable_totp, setup_totp, totp_code  # noqa: E402
 
 
+def _install_legacy_field_devices_fixture():
+    # Reproduz o schema existente em produção antes do modem-first. A migração
+    # precisa adicionar as colunas novas antes de criar índices que dependem delas.
+    with db.connect() as conn:
+        conn.executescript(
+            """
+            CREATE TABLE IF NOT EXISTS field_devices (
+                id TEXT PRIMARY KEY,
+                kind TEXT NOT NULL CHECK(kind IN ('modem','gateway')),
+                name TEXT NOT NULL,
+                site_id TEXT,
+                generator_id TEXT,
+                model TEXT NOT NULL DEFAULT '',
+                serial TEXT NOT NULL DEFAULT '',
+                imei TEXT NOT NULL DEFAULT '',
+                sim_iccid TEXT NOT NULL DEFAULT '',
+                carrier TEXT NOT NULL DEFAULT '',
+                host TEXT NOT NULL DEFAULT '',
+                rssi REAL,
+                status TEXT NOT NULL DEFAULT 'unknown',
+                last_seen INTEGER,
+                metadata_json TEXT NOT NULL DEFAULT '{}',
+                active INTEGER NOT NULL DEFAULT 1,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL,
+                FOREIGN KEY(generator_id) REFERENCES generators(id) ON DELETE SET NULL
+            );
+            """
+        )
+
+
 def init_all():
     db.init_db()
     ops_store.init_ops_db()
+    _install_legacy_field_devices_fixture()
     platform_store.init_platform_db()
     industrial_store.init_industrial_db()
 
 
 init_all()
+
+with db.connect() as conn:
+    migrated_field_device_columns = {
+        str(row["name"]) for row in conn.execute("PRAGMA table_info(field_devices)").fetchall()
+    }
+    migrated_field_device_indexes = {
+        str(row["name"])
+        for row in conn.execute("PRAGMA index_list(field_devices)").fetchall()
+    }
+assert {"manufacturer", "sim_phone", "apn", "listen_port"} <= migrated_field_device_columns
+assert "idx_field_devices_modem_port" in migrated_field_device_indexes
 
 # F00: external TLS proxy mode must not report local nginx as a failed product service,
 # but readiness must surface a legacy local TLS terminator that remains active on 443.
