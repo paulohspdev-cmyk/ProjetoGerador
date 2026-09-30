@@ -389,7 +389,7 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
                   {advanced ? "Ocultar identificação do modem" : "Identificação do modem"}
                 </button>
                 {advanced && (
-                  <div className="grid gap-3 rounded-xl border border-border bg-background/35 p-3 md:grid-cols-2 xl:grid-cols-4">
+                  <div className="grid gap-3 rounded-xl border border-border bg-background/35 p-3 md:grid-cols-2 xl:grid-cols-3">
                     <label className="text-xs font-semibold">
                       IMEI
                       <input
@@ -403,6 +403,14 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
                       <input
                         value={sim}
                         onChange={(event) => setSim(event.target.value)}
+                        className="mt-1.5 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                      />
+                    </label>
+                    <label className="text-xs font-semibold">
+                      Número do chip
+                      <input
+                        value={simPhone}
+                        onChange={(event) => setSimPhone(event.target.value)}
                         className="mt-1.5 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                       />
                     </label>
@@ -444,9 +452,15 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
                 disabled={busy}
                 className="h-10 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"
               >
-                {busy ? "Salvando…" : editing ? "Salvar alterações" : "Adicionar"}
+                {busy
+                  ? "Salvando…"
+                  : approvalPeer
+                    ? "Aprovar modem"
+                    : editing
+                      ? "Salvar alterações"
+                      : "Adicionar"}
               </button>
-              {editing && (
+              {(editing || approvalPeer) && (
                 <button
                   type="button"
                   onClick={reset}
