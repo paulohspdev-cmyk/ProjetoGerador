@@ -115,7 +115,7 @@ export function LoginScreen() {
       setError(presentAccessError(err));
       return;
     }
-    void navigate({ to: "/p/geradores" });
+    void navigate({ to: "/p/$slug", params: { slug: "geradores" } });
   };
 
   const features = [
