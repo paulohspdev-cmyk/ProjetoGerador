@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { ensureApprovedModem } from "./modem-fixture";
+
 const adminEmail = process.env.E2E_ADMIN_EMAIL || "";
 const adminPassword = process.env.E2E_ADMIN_PASSWORD || "";
 
@@ -15,6 +17,7 @@ test("detalhe do gerador usa tendências reais em linha e não barras gigantes",
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 1600, height: 900 });
   await login(page);
+  await ensureApprovedModem(page, 15621);
 
   const generator = await page.evaluate(async () => {
     const response = await fetch("/api/generators", {

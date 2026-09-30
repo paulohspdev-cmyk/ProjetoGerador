@@ -1,5 +1,7 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from "@playwright/test";
 
+import { ensureApprovedModem } from "./modem-fixture";
+
 const adminEmail = process.env.E2E_ADMIN_EMAIL || "";
 const adminPassword = process.env.E2E_ADMIN_PASSWORD || "";
 
@@ -129,6 +131,7 @@ test("tablet usa cards e TV 4K preserva densidade do console", async ({ browser 
   test.setTimeout(180_000);
   const { context: tablet, page } = await contextAt(browser, 1024, 768, true);
 
+  await ensureApprovedModem(page, 15001);
   const created = await page.evaluate(async () => {
     const response = await fetch("/api/generators", {
       method: "POST",

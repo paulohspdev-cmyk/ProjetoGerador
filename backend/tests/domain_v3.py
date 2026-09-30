@@ -21,12 +21,39 @@ from app.domain_routes import (  # noqa: E402
     controller_delete,
     controller_update,
 )
+from app.main import _approved_modem_for_reverse_port  # noqa: E402
 
 
 db.init_db()
 domain_store.init_domain_db()
 platform_store.init_platform_db()
 user = {"email": "test@local", "role": "administrador"}
+
+# Reverse TCP só pode nascer depois de um modem aprovado para a porta.
+assert _approved_modem_for_reverse_port(15001) is None
+pending_modem = platform_store.create_field_device(
+    {
+        "kind": "modem",
+        "name": "MDM-PENDING",
+        "status": "unknown",
+        "metadata": {"admissionPort": 15001, "admissionIp": "10.0.0.10"},
+    },
+    actor="test",
+)
+assert _approved_modem_for_reverse_port(15001) is None
+platform_store.update_field_device(
+    pending_modem["id"],
+    {"status": "approved_unlinked"},
+    actor="test",
+)
+approved_modem = _approved_modem_for_reverse_port(15001)
+assert approved_modem and approved_modem["id"] == pending_modem["id"]
+platform_store.update_field_device(
+    pending_modem["id"],
+    {"active": False},
+    actor="test",
+)
+assert _approved_modem_for_reverse_port(15001) is None
 
 library = library_summary()
 catalog = library["catalog"]
