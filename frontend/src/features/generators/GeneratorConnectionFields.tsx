@@ -1,6 +1,6 @@
 import { Settings2 } from "lucide-react";
 
-import type { GeneratorTransport } from "@/lib/api";
+import type { FieldDevice, GeneratorTransport } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { NetworkDiscoveryPanel } from "./NetworkDiscoveryPanel";
 
@@ -18,6 +18,9 @@ export const connectionOptions: Array<{
 type Props = {
   transport: GeneratorTransport;
   setTransport: (value: GeneratorTransport) => void;
+  approvedModems: FieldDevice[];
+  selectedModemId: string;
+  setSelectedModemId: (value: string) => void;
   host: string;
   setHost: (value: string) => void;
   tag: string;
@@ -35,7 +38,6 @@ type Props = {
   stopBits: string;
   setStopBits: (value: string) => void;
   suggestedTag: string;
-  suggestedPort: number;
   advanced: boolean;
   setAdvanced: (value: boolean) => void;
   canScan: boolean;
@@ -46,11 +48,7 @@ export function GeneratorConnectionFields(props: Props) {
   const isSerial = props.transport === "modbus_rtu_serial";
   const effectivePort = Number(
     props.listenPort ||
-      (props.transport === "reverse_tcp"
-        ? props.suggestedPort
-        : props.transport === "modbus_tcp_direct" || props.transport === "rtu_over_tcp"
-          ? 502
-          : 0),
+      (props.transport === "modbus_tcp_direct" || props.transport === "rtu_over_tcp" ? 502 : 0),
   );
   return (
     <div className="space-y-4">
@@ -68,6 +66,11 @@ export function GeneratorConnectionFields(props: Props) {
                   !props.listenPort
                 ) {
                   props.setListenPort("502");
+                }
+                if (option.id === "reverse_tcp") {
+                  props.setListenPort("");
+                } else {
+                  props.setSelectedModemId("");
                 }
                 if (option.id === "modbus_rtu_serial") {
                   props.setListenPort("");
@@ -88,6 +91,48 @@ export function GeneratorConnectionFields(props: Props) {
           ))}
         </div>
       </div>
+
+      {props.transport === "reverse_tcp" && (
+        <div className="rounded-xl border border-border bg-background/35 p-3">
+          <label className="block text-sm font-semibold">
+            Modem aprovado
+            <select
+              value={props.selectedModemId}
+              onChange={(event) => {
+                const modemId = event.target.value;
+                props.setSelectedModemId(modemId);
+                const modem = props.approvedModems.find((item) => item.id === modemId);
+                const port = Number(modem?.metadata?.["admissionPort"] || 0);
+                props.setListenPort(port > 0 ? String(port) : "");
+                props.setError(null);
+              }}
+              className="mt-2 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
+              required
+            >
+              <option value="">Selecione um modem aprovado</option>
+              {props.approvedModems.map((modem) => {
+                const port = Number(modem.metadata?.["admissionPort"] || 0);
+                return (
+                  <option key={modem.id} value={modem.id}>
+                    {modem.name} · TCP {port}
+                  </option>
+                );
+              })}
+            </select>
+          </label>
+          {!props.approvedModems.length && (
+            <p className="mt-2 text-xs text-alert">
+              Nenhum modem aprovado está disponível. Vá em Comunicação → Modems e aprove primeiro a
+              conexão recebida.
+            </p>
+          )}
+          {!!props.selectedModemId && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              A porta TCP vem do modem aprovado. Informe abaixo somente o Unit ID da controladora.
+            </p>
+          )}
+        </div>
+      )}
 
       {props.transport !== "reverse_tcp" && (
         <>
@@ -117,7 +162,9 @@ export function GeneratorConnectionFields(props: Props) {
         <p className="mt-1 text-xs text-muted-foreground">
           {isSerial
             ? "Informe baud rate, paridade e stop bits conforme a controladora. O sistema não adivinha parâmetros seriais."
-            : "O sistema escolhe identificação, porta e canal. Use o modo avançado quando a instalação exigir valores específicos."}
+            : props.transport === "reverse_tcp"
+              ? "A porta vem do modem aprovado. Cada controladora é diferenciada pelo Unit ID."
+              : "O sistema escolhe identificação e canal. Use o modo avançado quando a instalação exigir valores específicos."}
         </p>
       </div>
 
@@ -138,11 +185,11 @@ export function GeneratorConnectionFields(props: Props) {
             placeholder={props.suggestedTag}
             onChange={(value) => props.setTag(value.toUpperCase())}
           />
-          {!isSerial && (
+          {!isSerial && props.transport !== "reverse_tcp" && (
             <Field
               label="Porta TCP"
               value={props.listenPort}
-              placeholder={String(props.transport === "reverse_tcp" ? props.suggestedPort : 502)}
+              placeholder="502"
               numeric
               onChange={props.setListenPort}
             />
