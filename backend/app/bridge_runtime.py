@@ -22,8 +22,8 @@ import time
 from collections import defaultdict, deque
 from pathlib import Path
 
-from . import bridge, db, ig4_lab, traffic_store
-from .controller_library import pack_for_model
+from . import bridge, db, domain_store, ig4_lab, ig4_prod, traffic_store
+from .controller_library import command_firmware_approval, pack_for_model
 from .production_guard import validate_production_runtime
 
 STATUS_FILE = Path(os.environ.get("RC_BRIDGE_STATUS_FILE", "/run/rc-geradores/bridge-status.json"))
@@ -220,6 +220,94 @@ def resolve_ig200_bound_device(device_num):
 
 
 bridge.resolve_ig200 = resolve_ig200_bound_device
+
+
+def resolve_ig4_prod_bound_device(generator_id, device_num):
+    """Resolve exatamente um IG4 allowlisted para o socket privilegiado de produção."""
+    if not ig4_prod.enabled():
+        raise PermissionError("controle IG4 de produção desabilitado")
+
+    generator_id = str(generator_id or "").strip()
+    device_num = int(device_num or 0)
+    if not generator_id or device_num <= 0:
+        raise ValueError("identidade do alvo IG4 de produção inválida")
+
+    generator = next(
+        (
+            item
+            for item in db.list_generators()
+            if str(item.get("id") or "") == generator_id
+            and int(item.get("rapid_device_num") or 0) == device_num
+        ),
+        None,
+    )
+    if not generator or not ig4_prod.is_target(generator):
+        raise PermissionError("gerador fora da allowlist IG4 de produção")
+
+    binding = next(
+        (
+            item
+            for item in bridge.load_bindings()
+            if str(item.get("generator_id") or "") == generator_id
+        ),
+        None,
+    )
+    if not binding or str(binding.get("status") or "") != "field_validated":
+        raise ValueError("binding Rapid IG4 ausente ou não field_validated")
+
+    expected = (
+        str(generator.get("controller_type") or "").upper(),
+        str(generator.get("controller_model") or "").strip().lower(),
+        str(generator.get("transport") or ""),
+        int(generator.get("listen_port") or 0),
+        int(generator.get("modbus_unit") or 0),
+        device_num,
+    )
+    actual = (
+        str(binding.get("controller_type") or "").upper(),
+        str(binding.get("controller_model") or "").strip().lower(),
+        str(binding.get("transport") or ""),
+        int(binding.get("listen_port") or 0),
+        int(binding.get("modbus_unit") or 0),
+        int(binding.get("rapid_device_num") or 0),
+    )
+    if actual != expected:
+        raise ValueError("cadastro e binding divergem para o IG4 de produção")
+
+    pack = pack_for_model(generator.get("controller_model") or "") or {}
+    if pack.get("lifecycle") != "production" or pack.get("status") != "field_validated":
+        raise PermissionError("IG4 de produção exige pack production field_validated")
+
+    assets = [
+        item
+        for item in domain_store.list_assets()
+        if str(item.get("legacy_generator_id") or "") == generator_id
+    ]
+    if len(assets) != 1:
+        raise ValueError("inventário IG4 não possui asset único")
+    controllers = [
+        item
+        for item in domain_store.list_controllers(str(assets[0].get("id") or ""))
+        if item.get("enabled", True)
+        and str(item.get("model") or "").strip().casefold()
+        == str(generator.get("controller_model") or "").strip().casefold()
+    ]
+    if len(controllers) != 1:
+        raise ValueError("inventário IG4 não possui controladora única compatível")
+    firmware = str(controllers[0].get("firmware") or "").strip()
+    approved, detail = command_firmware_approval(pack, firmware)
+    if not approved:
+        raise PermissionError(f"firmware IG4 não aprovado: {detail}")
+
+    if _remote_framing_for_generator(generator) != FRAMING_MODBUS_TCP:
+        raise PermissionError(
+            "controle IG4 de produção exige framing remoto Modbus TCP nesta implantação"
+        )
+
+    return generator, int(generator["listen_port"]), int(generator["modbus_unit"])
+
+
+bridge.resolve_ig4_prod = resolve_ig4_prod_bound_device
 
 
 def resolve_ig4_lab_bound_device(generator_id, device_num):
@@ -1056,6 +1144,8 @@ def write_status(enabled: list[dict]) -> None:
             "activePeerProtectionSeconds": REPLACE_ACTIVE_AFTER,
             "ig4LabControlEnabled": ig4_lab.enabled(),
             "ig4LabAllowlistConfigured": bool(ig4_lab.allowlist()),
+            "ig4ProdControlEnabled": ig4_prod.enabled(),
+            "ig4ProdAllowlist": sorted(ig4_prod.allowlist()),
         },
         "admissionPorts": [
             item.snapshot() for _, item in sorted(admission_ports.items())
@@ -1189,7 +1279,8 @@ async def main():
         f"allowlists_por_porta={sorted(PORT_ALLOWED_NETWORKS)}; "
         f"portas_admissao={sorted(ADMISSION_PORTS)}; "
         f"require_allowlist={'sim' if REQUIRE_ALLOWLIST else 'não'}; "
-        f"IG4_LAB={'ativo' if ig4_lab.enabled() else 'desabilitado'}"
+        f"IG4_LAB={'ativo' if ig4_lab.enabled() else 'desabilitado'}; "
+        f"IG4_PROD={'ativo' if ig4_prod.enabled() else 'desabilitado'}"
     )
     await bridge.start_control_server()
     await start_ig4_lab_control_server()
