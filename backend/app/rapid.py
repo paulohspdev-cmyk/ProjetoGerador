@@ -16,7 +16,7 @@ from .config import (
 )
 from .controller_library import pack_for_model
 from .power_topology import resolve_power_topology
-from . import db
+from . import db, ig4_prod
 
 _cache = {"at": 0.0, "channels": {}, "error": "", "requested": set()}
 _cache_lock = threading.Lock()
@@ -495,12 +495,20 @@ def _effective_capabilities(generator, status: str, binding_present: bool) -> di
         "gcb_close",
         "paralleling",
     ):
+        declared_contract = bool(
+            declared.get(action) and isinstance(commands.get(action), dict)
+        )
+        ig4_target_contract = bool(
+            action in ig4_prod.ACTIONS
+            and ig4_prod.is_target(generator)
+            and isinstance((pack or {}).get("homologationCandidates", {}).get(action), dict)
+            and (pack or {}).get("homologationCandidates", {}).get(action, {}).get("documented")
+        )
         result[action] = bool(
             field_validated
             and online
             and binding_present
-            and declared.get(action)
-            and isinstance(commands.get(action), dict)
+            and (declared_contract or ig4_target_contract)
         )
     return result
 
