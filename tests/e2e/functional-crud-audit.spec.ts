@@ -373,6 +373,7 @@ test("cadastro registration-only salva e mantém comandos bloqueados", async ({ 
   await dialog.getByRole("button", { name: /Continuar/i }).click();
 
   await expect(dialog.getByText("Configuração automática", { exact: true })).toBeVisible();
+  await dialog.getByLabel("Modem aprovado").selectOption({ index: 1 });
   await dialog.getByRole("button", { name: /Continuar/i }).click();
   await expect(
     dialog.getByText(/Cadastro técnico liberado|Cadastro liberado pelo fluxo/),
