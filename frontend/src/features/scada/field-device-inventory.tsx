@@ -57,9 +57,7 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
           rcApi.system.bridgePeers(200),
         ]);
         setRows(deviceRows);
-        setPeers(
-          peerRows.filter((peer) => String(peer.lastReason || "").startsWith("admission_")),
-        );
+        setPeers(peerRows.filter((peer) => String(peer.lastReason || "").startsWith("admission_")));
       } else {
         setRows(await rcApi.fieldDevices.list(kind));
         setPeers([]);
@@ -95,14 +93,8 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
     [peers, registeredAdmissionKeys],
   );
 
-  const registeredRows = useMemo(
-    () => rows.filter((row) => row.status !== "rejected"),
-    [rows],
-  );
-  const rejectedRows = useMemo(
-    () => rows.filter((row) => row.status === "rejected"),
-    [rows],
-  );
+  const registeredRows = useMemo(() => rows.filter((row) => row.status !== "rejected"), [rows]);
+  const rejectedRows = useMemo(() => rows.filter((row) => row.status === "rejected"), [rows]);
 
   const reset = () => {
     setEditing(null);
@@ -262,7 +254,14 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
         items={[
           { icon, label: "Cadastrados", value: registeredRows.length },
           ...(kind === "modem" && admin
-            ? [{ icon: Signal, label: "Aguardando", value: pendingPeers.length, tone: "text-alert" }]
+            ? [
+                {
+                  icon: Signal,
+                  label: "Aguardando",
+                  value: pendingPeers.length,
+                  tone: "text-alert",
+                },
+              ]
             : []),
           {
             icon: Signal,
@@ -544,13 +543,11 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
               },
               {
                 label: "Origem",
-                render: (row) =>
-                  metadataText(row.metadata, "admissionIp") || row.host || "—",
+                render: (row) => metadataText(row.metadata, "admissionIp") || row.host || "—",
               },
               {
                 label: "Primeiro acesso",
-                render: (row) =>
-                  dateTime(metadataNumber(row.metadata, "admissionFirstSeenAt")),
+                render: (row) => dateTime(metadataNumber(row.metadata, "admissionFirstSeenAt")),
               },
               {
                 label: "Ações",
