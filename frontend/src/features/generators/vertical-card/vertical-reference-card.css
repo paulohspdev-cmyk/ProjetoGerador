@@ -467,7 +467,7 @@
 
 .vref-energy-stroke.is-on {
   stroke: #f2f7fa;
-  animation: vref-energy-dash 2.2s linear infinite;
+  animation: vref-energy-dash 4s linear infinite;
 }
 
 @keyframes vref-energy-dash {
