@@ -24,13 +24,13 @@ export function VerticalPowerGauge({
               : Math.ceil(safePower / 500) * 500
     : null;
   const effectiveMax = hasNominal ? nominalKw : fallbackMax;
-  const pointerMax = effectiveMax ?? 100;
-  const fraction = hasPower ? Math.min(1, Math.max(0, safePower / pointerMax)) : 0;
+  const fraction =
+    hasPower && effectiveMax != null ? Math.min(1, Math.max(0, safePower / effectiveMax)) : 0;
   const angle = fraction * 180 - 90;
   const valueLabel = hasPower ? Math.round(powerKw).toLocaleString("pt-BR") : "—";
-  const cx = 110;
-  const cy = 98;
-  const r = 72;
+  const cx = 70;
+  const cy = 62;
+  const r = 48;
   const maxLabel = effectiveMax != null ? Math.round(effectiveMax).toLocaleString("pt-BR") : "N/D";
   const arc = `M${cx - r} ${cy} A${r} ${r} 0 0 1 ${cx + r} ${cy}`;
   const nominalSourceAuditLabel =
@@ -51,7 +51,7 @@ export function VerticalPowerGauge({
       </div>
       <div className="vref-power-gauge" aria-label="Indicador de potência do gerador">
         <svg
-          viewBox="0 0 220 168"
+          viewBox="0 0 140 108"
           className="kw-svg"
           aria-label="Indicador de potência do gerador"
           overflow="visible"
@@ -81,32 +81,30 @@ export function VerticalPowerGauge({
               />
             </>
           ) : null}
-          <text x={cx - r} y={cy + 28} textAnchor="middle" className="vref-gauge-scale">
+          <text x={cx - r} y={cy + 22} textAnchor="middle" className="vref-gauge-scale">
             0
           </text>
-          <text x={cx + r} y={cy + 28} textAnchor="middle" className="vref-gauge-scale">
+          <text x={cx + r} y={cy + 22} textAnchor="middle" className="vref-gauge-scale">
             {maxLabel}
           </text>
-          <g
-            className="vref-kw-needle"
-            data-reading={hasPower ? "known" : "unknown"}
-            transform={`rotate(${angle} ${cx} ${cy})`}
-          >
-            <line
-              x1={cx}
-              y1={cy - 8}
-              x2={cx}
-              y2={cy - r + 10}
-              stroke="#fff"
-              strokeWidth={6}
-              strokeLinecap="round"
-            />
-          </g>
-          <circle cx={cx} cy={cy} r="6" className="vref-gauge-hub" />
-          <text x={cx} y={cy - 18} textAnchor="middle" className="vref-kw-unit">
+          {hasPower && effectiveMax != null ? (
+            <g className="vref-kw-needle" transform={`rotate(${angle} ${cx} ${cy})`}>
+              <line
+                x1={cx}
+                y1={cy - 6}
+                x2={cx}
+                y2={cy - r + 10}
+                stroke="#fff"
+                strokeWidth={3}
+                strokeLinecap="round"
+              />
+            </g>
+          ) : null}
+          <circle cx={cx} cy={cy} r="5" className="vref-gauge-hub" />
+          <text x={cx} y={cy - 14} textAnchor="middle" className="vref-kw-unit">
             KW
           </text>
-          <text x={cx} y={cy + 48} textAnchor="middle" className="vref-kw-value">
+          <text x={cx} y={cy + 36} textAnchor="middle" className="vref-kw-value">
             {valueLabel}
           </text>
         </svg>
