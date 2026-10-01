@@ -31,8 +31,7 @@ export function VerticalPowerGauge({
   const cx = 110;
   const cy = 98;
   const r = 72;
-  const maxLabel =
-    effectiveMax != null ? Math.round(effectiveMax).toLocaleString("pt-BR") : "N/D";
+  const maxLabel = effectiveMax != null ? Math.round(effectiveMax).toLocaleString("pt-BR") : "N/D";
   const arc = `M${cx - r} ${cy} A${r} ${r} 0 0 1 ${cx + r} ${cy}`;
   const nominalSourceAuditLabel =
     nominalSource === "telemetry"
