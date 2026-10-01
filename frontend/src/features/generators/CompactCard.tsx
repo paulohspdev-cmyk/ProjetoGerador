@@ -63,14 +63,31 @@ function CompactKwGauge({
 }) {
   const hasPower = powerKw != null && Number.isFinite(powerKw);
   const hasNominal = nominalKw != null && Number.isFinite(nominalKw) && nominalKw > 0;
-  const fraction = hasPower && hasNominal ? Math.min(1, Math.max(0, powerKw / nominalKw)) : 0;
+  const safePower = hasPower ? Math.max(0, powerKw) : 0;
+  const fallbackMax = hasPower
+    ? safePower <= 50
+      ? 50
+      : safePower <= 100
+        ? 100
+        : safePower <= 250
+          ? 250
+          : safePower <= 500
+            ? 500
+            : safePower <= 1000
+              ? 1000
+              : Math.ceil(safePower / 500) * 500
+    : null;
+  const effectiveMax = hasNominal ? nominalKw : fallbackMax;
+  const fraction =
+    hasPower && effectiveMax != null ? Math.min(1, Math.max(0, safePower / effectiveMax)) : 0;
   const angle = fraction * 180 - 90;
   const valueLabel = hasPower ? Math.round(powerKw).toLocaleString("pt-BR") : "—";
   const cx = 55;
   const cy = 52;
   const r = 38;
   const arc = `M${cx - r} ${cy} A${r} ${r} 0 0 1 ${cx + r} ${cy}`;
-  const maxLabel = hasNominal ? Math.round(nominalKw).toLocaleString("pt-BR") : "—";
+  const maxLabel =
+    effectiveMax != null ? Math.round(effectiveMax).toLocaleString("pt-BR") : "—";
 
   return (
     <div className="compact-kw-gauge" aria-label="Potência ativa">
@@ -102,16 +119,16 @@ function CompactKwGauge({
         <text x="96" y="64" textAnchor="end" className="compact-kw-scale">
           {maxLabel}
         </text>
-        {hasPower && hasNominal ? (
-          <g
-            style={{
-              transformOrigin: `${cx}px ${cy}px`,
-              transform: `rotate(${angle}deg)`,
-            }}
-          >
-            <path
-              className="compact-kw-needle"
-              d={`M${cx} ${cy - r + 6} L${cx + 3} ${cy - 6} L${cx - 3} ${cy - 6} Z`}
+        {hasPower && effectiveMax != null ? (
+          <g transform={`rotate(${angle} ${cx} ${cy})`}>
+            <line
+              x1={cx}
+              y1={cy - 5}
+              x2={cx}
+              y2={cy - r + 6}
+              stroke="#fff"
+              strokeWidth={3}
+              strokeLinecap="round"
             />
           </g>
         ) : null}
