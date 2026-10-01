@@ -47,6 +47,7 @@ const COMPACT_GAP = 6;
 const COMPACT_PADDING = 4;
 const COMPACT_MIN_CARD_WIDTH = 160;
 const COMPACT_MIN_CARD_HEIGHT = 156;
+const FULLSCREEN_AUTO_ROTATE_MS = 25_000;
 /** Layouts preferidos para ~18 cards/tela, do mais denso ao mais folgado. */
 const COMPACT_LAYOUTS: Array<[number, number]> = [
   [6, 3],
@@ -246,6 +247,19 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
     },
     [pages],
   );
+
+  useEffect(() => {
+    if (!fullscreen || pages <= 1 || !ready || error) return;
+
+    const timer = window.setTimeout(() => {
+      setGroup((current) => {
+        const normalized = Math.min(Math.max(0, current), pages - 1);
+        return (normalized + 1) % pages;
+      });
+    }, FULLSCREEN_AUTO_ROTATE_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [fullscreen, pages, page, ready, error]);
 
   useEffect(() => {
     if (!toolsOpen) {
