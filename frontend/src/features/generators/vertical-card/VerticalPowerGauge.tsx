@@ -24,8 +24,8 @@ export function VerticalPowerGauge({
               : Math.ceil(safePower / 500) * 500
     : null;
   const effectiveMax = hasNominal ? nominalKw : fallbackMax;
-  const fraction =
-    hasPower && effectiveMax != null ? Math.min(1, Math.max(0, safePower / effectiveMax)) : 0;
+  const pointerMax = effectiveMax ?? 100;
+  const fraction = hasPower ? Math.min(1, Math.max(0, safePower / pointerMax)) : 0;
   const angle = fraction * 180 - 90;
   const valueLabel = hasPower ? Math.round(powerKw).toLocaleString("pt-BR") : "—";
   const cx = 110;
@@ -87,19 +87,21 @@ export function VerticalPowerGauge({
           <text x={cx + r} y={cy + 28} textAnchor="middle" className="vref-gauge-scale">
             {maxLabel}
           </text>
-          {hasPower && effectiveMax != null ? (
-            <g className="vref-kw-needle" transform={`rotate(${angle} ${cx} ${cy})`}>
-              <line
-                x1={cx}
-                y1={cy - 8}
-                x2={cx}
-                y2={cy - r + 12}
-                stroke="#fff"
-                strokeWidth={4}
-                strokeLinecap="round"
-              />
-            </g>
-          ) : null}
+          <g
+            className="vref-kw-needle"
+            data-reading={hasPower ? "known" : "unknown"}
+            transform={`rotate(${angle} ${cx} ${cy})`}
+          >
+            <line
+              x1={cx}
+              y1={cy - 8}
+              x2={cx}
+              y2={cy - r + 10}
+              stroke="#fff"
+              strokeWidth={6}
+              strokeLinecap="round"
+            />
+          </g>
           <circle cx={cx} cy={cy} r="6" className="vref-gauge-hub" />
           <text x={cx} y={cy - 18} textAnchor="middle" className="vref-kw-unit">
             KW
