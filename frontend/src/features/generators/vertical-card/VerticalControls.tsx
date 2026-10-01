@@ -27,6 +27,8 @@ export function VerticalControls({
   dse,
   modeKnown,
   canOperate,
+  canStart,
+  canStop,
   busy,
   onCommand,
 }: {
@@ -34,6 +36,8 @@ export function VerticalControls({
   dse: boolean;
   modeKnown: boolean;
   canOperate: boolean;
+  canStart: boolean;
+  canStop: boolean;
   busy: IndustrialCommandAction | null;
   onCommand: (action: IndustrialCommandAction) => void;
 }) {
@@ -41,6 +45,29 @@ export function VerticalControls({
 
   const canManual = Boolean(canOperate && modeEnabled(gen, "manual"));
   const canAuto = Boolean(canOperate && modeEnabled(gen, "auto"));
+
+  const startStopRow = (
+    <div className={cn("vref-command-row", dse && "is-dse")}>
+      <button
+        type="button"
+        className="vref-flow-html-btn start"
+        disabled={!canStart || busy !== null}
+        aria-label="START"
+        onClick={() => canStart && onCommand("start")}
+      >
+        {busy === "start" ? "…" : "START"}
+      </button>
+      <button
+        type="button"
+        className="vref-flow-html-btn stop"
+        disabled={!canStop || busy !== null}
+        aria-label="STOP"
+        onClick={() => canStop && onCommand("stop")}
+      >
+        {busy === "stop" ? "…" : "STOP"}
+      </button>
+    </div>
+  );
 
   if (dse) {
     return (
@@ -85,6 +112,7 @@ export function VerticalControls({
             )}
           </button>
         </div>
+        {startStopRow}
       </section>
     );
   }
@@ -120,6 +148,7 @@ export function VerticalControls({
         {modeButton("AUT", "auto")}
         {modeButton("TEST", "test")}
       </div>
+      {startStopRow}
     </section>
   );
 }
