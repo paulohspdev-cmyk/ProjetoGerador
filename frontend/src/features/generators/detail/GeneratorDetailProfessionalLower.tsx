@@ -43,7 +43,7 @@ type Props = {
 
 function EngineRow({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
-    <div className="flex items-center gap-1.5 border-b border-border/35 py-0.5 text-[11px] last:border-b-0">
+    <div className="flex items-center gap-1.5 border-b border-border/35 py-px text-[10px] leading-[13px] last:border-b-0">
       <span className="grid size-3.5 shrink-0 place-items-center text-muted-foreground">
         {icon}
       </span>
@@ -219,7 +219,7 @@ export function GeneratorDetailProfessionalLower({
   }
 
   return (
-    <div className="gen-detail-lower grid min-h-0 flex-1 grid-rows-[auto_minmax(178px,1fr)_112px_auto] gap-1.5 overflow-hidden">
+    <div className="gen-detail-lower grid min-h-0 flex-1 grid-rows-[auto_minmax(178px,1fr)_82px_auto] gap-1.5 overflow-hidden">
       <div className="grid min-h-0 gap-1.5 xl:grid-cols-12">
         <section className="gen-detail-section min-h-0 overflow-hidden rounded-xl p-1.5 xl:col-span-7">
           <h2 className="mb-0.5 flex items-center gap-1.5 text-[11px] font-extrabold">
@@ -323,40 +323,9 @@ export function GeneratorDetailProfessionalLower({
       </div>
 
       <div
-        className="grid min-h-0 grid-cols-3 gap-1.5 xl:grid-cols-6"
+        className="grid min-h-0 grid-cols-3 gap-1.5"
         aria-label="Tendências do motor 24h"
       >
-        <MiniTrendCard
-          title="RPM"
-          metric="rpm"
-          unit="rpm"
-          value={model.rpm}
-          tone="var(--info)"
-          trends={trends}
-          configuredTrendMetrics={configuredTrendMetrics}
-          loading={trendsLoading}
-        />
-        <MiniTrendCard
-          title="Pressão de óleo"
-          metric="oil_pressure"
-          unit={model.oilUnit}
-          value={model.oil}
-          digits={1}
-          tone="var(--primary)"
-          trends={trends}
-          configuredTrendMetrics={configuredTrendMetrics}
-          loading={trendsLoading}
-        />
-        <MiniTrendCard
-          title="Temp. motor"
-          metric="coolant_temperature"
-          unit={model.tempUnit}
-          value={model.temp}
-          tone="var(--chart-2)"
-          trends={trends}
-          configuredTrendMetrics={configuredTrendMetrics}
-          loading={trendsLoading}
-        />
         <MiniTrendCard
           title="Combustível"
           metric="fuel_level"
