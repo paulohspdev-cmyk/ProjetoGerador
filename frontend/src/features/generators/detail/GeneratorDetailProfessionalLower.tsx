@@ -41,6 +41,18 @@ type Props = {
   configuredTrendMetrics: Set<string>;
 };
 
+function powerGaugeMax(value: number | null, nominal: number | null) {
+  if (nominal != null && Number.isFinite(nominal) && nominal > 0) return nominal;
+  if (value == null || !Number.isFinite(value)) return null;
+  const safe = Math.max(0, value);
+  if (safe <= 50) return 50;
+  if (safe <= 100) return 100;
+  if (safe <= 250) return 250;
+  if (safe <= 500) return 500;
+  if (safe <= 1000) return 1000;
+  return Math.ceil(safe / 500) * 500;
+}
+
 function EngineRow({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
     <div className="flex items-center gap-1.5 border-b border-border/35 py-px text-[10px] leading-[13px] last:border-b-0">
@@ -226,7 +238,12 @@ export function GeneratorDetailProfessionalLower({
             <Gauge className="size-3 text-primary" /> Instantâneo
           </h2>
           <div className="grid grid-cols-4 gap-1">
-            <NeedleGauge label="KW" unit="kW" value={model.load} max={model.nominalPower} />
+            <NeedleGauge
+              label="KW"
+              unit="kW"
+              value={model.load}
+              max={powerGaugeMax(model.load, model.nominalPower)}
+            />
             <NeedleGauge label="RPM" unit="rpm" value={model.rpm} max={model.rpmGaugeMax} />
             <NeedleGauge
               label="Óleo"
