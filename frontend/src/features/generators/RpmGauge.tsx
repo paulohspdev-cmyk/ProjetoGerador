@@ -53,13 +53,13 @@ export function RpmGauge({ value, max = null }: Props) {
       </text>
       {known && hasScale ? (
         <g className="needle" transform={`rotate(${angle} ${cx} ${cy})`}>
-            <path
-              d={`M${cx} ${cy - r + 8} L${cx + 4.5} ${cy - 7} Q${cx + 5.5} ${cy} ${cx} ${cy + 5} Q${cx - 5.5} ${cy} ${cx - 4.5} ${cy - 7} Z`}
-              fill="#f8fafc"
-              stroke="#dbe7ee"
-              strokeWidth={0.8}
-              strokeLinejoin="round"
-            />
+          <path
+            d={`M${cx} ${cy - r + 8} L${cx + 4.5} ${cy - 7} Q${cx + 5.5} ${cy} ${cx} ${cy + 5} Q${cx - 5.5} ${cy} ${cx - 4.5} ${cy - 7} Z`}
+            fill="#f8fafc"
+            stroke="#dbe7ee"
+            strokeWidth={0.8}
+            strokeLinejoin="round"
+          />
         </g>
       ) : null}
       <text x={cx} y={cy + 48} textAnchor="middle" className="rpm-percent">
