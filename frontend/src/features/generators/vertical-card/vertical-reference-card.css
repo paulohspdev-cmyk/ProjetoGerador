@@ -322,17 +322,6 @@
   stroke-width: 1.4;
 }
 
-.vref-kw-needle > line,
-.vref-rpm-gauge .needle > line {
-  stroke: #fff;
-  stroke-width: 6;
-  filter: drop-shadow(0 0 2px rgb(255 255 255 / 80%));
-}
-
-.vref-kw-needle[data-reading="unknown"] > line {
-  opacity: 0.72;
-}
-
 .vref-kw-value,
 .vref-rpm .rpm-percent {
   fill: #fff;
