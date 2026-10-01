@@ -55,11 +55,11 @@ export function RpmGauge({ value, max = null }: Props) {
         <g className="needle" transform={`rotate(${angle} ${cx} ${cy})`}>
           <line
             x1={cx}
-            y1={cy - 6}
+            y1={cy - 8}
             x2={cx}
-            y2={cy - r + 10}
+            y2={cy - r + 12}
             stroke="#fff"
-            strokeWidth={3}
+            strokeWidth={4}
             strokeLinecap="round"
           />
         </g>
