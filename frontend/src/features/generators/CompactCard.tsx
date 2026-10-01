@@ -78,8 +78,8 @@ function CompactKwGauge({
               : Math.ceil(safePower / 500) * 500
     : null;
   const effectiveMax = hasNominal ? nominalKw : fallbackMax;
-  const fraction =
-    hasPower && effectiveMax != null ? Math.min(1, Math.max(0, safePower / effectiveMax)) : 0;
+  const pointerMax = effectiveMax ?? 100;
+  const fraction = hasPower ? Math.min(1, Math.max(0, safePower / pointerMax)) : 0;
   const angle = fraction * 180 - 90;
   const valueLabel = hasPower ? Math.round(powerKw).toLocaleString("pt-BR") : "—";
   const cx = 55;
@@ -118,19 +118,21 @@ function CompactKwGauge({
         <text x="96" y="64" textAnchor="end" className="compact-kw-scale">
           {maxLabel}
         </text>
-        {hasPower && effectiveMax != null ? (
-          <g transform={`rotate(${angle} ${cx} ${cy})`}>
-            <line
-              x1={cx}
-              y1={cy - 5}
-              x2={cx}
-              y2={cy - r + 6}
-              stroke="#fff"
-              strokeWidth={3}
-              strokeLinecap="round"
-            />
-          </g>
-        ) : null}
+        <g
+          className="compact-kw-pointer"
+          data-reading={hasPower ? "known" : "unknown"}
+          transform={`rotate(${angle} ${cx} ${cy})`}
+        >
+          <line
+            x1={cx}
+            y1={cy - 5}
+            x2={cx}
+            y2={cy - r + 4}
+            stroke="#fff"
+            strokeWidth={5}
+            strokeLinecap="round"
+          />
+        </g>
         <circle cx={cx} cy={cy} r="3.5" className="compact-kw-hub" />
         <text x={cx} y={cy - 10} textAnchor="middle" className="compact-kw-unit">
           KW
