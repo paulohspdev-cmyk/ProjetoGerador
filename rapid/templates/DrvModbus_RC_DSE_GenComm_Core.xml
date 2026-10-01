@@ -68,6 +68,10 @@
     <ElemGroup active="true" dataBlock="HoldingRegisters" address="1808" name="DSE GenComm - partidas">
       <Elem type="uint" readOnly="true" isBitMask="false" tagCode="number_starts" name="Number of Starts" />
     </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="48660" name="DSE GenComm - feedback do gerador">
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="gcb_closed" name="Generator Breaker Closed" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="engine_running" name="Engine Running" />
+    </ElemGroup>
   </ElemGroups>
   <Cmds />
 </DeviceTemplate>
