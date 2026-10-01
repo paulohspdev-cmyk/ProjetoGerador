@@ -86,8 +86,7 @@ function CompactKwGauge({
   const cy = 52;
   const r = 38;
   const arc = `M${cx - r} ${cy} A${r} ${r} 0 0 1 ${cx + r} ${cy}`;
-  const maxLabel =
-    effectiveMax != null ? Math.round(effectiveMax).toLocaleString("pt-BR") : "—";
+  const maxLabel = effectiveMax != null ? Math.round(effectiveMax).toLocaleString("pt-BR") : "—";
 
   return (
     <div className="compact-kw-gauge" aria-label="Potência ativa">
