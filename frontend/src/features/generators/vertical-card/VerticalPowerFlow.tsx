@@ -84,8 +84,8 @@ function FlowButton({
         }
       }}
     >
-      <rect x="-14" y="-14" width="28" height="28" rx="2" />
-      <text x="0" y="1" textAnchor="middle" dominantBaseline="middle">
+      <rect x="-14" y="-11" width="28" height="22" rx="2" />
+      <text x="0" y="0.5" textAnchor="middle" dominantBaseline="middle">
         {busy ? "…" : label}
       </text>
     </g>
@@ -224,7 +224,7 @@ export function VerticalPowerFlow({
               <HorizontalContact x1={56} x2={76} y={y} closed={mcb} known={mcbKnown} />
               <FlowButton
                 x={66}
-                y={y + 36}
+                y={y + 32}
                 label={mcbLabel}
                 tone={mcbTone}
                 disabled={!canToggleMcb}
@@ -260,7 +260,7 @@ export function VerticalPowerFlow({
           <HorizontalContact x1={148} x2={168} y={y} closed={gcb} known={gcbKnown} hinge="right" />
           <FlowButton
             x={158}
-            y={y + 36}
+            y={y + 32}
             label={gcbLabel}
             tone={gcbTone}
             disabled={!canToggleGcb}
