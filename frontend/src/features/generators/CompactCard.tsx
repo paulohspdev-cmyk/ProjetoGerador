@@ -78,19 +78,19 @@ function CompactKwGauge({
               : Math.ceil(safePower / 500) * 500
     : null;
   const effectiveMax = hasNominal ? nominalKw : fallbackMax;
-  const pointerMax = effectiveMax ?? 100;
-  const fraction = hasPower ? Math.min(1, Math.max(0, safePower / pointerMax)) : 0;
+  const fraction =
+    hasPower && effectiveMax != null ? Math.min(1, Math.max(0, safePower / effectiveMax)) : 0;
   const angle = fraction * 180 - 90;
   const valueLabel = hasPower ? Math.round(powerKw).toLocaleString("pt-BR") : "—";
-  const cx = 55;
-  const cy = 52;
-  const r = 38;
+  const cx = 70;
+  const cy = 62;
+  const r = 48;
   const arc = `M${cx - r} ${cy} A${r} ${r} 0 0 1 ${cx + r} ${cy}`;
   const maxLabel = effectiveMax != null ? Math.round(effectiveMax).toLocaleString("pt-BR") : "—";
 
   return (
     <div className="compact-kw-gauge" aria-label="Potência ativa">
-      <svg viewBox="0 0 110 72" className="compact-kw-svg" overflow="visible">
+      <svg viewBox="0 0 140 108" className="compact-kw-svg" overflow="visible">
         <path className="compact-kw-base" pathLength="100" d={arc} />
         <path
           className="compact-kw-zone is-green"
@@ -112,34 +112,32 @@ function CompactKwGauge({
           strokeDashoffset="-90"
           d={arc}
         />
-        <text x="14" y="64" className="compact-kw-scale">
+        <text x={cx - r} y={cy + 22} textAnchor="middle" className="compact-kw-scale">
           0
         </text>
-        <text x="96" y="64" textAnchor="end" className="compact-kw-scale">
+        <text x={cx + r} y={cy + 22} textAnchor="middle" className="compact-kw-scale">
           {maxLabel}
         </text>
-        <g
-          className="compact-kw-pointer"
-          data-reading={hasPower ? "known" : "unknown"}
-          transform={`rotate(${angle} ${cx} ${cy})`}
-        >
-          <line
-            x1={cx}
-            y1={cy - 5}
-            x2={cx}
-            y2={cy - r + 4}
-            stroke="#fff"
-            strokeWidth={5}
-            strokeLinecap="round"
-          />
-        </g>
-        <circle cx={cx} cy={cy} r="3.5" className="compact-kw-hub" />
-        <text x={cx} y={cy - 10} textAnchor="middle" className="compact-kw-unit">
+        {hasPower && effectiveMax != null ? (
+          <g className="compact-kw-pointer" transform={`rotate(${angle} ${cx} ${cy})`}>
+            <line
+              x1={cx}
+              y1={cy - 6}
+              x2={cx}
+              y2={cy - r + 10}
+              stroke="#fff"
+              strokeWidth={3}
+              strokeLinecap="round"
+            />
+          </g>
+        ) : null}
+        <circle cx={cx} cy={cy} r="5" className="compact-kw-hub" />
+        <text x={cx} y={cy - 14} textAnchor="middle" className="compact-kw-unit">
           KW
         </text>
         <text
           x={cx}
-          y={cy + 16}
+          y={cy + 36}
           textAnchor="middle"
           className={cn("compact-kw-value", hasPower && "is-live")}
         >

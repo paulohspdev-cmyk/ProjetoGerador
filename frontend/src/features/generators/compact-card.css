@@ -47,7 +47,7 @@
   display: block;
   width: 100%;
   height: auto;
-  max-height: 58px;
+  max-height: 64px;
 }
 
 .compact-kw-base,
@@ -103,14 +103,4 @@
   fill: #071923;
   stroke: #b8c9d4;
   stroke-width: 1;
-}
-
-.compact-kw-pointer > line {
-  stroke: #fff;
-  stroke-width: 5;
-  filter: drop-shadow(0 0 1.5px rgb(255 255 255 / 85%));
-}
-
-.compact-kw-pointer[data-reading="unknown"] > line {
-  opacity: 0.72;
 }
