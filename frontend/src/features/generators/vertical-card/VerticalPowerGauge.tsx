@@ -28,9 +28,9 @@ export function VerticalPowerGauge({
     hasPower && effectiveMax != null ? Math.min(1, Math.max(0, safePower / effectiveMax)) : 0;
   const angle = fraction * 180 - 90;
   const valueLabel = hasPower ? Math.round(powerKw).toLocaleString("pt-BR") : "—";
-  const cx = 70;
-  const cy = 62;
-  const r = 48;
+  const cx = 110;
+  const cy = 98;
+  const r = 72;
   const maxLabel = effectiveMax != null ? Math.round(effectiveMax).toLocaleString("pt-BR") : "N/D";
   const arc = `M${cx - r} ${cy} A${r} ${r} 0 0 1 ${cx + r} ${cy}`;
   const nominalSourceAuditLabel =
@@ -51,7 +51,7 @@ export function VerticalPowerGauge({
       </div>
       <div className="vref-power-gauge" aria-label="Indicador de potência do gerador">
         <svg
-          viewBox="0 0 140 108"
+          viewBox="0 0 220 168"
           className="kw-svg"
           aria-label="Indicador de potência do gerador"
           overflow="visible"
@@ -81,27 +81,25 @@ export function VerticalPowerGauge({
               />
             </>
           ) : null}
-          <text x={cx - r} y={cy + 22} textAnchor="middle" className="vref-gauge-scale">
+          <text x={cx - r} y={cy + 28} textAnchor="middle" className="vref-gauge-scale">
             0
           </text>
-          <text x={cx + r} y={cy + 22} textAnchor="middle" className="vref-gauge-scale">
+          <text x={cx + r} y={cy + 28} textAnchor="middle" className="vref-gauge-scale">
             {maxLabel}
           </text>
           {hasPower && effectiveMax != null ? (
             <g className="vref-kw-needle" transform={`rotate(${angle} ${cx} ${cy})`}>
               <path
-                d={`M${cx} ${cy - r + 8} L${cx + 4.5} ${cy - 7} Q${cx + 5.5} ${cy} ${cx} ${cy + 5} Q${cx - 5.5} ${cy} ${cx - 4.5} ${cy - 7} Z`}
-                fill="#f8fafc"
-                stroke="#dbe7ee"
-                strokeWidth={0.8}
-                strokeLinejoin="round"
+                className="vref-kw-needle-floating"
+                d={`M${cx} ${cy - r + 12} L${cx + 5} ${cy - 14} L${cx - 5} ${cy - 14} Z`}
               />
             </g>
           ) : null}
-          <text x={cx} y={cy - 14} textAnchor="middle" className="vref-kw-unit">
+          <circle cx={cx} cy={cy} r="6" className="vref-gauge-hub" />
+          <text x={cx} y={cy - 18} textAnchor="middle" className="vref-kw-unit">
             KW
           </text>
-          <text x={cx} y={cy + 36} textAnchor="middle" className="vref-kw-value">
+          <text x={cx} y={cy + 48} textAnchor="middle" className="vref-kw-value">
             {valueLabel}
           </text>
         </svg>
