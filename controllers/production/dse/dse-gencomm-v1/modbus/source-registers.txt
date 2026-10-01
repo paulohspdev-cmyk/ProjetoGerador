@@ -44,5 +44,3 @@
 1808 number_starts page=7 offset=16 type=uint32 scale=1
 4104 system_control_key page=16 offset=8 type=uint16 write=fc16 DISABLED
 4105 system_control_complement page=16 offset=9 type=uint16 write=fc16 DISABLED
-48660 gcb_closed page=190 offset=20 type=uint16 scale=1 READ_ONLY
-48661 engine_running page=190 offset=21 type=uint16 scale=1 READ_ONLY
