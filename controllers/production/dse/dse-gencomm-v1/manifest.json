@@ -120,7 +120,9 @@
     "bus_voltage_l3",
     "bus_voltage_l1_l2",
     "bus_voltage_l2_l3",
-    "bus_voltage_l3_l1"
+    "bus_voltage_l3_l1",
+    "gcb_closed",
+    "engine_running"
   ],
   "metricUnits": {
     "oil_pressure": "kPa",
@@ -164,7 +166,7 @@
     "kind": "modbus_register_export",
     "readOnly": true,
     "sourceFile": "modbus/source-registers.txt",
-    "sourceSha256": "0b35675aaf9f76bddf61e650f1153a42b3e7afda00c865540beffedf6a30b767",
+    "sourceSha256": "31082a82fc6d5ca8c40a99ae086b39673374fff06ef6ac89453ef2c939a4c846",
     "addressFormula": "page * 256 + offset",
     "readFunctions": [
       3
@@ -446,6 +448,18 @@
         "type": "uint32",
         "scale": 0.1,
         "unit": "V"
+      },
+      "gcb_closed": {
+        "address": 48660,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1
+      },
+      "engine_running": {
+        "address": 48661,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1
       }
     }
   },
@@ -688,6 +702,16 @@
         "tagCode": "bus_voltage_l3_l1",
         "scale": 0.1,
         "unit": "V"
+      },
+      {
+        "key": "gcb_closed",
+        "tagCode": "gcb_closed",
+        "scale": 1
+      },
+      {
+        "key": "engine_running",
+        "tagCode": "engine_running",
+        "scale": 1
       }
     ]
   },
@@ -696,7 +720,8 @@
       "DSE GenComm standard and Gencomm Control Keys training document 056-051",
       "MODEL_EVIDENCE.md: model-by-model evidence from official Deep Sea Electronics product/download pages",
       "DSE8610 MKII register list supplied by the user and retained as the register-map source",
-      "DSE GenComm rule: 32-bit values store the most-significant register at the lowest address"
+      "DSE GenComm rule: 32-bit values store the most-significant register at the lowest address",
+      "Live read-only FC03 validation on G-256, G-129 and G-191 confirmed page 190 feedback at 48660/48661"
     ],
     "lab": false,
     "field": false,
