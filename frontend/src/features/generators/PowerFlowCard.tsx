@@ -177,17 +177,23 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const genCurrent = currentKnown
     ? currentValues.reduce((sum, value) => sum + value, 0) / currentValues.length
     : null;
-  // Em DSE de instalação somente-gerador, alguns modelos GenComm não entregam
-  // um feedback GCB confiável no mesmo endereço. Corrente/potência real na saída
-  // é uma evidência elétrica inequívoca de que o gerador está alimentando a carga.
-  const inferredDseGcbClosed =
+  // O bloco de LEDs da página 190 não é feedback GCB universal entre modelos DSE.
+  // Em instalações genset_only, representamos no diagrama o contato de carga pelo
+  // fluxo elétrico realmente medido: potência/corrente presentes = fechado;
+  // gerador sem produção e sem corrente = aberto.
+  const dseFlowGcbKnown =
     dse &&
     !hasMainsSource &&
+    !gen.telemetryStale &&
+    generatorKnown &&
+    (currentKnown || hasFreshMetric(gen, "power_kw"));
+  const dseFlowGcbClosed =
+    dseFlowGcbKnown &&
     generatorPresent &&
     ((powerKw != null && Number.isFinite(powerKw) && Math.abs(powerKw) >= 0.5) ||
       currentValues.some((value) => Math.abs(value) >= 1));
-  const displayGcb = gen.gcb || inferredDseGcbClosed;
-  const displayGcbKnown = gcbKnown || inferredDseGcbClosed;
+  const displayGcb = dseFlowGcbKnown ? dseFlowGcbClosed : gen.gcb;
+  const displayGcbKnown = dseFlowGcbKnown || gcbKnown;
 
   const electricalRows = useMemo(
     () => [
@@ -312,7 +318,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       data-power-topology-source={gen.powerTopologySource ?? "unknown"}
       data-mains-state={!mainsKnown ? "unknown" : mainsPresent ? "present" : "absent"}
       data-gcb-state-source={
-        inferredDseGcbClosed && !gen.gcb ? "load-flow-inferred" : gcbKnown ? "feedback" : "unknown"
+        dseFlowGcbKnown ? "electrical-flow" : gcbKnown ? "feedback" : "unknown"
       }
       data-telemetry-state={gen.telemetryStale ? "stale" : online ? "live" : "unavailable"}
     >
