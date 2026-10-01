@@ -252,7 +252,7 @@ export function NeedleGauge({
           {maxLabel}
         </text>
         {known && hasScale ? (
-          <g style={{ transformOrigin: `${cx}px ${cy}px`, transform: `rotate(${angle}deg)` }}>
+          <g transform={`rotate(${angle} ${cx} ${cy})`}>
             <path
               className="gen-needle-pointer"
               d={`M${cx} ${cy - r + 10} L${cx + 4.5} ${cy - 12} L${cx - 4.5} ${cy - 12} Z`}
