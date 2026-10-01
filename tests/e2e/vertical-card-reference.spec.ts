@@ -105,7 +105,10 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
     await expect(card.getByText("ENGINE STATUS")).toBeVisible();
     await expect(card.getByRole("heading", { name: "RPM" })).toBeVisible();
     await expect(card.locator(".vref-data-table")).toBeVisible();
-    await expect(card.locator(".vref-summary-grid")).toBeVisible();
+    await expect(card.locator(".vref-summary-grid")).toHaveCount(0);
+    await expect(card.getByText("Horímetro", { exact: true })).toHaveCount(0);
+    await expect(card.getByText("Energia", { exact: true })).toHaveCount(0);
+    await expect(card.getByText("Partidas", { exact: true })).toHaveCount(0);
     await expect(card.getByText(/ALARM LIST/)).toHaveCount(0);
     await expect(card).toHaveAttribute("data-mains-state", "unknown");
     await expect(card.getByRole("button", { name: "START" })).toBeVisible();
