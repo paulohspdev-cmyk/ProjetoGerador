@@ -305,7 +305,6 @@ export function VerticalPowerFlow({
           <FlowEnergy d="M188 58 H112 V20" active={genToBus} />
           <FlowEnergy d="M188 58 H168" active={genSideLive && !genToBus} />
         </svg>
-
       </div>
     </section>
   );
