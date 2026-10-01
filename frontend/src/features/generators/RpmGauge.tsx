@@ -2,14 +2,17 @@ type Props = { value: number | null; max?: number | null };
 
 export function RpmGauge({ value, max = null }: Props) {
   const known = value != null && Number.isFinite(value);
-  const hasScale = max != null && Number.isFinite(max) && max > 0;
   const safeValue = known ? Math.max(0, value) : 0;
-  const pct = known && hasScale ? Math.min(1, safeValue / max) : 0;
+  const configuredMax = max != null && Number.isFinite(max) && max > 0 ? max : null;
+  const fallbackMax = known ? Math.max(3000, Math.ceil(Math.max(1, safeValue) / 500) * 500) : null;
+  const effectiveMax = configuredMax ?? fallbackMax;
+  const hasScale = effectiveMax != null && effectiveMax > 0;
+  const pct = known && hasScale ? Math.min(1, safeValue / effectiveMax) : 0;
   const angle = pct * 180 - 90;
   const cx = 110;
   const cy = 98;
   const r = 72;
-  const scaleMax = hasScale ? Math.max(1, Math.round(max / 1000)) : null;
+  const scaleMax = hasScale ? Math.max(1, Math.round(effectiveMax / 1000)) : null;
   const arc = `M${cx - r} ${cy} A${r} ${r} 0 0 1 ${cx + r} ${cy}`;
 
   return (
@@ -49,13 +52,15 @@ export function RpmGauge({ value, max = null }: Props) {
         ×1000
       </text>
       {known && hasScale ? (
-        <g
-          className="needle"
-          style={{ transformOrigin: `${cx}px ${cy}px`, transform: `rotate(${angle}deg)` }}
-        >
-          <path
-            className="rpm-needle-floating"
-            d={`M${cx} ${cy - r + 12} L${cx + 5} ${cy - 14} L${cx - 5} ${cy - 14} Z`}
+        <g className="needle" transform={`rotate(${angle} ${cx} ${cy})`}>
+          <line
+            x1={cx}
+            y1={cy - 8}
+            x2={cx}
+            y2={cy - r + 12}
+            stroke="#fff"
+            strokeWidth={4}
+            strokeLinecap="round"
           />
         </g>
       ) : null}
