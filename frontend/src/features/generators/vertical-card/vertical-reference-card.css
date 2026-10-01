@@ -43,9 +43,9 @@
   display: grid;
   grid-template-rows:
     34px
-    148px
+    143px
     minmax(142px, 1.15fr)
-    55px
+    51px
     minmax(158px, 1.15fr)
     minmax(168px, 1.2fr);
   gap: 0;
@@ -190,8 +190,8 @@
   gap: 0 8px;
   min-width: 0;
   min-height: 0;
-  height: 148px;
-  max-height: 148px;
+  height: 143px;
+  max-height: 143px;
   align-items: stretch;
   overflow: hidden;
   padding: 0 2px;
@@ -357,12 +357,12 @@
 .vref-flow-controller {
   display: flex;
   flex-direction: column;
-  padding: 2px 6px 2px;
+  padding: 0 6px 2px;
 }
 
 .vref-flow-controller-heading {
   display: flex;
-  flex: 0 0 15px;
+  flex: 0 0 13px;
   align-items: center;
   justify-content: space-between;
   gap: 6px;
@@ -385,7 +385,7 @@
   place-items: center;
   flex: 1;
   min-height: 0;
-  padding-top: 4px;
+  padding-top: 1px;
   padding-bottom: 2px;
 }
 
@@ -694,7 +694,7 @@
   flex-direction: column;
   align-items: stretch;
   justify-content: center;
-  gap: 5px;
+  gap: 4px;
   padding: 2px 4px;
   min-height: 0;
 }
@@ -734,10 +734,10 @@
 .vref-command-row .vref-flow-html-btn {
   width: 100%;
   min-width: 0;
-  height: 24px;
-  min-height: 24px;
-  max-height: 24px;
-  font-size: 8.5px;
+  height: 20px;
+  min-height: 20px;
+  max-height: 20px;
+  font-size: 8px;
 }
 
 .vref-control button {
@@ -1253,9 +1253,9 @@
   .vref-card {
     grid-template-rows:
       32px
-      136px
+      131px
       minmax(132px, 1.1fr)
-      55px
+      51px
       minmax(145px, 1.1fr)
       minmax(150px, 1.15fr);
     gap: 0;
@@ -1263,8 +1263,8 @@
   }
 
   .vref-gauges {
-    height: 136px;
-    max-height: 136px;
+    height: 131px;
+    max-height: 131px;
     gap: 0 6px;
   }
 
