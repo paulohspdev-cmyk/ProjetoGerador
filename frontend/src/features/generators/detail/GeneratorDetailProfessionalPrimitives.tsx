@@ -254,14 +254,12 @@ export function NeedleGauge({
         {known && hasScale ? (
           <g transform={`rotate(${angle} ${cx} ${cy})`}>
             <path
-              d={`M${cx} ${cy - r + 8} L${cx + 4.5} ${cy - 7} Q${cx + 5.5} ${cy} ${cx} ${cy + 5} Q${cx - 5.5} ${cy} ${cx - 4.5} ${cy - 7} Z`}
-              fill="#f8fafc"
-              stroke="#dbe7ee"
-              strokeWidth={0.8}
-              strokeLinejoin="round"
+              className="gen-needle-pointer"
+              d={`M${cx} ${cy - r + 10} L${cx + 4.5} ${cy - 12} L${cx - 4.5} ${cy - 12} Z`}
             />
           </g>
         ) : null}
+        <circle cx={cx} cy={cy} r="5" className="gen-needle-hub" />
         <text x={cx} y={cy - 14} textAnchor="middle" className="gen-needle-unit">
           {unit}
         </text>
