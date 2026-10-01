@@ -57,7 +57,7 @@ export function VerticalPowerGauge({
           overflow="visible"
         >
           <path className="vref-gauge-base" pathLength="100" d={arc} />
-          {hasNominal ? (
+          {effectiveMax != null ? (
             <>
               <path
                 className="vref-kw-zone vref-kw-zone-green"
