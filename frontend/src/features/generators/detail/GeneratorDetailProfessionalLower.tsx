@@ -322,10 +322,7 @@ export function GeneratorDetailProfessionalLower({
         ))}
       </div>
 
-      <div
-        className="grid min-h-0 grid-cols-3 gap-1.5"
-        aria-label="Tendências do motor 24h"
-      >
+      <div className="grid min-h-0 grid-cols-3 gap-1.5" aria-label="Tendências do motor 24h">
         <MiniTrendCard
           title="Combustível"
           metric="fuel_level"
