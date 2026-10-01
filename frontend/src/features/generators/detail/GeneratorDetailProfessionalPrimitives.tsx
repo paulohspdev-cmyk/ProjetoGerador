@@ -253,13 +253,7 @@ export function NeedleGauge({
         </text>
         {known && hasScale ? (
           <g transform={`rotate(${angle} ${cx} ${cy})`}>
-            <line
-              className="gen-needle-pointer"
-              x1={cx}
-              y1={cy - 6}
-              x2={cx}
-              y2={cy - r + 10}
-            />
+            <line className="gen-needle-pointer" x1={cx} y1={cy - 6} x2={cx} y2={cy - r + 10} />
           </g>
         ) : null}
         <circle cx={cx} cy={cy} r="5" className="gen-needle-hub" />
