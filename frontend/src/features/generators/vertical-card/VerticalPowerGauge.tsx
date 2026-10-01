@@ -17,18 +17,10 @@ export function VerticalPowerGauge({
   const r = 72;
   const maxLabel = hasNominal ? Math.round(nominalKw).toLocaleString("pt-BR") : "N/D";
   const arc = `M${cx - r} ${cy} A${r} ${r} 0 0 1 ${cx + r} ${cy}`;
-  const nominalSourceLabel =
-    nominalSource === "telemetry"
-      ? "CONTROLADORA"
-      : nominalSource === "cadastral"
-        ? "CADASTRO"
-        : "N/D";
-
   return (
     <section className="vref-section vref-power" data-nominal-source={nominalSource ?? "unknown"}>
       <div className="vref-section-heading">
         <h4>KW</h4>
-        <span className="vref-nominal-source">{nominalSourceLabel}</span>
       </div>
       <div className="vref-power-gauge" aria-label="Indicador de potência do gerador">
         <svg
