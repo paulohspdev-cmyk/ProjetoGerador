@@ -177,6 +177,17 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const genCurrent = currentKnown
     ? currentValues.reduce((sum, value) => sum + value, 0) / currentValues.length
     : null;
+  // Em DSE de instalação somente-gerador, alguns modelos GenComm não entregam
+  // um feedback GCB confiável no mesmo endereço. Corrente/potência real na saída
+  // é uma evidência elétrica inequívoca de que o gerador está alimentando a carga.
+  const inferredDseGcbClosed =
+    dse &&
+    !hasMainsSource &&
+    generatorPresent &&
+    ((powerKw != null && Number.isFinite(powerKw) && Math.abs(powerKw) >= 0.5) ||
+      currentValues.some((value) => Math.abs(value) >= 1));
+  const displayGcb = gen.gcb || inferredDseGcbClosed;
+  const displayGcbKnown = gcbKnown || inferredDseGcbClosed;
 
   const electricalRows = useMemo(
     () => [
@@ -300,6 +311,9 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       data-power-topology={gen.powerTopology ?? "unknown"}
       data-power-topology-source={gen.powerTopologySource ?? "unknown"}
       data-mains-state={!mainsKnown ? "unknown" : mainsPresent ? "present" : "absent"}
+      data-gcb-state-source={
+        inferredDseGcbClosed && !gen.gcb ? "load-flow-inferred" : gcbKnown ? "feedback" : "unknown"
+      }
       data-telemetry-state={gen.telemetryStale ? "stale" : online ? "live" : "unavailable"}
     >
       <header className="vref-header">
@@ -325,7 +339,10 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
             <h4>RPM</h4>
           </div>
           <div className="vref-rpm-gauge">
-            <RpmGauge value={rpm} max={gen.metricLimits?.["rpm"]?.displayMax ?? null} />
+            <RpmGauge
+              value={dse ? (rpm ?? 0) : rpm}
+              max={gen.metricLimits?.["rpm"]?.displayMax ?? null}
+            />
           </div>
         </section>
       </div>
@@ -343,8 +360,8 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         modeLabel={modeLabel}
         mcb={gen.mcb}
         mcbKnown={mcbKnown}
-        gcb={gen.gcb}
-        gcbKnown={gcbKnown}
+        gcb={displayGcb}
+        gcbKnown={displayGcbKnown}
         canMcbOpen={canAction("mcb_open")}
         canMcbClose={canAction("mcb_close")}
         canGcbOpen={canAction("gcb_open")}
