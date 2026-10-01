@@ -54,14 +54,12 @@ export function RpmGauge({ value, max = null }: Props) {
       {known && hasScale ? (
         <g className="needle" transform={`rotate(${angle} ${cx} ${cy})`}>
           <path
-            d={`M${cx} ${cy - r + 8} L${cx + 4.5} ${cy - 7} Q${cx + 5.5} ${cy} ${cx} ${cy + 5} Q${cx - 5.5} ${cy} ${cx - 4.5} ${cy - 7} Z`}
-            fill="#f8fafc"
-            stroke="#dbe7ee"
-            strokeWidth={0.8}
-            strokeLinejoin="round"
+            className="rpm-needle-floating"
+            d={`M${cx} ${cy - r + 12} L${cx + 5} ${cy - 14} L${cx - 5} ${cy - 14} Z`}
           />
         </g>
       ) : null}
+      <circle cx={cx} cy={cy} r="6" className="rpm-gauge-hub" />
       <text x={cx} y={cy + 48} textAnchor="middle" className="rpm-percent">
         {known ? Math.round(safeValue) : "—"}
       </text>
