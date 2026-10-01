@@ -345,8 +345,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         mcbKnown={mcbKnown}
         gcb={gen.gcb}
         gcbKnown={gcbKnown}
-        canStart={canStart}
-        canStop={canStop}
         canMcbOpen={canAction("mcb_open")}
         canMcbClose={canAction("mcb_close")}
         canGcbOpen={canAction("gcb_open")}
@@ -360,6 +358,8 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         dse={dse}
         modeKnown={modeKnown}
         canOperate={canOperate}
+        canStart={canStart}
+        canStop={canStop}
         busy={commandBusy}
         onCommand={(action) => void runCommand(action)}
       />
