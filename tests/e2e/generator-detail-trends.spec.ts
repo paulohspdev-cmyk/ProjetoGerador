@@ -125,18 +125,14 @@ test("detalhe do gerador usa tendências reais em linha e não barras gigantes",
 
   const engine = page.getByLabel("Tendências do motor 24h");
   await expect(engine).toBeVisible();
-  for (const label of [
-    "RPM",
-    "Pressão de óleo",
-    "Temp. motor",
-    "Combustível",
-    "Bateria",
-    "Carga do motor",
-  ]) {
+  for (const label of ["Combustível", "Bateria", "Carga do motor"]) {
     await expect(engine.getByText(label, { exact: true })).toBeVisible();
   }
+  for (const duplicated of ["RPM", "Pressão de óleo", "Temp. motor"]) {
+    await expect(engine.getByText(duplicated, { exact: true })).toHaveCount(0);
+  }
 
-  await expect.poll(() => page.locator("svg.recharts-surface").count()).toBeGreaterThanOrEqual(10);
+  await expect.poll(() => page.locator("svg.recharts-surface").count()).toBeGreaterThanOrEqual(9);
   await expect(page.getByText("Gráfico Rede — L1 L2 L3")).toHaveCount(0);
   await expect(page.getByText("Gráfico Gerador — L1 L2 L3")).toHaveCount(0);
 

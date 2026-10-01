@@ -372,7 +372,7 @@ export function GeneratorDetailProfessionalTop({
         </div>
       </header>
 
-      <div className="grid h-[132px] min-h-0 min-w-0 shrink-0 gap-1.5 xl:grid-cols-12">
+      <div className="grid h-[158px] min-h-0 min-w-0 shrink-0 gap-1.5 xl:grid-cols-12">
         <section className="gen-detail-section flex min-h-0 flex-col overflow-hidden rounded-xl p-2 xl:col-span-3">
           <h2 className="mb-1 shrink-0 text-[10px] font-extrabold uppercase tracking-wide text-muted-foreground">
             Controladora
@@ -381,7 +381,7 @@ export function GeneratorDetailProfessionalTop({
             <img
               src={controllerImageSrc(gen.controller)}
               alt={gen.controller}
-              className="max-h-full w-full object-contain"
+              className="h-full max-h-full w-full object-contain object-center"
               onError={(event) => {
                 event.currentTarget.src = CONTROLLER_IMAGE_FALLBACK;
               }}
