@@ -128,8 +128,6 @@ export function VerticalPowerFlow({
   mcbKnown,
   gcb,
   gcbKnown,
-  canStart,
-  canStop,
   canMcbOpen,
   canMcbClose,
   canGcbOpen,
@@ -151,8 +149,6 @@ export function VerticalPowerFlow({
   mcbKnown: boolean;
   gcb: boolean;
   gcbKnown: boolean;
-  canStart: boolean;
-  canStop: boolean;
   canMcbOpen: boolean;
   canMcbClose: boolean;
   canGcbOpen: boolean;
@@ -309,27 +305,6 @@ export function VerticalPowerFlow({
           <FlowEnergy d="M188 58 H112 V20" active={genToBus} />
           <FlowEnergy d="M188 58 H168" active={genSideLive && !genToBus} />
         </svg>
-
-        <div className="vref-flow-corner-commands">
-          <button
-            type="button"
-            className="vref-flow-html-btn start"
-            disabled={!canStart || busy !== null}
-            aria-label="START"
-            onClick={() => onCommand("start")}
-          >
-            {busy === "start" ? "…" : "START"}
-          </button>
-          <button
-            type="button"
-            className="vref-flow-html-btn stop"
-            disabled={!canStop || busy !== null}
-            aria-label="STOP"
-            onClick={() => onCommand("stop")}
-          >
-            {busy === "stop" ? "…" : "STOP"}
-          </button>
-        </div>
       </div>
     </section>
   );

@@ -400,16 +400,6 @@
   overflow: visible;
 }
 
-.vref-flow-corner-commands {
-  position: absolute;
-  right: 4px;
-  bottom: 2px;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
 .vref-device {
   fill: #061722;
   stroke: #607b8b;
@@ -701,9 +691,10 @@
 /* Mode controls — altura fixa igual em todos os cards */
 .vref-control {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   justify-content: center;
-  gap: 4px;
+  gap: 5px;
   padding: 2px 4px;
   min-height: 0;
 }
@@ -725,6 +716,28 @@
   max-width: 200px;
   margin-inline: auto;
   gap: 8px;
+}
+
+.vref-command-row {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+  align-items: center;
+}
+
+.vref-command-row.is-dse {
+  max-width: 200px;
+  margin-inline: auto;
+}
+
+.vref-command-row .vref-flow-html-btn {
+  width: 100%;
+  min-width: 0;
+  height: 24px;
+  min-height: 24px;
+  max-height: 24px;
+  font-size: 8.5px;
 }
 
 .vref-control button {
