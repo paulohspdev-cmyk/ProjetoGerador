@@ -45,7 +45,7 @@
     34px
     148px
     minmax(142px, 1.15fr)
-    26px
+    55px
     minmax(158px, 1.15fr)
     minmax(168px, 1.2fr);
   gap: 0;
@@ -1255,7 +1255,7 @@
       32px
       136px
       minmax(132px, 1.1fr)
-      24px
+      55px
       minmax(145px, 1.1fr)
       minmax(150px, 1.15fr);
     gap: 0;
