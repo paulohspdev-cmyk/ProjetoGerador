@@ -601,6 +601,11 @@ chmod 0640 /var/lib/rc-geradores/deployed-commit
 # A partir deste ponto a nova release foi integralmente validada.
 trap - ERR
 rm -rf "${OLD_OUTPUT}" "${OLD_VENV}" "${OLD_READER}"
+
+if ! bash "${BASE}/ops/prune_deploy_backups.sh" "${BACKUP_ROOT}" "${RC_DEPLOY_BACKUP_RETENTION:-30}"; then
+  echo "AVISO: falha ao aplicar retenção de backups de deploy; release permanece instalada." >&2
+fi
+
 log "RELEASE INSTALADA COM SUCESSO"
 echo "Commit: ${COMMIT}"
 echo "HEAD: ${CURRENT_HEAD}"
