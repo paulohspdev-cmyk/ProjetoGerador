@@ -188,13 +188,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     generatorPresent &&
     ((powerKw != null && Number.isFinite(powerKw) && Math.abs(powerKw) >= 0.5) ||
       currentValues.some((value) => Math.abs(value) >= 1));
-  const displayGcb = dse
-    ? gcbKnown
-      ? gen.gcb
-      : dseFlowProvesClosed
-        ? true
-        : false
-    : gen.gcb;
+  const displayGcb = dse ? (gcbKnown ? gen.gcb : dseFlowProvesClosed ? true : false) : gen.gcb;
   const displayGcbKnown = dse ? gcbKnown || dseFlowProvesClosed : gcbKnown;
 
   const electricalRows = useMemo(
