@@ -70,6 +70,7 @@ cleanup_smoke_session() {
   python_as_service - "$SMOKE_SESSION_HASH" <<'PY' >/dev/null 2>&1 || true
 import sys
 from app import db
+from app.controller_library import pack_for_model
 
 db.delete_session(sys.argv[1])
 PY
@@ -263,12 +264,38 @@ for item in items:
     requested_device = int(g.get("rapid_device_num") or 0)
     if requested_device and int(item.get("rapid_device_num") or 0) != requested_device:
         raise SystemExit(f"binding divergente {g['tag']}: Rapid Device")
-    if not item.get("channels"):
+    channels = item.get("channels") or {}
+    if not channels:
         raise SystemExit(f"binding sem canais: {g['tag']}")
-    print(f"OK binding {g['tag']}: line={item.get('rapid_line_num')} device={item.get('rapid_device_num')}")
+
+    pack = pack_for_model(g.get("controller_model") or "") or {}
+    rapid = pack.get("rapid") or {}
+    desired = rapid.get("channels") or {}
+    if isinstance(desired, dict):
+        expected_channels = set(desired)
+    elif isinstance(desired, list):
+        expected_channels = {
+            str(channel.get("key"))
+            for channel in desired
+            if isinstance(channel, dict) and channel.get("key")
+        }
+    else:
+        expected_channels = set()
+    actual_channels = set(channels)
+    if expected_channels != actual_channels:
+        missing = sorted(expected_channels - actual_channels)
+        extra = sorted(actual_channels - expected_channels)
+        raise SystemExit(
+            f"binding x Controller Pack divergente {g['tag']}: "
+            f"missing={missing}; extra={extra}"
+        )
+    print(
+        f"OK binding {g['tag']}: line={item.get('rapid_line_num')} "
+        f"device={item.get('rapid_device_num')} channels={len(actual_channels)}"
+    )
 PY
   then
-    ok "bindings conferem com o cadastro"
+    ok "bindings conferem com o cadastro e Controller Pack"
   else
     fail "bindings divergentes do banco"
   fi
