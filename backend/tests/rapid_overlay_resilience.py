@@ -176,9 +176,12 @@ try:
         "controller_model": "IG4 200",
         "controller_type": "COMAP",
     }
+    # O máximo 682 do export é configuracional daquele equipamento, não capacidade
+    # universal do tanque. Leituras de outros IG4 (ex.: 991 L) continuam válidas.
     assert rapid._metric_value_in_documented_range(ig4_generator, "fuel_level", 682)
-    assert not rapid._metric_value_in_documented_range(ig4_generator, "fuel_level", 683)
-    assert not rapid._metric_value_in_documented_range(ig4_generator, "fuel_level", 1041)
+    assert rapid._metric_value_in_documented_range(ig4_generator, "fuel_level", 683)
+    assert rapid._metric_value_in_documented_range(ig4_generator, "fuel_level", 1041)
+    assert not rapid._metric_value_in_documented_range(ig4_generator, "fuel_level", -1)
 
     # Um binding pertencente a outro generator_id jamais pode ser adotado só por
     # coincidir porta, Unit e Rapid Device.
