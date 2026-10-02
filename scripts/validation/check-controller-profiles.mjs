@@ -516,9 +516,9 @@ for (const [model, application] of excludedDse) {
   }
   if (dseProductionNames.has(model)) failures.push(`DSE: ${model} não pode usar pack de gerador`);
 }
-if (dseAliases.size !== 35) {
+if (dseAliases.size !== 36) {
   failures.push(
-    `DSE GenComm: esperado cobertura documental de 35 aliases, encontrado ${dseAliases.size}`,
+    `DSE GenComm: esperado cobertura documental de 36 aliases, encontrado ${dseAliases.size}`,
   );
 }
 const dse5210Path = "controllers/production/dse/dse5210-gencomm-v1/manifest.json";
