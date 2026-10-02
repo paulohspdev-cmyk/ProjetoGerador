@@ -1,0 +1,27 @@
+name: Gateway Source Bundle
+
+on:
+  push:
+    branches:
+      - 'feat/gateway-umbrella-foundation'
+  pull_request:
+    paths:
+      - 'gateway-umbrella/**'
+      - '.github/workflows/gateway-source-bundle.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Upload gateway source bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: rc-universal-gateway-source
+          path: gateway-umbrella/
+          if-no-files-found: error
+          retention-days: 7
