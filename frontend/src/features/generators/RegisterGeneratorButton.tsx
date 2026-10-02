@@ -158,7 +158,9 @@ export function RegisterGeneratorButton({
   );
   const canContinueStep1 = Boolean(site.trim() && controller && selectedController);
   const canContinueStep2 = isSerial
-    ? Boolean(host.trim() && Number.isInteger(effectiveBaud) && effectiveBaud > 0 && parity && stopBits)
+    ? Boolean(
+        host.trim() && Number.isInteger(effectiveBaud) && effectiveBaud > 0 && parity && stopBits,
+      )
     : transport === "reverse_tcp"
       ? Boolean(selectedModem && effectivePort > 0)
       : Boolean(selectedModem && host.trim() && effectivePort > 0);
