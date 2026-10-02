@@ -675,9 +675,9 @@
       "family": "DSE 61xx MKII",
       "application": "genset",
       "category": "legacy_single_genset",
-      "supportState": "promotion_pending_read_only",
+      "supportState": "production_read_only",
       "supportPack": "dse-gencomm-v1",
-      "notes": "Promoção read-only pendente; três unidades de campo respondem ao mapa GenComm com modelNumber 32807."
+      "notes": "Telemetria GenComm read-only validada em campo em 2026-10-02; comandos desabilitados."
     },
     {
       "model": "DSE6610",
