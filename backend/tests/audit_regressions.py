@@ -1071,7 +1071,29 @@ with db.connect() as conn:
     ).fetchone()
 assert linked is not None
 
-# F12: authentication throttles must not lose concurrent increments.
+# F12: bridge peer replacement must depend on real RX, not local TX polling.
+from app import bridge_runtime  # noqa: E402
+import ipaddress
+
+class _FakeWriter:
+    def is_closing(self):
+        return False
+
+bridge_port = bridge_runtime.HardenedBridgePort(15002)
+bridge_port.remote_writer = _FakeWriter()
+bridge_port.remote_peer = ("200.233.216.1", 50000)
+bridge_port.connected_at = 100
+bridge_port.last_rx_at = 100
+bridge_port.last_tx_at = 1000
+incoming_peer = ipaddress.ip_address("187.32.97.126")
+assert bridge_port._active_peer_is_protected(incoming_peer, 120) is True
+assert bridge_port._active_peer_is_protected(incoming_peer, 140) is False
+bridge_port.last_rx_at = None
+bridge_port.connected_at = 100
+assert bridge_port._active_peer_is_protected(incoming_peer, 120) is True
+assert bridge_port._active_peer_is_protected(incoming_peer, 140) is False
+
+# F13: authentication throttles must not lose concurrent increments.
 race_key = platform_store.login_key("race@example.invalid", "192.0.2.44")
 login_threads = [
     threading.Thread(
