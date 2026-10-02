@@ -475,7 +475,6 @@
         "sourceName": "Diesel",
         "unit": "L",
         "validMin": 0,
-        "validMax": 682,
         "object": 9153
       },
       "nominal_power_kw": {
