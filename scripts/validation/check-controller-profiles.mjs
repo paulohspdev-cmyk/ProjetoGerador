@@ -268,6 +268,7 @@ for (const profile of comapProductionPacks) {
 const allowedComapSupportStates = new Set([
   "production_field_validated",
   "production_read_only",
+  "promotion_pending_read_only",
   "registration_only",
   "classified_non_genset",
 ]);
@@ -461,6 +462,16 @@ for (const item of dseCatalog) {
     if (!inProduction || !item.supportPack) {
       failures.push(`DSE: ${item.model} marcado production_read_only sem pack real`);
     }
+  } else if (item.supportState === "promotion_pending_read_only") {
+    if (
+      item.model !== "DSE6120 MKII" ||
+      item.application !== "genset" ||
+      item.supportPack !== "dse-gencomm-v1"
+    ) {
+      failures.push(
+        `DSE: promotion_pending_read_only só é permitido para DSE6120 MKII -> dse-gencomm-v1`,
+      );
+    }
   } else if (item.supportState === "registration_only") {
     if (item.application !== "genset") {
       failures.push(`DSE: ${item.model} registration_only precisa ser genset`);
@@ -515,10 +526,16 @@ for (const [model, application] of excludedDse) {
   }
   if (dseProductionNames.has(model)) failures.push(`DSE: ${model} não pode usar pack de gerador`);
 }
-if (dseAliases.size !== 35) {
+if (![35, 36].includes(dseAliases.size)) {
   failures.push(
-    `DSE GenComm: esperado cobertura documental de 35 aliases, encontrado ${dseAliases.size}`,
+    `DSE GenComm: transição DSE6120 permite somente 35 ou 36 aliases, encontrado ${dseAliases.size}`,
   );
+}
+if (dseAliases.size === 36 && !dseAliases.has("DSE6120 MKII")) {
+  failures.push("DSE GenComm: 36º alias só pode ser DSE6120 MKII nesta transição");
+}
+if (dseAliases.size === 35 && dseAliases.has("DSE6120 MKII")) {
+  failures.push("DSE GenComm: DSE6120 MKII não pode substituir alias documental existente");
 }
 const dse5210Path = "controllers/production/dse/dse5210-gencomm-v1/manifest.json";
 if (!productionPaths.includes(dse5210Path)) failures.push("DSE5210: pack específico ausente");
