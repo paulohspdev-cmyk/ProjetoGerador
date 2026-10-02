@@ -9,8 +9,7 @@ export function approvedModems(rows: FieldDevice[]) {
     const status = String(modem.status || "").toLowerCase();
     return (
       modem.active &&
-      (status === "approved_unlinked" || status === "approved_linked") &&
-      modemAdmissionPort(modem) > 0
+      (status === "approved_unlinked" || status === "approved_linked")
     );
   });
 }
