@@ -1,0 +1,676 @@
+{
+  "schema": 4,
+  "manufacturer": "ComAp",
+  "family": "InteliCompact",
+  "model": "InteliCompact NT",
+  "aliases": [
+    "ComAp InteliCompact NT",
+    "IC-NT"
+  ],
+  "status": "field_validated",
+  "application": "genset",
+  "category": "single_genset",
+  "firmware": {
+    "tested": [
+      "branch-1/version-2.5"
+    ],
+    "minimum": null,
+    "maximum": null,
+    "notes": "G-132 Unit 1: FW Branch=1 e FW Version=2.5 lidos por FC03 em 2026-10-02."
+  },
+  "protocols": [
+    "modbus"
+  ],
+  "transports": [
+    "reverse_tcp",
+    "rtu_over_tcp",
+    "modbus_rtu_serial"
+  ],
+  "reverseTcpFraming": "modbus_tcp",
+  "defaults": {
+    "batteryNominalVoltage": 12,
+    "modbusUnit": null,
+    "tcpPort": 502
+  },
+  "capabilities": {
+    "telemetry": true,
+    "start": false,
+    "stop": false,
+    "off": false,
+    "auto": false,
+    "manual": false,
+    "test": false,
+    "mcb_open": false,
+    "mcb_close": false,
+    "gcb_open": false,
+    "gcb_close": false,
+    "paralleling": false
+  },
+  "validatedTelemetry": [
+    "voltage_l1",
+    "voltage_l2",
+    "voltage_l3",
+    "voltage_l1_l2",
+    "voltage_l2_l3",
+    "voltage_l3_l1",
+    "current_l1",
+    "current_l2",
+    "current_l3",
+    "rpm",
+    "frequency",
+    "power_kw",
+    "power_kvar",
+    "power_factor",
+    "battery_voltage",
+    "alternator_voltage",
+    "gcb_closed",
+    "mcb_closed",
+    "engine_state_raw",
+    "breaker_state_raw",
+    "controller_mode_raw",
+    "run_hours",
+    "maintenance_hours",
+    "number_starts",
+    "genset_kwh",
+    "nominal_power_kw",
+    "nominal_current",
+    "nominal_voltage",
+    "total_fuel_consumption"
+  ],
+  "documentedTelemetry": [
+    "voltage_l1",
+    "voltage_l2",
+    "voltage_l3",
+    "voltage_l1_l2",
+    "voltage_l2_l3",
+    "voltage_l3_l1",
+    "current_l1",
+    "current_l2",
+    "current_l3",
+    "rpm",
+    "frequency",
+    "power_kw",
+    "power_kvar",
+    "power_factor",
+    "battery_voltage",
+    "alternator_voltage",
+    "gcb_closed",
+    "mcb_closed",
+    "engine_state_raw",
+    "breaker_state_raw",
+    "controller_mode_raw",
+    "run_hours",
+    "maintenance_hours",
+    "number_starts",
+    "genset_kwh",
+    "nominal_power_kw",
+    "nominal_current",
+    "nominal_voltage",
+    "total_fuel_consumption"
+  ],
+  "metricUnits": {
+    "voltage_l1": "V",
+    "voltage_l2": "V",
+    "voltage_l3": "V",
+    "voltage_l1_l2": "V",
+    "voltage_l2_l3": "V",
+    "voltage_l3_l1": "V",
+    "current_l1": "A",
+    "current_l2": "A",
+    "current_l3": "A",
+    "rpm": "rpm",
+    "frequency": "Hz",
+    "power_kw": "kW",
+    "power_kvar": "kVAr",
+    "battery_voltage": "V",
+    "alternator_voltage": "V",
+    "run_hours": "h",
+    "maintenance_hours": "h",
+    "genset_kwh": "kWh",
+    "nominal_power_kw": "kW",
+    "nominal_current": "A",
+    "nominal_voltage": "V",
+    "total_fuel_consumption": "L"
+  },
+  "metricLimits": {
+    "rpm": {
+      "displayMin": 0,
+      "displayMax": 3000
+    },
+    "battery_voltage": {
+      "displayMin": 0,
+      "displayMax": 36
+    }
+  },
+  "mapping": {
+    "kind": "modbus_register_export",
+    "readOnly": true,
+    "sourceFile": "modbus/validated-map.txt",
+    "sourceSha256": "61f67f1643f70c9eb80b7f29a2a979bdfe66f3cb829db0712fcfbba9c197b8bd",
+    "registers": {
+      "voltage_l1": {
+        "address": 7,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1,
+        "sourceName": "Gen V L1-N",
+        "object": 8192,
+        "unit": "V"
+      },
+      "voltage_l2": {
+        "address": 8,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1,
+        "sourceName": "Gen V L2-N",
+        "object": 8193,
+        "unit": "V"
+      },
+      "voltage_l3": {
+        "address": 9,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1,
+        "sourceName": "Gen V L3-N",
+        "object": 8194,
+        "unit": "V"
+      },
+      "voltage_l1_l2": {
+        "address": 12,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1,
+        "sourceName": "Gen V L1-L2",
+        "object": 9628,
+        "unit": "V"
+      },
+      "voltage_l2_l3": {
+        "address": 13,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1,
+        "sourceName": "Gen V L2-L3",
+        "object": 9629,
+        "unit": "V"
+      },
+      "voltage_l3_l1": {
+        "address": 14,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1,
+        "sourceName": "Gen V L3-L1",
+        "object": 9630,
+        "unit": "V"
+      },
+      "current_l1": {
+        "address": 15,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1,
+        "sourceName": "Gen A L1",
+        "object": 8198,
+        "unit": "A"
+      },
+      "current_l2": {
+        "address": 16,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1,
+        "sourceName": "Gen A L2",
+        "object": 8199,
+        "unit": "A"
+      },
+      "current_l3": {
+        "address": 17,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1,
+        "sourceName": "Gen A L3",
+        "object": 8200,
+        "unit": "A"
+      },
+      "rpm": {
+        "address": 19,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1,
+        "sourceName": "RPM",
+        "object": 8209,
+        "unit": "rpm",
+        "validMin": 0,
+        "validMax": 4000
+      },
+      "frequency": {
+        "address": 20,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 0.1,
+        "sourceName": "Gen Freq",
+        "object": 8210,
+        "unit": "Hz",
+        "validMin": 0,
+        "validMax": 100
+      },
+      "power_kw": {
+        "address": 26,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1,
+        "sourceName": "Gen kW",
+        "object": 8202,
+        "unit": "kW"
+      },
+      "power_kvar": {
+        "address": 30,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1,
+        "sourceName": "Gen kVAr",
+        "object": 8203,
+        "unit": "kVAr"
+      },
+      "power_factor": {
+        "address": 34,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 0.01,
+        "sourceName": "Gen PF",
+        "object": 8204,
+        "validMin": -1,
+        "validMax": 1
+      },
+      "battery_voltage": {
+        "address": 57,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 0.1,
+        "sourceName": "Battery Volts",
+        "object": 8213,
+        "unit": "V",
+        "validMin": 0,
+        "validMax": 36
+      },
+      "alternator_voltage": {
+        "address": 59,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 0.1,
+        "sourceName": "D+",
+        "object": 10603,
+        "unit": "V",
+        "validMin": 0,
+        "validMax": 36
+      },
+      "gcb_closed": {
+        "address": 71,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1,
+        "sourceName": "Led GCB Green",
+        "object": 8316,
+        "validMin": 0,
+        "validMax": 1
+      },
+      "mcb_closed": {
+        "address": 72,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1,
+        "sourceName": "Led MCB Green",
+        "object": 8318,
+        "validMin": 0,
+        "validMax": 1
+      },
+      "engine_state_raw": {
+        "address": 79,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1,
+        "sourceName": "Engine State",
+        "object": 8330
+      },
+      "breaker_state_raw": {
+        "address": 80,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1,
+        "sourceName": "Breaker State",
+        "object": 8455
+      },
+      "controller_mode_raw": {
+        "address": 89,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1,
+        "sourceName": "ControllerMode",
+        "object": 9651,
+        "validMin": 0,
+        "validMax": 3
+      },
+      "run_hours": {
+        "address": 3000,
+        "count": 2,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1,
+        "sourceName": "Run Hours",
+        "object": 8206,
+        "unit": "h",
+        "validMin": 0
+      },
+      "maintenance_hours": {
+        "address": 3003,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1,
+        "sourceName": "Maintenance",
+        "object": 9648,
+        "unit": "h",
+        "validMin": 0
+      },
+      "number_starts": {
+        "address": 3004,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1,
+        "sourceName": "Num Starts",
+        "object": 8207,
+        "validMin": 0
+      },
+      "genset_kwh": {
+        "address": 3005,
+        "count": 2,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1,
+        "sourceName": "Energy kWh",
+        "object": 8205,
+        "unit": "kWh",
+        "validMin": 0
+      },
+      "nominal_power_kw": {
+        "address": 3024,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1,
+        "sourceName": "Nominal Power",
+        "object": 8276,
+        "unit": "kW",
+        "validMin": 1,
+        "validMax": 32000
+      },
+      "nominal_current": {
+        "address": 3025,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1,
+        "sourceName": "Nomin Current",
+        "object": 8275,
+        "unit": "A",
+        "validMin": 1,
+        "validMax": 10000
+      },
+      "nominal_voltage": {
+        "address": 3031,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1,
+        "sourceName": "Nominal Volts",
+        "object": 8277,
+        "unit": "V",
+        "validMin": 80,
+        "validMax": 20000
+      },
+      "total_fuel_consumption": {
+        "address": 3278,
+        "count": 2,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1,
+        "sourceName": "TotFuelConsum",
+        "object": 9040,
+        "unit": "L",
+        "validMin": 0
+      }
+    }
+  },
+  "rapid": {
+    "template": "rapid/templates/DrvModbus_RC_ICNT.xml",
+    "driver": "DrvModbus",
+    "channels": [
+      {
+        "key": "voltage_l1",
+        "tagCode": "voltage_l1",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l2",
+        "tagCode": "voltage_l2",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l3",
+        "tagCode": "voltage_l3",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l1_l2",
+        "tagCode": "voltage_l1_l2",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l2_l3",
+        "tagCode": "voltage_l2_l3",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l3_l1",
+        "tagCode": "voltage_l3_l1",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "current_l1",
+        "tagCode": "current_l1",
+        "scale": 1,
+        "unit": "A"
+      },
+      {
+        "key": "current_l2",
+        "tagCode": "current_l2",
+        "scale": 1,
+        "unit": "A"
+      },
+      {
+        "key": "current_l3",
+        "tagCode": "current_l3",
+        "scale": 1,
+        "unit": "A"
+      },
+      {
+        "key": "rpm",
+        "tagCode": "rpm",
+        "scale": 1,
+        "unit": "rpm"
+      },
+      {
+        "key": "frequency",
+        "tagCode": "frequency_raw",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      {
+        "key": "power_kw",
+        "tagCode": "power_kw",
+        "scale": 1,
+        "unit": "kW"
+      },
+      {
+        "key": "power_kvar",
+        "tagCode": "power_kvar",
+        "scale": 1,
+        "unit": "kVAr"
+      },
+      {
+        "key": "power_factor",
+        "tagCode": "power_factor_raw",
+        "scale": 0.01
+      },
+      {
+        "key": "battery_voltage",
+        "tagCode": "battery_voltage_raw",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "alternator_voltage",
+        "tagCode": "alternator_voltage_raw",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "gcb_closed",
+        "tagCode": "gcb_closed",
+        "scale": 1
+      },
+      {
+        "key": "mcb_closed",
+        "tagCode": "mcb_closed",
+        "scale": 1
+      },
+      {
+        "key": "engine_state_raw",
+        "tagCode": "engine_state_raw",
+        "scale": 1
+      },
+      {
+        "key": "breaker_state_raw",
+        "tagCode": "breaker_state_raw",
+        "scale": 1
+      },
+      {
+        "key": "controller_mode_raw",
+        "tagCode": "controller_mode_raw",
+        "scale": 1
+      },
+      {
+        "key": "run_hours",
+        "tagCode": "run_hours",
+        "scale": 1,
+        "unit": "h"
+      },
+      {
+        "key": "maintenance_hours",
+        "tagCode": "maintenance_hours",
+        "scale": 1,
+        "unit": "h"
+      },
+      {
+        "key": "number_starts",
+        "tagCode": "number_starts",
+        "scale": 1
+      },
+      {
+        "key": "genset_kwh",
+        "tagCode": "genset_kwh",
+        "scale": 1,
+        "unit": "kWh"
+      },
+      {
+        "key": "nominal_power_kw",
+        "tagCode": "nominal_power_kw",
+        "scale": 1,
+        "unit": "kW"
+      },
+      {
+        "key": "nominal_current",
+        "tagCode": "nominal_current",
+        "scale": 1,
+        "unit": "A"
+      },
+      {
+        "key": "nominal_voltage",
+        "tagCode": "nominal_voltage",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "total_fuel_consumption",
+        "tagCode": "total_fuel_consumption",
+        "scale": 1,
+        "unit": "L"
+      }
+    ]
+  },
+  "validation": {
+    "documentation": [
+      "IC-NT modbus.TXT fornecido pelo operador; subset normalizado retido em modbus/validated-map.txt."
+    ],
+    "lab": true,
+    "field": true,
+    "fieldReference": "G-132 / reverse TCP 15001 / Unit 1 / 57600 8N1. FC03 validou o mapa zero-based em 2026-10-02: bateria 11.9 V, FW Branch 1, FW Version 2.5, Engine State 25, Breaker State 42, Run Hours raw 0/746, Maintenance 467 h, Num Starts 416, Nominal Power 268 kW, Nominal Current 443 A e Nominal Voltage 255 V.",
+    "commandSafety": "Perfil estritamente somente leitura. Nenhum START/STOP/AUTO/MANUAL/TEST/MCB/GCB/paralelismo homologado ou materializado."
+  },
+  "notes": "Endereços 4xxxx do export foram convertidos para offset zero-based Modbus: 40020 -> 19. No Modem01, o PUSR USR-G806s entrega Modbus TCP à bridge; serial de campo informada e validada em 57600/8N1.",
+  "commands": {}
+}
