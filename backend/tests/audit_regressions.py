@@ -444,7 +444,7 @@ try:
             {
                 "id": "fw-no-pack",
                 "tag": "FW-NOPACK",
-                "controller_model": "InteliCompact NT",
+                "controller_model": "Controller Sem Pack",
                 "enabled": True,
                 "site": "Usina",
                 "customer": "Cliente",
