@@ -128,10 +128,6 @@ function CompactKwGauge({
           groupClassName="compact-kw-pointer"
           pointerClassName="compact-kw-needle"
           hubClassName="compact-kw-hub"
-          tipInset={6}
-          baseOffset={6}
-          halfWidth={3}
-          hubRadius={3.5}
         />
         <text x={cx} y={cy - 14} textAnchor="middle" className="compact-kw-unit">
           KW
