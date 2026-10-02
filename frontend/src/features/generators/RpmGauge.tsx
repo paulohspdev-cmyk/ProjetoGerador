@@ -1,3 +1,5 @@
+import { GaugeNeedle } from "./GaugeNeedle";
+
 type Props = { value: number | null; max?: number | null };
 
 export function RpmGauge({ value, max = null }: Props) {
@@ -51,15 +53,16 @@ export function RpmGauge({ value, max = null }: Props) {
       <text x={cx} y={cy - 18} textAnchor="middle" className="rpm-unit">
         ×1000
       </text>
-      {known && hasScale ? (
-        <g className="needle" transform={`rotate(${angle} ${cx} ${cy})`}>
-          <path
-            className="rpm-needle-floating"
-            d={`M${cx} ${cy - r + 12} L${cx + 5} ${cy - 14} L${cx - 5} ${cy - 14} Z`}
-          />
-        </g>
-      ) : null}
-      <circle cx={cx} cy={cy} r="6" className="rpm-gauge-hub" />
+      <GaugeNeedle
+        cx={cx}
+        cy={cy}
+        radius={r}
+        angle={angle}
+        showPointer={known && hasScale}
+        groupClassName="needle"
+        pointerClassName="rpm-needle-floating"
+        hubClassName="rpm-gauge-hub"
+      />
       <text x={cx} y={cy + 48} textAnchor="middle" className="rpm-percent">
         {known ? Math.round(safeValue) : "—"}
       </text>
