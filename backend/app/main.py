@@ -369,10 +369,20 @@ def generator_get(generator_id: str, user: dict = Depends(require_view)):
 @app.post("/api/generators", status_code=status.HTTP_201_CREATED)
 def generator_create(payload: GeneratorCreate, user: dict = Depends(require_create)):
     record = payload.to_db()
+    actor_name = actor(user)
     approved_modem = None
     if record.get("transport") == "reverse_tcp":
         try:
-            approved_modem = _approved_modem_for_reverse_port(record.get("listen_port") or 0)
+            if payload.modemId:
+                approved_modem = platform_store.require_approved_inventory_modem(payload.modemId)
+                metadata = approved_modem.get("metadata") or {}
+                admission_port = int(
+                    metadata.get("admissionPort") or approved_modem.get("listen_port") or 0
+                )
+                if admission_port != int(record.get("listen_port") or 0):
+                    raise ValueError("Modem aprovado não pertence à porta reverse TCP informada")
+            else:
+                approved_modem = _approved_modem_for_reverse_port(record.get("listen_port") or 0)
         except ValueError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
         if not approved_modem:
@@ -383,28 +393,35 @@ def generator_create(payload: GeneratorCreate, user: dict = Depends(require_crea
                     f"Nenhum modem aprovado está associado à porta TCP {record.get('listen_port')}."
                 ),
             )
+    elif record.get("transport") in {"modbus_tcp_direct", "rtu_over_tcp"}:
+        try:
+            approved_modem = platform_store.require_approved_inventory_modem(payload.modemId)
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+
     try:
-        created = db.create_generator(record, actor=actor(user))
+        created = db.create_generator(record, actor=actor_name)
+        if approved_modem:
+            platform_store.link_modem_to_generator(approved_modem["id"], created["id"], actor_name)
     except sqlite3.IntegrityError as exc:
         raise HTTPException(status_code=409, detail=_generator_integrity_detail(exc)) from exc
     except ValueError as exc:
+        if "created" in locals() and created:
+            db.delete_generator(created["id"], actor=actor_name)
+            domain_store.remove_legacy_generator(created["id"])
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-    if approved_modem:
-        db.add_audit(
-            actor(user),
-            "link_candidate",
-            "modem",
-            approved_modem["id"],
-            f"generator={created['id']};port={record.get('listen_port')}",
-        )
+
     domain_store.sync_legacy_generators()
     return overlay_generators([created])[0]
 
 
 @app.patch("/api/generators/{generator_id}")
 def generator_update(generator_id: str, payload: GeneratorUpdate, user: dict = Depends(require_edit)):
+    actor_name = actor(user)
     try:
-        updated = db.update_generator(generator_id, payload.to_db(), actor=actor(user))
+        updated = db.update_generator(generator_id, payload.to_db(), actor=actor_name)
+        if updated and payload.modemId:
+            platform_store.link_modem_to_generator(payload.modemId, updated["id"], actor_name)
     except sqlite3.IntegrityError as exc:
         raise HTTPException(status_code=409, detail=_generator_integrity_detail(exc)) from exc
     except ValueError as exc:
