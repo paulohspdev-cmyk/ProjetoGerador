@@ -373,11 +373,16 @@ def generator_create(payload: GeneratorCreate, user: dict = Depends(require_crea
     approved_modem = None
     if record.get("transport") == "reverse_tcp":
         try:
-            approved_modem = (
-                platform_store.require_approved_modem(payload.modemId, record.get("listen_port") or 0)
-                if payload.modemId
-                else _approved_modem_for_reverse_port(record.get("listen_port") or 0)
-            )
+            if payload.modemId:
+                approved_modem = platform_store.require_approved_inventory_modem(payload.modemId)
+                metadata = approved_modem.get("metadata") or {}
+                admission_port = int(
+                    metadata.get("admissionPort") or approved_modem.get("listen_port") or 0
+                )
+                if admission_port != int(record.get("listen_port") or 0):
+                    raise ValueError("Modem aprovado não pertence à porta reverse TCP informada")
+            else:
+                approved_modem = _approved_modem_for_reverse_port(record.get("listen_port") or 0)
         except ValueError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
         if not approved_modem:
