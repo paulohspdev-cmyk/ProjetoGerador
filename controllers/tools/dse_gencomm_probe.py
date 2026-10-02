@@ -136,6 +136,43 @@ def u16(value: int) -> int | None:
     return None if 0xFFF8 <= value <= 0xFFFF else value
 
 
+def binary_status(value: int) -> bool | None:
+    parsed = u16(value)
+    return bool(parsed) if parsed in (0, 1) else None
+
+
+DSE61XX_MKII_NAMED_ALARMS = {
+    1: ("Emergency stop", "Low oil pressure", "High coolant temperature", "Low coolant temperature"),
+    2: ("Under speed", "Over speed", "Generator under frequency", "Generator over frequency"),
+    3: ("Generator low voltage", "Generator high voltage", "Battery low voltage", "Battery high voltage"),
+    4: ("Charge alternator failure", "Fail to start", "Fail to stop", "Generator fail to close"),
+    5: ("Mains fail to close", "Oil pressure sender fault", "Loss of magnetic pickup", "Magnetic pickup open circuit"),
+    6: ("Generator high current", "Calibration lost", "Low fuel level", "CAN ECU Warning"),
+    7: ("CAN ECU Shutdown", "CAN ECU Data fail", "Low oil level switch", "High temperature switch"),
+    8: ("Low fuel level switch", "Expansion unit watchdog alarm", "kW overload alarm", "Negative phase sequence current alarm"),
+    9: ("Earth fault trip alarm", "Generator phase rotation alarm", "Auto Voltage Sense Fail", "Maintenance alarm"),
+    10: ("Loading frequency alarm", "Loading voltage alarm", "Fuel usage running", "Fuel usage stopped"),
+    11: ("Protections disabled", "Protections blocked", "Generator Short Circuit", "Mains High Current"),
+    12: ("Mains Earth Fault", "Mains Short Circuit", "ECU protect", "ECU Malfunction"),
+    13: ("ECU Information", "ECU Shutdown", "ECU Warning", "ECU Electrical Trip"),
+    14: ("ECU After treatment", "ECU Water In Fuel", "Generator Reverse Power", "Generator Positive VAr"),
+    15: ("Generator Negative VAr", "LCD Heater Low Voltage", "LCD Heater High Voltage", "DEF Level Low"),
+}
+
+ALARM_CONDITIONS = {
+    0: "disabled",
+    1: "inactive",
+    2: "warning",
+    3: "shutdown",
+    4: "electrical_trip",
+    5: "controlled_shutdown",
+    8: "inactive_indication",
+    9: "inactive_indication_text",
+    10: "active_indication",
+    15: "unimplemented",
+}
+
+
 def decode(args: argparse.Namespace) -> dict:
     cls = TcpClient if args.transport == "modbus_tcp" else Client
     client = cls(args.host, args.port, args.unit, args.transport, args.timeout)
@@ -147,7 +184,8 @@ def decode(args: argparse.Namespace) -> dict:
         ("engine", 1024, 35),
         ("accumulated", 1794, 16),
         ("control_support", 4096, 8),
-        ("led_feedback", 48654, 8),
+        ("named_alarms", 39424, 16),
+        ("led_feedback_6xxx", 48640, 22),
     ):
         try:
             blocks[name] = client.read_holding(address, count)
@@ -158,7 +196,8 @@ def decode(args: argparse.Namespace) -> dict:
     identity = blocks.get("identity", [])
     engine = blocks.get("engine", [])
     accumulated = blocks.get("accumulated", [])
-    leds = blocks.get("led_feedback", [])
+    named_alarms = blocks.get("named_alarms", [])
+    leds_6xxx = blocks.get("led_feedback_6xxx", [])
     result: dict = {
         "target": {"host": args.host, "port": args.port, "unit": args.unit, "transport": args.transport},
         "readOnly": True,
@@ -167,6 +206,7 @@ def decode(args: argparse.Namespace) -> dict:
         "identity": {},
         "telemetry": {},
         "feedback": {},
+        "alarms": {},
         "controlSupportWords": blocks.get("control_support"),
     }
     if len(identity) == 7:
@@ -207,14 +247,40 @@ def decode(args: argparse.Namespace) -> dict:
                 "numberStarts": starts,
             }
         )
-    if len(leds) == 8:
+    model_number = result["identity"].get("modelNumber")
+    if model_number == 32807 and len(leds_6xxx) == 22:
         result["feedback"] = {
-            "stopLed": bool(leds[0]),
-            "manualLed": bool(leds[1]),
-            "testLed": bool(leds[2]),
-            "autoLed": bool(leds[3]),
-            "gcbClosedLed": bool(leds[6]),
-            "engineRunningLed": bool(leds[7]),
+            "mapping": "6xxx-family-page-190",
+            "stopLed": binary_status(leds_6xxx[8]),
+            "manualLed": binary_status(leds_6xxx[9]),
+            "testLed": binary_status(leds_6xxx[10]),
+            "autoLed": binary_status(leds_6xxx[11]),
+            "mainsAvailableLed": binary_status(leds_6xxx[12]),
+            "mcbClosedLed": binary_status(leds_6xxx[13]),
+            "gcbClosedLed": binary_status(leds_6xxx[14]),
+            "generatorAvailableLed": binary_status(leds_6xxx[15]),
+        }
+
+    if model_number == 32807 and len(named_alarms) == 16:
+        active = []
+        for offset in range(1, 16):
+            labels = DSE61XX_MKII_NAMED_ALARMS[offset]
+            word = named_alarms[offset]
+            states = ((word >> 12) & 0xF, (word >> 8) & 0xF, (word >> 4) & 0xF, word & 0xF)
+            for label, state in zip(labels, states):
+                if state in {2, 3, 4, 5, 10}:
+                    active.append(
+                        {
+                            "registerOffset": offset,
+                            "name": label,
+                            "conditionCode": state,
+                            "condition": ALARM_CONDITIONS.get(state, str(state)),
+                        }
+                    )
+        result["alarms"] = {
+            "mapping": "61xx-mkii-page-154",
+            "namedAlarmCount": u16(named_alarms[0]),
+            "activeNamedAlarms": active,
         }
     return result
 
