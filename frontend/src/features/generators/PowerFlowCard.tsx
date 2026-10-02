@@ -48,6 +48,51 @@ function controllerVendor(gen: Generator) {
   return "generic";
 }
 
+function dseStatusAlarmRows(gen: Generator): GeneratorAlarmRow[] {
+  if (controllerVendor(gen) !== "dse") return [];
+  const raw = metricNumber(gen, "controller_status_flags_raw", undefined);
+  if (raw == null || !Number.isFinite(raw)) return [];
+  const flags = Math.trunc(raw);
+  const rows: GeneratorAlarmRow[] = [];
+  const definitions = [
+    {
+      mask: 0x2000,
+      severity: "fault",
+      message: "DSE Control Unit Failure ativo; causa individual não disponível neste canal GenComm",
+      code: "0x2000",
+    },
+    {
+      mask: 0x1000,
+      severity: "fault",
+      message: "DSE Shutdown ativo; causa individual não disponível neste canal GenComm",
+      code: "0x1000",
+    },
+    {
+      mask: 0x0800,
+      severity: "alarm",
+      message: "DSE Electrical Trip ativo; causa individual não disponível neste canal GenComm",
+      code: "0x0800",
+    },
+    {
+      mask: 0x0400,
+      severity: "warning",
+      message: "DSE Warning ativo; causa individual não disponível neste canal GenComm",
+      code: "0x0400",
+    },
+  ] as const;
+  for (const definition of definitions) {
+    if (flags & definition.mask) {
+      rows.push({
+        key: `${gen.id}-dse-${definition.code}`,
+        severity: definition.severity,
+        message: definition.message,
+        code: definition.code,
+      });
+    }
+  }
+  return rows;
+}
+
 function alarmsForGenerator(gen: Generator, all: IndustrialAlarm[]): GeneratorAlarmRow[] {
   const matched = all
     .filter(
@@ -78,7 +123,9 @@ function alarmsForGenerator(gen: Generator, all: IndustrialAlarm[]): GeneratorAl
       code: "STALE",
     });
   }
-  if (gen.status === "alerta" || (gen.alarms ?? 0) > 0) {
+  const dseRows = dseStatusAlarmRows(gen);
+  rows.push(...dseRows);
+  if ((gen.status === "alerta" || (gen.alarms ?? 0) > 0) && !dseRows.length) {
     rows.push({
       key: `${gen.id}-alert`,
       severity: "alarm",
