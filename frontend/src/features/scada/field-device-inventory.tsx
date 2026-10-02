@@ -58,7 +58,7 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
           rcApi.system.bridgePeers(200),
         ]);
         setRows(deviceRows);
-        setPeers(peerRows.filter((peer) => String(peer.lastReason || "").startsWith("admission_")));
+        setPeers(peerRows);
       } else {
         setRows(await rcApi.fieldDevices.list(kind));
         setPeers([]);
@@ -76,23 +76,27 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
     return () => window.clearInterval(timer);
   }, [admin, kind, load]);
 
-  const registeredAdmissionKeys = useMemo(() => {
-    const keys = new Set<string>();
+  const registeredAdmissionPorts = useMemo(() => {
+    const ports = new Set<number>();
     for (const row of rows) {
       const port = metadataNumber(row.metadata, "admissionPort");
-      const ip = metadataText(row.metadata, "admissionIp");
-      if (port && ip) keys.add(admissionKey(port, ip));
+      if (port) ports.add(port);
     }
-    return keys;
+    return ports;
   }, [rows]);
 
-  const pendingPeers = useMemo(
-    () =>
-      peers.filter(
-        (peer) => !registeredAdmissionKeys.has(admissionKey(peer.remotePort, peer.remoteIp)),
-      ),
-    [peers, registeredAdmissionKeys],
-  );
+  const pendingPeers = useMemo(() => {
+    const latestAcceptedByPort = new Map<number, BridgePeerObservation>();
+    for (const peer of peers) {
+      if (registeredAdmissionPorts.has(peer.remotePort)) continue;
+      if (!peer.lastAcceptedAt || Number(peer.acceptedCount || 0) <= 0) continue;
+      const current = latestAcceptedByPort.get(peer.remotePort);
+      if (!current || Number(peer.lastAcceptedAt) > Number(current.lastAcceptedAt || 0)) {
+        latestAcceptedByPort.set(peer.remotePort, peer);
+      }
+    }
+    return [...latestAcceptedByPort.values()];
+  }, [peers, registeredAdmissionPorts]);
   const pendingRows = useMemo(
     () =>
       pendingPeers.map((peer) => ({
