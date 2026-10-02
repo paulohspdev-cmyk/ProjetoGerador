@@ -1,0 +1,12 @@
+19 8209 RPM
+20 8210 Gen Freq
+26 8202 Gen kW
+57 8213 Battery Volts
+79 8330 Engine State
+80 8455 Breaker State
+89 9651 ControllerMode
+3000 8206 Run Hours
+3004 8207 Num Starts
+3024 8276 Nominal Power
+3025 8275 Nomin Current
+3031 8277 Nominal Volts

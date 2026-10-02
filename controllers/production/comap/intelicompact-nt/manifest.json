@@ -1,0 +1,333 @@
+{
+  "schema": 4,
+  "manufacturer": "ComAp",
+  "family": "InteliCompact",
+  "model": "InteliCompact NT",
+  "aliases": [
+    "ComAp InteliCompact NT",
+    "IC-NT"
+  ],
+  "status": "field_validated",
+  "application": "genset",
+  "category": "single_genset",
+  "firmware": {
+    "tested": [
+      "branch-1/version-2.5"
+    ],
+    "minimum": null,
+    "maximum": null,
+    "notes": "G-132 Unit 1: FW Branch 1 / FW Version 2.5 lidos por FC03 em 2026-10-02."
+  },
+  "protocols": [
+    "modbus"
+  ],
+  "transports": [
+    "reverse_tcp",
+    "rtu_over_tcp",
+    "modbus_rtu_serial"
+  ],
+  "defaults": {
+    "batteryNominalVoltage": 12,
+    "modbusUnit": null,
+    "tcpPort": 502
+  },
+  "capabilities": {
+    "telemetry": true,
+    "start": false,
+    "stop": false,
+    "off": false,
+    "auto": false,
+    "manual": false,
+    "test": false,
+    "mcb_open": false,
+    "mcb_close": false,
+    "gcb_open": false,
+    "gcb_close": false,
+    "paralleling": false
+  },
+  "validatedTelemetry": [
+    "rpm",
+    "frequency",
+    "power_kw",
+    "battery_voltage",
+    "engine_state_raw",
+    "breaker_state_raw",
+    "controller_mode_raw",
+    "run_hours",
+    "number_starts",
+    "nominal_power_kw",
+    "nominal_current",
+    "nominal_voltage"
+  ],
+  "documentedTelemetry": [
+    "rpm",
+    "frequency",
+    "power_kw",
+    "battery_voltage",
+    "engine_state_raw",
+    "breaker_state_raw",
+    "controller_mode_raw",
+    "run_hours",
+    "number_starts",
+    "nominal_power_kw",
+    "nominal_current",
+    "nominal_voltage"
+  ],
+  "metricUnits": {
+    "rpm": "rpm",
+    "frequency": "Hz",
+    "power_kw": "kW",
+    "battery_voltage": "V",
+    "run_hours": "h",
+    "nominal_power_kw": "kW",
+    "nominal_current": "A",
+    "nominal_voltage": "V"
+  },
+  "metricLimits": {
+    "rpm": {
+      "displayMin": 0,
+      "displayMax": 3000
+    },
+    "battery_voltage": {
+      "displayMin": 0,
+      "displayMax": 36
+    }
+  },
+  "mapping": {
+    "kind": "modbus_register_export",
+    "readOnly": true,
+    "sourceFile": "modbus/validated-map.txt",
+    "sourceSha256": "daad17bfdc5f77fe461091b266e11135cc1c775db7cd589d1d60acec191f2440",
+    "registers": {
+      "rpm": {
+        "address": 19,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "RPM",
+        "object": 8209,
+        "unit": "rpm",
+        "validMin": 0,
+        "validMax": 4000
+      },
+      "frequency": {
+        "address": 20,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 0.1,
+        "sourceName": "Gen Freq",
+        "object": 8210,
+        "unit": "Hz",
+        "validMin": 0,
+        "validMax": 100
+      },
+      "power_kw": {
+        "address": 26,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Gen kW",
+        "object": 8202,
+        "unit": "kW"
+      },
+      "battery_voltage": {
+        "address": 57,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 0.1,
+        "sourceName": "Battery Volts",
+        "object": 8213,
+        "unit": "V",
+        "validMin": 0,
+        "validMax": 36
+      },
+      "engine_state_raw": {
+        "address": 79,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Engine State",
+        "object": 8330
+      },
+      "breaker_state_raw": {
+        "address": 80,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Breaker State",
+        "object": 8455
+      },
+      "controller_mode_raw": {
+        "address": 89,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "ControllerMode",
+        "object": 9651,
+        "validMin": 0,
+        "validMax": 3
+      },
+      "run_hours": {
+        "address": 3000,
+        "count": 2,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Run Hours",
+        "object": 8206,
+        "unit": "h",
+        "validMin": 0
+      },
+      "number_starts": {
+        "address": 3004,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Num Starts",
+        "object": 8207,
+        "validMin": 0
+      },
+      "nominal_power_kw": {
+        "address": 3024,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Nominal Power",
+        "object": 8276,
+        "unit": "kW",
+        "validMin": 1,
+        "validMax": 32000
+      },
+      "nominal_current": {
+        "address": 3025,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Nomin Current",
+        "object": 8275,
+        "unit": "A",
+        "validMin": 1,
+        "validMax": 10000
+      },
+      "nominal_voltage": {
+        "address": 3031,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Nominal Volts",
+        "object": 8277,
+        "unit": "V",
+        "validMin": 80,
+        "validMax": 20000
+      }
+    }
+  },
+  "rapid": {
+    "template": "rapid/templates/DrvModbus_RC_ICNT.xml",
+    "driver": "DrvModbus",
+    "channels": [
+      {
+        "key": "rpm",
+        "tagCode": "rpm",
+        "scale": 1.0,
+        "unit": "rpm"
+      },
+      {
+        "key": "frequency",
+        "tagCode": "frequency_raw",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      {
+        "key": "power_kw",
+        "tagCode": "power_kw",
+        "scale": 1.0,
+        "unit": "kW"
+      },
+      {
+        "key": "battery_voltage",
+        "tagCode": "battery_voltage_raw",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "engine_state_raw",
+        "tagCode": "engine_state_raw",
+        "scale": 1.0
+      },
+      {
+        "key": "breaker_state_raw",
+        "tagCode": "breaker_state_raw",
+        "scale": 1.0
+      },
+      {
+        "key": "controller_mode_raw",
+        "tagCode": "controller_mode_raw",
+        "scale": 1.0
+      },
+      {
+        "key": "run_hours",
+        "tagCode": "run_hours",
+        "scale": 1.0,
+        "unit": "h"
+      },
+      {
+        "key": "number_starts",
+        "tagCode": "number_starts",
+        "scale": 1.0
+      },
+      {
+        "key": "nominal_power_kw",
+        "tagCode": "nominal_power_kw",
+        "scale": 1.0,
+        "unit": "kW"
+      },
+      {
+        "key": "nominal_current",
+        "tagCode": "nominal_current",
+        "scale": 1.0,
+        "unit": "A"
+      },
+      {
+        "key": "nominal_voltage",
+        "tagCode": "nominal_voltage",
+        "scale": 1.0,
+        "unit": "V"
+      }
+    ]
+  },
+  "validation": {
+    "documentation": [
+      "IC-NT modbus.TXT fornecido pelo operador; subset retido em modbus/validated-map.txt."
+    ],
+    "lab": true,
+    "field": true,
+    "fieldReference": "G-132 / reverse TCP 15001 / Unit 1 / 57600 8N1. FC03 validou bateria=11.9 V, RPM=0, frequência=0, kW=0, Engine State=25, Breaker State=42, ControllerMode=0 e parâmetros nominais em 2026-10-02.",
+    "commandSafety": "Somente leitura. Nenhum comando industrial homologado ou materializado."
+  },
+  "notes": "Export 4xxxx é usado pelo template com offset zero-based. G-132 respondeu em campo no Unit 1.",
+  "commands": {}
+}
