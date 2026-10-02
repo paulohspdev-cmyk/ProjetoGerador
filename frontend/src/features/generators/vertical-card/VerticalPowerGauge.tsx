@@ -1,3 +1,5 @@
+import { GaugeNeedle } from "../GaugeNeedle";
+
 export function VerticalPowerGauge({
   powerKw,
   nominalKw,
@@ -87,15 +89,16 @@ export function VerticalPowerGauge({
           <text x={cx + r} y={cy + 28} textAnchor="middle" className="vref-gauge-scale">
             {maxLabel}
           </text>
-          {hasPower && effectiveMax != null ? (
-            <g className="vref-kw-needle" transform={`rotate(${angle} ${cx} ${cy})`}>
-              <path
-                className="vref-kw-needle-floating"
-                d={`M${cx} ${cy - r + 12} L${cx + 5} ${cy - 14} L${cx - 5} ${cy - 14} Z`}
-              />
-            </g>
-          ) : null}
-          <circle cx={cx} cy={cy} r="6" className="vref-gauge-hub" />
+          <GaugeNeedle
+            cx={cx}
+            cy={cy}
+            radius={r}
+            angle={angle}
+            showPointer={hasPower && effectiveMax != null}
+            groupClassName="vref-kw-needle"
+            pointerClassName="vref-kw-needle-floating"
+            hubClassName="vref-gauge-hub"
+          />
           <text x={cx} y={cy - 18} textAnchor="middle" className="vref-kw-unit">
             KW
           </text>
