@@ -17,7 +17,6 @@ import { connectionOptions, GeneratorConnectionFields } from "./GeneratorConnect
 import { GeneratorEquipmentFields, type CatalogController } from "./GeneratorEquipmentFields";
 import {
   approvedModems as selectApprovedModems,
-  markModemLinked,
   modemAdmissionPort,
 } from "./generator-modem-onboarding";
 import { useGenerators } from "./GeneratorsProvider";
@@ -159,17 +158,17 @@ export function RegisterGeneratorButton({
   );
   const canContinueStep1 = Boolean(site.trim() && controller && selectedController);
   const canContinueStep2 =
-    transport === "reverse_tcp"
-      ? Boolean(selectedModem && effectivePort > 0)
-      : isSerial
-        ? Boolean(
-            host.trim() &&
-            Number.isInteger(effectiveBaud) &&
-            effectiveBaud > 0 &&
-            parity &&
-            stopBits,
-          )
-        : Boolean(host.trim() && effectivePort > 0);
+    isSerial
+      ? Boolean(
+          host.trim() &&
+          Number.isInteger(effectiveBaud) &&
+          effectiveBaud > 0 &&
+          parity &&
+          stopBits,
+        )
+      : transport === "reverse_tcp"
+        ? Boolean(selectedModem && effectivePort > 0)
+        : Boolean(selectedModem && host.trim() && effectivePort > 0);
 
   const applyTransportConfig = async (generatorId: string) => {
     if (!isSerial) return;
@@ -208,7 +207,7 @@ export function RegisterGeneratorButton({
       setError("Escolha a unidade e a controladora.");
       return;
     }
-    if (transport === "reverse_tcp" && !selectedModem) {
+    if (!isSerial && !selectedModem) {
       setError("Selecione um modem aprovado antes de cadastrar o gerador.");
       return;
     }
@@ -247,6 +246,7 @@ export function RegisterGeneratorButton({
         name: name.trim() || effectiveTag,
         controller,
         site: site.trim(),
+        modemId: !isSerial && selectedModem ? selectedModem.id : undefined,
         transport,
         listenPort: isSerial ? 0 : effectivePort,
         modbusUnit: effectiveUnit,
@@ -254,23 +254,6 @@ export function RegisterGeneratorButton({
         ...(rapidDeviceNum ? { rapidDeviceNum: Number(rapidDeviceNum) } : {}),
       });
       setCreatedId(created.id);
-
-      if (transport === "reverse_tcp" && selectedModem) {
-        try {
-          await markModemLinked(selectedModem, created.id);
-        } catch (modemLinkError) {
-          await refresh();
-          setError(
-            modemLinkError instanceof Error
-              ? [
-                  "Gerador cadastrado, mas o vínculo visual do modem falhou: ",
-                  modemLinkError.message,
-                ].join("")
-              : "Gerador cadastrado, mas o vínculo visual do modem falhou.",
-          );
-          return;
-        }
-      }
 
       try {
         await applyTransportConfig(created.id);
