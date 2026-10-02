@@ -839,7 +839,15 @@ def link_modem_to_generator(modem_id: str, generator_id: str, actor: str) -> Non
 
     transport = str(generator.get("transport") or "")
     if transport == "reverse_tcp":
-        modem = require_approved_modem(modem_id, int(generator.get("listen_port") or 0))
+        port = int(generator.get("listen_port") or 0)
+        try:
+            modem = require_approved_modem(modem_id, port)
+        except ValueError:
+            modem = require_approved_inventory_modem(modem_id)
+            metadata = dict(modem.get("metadata") or {})
+            admission_port = int(metadata.get("admissionPort") or modem.get("listen_port") or 0)
+            if admission_port != port:
+                raise ValueError("Modem aprovado não pertence à porta reverse TCP do gerador")
     elif transport in {"modbus_tcp_direct", "rtu_over_tcp"}:
         modem = require_approved_inventory_modem(modem_id)
     else:
