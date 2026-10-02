@@ -260,10 +260,6 @@ export function NeedleGauge({
           showPointer={known && hasScale}
           pointerClassName="gen-needle-pointer"
           hubClassName="gen-needle-hub"
-          tipInset={10}
-          baseOffset={12}
-          halfWidth={4.5}
-          hubRadius={5}
         />
         <text x={cx} y={cy - 14} textAnchor="middle" className="gen-needle-unit">
           {unit}
