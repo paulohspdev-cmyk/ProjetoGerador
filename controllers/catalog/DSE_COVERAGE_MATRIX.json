@@ -675,9 +675,9 @@
       "family": "DSE 61xx MKII",
       "application": "genset",
       "category": "legacy_single_genset",
-      "supportState": "registration_only",
-      "supportPack": null,
-      "notes": "Geração MKII oficial/obsoleta; cadastro somente até mapa autoritativo."
+      "supportState": "promotion_pending_read_only",
+      "supportPack": "dse-gencomm-v1",
+      "notes": "Promoção read-only pendente; três unidades de campo respondem ao mapa GenComm com modelNumber 32807."
     },
     {
       "model": "DSE6610",
