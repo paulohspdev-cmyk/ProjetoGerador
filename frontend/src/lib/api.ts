@@ -15,6 +15,7 @@ export type CreateGeneratorPayload = {
   customer?: string | undefined;
   controller: string;
   site: string;
+  modemId?: string | undefined;
   ip?: string | undefined;
   transport?: GeneratorTransport | undefined;
   listenPort?: number | undefined;
