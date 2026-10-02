@@ -1650,10 +1650,10 @@
       "category": "legacy_single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Geração MKII oficial/obsoleta; promoção read-only baseada em três unidades de campo com modelNumber 32807.",
+      "notes": "Telemetria GenComm read-only validada em campo em 2026-10-02.",
       "supportPack": "dse-gencomm-v1",
-      "supportState": "promotion_pending_read_only",
-      "supportNotes": "Transição controlada para o pack GenComm read-only; nenhuma capability de comando é habilitada."
+      "supportState": "production_read_only",
+      "supportNotes": "modelNumber 32807 identificado como DSE6120 MKII; comandos permanecem desabilitados."
     },
     {
       "manufacturer": "DSE",
