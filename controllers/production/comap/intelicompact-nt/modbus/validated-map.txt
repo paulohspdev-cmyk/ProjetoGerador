@@ -1,0 +1,33 @@
+40008            8192     Gen V L1-N     V    Unsigned    2   0      -      - Generator
+40009            8193     Gen V L2-N     V    Unsigned    2   0      -      - Generator
+40010            8194     Gen V L3-N     V    Unsigned    2   0      -      - Generator
+40013            9628     Gen V L1-L2    V    Unsigned    2   0      -      - Generator
+40014            9629     Gen V L2-L3    V    Unsigned    2   0      -      - Generator
+40015            9630     Gen V L3-L1    V    Unsigned    2   0      -      - Generator
+40016            8198     Gen A L1       A    Unsigned    2   0      -      - Generator
+40017            8199     Gen A L2       A    Unsigned    2   0      -      - Generator
+40018            8200     Gen A L3       A    Unsigned    2   0      -      - Generator
+40020            8209     RPM            RPM  Unsigned    2   0      -      - Engine
+40021            8210     Gen Freq       Hz   Unsigned    2   1      -      - Generator
+40027            8202     Gen kW         kW   Integer     2   0      -      - Generator
+40031            8203     Gen kVAr       kVAr Integer     2   0      -      - Generator
+40035            8204     Gen PF              Integer     1   2      -      - Generator
+40058            8213     Battery Volts  V    Integer     2   1      -      - Controller I/O
+40060            10603    D+             V    Integer     2   1      -      - Controller I/O
+40072            8316     Led GCB Green       Unsigned    1   0      -      - Invisible
+40073            8318     Led MCB Green       Unsigned    1   0      -      - Invisible
+40080            8330     Engine State        Table#1     2   0      -      - Info
+40081            8455     Breaker State       Table#1     2   0      -      - Info
+40084            8707     FW Branch           Unsigned    1   0      -      - Info
+40085            8393     FW Version          Unsigned    1   1      -      - Info
+40090            9651     ControllerMode      Unsigned    1   0      -      - Invisible
+43001-43002 ( 2) 8206     Run Hours      h    Integer     4   0      -      - Statistics
+43004            9648     Maintenance    h    Unsigned    2   0      -      - Statistics
+43005            8207     Num Starts          Unsigned    2   0      -      - Statistics
+43006-43007 ( 2) 8205     Energy kWh     kWh  Integer     4   0      -      - Statistics
+43017-43024 ( 8) 8637     ControllerName      String0    16   -      -      - Basic Settings
+43025            8276     Nominal Power  kW   Unsigned    2   0      1  32000 Basic Settings
+43026            8275     Nomin Current  A    Unsigned    2   0      1  10000 Basic Settings
+43032            8277     Nominal Volts  V    Unsigned    2   0     80  20000 Basic Settings
+43279-43280 ( 2) 9040     TotFuelConsum  L    Unsigned    4   0      -      - Statistics
+43284            11103    FuelTankVolume L    Unsigned    2   0      0  10000 Engine Params
