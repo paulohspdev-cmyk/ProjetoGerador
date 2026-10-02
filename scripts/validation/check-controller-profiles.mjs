@@ -268,7 +268,6 @@ for (const profile of comapProductionPacks) {
 const allowedComapSupportStates = new Set([
   "production_field_validated",
   "production_read_only",
-  "promotion_pending_read_only",
   "registration_only",
   "classified_non_genset",
 ]);
@@ -449,6 +448,7 @@ for (const model of newlyDocumentedDse) {
 
 const allowedSupportStates = new Set([
   "production_read_only",
+  "promotion_pending_read_only",
   "registration_only",
   "classified_non_genset",
 ]);
