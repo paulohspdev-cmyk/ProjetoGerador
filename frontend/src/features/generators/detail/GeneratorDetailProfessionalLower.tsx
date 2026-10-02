@@ -102,7 +102,26 @@ export function GeneratorDetailProfessionalLower({
           : ("info" as const),
   }));
 
-  const alarmsOk = !eventRows.length && (model.alarms == null || model.alarms <= 0);
+  const dseStatusFlags =
+    model.controllerStatusFlagsRaw != null && Number.isFinite(model.controllerStatusFlagsRaw)
+      ? Math.trunc(model.controllerStatusFlagsRaw)
+      : 0;
+  const dseStatusRows = [
+    dseStatusFlags & 0x2000
+      ? { time: "ATIVO", message: "DSE Control Unit Failure ativo", tone: "err" as const }
+      : null,
+    dseStatusFlags & 0x1000
+      ? { time: "ATIVO", message: "DSE Shutdown ativo", tone: "err" as const }
+      : null,
+    dseStatusFlags & 0x0800
+      ? { time: "ATIVO", message: "DSE Electrical Trip ativo", tone: "err" as const }
+      : null,
+    dseStatusFlags & 0x0400
+      ? { time: "ATIVO", message: "DSE Warning ativo (0x0400)", tone: "warn" as const }
+      : null,
+  ].filter((row): row is NonNullable<typeof row> => row != null);
+  const alarmRows = [...dseStatusRows, ...eventRows].slice(0, 3);
+  const alarmsOk = !alarmRows.length && (model.alarms == null || model.alarms <= 0);
 
   const paramSkip = new Set([
     "modo de operação",
@@ -385,14 +404,14 @@ export function GeneratorDetailProfessionalLower({
               </span>
             ) : null}
           </div>
-          {eventError && !eventRows.length ? (
+          {eventError && !alarmRows.length ? (
             <p className="text-[10px] text-offline">{eventError}</p>
           ) : null}
           {alarmsOk ? (
             <p className="text-[11px] text-muted-foreground">Sem alarmes ativos</p>
           ) : (
             <ul className="space-y-0.5 overflow-hidden">
-              {eventRows.map((event) => (
+              {alarmRows.map((event) => (
                 <li
                   key={event.time + "-" + event.message}
                   className="flex items-start gap-1 text-[10px]"
