@@ -1650,9 +1650,10 @@
       "category": "legacy_single_genset",
       "status": "inventory_only",
       "provisionable": false,
-      "notes": "Geração MKII oficial/obsoleta; cadastro somente até mapa autoritativo.",
-      "supportState": "registration_only",
-      "supportNotes": "Modelo reconhecido no catálogo, mas sem mapa/protocolo autoritativo suficiente para provisionamento automático."
+      "notes": "Geração MKII oficial/obsoleta; promoção read-only baseada em três unidades de campo com modelNumber 32807.",
+      "supportPack": "dse-gencomm-v1",
+      "supportState": "promotion_pending_read_only",
+      "supportNotes": "Transição controlada para o pack GenComm read-only; nenhuma capability de comando é habilitada."
     },
     {
       "manufacturer": "DSE",
