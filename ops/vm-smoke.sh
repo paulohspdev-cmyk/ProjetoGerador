@@ -240,6 +240,7 @@ import json
 import sys
 from pathlib import Path
 from app import db
+from app.controller_library import pack_for_model
 
 path = Path(sys.argv[1])
 items = json.loads(path.read_text(encoding="utf-8"))
