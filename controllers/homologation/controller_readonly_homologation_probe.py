@@ -20,15 +20,11 @@ sys.path.insert(0, str(ROOT / "backend"))
 from app import db  # noqa: E402
 from app.bridge import LOCAL_OFFSET  # noqa: E402
 from app.controller_library import pack_for_model  # noqa: E402
-from app.dse_control import (  # noqa: E402
-    AVAILABILITY_ADDRESS,
-    AVAILABILITY_COUNT,
-    MODE_ADDRESS,
-    RPM_ADDRESS,
-    _ModbusTcp,
-)
-
 READ_FUNCTIONS = {3, 4}
+AVAILABILITY_ADDRESS = 4096
+AVAILABILITY_COUNT = 8
+MODE_ADDRESS = 772
+RPM_ADDRESS = 1030
 
 
 def decode_ascii_registers(registers: list[int]) -> dict:
