@@ -178,22 +178,24 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     ? currentValues.reduce((sum, value) => sum + value, 0) / currentValues.length
     : null;
   // O bloco de LEDs da página 190 não é feedback GCB universal entre modelos DSE.
-  // Em instalações genset_only, representamos no diagrama o contato de carga pelo
-  // fluxo elétrico realmente medido: potência/corrente presentes = fechado;
-  // gerador sem produção e sem corrente = aberto.
-  const dseFlowGcbKnown =
+  // Fluxo elétrico positivo é evidência suficiente para afirmar FECHADO em genset_only,
+  // mas ausência de carga NÃO prova ABERTO: o disjuntor pode estar fechado em barramento
+  // sem carga. Sem canal gcb_closed documentado, mostramos estado desconhecido.
+  const dseFlowProvesClosed =
     dse &&
     !hasMainsSource &&
     !gen.telemetryStale &&
-    generatorKnown &&
-    (currentKnown || hasFreshMetric(gen, "power_kw"));
-  const dseFlowGcbClosed =
-    dseFlowGcbKnown &&
     generatorPresent &&
     ((powerKw != null && Number.isFinite(powerKw) && Math.abs(powerKw) >= 0.5) ||
       currentValues.some((value) => Math.abs(value) >= 1));
-  const displayGcb = dseFlowGcbKnown ? dseFlowGcbClosed : gen.gcb;
-  const displayGcbKnown = dseFlowGcbKnown || gcbKnown;
+  const displayGcb = dse
+    ? gcbKnown
+      ? gen.gcb
+      : dseFlowProvesClosed
+        ? true
+        : false
+    : gen.gcb;
+  const displayGcbKnown = dse ? gcbKnown || dseFlowProvesClosed : gcbKnown;
 
   const electricalRows = useMemo(
     () => [
@@ -318,7 +320,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       data-power-topology-source={gen.powerTopologySource ?? "unknown"}
       data-mains-state={!mainsKnown ? "unknown" : mainsPresent ? "present" : "absent"}
       data-gcb-state-source={
-        dseFlowGcbKnown ? "electrical-flow" : gcbKnown ? "feedback" : "unknown"
+        dseFlowProvesClosed ? "electrical-flow-closed" : gcbKnown ? "feedback" : "unknown"
       }
       data-telemetry-state={gen.telemetryStale ? "stale" : online ? "live" : "unavailable"}
     >
