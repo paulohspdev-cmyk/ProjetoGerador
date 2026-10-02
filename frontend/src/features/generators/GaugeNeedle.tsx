@@ -22,22 +22,27 @@ export function GaugeNeedle({
   pointerClassName,
   hubClassName,
   groupClassName,
-  tipInset = 12,
-  baseOffset = 14,
-  halfWidth = 5,
-  hubRadius = 6,
+  tipInset,
+  baseOffset,
+  halfWidth,
+  hubRadius,
 }: Props) {
+  const resolvedTipInset = tipInset ?? 1;
+  const resolvedBaseOffset = baseOffset ?? Math.max(7, radius * 0.12);
+  const resolvedHalfWidth = halfWidth ?? Math.max(1.5, radius * 0.028);
+  const resolvedHubRadius = hubRadius ?? Math.max(3, radius * 0.06);
+
   return (
     <>
       {showPointer ? (
         <g className={groupClassName} transform={`rotate(${angle} ${cx} ${cy})`}>
           <path
             className={pointerClassName}
-            d={`M${cx} ${cy - radius + tipInset} L${cx + halfWidth} ${cy - baseOffset} L${cx - halfWidth} ${cy - baseOffset} Z`}
+            d={`M${cx} ${cy - radius + resolvedTipInset} L${cx + resolvedHalfWidth} ${cy - resolvedBaseOffset} L${cx - resolvedHalfWidth} ${cy - resolvedBaseOffset} Z`}
           />
         </g>
       ) : null}
-      <circle cx={cx} cy={cy} r={hubRadius} className={hubClassName} />
+      <circle cx={cx} cy={cy} r={resolvedHubRadius} className={hubClassName} />
     </>
   );
 }
