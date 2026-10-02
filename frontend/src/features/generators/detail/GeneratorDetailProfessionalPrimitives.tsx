@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import type { MetricLimit } from "@/data/generators";
 import { cn } from "@/lib/utils";
+import { GaugeNeedle } from "../GaugeNeedle";
 
 export type MetricTone = "ok" | "warn" | "err" | "info";
 
@@ -251,15 +252,19 @@ export function NeedleGauge({
         <text x={cx + r} y={cy + 22} textAnchor="middle" className="gen-needle-scale">
           {maxLabel}
         </text>
-        {known && hasScale ? (
-          <g transform={`rotate(${angle} ${cx} ${cy})`}>
-            <path
-              className="gen-needle-pointer"
-              d={`M${cx} ${cy - r + 10} L${cx + 4.5} ${cy - 12} L${cx - 4.5} ${cy - 12} Z`}
-            />
-          </g>
-        ) : null}
-        <circle cx={cx} cy={cy} r="5" className="gen-needle-hub" />
+        <GaugeNeedle
+          cx={cx}
+          cy={cy}
+          radius={r}
+          angle={angle}
+          showPointer={known && hasScale}
+          pointerClassName="gen-needle-pointer"
+          hubClassName="gen-needle-hub"
+          tipInset={10}
+          baseOffset={12}
+          halfWidth={4.5}
+          hubRadius={5}
+        />
         <text x={cx} y={cy - 14} textAnchor="middle" className="gen-needle-unit">
           {unit}
         </text>
