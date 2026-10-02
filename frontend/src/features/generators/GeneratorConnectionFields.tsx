@@ -69,10 +69,9 @@ export function GeneratorConnectionFields(props: Props) {
                 }
                 if (option.id === "reverse_tcp") {
                   props.setListenPort("");
-                } else {
-                  props.setSelectedModemId("");
                 }
                 if (option.id === "modbus_rtu_serial") {
+                  props.setSelectedModemId("");
                   props.setListenPort("");
                   props.setAdvanced(true);
                 }
@@ -92,7 +91,7 @@ export function GeneratorConnectionFields(props: Props) {
         </div>
       </div>
 
-      {props.transport === "reverse_tcp" && (
+      {!isSerial && (
         <div className="rounded-xl border border-border bg-background/35 p-3">
           <label className="block text-sm font-semibold">
             Modem aprovado
@@ -103,7 +102,9 @@ export function GeneratorConnectionFields(props: Props) {
                 props.setSelectedModemId(modemId);
                 const modem = props.approvedModems.find((item) => item.id === modemId);
                 const port = Number(modem?.metadata?.["admissionPort"] || 0);
-                props.setListenPort(port > 0 ? String(port) : "");
+                if (props.transport === "reverse_tcp") {
+                  props.setListenPort(port > 0 ? String(port) : "");
+                }
                 props.setError(null);
               }}
               className="mt-2 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
@@ -112,9 +113,14 @@ export function GeneratorConnectionFields(props: Props) {
               <option value="">Selecione um modem aprovado</option>
               {props.approvedModems.map((modem) => {
                 const port = Number(modem.metadata?.["admissionPort"] || 0);
+                const route = String(modem.host || modem.metadata?.["configuredIp"] || "").trim();
+                const detail =
+                  props.transport === "reverse_tcp" && port > 0
+                    ? `TCP ${port}`
+                    : route || "VPN / rota cadastrada";
                 return (
                   <option key={modem.id} value={modem.id}>
-                    {modem.name} · TCP {port}
+                    {modem.name} · {detail}
                   </option>
                 );
               })}
@@ -128,7 +134,9 @@ export function GeneratorConnectionFields(props: Props) {
           )}
           {!!props.selectedModemId && (
             <p className="mt-2 text-xs text-muted-foreground">
-              A porta TCP vem do modem aprovado. Informe abaixo somente o Unit ID da controladora.
+              {props.transport === "reverse_tcp"
+                ? "A porta TCP vem do modem aprovado. Informe abaixo somente o Unit ID da controladora."
+                : "O gerador ficará vinculado a este modem/VPN. Informe abaixo o IP da controladora e o Unit ID."}
             </p>
           )}
         </div>
