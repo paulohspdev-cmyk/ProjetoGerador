@@ -6,6 +6,7 @@ import { Battery, Clock3, Fuel, Gauge, RotateCw, Thermometer, Wrench, Zap } from
 import { CONTROLLER_IMAGE_FALLBACK, controllerImageSrc } from "@/assets";
 import { generatorDisplayStatus, isGeneratorConnected, type Generator } from "@/data/generators";
 import { cn } from "@/lib/utils";
+import { GaugeNeedle } from "./GaugeNeedle";
 import { readGeneratorTelemetry } from "./generator-health";
 import { displayGeneratorName, hasFreshMetric, metricNumber } from "./generator-metrics";
 import "./compact-card.css";
@@ -118,15 +119,20 @@ function CompactKwGauge({
         <text x={cx + r} y={cy + 22} textAnchor="middle" className="compact-kw-scale">
           {maxLabel}
         </text>
-        {hasPower && effectiveMax != null ? (
-          <g className="compact-kw-pointer" transform={`rotate(${angle} ${cx} ${cy})`}>
-            <path
-              className="compact-kw-needle"
-              d={`M${cx} ${cy - r + 6} L${cx + 3} ${cy - 6} L${cx - 3} ${cy - 6} Z`}
-            />
-          </g>
-        ) : null}
-        <circle cx={cx} cy={cy} r="3.5" className="compact-kw-hub" />
+        <GaugeNeedle
+          cx={cx}
+          cy={cy}
+          radius={r}
+          angle={angle}
+          showPointer={hasPower && effectiveMax != null}
+          groupClassName="compact-kw-pointer"
+          pointerClassName="compact-kw-needle"
+          hubClassName="compact-kw-hub"
+          tipInset={6}
+          baseOffset={6}
+          halfWidth={3}
+          hubRadius={3.5}
+        />
         <text x={cx} y={cy - 14} textAnchor="middle" className="compact-kw-unit">
           KW
         </text>
