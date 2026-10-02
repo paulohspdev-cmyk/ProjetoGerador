@@ -58,7 +58,8 @@ function dseStatusAlarmRows(gen: Generator): GeneratorAlarmRow[] {
     {
       mask: 0x2000,
       severity: "fault",
-      message: "DSE Control Unit Failure ativo; causa individual não disponível neste canal GenComm",
+      message:
+        "DSE Control Unit Failure ativo; causa individual não disponível neste canal GenComm",
       code: "0x2000",
     },
     {
