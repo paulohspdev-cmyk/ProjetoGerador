@@ -24,6 +24,7 @@ Um modelo entra no pack compartilhado somente quando:
 | DSE4620 | Auto Mains Failure | https://www.deepseaelectronics.com/genset/auto-mains-utility-failure-control-modules/dse4620/downloads |
 | DSE6010 MKII | Auto Start | https://www.deepseaelectronics.com/genset/manual-auto-start-control-modules/dse6010mkii/downloads |
 | DSE6020 MKII | Auto Mains Failure | https://www.deepseaelectronics.com/genset/auto-mains-utility-failure-control-modules/dse6020mkii/downloads |
+| DSE6120 MKII | Auto Mains Failure | https://www.deepseaelectronics.com/genset/auto-mains-utility-failure-control-modules/dse6120-mkii/downloads |
 | DSE7110 MKII | Auto Start | https://www.deepseaelectronics.com/genset/manual-auto-start-control-modules/dse7110-mkii/downloads |
 | DSE7120 MKII | Auto Mains Failure | https://www.deepseaelectronics.com/genset/auto-mains-utility-failure-control-modules/dse7120mkii/downloads |
 | DSE7210 / DSE7220 | Auto Start / AMF | páginas oficiais de downloads DSE com 056-051 |
@@ -37,6 +38,10 @@ Um modelo entra no pack compartilhado somente quando:
 | DSE8910 / DSE8920 | Colour Load Share / Synchronising | https://www.deepseaelectronics.com/genset/load-sharing-synchronising-control-modules/dse8920/downloads |
 
 Os aliases comerciais DSEG7400, DSEG7300, DSEG4500 e DSEG4501 permanecem no manifest de produção read-only existente. A presença no pack não autoriza ampliar registradores ou comandos sem evidência específica.
+
+### Evidência de campo DSE6120 MKII
+
+Em 2026-10-02, G-163, G-191 e G-194 responderam via FC03/GenComm com `manufacturerCode=1` e `modelNumber=32807`. A tabela **Controller Type** do manual DSEGateway 057-274 associa o valor numérico `32807` a **DSE6120 MKII**. A página oficial DSE confirma o produto/classe AMF. Essa identificação altera apenas o alias de modelo; o pack continua read-only e sem capabilities de comando.
 
 ## GenComm oficial encontrado, mas fora do mesmo mapa
 
