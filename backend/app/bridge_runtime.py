@@ -613,11 +613,12 @@ class HardenedBridgePort(bridge.BridgePort):
         current = self._peer_ip(self.remote_peer)
         if current is None or current == incoming:
             return False
-        activity = max(
-            int(self.connected_at or 0),
-            int(self.last_rx_at or 0),
-            int(self.last_tx_at or 0),
-        )
+        # Somente RX real comprova que a sessão antiga ainda está viva.
+        # O Rapid continua transmitindo mesmo quando o modem já caiu; usar last_tx_at
+        # aqui fazia uma sessão morta parecer ativa e bloqueava a reconexão legítima.
+        activity = int(self.last_rx_at or 0)
+        if activity <= 0:
+            activity = int(self.connected_at or 0)
         return activity > 0 and now_epoch - activity < REPLACE_ACTIVE_AFTER
 
     def _record_peer(self, peer, accepted: bool, reason: str) -> None:
