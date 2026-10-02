@@ -1026,7 +1026,52 @@ for payload in (
     else:
         raise AssertionError("field-device com referência inexistente foi aceito")
 
-# F11: authentication throttles must not lose concurrent increments.
+# F11: direct VPN generators must support an approved modem-first transport link.
+direct_modem = platform_store.create_field_device(
+    {
+        "kind": "modem",
+        "name": "VPN-MODEM-TEST",
+        "host": "10.60.99.1",
+        "status": "approved_unlinked",
+        "metadata": {"networkCidr": "10.60.99.0/24"},
+    },
+    "test",
+)
+direct_generator = db.create_generator(
+    {
+        "tag": "VPN901",
+        "name": "VPN901",
+        "customer": "",
+        "site": "VPN",
+        "controller_type": "DSE",
+        "controller_model": "DSE GenComm Genset",
+        "transport": "modbus_tcp_direct",
+        "host": "10.60.99.100",
+        "listen_port": 502,
+        "modbus_unit": 1,
+        "rapid_device_num": None,
+        "nominal_power_kw": None,
+        "fuel_capacity_l": None,
+        "power_topology": "genset_only",
+        "enabled": True,
+    },
+    actor="test",
+)
+platform_store.link_modem_to_generator(direct_modem["id"], direct_generator["id"], "test")
+linked_modem = next(
+    item for item in platform_store.list_field_devices("modem") if item["id"] == direct_modem["id"]
+)
+assert linked_modem["status"] == "approved_linked"
+assert direct_generator["id"] in (linked_modem.get("metadata") or {}).get("linkedGeneratorIds", [])
+with db.connect() as conn:
+    linked = conn.execute(
+        """SELECT 1 FROM field_device_links
+           WHERE field_device_id=? AND generator_id=? AND relation='transport'""",
+        (direct_modem["id"], direct_generator["id"]),
+    ).fetchone()
+assert linked is not None
+
+# F12: authentication throttles must not lose concurrent increments.
 race_key = platform_store.login_key("race@example.invalid", "192.0.2.44")
 login_threads = [
     threading.Thread(
