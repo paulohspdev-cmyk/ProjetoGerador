@@ -815,27 +815,78 @@ def approved_modem_for_port(remote_port: int) -> dict | None:
     return _row(row)
 
 
+def require_approved_inventory_modem(modem_id: str | None) -> dict:
+    init_platform_db()
+    if not modem_id:
+        raise ValueError("Selecione um modem aprovado antes de cadastrar o gerador")
+    with db.connect() as conn:
+        row = conn.execute(
+            """SELECT *
+               FROM field_devices
+               WHERE id=? AND kind='modem' AND active=1
+                 AND lower(status) IN ('approved_unlinked','approved_linked')""",
+            (str(modem_id),),
+        ).fetchone()
+    if not row:
+        raise ValueError("Modem não encontrado, desativado ou ainda não aprovado")
+    return _row(row)
+
+
 def link_modem_to_generator(modem_id: str, generator_id: str, actor: str) -> None:
     generator = db.get_generator(generator_id)
     if not generator:
         raise ValueError("Gerador não encontrado para vínculo do modem")
-    if str(generator.get("transport") or "") != "reverse_tcp":
-        raise ValueError("Vínculo de modem só se aplica a gerador reverse TCP")
-    modem = require_approved_modem(modem_id, int(generator.get("listen_port") or 0))
+
+    transport = str(generator.get("transport") or "")
+    if transport == "reverse_tcp":
+        port = int(generator.get("listen_port") or 0)
+        try:
+            modem = require_approved_modem(modem_id, port)
+        except ValueError:
+            modem = require_approved_inventory_modem(modem_id)
+            metadata = dict(modem.get("metadata") or {})
+            admission_port = int(metadata.get("admissionPort") or modem.get("listen_port") or 0)
+            if admission_port != port:
+                raise ValueError("Modem aprovado não pertence à porta reverse TCP do gerador")
+    elif transport in {"modbus_tcp_direct", "rtu_over_tcp"}:
+        modem = require_approved_inventory_modem(modem_id)
+    else:
+        raise ValueError("Este transporte não utiliza modem de campo")
+
     now = _now()
     with db.connect() as conn:
         conn.execute(
-            """INSERT OR IGNORE INTO field_device_links(
+            "DELETE FROM field_device_links WHERE generator_id=? AND relation='transport'",
+            (generator["id"],),
+        )
+        conn.execute(
+            """INSERT INTO field_device_links(
                    field_device_id,generator_id,relation,created_at
                ) VALUES (?,?,'transport',?)""",
             (modem["id"], generator["id"], now),
         )
+
+    metadata = dict(modem.get("metadata") or {})
+    linked_ids = [
+        str(item)
+        for item in metadata.get("linkedGeneratorIds", [])
+        if str(item).strip() and str(item) != generator["id"]
+    ]
+    linked_ids.append(generator["id"])
+    update_field_device(
+        modem["id"],
+        {
+            "status": "approved_linked",
+            "metadata": {**metadata, "linkedGeneratorIds": linked_ids},
+        },
+        actor,
+    )
     db.add_audit(
         actor,
         "link",
         "field_device",
         modem["id"],
-        f"generator={generator['id']};relation=transport",
+        f"generator={generator['id']};relation=transport;transport={transport}",
     )
 
 
