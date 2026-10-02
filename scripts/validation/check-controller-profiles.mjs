@@ -434,6 +434,7 @@ const newlyDocumentedDse = new Set([
   "DSE8610",
   "DSE8620",
   "DSE8810",
+  "DSE6120 MKII",
 ]);
 const dseAliases = new Set(dseProduction.aliases ?? []);
 const dseProductionPacks = productionPaths
