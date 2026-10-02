@@ -40,6 +40,8 @@ Documentação oficial de control keys é evidência de que a função existe no
 
 A varredura oficial também encontrou DSE402, DSE4110, DSE550, DSE6010/DSE6020, DSE6110/DSE6120, DSE6110/DSE6120 MKII, DSE7110/DSE7120 e variantes marine DSE5310M/DSE5510M. Esses produtos entram no catálogo como inventory-only quando a documentação pública não comprova o mapa GenComm necessário para provisionamento.
 
+> Atualização 2026-10-02: **DSE6120 MKII** saiu de `registration_only` para `production_read_only`. Três unidades de campo (G-163, G-191 e G-194) responderam de forma consistente ao mapa GenComm read-only, todas com `manufacturerCode=1` e `modelNumber=32807`; a tabela Controller Type do DSEGateway 057-274 associa `32807` ao DSE6120 MKII. Essa promoção não habilita escrita.
+
 O DSE5220 é a exceção desta rodada: o protocolo GenComm v1.29 usado pelo pack legacy cita explicitamente DSE5210 e DSE5220. Por isso o `dse5210-gencomm-v1` passa a reconhecer DSE5220 como alias e continua estritamente read-only.
 
 ## Rodada final — cobertura ampla DSE
