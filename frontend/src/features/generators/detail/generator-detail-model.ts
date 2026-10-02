@@ -140,6 +140,11 @@ export function buildGeneratorDetailModel(gen: Generator) {
   const maintenance = metricNumber(gen, "maintenance_hours", gen.maintenance);
   const runHours = metricNumber(gen, "run_hours", gen.runHours);
   const alarms = metricNumber(gen, "alarm_count", gen.alarms);
+  const controllerStatusFlagsRaw = metricNumber(
+    gen,
+    "controller_status_flags_raw",
+    undefined,
+  );
 
   const runningKnown = rpm != null && hasFreshMetric(gen, "rpm");
   const running = runningKnown ? isPositiveMeasurement(rpm) : null;
@@ -487,6 +492,7 @@ export function buildGeneratorDetailModel(gen: Generator) {
     maintenance,
     runHours,
     alarms,
+    controllerStatusFlagsRaw,
     runningKnown,
     running,
     mcbKnown,
