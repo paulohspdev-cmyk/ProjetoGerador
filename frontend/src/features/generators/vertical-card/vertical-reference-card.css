@@ -979,8 +979,8 @@
 
 /* Measurements — colunas MAINS/GEN com a mesma grade do cabeçalho */
 .vref-measurements {
-  --vref-m-label: minmax(0, 1fr);
-  --vref-m-val: 56px;
+  --vref-m-label: 58px;
+  --vref-m-val: minmax(0, 1fr);
   display: flex;
   flex-direction: column;
   padding: 2px 4px 4px;
@@ -1061,6 +1061,19 @@
 
 .vref-data-row > b.generator {
   color: var(--vref-green);
+}
+
+.vref-data-row.is-compact > span {
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.vref-data-row.is-compact > b {
+  overflow: hidden;
+  font-size: 8.25px;
+  letter-spacing: -0.015em;
+  text-align: left;
+  text-overflow: clip;
 }
 
 .vref-alarms {
