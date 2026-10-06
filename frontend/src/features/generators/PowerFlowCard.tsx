@@ -259,11 +259,11 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         alignRight: true,
         values: [
           {
-            text: formatUnit(mainsKnown ? mainsFrequency : null, "Hz", 1),
+            text: formatNumber(mainsKnown ? mainsFrequency : null, 1),
             source: "mains",
             title: "MAINS",
           },
-          { text: formatUnit(frequency, "Hz", 1), source: "generator", title: "GEN" },
+          { text: formatNumber(frequency, 1), source: "generator", title: "GEN" },
         ],
       },
       {
