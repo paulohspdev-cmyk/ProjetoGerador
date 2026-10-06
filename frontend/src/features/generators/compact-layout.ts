@@ -4,6 +4,8 @@ export const COMPACT_TARGET_PAGE_SIZE = 30;
 
 export const COMPACT_MIN_CARD_WIDTH = 210;
 export const COMPACT_MIN_CARD_HEIGHT = 180;
+const COMPACT_VERTICAL_TARGET_MIN_WIDTH = 280;
+const COMPACT_VERTICAL_TARGET_MIN_HEIGHT = 145;
 const COMPACT_TARGET_ASPECT_RATIO = 1.55;
 
 export type CompactDensity = "normal" | "dense" | "videowall";
@@ -79,26 +81,38 @@ export function compactLayout(width: number, height: number): CompactLayout {
     const cardHeight = (usableHeight - COMPACT_GAP * Math.max(0, rows - 1)) / Math.max(1, rows);
     const pageSize = columns * rows;
     const aspectRatio = cardWidth / Math.max(1, cardHeight);
+    const verticalTarget = columns === 5 && rows === 6;
     return {
       columns,
       rows,
       pageSize,
       cardWidth,
       cardHeight,
+      verticalTarget,
       aspectDistance: Math.abs(Math.log(aspectRatio / COMPACT_TARGET_ASPECT_RATIO)),
     };
-  }).filter(
-    (candidate) =>
-      candidate.pageSize <= COMPACT_TARGET_PAGE_SIZE &&
+  }).filter((candidate) => {
+    if (candidate.pageSize > COMPACT_TARGET_PAGE_SIZE) return false;
+    if (candidate.verticalTarget) {
+      return (
+        candidate.cardWidth >= COMPACT_VERTICAL_TARGET_MIN_WIDTH &&
+        candidate.cardHeight >= COMPACT_VERTICAL_TARGET_MIN_HEIGHT
+      );
+    }
+    return (
       candidate.cardWidth >= COMPACT_MIN_CARD_WIDTH &&
-      candidate.cardHeight >= COMPACT_MIN_CARD_HEIGHT,
-  );
+      candidate.cardHeight >= COMPACT_MIN_CARD_HEIGHT
+    );
+  });
 
   if (candidates.length) {
     const exactTarget = candidates.filter(
       (candidate) => candidate.pageSize === COMPACT_TARGET_PAGE_SIZE,
     );
-    const pool = exactTarget.length ? exactTarget : candidates;
+    const verticalTarget = exactTarget.find(
+      (candidate) => candidate.columns === 5 && candidate.rows === 6,
+    );
+    const pool = verticalTarget ? [verticalTarget] : exactTarget.length ? exactTarget : candidates;
     const best = [...pool].sort(
       (a, b) =>
         b.pageSize - a.pageSize ||
