@@ -428,6 +428,9 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
               data-page-size={compactLayoutState.pageSize}
               data-min-card={`${COMPACT_MIN_CARD_WIDTH}x${COMPACT_MIN_CARD_HEIGHT}`}
               data-density={compactLayoutState.density}
+              data-layout-shape={
+                compactLayoutState.rows > compactLayoutState.columns ? "vertical" : "horizontal"
+              }
               data-videowall={
                 compactLayoutState.pageSize === COMPACT_TARGET_PAGE_SIZE ? "true" : "false"
               }
