@@ -977,46 +977,30 @@
   letter-spacing: 0.04em;
 }
 
-/* Measurements — três linhas elétricas, com MAINS/GEN lado a lado. */
+/* Measurements — colunas MAINS/GEN com a mesma grade do cabeçalho */
 .vref-measurements {
+  --vref-m-label: minmax(0, 1fr);
+  --vref-m-val: 56px;
   display: flex;
-  min-height: 0;
   flex-direction: column;
   padding: 2px 4px 4px;
 }
 
 .vref-table-heading {
-  display: flex;
+  display: grid;
   flex: 0 0 auto;
-  min-height: 24px;
-  flex-direction: column;
+  grid-template-columns: var(--vref-m-label) var(--vref-m-val) var(--vref-m-val);
+  align-items: end;
+  gap: 4px;
+  min-height: 13px;
   margin-bottom: 1px;
 }
 
 .vref-table-heading h4 {
   margin: 0;
-  min-height: 12px;
   white-space: nowrap;
   font-size: 11px;
   font-weight: 900;
-  line-height: 12px;
-}
-
-.vref-table-sources {
-  display: grid;
-  width: 100%;
-  min-height: 11px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: center;
-  gap: 8px;
-}
-
-.vref-table-sources > span {
-  color: #9fb1bd;
-  font-size: 8.5px;
-  font-weight: 900;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
 }
 
 .vref-alarms-heading h4 {
@@ -1026,9 +1010,17 @@
   letter-spacing: 0.02em;
 }
 
+.vref-table-heading > span {
+  color: #9fb1bd;
+  font-size: 8px;
+  font-weight: 800;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
 .vref-data-table {
   display: flex;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   min-width: 0;
   min-height: 0;
   flex-direction: column;
@@ -1036,13 +1028,13 @@
 
 .vref-data-row {
   display: grid;
-  flex: 0 0 18px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  flex: 1 1 0;
+  grid-template-columns: var(--vref-m-label) var(--vref-m-val) var(--vref-m-val);
   align-items: center;
-  gap: 8px;
-  min-width: 0;
-  min-height: 18px;
+  gap: 4px;
+  min-height: 0;
   border-bottom: 1px solid rgb(23 67 91 / 42%);
+  font-size: 10.5px;
   line-height: 1;
 }
 
@@ -1050,22 +1042,21 @@
   border-bottom: 0;
 }
 
-.vref-data-row > b {
-  min-width: 0;
+.vref-data-row > span {
   overflow: hidden;
-  color: #f6f9fb;
-  font-size: 9.25px;
-  font-weight: 900;
-  letter-spacing: -0.012em;
-  text-align: left;
-  text-overflow: clip;
+  color: #edf4f8;
+  text-overflow: ellipsis;
   white-space: nowrap;
-  font-variant-numeric: tabular-nums;
 }
 
-.vref-data-row[aria-label="phase-phase"] > b {
-  font-size: 8.75px;
-  letter-spacing: -0.02em;
+.vref-data-row > b {
+  overflow: visible;
+  color: #f6f9fb;
+  font-size: 11px;
+  font-weight: 900;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .vref-data-row > b.generator {
@@ -1074,7 +1065,7 @@
 
 .vref-alarms {
   display: flex;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   flex-direction: column;
   gap: 1px;
   margin-top: 2px;
