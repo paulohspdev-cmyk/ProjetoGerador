@@ -133,25 +133,22 @@ export function VerticalTables({
   electricalRows: ElectricalRow[];
   alarms: GeneratorAlarmRow[];
 }) {
-  const visible = alarms.slice(0, 5);
+  const visible = alarms.slice(0, 3);
   const extra = Math.max(0, alarms.length - visible.length);
 
   return (
     <div className="vref-measurements">
       <div className="vref-table-heading">
         <h4>ELECTRICAL</h4>
-        <div className="vref-table-sources" aria-hidden>
-          <span>MAINS</span>
-          <span>GEN</span>
-        </div>
+        <span>MAINS</span>
+        <span>GEN</span>
       </div>
       <div className="vref-data-table">
         {electricalRows.map((row) => (
-          <div key={row.label} className="vref-data-row" aria-label={row.label}>
-            <b title={row.mains}>{row.mains}</b>
-            <b className="generator" title={row.generator}>
-              {row.generator}
-            </b>
+          <div key={row.label} className="vref-data-row">
+            <span>{row.label}</span>
+            <b>{row.mains}</b>
+            <b className="generator">{row.generator}</b>
           </div>
         ))}
       </div>
