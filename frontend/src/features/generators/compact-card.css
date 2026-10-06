@@ -350,3 +350,129 @@
   margin-top: 4px;
   font-size: 10px;
 }
+
+/* Compactação vertical: usa a largura extra do card para preservar legibilidade. */
+.compact-generator-grid[data-layout-shape="vertical"][data-density="dense"] .compact-card {
+  padding: 4px;
+}
+
+.compact-generator-grid[data-layout-shape="vertical"][data-density="dense"] .compact-card__header {
+  gap: 4px;
+}
+
+.compact-generator-grid[data-layout-shape="vertical"][data-density="dense"]
+  .compact-card__header
+  h3 {
+  font-size: 11.5px !important;
+  line-height: 1.05 !important;
+}
+
+.compact-generator-grid[data-layout-shape="vertical"][data-density="dense"]
+  .compact-card__header
+  p {
+  font-size: 8.5px !important;
+  line-height: 1 !important;
+}
+
+.compact-generator-grid[data-layout-shape="vertical"][data-density="dense"] .compact-card__header a,
+.compact-generator-grid[data-layout-shape="vertical"][data-density="dense"]
+  .compact-card__header
+  > div:last-child
+  > span:last-child {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.compact-generator-grid[data-layout-shape="vertical"][data-density="dense"] .compact-card__body {
+  margin-top: 1px !important;
+  gap: 6px !important;
+}
+
+.compact-generator-grid[data-layout-shape="vertical"][data-density="dense"] .compact-card__visuals {
+  width: 150px !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 4px !important;
+}
+
+.compact-generator-grid[data-layout-shape="vertical"][data-density="dense"] .controller-image-area {
+  width: 72px;
+  max-width: 72px;
+  height: 42px;
+}
+
+.compact-generator-grid[data-layout-shape="vertical"][data-density="dense"] .compact-kw-gauge {
+  width: 74px;
+  max-width: 74px;
+  margin-top: 0;
+}
+
+.compact-generator-grid[data-layout-shape="vertical"][data-density="dense"] .compact-kw-svg {
+  max-height: 58px;
+}
+
+.compact-generator-grid[data-layout-shape="vertical"][data-density="dense"] .compact-card__metrics {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0 !important;
+}
+
+.compact-generator-grid[data-layout-shape="vertical"][data-density="dense"]
+  .compact-card__metrics
+  > :not([hidden])
+  ~ :not([hidden]) {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.compact-generator-grid[data-layout-shape="vertical"][data-density="dense"] .compact-card__metric {
+  min-width: 0;
+  font-size: 9px !important;
+  line-height: 1 !important;
+}
+
+.compact-generator-grid[data-layout-shape="vertical"][data-density="dense"]
+  .compact-card__metric
+  svg {
+  width: 9px !important;
+  height: 9px !important;
+}
+
+.compact-generator-grid[data-layout-shape="vertical"][data-density="dense"]
+  .compact-card__electrical {
+  margin-top: 1px !important;
+}
+
+.compact-generator-grid[data-layout-shape="vertical"][data-density="dense"]
+  .compact-card__electrical
+  > div:first-child {
+  grid-template-columns: minmax(0, 1fr) 48px 48px;
+  margin-bottom: 0 !important;
+  font-size: 8px !important;
+  line-height: 1 !important;
+}
+
+.compact-generator-grid[data-layout-shape="vertical"][data-density="dense"]
+  .compact-card__electrical
+  > div:first-child
+  > span:first-child {
+  font-size: 9px !important;
+}
+
+.compact-generator-grid[data-layout-shape="vertical"][data-density="dense"]
+  .compact-card__electrical
+  > div:last-child
+  > div {
+  grid-template-columns: minmax(0, 1fr) 48px 48px;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  font-size: 9px !important;
+  line-height: 1 !important;
+}
+
+.compact-generator-grid[data-layout-shape="vertical"][data-density="dense"] .compact-card__stale {
+  margin-top: 1px !important;
+  font-size: 8.5px !important;
+  line-height: 1 !important;
+}
