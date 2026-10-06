@@ -163,6 +163,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     frequency,
     mainsFrequency,
     powerKw,
+    powerFactor,
     nominalPower,
     currentL1,
     currentL2,
@@ -370,6 +371,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
 
   return (
     <article
+      data-power-factor={formatNumber(powerFactor, 2)}
       className={cn(
         "vref-card",
         dse ? "is-dse" : "is-comap",
