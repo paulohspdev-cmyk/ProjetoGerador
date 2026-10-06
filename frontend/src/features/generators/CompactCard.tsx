@@ -169,6 +169,7 @@ export function CompactCard({ gen }: { gen: Generator }) {
     frequency,
     mainsFrequency,
     powerKw,
+    powerFactor,
     nominalPower,
     currentL1,
     currentL2,
@@ -176,60 +177,106 @@ export function CompactCard({ gen }: { gen: Generator }) {
   } = telemetry;
 
   const mainsL1 = metricNumber(gen, "mains_voltage_l1", gen.mains.l1);
-  const mainsL12 = metricNumber(gen, "mains_voltage_l1_l2", gen.mains.l12);
-  const mainsCurrent = metricNumber(gen, "mains_current_l1", undefined);
+  const mainsL2 = metricNumber(gen, "mains_voltage_l2", gen.mains.l2);
+  const mainsL3 = metricNumber(gen, "mains_voltage_l3", gen.mains.l3);
   const mainsKnown =
-    ["mains_voltage_l1", "mains_voltage_l1_l2"].some((key) => hasFreshMetric(gen, key)) ||
-    hasFreshMetric(gen, "mains_frequency");
+    ["mains_voltage_l1", "mains_voltage_l2", "mains_voltage_l3"].some((key) =>
+      hasFreshMetric(gen, key),
+    ) || hasFreshMetric(gen, "mains_frequency");
 
   const genL1 = metricNumber(gen, "voltage_l1", gen.gen.l1);
-  const genL12 = metricNumber(gen, "voltage_l1_l2", gen.gen.l12);
+  const genL2 = metricNumber(gen, "voltage_l2", gen.gen.l2);
+  const genL3 = metricNumber(gen, "voltage_l3", gen.gen.l3);
+  const genPowerFactorL1 = metricNumber(gen, "power_factor_l1", undefined);
+  const genPowerFactorL2 = metricNumber(gen, "power_factor_l2", undefined);
+  const genPowerFactorL3 = metricNumber(gen, "power_factor_l3", undefined);
   const genCurrentValues = [currentL1, currentL2, currentL3].filter(
     (value): value is number => value != null,
   );
-  const genCurrent =
-    genCurrentValues.length > 0
-      ? genCurrentValues.reduce((sum, value) => sum + value, 0) / genCurrentValues.length
-      : null;
+  const currentKnown = genCurrentValues.length > 0;
 
   const electricalRows = useMemo(
     () => [
       {
-        label: "L1-N",
-        mains: formatUnit(mainsKnown ? mainsL1 : null, "V"),
-        generator: formatUnit(genL1, "V"),
+        label: "MAINS",
+        values: [
+          { text: formatNumber(mainsKnown ? mainsL1 : null, 0), source: "mains", title: "L1-N" },
+          { text: formatNumber(mainsKnown ? mainsL2 : null, 0), source: "mains", title: "L2-N" },
+          { text: formatNumber(mainsKnown ? mainsL3 : null, 0), source: "mains", title: "L3-N" },
+        ],
       },
       {
-        label: "L1-L2",
-        mains: formatUnit(mainsKnown ? mainsL12 : null, "V"),
-        generator: formatUnit(genL12, "V"),
+        label: "GEN",
+        values: [
+          { text: formatNumber(genL1, 0), source: "generator", title: "L1-N" },
+          { text: formatNumber(genL2, 0), source: "generator", title: "L2-N" },
+          { text: formatNumber(genL3, 0), source: "generator", title: "L3-N" },
+        ],
       },
       {
         label: "Frequency",
-        mains: formatUnit(mainsKnown ? mainsFrequency : null, "Hz", 1),
-        generator: formatUnit(frequency, "Hz", 1),
+        alignRight: true,
+        values: [
+          {
+            text: formatUnit(mainsKnown ? mainsFrequency : null, "Hz", 1),
+            source: "mains",
+            title: "MAINS",
+          },
+          { text: formatUnit(frequency, "Hz", 1), source: "generator", title: "GEN" },
+        ],
+      },
+      {
+        label: "Power Factor",
+        values: [
+          { text: formatNumber(genPowerFactorL1, 2), source: "generator", title: "L1" },
+          { text: formatNumber(genPowerFactorL2, 2), source: "generator", title: "L2" },
+          { text: formatNumber(genPowerFactorL3, 2), source: "generator", title: "L3" },
+        ],
       },
       {
         label: "Current (A)",
-        mains: formatUnit(mainsCurrent, "A", 0),
-        generator: formatUnit(genCurrent, "A", 0),
+        values: [
+          {
+            text: formatNumber(currentKnown ? currentL1 : null, 0),
+            source: "generator",
+            title: "L1",
+          },
+          {
+            text: formatNumber(currentKnown ? currentL2 : null, 0),
+            source: "generator",
+            title: "L2",
+          },
+          {
+            text: formatNumber(currentKnown ? currentL3 : null, 0),
+            source: "generator",
+            title: "L3",
+          },
+        ],
       },
     ],
     [
+      currentKnown,
+      currentL1,
+      currentL2,
+      currentL3,
       frequency,
-      genCurrent,
       genL1,
-      genL12,
-      mainsCurrent,
+      genL2,
+      genL3,
+      genPowerFactorL1,
+      genPowerFactorL2,
+      genPowerFactorL3,
       mainsFrequency,
       mainsKnown,
       mainsL1,
-      mainsL12,
+      mainsL2,
+      mainsL3,
     ],
   );
 
   return (
     <article
+      data-power-factor={formatNumber(powerFactor, 2)}
       className={cn(
         "compact-card flex min-w-0 min-h-0 flex-col overflow-hidden rounded-lg border bg-card p-1.5",
         connected && "border-online/55 [box-shadow:var(--glow-online)]",
@@ -356,27 +403,27 @@ export function CompactCard({ gen }: { gen: Generator }) {
 
       {configured && (
         <div className="compact-card__electrical mt-1 min-h-0 min-w-0 shrink overflow-hidden">
-          <div className="mb-0.5 grid grid-cols-[minmax(0,1fr)_36px_36px] items-end gap-0.5 text-[8px] font-bold tracking-wide text-muted-foreground">
-            <span className="text-[9px] font-black text-foreground">ELECTRICAL</span>
-            <span className="text-right">MAINS</span>
-            <span className="text-right">GEN</span>
-          </div>
-          <div className="space-y-0">
+          <div className="compact-card__electrical-heading">ELECTRICAL</div>
+          <div className="compact-card__electrical-rows">
             {electricalRows.map((row) => (
-              <div
-                key={row.label}
-                className="grid grid-cols-[minmax(0,1fr)_36px_36px] items-center gap-0.5 border-b border-border/50 py-px text-[9px] leading-tight last:border-b-0"
-              >
-                <span className="truncate text-muted-foreground">{row.label}</span>
-                <span className="num text-right font-semibold text-foreground">{row.mains}</span>
-                <span
-                  className={cn(
-                    "num text-right font-semibold",
-                    row.generator !== "—" ? "text-online" : "text-foreground",
-                  )}
+              <div key={row.label} className="compact-card__electrical-row">
+                <span className="compact-card__electrical-label">{row.label}</span>
+                <div
+                  className={cn("compact-card__electrical-values", row.alignRight && "is-right")}
                 >
-                  {row.generator}
-                </span>
+                  {row.values.map((value, index) => (
+                    <span
+                      key={`${row.label}-${index}`}
+                      title={value.title}
+                      className={cn(
+                        "num",
+                        value.source === "generator" ? "text-online" : "text-foreground",
+                      )}
+                    >
+                      {value.text}
+                    </span>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
