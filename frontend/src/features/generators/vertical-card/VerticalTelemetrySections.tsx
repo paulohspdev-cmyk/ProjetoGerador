@@ -117,6 +117,7 @@ export type ElectricalRow = {
   label: string;
   mains: string;
   generator: string;
+  compact?: boolean;
 };
 
 export type GeneratorAlarmRow = {
@@ -133,7 +134,7 @@ export function VerticalTables({
   electricalRows: ElectricalRow[];
   alarms: GeneratorAlarmRow[];
 }) {
-  const visible = alarms.slice(0, 3);
+  const visible = alarms.slice(0, 5);
   const extra = Math.max(0, alarms.length - visible.length);
 
   return (
@@ -145,10 +146,12 @@ export function VerticalTables({
       </div>
       <div className="vref-data-table">
         {electricalRows.map((row) => (
-          <div key={row.label} className="vref-data-row">
+          <div key={row.label} className={cn("vref-data-row", row.compact && "is-compact")}>
             <span>{row.label}</span>
-            <b>{row.mains}</b>
-            <b className="generator">{row.generator}</b>
+            <b title={row.mains}>{row.mains}</b>
+            <b className="generator" title={row.generator}>
+              {row.generator}
+            </b>
           </div>
         ))}
       </div>
