@@ -1,11 +1,39 @@
 # Estado oficial do projeto
 
-Atualizado em: 2026-09-30  
+Atualizado em: 2026-10-06  
 Baseline de governança integrada: `a3991670a78564d514de95fa1d500b53a32f6f7e`  
 Produção observada durante a Auditoria Zero: `20a68c2d0e146addcca708290a1564c63ffa305e`  
 Fotografia congelada: `production/observed-2026-09-29`  
 PR de fechamento da Auditoria Zero: #105  
 Contexto operacional privado mais recente: `sentinelx_context_sxc_48T4HH71`
+
+## Remediação operacional validada em 2026-10-06
+
+Estado corrente observado e validado:
+
+- `main`, `HEAD` de produção e `/var/lib/rc-geradores/deployed-commit` alinhados após o deploy de `037c97568b289a3d23bd224d7d39aa7a28c2a923`;
+- GitHub Actions do `main`: CI, E2E e Quality and Security verdes;
+- vulnerabilidade HIGH de `source-map-js` corrigida em `1.2.2`; `npm audit --audit-level=high` retorna zero vulnerabilidades;
+- auditoria Python com `pip-audit` sem vulnerabilidades conhecidas;
+- backup completo periódico restaurado com job diário idempotente `job-daily-full-backup`;
+- backup completo imediato executado com sucesso após a correção;
+- retenção de backups transacionais de deploy permanece em 30;
+- banco SQLite validado por `quick_check`, `integrity_check` e `foreign_key_check`;
+- `vm-smoke.sh` e `preflight_vm.sh` aprovados;
+- 13/13 bindings Rapid conferem com cadastro e Controller Pack;
+- serviços RC e Rapid essenciais ativos e sem unidades systemd falhas;
+- inconsistência de versão do `fwupd` da VM corrigida;
+- 98 branches Git já mescladas foram removidas; branches não mescladas, releases, backups, checkpoints e auditorias foram preservados;
+- E2E dedicado do Compacto está presente e ativo.
+
+Pendências que dependem de infraestrutura/administrador externo ao código:
+
+- backup off-site continua sem destino externo montado/configurado; não deve ser simulado em diretório do mesmo disco;
+- proteção obrigatória de `main` contra merge com checks vermelhos depende de configuração administrativa no GitHub. O código já possui os gates, mas a integração disponível nesta sessão não possui permissão de administração do repositório.
+
+Relatório desta remediação:
+
+`docs/audit/AUDIT_REMEDIATION_2026-10-06.md`
 
 ## Estado da Auditoria Zero
 
@@ -19,7 +47,7 @@ Relatório de fechamento:
 
 `docs/audit/AUDIT_ZERO_FINAL_2026-09-30.md`
 
-## Estado conhecido de maior impacto
+## Baseline histórica de maior impacto da Auditoria Zero
 
 - produção observada estava em SHA de PR ainda aberto, diferente da main consolidada;
 - GEN163/DSE4520 possuía Controller Pack com 40 canais e binding runtime com 26;
@@ -46,7 +74,7 @@ Relatório de fechamento:
 - `docs/governance/AI_HANDOFF.md`
 - `docs/audit/AUDIT_ZERO_FINAL_2026-09-30.md`
 
-## Próxima fase obrigatória — Remediação Controlada
+## Plano histórico da Remediação Controlada — consultar a seção de 2026-10-06 antes de executar
 
 Ordem:
 
