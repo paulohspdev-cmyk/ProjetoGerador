@@ -12,6 +12,24 @@
   min-height: 0;
   height: 100%;
   overflow: hidden;
+  container-type: size;
+  container-name: compact-card;
+}
+
+.compact-generator-grid[data-videowall="true"] {
+  /* Mantém a página inteira dentro da área útil do videowall. */
+  overflow: clip;
+}
+
+.compact-card {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.compact-card__body,
+.compact-card__metrics,
+.compact-card__electrical {
+  min-height: 0;
 }
 
 .controller-image-area {
@@ -103,4 +121,152 @@
   fill: #071923;
   stroke: #b8c9d4;
   stroke-width: 1;
+}
+
+/*
+ * Densidade do videowall.
+ * Os breakpoints são pelo tamanho REAL de cada card, não pela resolução
+ * nominal da TV. Assim 30 cards continuam íntegros em 1080p/4K e em uma
+ * área de trabalho formada por várias TVs.
+ */
+@container compact-card (max-height: 220px) {
+  .compact-card {
+    padding: 4px !important;
+  }
+
+  .compact-card__header {
+    gap: 2px;
+  }
+
+  .compact-card__header h3 {
+    font-size: 10px !important;
+    line-height: 1.05 !important;
+  }
+
+  .compact-card__header p {
+    font-size: 8px !important;
+    line-height: 1.05 !important;
+  }
+
+  .compact-card__header a,
+  .compact-card__header > div:last-child > span:last-child {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  .compact-card__body {
+    margin-top: 2px !important;
+    gap: 4px !important;
+  }
+
+  .compact-card__visuals {
+    width: 78px !important;
+    gap: 0 !important;
+  }
+
+  .controller-image-area {
+    max-width: 78px;
+    height: 38px;
+    border-radius: 4px;
+  }
+
+  .compact-kw-gauge {
+    max-width: 78px;
+    margin-top: -7px;
+  }
+
+  .compact-kw-svg {
+    max-height: 56px;
+  }
+
+  .compact-card__metrics {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0 !important;
+  }
+
+  .compact-card__metric {
+    min-height: 0;
+    font-size: 8px !important;
+    line-height: 1 !important;
+  }
+
+  .compact-card__electrical {
+    margin-top: 2px !important;
+  }
+
+  .compact-card__electrical > div:first-child {
+    margin-bottom: 0 !important;
+    font-size: 7px !important;
+    line-height: 1 !important;
+  }
+
+  .compact-card__electrical > div:first-child > span:first-child {
+    font-size: 8px !important;
+  }
+
+  .compact-card__electrical > div:last-child > div {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    font-size: 8px !important;
+    line-height: 1.05 !important;
+  }
+
+  .compact-card__stale {
+    margin-top: 2px !important;
+    font-size: 8px !important;
+    line-height: 1 !important;
+  }
+}
+
+@container compact-card (max-height: 190px) {
+  .compact-card {
+    padding: 3px !important;
+  }
+
+  .compact-card__visuals {
+    width: 70px !important;
+  }
+
+  .controller-image-area {
+    max-width: 70px;
+    height: 32px;
+  }
+
+  .compact-kw-gauge {
+    max-width: 70px;
+    margin-top: -9px;
+  }
+
+  .compact-kw-svg {
+    max-height: 49px;
+  }
+
+  .compact-card__metric {
+    font-size: 7.25px !important;
+  }
+
+  .compact-card__metric svg {
+    width: 8px !important;
+    height: 8px !important;
+  }
+
+  .compact-card__electrical > div:first-child,
+  .compact-card__electrical > div:last-child > div {
+    font-size: 7px !important;
+  }
+
+  .compact-card__electrical > div:first-child > span:first-child {
+    font-size: 7.5px !important;
+  }
+
+  .compact-kw-scale,
+  .compact-kw-unit {
+    font-size: 7px;
+  }
+
+  .compact-kw-value {
+    font-size: 12px;
+  }
 }
