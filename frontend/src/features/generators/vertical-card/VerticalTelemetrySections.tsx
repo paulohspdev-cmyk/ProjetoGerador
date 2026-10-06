@@ -117,7 +117,6 @@ export type ElectricalRow = {
   label: string;
   mains: string;
   generator: string;
-  compact?: boolean;
 };
 
 export type GeneratorAlarmRow = {
@@ -141,13 +140,14 @@ export function VerticalTables({
     <div className="vref-measurements">
       <div className="vref-table-heading">
         <h4>ELECTRICAL</h4>
-        <span>MAINS</span>
-        <span>GEN</span>
+        <div className="vref-table-sources" aria-hidden>
+          <span>MAINS</span>
+          <span>GEN</span>
+        </div>
       </div>
       <div className="vref-data-table">
         {electricalRows.map((row) => (
-          <div key={row.label} className={cn("vref-data-row", row.compact && "is-compact")}>
-            <span>{row.label}</span>
+          <div key={row.label} className="vref-data-row" aria-label={row.label}>
             <b title={row.mains}>{row.mains}</b>
             <b className="generator" title={row.generator}>
               {row.generator}
