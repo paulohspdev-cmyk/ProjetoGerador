@@ -115,8 +115,11 @@ export function VerticalEngine({
 
 export type ElectricalRow = {
   label: string;
-  mains: string;
-  generator: string;
+  values: Array<{
+    text: string;
+    source: "mains" | "generator";
+    title?: string;
+  }>;
 };
 
 export type GeneratorAlarmRow = {
@@ -133,22 +136,29 @@ export function VerticalTables({
   electricalRows: ElectricalRow[];
   alarms: GeneratorAlarmRow[];
 }) {
-  const visible = alarms.slice(0, 3);
+  const visible = alarms.slice(0, 5);
   const extra = Math.max(0, alarms.length - visible.length);
 
   return (
     <div className="vref-measurements">
       <div className="vref-table-heading">
         <h4>ELECTRICAL</h4>
-        <span>MAINS</span>
-        <span>GEN</span>
       </div>
       <div className="vref-data-table">
         {electricalRows.map((row) => (
           <div key={row.label} className="vref-data-row">
             <span>{row.label}</span>
-            <b>{row.mains}</b>
-            <b className="generator">{row.generator}</b>
+            <div className="vref-data-values">
+              {row.values.map((value, index) => (
+                <b
+                  key={`${row.label}-${index}`}
+                  className={value.source === "generator" ? "generator" : undefined}
+                  title={value.title}
+                >
+                  {value.text}
+                </b>
+              ))}
+            </div>
           </div>
         ))}
       </div>
