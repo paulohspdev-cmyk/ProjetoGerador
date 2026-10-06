@@ -6,13 +6,15 @@ export const COMPACT_MIN_CARD_WIDTH = 210;
 export const COMPACT_MIN_CARD_HEIGHT = 180;
 const COMPACT_TARGET_ASPECT_RATIO = 1.55;
 
+export type CompactDensity = "normal" | "dense" | "videowall";
+
 /**
  * O modo compacto também é o modo videowall. A prioridade é acomodar
- * aproximadamente 30 geradores sem recortar o conteúdo do card.
+ * até 30 geradores por página sem recortar o conteúdo do card.
  *
- * Mantemos geometrias alternativas com a mesma capacidade para telas 16:9,
- * videowalls 3x2 e paredes ultrawide. Entre as grades que cabem, escolhemos
- * a que preserva melhor o formato horizontal do card.
+ * Para conjuntos menores, a grade usa apenas a capacidade necessária para
+ * manter os cards legíveis e aproveitar melhor a área disponível. Quando a
+ * quantidade não cabe integralmente, escolhemos a maior capacidade segura.
  */
 const COMPACT_LAYOUTS: Array<[number, number]> = [
   [6, 5],
@@ -58,11 +60,23 @@ export type CompactLayout = {
   pageSize: number;
   cardWidth: number;
   cardHeight: number;
+  density: CompactDensity;
 };
 
-export function compactLayout(width: number, height: number): CompactLayout {
+function compactDensity(cardWidth: number, cardHeight: number, pageSize: number): CompactDensity {
+  if (cardWidth >= 400 && cardHeight >= 260) return "videowall";
+  if (pageSize >= 20 || cardWidth <= 260 || cardHeight <= 220) return "dense";
+  return "normal";
+}
+
+export function compactLayout(
+  width: number,
+  height: number,
+  itemCount = COMPACT_TARGET_PAGE_SIZE,
+): CompactLayout {
   const usableWidth = Math.max(1, width - COMPACT_PADDING * 2);
   const usableHeight = Math.max(1, height - COMPACT_PADDING * 2);
+  const desiredPageSize = Math.min(COMPACT_TARGET_PAGE_SIZE, Math.max(1, Math.floor(itemCount)));
 
   const candidates = COMPACT_LAYOUTS.map(([columns, rows]) => {
     const cardWidth = (usableWidth - COMPACT_GAP * Math.max(0, columns - 1)) / Math.max(1, columns);
@@ -85,22 +99,24 @@ export function compactLayout(width: number, height: number): CompactLayout {
   );
 
   if (candidates.length) {
-    const exactTarget = candidates.filter(
-      (candidate) => candidate.pageSize === COMPACT_TARGET_PAGE_SIZE,
-    );
-    const pool = exactTarget.length ? exactTarget : candidates;
-    const best = [...pool].sort(
-      (a, b) =>
-        b.pageSize - a.pageSize ||
+    const completePage = candidates.filter((candidate) => candidate.pageSize >= desiredPageSize);
+    const pool = completePage.length ? completePage : candidates;
+    const best = [...pool].sort((a, b) => {
+      const capacityOrder = completePage.length ? a.pageSize - b.pageSize : b.pageSize - a.pageSize;
+      return (
+        capacityOrder ||
         a.aspectDistance - b.aspectDistance ||
-        b.cardWidth * b.cardHeight - a.cardWidth * a.cardHeight,
-    )[0]!;
+        b.cardWidth * b.cardHeight - a.cardWidth * a.cardHeight
+      );
+    })[0]!;
+
     return {
       columns: best.columns,
       rows: best.rows,
       pageSize: best.pageSize,
       cardWidth: best.cardWidth,
       cardHeight: best.cardHeight,
+      density: compactDensity(best.cardWidth, best.cardHeight, best.pageSize),
     };
   }
 
@@ -110,5 +126,6 @@ export function compactLayout(width: number, height: number): CompactLayout {
     pageSize: 1,
     cardWidth: usableWidth,
     cardHeight: usableHeight,
+    density: compactDensity(usableWidth, usableHeight, 1),
   };
 }

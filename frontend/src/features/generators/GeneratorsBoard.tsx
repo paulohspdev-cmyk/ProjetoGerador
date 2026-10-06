@@ -132,8 +132,13 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
   );
 
   const compactLayoutState = useMemo(
-    () => compactLayout(Math.max(1, viewport.width || 1200), Math.max(1, viewport.height || 720)),
-    [viewport],
+    () =>
+      compactLayout(
+        Math.max(1, viewport.width || 1200),
+        Math.max(1, viewport.height || 720),
+        items.length,
+      ),
+    [viewport, items.length],
   );
 
   const pageSize = useMemo(() => {
@@ -427,6 +432,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
               style={compactGridStyle}
               data-page-size={compactLayoutState.pageSize}
               data-min-card={`${COMPACT_MIN_CARD_WIDTH}x${COMPACT_MIN_CARD_HEIGHT}`}
+              data-density={compactLayoutState.density}
               data-videowall={
                 compactLayoutState.pageSize === COMPACT_TARGET_PAGE_SIZE ? "true" : "false"
               }
