@@ -105,6 +105,16 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
     await expect(card.getByText("ENGINE STATUS")).toBeVisible();
     await expect(card.getByRole("heading", { name: "RPM" })).toBeVisible();
     await expect(card.locator(".vref-data-table")).toBeVisible();
+    await expect(card.locator(".vref-data-row")).toHaveCount(5);
+    await expect(card.locator(".vref-data-row").nth(0)).toContainText("L1-N");
+    await expect(card.locator(".vref-data-row").nth(0)).toContainText("L2-N");
+    await expect(card.locator(".vref-data-row").nth(0)).toContainText("L3-N");
+    await expect(card.locator(".vref-data-row").nth(1)).toContainText("L1-L2");
+    await expect(card.locator(".vref-data-row").nth(1)).toContainText("L2-L3");
+    await expect(card.locator(".vref-data-row").nth(1)).toContainText("L3-L1");
+    await expect(card.locator(".vref-data-row").nth(4)).toContainText("L1");
+    await expect(card.locator(".vref-data-row").nth(4)).toContainText("L2");
+    await expect(card.locator(".vref-data-row").nth(4)).toContainText("L3");
     await expect(card.locator(".vref-summary-grid")).toHaveCount(0);
     await expect(card.getByText("Horímetro", { exact: true })).toHaveCount(0);
     await expect(card.getByText("Energia", { exact: true })).toHaveCount(0);
