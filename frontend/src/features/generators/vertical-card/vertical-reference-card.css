@@ -1062,6 +1062,16 @@
   color: var(--vref-green);
 }
 
+.vref-data-values.is-right {
+  grid-template-columns: repeat(2, minmax(0, max-content));
+  justify-content: end;
+  gap: 10px;
+}
+
+.vref-data-values.is-right > b {
+  min-width: 54px;
+}
+
 .vref-alarms {
   display: flex;
   flex: 1 1 auto;
