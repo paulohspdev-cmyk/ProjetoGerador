@@ -122,17 +122,11 @@ async function validateViewport(
     }
 
     const styles = getComputedStyle(grid);
-    const firstCardRect = cards[0]?.getBoundingClientRect();
     return {
       pageSize: Number(grid.dataset.pageSize || "0"),
       density: grid.dataset.density || "",
-      layoutShape: grid.dataset.layoutShape || "",
       columns: Number(styles.getPropertyValue("--compact-cols") || "0"),
       rows: Number(styles.getPropertyValue("--compact-rows") || "0"),
-      gridWidth: Math.round(gridRect.width),
-      gridHeight: Math.round(gridRect.height),
-      cardWidth: firstCardRect ? Math.round(firstCardRect.width) : 0,
-      cardHeight: firstCardRect ? Math.round(firstCardRect.height) : 0,
       cardCount: cards.length,
       violations,
       globalOverflow:
@@ -144,11 +138,6 @@ async function validateViewport(
   expect(result.pageSize).toBeGreaterThan(0);
   expect(result.pageSize).toBeLessThanOrEqual(30);
   if (expectedPageSize != null) expect(result.pageSize).toBe(expectedPageSize);
-  if (expectedPageSize === 30 && width >= 1920) {
-    expect(result.columns).toBe(5);
-    expect(result.rows).toBe(6);
-    expect(result.layoutShape).toBe("vertical");
-  }
   expect(result.cardCount).toBe(Math.min(result.pageSize, rows.length));
   expect(result.violations).toEqual([]);
   expect(result.globalOverflow).toBeLessThanOrEqual(1);
@@ -206,7 +195,6 @@ test("compacto videowall acomoda até 30 cards sem recorte", async ({ browser, p
   }));
 
   await validateViewport(browser, rows, 1366, 768);
-  await validateViewport(browser, rows.slice(0, 13), 1920, 1080, 30);
   await validateViewport(browser, rows, 1920, 1080, 30);
   await validateViewport(browser, rows, 2560, 1440, 30);
   await validateViewport(browser, rows, 3840, 2160, 30);

@@ -4,8 +4,6 @@ export const COMPACT_TARGET_PAGE_SIZE = 30;
 
 export const COMPACT_MIN_CARD_WIDTH = 210;
 export const COMPACT_MIN_CARD_HEIGHT = 180;
-const COMPACT_VERTICAL_TARGET_MIN_WIDTH = 280;
-const COMPACT_VERTICAL_TARGET_MIN_HEIGHT = 145;
 const COMPACT_TARGET_ASPECT_RATIO = 1.55;
 
 export type CompactDensity = "normal" | "dense" | "videowall";
@@ -14,10 +12,9 @@ export type CompactDensity = "normal" | "dense" | "videowall";
  * O modo compacto também é o modo videowall. A prioridade é acomodar
  * até 30 geradores por página sem recortar o conteúdo do card.
  *
- * A capacidade da grade é definida pelo espaço disponível, não pela quantidade
- * atual de geradores. Assim o videowall mantém o mesmo tamanho de card hoje e
- * quando novas unidades forem adicionadas, sem "inflar" os cards em páginas
- * parcialmente preenchidas.
+ * Para conjuntos menores, a grade usa apenas a capacidade necessária para
+ * manter os cards legíveis e aproveitar melhor a área disponível. Quando a
+ * quantidade não cabe integralmente, escolhemos a maior capacidade segura.
  */
 const COMPACT_LAYOUTS: Array<[number, number]> = [
   [6, 5],
@@ -72,53 +69,46 @@ function compactDensity(cardWidth: number, cardHeight: number, pageSize: number)
   return "normal";
 }
 
-export function compactLayout(width: number, height: number): CompactLayout {
+export function compactLayout(
+  width: number,
+  height: number,
+  itemCount = COMPACT_TARGET_PAGE_SIZE,
+): CompactLayout {
   const usableWidth = Math.max(1, width - COMPACT_PADDING * 2);
   const usableHeight = Math.max(1, height - COMPACT_PADDING * 2);
+  const desiredPageSize = Math.min(COMPACT_TARGET_PAGE_SIZE, Math.max(1, Math.floor(itemCount)));
 
   const candidates = COMPACT_LAYOUTS.map(([columns, rows]) => {
     const cardWidth = (usableWidth - COMPACT_GAP * Math.max(0, columns - 1)) / Math.max(1, columns);
     const cardHeight = (usableHeight - COMPACT_GAP * Math.max(0, rows - 1)) / Math.max(1, rows);
     const pageSize = columns * rows;
     const aspectRatio = cardWidth / Math.max(1, cardHeight);
-    const verticalTarget = columns === 5 && rows === 6;
     return {
       columns,
       rows,
       pageSize,
       cardWidth,
       cardHeight,
-      verticalTarget,
       aspectDistance: Math.abs(Math.log(aspectRatio / COMPACT_TARGET_ASPECT_RATIO)),
     };
-  }).filter((candidate) => {
-    if (candidate.pageSize > COMPACT_TARGET_PAGE_SIZE) return false;
-    if (candidate.verticalTarget) {
-      return (
-        candidate.cardWidth >= COMPACT_VERTICAL_TARGET_MIN_WIDTH &&
-        candidate.cardHeight >= COMPACT_VERTICAL_TARGET_MIN_HEIGHT
-      );
-    }
-    return (
+  }).filter(
+    (candidate) =>
+      candidate.pageSize <= COMPACT_TARGET_PAGE_SIZE &&
       candidate.cardWidth >= COMPACT_MIN_CARD_WIDTH &&
-      candidate.cardHeight >= COMPACT_MIN_CARD_HEIGHT
-    );
-  });
+      candidate.cardHeight >= COMPACT_MIN_CARD_HEIGHT,
+  );
 
   if (candidates.length) {
-    const exactTarget = candidates.filter(
-      (candidate) => candidate.pageSize === COMPACT_TARGET_PAGE_SIZE,
-    );
-    const verticalTarget = exactTarget.find(
-      (candidate) => candidate.columns === 5 && candidate.rows === 6,
-    );
-    const pool = verticalTarget ? [verticalTarget] : exactTarget.length ? exactTarget : candidates;
-    const best = [...pool].sort(
-      (a, b) =>
-        b.pageSize - a.pageSize ||
+    const completePage = candidates.filter((candidate) => candidate.pageSize >= desiredPageSize);
+    const pool = completePage.length ? completePage : candidates;
+    const best = [...pool].sort((a, b) => {
+      const capacityOrder = completePage.length ? a.pageSize - b.pageSize : b.pageSize - a.pageSize;
+      return (
+        capacityOrder ||
         a.aspectDistance - b.aspectDistance ||
-        b.cardWidth * b.cardHeight - a.cardWidth * a.cardHeight,
-    )[0]!;
+        b.cardWidth * b.cardHeight - a.cardWidth * a.cardHeight
+      );
+    })[0]!;
 
     return {
       columns: best.columns,
