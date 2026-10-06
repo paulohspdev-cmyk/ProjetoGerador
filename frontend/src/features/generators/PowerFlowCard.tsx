@@ -163,7 +163,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     frequency,
     mainsFrequency,
     powerKw,
-    powerFactor,
     nominalPower,
     currentL1,
     currentL2,
@@ -184,7 +183,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const mainsL1 = metricNumber(gen, "mains_voltage_l1", gen.mains.l1);
   const mainsL2 = metricNumber(gen, "mains_voltage_l2", gen.mains.l2);
   const mainsL3 = metricNumber(gen, "mains_voltage_l3", gen.mains.l3);
-  const mainsPf = metricNumber(gen, "mains_power_factor", undefined);
   const mainsCurrentL1 = metricNumber(gen, "mains_current_l1", undefined);
   const mainsCurrentL2 = metricNumber(gen, "mains_current_l2", undefined);
   const mainsCurrentL3 = metricNumber(gen, "mains_current_l3", undefined);
@@ -245,75 +243,61 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const electricalRows = useMemo(
     () => [
       {
-        label: "L-N",
-        compact: true,
+        label: "phase-neutral",
         mains: [
           ["L1-N", mainsKnown ? mainsL1 : null],
           ["L2-N", mainsKnown ? mainsL2 : null],
           ["L3-N", mainsKnown ? mainsL3 : null],
         ]
           .map(([phase, value]) => phase + " " + formatNumber(value as number | null, 0))
-          .join("  "),
+          .join("   "),
         generator: [
           ["L1-N", genL1],
           ["L2-N", genL2],
           ["L3-N", genL3],
         ]
           .map(([phase, value]) => phase + " " + formatNumber(value as number | null, 0))
-          .join("  "),
+          .join("   "),
       },
       {
-        label: "L-L",
-        compact: true,
+        label: "phase-phase",
         mains: [
           ["L1-L2", mainsKnown ? mainsL12 : null],
           ["L2-L3", mainsKnown ? mainsL23 : null],
           ["L3-L1", mainsKnown ? mainsL31 : null],
         ]
           .map(([phase, value]) => phase + " " + formatNumber(value as number | null, 0))
-          .join("  "),
+          .join("   "),
         generator: [
           ["L1-L2", genL12],
           ["L2-L3", genL23],
           ["L3-L1", genL31],
         ]
           .map(([phase, value]) => phase + " " + formatNumber(value as number | null, 0))
-          .join("  "),
+          .join("   "),
       },
       {
-        label: "Frequency",
-        mains: formatUnit(mainsKnown ? mainsFrequency : null, "Hz", 1),
-        generator: formatUnit(frequency, "Hz", 1),
-      },
-      {
-        label: "Power Factor",
-        mains: formatNumber(mainsPf, 2),
-        generator: formatNumber(powerFactor, 2),
-      },
-      {
-        label: "Current",
-        compact: true,
+        label: "current",
         mains: [
           ["L1", mainsCurrentL1],
           ["L2", mainsCurrentL2],
           ["L3", mainsCurrentL3],
         ]
-          .map(([phase, value]) => phase + " " + formatNumber(value as number | null, 0))
-          .join("  "),
+          .map(([phase, value]) => phase + " " + formatNumber(value as number | null, 0) + "A")
+          .join("   "),
         generator: [
           ["L1", currentL1],
           ["L2", currentL2],
           ["L3", currentL3],
         ]
-          .map(([phase, value]) => phase + " " + formatNumber(value as number | null, 0))
-          .join("  "),
+          .map(([phase, value]) => phase + " " + formatNumber(value as number | null, 0) + "A")
+          .join("   "),
       },
     ],
     [
       currentL1,
       currentL2,
       currentL3,
-      frequency,
       genL1,
       genL2,
       genL3,
@@ -323,7 +307,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       mainsCurrentL1,
       mainsCurrentL2,
       mainsCurrentL3,
-      mainsFrequency,
       mainsKnown,
       mainsL1,
       mainsL2,
@@ -331,8 +314,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       mainsL12,
       mainsL23,
       mainsL31,
-      mainsPf,
-      powerFactor,
     ],
   );
 
