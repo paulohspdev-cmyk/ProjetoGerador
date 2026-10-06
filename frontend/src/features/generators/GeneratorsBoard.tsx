@@ -29,6 +29,14 @@ import { GeneratorTable } from "./GeneratorTable";
 import { KpiStrip } from "./KpiStrip";
 import { PowerFlowCard } from "./PowerFlowCard";
 import { useGenerators } from "./GeneratorsProvider";
+import {
+  COMPACT_GAP,
+  COMPACT_MIN_CARD_HEIGHT,
+  COMPACT_MIN_CARD_WIDTH,
+  COMPACT_PADDING,
+  COMPACT_TARGET_PAGE_SIZE,
+  compactLayout,
+} from "./compact-layout";
 
 type View = "principal" | "compacto" | "lista";
 
@@ -42,32 +50,7 @@ const VERTICAL_GAP = 8;
 const VERTICAL_PADDING = 4;
 const VERTICAL_MIN_CARD_WIDTH = 285;
 const VERTICAL_MIN_CARD_HEIGHT = 720;
-
-const COMPACT_GAP = 6;
-const COMPACT_PADDING = 4;
-const COMPACT_MIN_CARD_WIDTH = 160;
-const COMPACT_MIN_CARD_HEIGHT = 156;
 const FULLSCREEN_AUTO_ROTATE_MS = 25_000;
-/** Layouts preferidos para ~18 cards/tela, do mais denso ao mais folgado. */
-const COMPACT_LAYOUTS: Array<[number, number]> = [
-  [6, 3],
-  [9, 2],
-  [3, 6],
-  [5, 4],
-  [4, 5],
-  [6, 4],
-  [4, 4],
-  [6, 2],
-  [3, 4],
-  [4, 3],
-  [3, 3],
-  [2, 4],
-  [2, 3],
-  [2, 2],
-  [1, 3],
-  [1, 2],
-  [1, 1],
-];
 
 function verticalColumnCount(width: number) {
   const usableWidth = Math.max(1, width - VERTICAL_PADDING * 2);
@@ -83,33 +66,6 @@ function verticalRowCount(height: number) {
     1,
     Math.floor((usableHeight + VERTICAL_GAP) / (VERTICAL_MIN_CARD_HEIGHT + VERTICAL_GAP)),
   );
-}
-
-function compactLayout(width: number, height: number) {
-  const usableWidth = Math.max(1, width - COMPACT_PADDING * 2);
-  const usableHeight = Math.max(1, height - COMPACT_PADDING * 2);
-
-  for (const [columns, rows] of COMPACT_LAYOUTS) {
-    const cardWidth = (usableWidth - COMPACT_GAP * Math.max(0, columns - 1)) / Math.max(1, columns);
-    const cardHeight = (usableHeight - COMPACT_GAP * Math.max(0, rows - 1)) / Math.max(1, rows);
-    if (cardWidth >= COMPACT_MIN_CARD_WIDTH && cardHeight >= COMPACT_MIN_CARD_HEIGHT) {
-      return {
-        columns,
-        rows,
-        pageSize: columns * rows,
-        cardWidth,
-        cardHeight,
-      };
-    }
-  }
-
-  return {
-    columns: 1,
-    rows: 1,
-    pageSize: 1,
-    cardWidth: usableWidth,
-    cardHeight: usableHeight,
-  };
 }
 
 const filters: Array<{ id: GenStatus | "todos"; label: string }> = [
@@ -199,6 +155,8 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
         "--compact-rows": compactLayoutState.rows,
         "--compact-gap": COMPACT_GAP + "px",
         "--compact-padding": COMPACT_PADDING + "px",
+        "--compact-card-width": compactLayoutState.cardWidth + "px",
+        "--compact-card-height": compactLayoutState.cardHeight + "px",
       }) as CSSProperties,
     [compactLayoutState],
   );
@@ -467,6 +425,11 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
             <div
               className="compact-generator-grid scroll-slim grid h-full min-h-0 min-w-0 overflow-hidden"
               style={compactGridStyle}
+              data-page-size={compactLayoutState.pageSize}
+              data-min-card={`${COMPACT_MIN_CARD_WIDTH}x${COMPACT_MIN_CARD_HEIGHT}`}
+              data-videowall={
+                compactLayoutState.pageSize === COMPACT_TARGET_PAGE_SIZE ? "true" : "false"
+              }
             >
               {visible.map((generator) => (
                 <CompactCard key={generator.id} gen={generator} />

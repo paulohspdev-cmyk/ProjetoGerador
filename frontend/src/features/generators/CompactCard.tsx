@@ -45,7 +45,7 @@ function Metric({
   tone?: string;
 }) {
   return (
-    <div className="flex min-w-0 items-center gap-0.5 text-[9px] leading-none">
+    <div className="compact-card__metric flex min-w-0 items-center gap-0.5 text-[9px] leading-none">
       <span className="grid size-2.5 shrink-0 place-items-center text-muted-foreground">
         {icon}
       </span>
@@ -231,14 +231,14 @@ export function CompactCard({ gen }: { gen: Generator }) {
   return (
     <article
       className={cn(
-        "flex min-w-0 min-h-0 flex-col overflow-hidden rounded-lg border bg-card p-1.5",
+        "compact-card flex min-w-0 min-h-0 flex-col overflow-hidden rounded-lg border bg-card p-1.5",
         connected && "border-online/55 [box-shadow:var(--glow-online)]",
         displayStatus === "alerta" && "border-alert/50",
         (displayStatus === "offline" || displayStatus === "stale") && "border-offline/40",
         !configured && "border-border",
       )}
     >
-      <header className="flex shrink-0 items-start justify-between gap-1">
+      <header className="compact-card__header flex shrink-0 items-start justify-between gap-1">
         <div className="min-w-0">
           <h3 className="truncate text-[12px] font-bold leading-tight">
             {displayGeneratorName(gen)}
@@ -284,8 +284,8 @@ export function CompactCard({ gen }: { gen: Generator }) {
         </div>
       </header>
 
-      <div className="mt-1 flex min-h-0 flex-1 items-start gap-1.5 overflow-hidden">
-        <div className="flex w-[92px] shrink-0 flex-col gap-0.5">
+      <div className="compact-card__body mt-1 flex min-h-0 flex-1 items-start gap-1.5 overflow-hidden">
+        <div className="compact-card__visuals flex w-[92px] shrink-0 flex-col gap-0.5">
           <div className="controller-image-area" aria-hidden>
             <img
               className="controller-image"
@@ -300,7 +300,7 @@ export function CompactCard({ gen }: { gen: Generator }) {
         </div>
 
         {configured ? (
-          <div className="min-w-0 flex-1 space-y-0.5 overflow-y-auto scroll-slim">
+          <div className="compact-card__metrics min-w-0 flex-1 space-y-0.5 overflow-hidden">
             <Metric
               icon={<RotateCw className="size-2.5" />}
               label="RPM"
@@ -355,7 +355,7 @@ export function CompactCard({ gen }: { gen: Generator }) {
       </div>
 
       {configured && (
-        <div className="mt-1 min-h-0 min-w-0 shrink overflow-hidden">
+        <div className="compact-card__electrical mt-1 min-h-0 min-w-0 shrink overflow-hidden">
           <div className="mb-0.5 grid grid-cols-[minmax(0,1fr)_36px_36px] items-end gap-0.5 text-[8px] font-bold tracking-wide text-muted-foreground">
             <span className="text-[9px] font-black text-foreground">ELECTRICAL</span>
             <span className="text-right">MAINS</span>
@@ -384,7 +384,7 @@ export function CompactCard({ gen }: { gen: Generator }) {
       )}
 
       {gen.telemetryStale && (
-        <p className="mt-1 text-[10px] font-semibold text-alert">
+        <p className="compact-card__stale mt-1 text-[10px] font-semibold text-alert">
           Telemetria expirada — valores ocultados
         </p>
       )}
