@@ -125,6 +125,20 @@ if [[ -x "$BASE/backend/.venv/bin/python" && -f "$ENV_FILE" ]]; then
 from app import db, ops_store, platform_store, transport_store
 db.init_db(); ops_store.init_ops_db(); platform_store.init_platform_db(); transport_store.init_transport_db()
 print(f"Usuários: {db.count_users()} / administradores ativos: {db.count_active_admins()}")
+backup_jobs = [
+    job for job in platform_store.list_scheduler_jobs()
+    if job.get("kind") == "backup"
+]
+enabled_backups = [job for job in backup_jobs if job.get("enabled")]
+if enabled_backups:
+    job = sorted(enabled_backups, key=lambda item: str(item.get("id") or ""))[0]
+    print(
+        "Backup periódico: ATIVO | "
+        f"id={job.get('id')} interval={job.get('interval_seconds')}s "
+        f"next_run={job.get('next_run')} last_result={job.get('last_result') or '-'}"
+    )
+else:
+    print("Backup periódico: AUSENTE")
 for g in db.list_generators():
     print(
         f"{g['tag']}: {g['controller_type']} {g['controller_model']} | "
