@@ -185,7 +185,9 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const mainsL2 = metricNumber(gen, "mains_voltage_l2", gen.mains.l2);
   const mainsL3 = metricNumber(gen, "mains_voltage_l3", gen.mains.l3);
   const mainsPf = metricNumber(gen, "mains_power_factor", undefined);
-  const mainsCurrent = metricNumber(gen, "mains_current_l1", undefined);
+  const mainsCurrentL1 = metricNumber(gen, "mains_current_l1", undefined);
+  const mainsCurrentL2 = metricNumber(gen, "mains_current_l2", undefined);
+  const mainsCurrentL3 = metricNumber(gen, "mains_current_l3", undefined);
   const mainsVoltageKnown = ["mains_voltage_l1", "mains_voltage_l2", "mains_voltage_l3"].some(
     (key) => hasFreshMetric(gen, key),
   );
@@ -203,8 +205,12 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const genL1 = metricNumber(gen, "voltage_l1", gen.gen.l1);
   const genL2 = metricNumber(gen, "voltage_l2", gen.gen.l2);
   const genL3 = metricNumber(gen, "voltage_l3", gen.gen.l3);
-  const genL13 = metricNumber(gen, "voltage_l3_l1", undefined);
-  const mainsL13 = metricNumber(gen, "mains_voltage_l3_l1", undefined);
+  const genL12 = metricNumber(gen, "voltage_l1_l2", gen.gen.l12);
+  const genL23 = metricNumber(gen, "voltage_l2_l3", undefined);
+  const genL31 = metricNumber(gen, "voltage_l3_l1", undefined);
+  const mainsL12 = metricNumber(gen, "mains_voltage_l1_l2", gen.mains.l12);
+  const mainsL23 = metricNumber(gen, "mains_voltage_l2_l3", undefined);
+  const mainsL31 = metricNumber(gen, "mains_voltage_l3_l1", undefined);
   const generatorVoltageKnown = ["voltage_l1", "voltage_l2", "voltage_l3"].some((key) =>
     hasFreshMetric(gen, key),
   );
@@ -222,9 +228,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     (value): value is number => value != null,
   );
   const currentKnown = currentValues.length > 0;
-  const genCurrent = currentKnown
-    ? currentValues.reduce((sum, value) => sum + value, 0) / currentValues.length
-    : null;
   // O bloco de LEDs da página 190 não é feedback GCB universal entre modelos DSE.
   // Fluxo elétrico positivo é evidência suficiente para afirmar FECHADO em genset_only,
   // mas ausência de carga NÃO prova ABERTO: o disjuntor pode estar fechado em barramento
@@ -242,24 +245,40 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const electricalRows = useMemo(
     () => [
       {
-        label: "L1-N Voltage",
-        mains: formatUnit(mainsKnown ? mainsL1 : null, "V"),
-        generator: formatUnit(genL1, "V"),
+        label: "L-N",
+        compact: true,
+        mains: [
+          ["L1-N", mainsKnown ? mainsL1 : null],
+          ["L2-N", mainsKnown ? mainsL2 : null],
+          ["L3-N", mainsKnown ? mainsL3 : null],
+        ]
+          .map(([phase, value]) => phase + " " + formatNumber(value as number | null, 0))
+          .join("  "),
+        generator: [
+          ["L1-N", genL1],
+          ["L2-N", genL2],
+          ["L3-N", genL3],
+        ]
+          .map(([phase, value]) => phase + " " + formatNumber(value as number | null, 0))
+          .join("  "),
       },
       {
-        label: "L2-N Voltage",
-        mains: formatUnit(mainsKnown ? mainsL2 : null, "V"),
-        generator: formatUnit(genL2, "V"),
-      },
-      {
-        label: "L3-N Voltage",
-        mains: formatUnit(mainsKnown ? mainsL3 : null, "V"),
-        generator: formatUnit(genL3, "V"),
-      },
-      {
-        label: "L1-L3 Voltage",
-        mains: formatUnit(mainsKnown ? mainsL13 : null, "V"),
-        generator: formatUnit(genL13, "V"),
+        label: "L-L",
+        compact: true,
+        mains: [
+          ["L1-L2", mainsKnown ? mainsL12 : null],
+          ["L2-L3", mainsKnown ? mainsL23 : null],
+          ["L3-L1", mainsKnown ? mainsL31 : null],
+        ]
+          .map(([phase, value]) => phase + " " + formatNumber(value as number | null, 0))
+          .join("  "),
+        generator: [
+          ["L1-L2", genL12],
+          ["L2-L3", genL23],
+          ["L3-L1", genL31],
+        ]
+          .map(([phase, value]) => phase + " " + formatNumber(value as number | null, 0))
+          .join("  "),
       },
       {
         label: "Frequency",
@@ -272,26 +291,46 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
         generator: formatNumber(powerFactor, 2),
       },
       {
-        label: "Current (A)",
-        mains: formatUnit(mainsCurrent, "A", 0),
-        generator: formatUnit(currentKnown ? genCurrent : null, "A", 0),
+        label: "Current",
+        compact: true,
+        mains: [
+          ["L1", mainsCurrentL1],
+          ["L2", mainsCurrentL2],
+          ["L3", mainsCurrentL3],
+        ]
+          .map(([phase, value]) => phase + " " + formatNumber(value as number | null, 0))
+          .join("  "),
+        generator: [
+          ["L1", currentL1],
+          ["L2", currentL2],
+          ["L3", currentL3],
+        ]
+          .map(([phase, value]) => phase + " " + formatNumber(value as number | null, 0))
+          .join("  "),
       },
     ],
     [
-      currentKnown,
+      currentL1,
+      currentL2,
+      currentL3,
       frequency,
-      genCurrent,
       genL1,
       genL2,
       genL3,
-      genL13,
-      mainsCurrent,
+      genL12,
+      genL23,
+      genL31,
+      mainsCurrentL1,
+      mainsCurrentL2,
+      mainsCurrentL3,
       mainsFrequency,
       mainsKnown,
       mainsL1,
       mainsL2,
       mainsL3,
-      mainsL13,
+      mainsL12,
+      mainsL23,
+      mainsL31,
       mainsPf,
       powerFactor,
     ],
