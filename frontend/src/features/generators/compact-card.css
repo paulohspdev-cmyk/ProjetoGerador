@@ -32,6 +32,64 @@
   min-height: 0;
 }
 
+.compact-card__electrical-heading {
+  margin-bottom: 1px;
+  color: var(--foreground);
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.compact-card__electrical-rows {
+  min-width: 0;
+}
+
+.compact-card__electrical-row {
+  display: grid;
+  grid-template-columns: minmax(62px, 0.9fr) minmax(0, 1.7fr);
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 8.5px;
+  line-height: 1.05;
+}
+
+.compact-card__electrical-row:last-child {
+  border-bottom: 0;
+}
+
+.compact-card__electrical-label {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted-foreground);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compact-card__electrical-values {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.compact-card__electrical-values > span {
+  min-width: 0;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: clip;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+.compact-card__electrical-values.is-right {
+  grid-template-columns: repeat(2, minmax(0, max-content));
+  justify-content: end;
+  gap: 5px;
+}
+
 .controller-image-area {
   display: flex;
   width: 100%;
@@ -196,21 +254,20 @@
     margin-top: 2px !important;
   }
 
-  .compact-card__electrical > div:first-child {
+  .compact-card__electrical-heading {
     margin-bottom: 0 !important;
-    font-size: 7px !important;
+    font-size: 8px !important;
+  }
+
+  .compact-card__electrical-row {
+    grid-template-columns: minmax(56px, 0.9fr) minmax(0, 1.7fr);
+    gap: 2px;
+    font-size: 7.5px !important;
     line-height: 1 !important;
   }
 
-  .compact-card__electrical > div:first-child > span:first-child {
-    font-size: 8px !important;
-  }
-
-  .compact-card__electrical > div:last-child > div {
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    font-size: 8px !important;
-    line-height: 1.05 !important;
+  .compact-card__electrical-values.is-right {
+    gap: 3px;
   }
 
   .compact-card__stale {
@@ -252,13 +309,13 @@
     height: 8px !important;
   }
 
-  .compact-card__electrical > div:first-child,
-  .compact-card__electrical > div:last-child > div {
-    font-size: 7px !important;
+  .compact-card__electrical-heading {
+    font-size: 7.5px !important;
   }
 
-  .compact-card__electrical > div:first-child > span:first-child {
-    font-size: 7.5px !important;
+  .compact-card__electrical-row {
+    grid-template-columns: minmax(52px, 0.9fr) minmax(0, 1.7fr);
+    font-size: 6.75px !important;
   }
 
   .compact-kw-scale,
@@ -328,22 +385,19 @@
   margin-top: 4px;
 }
 
-.compact-generator-grid[data-density="videowall"] .compact-card__electrical > div:first-child {
-  grid-template-columns: minmax(0, 1fr) 48px 48px;
+.compact-generator-grid[data-density="videowall"] .compact-card__electrical-heading {
+  font-size: 10px;
+}
+
+.compact-generator-grid[data-density="videowall"] .compact-card__electrical-row {
+  grid-template-columns: minmax(72px, 0.9fr) minmax(0, 1.7fr);
+  gap: 4px;
   font-size: 9px;
-}
-
-.compact-generator-grid[data-density="videowall"]
-  .compact-card__electrical
-  > div:first-child
-  > span:first-child {
-  font-size: 10px;
-}
-
-.compact-generator-grid[data-density="videowall"] .compact-card__electrical > div:last-child > div {
-  grid-template-columns: minmax(0, 1fr) 48px 48px;
-  font-size: 10px;
   line-height: 1.1;
+}
+
+.compact-generator-grid[data-density="videowall"] .compact-card__electrical-values.is-right {
+  gap: 8px;
 }
 
 .compact-generator-grid[data-density="videowall"] .compact-card__stale {

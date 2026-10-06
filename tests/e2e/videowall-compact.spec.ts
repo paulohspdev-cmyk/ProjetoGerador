@@ -63,6 +63,25 @@ async function validateViewport(
   const grid = page.locator(".compact-generator-grid");
   await expect(grid).toBeVisible();
 
+  const firstCard = grid.locator(".compact-card").first();
+  await expect(firstCard.locator(".compact-card__electrical-heading")).toHaveText("ELECTRICAL");
+  await expect(firstCard.locator(".compact-card__electrical-row")).toHaveCount(5);
+  await expect(
+    firstCard.locator(".compact-card__electrical-row").nth(2).locator("span.num"),
+  ).toHaveCount(2);
+  await expect(
+    firstCard
+      .locator(".compact-card__electrical-row")
+      .nth(2)
+      .locator(".compact-card__electrical-values"),
+  ).toHaveClass(/is-right/);
+  await expect(
+    firstCard.locator(".compact-card__electrical-row").nth(3).locator("span.num"),
+  ).toHaveCount(3);
+  await expect(
+    firstCard.locator(".compact-card__electrical-row").nth(4).locator("span.num"),
+  ).toHaveCount(3);
+
   const result = await grid.evaluate((element) => {
     const grid = element as HTMLElement;
     const cards = Array.from(grid.querySelectorAll<HTMLElement>("article"));

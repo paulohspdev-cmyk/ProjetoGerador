@@ -185,7 +185,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const mainsL1 = metricNumber(gen, "mains_voltage_l1", gen.mains.l1);
   const mainsL2 = metricNumber(gen, "mains_voltage_l2", gen.mains.l2);
   const mainsL3 = metricNumber(gen, "mains_voltage_l3", gen.mains.l3);
-  const mainsPf = metricNumber(gen, "mains_power_factor", undefined);
   const mainsVoltageKnown = ["mains_voltage_l1", "mains_voltage_l2", "mains_voltage_l3"].some(
     (key) => hasFreshMetric(gen, key),
   );
@@ -203,6 +202,9 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const genL1 = metricNumber(gen, "voltage_l1", gen.gen.l1);
   const genL2 = metricNumber(gen, "voltage_l2", gen.gen.l2);
   const genL3 = metricNumber(gen, "voltage_l3", gen.gen.l3);
+  const genPowerFactorL1 = metricNumber(gen, "power_factor_l1", undefined);
+  const genPowerFactorL2 = metricNumber(gen, "power_factor_l2", undefined);
+  const genPowerFactorL3 = metricNumber(gen, "power_factor_l3", undefined);
   const generatorVoltageKnown = ["voltage_l1", "voltage_l2", "voltage_l3"].some((key) =>
     hasFreshMetric(gen, key),
   );
@@ -254,20 +256,22 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       },
       {
         label: "Frequency",
+        alignRight: true,
         values: [
           {
-            text: formatNumber(mainsKnown ? mainsFrequency : null, 1),
+            text: formatUnit(mainsKnown ? mainsFrequency : null, "Hz", 1),
             source: "mains",
             title: "MAINS",
           },
-          { text: formatNumber(frequency, 1), source: "generator", title: "GEN" },
+          { text: formatUnit(frequency, "Hz", 1), source: "generator", title: "GEN" },
         ],
       },
       {
         label: "Power Factor",
         values: [
-          { text: formatNumber(mainsPf, 2), source: "mains", title: "MAINS" },
-          { text: formatNumber(powerFactor, 2), source: "generator", title: "GEN" },
+          { text: formatNumber(genPowerFactorL1, 2), source: "generator", title: "L1" },
+          { text: formatNumber(genPowerFactorL2, 2), source: "generator", title: "L2" },
+          { text: formatNumber(genPowerFactorL3, 2), source: "generator", title: "L3" },
         ],
       },
       {
@@ -297,6 +301,9 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       currentL2,
       currentL3,
       frequency,
+      genPowerFactorL1,
+      genPowerFactorL2,
+      genPowerFactorL3,
       genL1,
       genL2,
       genL3,
@@ -305,8 +312,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       mainsL1,
       mainsL2,
       mainsL3,
-      mainsPf,
-      powerFactor,
     ],
   );
 
@@ -363,6 +368,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
 
   return (
     <article
+      data-power-factor={formatNumber(powerFactor, 2)}
       className={cn(
         "vref-card",
         dse ? "is-dse" : "is-comap",

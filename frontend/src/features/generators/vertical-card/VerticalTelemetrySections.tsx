@@ -120,6 +120,7 @@ export type ElectricalRow = {
     source: "mains" | "generator";
     title?: string;
   }>;
+  alignRight?: boolean;
 };
 
 export type GeneratorAlarmRow = {
@@ -148,7 +149,7 @@ export function VerticalTables({
         {electricalRows.map((row) => (
           <div key={row.label} className="vref-data-row">
             <span>{row.label}</span>
-            <div className="vref-data-values">
+            <div className={cn("vref-data-values", row.alignRight && "is-right")}>
               {row.values.map((value, index) => (
                 <b
                   key={`${row.label}-${index}`}

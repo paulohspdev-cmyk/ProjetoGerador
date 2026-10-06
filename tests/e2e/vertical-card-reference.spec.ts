@@ -118,10 +118,13 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
     await expect(card.locator(".vref-data-row").nth(1).locator("b")).toHaveCount(3);
     await expect(card.locator(".vref-data-row").nth(2).locator("> span")).toHaveText("Frequency");
     await expect(card.locator(".vref-data-row").nth(2).locator("b")).toHaveCount(2);
+    await expect(card.locator(".vref-data-row").nth(2).locator(".vref-data-values")).toHaveClass(
+      /is-right/,
+    );
     await expect(card.locator(".vref-data-row").nth(3).locator("> span")).toHaveText(
       "Power Factor",
     );
-    await expect(card.locator(".vref-data-row").nth(3).locator("b")).toHaveCount(2);
+    await expect(card.locator(".vref-data-row").nth(3).locator("b")).toHaveCount(3);
     await expect(card.locator(".vref-data-row").nth(4).locator("> span")).toHaveText("Current (A)");
     await expect(card.locator(".vref-data-row").nth(4).locator("b")).toHaveCount(3);
     await expect(card.locator(".vref-summary-grid")).toHaveCount(0);
