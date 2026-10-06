@@ -455,6 +455,7 @@ systemctl enable rc-geradores-provision.service rc-geradores-api.service \
   rc-geradores-worker.service rc-geradores-frontend.service >/dev/null
 systemctl restart rc-geradores-provision.service
 systemctl restart rc-geradores-api.service
+"${BASE}/backend/.venv/bin/python" "${BASE}/ops/ensure_periodic_backup.py"
 systemctl restart rc-geradores-worker.service
 systemctl restart rc-geradores-frontend.service
 

@@ -457,6 +457,10 @@ if ! "${BASE}/backend/.venv/bin/python" "${BASE}/ops/migrate_db.py"; then
   rollback
   fail "migrações versionadas falharam"
 fi
+if ! "${BASE}/backend/.venv/bin/python" "${BASE}/ops/ensure_periodic_backup.py"; then
+  rollback
+  fail "não foi possível garantir backup periódico"
+fi
 if ! "${BASE}/backend/.venv/bin/python" - <<'PY'
 from app import db, domain_store
 domain_store.sync_legacy_generators()
