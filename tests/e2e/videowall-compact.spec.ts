@@ -195,6 +195,7 @@ test("compacto videowall acomoda até 30 cards sem recorte", async ({ browser, p
   }));
 
   await validateViewport(browser, rows, 1366, 768);
+  await validateViewport(browser, rows.slice(0, 13), 1920, 1080, 30);
   await validateViewport(browser, rows, 1920, 1080, 30);
   await validateViewport(browser, rows, 2560, 1440, 30);
   await validateViewport(browser, rows, 3840, 2160, 30);
