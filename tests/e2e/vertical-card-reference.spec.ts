@@ -105,6 +105,25 @@ test("vertical nasce diferente para ComAp e DSE", async ({ page }) => {
     await expect(card.getByText("ENGINE STATUS")).toBeVisible();
     await expect(card.getByRole("heading", { name: "RPM" })).toBeVisible();
     await expect(card.locator(".vref-data-table")).toBeVisible();
+    await expect(card.locator(".vref-data-row")).toHaveCount(5);
+    await expect(
+      card.locator(".vref-table-heading").getByText("MAINS", { exact: true }),
+    ).toHaveCount(0);
+    await expect(card.locator(".vref-table-heading").getByText("GEN", { exact: true })).toHaveCount(
+      0,
+    );
+    await expect(card.locator(".vref-data-row").nth(0).locator("> span")).toHaveText("MAINS");
+    await expect(card.locator(".vref-data-row").nth(0).locator("b")).toHaveCount(3);
+    await expect(card.locator(".vref-data-row").nth(1).locator("> span")).toHaveText("GEN");
+    await expect(card.locator(".vref-data-row").nth(1).locator("b")).toHaveCount(3);
+    await expect(card.locator(".vref-data-row").nth(2).locator("> span")).toHaveText("Frequency");
+    await expect(card.locator(".vref-data-row").nth(2).locator("b")).toHaveCount(2);
+    await expect(card.locator(".vref-data-row").nth(3).locator("> span")).toHaveText(
+      "Power Factor",
+    );
+    await expect(card.locator(".vref-data-row").nth(3).locator("b")).toHaveCount(2);
+    await expect(card.locator(".vref-data-row").nth(4).locator("> span")).toHaveText("Current (A)");
+    await expect(card.locator(".vref-data-row").nth(4).locator("b")).toHaveCount(3);
     await expect(card.locator(".vref-summary-grid")).toHaveCount(0);
     await expect(card.getByText("Horímetro", { exact: true })).toHaveCount(0);
     await expect(card.getByText("Energia", { exact: true })).toHaveCount(0);

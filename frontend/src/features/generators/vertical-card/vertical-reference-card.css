@@ -977,21 +977,16 @@
   letter-spacing: 0.04em;
 }
 
-/* Measurements — colunas MAINS/GEN com a mesma grade do cabeçalho */
+/* Measurements — layout linear sem cabeçalhos MAINS/GEN no topo. */
 .vref-measurements {
-  --vref-m-label: minmax(0, 1fr);
-  --vref-m-val: 56px;
   display: flex;
+  min-height: 0;
   flex-direction: column;
   padding: 2px 4px 4px;
 }
 
 .vref-table-heading {
-  display: grid;
   flex: 0 0 auto;
-  grid-template-columns: var(--vref-m-label) var(--vref-m-val) var(--vref-m-val);
-  align-items: end;
-  gap: 4px;
   min-height: 13px;
   margin-bottom: 1px;
 }
@@ -1010,17 +1005,9 @@
   letter-spacing: 0.02em;
 }
 
-.vref-table-heading > span {
-  color: #9fb1bd;
-  font-size: 8px;
-  font-weight: 800;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
 .vref-data-table {
   display: flex;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   min-width: 0;
   min-height: 0;
   flex-direction: column;
@@ -1028,11 +1015,12 @@
 
 .vref-data-row {
   display: grid;
-  flex: 1 1 0;
-  grid-template-columns: var(--vref-m-label) var(--vref-m-val) var(--vref-m-val);
+  flex: 0 0 18px;
+  grid-template-columns: minmax(92px, 1fr) minmax(0, 1.75fr);
   align-items: center;
-  gap: 4px;
-  min-height: 0;
+  gap: 6px;
+  min-width: 0;
+  min-height: 18px;
   border-bottom: 1px solid rgb(23 67 91 / 42%);
   font-size: 10.5px;
   line-height: 1;
@@ -1045,27 +1033,38 @@
 .vref-data-row > span {
   overflow: hidden;
   color: #edf4f8;
+  font-weight: 800;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.vref-data-row > b {
-  overflow: visible;
+.vref-data-values {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  gap: 4px;
+}
+
+.vref-data-values > b {
+  min-width: 0;
+  overflow: hidden;
   color: #f6f9fb;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 900;
   text-align: right;
+  text-overflow: clip;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 
-.vref-data-row > b.generator {
+.vref-data-values > b.generator {
   color: var(--vref-green);
 }
 
 .vref-alarms {
   display: flex;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 1px;
   margin-top: 2px;

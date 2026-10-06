@@ -17,6 +17,7 @@ import { VerticalControls, headerMode } from "./vertical-card/VerticalControls";
 import {
   VerticalEngine,
   VerticalTables,
+  type ElectricalRow,
   type GeneratorAlarmRow,
 } from "./vertical-card/VerticalTelemetrySections";
 import { VerticalPowerFlow } from "./vertical-card/VerticalPowerFlow";
@@ -185,7 +186,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const mainsL2 = metricNumber(gen, "mains_voltage_l2", gen.mains.l2);
   const mainsL3 = metricNumber(gen, "mains_voltage_l3", gen.mains.l3);
   const mainsPf = metricNumber(gen, "mains_power_factor", undefined);
-  const mainsCurrent = metricNumber(gen, "mains_current_l1", undefined);
   const mainsVoltageKnown = ["mains_voltage_l1", "mains_voltage_l2", "mains_voltage_l3"].some(
     (key) => hasFreshMetric(gen, key),
   );
@@ -203,8 +203,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const genL1 = metricNumber(gen, "voltage_l1", gen.gen.l1);
   const genL2 = metricNumber(gen, "voltage_l2", gen.gen.l2);
   const genL3 = metricNumber(gen, "voltage_l3", gen.gen.l3);
-  const genL13 = metricNumber(gen, "voltage_l3_l1", undefined);
-  const mainsL13 = metricNumber(gen, "mains_voltage_l3_l1", undefined);
   const generatorVoltageKnown = ["voltage_l1", "voltage_l2", "voltage_l3"].some((key) =>
     hasFreshMetric(gen, key),
   );
@@ -222,9 +220,6 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     (value): value is number => value != null,
   );
   const currentKnown = currentValues.length > 0;
-  const genCurrent = currentKnown
-    ? currentValues.reduce((sum, value) => sum + value, 0) / currentValues.length
-    : null;
   // O bloco de LEDs da página 190 não é feedback GCB universal entre modelos DSE.
   // Fluxo elétrico positivo é evidência suficiente para afirmar FECHADO em genset_only,
   // mas ausência de carga NÃO prova ABERTO: o disjuntor pode estar fechado em barramento
@@ -239,59 +234,77 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const displayGcb = dse ? (gcbKnown ? gen.gcb : dseFlowProvesClosed ? true : false) : gen.gcb;
   const displayGcbKnown = dse ? gcbKnown || dseFlowProvesClosed : gcbKnown;
 
-  const electricalRows = useMemo(
+  const electricalRows = useMemo<ElectricalRow[]>(
     () => [
       {
-        label: "L1-N Voltage",
-        mains: formatUnit(mainsKnown ? mainsL1 : null, "V"),
-        generator: formatUnit(genL1, "V"),
+        label: "MAINS",
+        values: [
+          { text: formatNumber(mainsKnown ? mainsL1 : null, 0), source: "mains", title: "L1-N" },
+          { text: formatNumber(mainsKnown ? mainsL2 : null, 0), source: "mains", title: "L2-N" },
+          { text: formatNumber(mainsKnown ? mainsL3 : null, 0), source: "mains", title: "L3-N" },
+        ],
       },
       {
-        label: "L2-N Voltage",
-        mains: formatUnit(mainsKnown ? mainsL2 : null, "V"),
-        generator: formatUnit(genL2, "V"),
-      },
-      {
-        label: "L3-N Voltage",
-        mains: formatUnit(mainsKnown ? mainsL3 : null, "V"),
-        generator: formatUnit(genL3, "V"),
-      },
-      {
-        label: "L1-L3 Voltage",
-        mains: formatUnit(mainsKnown ? mainsL13 : null, "V"),
-        generator: formatUnit(genL13, "V"),
+        label: "GEN",
+        values: [
+          { text: formatNumber(genL1, 0), source: "generator", title: "L1-N" },
+          { text: formatNumber(genL2, 0), source: "generator", title: "L2-N" },
+          { text: formatNumber(genL3, 0), source: "generator", title: "L3-N" },
+        ],
       },
       {
         label: "Frequency",
-        mains: formatUnit(mainsKnown ? mainsFrequency : null, "Hz", 1),
-        generator: formatUnit(frequency, "Hz", 1),
+        values: [
+          {
+            text: formatNumber(mainsKnown ? mainsFrequency : null, 1),
+            source: "mains",
+            title: "MAINS",
+          },
+          { text: formatNumber(frequency, 1), source: "generator", title: "GEN" },
+        ],
       },
       {
         label: "Power Factor",
-        mains: formatNumber(mainsPf, 2),
-        generator: formatNumber(powerFactor, 2),
+        values: [
+          { text: formatNumber(mainsPf, 2), source: "mains", title: "MAINS" },
+          { text: formatNumber(powerFactor, 2), source: "generator", title: "GEN" },
+        ],
       },
       {
         label: "Current (A)",
-        mains: formatUnit(mainsCurrent, "A", 0),
-        generator: formatUnit(currentKnown ? genCurrent : null, "A", 0),
+        values: [
+          {
+            text: formatNumber(currentKnown ? currentL1 : null, 0),
+            source: "generator",
+            title: "L1",
+          },
+          {
+            text: formatNumber(currentKnown ? currentL2 : null, 0),
+            source: "generator",
+            title: "L2",
+          },
+          {
+            text: formatNumber(currentKnown ? currentL3 : null, 0),
+            source: "generator",
+            title: "L3",
+          },
+        ],
       },
     ],
     [
       currentKnown,
+      currentL1,
+      currentL2,
+      currentL3,
       frequency,
-      genCurrent,
       genL1,
       genL2,
       genL3,
-      genL13,
-      mainsCurrent,
       mainsFrequency,
       mainsKnown,
       mainsL1,
       mainsL2,
       mainsL3,
-      mainsL13,
       mainsPf,
       powerFactor,
     ],
