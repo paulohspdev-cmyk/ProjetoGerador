@@ -415,13 +415,13 @@ test("vertical preserva todo o conteúdo e rola a grade quando a altura é curta
 
 test("vertical não infere GCB pela carga e feedback some em dois segundos", async ({ page }) => {
   await login(page);
-  expect([201, 409]).toContain(
+  expect(201).toBe(
     await createGenerator(page, {
       tag: "VERTTRUTH",
       controller: "DSE DSE8620 MKII",
-      listenPort: 15103,
-      modbusUnit: 73,
-      rapidDeviceNum: 393,
+      listenPort: 15120,
+      modbusUnit: 93,
+      rapidDeviceNum: 420,
     }),
   );
   await page.route("**/api/generators", async (route) => {
