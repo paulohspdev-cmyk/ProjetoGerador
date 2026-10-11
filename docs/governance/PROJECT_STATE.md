@@ -1,5 +1,14 @@
 # Estado oficial do projeto
 
+## Timeout HTTP de comandos — 2026-10-11
+
+- Branch `fix/frontend-command-timeout-20261011`, base `6a4a3fa4ad28e042608638469ba75bd0e0571ec3`. Domínio: API/frontend.
+- Cliente de comando passa deadline HTTP de 45 s, superior ao timeout máximo homologado atual (STOP 35 s) com margem de conexão; não aborta mais o feedback aos 15 s. Tipo CommandResult inclui feedback_confirmed e estados terminais da API. Sem retry automático.
+- Arquivos: `frontend/src/lib/api.ts`, `tests/command-client-timeout.mjs`, esta documentação.
+- Validação: `node --experimental-vm-modules tests/command-client-timeout.mjs` executa o cliente real com transporte simulado e compara deadline com o pack; confirmação explícita, URL escapada e resposta failed são preservadas. `npm run check` aprovado (arquitetura, superfícies, lint, tipos e build).
+- Produção não alterada por este PR; rollback por revert e deploy transacional. Instalação independente por cliente, 2FA desativado.
+- Próximo passo: feedback transitório e semântica do disjuntor no Vertical, em PR separado.
+
 Atualizado em: 2026-10-06  
 Baseline de governança integrada: `a3991670a78564d514de95fa1d500b53a32f6f7e`  
 Produção observada durante a Auditoria Zero: `20a68c2d0e146addcca708290a1564c63ffa305e`  
