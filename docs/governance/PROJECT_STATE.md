@@ -1,5 +1,16 @@
 # Estado oficial do projeto
 
+## Gates de fonte do CI — 2026-10-11
+
+- Branch `fix/ci-source-security-gates-20261011`, domínio governança/CI; base `6a4a3fa4ad28e042608638469ba75bd0e0571ec3`.
+- Scans de dados demonstrativos e Google Fonts apontam para `frontend/src`, exigem diretório existente e recusam erros do grep (código 2), em vez de tratá-los como ausência de match.
+- Arquivos: dois workflows, `tests/ci_source_gates.py`, esta documentação. Regressão executa os blocos reais dos workflows contra fonte limpa, padrão proibido e diretório ausente; aprovada e incluída no CI. Self-test de fronteiras aprovado.
+- Não altera runtime/produção/2FA. Rollback: revert.
+- Operação separada observada em 2026-10-11: Communicator retomado após conferir 17 devices em linhas com CmdEnabled=false e fila por arquivo vazia; serviço ativo, G-194 sessão Normal avançando, contador de comandos 0/0. Nenhum template, binding ou comando alterado. G-237 ainda sem sessão; não deve ser mostrado como atual até evidência positiva.
+- Próximo passo: integrar domínios após checks verdes e validar release na VM isolada antes de deploy.
+
+
+
 ## Timeout HTTP de comandos — 2026-10-11
 
 - Branch `fix/frontend-command-timeout-20261011`, base `6a4a3fa4ad28e042608638469ba75bd0e0571ec3`. Domínio: API/frontend.
