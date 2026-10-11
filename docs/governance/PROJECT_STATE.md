@@ -1,5 +1,14 @@
 # Estado oficial do projeto
 
+## Frescor Rapid — 2026-10-11
+
+- Branch `fix/rapid-unavailable-freshness-20261011`, base `6a4a3fa4ad28e042608638469ba75bd0e0571ec3`. Domínio: integração Rapid/telemetria.
+- Em produção, cache do Server não pode provar coleta: exigir Communicator ativo, transporte não desconectado e sessão Normal recente por device. Timestamp vem de `Session time` no diagnóstico nativo do Communicator, não da hora HTTP. Valores constantes continuam válidos se a sessão avança. Sessão expirada/ausente, erro de verificação e coletor parado tornam dados stale e não renovam snapshots.
+- Integração observada na VM Rapid 6.4.7: `/var/log/scada/ScadaComm/Log/deviceNNN.txt`, cabeçalho em inglês e timestamp `dd/MM/yyyy HH:mm:ss` no fuso local do host; arquivo 0644, diretório 0755 acessíveis ao usuário API. Parametrização: `RC_RAPID_COMM_LOG_DIR`, `RC_RAPID_DEVICE_STALE_SECONDS` (padrão 60 s). Outros ambientes/layouts de diagnóstico devem ser validados; ausência falha conservadoramente.
+- Arquivos: `backend/app/rapid.py`, `backend/tests/rapid_overlay_resilience.py`, esta documentação. Suíte completa backend (14 arquivos) aprovada após guardas de coletor/transporte; parser de sessão coberto por regressões de sessão atual, constante, expirada, indefinida e ausente.
+- Sem alteração de schema, templates, comandos ou 2FA. Produção ainda não alterada. Rollback: revert e deploy transacional existente.
+- Próximo passo: validar em cópia isolada da VM e preparar deploy; corrigir timeout HTTP e apresentação de feedback em domínio API/frontend separado.
+
 Atualizado em: 2026-10-06  
 Baseline de governança integrada: `a3991670a78564d514de95fa1d500b53a32f6f7e`  
 Produção observada durante a Auditoria Zero: `20a68c2d0e146addcca708290a1564c63ffa305e`  
