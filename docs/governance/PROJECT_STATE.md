@@ -1,5 +1,13 @@
 # Estado oficial do projeto
 
+## Vertical: verdade do disjuntor e TTL — 2026-10-11
+
+- Branch `fix/vertical-truth-feedback-20261011`, base `a6452e9de7c68d84c95573d8bc6356cd9f99b4d6`. Domínio exclusivo Vertical.
+- GCB conhecido exige canal gcb_closed fresco; potência/corrente não fabricam FECHADO no frontend. Feedback transitório some em 2 s; falhas continuam disponíveis na auditoria/eventos backend. Sem confirmação explícita do executor, texto de fallback não afirma confirmação física.
+- Arquivos: `PowerFlowCard.tsx`, E2E Vertical e esta documentação. `npm run check` aprovado; regressão E2E adicionada com dados sob carga sem feedback GCB e comando interceptado, relógio controlado. Execução E2E isolada da VM pendente na abertura do PR.
+- Compacto, Lista, CSS, geometria, Controller Packs e 2FA preservados. Produção não alterada por este PR. Rollback: revert e deploy transacional.
+- Próximo passo: executar E2E e integrar após checks verdes.
+
 ## Permissões da API operacional — 2026-10-11
 
 - Branch `fix/ops-bootstrap-rbac-20261011`, base `6a4a3fa4ad28e042608638469ba75bd0e0571ec3`. Domínio: backend de produto/RBAC.
