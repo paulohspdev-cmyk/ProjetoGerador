@@ -1,4 +1,8 @@
 from app import rapid
+from unittest.mock import patch
+from types import SimpleNamespace
+from pathlib import Path
+import tempfile
 
 
 generator = {
@@ -192,6 +196,41 @@ try:
     legacy = {**binding}
     legacy.pop("generator_id")
     assert rapid.binding_for(generator, [legacy]) is legacy
+
+    # Defined channels remain cached after collector/transport loss. They must
+    # not refresh snapshot timestamps or declare the controller online.
+    rapid.read_channels = lambda _nums: ({1001: {"val": 0, "stat": 1, "defined": True}, 1002: {"val": 60, "stat": 1, "defined": True}}, "")
+    before = dict(snapshots)
+    with patch.object(rapid, "_collector_error", return_value="Coletor parado"):
+        row = rapid.overlay_generators([generator])[0]
+        assert row["telemetryStale"] is True and row["status"] != "online"
+        assert snapshots == before
+    rapid._load_bridge_status = lambda: {"updatedAt": rapid.time.time(), "ports": [{"remotePort": 15001, "connected": False}]}
+    row = rapid.overlay_generators([generator])[0]
+    assert row["telemetryStale"] is True and row["status"] == "offline"
+    assert snapshots == before
+    with patch.object(rapid, "production_mode", return_value=True), patch.object(rapid.subprocess, "run", return_value=SimpleNamespace(returncode=3, stdout="failed")):
+        rapid._collector_cache.update(at=0.0, error="")
+        assert rapid._collector_error()
+    with patch.object(rapid, "production_mode", return_value=True), patch.object(rapid.subprocess, "run", return_value=SimpleNamespace(returncode=0, stdout="active")):
+        rapid._collector_cache.update(at=0.0, error="")
+        assert rapid._collector_error() == ""
+    with tempfile.TemporaryDirectory() as logdir, patch.dict(rapid.os.environ, {"RC_RAPID_COMM_LOG_DIR": logdir}), patch.object(rapid, "production_mode", return_value=True):
+        log = Path(logdir) / "device200.txt"
+        now = int(rapid.time.time())
+        stamp = rapid.datetime.fromtimestamp(now).strftime("%d/%m/%Y %H:%M:%S")
+        log.write_text(f"Status : Normal\nSession time : {stamp}\n")
+        assert rapid._device_collection_at(generator) == (now, "")
+        # Identical values with a current session remain fresh; HTTP calls do
+        # not change the source timestamp. Old/undefined sessions fail closed.
+        assert rapid._device_collection_at(generator) == (now, "")
+        old = rapid.datetime.fromtimestamp(now - 120).strftime("%d/%m/%Y %H:%M:%S")
+        log.write_text(f"Status : Normal\nSession time : {old}\n")
+        assert rapid._device_collection_at(generator)[1]
+        log.write_text(f"Status : Undefined\nSession time : {stamp}\n")
+        assert rapid._device_collection_at(generator)[1]
+        log.unlink()
+        assert rapid._device_collection_at(generator)[1]
 
     # Mesmo uma exceção inesperada de binding/leitor deve preservar o inventário.
     rapid.load_bindings = lambda: (_ for _ in ()).throw(RuntimeError("falha sintética"))
