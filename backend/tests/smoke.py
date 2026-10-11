@@ -26,7 +26,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 
 from app import db  # noqa: E402
 from app.auth import hash_password  # noqa: E402
-from app.main import app  # noqa: E402
+from app.main import app, _visible_settings  # noqa: E402
 
 
 def expect(response, code):
@@ -44,6 +44,9 @@ admin, created = db.bootstrap_admin(
     hash_password("Teste-Seguro-123"),
 )
 assert created and admin["role"] == "administrador"
+for role in ("visualizacao", "operador", "cadastro"):
+    assert _visible_settings({"role": role}, {"private": "secret", "switch.ui": True, "switch.private": "secret"}) == {"switch.ui": True}
+assert _visible_settings({"role": "administrador"}, {"private": "secret"}) == {"private": "secret"}
 
 
 @app.get("/api/__test__/request-id-boom", include_in_schema=False)
@@ -292,6 +295,9 @@ with TestClient(app) as client:
     assert webhook["status"] == "Ativo"
 
     expect(client.put("/api/settings/cfg.test", json={"value": True}), 200)
+    expect(client.put("/api/settings/private.audit", json={"value": "private-fixture"}), 200)
+    expect(client.put("/api/settings/switch.audit", json={"value": True}), 200)
+    expect(client.put("/api/settings/switch.secret", json={"value": "private-fixture"}), 200)
     backup = expect(client.post("/api/backups"), 201).json()
     assert backup["result"] == "OK"
     assert Path(backup["path"]).exists()
@@ -323,7 +329,12 @@ with TestClient(app) as viewer_client:
         200,
     )
     expect(viewer_client.get("/api/generators"), 200)
-    expect(viewer_client.get("/api/ops/bootstrap"), 200)
+    bootstrap = expect(viewer_client.get("/api/ops/bootstrap"), 200).json()
+    assert bootstrap["backups"] == [] and bootstrap["webhooks"] == []
+    assert bootstrap["settings"] == {"switch.audit": True}
+    assert expect(viewer_client.get("/api/settings"), 200).json() == {"switch.audit": True}
+    expect(viewer_client.get("/api/backups"), 403)
+    expect(viewer_client.get("/api/webhooks"), 403)
     expect(viewer_client.get("/api/system/controller-homologation"), 403)
     expect(viewer_client.get("/api/system/bridge-peers"), 403)
     expect(
