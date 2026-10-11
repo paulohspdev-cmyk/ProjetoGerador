@@ -1,5 +1,17 @@
 # Estado oficial do projeto
 
+## Remediação de comandos — 2026-10-11
+
+- Escopo autorizado pelo proprietário: instalação independente por cliente, sem arquitetura SaaS compartilhada; manter 2FA desativado nesta etapa.
+- Base conferida: produção, marker e checkout em `6a4a3fa4ad28e042608638469ba75bd0e0571ec3`, checkout de produção limpo. Communicator continua parado; investigação em domínio separado.
+- Branch: `fix/ig200-physical-feedback-20261011`. Domínio: comando industrial.
+- IG200 START exige RPM >100 em até 15 s; STOP exige RPM <=100 em até 30 s, conforme pack existente. Escrita aceita sem feedback retorna `ok=false`, `state=failed`; confirmação retorna `state=confirmed`. Falhas ficam registradas como ERROR no histórico.
+- Arquivos: `backend/app/bridge.py`, `backend/app/control.py`, `backend/tests/control_multi_device.py` e esta documentação.
+- Validação: suíte backend completa, 14 arquivos, aprovada; regressões simulam START/STOP confirmado, timeout, perda de conexão, rejeição e aceitação sem feedback. Teste exige igualdade com o contrato RPM/timeout do pack.
+- Produção não alterada por esta branch; nenhum comando industrial executado. Confirmação física em campo não realizada.
+- Rollback: reverter o commit desta branch e usar o deploy transacional existente, preservando banco e bindings.
+- Próximo passo: revisar/integrar esta mudança isolada; corrigir acesso administrativo no bootstrap e frescor de telemetria em branches separadas.
+
 Atualizado em: 2026-10-06  
 Baseline de governança integrada: `a3991670a78564d514de95fa1d500b53a32f6f7e`  
 Produção observada durante a Auditoria Zero: `20a68c2d0e146addcca708290a1564c63ffa305e`  
