@@ -158,6 +158,7 @@ class BridgePort:
         self.remote_writer = None
         self.remote_peer = None
         self.remote_lock = asyncio.Lock()
+        self.command_locks = {}
         self.next_tid = 1
         self.connected_at = None
         self.last_rx_at = None
@@ -342,6 +343,20 @@ class BridgePort:
         async with self.remote_lock:
             pdu = await self.request_locked(unit, read_holding_pdu(address, count))
             return parse_registers(pdu, count)
+
+    async def execute_privileged_command(self, executor, unit, action, password=None):
+        # Hold the per-device operation gate until physical feedback finishes.
+        # The short Modbus transport lock alone allows duplicate writes while
+        # another command is awaiting RPM. Other Units may continue polling.
+        lock = self.command_locks.setdefault(int(unit), asyncio.Lock())
+        if lock.locked():
+            raise PermissionError("comando já em andamento para esta controladora")
+        async with lock:
+            if executor == "ig200_privileged":
+                return await self.ig200_command(unit, action, password=password)
+            if executor == "comap_privileged":
+                return await self.ig4_command(unit, action)
+            raise PermissionError("executor privilegiado desconhecido")
 
     async def ig200_command(self, unit, action, password=None):
         if action not in ("start", "stop"):
@@ -640,12 +655,12 @@ async def handle_control(reader, writer):
             raise ConnectionError(f"modem da porta {port} está desconectado")
 
         if executor == "ig200_privileged":
-            result = await port_bridge.ig200_command(
-                unit, action, password=req.get("password")
+            result = await port_bridge.execute_privileged_command(
+                executor, unit, action, password=req.get("password")
             )
             controller_label = "IG200"
         else:
-            result = await port_bridge.ig4_command(unit, action)
+            result = await port_bridge.execute_privileged_command(executor, unit, action)
             controller_label = "IG4"
 
         response = {
