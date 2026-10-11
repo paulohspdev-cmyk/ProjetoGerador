@@ -4,7 +4,8 @@ import os
 import struct
 import tempfile
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
+from types import SimpleNamespace
 
 
 tmp = tempfile.TemporaryDirectory(prefix="rc-control-device-")
@@ -152,10 +153,16 @@ async def validate_payload():
         result = await control.send_homologated_command(generator, "start")
 
     assert result["accepted"] is True
+    assert result["state"] == "failed" and result["ok"] is False
     payload = json.loads(writer.payload.decode("utf-8").strip())
     assert payload["device"] == 204
     assert payload["action"] == "start"
     assert payload["confirm"] == "REMOTE_CONTROL_CONFIRMED"
+    for accepted, confirmed, state in ((True, True, "confirmed"), (True, False, "failed"), (False, False, "rejected")):
+        with patch.object(control, "command_firmware_approval", return_value=(True, "teste")), patch.object(control, "_send_socket_command", AsyncMock(return_value={"ok": True, "accepted": accepted, "feedback_confirmed": confirmed})):
+            result = await control.send_homologated_command(generator, "start")
+        assert result["state"] == state
+        assert result["ok"] is (accepted and confirmed)
 
 
 async def validate_unit_backoff():
@@ -327,6 +334,59 @@ async def validate_ig4_lab_start_interlock():
     assert attempted == []
 
 
+async def validate_ig200_physical_feedback():
+    pack = json.loads((Path(__file__).resolve().parents[2] / "controllers/production/comap/inteligen-200/manifest.json").read_text())
+    for action, operator, timeout in (("start", "gt", 15), ("stop", "lte", 30)):
+        assert pack["commands"][action]["feedback"] == {
+            "metric": "rpm", "operator": operator, "value": 100, "timeoutSeconds": timeout,
+        }, "mudança no pack exige rever executor e regressão"
+    # Entire transport is mocked: no socket, modem or industrial write.
+    for action, rpms, confirmed in (
+        ("start", [0, 100, 101], True),
+        ("start", [0], False),
+        ("stop", [900, 101, 100], True),
+        ("stop", [900], False),
+        ("start", [ConnectionError("lost")], False),
+    ):
+        clock = [0.0]
+        values = iter(rpms)
+        last = rpms[-1]
+
+        async def sleep(seconds):
+            clock[0] += seconds
+
+        async def read(*args):
+            value = next(values, last)
+            if isinstance(value, Exception):
+                raise value
+            return [value]
+
+        port = SimpleNamespace(
+            remote_lock=asyncio.Lock(),
+            request_locked=AsyncMock(return_value=b"mock"),
+            read_registers_privileged=read,
+        )
+        expected = bridge.IG200_START_RETURN if action == "start" else bridge.IG200_STOP_RETURN
+        before = 0 if action == "start" else 900
+        with patch.object(bridge, "parse_registers", side_effect=[[before], [0, expected]]), \
+             patch.object(bridge, "ensure_write_ok"), \
+             patch.object(bridge.asyncio, "sleep", sleep), \
+             patch.object(bridge.asyncio, "get_running_loop", return_value=SimpleNamespace(time=lambda: clock[0])):
+            result = await bridge.BridgePort.ig200_command(port, 1, action)
+        assert result["accepted"] is True
+        assert result["ok"] is confirmed, (action, result)
+        assert result["feedback_confirmed"] is confirmed
+        assert clock[0] <= (15.2 if action == "start" else 30.2) + 0.01
+
+    port = SimpleNamespace(remote_lock=asyncio.Lock(), request_locked=AsyncMock(return_value=b"mock"))
+    with patch.object(bridge, "parse_registers", side_effect=[[0], [0, 2]]), \
+         patch.object(bridge, "ensure_write_ok"), patch.object(bridge.asyncio, "sleep", AsyncMock()):
+        result = await bridge.BridgePort.ig200_command(port, 1, "start")
+    assert result["ok"] is False and result["accepted"] is False
+    assert result["feedback_confirmed"] is False
+
+
+asyncio.run(validate_ig200_physical_feedback())
 asyncio.run(validate_payload())
 asyncio.run(validate_unit_backoff())
 asyncio.run(validate_disconnect_backoff())
