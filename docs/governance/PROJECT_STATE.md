@@ -1,5 +1,13 @@
 # Estado oficial do projeto
 
+## Concorrência de comandos na bridge — 2026-10-11
+
+- Branch `fix/bridge-command-concurrency-20261011`, base `e54d1bfde9e6b8c3c90b329a4d0da7310876f63d`. Domínio: bridge/transporte.
+- Gate por Unit permanece ocupado até finalizar feedback físico. Segundo START/STOP na mesma controladora é recusado antes de escrita, inclusive entre executores; outras Units continuam disponíveis. Gate libera em falha/cancelamento. Não substitui futura idempotência persistente por operation ID.
+- Arquivos: `backend/app/bridge.py`, `backend/tests/control_multi_device.py`, esta documentação. Suíte backend completa (14 arquivos) aprovada; regressão concorrente usa Events e transporte simulado, verifica ausência da segunda escrita, independência entre Units e liberação em falha.
+- Produção ainda no baseline `6a4a3fa`; release consolidada será implantada transacionalmente após checks. Nenhum comando industrial enviado; 2FA desativado. Rollback: revert e deploy transacional.
+- Próximo passo: consolidar com #231 e validar SHA final/smoke de produção.
+
 ## Gates de fonte do CI — 2026-10-11
 
 - Branch `fix/ci-source-security-gates-20261011`, domínio governança/CI; base `6a4a3fa4ad28e042608638469ba75bd0e0571ec3`.
