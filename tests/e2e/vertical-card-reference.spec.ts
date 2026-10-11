@@ -425,10 +425,11 @@ test("vertical não infere GCB pela carga e feedback some em dois segundos", asy
       rapidDeviceNum: 700,
     }),
   );
+  const response = await page.request.get("/api/generators");
+  expect(response.ok()).toBe(true);
+  const rows = await response.json();
   await page.route("**/api/generators", async (route) => {
     if (route.request().method() !== "GET") return route.continue();
-    const response = await route.fetch();
-    const rows = await response.json();
     await route.fulfill({
       json: rows.map((gen: Record<string, unknown>) =>
         gen.tag === "VERTTRUTH"
@@ -468,4 +469,5 @@ test("vertical não infere GCB pela carga e feedback some em dois segundos", asy
   await expect(card.locator(".vref-command-message")).toHaveText("Feedback não confirmou no prazo");
   await page.clock.fastForward(2100);
   await expect(card.locator(".vref-command-message")).toHaveCount(0);
+  await page.unrouteAll({ behavior: "wait" });
 });

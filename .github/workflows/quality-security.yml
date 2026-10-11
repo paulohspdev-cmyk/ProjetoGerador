@@ -132,9 +132,13 @@ jobs:
           fi
 
           test ! -f .github/workflows/one-shot-format-width-check.yml
-          if grep -R -n 'fonts.googleapis.com\|fonts.gstatic.com' src --include='*.ts' --include='*.tsx' --include='*.css'; then
+          test -d frontend/src
+          if grep -R -n 'fonts.googleapis.com\|fonts.gstatic.com' frontend/src --include='*.ts' --include='*.tsx' --include='*.css'; then
             echo 'ERRO: frontend voltou a depender de Google Fonts em runtime.' >&2
             exit 1
+          else
+            RC_SCAN_STATUS=$?
+            test "$RC_SCAN_STATUS" -eq 1 || exit "$RC_SCAN_STATUS"
           fi
 
       - name: Política industrial permanece restrita
