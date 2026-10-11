@@ -1,5 +1,13 @@
 # Estado oficial do projeto
 
+## Contrato de resposta de comando — 2026-10-11
+
+- Branch `fix/command-api-confirmation-20261011`, encadeada à correção da bridge #225. Domínio: comando industrial/API de controle.
+- Resposta terminal diferencia `confirmed` (aceito e feedback confirmado), `failed` (aceito sem confirmação) e `rejected` (não aceito). `ok` somente quando accepted e feedback_confirmed; resposta inconsistente de executor não produz sucesso. Nenhum estado intermediário é fabricado no protocolo síncrono existente.
+- Arquivos: `backend/app/control.py`, `backend/tests/control_multi_device.py`, esta documentação. Teste simulado cobre as três respostas e aceitação antiga sem feedback.
+- Produção não alterada, sem comando real, sem alteração de 2FA. Rollback: revert e deploy transacional.
+- Próximo passo: integrar após #225 e ajustar timeout HTTP separadamente no cliente frontend.
+
 ## Remediação de comandos — 2026-10-11
 
 - Escopo autorizado pelo proprietário: instalação independente por cliente, sem arquitetura SaaS compartilhada; manter 2FA desativado nesta etapa.

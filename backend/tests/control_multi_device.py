@@ -153,10 +153,16 @@ async def validate_payload():
         result = await control.send_homologated_command(generator, "start")
 
     assert result["accepted"] is True
+    assert result["state"] == "failed" and result["ok"] is False
     payload = json.loads(writer.payload.decode("utf-8").strip())
     assert payload["device"] == 204
     assert payload["action"] == "start"
     assert payload["confirm"] == "REMOTE_CONTROL_CONFIRMED"
+    for accepted, confirmed, state in ((True, True, "confirmed"), (True, False, "failed"), (False, False, "rejected")):
+        with patch.object(control, "command_firmware_approval", return_value=(True, "teste")), patch.object(control, "_send_socket_command", AsyncMock(return_value={"ok": True, "accepted": accepted, "feedback_confirmed": confirmed})):
+            result = await control.send_homologated_command(generator, "start")
+        assert result["state"] == state
+        assert result["ok"] is (accepted and confirmed)
 
 
 async def validate_unit_backoff():
