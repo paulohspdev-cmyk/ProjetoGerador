@@ -55,6 +55,7 @@ async function createGenerator(
         rapidDeviceNum: body.rapidDeviceNum,
       }),
     });
+    if (body.tag === "VERTTRUTH" && !response.ok) throw new Error(await response.text());
     return response.status;
   }, payload);
 }
@@ -421,7 +422,7 @@ test("vertical não infere GCB pela carga e feedback some em dois segundos", asy
       controller: "DSE DSE8620 MKII",
       listenPort: 15120,
       modbusUnit: 93,
-      rapidDeviceNum: 420,
+      rapidDeviceNum: 700,
     }),
   );
   await page.route("**/api/generators", async (route) => {
