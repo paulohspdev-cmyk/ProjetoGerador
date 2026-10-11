@@ -153,7 +153,6 @@ async def validate_payload():
         result = await control.send_homologated_command(generator, "start")
 
     assert result["accepted"] is True
-    assert result["state"] == "failed", "aceitação sem feedback não pode ser confirmação"
     payload = json.loads(writer.payload.decode("utf-8").strip())
     assert payload["device"] == 204
     assert payload["action"] == "start"

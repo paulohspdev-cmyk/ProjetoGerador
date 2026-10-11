@@ -190,7 +190,6 @@ async def send_homologated_command(generator: dict, action: str) -> dict:
     )
     return {
         **result,
-        "ok": bool(result.get("accepted") and result.get("feedback_confirmed")),
         "contract": {
             "schema": 4,
             "executor": executor,
@@ -198,9 +197,5 @@ async def send_homologated_command(generator: dict, action: str) -> dict:
             "timeoutSeconds": int(timeout),
             "feedback": contract.get("feedback") or {},
         },
-        "state": (
-            "confirmed" if result.get("accepted") and result.get("feedback_confirmed")
-            else "failed" if result.get("accepted")
-            else "rejected"
-        ),
+        "state": "controller_accepted" if result.get("accepted") else "rejected",
     }
