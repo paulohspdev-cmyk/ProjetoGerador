@@ -1,5 +1,17 @@
 # Estado oficial do projeto
 
+## Evidência de implantação dedicada — 2026-10-11
+
+- Domínio: governança/documentação. Branch `docs/production-release-evidence-20261011`, base e release funcional `e0fc6a551e0c0432aae6002d956a8cd328766f08`; PRs #225–#233 integrados. Este registro modifica somente esta documentação e não altera runtime.
+- Release funcional implantada pelo procedimento transacional existente em 2026-10-11 09:46 UTC. HEAD e `/var/lib/rc-geradores/deployed-commit` conferidos iguais ao SHA acima; checkout rastreado limpo. Backup de rollback: `/var/lib/rc-geradores/backups/deploy-20261011-094612`. Smoke de infraestrutura aprovado; banco integrity_check=ok, zero violações FK e 17 geradores preservados.
+- API, frontend, worker, provision, bridge, Communicator e SCADA Server ativos. Health interno e público e página pública respondem HTTP 200. `RC_2FA_ENFORCED=0`, `RC_ENABLE_IG4_LAB_CONTROL=0` e `RC_ENABLE_DSE_LAB_CONTROL=0` preservados. Instalação independente por cliente conforme decisão do proprietário.
+- Validação do SHA funcional final: `npm run check`, 14 suítes backend, regressão do cliente de comando e gates de fonte aprovados; GitHub CI, E2E e Quality and Security concluídos com sucesso. E2E isolado completo: 25 testes, incluindo responsividade e videowall até 5760x2160. Não equivale a homologação em Safari ou hardware físico.
+- API autenticada de produção retorna os 17 geradores. G-194 observado com `telemetryStale=false`; G-237 com `telemetryStale=true`. Smoke encontrou 1/17 devices Normal naquele instante; os demais exigem diagnóstico de conectividade/energização em campo, sem presumir defeito de software nem comunicação saudável. Contadores nativos de comando permanecem zero. Nenhum START/STOP ou escrita industrial foi enviado nesta remediação.
+- RBAC restritivo aprovado em regressão isolada com usuários não administradores. A instalação atual não possui usuário ativo desses perfis para prova HTTP em produção; nenhum usuário foi criado para testar. Sessões administrativas temporárias de verificação foram removidas.
+- Limites mantidos: backup off-site sem destino externo configurado; hardening do NPM depende do proxy separado não exposto pela conexão atual; nominais/tanques/firmwares e contatos exigem dados reais. Idempotência persistente, contratos tipados completos, ensaio de carga e validação física de controladoras/telas permanecem próximos trabalhos. 2FA continua adiado por autorização expressa.
+- Próximo passo operacional deste registro: integrar o PR documental, conferir seus checks e alinhar o SHA documental na VM pelo mesmo deploy transacional, sem alterar configuração industrial. Comparar HEAD/marker ao release esperado ao iniciar trabalho novo. Próximo passo de produto: obter destino off-site e dados técnicos reais e validar equipamentos energizados com procedimento de campo autorizado.
+- Rollback: backup transacional acima e release anterior `6a4a3fa4ad28e042608638469ba75bd0e0571ec3`; reversão por domínio, sem reprovisionar equipamentos.
+
 ## Consolidação para instalações dedicadas — 2026-10-11
 
 - Domínio desta alteração: governança/CI, com documentação auxiliar. Branch `docs/dedicated-release-validation-20261011`, base `e8352cc589176936761f787f8a2b998fb06649e1`.
