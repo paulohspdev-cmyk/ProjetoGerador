@@ -1,5 +1,18 @@
 # Estado oficial do projeto
 
+## Consolidação para instalações dedicadas — 2026-10-11
+
+- Domínio desta alteração: governança/CI, com documentação auxiliar. Branch `docs/dedicated-release-validation-20261011`, base `e8352cc589176936761f787f8a2b998fb06649e1`.
+- PRs #225–#232 integrados por domínio: executor IG200/feedback, permissões de bootstrap, frescor Rapid, resposta de comando, timeout HTTP, gates de fonte do CI e Vertical. O teste real do cliente HTTP passa a rodar continuamente no CI; README passa a refletir os sete packs reais.
+- E2E completo isolado na VM aprovado: 25/25, incluindo GCB desconhecido sob carga, TTL de 2 s, CRUD, auth/RBAC, menus, responsividade e videowall até 5760x2160. `npm run check` aprovado por domínio frontend; suíte backend combinada com 14 arquivos aprovada. Teste de concorrência da bridge aprovado em suíte completa; #232 integrado.
+- Prova read-only com cadastro real e persistência bloqueada: G-194 atual por sessão recente, G-237 stale sem sessão; simulação de coletor perdido produz 17/17 stale e nenhum snapshot renovado. Preflight da VM aprovado. Banco quick_check=ok e zero violações FK; backup completo diário mais recente de 2026-10-10, cerca de 17 h na inspeção.
+- Decisões do proprietário: uma instalação independente por cliente; 2FA desativado. Guia em `docs/product/DEDICATED_INSTALLATIONS.md`. Não criar arquitetura SaaS compartilhada nem habilitar capabilities adicionais nesta remediação.
+- Produção ainda no baseline de código `6a4a3fa` antes do deploy desta série; Communicator já retomado em operação read-only e contadores de comando continuam 0/0. Deploy final deve usar SHA exato aprovado, backup transacional e smoke; nenhum START/STOP de campo será executado como teste automatizado.
+- Limites: nenhum comando físico foi homologado novamente nesta sessão. Backup off-site depende de destino externo real; hardening do NPM depende de acesso ao proxy separado (a conexão disponível expõe somente a VM SCADA); nominais/tanques/firmwares e destinatários de notificações dependem de dados reais. Safari/hardware físico, idempotência persistente e ensaio de carga continuam pendentes. 2FA é adiamento autorizado, não evidência de readiness completa.
+- Rollback: deploy transacional existente e backup anterior; reverter PR do domínio afetado, sem reprovisionar equipamentos.
+- Próximo passo exato: conferir checks do SHA final, implantar e verificar HEAD/marker, serviços, banco, RBAC, sessões Rapid e 2FA preservado.
+
+
 ## Concorrência de comandos na bridge — 2026-10-11
 
 - Branch `fix/bridge-command-concurrency-20261011`, base `e54d1bfde9e6b8c3c90b329a4d0da7310876f63d`. Domínio: bridge/transporte.
