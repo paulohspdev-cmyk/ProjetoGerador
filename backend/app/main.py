@@ -10,6 +10,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from . import db, domain_store, ops_store, platform_store, transport_store
 from .auth import (
     authenticate,
+    can,
     create_login_session,
     current_user,
     destroy_login_session,
@@ -195,8 +196,19 @@ def _backup_public(item: dict) -> dict:
     }
 
 
-def _ops_payload() -> dict:
+def _visible_settings(user: dict, settings: dict) -> dict:
+    if can(user, "admin"):
+        return settings
+    # Only boolean UI preferences are shared; arbitrary config keys are private.
+    return {key: value for key, value in settings.items() if key.startswith("switch.") and isinstance(value, bool)}
+
+
+def _ops_payload(user: dict) -> dict:
     raw = ops_store.bootstrap_payload()
+    if not can(user, "admin"):
+        raw["backups"] = []
+        raw["webhooks"] = []
+    raw["settings"] = _visible_settings(user, raw["settings"])
     return {
         **raw,
         "sites": [_site_public(x) for x in raw["sites"]],
@@ -531,7 +543,7 @@ def controller_bindings(user: dict = Depends(require_view)):
 # ---------------------------------------------------------------------------
 @app.get("/api/ops/bootstrap")
 def ops_bootstrap(user: dict = Depends(require_view)):
-    return _ops_payload()
+    return _ops_payload(user)
 
 
 @app.get("/api/clients")
@@ -664,7 +676,7 @@ def reports_download(report_id: str, user: dict = Depends(require_view)):
 
 
 @app.get("/api/webhooks")
-def webhooks_list(user: dict = Depends(require_view)):
+def webhooks_list(user: dict = Depends(require_admin)):
     return ops_store.list_webhooks()
 
 
@@ -690,7 +702,7 @@ def webhooks_update(item_id: str, payload: WebhookUpdate, user: dict = Depends(r
 
 @app.get("/api/settings")
 def settings_list(user: dict = Depends(require_view)):
-    return ops_store.list_settings()
+    return _visible_settings(user, ops_store.list_settings())
 
 
 @app.put("/api/settings/{key}")
