@@ -61,15 +61,17 @@ Regras de arquitetura:
 
 ## Controller Packs de produção
 
-O estado atual do repositório possui cinco packs em `controllers/production/`. O lifecycle de produção autoriza provisionamento, mas **não libera comandos automaticamente**: cada capacidade continua declarada no manifest do pack.
+O estado atual do repositório possui sete packs em `controllers/production/`. O lifecycle de produção autoriza provisionamento, mas **não libera comandos automaticamente**: cada capacidade continua declarada no manifest do pack.
 
 | Modelo              | Estado do pack    | Telemetria                                                      | START/STOP  | AUTO / MAN / TEST | MCB / GCB  |
 | ------------------- | ----------------- | --------------------------------------------------------------- | ----------- | ----------------- | ---------- |
 | ComAp InteliGen 200 | `field_validated` | validada em campo                                               | habilitados | bloqueados        | bloqueados |
 | ComAp IG-NT         | `field_validated` | validada em campo                                               | bloqueados  | bloqueados        | bloqueados |
 | ComAp IG4 200       | `field_validated` | validada em campo                                               | bloqueados  | bloqueados        | bloqueados |
+| ComAp InteliCompact NT | `field_validated` | validada em campo | bloqueados | bloqueados | bloqueados |
 | DSE GenComm Genset  | `production`      | pack de leitura; canais ainda sem `validatedTelemetry` de campo | bloqueados  | bloqueados        | bloqueados |
 | DSE5210             | `production`      | pack de leitura; canais ainda sem `validatedTelemetry` de campo | bloqueados  | bloqueados        | bloqueados |
+| DSE5xx GenComm | `production` | pack de leitura; canais ainda sem `validatedTelemetry` de campo | bloqueados | bloqueados | bloqueados |
 
 No InteliGen 200, START/STOP são os únicos comandos atualmente homologados. AUTO, MANUAL, TEST, MCB, GCB e paralelismo permanecem bloqueados até homologação específica por modelo.
 

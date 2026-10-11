@@ -47,7 +47,9 @@ jobs:
         run: npm run check:architecture
 
       - name: Superfícies funcionais frontend
-        run: npm run check:functional
+        run: |
+          npm run check:functional
+          node --experimental-vm-modules tests/command-client-timeout.mjs
 
       - name: Frontend ESLint
         run: npm run lint
