@@ -9,6 +9,17 @@
 - Operação separada observada em 2026-10-11: Communicator retomado após conferir 17 devices em linhas com CmdEnabled=false e fila por arquivo vazia; serviço ativo, G-194 sessão Normal avançando, contador de comandos 0/0. Nenhum template, binding ou comando alterado. G-237 ainda sem sessão; não deve ser mostrado como atual até evidência positiva.
 - Próximo passo: integrar domínios após checks verdes e validar release na VM isolada antes de deploy.
 
+
+## Permissões da API operacional — 2026-10-11
+
+- Branch `fix/ops-bootstrap-rbac-20261011`, base `6a4a3fa4ad28e042608638469ba75bd0e0571ec3`. Domínio: backend de produto/RBAC.
+- Bootstrap deixa de expor backups e webhooks a usuários sem permissão administrativa. Configurações privadas ficam restritas a administradores tanto no bootstrap quanto em GET settings; apenas switches booleanos de UI são compartilhados. GET webhooks exige admin.
+- Arquivos: `backend/app/main.py`, `backend/tests/smoke.py`, esta documentação.
+- Validação: suíte backend completa (14 arquivos) aprovada; regressão de visualização nas rotas reais, verificação dos demais perfis na filtragem de configurações e preservação de acesso administrativo.
+- Produção permanece inalterada; nenhum schema, binding, capability ou opção 2FA alterado. Modelo autorizado: uma instalação independente por cliente, sem SaaS compartilhado.
+- Rollback: revert desta mudança e deploy transacional existente.
+- Próximo passo: PR separado para bloquear frescor falso quando coletor/transporte estão indisponíveis. Comandos tratados separadamente no PR #225.
+
 Atualizado em: 2026-10-06  
 Baseline de governança integrada: `a3991670a78564d514de95fa1d500b53a32f6f7e`  
 Produção observada durante a Auditoria Zero: `20a68c2d0e146addcca708290a1564c63ffa305e`  
