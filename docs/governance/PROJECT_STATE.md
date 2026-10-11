@@ -1,5 +1,14 @@
 # Estado oficial do projeto
 
+## Gates de fonte do CI — 2026-10-11
+
+- Branch `fix/ci-source-security-gates-20261011`, domínio governança/CI; base `6a4a3fa4ad28e042608638469ba75bd0e0571ec3`.
+- Scans de dados demonstrativos e Google Fonts apontam para `frontend/src`, exigem diretório existente e recusam erros do grep (código 2), em vez de tratá-los como ausência de match.
+- Arquivos: dois workflows, `tests/ci_source_gates.py`, esta documentação. Regressão executa os blocos reais dos workflows contra fonte limpa, padrão proibido e diretório ausente; aprovada e incluída no CI. Self-test de fronteiras aprovado.
+- Não altera runtime/produção/2FA. Rollback: revert.
+- Operação separada observada em 2026-10-11: Communicator retomado após conferir 17 devices em linhas com CmdEnabled=false e fila por arquivo vazia; serviço ativo, G-194 sessão Normal avançando, contador de comandos 0/0. Nenhum template, binding ou comando alterado. G-237 ainda sem sessão; não deve ser mostrado como atual até evidência positiva.
+- Próximo passo: integrar domínios após checks verdes e validar release na VM isolada antes de deploy.
+
 Atualizado em: 2026-10-06  
 Baseline de governança integrada: `a3991670a78564d514de95fa1d500b53a32f6f7e`  
 Produção observada durante a Auditoria Zero: `20a68c2d0e146addcca708290a1564c63ffa305e`  

@@ -17,6 +17,7 @@ jobs:
       - name: Higiene do repositório
         run: |
           set -euo pipefail
+          python3 tests/ci_source_gates.py
           BAD="$(git ls-files | grep -E '(^|/)node_modules/|(^|/)__pycache__/|\.py[co]$|(^|/)\.venv/|(^|/)backend/\.venv/|(^|/)\.output/' || true)"
           if [[ -n "$BAD" ]]; then
             echo 'ERRO: artefatos de runtime/build foram versionados:' >&2
@@ -85,9 +86,13 @@ jobs:
       - name: Layout industrial e fluxo sem dados simulados
         run: |
           set -euo pipefail
-          if grep -R -n -E 'Teltonika RUT241|Sierra AirLink|Atlas Data Centers|23/05/2025|14:32:18|612 kW|0,92|phaseSeries|kwSeries' src --include='*.ts' --include='*.tsx'; then
+          test -d frontend/src
+          if grep -R -n -E 'Teltonika RUT241|Sierra AirLink|Atlas Data Centers|23/05/2025|14:32:18|612 kW|0,92|phaseSeries|kwSeries' frontend/src --include='*.ts' --include='*.tsx'; then
             echo 'ERRO: dado/série demonstrativa conhecida voltou ao frontend.' >&2
             exit 1
+          else
+            RC_SCAN_STATUS=$?
+            test "$RC_SCAN_STATUS" -eq 1 || exit "$RC_SCAN_STATUS"
           fi
           test ! -f frontend/src/features/generators/detail-widgets.tsx
           test -f frontend/src/features/generators/detail/generator-detail-model.ts
