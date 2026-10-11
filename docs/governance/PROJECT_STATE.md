@@ -10,6 +10,39 @@
 - Próximo passo: feedback transitório e semântica do disjuntor no Vertical, em PR separado.
 
 
+
+## Frescor Rapid — 2026-10-11
+
+- Branch `fix/rapid-unavailable-freshness-20261011`, base `6a4a3fa4ad28e042608638469ba75bd0e0571ec3`. Domínio: integração Rapid/telemetria.
+- Em produção, cache do Server não pode provar coleta: exigir Communicator ativo, transporte não desconectado e sessão Normal recente por device. Timestamp vem de `Session time` no diagnóstico nativo do Communicator, não da hora HTTP. Valores constantes continuam válidos se a sessão avança. Sessão expirada/ausente, erro de verificação e coletor parado tornam dados stale e não renovam snapshots.
+- Integração observada na VM Rapid 6.4.7: `/var/log/scada/ScadaComm/Log/deviceNNN.txt`, cabeçalho em inglês e timestamp `dd/MM/yyyy HH:mm:ss` no fuso local do host; arquivo 0644, diretório 0755 acessíveis ao usuário API. Parametrização: `RC_RAPID_COMM_LOG_DIR`, `RC_RAPID_DEVICE_STALE_SECONDS` (padrão 60 s). Outros ambientes/layouts de diagnóstico devem ser validados; ausência falha conservadoramente.
+- Arquivos: `backend/app/rapid.py`, `backend/tests/rapid_overlay_resilience.py`, esta documentação. Suíte completa backend (14 arquivos) aprovada após guardas de coletor/transporte; parser de sessão coberto por regressões de sessão atual, constante, expirada, indefinida e ausente.
+- Sem alteração de schema, templates, comandos ou 2FA. Produção ainda não alterada. Rollback: revert e deploy transacional existente.
+- Próximo passo: validar em cópia isolada da VM e preparar deploy; corrigir timeout HTTP e apresentação de feedback em domínio API/frontend separado.
+
+
+
+## Contrato de resposta de comando — 2026-10-11
+
+- Branch `fix/command-api-confirmation-20261011`, encadeada à correção da bridge #225. Domínio: comando industrial/API de controle.
+- Resposta terminal diferencia `confirmed` (aceito e feedback confirmado), `failed` (aceito sem confirmação) e `rejected` (não aceito). `ok` somente quando accepted e feedback_confirmed; resposta inconsistente de executor não produz sucesso. Nenhum estado intermediário é fabricado no protocolo síncrono existente.
+- Arquivos: `backend/app/control.py`, `backend/tests/control_multi_device.py`, esta documentação. Teste simulado cobre as três respostas e aceitação antiga sem feedback.
+- Produção não alterada, sem comando real, sem alteração de 2FA. Rollback: revert e deploy transacional.
+- Próximo passo: integrar após #225 e ajustar timeout HTTP separadamente no cliente frontend.
+
+## Remediação de comandos — 2026-10-11
+
+- Escopo autorizado pelo proprietário: instalação independente por cliente, sem arquitetura SaaS compartilhada; manter 2FA desativado nesta etapa.
+- Base conferida: produção, marker e checkout em `6a4a3fa4ad28e042608638469ba75bd0e0571ec3`, checkout de produção limpo. Communicator continua parado; investigação em domínio separado.
+- Branch: `fix/ig200-physical-feedback-20261011`. Domínio: bridge/transporte (executor privilegiado).
+- IG200 START exige RPM >100 em até 15 s; STOP exige RPM <=100 em até 30 s, conforme pack existente. Escrita aceita sem feedback retorna `ok=false` e `feedback_confirmed=false`; confirmação retorna `feedback_confirmed=true`. Normalização de state na API será PR encadeado separado. Falhas ficam registradas como ERROR no histórico.
+- Arquivos: `backend/app/bridge.py`, `backend/tests/control_multi_device.py` e esta documentação.
+- Validação: suíte backend completa, 14 arquivos, aprovada; regressões simulam START/STOP confirmado, timeout, perda de conexão, rejeição e aceitação sem feedback. Teste exige igualdade com o contrato RPM/timeout do pack.
+- Produção não alterada por esta branch; nenhum comando industrial executado. Confirmação física em campo não realizada.
+- Rollback: reverter o commit desta branch e usar o deploy transacional existente, preservando banco e bindings.
+- Próximo passo: revisar/integrar esta mudança isolada; corrigir acesso administrativo no bootstrap e frescor de telemetria em branches separadas.
+
+
 ## Permissões da API operacional — 2026-10-11
 
 - Branch `fix/ops-bootstrap-rbac-20261011`, base `6a4a3fa4ad28e042608638469ba75bd0e0571ec3`. Domínio: backend de produto/RBAC.

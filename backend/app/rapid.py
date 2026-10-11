@@ -5,6 +5,7 @@ import sqlite3
 import subprocess
 import threading
 import time
+from pathlib import Path
 from datetime import datetime, timedelta, timezone
 
 from .binding_store import load_runtime_bindings
@@ -17,9 +18,56 @@ from .config import (
 from .controller_library import pack_for_model
 from .power_topology import resolve_power_topology
 from . import db, ig4_prod
+from .production_guard import production_mode
 
 _cache = {"at": 0.0, "channels": {}, "error": "", "requested": set()}
 _cache_lock = threading.Lock()
+_collector_cache = {"at": 0.0, "error": ""}
+_collector_lock = threading.Lock()
+
+
+def _collector_error():
+    """Fail closed in production: Server cache alone cannot prove collection."""
+    if not production_mode():
+        return ""
+    with _collector_lock:
+        now = time.monotonic()
+        if now - _collector_cache["at"] < 1.0 and _collector_cache["at"]:
+            return _collector_cache["error"]
+        try:
+            proc = subprocess.run(
+                ["systemctl", "is-active", "scadacomm6.service"],
+                capture_output=True, text=True, timeout=1.0, check=False,
+            )
+            error = "" if proc.returncode == 0 and proc.stdout.strip() == "active" else "Coletor Rapid indisponível; cache do Server não comprova telemetria atual"
+        except (OSError, subprocess.TimeoutExpired):
+            error = "Não foi possível verificar o coletor Rapid; frescor não comprovado"
+        _collector_cache.update(at=time.monotonic(), error=error)
+        return error
+
+
+def _device_collection_at(generator):
+    """Use the Communicator session time, never HTTP query time, in production."""
+    if not production_mode():
+        return None, ""
+    device = int(generator.get("rapid_device_num") or 0)
+    if device <= 0:
+        return None, "Device Rapid não identificado"
+    root = Path(os.environ.get("RC_RAPID_COMM_LOG_DIR", "/var/log/scada/ScadaComm/Log"))
+    try:
+        with (root / f"device{device:03d}.txt").open(encoding="utf-8-sig") as stream:
+            header = stream.read(1024)
+        fields = dict(line.split(":", 1) for line in header.splitlines() if ":" in line)
+        fields = {key.strip(): value.strip() for key, value in fields.items()}
+        if fields.get("Status") != "Normal":
+            return None, "Sessão do device Rapid não está Normal"
+        at = int(datetime.strptime(fields["Session time"], "%d/%m/%Y %H:%M:%S").timestamp())
+        max_age = max(5.0, float(os.environ.get("RC_RAPID_DEVICE_STALE_SECONDS", "60")))
+        if not 0 <= time.time() - at <= max_age:
+            return at, "Sessão do device Rapid expirada; valores em cache"
+        return at, ""
+    except (OSError, ValueError, KeyError):
+        return None, "Frescor da sessão do device Rapid não comprovado"
 
 _COMAP_UNDEFINED = {-32768.0, 32768.0, -2147483648.0, 2147483648.0}
 _DSE_16_UNDEFINED = {float(value) for value in range(0xFFF8, 0x10000)} | {
@@ -749,11 +797,13 @@ def _overlay_generators(generators):
                     all_channels.append(int(cfg["cnl"]))
 
     channel_data, read_error = read_channels(all_channels)
+    collection_error = _collector_error()
     result = []
 
     for generator, binding in zip(generators, matched):
         configured = sorted((binding.get("channels") or {}).keys()) if binding else []
         health = _transport_health(generator, bridge_status)
+        acquisition_at, device_error = _device_collection_at(generator)
         snapshot = db.get_telemetry_snapshot(generator["id"])
 
         def last_known():
@@ -872,7 +922,10 @@ def _overlay_generators(generators):
             configured = sorted(set([*configured, *derived]))
         defined = sorted(values.keys())
 
-        if read_error:
+        unavailable = read_error or collection_error or device_error
+        if health.get("transport") == "disconnected":
+            unavailable = unavailable or "Transporte desconectado; cache Rapid não comprova telemetria atual"
+        if unavailable:
             health.update({"controller": "unknown", "telemetry": "error"})
             state = "offline" if health.get("transport") == "disconnected" else "fault"
             stale_values, _stale_defined, stale_at = last_known()
@@ -881,7 +934,7 @@ def _overlay_generators(generators):
                     generator,
                     stale_values,
                     state,
-                    read_error,
+                    unavailable,
                     defined=[],
                     configured_metrics=configured,
                     binding_present=True,
@@ -899,12 +952,11 @@ def _overlay_generators(generators):
                 # Não persiste lixo histórico que deixou de ser definido.
                 snapshot_values = dict(display_values)
                 snapshot_defined = sorted(snapshot_values.keys())
-                db.save_telemetry_snapshot(
-                    generator["id"], snapshot_values, snapshot_defined
-                )
+                snapshot_args = {"updated_at": acquisition_at} if acquisition_at is not None else {}
+                db.save_telemetry_snapshot(generator["id"], snapshot_values, snapshot_defined, **snapshot_args)
             except sqlite3.Error as exc:
                 print(f"[rapid] falha ao persistir snapshot de {generator['id']}: {exc}", flush=True)
-            telemetry_at = int(time.time())
+            telemetry_at = acquisition_at if acquisition_at is not None else int(time.time())
             controller_ok = _has_controller_health(values, configured)
             health.update(
                 {
