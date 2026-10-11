@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 
 import { useAuth } from "@/features/auth/AuthProvider";
@@ -145,6 +145,11 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
   const industrialAlarms = useActiveIndustrialAlarms();
   const [commandBusy, setCommandBusy] = useState<IndustrialCommandAction | null>(null);
   const [commandMessage, setCommandMessage] = useState<string | null>(null);
+  useEffect(() => {
+    if (!commandMessage) return;
+    const timer = window.setTimeout(() => setCommandMessage(null), 2000);
+    return () => window.clearTimeout(timer);
+  }, [commandMessage]);
 
   const telemetry = readGeneratorTelemetry(gen);
   const {
@@ -222,19 +227,9 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     (value): value is number => value != null,
   );
   const currentKnown = currentValues.length > 0;
-  // O bloco de LEDs da página 190 não é feedback GCB universal entre modelos DSE.
-  // Fluxo elétrico positivo é evidência suficiente para afirmar FECHADO em genset_only,
-  // mas ausência de carga NÃO prova ABERTO: o disjuntor pode estar fechado em barramento
-  // sem carga. Sem canal gcb_closed documentado, mostramos estado desconhecido.
-  const dseFlowProvesClosed =
-    dse &&
-    !hasMainsSource &&
-    !gen.telemetryStale &&
-    generatorPresent &&
-    ((powerKw != null && Number.isFinite(powerKw) && Math.abs(powerKw) >= 0.5) ||
-      currentValues.some((value) => Math.abs(value) >= 1));
-  const displayGcb = dse ? (gcbKnown ? gen.gcb : dseFlowProvesClosed ? true : false) : gen.gcb;
-  const displayGcbKnown = dse ? gcbKnown || dseFlowProvesClosed : gcbKnown;
+  // Breaker state requires explicit homologated feedback, even under load.
+  const displayGcb = gen.gcb;
+  const displayGcbKnown = gcbKnown;
 
   const electricalRows = useMemo<ElectricalRow[]>(
     () => [
@@ -335,7 +330,12 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
     setCommandMessage(null);
     try {
       const result = await rcApi.generators.command(gen.id, action);
-      setCommandMessage(result.reason || label + " aceito pelo controlador");
+      setCommandMessage(
+        result.reason ||
+          ("feedback_confirmed" in result && result.feedback_confirmed === true
+            ? label + " confirmado pelo controlador"
+            : label + " sem confirmação física"),
+      );
       await refresh();
     } catch (error) {
       setCommandMessage(error instanceof Error ? error.message : "Falha no comando " + label);
@@ -380,9 +380,7 @@ export function PowerFlowCard({ gen }: { gen: Generator }) {
       data-power-topology={gen.powerTopology ?? "unknown"}
       data-power-topology-source={gen.powerTopologySource ?? "unknown"}
       data-mains-state={!mainsKnown ? "unknown" : mainsPresent ? "present" : "absent"}
-      data-gcb-state-source={
-        dseFlowProvesClosed ? "electrical-flow-closed" : gcbKnown ? "feedback" : "unknown"
-      }
+      data-gcb-state-source={gcbKnown ? "feedback" : "unknown"}
       data-telemetry-state={gen.telemetryStale ? "stale" : online ? "live" : "unavailable"}
     >
       <header className="vref-header">

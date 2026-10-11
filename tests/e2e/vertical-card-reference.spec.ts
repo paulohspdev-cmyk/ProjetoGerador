@@ -55,6 +55,7 @@ async function createGenerator(
         rapidDeviceNum: body.rapidDeviceNum,
       }),
     });
+    if (body.tag === "VERTTRUTH" && !response.ok) throw new Error(await response.text());
     return response.status;
   }, payload);
 }
@@ -411,4 +412,62 @@ test("vertical preserva todo o conteúdo e rola a grade quando a altura é curta
 
     await context.close();
   }
+});
+
+test("vertical não infere GCB pela carga e feedback some em dois segundos", async ({ page }) => {
+  await login(page);
+  expect(201).toBe(
+    await createGenerator(page, {
+      tag: "VERTTRUTH",
+      controller: "DSE DSE8620 MKII",
+      listenPort: 15120,
+      modbusUnit: 93,
+      rapidDeviceNum: 700,
+    }),
+  );
+  const response = await page.request.get("/api/generators");
+  expect(response.ok()).toBe(true);
+  const rows = await response.json();
+  await page.route("**/api/generators", async (route) => {
+    if (route.request().method() !== "GET") return route.continue();
+    await route.fulfill({
+      json: rows.map((gen: Record<string, unknown>) =>
+        gen.tag === "VERTTRUTH"
+          ? {
+              ...gen,
+              status: "online",
+              telemetryStale: false,
+              powerTopology: "genset_only",
+              metrics: { rpm: 0, power_kw: 50, current_l1: 20, voltage_l1: 220 },
+              definedMetrics: ["rpm", "power_kw", "current_l1", "voltage_l1"],
+              capabilities: { start: true },
+            }
+          : gen,
+      ),
+    });
+  });
+  // Fixture command is intercepted; no request reaches the industrial executor.
+  await page.route("**/api/generators/*/commands/start", (route) =>
+    route.fulfill({
+      json: {
+        ok: false,
+        accepted: true,
+        feedback_confirmed: false,
+        state: "failed",
+        reason: "Feedback não confirmou no prazo",
+      },
+    }),
+  );
+  await page.goto("/p/geradores");
+  await openGeneratorTools(page);
+  await page.locator('input[aria-label="Buscar gerador"]:visible').first().fill("VERTTRUTH");
+  const card = page.locator('[data-controller-vendor="dse"]').filter({ hasText: "VERTTRUTH" });
+  await expect(card).toHaveAttribute("data-gcb-state-source", "unknown");
+  await page.clock.install();
+  page.once("dialog", (dialog) => dialog.accept());
+  await card.getByRole("button", { name: "START", exact: true }).click();
+  await expect(card.locator(".vref-command-message")).toHaveText("Feedback não confirmou no prazo");
+  await page.clock.fastForward(2100);
+  await expect(card.locator(".vref-command-message")).toHaveCount(0);
+  await page.unrouteAll({ behavior: "wait" });
 });
