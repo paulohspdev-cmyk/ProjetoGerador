@@ -386,6 +386,44 @@ async def validate_ig200_physical_feedback():
     assert result["feedback_confirmed"] is False
 
 
+async def validate_command_concurrency():
+    port = bridge.BridgePort(15090)
+    started, release = asyncio.Event(), asyncio.Event()
+    writes = []
+
+    async def fake_command(unit, action, password=None):
+        writes.append((unit, action))
+        if unit == 1:
+            started.set()
+            await release.wait()
+        if unit == 3:
+            raise ConnectionError("fixture lost transport")
+        return {"ok": True, "accepted": True, "feedback_confirmed": True}
+
+    port.ig200_command = fake_command
+    port.ig4_command = fake_command
+    first = asyncio.create_task(port.execute_privileged_command("ig200_privileged", 1, "start"))
+    await started.wait()
+    try:
+        await port.execute_privileged_command("comap_privileged", 1, "stop")
+    except PermissionError:
+        pass
+    else:
+        raise AssertionError("concurrent action must be rejected before write")
+    assert writes == [(1, "start")]
+    await port.execute_privileged_command("comap_privileged", 2, "start")
+    release.set()
+    assert (await first)["feedback_confirmed"]
+    assert not port.command_locks[1].locked()
+    try:
+        await port.execute_privileged_command("ig200_privileged", 3, "start")
+    except ConnectionError:
+        pass
+    assert not port.command_locks[3].locked(), "failure must release device gate"
+    assert writes == [(1, "start"), (2, "start"), (3, "start")]
+
+
+asyncio.run(validate_command_concurrency())
 asyncio.run(validate_ig200_physical_feedback())
 asyncio.run(validate_payload())
 asyncio.run(validate_unit_backoff())
