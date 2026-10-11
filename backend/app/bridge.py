@@ -380,15 +380,34 @@ class BridgePort:
             accepted = False
             reason = f"retorno inesperado 0x{return_value:08X}"
         rpm_after = None
+        feedback_confirmed = False
         if accepted:
-            await asyncio.sleep(2.0)
-            try:
-                rpm_after = (await self.read_registers_privileged(unit, IG200_RPM_ADDRESS, 1))[0]
-            except Exception:
-                rpm_after = None
+            # Homologated IG200 contract: START >100 rpm/15s; STOP <=100 rpm/30s.
+            deadline = asyncio.get_running_loop().time() + (15.0 if action == "start" else 30.0)
+            while asyncio.get_running_loop().time() < deadline:
+                await asyncio.sleep(0.5)
+                try:
+                    remaining = deadline - asyncio.get_running_loop().time()
+                    if remaining <= 0:
+                        break
+                    rpm_after = (await asyncio.wait_for(
+                        self.read_registers_privileged(unit, IG200_RPM_ADDRESS, 1),
+                        timeout=remaining,
+                    ))[0]
+                except Exception:
+                    continue
+                feedback_confirmed = rpm_after > 100 if action == "start" else rpm_after <= 100
+                if feedback_confirmed:
+                    break
+            reason = (
+                f"{action.upper()} aceito e feedback por RPM confirmado"
+                if feedback_confirmed
+                else f"{action.upper()} aceito, mas feedback por RPM não confirmou no prazo"
+            )
         return {
-            "ok": accepted,
+            "ok": feedback_confirmed,
             "accepted": accepted,
+            "feedback_confirmed": feedback_confirmed,
             "action": action,
             "reason": reason,
             "return_value": f"0x{return_value:08X}",
@@ -637,7 +656,7 @@ async def handle_control(reader, writer):
             "unit": unit,
             "executor": executor,
         }
-        level = "WARN" if result.get("accepted") else "ERROR"
+        level = "INFO" if result.get("feedback_confirmed") else "ERROR"
         db.add_event(
             generator["id"],
             level,
