@@ -1,0 +1,2956 @@
+[
+  {
+    "source": ".gitattributes",
+    "area": "root/configuração",
+    "bytes": 216,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "0f9e222921bd5aa4e8f8a337661efc3b992103e8"
+  },
+  {
+    "source": ".github/PULL_REQUEST_TEMPLATE.md",
+    "area": "root/configuração",
+    "bytes": 1087,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "8947cb5af20f1ad26ea70ebb440b079680f77a70"
+  },
+  {
+    "source": ".github/copilot-instructions.md",
+    "area": "root/configuração",
+    "bytes": 297,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "3805ab263155b49398e2b01993767fbe58711e43"
+  },
+  {
+    "source": ".github/workflows/ci.yml",
+    "area": ".github/workflows",
+    "bytes": 24124,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "ee150f41c379d8e5e29800c7b219e8b8a03fb3d7"
+  },
+  {
+    "source": ".github/workflows/e2e.yml",
+    "area": ".github/workflows",
+    "bytes": 1014,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "ba1832550de076c11534dde36266035992fc1661"
+  },
+  {
+    "source": ".github/workflows/quality-security.yml",
+    "area": ".github/workflows",
+    "bytes": 8683,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "882d831db9418a20c202d1cd5d9cf0e9878d2373"
+  },
+  {
+    "source": ".gitignore",
+    "area": "root/configuração",
+    "bytes": 690,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "d2f90e92387c4f58418f3ed76eccb90587871960"
+  },
+  {
+    "source": ".lovable/project.json",
+    "area": "root/configuração",
+    "bytes": 124,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "d2b3c4a1abdb1ef6baeaac4c216810c397a3ba63"
+  },
+  {
+    "source": ".prettierignore",
+    "area": "root/configuração",
+    "bytes": 92,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "be49b2655e2222e8a688f616a5c13500298801a0"
+  },
+  {
+    "source": ".prettierrc",
+    "area": "root/configuração",
+    "bytes": 90,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "90abee2393e79dff7ec36856c94f662a263f0107"
+  },
+  {
+    "source": "AGENTS.md",
+    "area": "root/configuração",
+    "bytes": 1781,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "2bba0a94374afeedad72435245d3769fb6358080"
+  },
+  {
+    "source": "CLAUDE.md",
+    "area": "root/configuração",
+    "bytes": 215,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "20a4959b2bb2275269a0c94bcb233c740fd0eefa"
+  },
+  {
+    "source": "README.md",
+    "area": "root/configuração",
+    "bytes": 18589,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "24523ed7811e0b41f6067fc4b7bb180586bef9ef"
+  },
+  {
+    "source": "backend/README.md",
+    "area": "root/configuração",
+    "bytes": 1242,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "ea30457f1c7beae483e09ecc6d55237a800cbc31"
+  },
+  {
+    "source": "backend/app/__init__.py",
+    "area": "backend/app",
+    "bytes": 0,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+  },
+  {
+    "source": "backend/app/auth.py",
+    "area": "backend/app",
+    "bytes": 7599,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "4f0bf8b02477b876c040321a5f44daaf4fac9ce9"
+  },
+  {
+    "source": "backend/app/automation_engine.py",
+    "area": "backend/app",
+    "bytes": 7343,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "bc215ee55806c34fada84c57cdd96c730489025a"
+  },
+  {
+    "source": "backend/app/backup_manager.py",
+    "area": "backend/app",
+    "bytes": 35741,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "34ceea9db8f3bd6276eb8fe0e33934b72840065e"
+  },
+  {
+    "source": "backend/app/binding_store.py",
+    "area": "backend/app",
+    "bytes": 4300,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "cbb48ba4d0d02a26b098f2198860548f06fb38ad"
+  },
+  {
+    "source": "backend/app/bridge.py",
+    "area": "backend/app",
+    "bytes": 30806,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "9d3b62108832bcb14ab3e65d580538e454db31a8"
+  },
+  {
+    "source": "backend/app/bridge_runtime.py",
+    "area": "backend/app",
+    "bytes": 52598,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "811f7e393e19114c966fea3975bd21f377fde209"
+  },
+  {
+    "source": "backend/app/bridge_runtime_port_override.py",
+    "area": "backend/app",
+    "bytes": 2331,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "26cfaaabf55130d6038db303a50d80df07e29b1f"
+  },
+  {
+    "source": "backend/app/completion_routes.py",
+    "area": "backend/app",
+    "bytes": 17430,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "5d040a1787e113cfbfe242131eaeb69c80c6efb5"
+  },
+  {
+    "source": "backend/app/config.py",
+    "area": "backend/app",
+    "bytes": 3687,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "241cc3f6eb18637b81ff979d2e75d1e28ed93409"
+  },
+  {
+    "source": "backend/app/control.py",
+    "area": "backend/app",
+    "bytes": 7940,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "95c43caf027a2f15336f9a3a61d22a5eb37c4676"
+  },
+  {
+    "source": "backend/app/controller_library.py",
+    "area": "backend/app",
+    "bytes": 18987,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "44c545a5a4dfdfe8c71c0b415ae76c5c0e74adfc"
+  },
+  {
+    "source": "backend/app/data_maintenance.py",
+    "area": "backend/app",
+    "bytes": 1720,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "ef547ffbd04727493b74a7262ac50406df662176"
+  },
+  {
+    "source": "backend/app/db.py",
+    "area": "backend/app",
+    "bytes": 30530,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "655346163b47662b7348c29742917b933b4248ab"
+  },
+  {
+    "source": "backend/app/diagnostics.py",
+    "area": "backend/app",
+    "bytes": 31458,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "d88df119e888b2e4bf1dfbff5419abb68b45cf86"
+  },
+  {
+    "source": "backend/app/domain_bundle.py",
+    "area": "backend/app",
+    "bytes": 7012,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "88a004b7f4f64f7cdd120a2a5a166566384eab21"
+  },
+  {
+    "source": "backend/app/domain_routes.py",
+    "area": "backend/app",
+    "bytes": 34265,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "a92175c0f73cec539d8a6dc87bd48843a09d0f5e"
+  },
+  {
+    "source": "backend/app/domain_store.py",
+    "area": "backend/app",
+    "bytes": 27508,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "9840f5846f249185d9f0e09646f28ab7e6d5930e"
+  },
+  {
+    "source": "backend/app/dse_lab.py",
+    "area": "backend/app",
+    "bytes": 1720,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "251c0ed14619f67024d237d4c4d5d6316300148d"
+  },
+  {
+    "source": "backend/app/extra_routes.py",
+    "area": "backend/app",
+    "bytes": 21455,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "ed073decab6ffaf23ccad4324566b4a88c2ed830"
+  },
+  {
+    "source": "backend/app/heavy_worker.py",
+    "area": "backend/app",
+    "bytes": 1213,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "1cfc365d6d8c3af071626f0b55c9a2f4fd9a7435"
+  },
+  {
+    "source": "backend/app/homologation.py",
+    "area": "backend/app",
+    "bytes": 11069,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "cd2fbc2b8b3e2b2a1e95cf9718721b9d81bd3d6f"
+  },
+  {
+    "source": "backend/app/ig4_lab.py",
+    "area": "backend/app",
+    "bytes": 1727,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "4d8c04a2deeedf64c2d6173f5d1ad58a1c4f3685"
+  },
+  {
+    "source": "backend/app/ig4_prod.py",
+    "area": "backend/app",
+    "bytes": 2887,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "2f21525cb0a158f9ba7969fee37c476fda30ff3a"
+  },
+  {
+    "source": "backend/app/industrial_routes.py",
+    "area": "backend/app",
+    "bytes": 8217,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "f728801d03b4d36dbfa2f3652ec28e5f1548e227"
+  },
+  {
+    "source": "backend/app/industrial_store.py",
+    "area": "backend/app",
+    "bytes": 26754,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "728289e6d33be0fbafa51f2a9c70038e7cb78e94"
+  },
+  {
+    "source": "backend/app/integration_status.py",
+    "area": "backend/app",
+    "bytes": 1841,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "bdce5b46356f0a240d92cd581e86090bfc718668"
+  },
+  {
+    "source": "backend/app/lifecycle_worker.py",
+    "area": "backend/app",
+    "bytes": 1821,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "3dadc089ed06feda424f149d280966bfd8d11a31"
+  },
+  {
+    "source": "backend/app/main.py",
+    "area": "backend/app",
+    "bytes": 30071,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "b38f8d63fa2171e851402f9469f4e74a82270473"
+  },
+  {
+    "source": "backend/app/migrations.py",
+    "area": "backend/app",
+    "bytes": 6343,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "b8dc16335367942c83026aa40a1ea295b47df933"
+  },
+  {
+    "source": "backend/app/network_discovery.py",
+    "area": "backend/app",
+    "bytes": 2778,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "d9969c4bb7fab587125b46c3f034910c65b1bcf6"
+  },
+  {
+    "source": "backend/app/notification_worker.py",
+    "area": "backend/app",
+    "bytes": 1245,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "b1fda630b3cf3449aac3ede576dd15e4b769924c"
+  },
+  {
+    "source": "backend/app/notifications.py",
+    "area": "backend/app",
+    "bytes": 8034,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "8c179dc8e0f9068222383e3103064fcd010ee153"
+  },
+  {
+    "source": "backend/app/ops_schemas.py",
+    "area": "backend/app",
+    "bytes": 4149,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "66b055a98f446ec0480e3482ecf279cc6e1d37b1"
+  },
+  {
+    "source": "backend/app/ops_store.py",
+    "area": "backend/app",
+    "bytes": 19568,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "2ae37816eda5015695d5086381adf1e5c15b242e"
+  },
+  {
+    "source": "backend/app/platform_store.py",
+    "area": "backend/app",
+    "bytes": 62762,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "e7d2ea238beeafe13d34f598ce8bc9dae50ebb12"
+  },
+  {
+    "source": "backend/app/power_topology.py",
+    "area": "backend/app",
+    "bytes": 6337,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "6691b17da0f9239442bc3a54326f5966992d242f"
+  },
+  {
+    "source": "backend/app/production_guard.py",
+    "area": "backend/app",
+    "bytes": 2197,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "b608ffcb6b4cbb998dc136a5600424a65cf124ae"
+  },
+  {
+    "source": "backend/app/provision_service.py",
+    "area": "backend/app",
+    "bytes": 5028,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "e97b1f774cbaf0d4b78b03c31039c795e145d676"
+  },
+  {
+    "source": "backend/app/rapid.py",
+    "area": "backend/app",
+    "bytes": 40531,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "233a5c2c27263e3f69951f52e04f579997daddc0"
+  },
+  {
+    "source": "backend/app/reporting.py",
+    "area": "backend/app",
+    "bytes": 6681,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "ed295685a0ca94bb44c6fb88c3360cb740a25145"
+  },
+  {
+    "source": "backend/app/scheduler_jobs.py",
+    "area": "backend/app",
+    "bytes": 2378,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "b530bea9c46cd2d08749a2b07fad5d93d6dab9d6"
+  },
+  {
+    "source": "backend/app/schemas.py",
+    "area": "backend/app",
+    "bytes": 6761,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "4ba6bd74a428124e5f47dbb8b5a132f7af7f5c15"
+  },
+  {
+    "source": "backend/app/secret_box.py",
+    "area": "backend/app",
+    "bytes": 1601,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "04db12cfd31100ce1c12187f3c4bc1b527ba5d55"
+  },
+  {
+    "source": "backend/app/security_service.py",
+    "area": "backend/app",
+    "bytes": 6738,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "49cededccf3b4f0e33ac76945c57d21686d0776d"
+  },
+  {
+    "source": "backend/app/traffic_store.py",
+    "area": "backend/app",
+    "bytes": 16349,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "1e97882da18cdbc75b1cc9bd582fc91e195cf841"
+  },
+  {
+    "source": "backend/app/transport_store.py",
+    "area": "backend/app",
+    "bytes": 6240,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "9d353cf5dc78ec8d6e657657ed96bcf82196abd4"
+  },
+  {
+    "source": "backend/app/worker.py",
+    "area": "backend/app",
+    "bytes": 2379,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "041a97078ccf65be81747ba744a9a9d43608c691"
+  },
+  {
+    "source": "backend/app/worker_supervisor.py",
+    "area": "backend/app",
+    "bytes": 2022,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "9089a3b7bb3737e194712ef99633bf5a1ff803fe"
+  },
+  {
+    "source": "backend/requirements-test.txt",
+    "area": "root/configuração",
+    "bytes": 33,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "ba1058ebacf6aaa194b86f28a51ba67bf0fc720c"
+  },
+  {
+    "source": "backend/requirements.txt",
+    "area": "root/configuração",
+    "bytes": 314,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "600b19e100e75dc0b749c293b2a07cfa4457fdd5"
+  },
+  {
+    "source": "backend/tests/audit_regressions.py",
+    "area": "backend/tests",
+    "bytes": 57904,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "0485b01c4ce8c7aaae8858c97821f53f88ac96eb"
+  },
+  {
+    "source": "backend/tests/connectivity_evidence.py",
+    "area": "backend/tests",
+    "bytes": 2606,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "431f991d2128b5a45ce75397e0b81813389b4d15"
+  },
+  {
+    "source": "backend/tests/control_multi_device.py",
+    "area": "backend/tests",
+    "bytes": 15786,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "aa3eeddb04e6a2144557f3974cd5135bb30b3400"
+  },
+  {
+    "source": "backend/tests/domain_v3.py",
+    "area": "backend/tests",
+    "bytes": 19252,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "f5a731d6eadbe585d8e73e8be5d6822b82229f68"
+  },
+  {
+    "source": "backend/tests/homologation.py",
+    "area": "backend/tests",
+    "bytes": 4568,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "b44e5f7d7f760f91e0ce0d0cd0a2fe0306c52af5"
+  },
+  {
+    "source": "backend/tests/industrial_v3.py",
+    "area": "backend/tests",
+    "bytes": 4900,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "e12be76f3023046f2052d5458698a57810704f2c"
+  },
+  {
+    "source": "backend/tests/network_discovery.py",
+    "area": "backend/tests",
+    "bytes": 2282,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "28a3645a6dbfeb06e19fede1bb9ffd206b123997"
+  },
+  {
+    "source": "backend/tests/power_topology.py",
+    "area": "backend/tests",
+    "bytes": 804,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "a5f16c36f9a35058225400478bd9b1981700f0e7"
+  },
+  {
+    "source": "backend/tests/production_hardening.py",
+    "area": "backend/tests",
+    "bytes": 29063,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "ebae68e8d6ab96e8324a120533d5d1b3a64b2ebc"
+  },
+  {
+    "source": "backend/tests/provision_timeout.py",
+    "area": "backend/tests",
+    "bytes": 1145,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "8a7b2cf234ce6c574394bb035c8dd345af119a65"
+  },
+  {
+    "source": "backend/tests/rapid_overlay_resilience.py",
+    "area": "backend/tests",
+    "bytes": 10839,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "08f74db229399f02aff2b3180d65c2c43735d2e7"
+  },
+  {
+    "source": "backend/tests/reconfigure_transaction.py",
+    "area": "backend/tests",
+    "bytes": 2839,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "4dce2b28efe4349dfdc55eb4f166a43775eea3db"
+  },
+  {
+    "source": "backend/tests/session_inventory.py",
+    "area": "backend/tests",
+    "bytes": 3052,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "e0a5b6228ca97902836c7db08bc6603ff8b2533c"
+  },
+  {
+    "source": "backend/tests/smoke.py",
+    "area": "backend/tests",
+    "bytes": 12558,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "9cc8f551aa06c68398662c853d4ee57a4e69896d"
+  },
+  {
+    "source": "components.json",
+    "area": "root/configuração",
+    "bytes": 458,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "d71c90b9880a2a2ac858dab3555f3d9f3071c756"
+  },
+  {
+    "source": "controllers/README.md",
+    "area": "controllers",
+    "bytes": 562,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "bef1ddf410ef73b8b8aa995d0396eed679d3518e"
+  },
+  {
+    "source": "controllers/catalog/COMAP_COVERAGE_MATRIX.json",
+    "area": "controllers",
+    "bytes": 25840,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "1b02abdbbf37a51e3a73b155837f4f4e673127e6"
+  },
+  {
+    "source": "controllers/catalog/DSE_COVERAGE_MATRIX.json",
+    "area": "controllers",
+    "bytes": 45130,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "4e8a4f755c2722528c2fa7eb25da3f017b2b853f"
+  },
+  {
+    "source": "controllers/catalog/catalog-v1.json",
+    "area": "controllers",
+    "bytes": 112764,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "739f8bcfd6c6492cab557c35a6ddeaca43e55062"
+  },
+  {
+    "source": "controllers/homologation/README.md",
+    "area": "controllers",
+    "bytes": 3189,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "c34a2e926fc93dd1ef437fc291730a00395bd5bc"
+  },
+  {
+    "source": "controllers/homologation/controller_homologation.py",
+    "area": "controllers",
+    "bytes": 4073,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "e5f7439fd5554f95359de94473d83b655c331f09"
+  },
+  {
+    "source": "controllers/homologation/controller_readonly_homologation_probe.py",
+    "area": "controllers",
+    "bytes": 7459,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "cc088db33b259f1c18a171b88d89fa97706bf197"
+  },
+  {
+    "source": "controllers/lab/README.md",
+    "area": "controllers",
+    "bytes": 360,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "c413a48cd9759ef625f7a23c9136195676755235"
+  },
+  {
+    "source": "controllers/lab/comap/amf-09/manifest.json",
+    "area": "controllers",
+    "bytes": 7293,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "4136151689bb5cc2b52bad3c77e4b4de12ed454f"
+  },
+  {
+    "source": "controllers/lab/comap/amf-09/modbus/source-export.txt",
+    "area": "controllers",
+    "bytes": 97756,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "6861187da6d91fc221eceaa4f82c7f64d664bdde"
+  },
+  {
+    "source": "controllers/lab/comap/amf-25/manifest.json",
+    "area": "controllers",
+    "bytes": 6475,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "70f605905b719d714c38d20224a7cd5e79461c99"
+  },
+  {
+    "source": "controllers/lab/comap/amf-25/modbus/source-export.txt",
+    "area": "controllers",
+    "bytes": 143180,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "195ddf99123ccaa57028e2a74ff6831f41b838da"
+  },
+  {
+    "source": "controllers/lab/comap/ig-nt/manifest.json",
+    "area": "controllers",
+    "bytes": 4627,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "223d11c2daa8bc473c43564a07c85c43c70fd284"
+  },
+  {
+    "source": "controllers/lab/comap/ig-nt/modbus/source-export.txt",
+    "area": "controllers",
+    "bytes": 93507,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "affeb34eaedff46c2fba1a3773eebf59c1a58282"
+  },
+  {
+    "source": "controllers/lab/comap/ig4-200/manifest.json",
+    "area": "controllers",
+    "bytes": 7135,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "3feb9b45ae3a3166b2f957b2614f3d7583dbbe02"
+  },
+  {
+    "source": "controllers/lab/comap/ig4-200/modbus/source-export.txt",
+    "area": "controllers",
+    "bytes": 113340,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "3a0edc1111a75fd983aee305277cd7e8d7199066"
+  },
+  {
+    "source": "controllers/lab/comap/inteli-mains-comap/manifest.json",
+    "area": "controllers",
+    "bytes": 3667,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "96d61225ba997e6cf92eedb49412fc77b442c3dd"
+  },
+  {
+    "source": "controllers/lab/comap/inteli-mains-comap/modbus/source-export.txt",
+    "area": "controllers",
+    "bytes": 96523,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "a8ee25e29552e96141973709b1ba377fc13e9f15"
+  },
+  {
+    "source": "controllers/lab/comap/intelicompact-nt/manifest.json",
+    "area": "controllers",
+    "bytes": 5138,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "3248bf0c7405f628389b88a6ddaabddfd77d4e21"
+  },
+  {
+    "source": "controllers/lab/comap/inteligen1000-protocol/README.md",
+    "area": "controllers",
+    "bytes": 250,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "33708215f1d39911fda47c154cf12767f5c6440d"
+  },
+  {
+    "source": "controllers/lab/comap/inteligen1000-protocol/manifest.json",
+    "area": "controllers",
+    "bytes": 2066,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "98bb06a819d00d8bfa50a5d8289b9956657d3dba"
+  },
+  {
+    "source": "controllers/lab/comap/inteligen500-g2-protocol/README.md",
+    "area": "controllers",
+    "bytes": 278,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "65d09b4063c6f9a3d4512445519ea2354a1efeef"
+  },
+  {
+    "source": "controllers/lab/comap/inteligen500-g2-protocol/manifest.json",
+    "area": "controllers",
+    "bytes": 3081,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "c7c6f8df6ccbc32a1cf499780d2a35cb56ae934f"
+  },
+  {
+    "source": "controllers/lab/comap/intelilite4-integration-reference/MODEL_EVIDENCE.md",
+    "area": "controllers",
+    "bytes": 558,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "bdaa6e7f830b245f05b19e3997968822352641e7"
+  },
+  {
+    "source": "controllers/lab/comap/intelilite4-integration-reference/manifest.json",
+    "area": "controllers",
+    "bytes": 7878,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "fc0d402723c32bcb0a9cbfaf15d9887d1b2b36c1"
+  },
+  {
+    "source": "controllers/lab/comap/intelilite4-integration-reference/modbus/source-reference.txt",
+    "area": "controllers",
+    "bytes": 1747,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "7a5a0f642171a3d9e70042841e02fc1188074490"
+  },
+  {
+    "source": "controllers/lab/dse/README.md",
+    "area": "controllers",
+    "bytes": 1062,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "2e84450dd8c90117798c674f726538588c5b249a"
+  },
+  {
+    "source": "controllers/lab/dse/dse8610-mkii/manifest.json",
+    "area": "controllers",
+    "bytes": 8116,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "6f831f1626875a72ce86b1aa84f0afcc91028648"
+  },
+  {
+    "source": "controllers/lab/dse/dse8610-mkii/modbus/source-registers.txt",
+    "area": "controllers",
+    "bytes": 2837,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "51d217c4b7f795d5f1c195ad046c2d53a5a736d8"
+  },
+  {
+    "source": "controllers/production/README.md",
+    "area": "controllers",
+    "bytes": 269,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "5a44f28378fa4d56b22531e5cf2cdbc66570ab93"
+  },
+  {
+    "source": "controllers/production/comap/COMAP_DOCUMENTATION_AUDIT_2026-09-28.md",
+    "area": "controllers",
+    "bytes": 4531,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "30efbfc580f125f648d6f08d48a23634d859b139"
+  },
+  {
+    "source": "controllers/production/comap/ig-nt/manifest.json",
+    "area": "controllers",
+    "bytes": 7059,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "79e08591236966f92ff083de26581d33367ec8ba"
+  },
+  {
+    "source": "controllers/production/comap/ig-nt/modbus/field-validated-registers.txt",
+    "area": "controllers",
+    "bytes": 1479,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "928da32aec553a678548c407d79d5c8dd826c75a"
+  },
+  {
+    "source": "controllers/production/comap/ig4-200/manifest.json",
+    "area": "controllers",
+    "bytes": 20548,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "75892066c90016f617a4221ca3d7c0b4e7c7989c"
+  },
+  {
+    "source": "controllers/production/comap/ig4-200/modbus/source-export.txt",
+    "area": "controllers",
+    "bytes": 113340,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "3a0edc1111a75fd983aee305277cd7e8d7199066"
+  },
+  {
+    "source": "controllers/production/comap/intelicompact-nt/manifest.json",
+    "area": "controllers",
+    "bytes": 7425,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "9c4dcae331795ac915342a6bd08dc88247be5f9e"
+  },
+  {
+    "source": "controllers/production/comap/intelicompact-nt/modbus/validated-map.txt",
+    "area": "controllers",
+    "bytes": 245,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "ffee5280bbc7a67504a26cdadccf62a1b99b66ab"
+  },
+  {
+    "source": "controllers/production/comap/inteligen-200/MODBUS_EXPORT.md",
+    "area": "controllers",
+    "bytes": 3981,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "2f334813e5b56a0e7100c190115c0dba7235d414"
+  },
+  {
+    "source": "controllers/production/comap/inteligen-200/manifest.json",
+    "area": "controllers",
+    "bytes": 22962,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "3a0a50dace146e1ff98acc5e9707c2c888ef6154"
+  },
+  {
+    "source": "controllers/production/comap/inteligen-200/modbus/source-export.txt",
+    "area": "controllers",
+    "bytes": 214768,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "ee0b95026d2e7d36aad94406a639d0cfc1253e74"
+  },
+  {
+    "source": "controllers/production/dse/DSE_DOCUMENTATION_AUDIT_2026-09-28.md",
+    "area": "controllers",
+    "bytes": 3600,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "f9320d69c6fe720e0e3558ece98b3fb3335ad9ef"
+  },
+  {
+    "source": "controllers/production/dse/dse-gencomm-v1/MODEL_EVIDENCE.md",
+    "area": "controllers",
+    "bytes": 6125,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "ddd0a7459a3711c750dda3f3f5cb78bd0cf4bab4"
+  },
+  {
+    "source": "controllers/production/dse/dse-gencomm-v1/manifest.json",
+    "area": "controllers",
+    "bytes": 18165,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "e1e7041373e63183f5ef439967ce128f41e4f637"
+  },
+  {
+    "source": "controllers/production/dse/dse-gencomm-v1/modbus/source-registers.txt",
+    "area": "controllers",
+    "bytes": 3220,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "01103eb49e7110e85b2cfda5354dd58798406713"
+  },
+  {
+    "source": "controllers/production/dse/dse5210-gencomm-v1/MODEL_EVIDENCE.md",
+    "area": "controllers",
+    "bytes": 1722,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "923b8b34e083fcaee617001327e6461914587fb7"
+  },
+  {
+    "source": "controllers/production/dse/dse5210-gencomm-v1/manifest.json",
+    "area": "controllers",
+    "bytes": 8532,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "ae8fcba12e31dd7189af53e4c1121800ae4d5a34"
+  },
+  {
+    "source": "controllers/production/dse/dse5210-gencomm-v1/modbus/source-registers.txt",
+    "area": "controllers",
+    "bytes": 1714,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "a55dbf50a5d0baf90acb26ae69ed2e250967df96"
+  },
+  {
+    "source": "controllers/production/dse/dse5xx-gencomm-v1/MODEL_EVIDENCE.md",
+    "area": "controllers",
+    "bytes": 380,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "588c925a0dc2607ff67c7a412d2956b145482444"
+  },
+  {
+    "source": "controllers/production/dse/dse5xx-gencomm-v1/manifest.json",
+    "area": "controllers",
+    "bytes": 5619,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "dbc64fd9e14e8c9f55c613d15a288e0a1e9d396a"
+  },
+  {
+    "source": "controllers/production/dse/dse5xx-gencomm-v1/modbus/source-registers.txt",
+    "area": "controllers",
+    "bytes": 846,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "fd5a9bfcb7b39c27a1b0eb85b69cbbd18a650c64"
+  },
+  {
+    "source": "controllers/schema/controller-pack-v3.schema.json",
+    "area": "controllers",
+    "bytes": 5521,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "49a911c9fc04887c2ee85ba116b3ca027878bdd4"
+  },
+  {
+    "source": "controllers/schema/controller-pack-v4.schema.json",
+    "area": "controllers",
+    "bytes": 10268,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "8f325a46f958f180c2a5712c103de0021c55639f"
+  },
+  {
+    "source": "controllers/tools/bootstrap_ig200.py",
+    "area": "controllers",
+    "bytes": 2959,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "56ace54acfbe7a8453581bca94d8a8571c2c277e"
+  },
+  {
+    "source": "controllers/tools/comap_import_modbus_map.py",
+    "area": "controllers",
+    "bytes": 9713,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "f896de5c621728693917d1edde23fae290b63a07"
+  },
+  {
+    "source": "controllers/tools/dse_gencomm_probe.py",
+    "area": "controllers",
+    "bytes": 12940,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "6fc16daa443e9d9884a355f2b58196501672fba6"
+  },
+  {
+    "source": "controllers/tools/ig200_import_modbus_map.py",
+    "area": "controllers",
+    "bytes": 410,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "ef3c54ce03e6c0ee9d5cbf6956f36a2b2cebd647"
+  },
+  {
+    "source": "controllers/tools/ig200_probe_readonly.py",
+    "area": "controllers",
+    "bytes": 11064,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "2328e6692fd6d803a3b5ed0a57a56cb02f7d64b1"
+  },
+  {
+    "source": "docs/ARCHITECTURE.md",
+    "area": "docs",
+    "bytes": 2640,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "3858dd6704eadfd52d46bd62805a642d92d2df52"
+  },
+  {
+    "source": "docs/CODE_AUDIT_2026-09-02.md",
+    "area": "docs",
+    "bytes": 3666,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "9cbc19bc22f8c8294226071c0400f100940f3fb3"
+  },
+  {
+    "source": "docs/CONNECTION_ARCHITECTURE.md",
+    "area": "docs",
+    "bytes": 3878,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "3bd54db684a29736ab97941b51d6385b05737914"
+  },
+  {
+    "source": "docs/CONTROLLER_IMPORT_AUDIT_2026-09-02.md",
+    "area": "docs",
+    "bytes": 2317,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "c31fc7c911c42c8b041aafd282428859c904ede2"
+  },
+  {
+    "source": "docs/FRONTEND_ARCHITECTURE.md",
+    "area": "docs",
+    "bytes": 5074,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "41c64c63a07e65eb7b7377c94e35ee0564d7a857"
+  },
+  {
+    "source": "docs/FRONTEND_AUDIT.md",
+    "area": "docs",
+    "bytes": 2738,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "d022449fc0cd7a08298f32f2f93258f70869f05d"
+  },
+  {
+    "source": "docs/FUNCTIONAL_AUDIT_2026-09-29.md",
+    "area": "docs",
+    "bytes": 12588,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "d370995bbf8be8eae435de93fa3583fc99322a6e"
+  },
+  {
+    "source": "docs/INDUSTRIAL_UI_STANDARD.md",
+    "area": "docs",
+    "bytes": 2009,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "b3db3842b4a104db21b60e0fb97ad74b44c10869"
+  },
+  {
+    "source": "docs/PRODUCTION_HARDENING_V4.md",
+    "area": "docs",
+    "bytes": 3027,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "f4e7142eccdb31cdc5d62597b2ef20b3524cbf8e"
+  },
+  {
+    "source": "docs/audit/AUDIT_REMEDIATION_2026-10-06.md",
+    "area": "docs",
+    "bytes": 2911,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "e6136a8b455a3b98d0057b83b431bed68919042d"
+  },
+  {
+    "source": "docs/audit/AUDIT_ZERO_FINAL_2026-09-30.md",
+    "area": "docs",
+    "bytes": 5610,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "d7f2951e4d4ee346a3397cf08da67ba493bf7a26"
+  },
+  {
+    "source": "docs/audit/AUDIT_ZERO_MASTER.md",
+    "area": "docs",
+    "bytes": 1963,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "952ca22076c843cb8ded6e2faa2ea0d57c927876"
+  },
+  {
+    "source": "docs/audit/BRIDGE_TRANSPORT_AUDIT_2026-09-30.md",
+    "area": "docs",
+    "bytes": 3478,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "0256b3a7f79c6eece5c5964ed18b92d41bf5b63d"
+  },
+  {
+    "source": "docs/audit/COMAP_AUDIT_2026-09-30.md",
+    "area": "docs",
+    "bytes": 3876,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "5aaf13aad7713ef152b6b120292b4645a50eb77f"
+  },
+  {
+    "source": "docs/audit/COMMAND_CAPABILITY_MATRIX_2026-09-29.md",
+    "area": "docs",
+    "bytes": 4880,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "509dd8835ab74eeed9b1354f444ef40cb2e4f4b4"
+  },
+  {
+    "source": "docs/audit/COMMAND_FEEDBACK_AUDIT_2026-09-30.md",
+    "area": "docs",
+    "bytes": 6658,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "4068619e5d8840f9f3cf7aaa4e8f7e41598fed48"
+  },
+  {
+    "source": "docs/audit/DATABASE_BACKUP_DEPLOY_AUDIT_2026-09-30.md",
+    "area": "docs",
+    "bytes": 5711,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "1b58fdadbe6b4b33037dd0dbdad1fc251464cbf3"
+  },
+  {
+    "source": "docs/audit/FRONTEND_SURFACES_AUDIT_2026-09-30.md",
+    "area": "docs",
+    "bytes": 6170,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "f136ac6ea426961adc044892c85a4f032e9eb238"
+  },
+  {
+    "source": "docs/audit/PRODUCTION_DRIFT_2026-09-29.md",
+    "area": "docs",
+    "bytes": 2976,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "fba26238944e7794be8149d143b0f9ac47c986a6"
+  },
+  {
+    "source": "docs/audit/PRODUCTION_INVENTORY_2026-09-29.md",
+    "area": "docs",
+    "bytes": 4648,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "2ea30050cc343974962572f89b2e9f33c319a197"
+  },
+  {
+    "source": "docs/audit/RAPID_DSE_GEN163_AUDIT_2026-09-30.md",
+    "area": "docs",
+    "bytes": 6842,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "ef2c73ed831780378572243342e45197781529c2"
+  },
+  {
+    "source": "docs/audit/SECURITY_RBAC_AUDIT_2026-09-30.md",
+    "area": "docs",
+    "bytes": 2713,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "5fdb5fe15e39e8a6f3469364125740e7c64cf32a"
+  },
+  {
+    "source": "docs/audit/STATUS_COLOR_AUDIT_2026-09-30.md",
+    "area": "docs",
+    "bytes": 7307,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "3d56f8790a45e9936055135014dcc7b98da6d6bf"
+  },
+  {
+    "source": "docs/audit/TEST_RELEASE_AUDIT_2026-09-30.md",
+    "area": "docs",
+    "bytes": 4948,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "2b41c15b831e2a632aac0726329b1f3301174a20"
+  },
+  {
+    "source": "docs/checkpoints/CHECKPOINT_2026-08-30.md",
+    "area": "docs",
+    "bytes": 14043,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "b5759b36315cfeb8eb11b0922169a3c7aa7c1697"
+  },
+  {
+    "source": "docs/governance/AI_HANDOFF.md",
+    "area": "docs",
+    "bytes": 1152,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "3d5c32a33994e09e46779073c587a32950c0cb46"
+  },
+  {
+    "source": "docs/governance/BUG_LEDGER.md",
+    "area": "docs",
+    "bytes": 6594,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "742724754e395efa56a55cc6310cf66be142a37e"
+  },
+  {
+    "source": "docs/governance/CHANGE_BOUNDARIES.md",
+    "area": "docs",
+    "bytes": 3229,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "1557918ef949a992e3ff3ad096ca0bf54df3a81d"
+  },
+  {
+    "source": "docs/governance/PRODUCTION_CONTRACT.md",
+    "area": "docs",
+    "bytes": 3350,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "acb6a09f96cda6fb8cf1fa4f9c62d5a71e49027b"
+  },
+  {
+    "source": "docs/governance/PROJECT_STATE.md",
+    "area": "docs",
+    "bytes": 22694,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "c4987da4b676bbf40c4bae21120c1ef470cb063e"
+  },
+  {
+    "source": "docs/governance/REGRESSION_MATRIX.md",
+    "area": "docs",
+    "bytes": 4120,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "779719dff55be882d8fdf2dc6d558e1c41ed3bcb"
+  },
+  {
+    "source": "docs/product/DEDICATED_INSTALLATIONS.md",
+    "area": "docs",
+    "bytes": 3804,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "f8c610640f9c8bd985da0cd1550ed3fcb4406a77"
+  },
+  {
+    "source": "docs/responsive-layout.md",
+    "area": "docs",
+    "bytes": 1251,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "9fefad91803576495ad42546608405767552e211"
+  },
+  {
+    "source": "docs/technical/DSE_GENCOMM_AUDIT.md",
+    "area": "docs",
+    "bytes": 2999,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "0d86303ead71af6385902b9a7de8c87dd900dbb2"
+  },
+  {
+    "source": "eslint.config.js",
+    "area": "root/configuração",
+    "bytes": 2052,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "84831eb4a87fde4fb3829c1c9424b07d22edeb9f"
+  },
+  {
+    "source": "frontend/README.md",
+    "area": "root/configuração",
+    "bytes": 580,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "29301a2860e4246115d944c60a51f3e1afad5670"
+  },
+  {
+    "source": "frontend/public/controllers/dse4520.png",
+    "area": "frontend/public",
+    "bytes": 1280058,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "74a54bfe923418177b28a1a5e13a58d046cc0c0f"
+  },
+  {
+    "source": "frontend/public/controllers/dse6120.png",
+    "area": "frontend/public",
+    "bytes": 1727009,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "eeda4d7ac44bbaef8d45cf65feff99c7251df410"
+  },
+  {
+    "source": "frontend/public/controllers/dse7320.png",
+    "area": "frontend/public",
+    "bytes": 1733882,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "0854e8795413490b3e0142bb6ea5e0f7bc868285"
+  },
+  {
+    "source": "frontend/public/controllers/dse8610.png",
+    "area": "frontend/public",
+    "bytes": 1933397,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "89ba66a3fa667573532dcc51d650e2cac58255f2"
+  },
+  {
+    "source": "frontend/public/controllers/generic.png",
+    "area": "frontend/public",
+    "bytes": 1771607,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "d0b325c0d2f420bbcc87a6205a88d6ae08c37811"
+  },
+  {
+    "source": "frontend/public/controllers/intelilite9.png",
+    "area": "frontend/public",
+    "bytes": 1946758,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "8a49e16ab8a8b5a7b27f658b623b8547e66dfe27"
+  },
+  {
+    "source": "frontend/public/controllers/intelimains150.png",
+    "area": "frontend/public",
+    "bytes": 1948746,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "c2b3617875718f17ed4078954e7d0256dad2237d"
+  },
+  {
+    "source": "frontend/public/favicon.ico",
+    "area": "frontend/public",
+    "bytes": 20373,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "3c01d69713f9c184e92b74f5799e6dff2f500825"
+  },
+  {
+    "source": "frontend/public/images/auth/industrial-login-bg.svg",
+    "area": "frontend/public",
+    "bytes": 5646,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "af91cbdae1d8c3a0fc9eed7b328a559461465444"
+  },
+  {
+    "source": "frontend/public/images/auth/login-reference-left.webp",
+    "area": "frontend/public",
+    "bytes": 31318,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "82653c6838072b6f1205c6ed5439b6f5d84c94b2"
+  },
+  {
+    "source": "frontend/public/images/auth/rc-bolt.svg",
+    "area": "frontend/public",
+    "bytes": 747,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "f4f2aad4d03ce4ee56b795c9d904d3b114618bc4"
+  },
+  {
+    "source": "frontend/public/login-plant.jpg",
+    "area": "frontend/public",
+    "bytes": 137654,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "709b520e72de81219af100e3a42a168220df2eb2"
+  },
+  {
+    "source": "frontend/public/overview-hero.jpg",
+    "area": "frontend/public",
+    "bytes": 47129,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "1d16bc8deabf6a19d35c53f3370dfe7fcd9b76fb"
+  },
+  {
+    "source": "frontend/public/rc-industrial-plant.svg",
+    "area": "frontend/public",
+    "bytes": 5365,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "735a38efff78aca5109a35bd320b97ddbbce9aa8"
+  },
+  {
+    "source": "frontend/public/robots.txt",
+    "area": "frontend/public",
+    "bytes": 160,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "6018e701fc7dd0317cda9eceea390524322e8a05"
+  },
+  {
+    "source": "frontend/src/assets/controllers.ts",
+    "area": "frontend/src",
+    "bytes": 2119,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "038cf00825d09a729a3d308f29d8aa101f8ff203"
+  },
+  {
+    "source": "frontend/src/assets/index.ts",
+    "area": "frontend/src",
+    "bytes": 170,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "424942218aea63a3ec5dd71c85c61779a3dc8437"
+  },
+  {
+    "source": "frontend/src/assets/industrial/batteries.svg",
+    "area": "frontend/src",
+    "bytes": 1501,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "1aad6e5db466b3b2fcf44c27591532b98d13a16b"
+  },
+  {
+    "source": "frontend/src/assets/industrial/consumption.svg",
+    "area": "frontend/src",
+    "bytes": 3620,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "331386aff36b21db7b12a16bec9307cdb1b0f1c8"
+  },
+  {
+    "source": "frontend/src/assets/industrial/generator.svg",
+    "area": "frontend/src",
+    "bytes": 1538,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "030da6a6ceb45134e39da85934045fdd46360a9e"
+  },
+  {
+    "source": "frontend/src/assets/industrial/index.ts",
+    "area": "frontend/src",
+    "bytes": 510,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "7aab2ab8154982b6e8a7ea2fe68819456c591d75"
+  },
+  {
+    "source": "frontend/src/assets/industrial/power-transformer.svg",
+    "area": "frontend/src",
+    "bytes": 1574,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "116827247cbe8a5ac90371026b17610e66c223e0"
+  },
+  {
+    "source": "frontend/src/assets/industrial/solar-panels.svg",
+    "area": "frontend/src",
+    "bytes": 1286,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "d3923f816afddb12f7f3d2c1047f8747525835ec"
+  },
+  {
+    "source": "frontend/src/data/generators.ts",
+    "area": "frontend/src",
+    "bytes": 5026,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "cd4e8900bbd066fba2b3c456f493790c4e869b0e"
+  },
+  {
+    "source": "frontend/src/data/nav.ts",
+    "area": "frontend/src",
+    "bytes": 18037,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "f78fdc6f43cd972a10c7ea36824d4ad5aef990a8"
+  },
+  {
+    "source": "frontend/src/data/scada.ts",
+    "area": "frontend/src",
+    "bytes": 7127,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "0f708735b6e0b04a18fb1fb0f25fecab64630349"
+  },
+  {
+    "source": "frontend/src/design-system/ui/alert.tsx",
+    "area": "frontend/src",
+    "bytes": 1589,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "cd0a0627702e492c3f02607dbc77025999c5ed13"
+  },
+  {
+    "source": "frontend/src/design-system/ui/badge.tsx",
+    "area": "frontend/src",
+    "bytes": 1123,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "3aabd17e73034f71efdd2f301f8a81ab8cdae23c"
+  },
+  {
+    "source": "frontend/src/design-system/ui/breadcrumb.tsx",
+    "area": "frontend/src",
+    "bytes": 2749,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "94eb6291a6f26846562a63438b3c49595e9bff25"
+  },
+  {
+    "source": "frontend/src/design-system/ui/button.tsx",
+    "area": "frontend/src",
+    "bytes": 1894,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "bc3bc9f6bbefc3155d1f4d053ff58f9b8662edbe"
+  },
+  {
+    "source": "frontend/src/design-system/ui/card.tsx",
+    "area": "frontend/src",
+    "bytes": 1861,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "a4628d0a24933fa30a919357a44b4abbc2fa6335"
+  },
+  {
+    "source": "frontend/src/design-system/ui/chart.tsx",
+    "area": "frontend/src",
+    "bytes": 10570,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "f27e7ca5343ccc102441afeb45ef946e1d504944"
+  },
+  {
+    "source": "frontend/src/design-system/ui/checkbox.tsx",
+    "area": "frontend/src",
+    "bytes": 1043,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "f01d47c865e9ce28610b16bfa4021a88beebec3e"
+  },
+  {
+    "source": "frontend/src/design-system/ui/collapsible.tsx",
+    "area": "frontend/src",
+    "bytes": 335,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "cb003d17563549c97d3d349477c0aa073b2244aa"
+  },
+  {
+    "source": "frontend/src/design-system/ui/command.tsx",
+    "area": "frontend/src",
+    "bytes": 4879,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "6d98d5db9f8ee0a3fe9ab804b9f3a09521fee47e"
+  },
+  {
+    "source": "frontend/src/design-system/ui/dialog.tsx",
+    "area": "frontend/src",
+    "bytes": 3648,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "8ed559e3d6f2ab5f0d0287f56c63fbcd48a47b87"
+  },
+  {
+    "source": "frontend/src/design-system/ui/dropdown-menu.tsx",
+    "area": "frontend/src",
+    "bytes": 7565,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "211a4e514aa7cfca580d33efa434272b2011eec6"
+  },
+  {
+    "source": "frontend/src/design-system/ui/form.tsx",
+    "area": "frontend/src",
+    "bytes": 4204,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "2d54b3c2a215a1b13a39db230709971332c8ffeb"
+  },
+  {
+    "source": "frontend/src/design-system/ui/input.tsx",
+    "area": "frontend/src",
+    "bytes": 776,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "7db524115c08e80b10d5282d1bb504b06b238d17"
+  },
+  {
+    "source": "frontend/src/design-system/ui/label.tsx",
+    "area": "frontend/src",
+    "bytes": 716,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "392197c3b43d69a9b426d49dec06d32ff53ea8d4"
+  },
+  {
+    "source": "frontend/src/design-system/ui/popover.tsx",
+    "area": "frontend/src",
+    "bytes": 1352,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "dc78a209bbda251914e8ee4633c303ba55a59d2c"
+  },
+  {
+    "source": "frontend/src/design-system/ui/select.tsx",
+    "area": "frontend/src",
+    "bytes": 5749,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "3fdfc929eb90d4f33e2591e94cdfb2278d1b5c38"
+  },
+  {
+    "source": "frontend/src/design-system/ui/separator.tsx",
+    "area": "frontend/src",
+    "bytes": 723,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "5f5966c41731e846b2bc97de315471ea605ffe86"
+  },
+  {
+    "source": "frontend/src/design-system/ui/sheet.tsx",
+    "area": "frontend/src",
+    "bytes": 4248,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "0aedeb766169d085f3b4bb72e80eac6fe552b971"
+  },
+  {
+    "source": "frontend/src/design-system/ui/sidebar.tsx",
+    "area": "frontend/src",
+    "bytes": 24002,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "b5652c14dd7507c21da6385156cd14620320aa0c"
+  },
+  {
+    "source": "frontend/src/design-system/ui/skeleton.tsx",
+    "area": "frontend/src",
+    "bytes": 239,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "6d9a616758e39fcbc07480484a308ffb9d9fba5d"
+  },
+  {
+    "source": "frontend/src/design-system/ui/switch.tsx",
+    "area": "frontend/src",
+    "bytes": 1156,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "6338184e11d92961b4dfd06f151ce5ada7dd838c"
+  },
+  {
+    "source": "frontend/src/design-system/ui/table.tsx",
+    "area": "frontend/src",
+    "bytes": 2820,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "49d2d5c7c3e9d2d43fb2a2e423c751ec77da4279"
+  },
+  {
+    "source": "frontend/src/design-system/ui/toggle.tsx",
+    "area": "frontend/src",
+    "bytes": 1534,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "9d146b6a1051516735339895093cbcbcfeb9a3e8"
+  },
+  {
+    "source": "frontend/src/design-system/ui/tooltip.tsx",
+    "area": "frontend/src",
+    "bytes": 1278,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "07e55fafdcf32ee9a57164a07c89422e61c6ac2e"
+  },
+  {
+    "source": "frontend/src/features/auth/AuthProvider.tsx",
+    "area": "frontend/src",
+    "bytes": 7082,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "100dfb8c687c59d98301a0c77ce79eb766e288cd"
+  },
+  {
+    "source": "frontend/src/features/auth/LoginScreen.tsx",
+    "area": "frontend/src",
+    "bytes": 15666,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "9b46ce40501fde2140b9a8b88efb6e9236826da9"
+  },
+  {
+    "source": "frontend/src/features/auth/ResetPasswordScreen.tsx",
+    "area": "frontend/src",
+    "bytes": 4357,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "8fc4b62f46ff536be9f7626a10ef21a5d32fe870"
+  },
+  {
+    "source": "frontend/src/features/auth/login-screen.css",
+    "area": "frontend/src",
+    "bytes": 10036,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "be690a9fddaede2d1be4d232a2fa93e35d187198"
+  },
+  {
+    "source": "frontend/src/features/generators/CompactCard.tsx",
+    "area": "frontend/src",
+    "bytes": 14965,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "73b2553afc2ff7600e5ac18f333c0dadb533c00a"
+  },
+  {
+    "source": "frontend/src/features/generators/DeleteGeneratorButton.tsx",
+    "area": "frontend/src",
+    "bytes": 2462,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "2deff593bf192e989637e160719c849cbd8b1cda"
+  },
+  {
+    "source": "frontend/src/features/generators/GaugeNeedle.tsx",
+    "area": "frontend/src",
+    "bytes": 1208,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "cc9997361d5ec757087b68f5fce04c2412dd5202"
+  },
+  {
+    "source": "frontend/src/features/generators/GeneratorConnectionFields.tsx",
+    "area": "frontend/src",
+    "bytes": 10886,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "bda964d3019422afa8b984e785a43493c428058b"
+  },
+  {
+    "source": "frontend/src/features/generators/GeneratorDetailScreen.tsx",
+    "area": "frontend/src",
+    "bytes": 4839,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "8e746408ecc0f02400747418f0fae8a8fee8270d"
+  },
+  {
+    "source": "frontend/src/features/generators/GeneratorEditDialog.tsx",
+    "area": "frontend/src",
+    "bytes": 15311,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "0d81eb9f4e7acc3ee284586402be4c48d721cb40"
+  },
+  {
+    "source": "frontend/src/features/generators/GeneratorEquipmentFields.tsx",
+    "area": "frontend/src",
+    "bytes": 2521,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "27da20593a10c9eacb3c75eecfaa81305b7a7f8b"
+  },
+  {
+    "source": "frontend/src/features/generators/GeneratorIdentityFields.tsx",
+    "area": "frontend/src",
+    "bytes": 4101,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "d3b77d80d58df0a99d331eb86b7c8481662a804f"
+  },
+  {
+    "source": "frontend/src/features/generators/GeneratorTable.tsx",
+    "area": "frontend/src",
+    "bytes": 12378,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "30761382547aa0b1e94b46eeb756114b9e9b9ae4"
+  },
+  {
+    "source": "frontend/src/features/generators/GeneratorsBoard.tsx",
+    "area": "frontend/src",
+    "bytes": 19756,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "4da0c0cc0c545bf6b1284683b36a2b1ff3c2359f"
+  },
+  {
+    "source": "frontend/src/features/generators/GeneratorsProvider.tsx",
+    "area": "frontend/src",
+    "bytes": 9244,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "7c7e46483847ba76e29280d136d8376b39bd1df8"
+  },
+  {
+    "source": "frontend/src/features/generators/KpiStrip.tsx",
+    "area": "frontend/src",
+    "bytes": 3148,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "ff24761f93f4216fc6a9fcf4dd9e62c7843f56ce"
+  },
+  {
+    "source": "frontend/src/features/generators/NetworkDiscoveryPanel.tsx",
+    "area": "frontend/src",
+    "bytes": 2620,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "b1e56ca98b453a3619d3cc34d2bf7609fc124d14"
+  },
+  {
+    "source": "frontend/src/features/generators/PowerFlowCard.tsx",
+    "area": "frontend/src",
+    "bytes": 16024,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "b9213ec04cb76d7a9e9d121bf2fcbfc0c078a867"
+  },
+  {
+    "source": "frontend/src/features/generators/RegisterGeneratorButton.tsx",
+    "area": "frontend/src",
+    "bytes": 19348,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "260052f2cc69f5051a009a10f3ccdbf66d1ccf0a"
+  },
+  {
+    "source": "frontend/src/features/generators/RpmGauge.tsx",
+    "area": "frontend/src",
+    "bytes": 2403,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "f7dc12101086091f0593fb368a9505534df53d19"
+  },
+  {
+    "source": "frontend/src/features/generators/StatusPill.tsx",
+    "area": "frontend/src",
+    "bytes": 1470,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "0be73d948c43f8494b7e108f99916d4eb21fbe18"
+  },
+  {
+    "source": "frontend/src/features/generators/compact-card.css",
+    "area": "frontend/src",
+    "bytes": 7703,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "6231d256e0f955b5e60f3afbbeccbe7735a596de"
+  },
+  {
+    "source": "frontend/src/features/generators/compact-layout.ts",
+    "area": "frontend/src",
+    "bytes": 3565,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "3cdc6955cb96a816a69c1984f4a87df2e5c32f70"
+  },
+  {
+    "source": "frontend/src/features/generators/detail/GeneratorDetailProfessionalLower.tsx",
+    "area": "frontend/src",
+    "bytes": 16708,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "74485ec582c1ab6142e6e81ad1c0f1ee731a4507"
+  },
+  {
+    "source": "frontend/src/features/generators/detail/GeneratorDetailProfessionalPrimitives.tsx",
+    "area": "frontend/src",
+    "bytes": 10458,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "99fc5d71adf5e4c87c1c1da7353defdbc35c6a24"
+  },
+  {
+    "source": "frontend/src/features/generators/detail/GeneratorDetailProfessionalTop.tsx",
+    "area": "frontend/src",
+    "bytes": 15522,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "a2c566703a1203761bd480c0ba56a13930dad028"
+  },
+  {
+    "source": "frontend/src/features/generators/detail/GeneratorDetailTrendPanels.tsx",
+    "area": "frontend/src",
+    "bytes": 7383,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "7525d13782d28baed119695952b79fd0cfe49a18"
+  },
+  {
+    "source": "frontend/src/features/generators/detail/generator-detail-model.ts",
+    "area": "frontend/src",
+    "bytes": 18895,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "a0d8440355fba4cb55df31336789a7ac48388840"
+  },
+  {
+    "source": "frontend/src/features/generators/detail/useGeneratorDetailData.ts",
+    "area": "frontend/src",
+    "bytes": 4304,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "c42e54e3f97cd087a533931162292e52df34bffc"
+  },
+  {
+    "source": "frontend/src/features/generators/generator-detail.css",
+    "area": "frontend/src",
+    "bytes": 12054,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "681cc134ac082083a7015024183c99761054bc67"
+  },
+  {
+    "source": "frontend/src/features/generators/generator-health.ts",
+    "area": "frontend/src",
+    "bytes": 9089,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "d40fc55e47c720c9925eedb66db793f1694a31a5"
+  },
+  {
+    "source": "frontend/src/features/generators/generator-metrics.ts",
+    "area": "frontend/src",
+    "bytes": 2299,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "54ce6cbd07fd5655d51a90ffcb2ddb2b785f891d"
+  },
+  {
+    "source": "frontend/src/features/generators/generator-modem-onboarding.ts",
+    "area": "frontend/src",
+    "bytes": 427,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "e61d0d72edb780b1b88ae7740e8e86928a1f8438"
+  },
+  {
+    "source": "frontend/src/features/generators/generator-presence.ts",
+    "area": "frontend/src",
+    "bytes": 286,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "dec59f10babf0a70dfaf00098819eec8e3f08cf9"
+  },
+  {
+    "source": "frontend/src/features/generators/scada-icons.tsx",
+    "area": "frontend/src",
+    "bytes": 3593,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "2eb17342cd9fafd8ca9f5b46379aedf09ffb5559"
+  },
+  {
+    "source": "frontend/src/features/generators/use-active-alarms.ts",
+    "area": "frontend/src",
+    "bytes": 1742,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "7997f47aa56e0e7dee42b8915975eccf78e78748"
+  },
+  {
+    "source": "frontend/src/features/generators/vertical-card/VerticalControls.tsx",
+    "area": "frontend/src",
+    "bytes": 4781,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "f89ab6d258c2ef4c40f0a7cf27353e2a6b7684e6"
+  },
+  {
+    "source": "frontend/src/features/generators/vertical-card/VerticalPowerFlow.tsx",
+    "area": "frontend/src",
+    "bytes": 9878,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "bd70c741c69e2d1fd9b49833c39d6350d74a0614"
+  },
+  {
+    "source": "frontend/src/features/generators/vertical-card/VerticalPowerGauge.tsx",
+    "area": "frontend/src",
+    "bytes": 3643,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "9df48219abd72f8033f1d8bac41452f06e68e4aa"
+  },
+  {
+    "source": "frontend/src/features/generators/vertical-card/VerticalTelemetrySections.tsx",
+    "area": "frontend/src",
+    "bytes": 5549,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "41dc57855e9de51d75ccd99b218227e07922b43e"
+  },
+  {
+    "source": "frontend/src/features/generators/vertical-card/vertical-reference-card.css",
+    "area": "frontend/src",
+    "bytes": 22915,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "9c058d75d14c2521b65c94e4948c22c5c378b68b"
+  },
+  {
+    "source": "frontend/src/features/scada/AgendaV3Screen.tsx",
+    "area": "frontend/src",
+    "bytes": 7097,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "21f7631c41eece413b3ecfb30fbfedfb50cf1845"
+  },
+  {
+    "source": "frontend/src/features/scada/AlarmEventsScreens.tsx",
+    "area": "frontend/src",
+    "bytes": 16299,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "de369045fc823ba82e7de9f2c0719258ce7acae8"
+  },
+  {
+    "source": "frontend/src/features/scada/ApiV3Screen.tsx",
+    "area": "frontend/src",
+    "bytes": 13140,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "35b3e857e5c0d196ecef8cf449d3f906b3cc33a6"
+  },
+  {
+    "source": "frontend/src/features/scada/BackupsV3Screen.tsx",
+    "area": "frontend/src",
+    "bytes": 4496,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "84c3783d39c0f4053a816990fe837f0df150c9a6"
+  },
+  {
+    "source": "frontend/src/features/scada/ControllersLifecycleScreen.tsx",
+    "area": "frontend/src",
+    "bytes": 19244,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "6983f935a77d739978c4d75f2e1f8b1961854d90"
+  },
+  {
+    "source": "frontend/src/features/scada/ControllersV3CreatePanel.tsx",
+    "area": "frontend/src",
+    "bytes": 12341,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "67d8447a766f5e0ec3ffc87295fce31e00941a5d"
+  },
+  {
+    "source": "frontend/src/features/scada/ControllersV3Screen.tsx",
+    "area": "frontend/src",
+    "bytes": 10586,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "7cad986159603085f4941caa8a75c679e6257c70"
+  },
+  {
+    "source": "frontend/src/features/scada/ErpBmsLifecycleScreen.tsx",
+    "area": "frontend/src",
+    "bytes": 7432,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "4822fe26b97ef78676dbb91bd166c6bb81025491"
+  },
+  {
+    "source": "frontend/src/features/scada/HistoryReportsScreens.tsx",
+    "area": "frontend/src",
+    "bytes": 4762,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "32639a1d9cb5df996a089859f8eb2a21ed4dd0fb"
+  },
+  {
+    "source": "frontend/src/features/scada/IndustrialAlarmHistoryScreens.tsx",
+    "area": "frontend/src",
+    "bytes": 4804,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "110356303b95cf0de4e3b8d0347ea542bc9773cc"
+  },
+  {
+    "source": "frontend/src/features/scada/IndustrialAlarmsScreen.tsx",
+    "area": "frontend/src",
+    "bytes": 17616,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "f521bcfab56e012f9d97571b1359dcf5817e7590"
+  },
+  {
+    "source": "frontend/src/features/scada/IndustrialEscalationScreen.tsx",
+    "area": "frontend/src",
+    "bytes": 9490,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "91c0db8d222af421706e0ea35b833c36a5d713d3"
+  },
+  {
+    "source": "frontend/src/features/scada/IndustrialMaintenanceScreen.tsx",
+    "area": "frontend/src",
+    "bytes": 10958,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "70677a735daa8b9e4c9393e0b3d8f4aea4daf78b"
+  },
+  {
+    "source": "frontend/src/features/scada/IndustrialOpsScreens.tsx",
+    "area": "frontend/src",
+    "bytes": 275,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "30f19df1e53649421a424e8463b858592e5fb840"
+  },
+  {
+    "source": "frontend/src/features/scada/IntegrationsV3Screens.tsx",
+    "area": "frontend/src",
+    "bytes": 7043,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "e983981a15b3799d0260ace257dea9fbb3fefd39"
+  },
+  {
+    "source": "frontend/src/features/scada/MaintenanceHubScreen.tsx",
+    "area": "frontend/src",
+    "bytes": 7791,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "64c9514c530759ff46cd9d3c35e87604f01361a5"
+  },
+  {
+    "source": "frontend/src/features/scada/ManagementClientsUnitsScreens.tsx",
+    "area": "frontend/src",
+    "bytes": 17888,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "3c9cb4c28abda4772bdecbe6cac41475ac05aa10"
+  },
+  {
+    "source": "frontend/src/features/scada/MapScreen.tsx",
+    "area": "frontend/src",
+    "bytes": 16659,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "3ad52556a706ba05ebb9661189ee3a75dde1d253"
+  },
+  {
+    "source": "frontend/src/features/scada/ModemAdmissionPanel.tsx",
+    "area": "frontend/src",
+    "bytes": 2084,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "7d143c74e53a2dcd1165f7218f64db04fb21694e"
+  },
+  {
+    "source": "frontend/src/features/scada/OperationCenterScreen.tsx",
+    "area": "frontend/src",
+    "bytes": 16657,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "b344a2028c64fc3d4817f03c4e28dae2df9ea550"
+  },
+  {
+    "source": "frontend/src/features/scada/OperationOverviewScreens.tsx",
+    "area": "frontend/src",
+    "bytes": 5543,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "a1ac801c130486130085f85c378f2091ce15bf6a"
+  },
+  {
+    "source": "frontend/src/features/scada/OperationalMap.tsx",
+    "area": "frontend/src",
+    "bytes": 9045,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "0627843d35438292eb7b06f4e8798dd7f4b69575"
+  },
+  {
+    "source": "frontend/src/features/scada/OverviewDashboard.tsx",
+    "area": "frontend/src",
+    "bytes": 3071,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "bf1084ee905ccadff40f8197b4116815839ac7dd"
+  },
+  {
+    "source": "frontend/src/features/scada/ReportsV3Screen.tsx",
+    "area": "frontend/src",
+    "bytes": 6598,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "a093a41c73f8331037390330590e9a173ae1d6d0"
+  },
+  {
+    "source": "frontend/src/features/scada/ScadaOpsProvider.tsx",
+    "area": "frontend/src",
+    "bytes": 11473,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "1f62bb5248957976ef518b9d5e5faa8362d65e13"
+  },
+  {
+    "source": "frontend/src/features/scada/SchedulesV3Screen.tsx",
+    "area": "frontend/src",
+    "bytes": 11990,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "52c5616ec3507b45cc02d42537c2eac74836e7d0"
+  },
+  {
+    "source": "frontend/src/features/scada/SystemHealthScreen.tsx",
+    "area": "frontend/src",
+    "bytes": 10960,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "f4f922f1d0b26fa5a5c09776ca64d2eea6acaca7"
+  },
+  {
+    "source": "frontend/src/features/scada/SystemSettingsV3Screen.tsx",
+    "area": "frontend/src",
+    "bytes": 11660,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "e70e426b68ab5a68c7d9852bb906f25c879ae0d1"
+  },
+  {
+    "source": "frontend/src/features/scada/TrendsScreen.tsx",
+    "area": "frontend/src",
+    "bytes": 5165,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "b4c8d42a271bd8c05a5fdce7215a61f646668422"
+  },
+  {
+    "source": "frontend/src/features/scada/UsersV3Screen.tsx",
+    "area": "frontend/src",
+    "bytes": 18615,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "2b6971de85fdd407a86a132a075b54b5c11ea3a4"
+  },
+  {
+    "source": "frontend/src/features/scada/WebhooksScreen.tsx",
+    "area": "frontend/src",
+    "bytes": 5680,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "66f7ac48033904f6a35c853501452e982dae0ea4"
+  },
+  {
+    "source": "frontend/src/features/scada/communication-guide.tsx",
+    "area": "frontend/src",
+    "bytes": 350,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "c4fe5ccbfa95e41f3f731410d4690059532c9dd0"
+  },
+  {
+    "source": "frontend/src/features/scada/connectivity-secondary-panels.tsx",
+    "area": "frontend/src",
+    "bytes": 6622,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "fc99d8971beb970d7d5d33ca9045a77f9b0bdb33"
+  },
+  {
+    "source": "frontend/src/features/scada/energy-assets.tsx",
+    "area": "frontend/src",
+    "bytes": 7250,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "5e7bdbb961c9f0ff32f6a57ea13456f67dcfef7a"
+  },
+  {
+    "source": "frontend/src/features/scada/energy-maint.tsx",
+    "area": "frontend/src",
+    "bytes": 15111,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "becd395d083559306b0c032655aa82a25ab5d11e"
+  },
+  {
+    "source": "frontend/src/features/scada/equip-auto.tsx",
+    "area": "frontend/src",
+    "bytes": 18149,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "7def93aedc1d59cb399774f071efb81f31ed1937"
+  },
+  {
+    "source": "frontend/src/features/scada/equip-connectivity.tsx",
+    "area": "frontend/src",
+    "bytes": 17617,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "1d9d262584aa2863fe579e8eace5d1e0ce4c766f"
+  },
+  {
+    "source": "frontend/src/features/scada/field-device-inventory.tsx",
+    "area": "frontend/src",
+    "bytes": 19252,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "b814475726f827b6f974a77299c54f7327cc2059"
+  },
+  {
+    "source": "frontend/src/features/scada/kit.tsx",
+    "area": "frontend/src",
+    "bytes": 9748,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "c44395bedc01dff9aa51e291bbebf65990188478"
+  },
+  {
+    "source": "frontend/src/features/scada/mgmt.tsx",
+    "area": "frontend/src",
+    "bytes": 129,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "198c782bd9452e3bd432e6e084e37c65c7def6b6"
+  },
+  {
+    "source": "frontend/src/features/scada/operation-helpers.ts",
+    "area": "frontend/src",
+    "bytes": 1746,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "cfd39765ba85e28b52e1e5d0826cab02b420a02a"
+  },
+  {
+    "source": "frontend/src/features/scada/operations.tsx",
+    "area": "frontend/src",
+    "bytes": 303,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "02a3c1f8d6971a0c8ae64dbeb19bf04040b49acc"
+  },
+  {
+    "source": "frontend/src/features/scada/overview-dashboard-actions.tsx",
+    "area": "frontend/src",
+    "bytes": 12418,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "dfb5ae904f4ba96f5b11552b0bdcdac6a5a01688"
+  },
+  {
+    "source": "frontend/src/features/scada/overview-dashboard-model.ts",
+    "area": "frontend/src",
+    "bytes": 12478,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "d5c7f7c4cb579d4a033339189c083e6a691c38c8"
+  },
+  {
+    "source": "frontend/src/features/scada/overview-dashboard-summary.tsx",
+    "area": "frontend/src",
+    "bytes": 17273,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "847d9d510d965a01bd26c320e5ba24b94a99a188"
+  },
+  {
+    "source": "frontend/src/features/scada/registry.ts",
+    "area": "frontend/src",
+    "bytes": 3355,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "fa60e68f47f63daedfde4e98a277db7f0640a0e4"
+  },
+  {
+    "source": "frontend/src/features/scada/scada-lib.tsx",
+    "area": "frontend/src",
+    "bytes": 18545,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "1b1fb5a0531121451a78cd67196e76c0232fcaeb"
+  },
+  {
+    "source": "frontend/src/features/scada/security.tsx",
+    "area": "frontend/src",
+    "bytes": 5763,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "938b1a21e5b0d4a7848ecebc89baf853f098766a"
+  },
+  {
+    "source": "frontend/src/hooks/use-mobile.tsx",
+    "area": "frontend/src",
+    "bytes": 576,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "502fd323934501eab408a396a9ae4a07c0ae3560"
+  },
+  {
+    "source": "frontend/src/layout/AppSidebar.tsx",
+    "area": "frontend/src",
+    "bytes": 13161,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "0db918b3654eeeed21914b3edad8d2324acb21b1"
+  },
+  {
+    "source": "frontend/src/layout/LayoutContext.tsx",
+    "area": "frontend/src",
+    "bytes": 3231,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "d699dec47020ebb8d83622de4d8f40dc99b4b9f4"
+  },
+  {
+    "source": "frontend/src/layout/ThemeProvider.tsx",
+    "area": "frontend/src",
+    "bytes": 2076,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "35312958fd8ada94ffbe1bc4e213a55339a727ac"
+  },
+  {
+    "source": "frontend/src/layout/Topbar.tsx",
+    "area": "frontend/src",
+    "bytes": 9134,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "181787b6b1b246519611e98ccb39b4a2ce7dba7c"
+  },
+  {
+    "source": "frontend/src/lib/api.ts",
+    "area": "frontend/src",
+    "bytes": 25179,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "a5044b6f8dd815f08212894f9c9fbe8ba27bd581"
+  },
+  {
+    "source": "frontend/src/lib/auth.ts",
+    "area": "frontend/src",
+    "bytes": 2212,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "afc6e34006420badf86063222e1645c969eb11ba"
+  },
+  {
+    "source": "frontend/src/lib/domain-api.ts",
+    "area": "frontend/src",
+    "bytes": 4627,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "3e3c7405eef69d4bfcd11326aad866812534cb78"
+  },
+  {
+    "source": "frontend/src/lib/download.ts",
+    "area": "frontend/src",
+    "bytes": 542,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "a271d44a908331563a6f97a62a42e765fd9f9555"
+  },
+  {
+    "source": "frontend/src/lib/error-capture.ts",
+    "area": "frontend/src",
+    "bytes": 2898,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "e4a97bedd4614fc51cdcdb5583a918e6b57a5dfc"
+  },
+  {
+    "source": "frontend/src/lib/error-page.ts",
+    "area": "frontend/src",
+    "bytes": 1371,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "725235ce7bdf496daf2d870148978939f4f40a9b"
+  },
+  {
+    "source": "frontend/src/lib/http-client.ts",
+    "area": "frontend/src",
+    "bytes": 3534,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "ba6f209520738c83d0e18c8a546ee41f60953e92"
+  },
+  {
+    "source": "frontend/src/lib/industrial-api.ts",
+    "area": "frontend/src",
+    "bytes": 8953,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "c2c74ef0b0b0bc01f21602bcc09acede9a5b6f04"
+  },
+  {
+    "source": "frontend/src/lib/utils.ts",
+    "area": "frontend/src",
+    "bytes": 169,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "a5ef193506d07d0459fec4f187af08283094d7c8"
+  },
+  {
+    "source": "frontend/src/routeTree.gen.ts",
+    "area": "frontend/src",
+    "bytes": 4445,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "c6cc9b81c4e691656d1afa6a3693f03bab310776"
+  },
+  {
+    "source": "frontend/src/router.tsx",
+    "area": "frontend/src",
+    "bytes": 394,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "3423d598036579e62f42faec438f868b4bb0bb17"
+  },
+  {
+    "source": "frontend/src/routes/__root.tsx",
+    "area": "frontend/src",
+    "bytes": 7220,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "18a6cb3c615d1b45a5af8294c0bb48b1554a95f9"
+  },
+  {
+    "source": "frontend/src/routes/index.tsx",
+    "area": "frontend/src",
+    "bytes": 936,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "b9b6c7bb4cd628dfccaa0cd7c490a752471801ba"
+  },
+  {
+    "source": "frontend/src/routes/login.tsx",
+    "area": "frontend/src",
+    "bytes": 357,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "eadb425ddb2380bcc7442d93ed49b6b902ac9c51"
+  },
+  {
+    "source": "frontend/src/routes/p.$slug.tsx",
+    "area": "frontend/src",
+    "bytes": 3064,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "31f376dd4383684ebf8271113f55d5fbc5c3fc06"
+  },
+  {
+    "source": "frontend/src/routes/p.geradores.$id.tsx",
+    "area": "frontend/src",
+    "bytes": 1832,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "1e0f352862e161ae435070c0872c7d0489e3d80e"
+  },
+  {
+    "source": "frontend/src/routes/reset-password.tsx",
+    "area": "frontend/src",
+    "bytes": 567,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "bcbdc935ad575627842c36d7123e329e99b8ae03"
+  },
+  {
+    "source": "frontend/src/server.ts",
+    "area": "frontend/src",
+    "bytes": 5244,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "59547d26a979a969d271e5c1431dae8ada6e26ce"
+  },
+  {
+    "source": "frontend/src/start.ts",
+    "area": "frontend/src",
+    "bytes": 944,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "6935f74eb2d5cff0a21e45b63c9d627d38b474f3"
+  },
+  {
+    "source": "frontend/src/styles.css",
+    "area": "frontend/src",
+    "bytes": 534,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "d7c5080a6a2ebb51870a2b0ccf3b66fe0ead8b4e"
+  },
+  {
+    "source": "frontend/src/theme/base.css",
+    "area": "frontend/src",
+    "bytes": 921,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "1e2dc9b672369875582c506bd318187f8a7b11d3"
+  },
+  {
+    "source": "frontend/src/theme/colors.css",
+    "area": "frontend/src",
+    "bytes": 6099,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "e5414f95ee1addee2a592da8f0e9e74baa8fa632"
+  },
+  {
+    "source": "frontend/src/theme/industrial-console.css",
+    "area": "frontend/src",
+    "bytes": 25904,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "75d9e2e6aab38424d77c0e623981e747a1bd70b7"
+  },
+  {
+    "source": "frontend/src/theme/professional-ui.css",
+    "area": "frontend/src",
+    "bytes": 18472,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "9945752bb454673ad3cfa60867bb89f1db9f775c"
+  },
+  {
+    "source": "frontend/src/theme/readability.css",
+    "area": "frontend/src",
+    "bytes": 3008,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "398d3407e66e7dff74d0afe84395d758dc8dbef7"
+  },
+  {
+    "source": "frontend/src/theme/scada-reference.css",
+    "area": "frontend/src",
+    "bytes": 11435,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "764adf397f02091dd298486272d5b84a7ce97859"
+  },
+  {
+    "source": "frontend/src/theme/shadows.css",
+    "area": "frontend/src",
+    "bytes": 597,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "0a3fca1f92a68ded18c91bf2948687e98acc67b3"
+  },
+  {
+    "source": "frontend/src/theme/spacing.css",
+    "area": "frontend/src",
+    "bytes": 386,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "4d1baf9a66955f3421e7cfd9d8e24ca81b6256a3"
+  },
+  {
+    "source": "frontend/src/theme/tokens.css",
+    "area": "frontend/src",
+    "bytes": 160,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "a0df1a3410335732a9f9e269b958e69bf1d761d1"
+  },
+  {
+    "source": "frontend/src/theme/typography.css",
+    "area": "frontend/src",
+    "bytes": 171,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "e9cc721044eb1cb4f66319eef492ed58b703c755"
+  },
+  {
+    "source": "frontend/src/theme/utilities.css",
+    "area": "frontend/src",
+    "bytes": 96,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "2ae95a4cfbdc736c1a382152fe8dfbdf8cd369ab"
+  },
+  {
+    "source": "infrastructure/README.md",
+    "area": "infrastructure",
+    "bytes": 360,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "b97a348b4f371359592a5cc746e85767207ea009"
+  },
+  {
+    "source": "infrastructure/docs/NPM_EXTERNAL_PROXY.md",
+    "area": "infrastructure",
+    "bytes": 5576,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "c46951034cbb63fd796dc394af6643488619323b"
+  },
+  {
+    "source": "infrastructure/env/rc-geradores.env.example",
+    "area": "infrastructure",
+    "bytes": 5317,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "4c882e058478506100146bd304faff5f1e7988ff"
+  },
+  {
+    "source": "infrastructure/nginx/rc-geradores.conf",
+    "area": "infrastructure",
+    "bytes": 1953,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "049041a24e9a4018af800d879ef3c2219ecbbb69"
+  },
+  {
+    "source": "infrastructure/systemd/rc-geradores-api.service",
+    "area": "infrastructure",
+    "bytes": 1045,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "cde8e49a2806053f5866f012629c4b0247bd7ca6"
+  },
+  {
+    "source": "infrastructure/systemd/rc-geradores-bridge.service",
+    "area": "infrastructure",
+    "bytes": 1043,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "96559b27c85726935c8ece32acb3e5be2a1a56d2"
+  },
+  {
+    "source": "infrastructure/systemd/rc-geradores-frontend.service",
+    "area": "infrastructure",
+    "bytes": 909,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "641c97125800fed5ecbbecf3e68e9d281cdc6ff7"
+  },
+  {
+    "source": "infrastructure/systemd/rc-geradores-provision.service",
+    "area": "infrastructure",
+    "bytes": 1107,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "968633e126eb09174ab450060bfc30235f840efc"
+  },
+  {
+    "source": "infrastructure/systemd/rc-geradores-worker.service",
+    "area": "infrastructure",
+    "bytes": 974,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "58f63be303903d588dc8a5f286645c0ed0928155"
+  },
+  {
+    "source": "ops/README.md",
+    "area": "ops",
+    "bytes": 351,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "ccd962d063128d09494af4b7e40ae576572bed64"
+  },
+  {
+    "source": "ops/bootstrap_admin.py",
+    "area": "ops",
+    "bytes": 2797,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "98581f8261845f3cbeef7335bea0d2d8d313c216"
+  },
+  {
+    "source": "ops/configure_external_proxy_network.sh",
+    "area": "ops",
+    "bytes": 16062,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "6a1a84227b429d75172a22e02a98d11baa838459"
+  },
+  {
+    "source": "ops/configure_https.sh",
+    "area": "ops",
+    "bytes": 5839,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "c1990529159d4fb44112d707821f65a69bde53f3"
+  },
+  {
+    "source": "ops/configure_rapid_network.sh",
+    "area": "ops",
+    "bytes": 6132,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "53bb795eeb4fc8884248d0b44a1058ba4789233e"
+  },
+  {
+    "source": "ops/deploy_release.sh",
+    "area": "ops",
+    "bytes": 360,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "a329b73510a565b942d18e4b4d25bea1f1766a97"
+  },
+  {
+    "source": "ops/deploy_release_v2.sh",
+    "area": "ops",
+    "bytes": 26796,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "731790f249e4386aedd9550022d74a3e06db3832"
+  },
+  {
+    "source": "ops/ensure_periodic_backup.py",
+    "area": "ops",
+    "bytes": 2453,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "cd5cb7b6ee49da0f717ac92b6f9010a032dcb259"
+  },
+  {
+    "source": "ops/install.sh",
+    "area": "ops",
+    "bytes": 24561,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "75d901b6453bd3b9c7a5cb8c89367baf95bd69e2"
+  },
+  {
+    "source": "ops/migrate_db.py",
+    "area": "ops",
+    "bytes": 708,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "e90eaff035f936236a43ce0c456124ba4a0eff02"
+  },
+  {
+    "source": "ops/migrate_old_db.py",
+    "area": "ops",
+    "bytes": 3054,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "96b5ce224bc15cbed4813520d8825fb1f69a146d"
+  },
+  {
+    "source": "ops/preflight_vm.sh",
+    "area": "ops",
+    "bytes": 13777,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "429869e2bbbec3b43340ff2e3049491a8b26c01d"
+  },
+  {
+    "source": "ops/prune_deploy_backups.sh",
+    "area": "ops",
+    "bytes": 939,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "da2f11f61cd533197e5a5dd2a64160dd147b9eaa"
+  },
+  {
+    "source": "ops/restore_backup.py",
+    "area": "ops",
+    "bytes": 4523,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "23a5077b4a5bdb4d41ee0698c017abeeacc947b7"
+  },
+  {
+    "source": "ops/run_backend_tests.sh",
+    "area": "ops",
+    "bytes": 1542,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "ce5587716e7d35d1e7751f0baf4ee2e450e72e8e"
+  },
+  {
+    "source": "ops/run_e2e_isolated.sh",
+    "area": "ops",
+    "bytes": 4966,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "c85ca8e0065a1935295c2dc7c353ce61d62cdfb9"
+  },
+  {
+    "source": "ops/status.sh",
+    "area": "ops",
+    "bytes": 8767,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "50904b210daffc4244eda9f6d9e230e57f09a6f5"
+  },
+  {
+    "source": "ops/test_deploy_backup_retention.sh",
+    "area": "ops",
+    "bytes": 741,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "1a51b0698384488f193c142205e31bcdfe4bdbbb"
+  },
+  {
+    "source": "ops/test_frontend_asset_retention.sh",
+    "area": "ops",
+    "bytes": 1977,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "c7f00de0422702deddc7bbaff44bbecb7d45c5d0"
+  },
+  {
+    "source": "ops/test_periodic_backup_schedule.sh",
+    "area": "ops",
+    "bytes": 942,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "8dbb697b216537d52e6fe687cb85c86508d0ab33"
+  },
+  {
+    "source": "ops/test_release_ref_resolution.sh",
+    "area": "ops",
+    "bytes": 2398,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "f9eaac9ae66387a3e97ea0c671121f1f3103bf8c"
+  },
+  {
+    "source": "ops/verify_npm_route.sh",
+    "area": "ops",
+    "bytes": 5863,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "fe7497735f17ca6d676ee43b9103de6e60125197"
+  },
+  {
+    "source": "ops/vm-smoke.sh",
+    "area": "ops",
+    "bytes": 16925,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "e880b93764604bad17cb51f757fb0b27165cef99"
+  },
+  {
+    "source": "package-lock.json",
+    "area": "root/configuração",
+    "bytes": 229102,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "da6bc5b61c4cc909dee8281cb2fe14e62acd5559"
+  },
+  {
+    "source": "package.json",
+    "area": "root/configuração",
+    "bytes": 2495,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "5274b56a933289f982f6ddaa28b288874e83024a"
+  },
+  {
+    "source": "playwright.config.ts",
+    "area": "root/configuração",
+    "bytes": 577,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "16fe5118585804d5721ab5b9a5ffbf84d5dbd5e3"
+  },
+  {
+    "source": "rapid/README.md",
+    "area": "rapid",
+    "bytes": 333,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "2a3d9589591132a50c4e9c8a01e089434e7e96c2"
+  },
+  {
+    "source": "rapid/bindings.json",
+    "area": "rapid",
+    "bytes": 703,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "ec73ba3182289ea8bbe138f597718bee1c9dcc55"
+  },
+  {
+    "source": "rapid/provisioning/deprovision_generator.py",
+    "area": "rapid",
+    "bytes": 10277,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "469462782c8745e3f3db03592339e1ce86049fa9"
+  },
+  {
+    "source": "rapid/provisioning/provision_dse_gencomm.py",
+    "area": "rapid",
+    "bytes": 5583,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "662fc4ae609aef0fc5cb10a69fd520d57cec0fb8"
+  },
+  {
+    "source": "rapid/provisioning/provision_generator.py",
+    "area": "rapid",
+    "bytes": 43137,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "c8fb064cb95a901d262b08d4ad6772b69d1e1275"
+  },
+  {
+    "source": "rapid/provisioning/provision_ig200.sh",
+    "area": "rapid",
+    "bytes": 528,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "ae99f80db61407aaad6a9ae3c4ef47718a18a921"
+  },
+  {
+    "source": "rapid/provisioning/rapid_dat.py",
+    "area": "rapid",
+    "bytes": 15780,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "c4ca28ca83d566ede87cfc23449a3dd9d597d87b"
+  },
+  {
+    "source": "rapid/provisioning/service_guard.py",
+    "area": "rapid",
+    "bytes": 2684,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "23b46f0f8d6d18af33241a7c314d19f5d0abdd9a"
+  },
+  {
+    "source": "rapid/reader/Program.cs",
+    "area": "rapid",
+    "bytes": 3051,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "688b5d3879076d8c3cd5bfd4447371e8daf35167"
+  },
+  {
+    "source": "rapid/reader/RcRapidReader.csproj",
+    "area": "rapid",
+    "bytes": 398,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "dd30ce55e8a1e3080182cccb0b0628ec7ee7c721"
+  },
+  {
+    "source": "rapid/templates/DrvModbus_RC_DSE5210_GenComm.xml",
+    "area": "rapid",
+    "bytes": 3625,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "021c1de115b448c9e512e2647bc3ce17e13a1402"
+  },
+  {
+    "source": "rapid/templates/DrvModbus_RC_DSE5xx_GenComm.xml",
+    "area": "rapid",
+    "bytes": 2080,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "9294cc62f4d2949cfa8aaa100a15c7c36784b1b6"
+  },
+  {
+    "source": "rapid/templates/DrvModbus_RC_DSE_GenComm_Core.xml",
+    "area": "rapid",
+    "bytes": 5978,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "462f3f382788b99bedb915422cf6aa59fa637f5c"
+  },
+  {
+    "source": "rapid/templates/DrvModbus_RC_ICNT.xml",
+    "area": "rapid",
+    "bytes": 5164,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "f6d6ad4608adb0eb25d281f8b4eb6450a37d0daf"
+  },
+  {
+    "source": "rapid/templates/DrvModbus_RC_IG200.xml",
+    "area": "rapid",
+    "bytes": 9098,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "f73c0268d84b57488dffd70420d30f47ed320dd6"
+  },
+  {
+    "source": "rapid/templates/DrvModbus_RC_IG4_200.xml",
+    "area": "rapid",
+    "bytes": 5268,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "8db3eb23dae2ecbe2876b4ea421de59570e84f51"
+  },
+  {
+    "source": "rapid/templates/DrvModbus_RC_IGNT.xml",
+    "area": "rapid",
+    "bytes": 3148,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "979d48012c5363671eb9b8a81b46a08d576fe828"
+  },
+  {
+    "source": "scripts/README.md",
+    "area": "root/configuração",
+    "bytes": 257,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "a5b84a3d6b590a51579197a012071d142e65ddd9"
+  },
+  {
+    "source": "scripts/validation/check-architecture.mjs",
+    "area": "scripts/validation",
+    "bytes": 5013,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "84171ba4f31c17e1e2c3212de7a69e200fd939a9"
+  },
+  {
+    "source": "scripts/validation/check-change-boundaries.mjs",
+    "area": "scripts/validation",
+    "bytes": 6383,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "2579c27b367fe5104a1b2e9ea85228e4fd43b46f"
+  },
+  {
+    "source": "scripts/validation/check-controller-profiles.mjs",
+    "area": "scripts/validation",
+    "bytes": 28442,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "5c36dc356aea3ad2154b92684c9828f934c28626"
+  },
+  {
+    "source": "scripts/validation/check-decision-ui.mjs",
+    "area": "scripts/validation",
+    "bytes": 9895,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "2b5a6e20abc4a1bc2712e10a16dfcf492cda0f97"
+  },
+  {
+    "source": "scripts/validation/check-functional-surfaces.mjs",
+    "area": "scripts/validation",
+    "bytes": 22355,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "5c5bf378c2c274ac6096d09d3f676310f72edd4d"
+  },
+  {
+    "source": "tests/README.md",
+    "area": "tests",
+    "bytes": 262,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "f73e7bd0ffd9a512ae5d83ce478364ff2eb9867e"
+  },
+  {
+    "source": "tests/ci_source_gates.py",
+    "area": "tests",
+    "bytes": 1359,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "2078a8e723a7088300ea51d74d4a5a4ec8853cd4"
+  },
+  {
+    "source": "tests/command-client-timeout.mjs",
+    "area": "tests",
+    "bytes": 1795,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "c02d5a62c43379bdbdf9db226083204cf7e49f20"
+  },
+  {
+    "source": "tests/e2e/all-routes.spec.ts",
+    "area": "tests",
+    "bytes": 2683,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "2e02b2ea5f078e724fb85028feb8a703d51b018e"
+  },
+  {
+    "source": "tests/e2e/auth.spec.ts",
+    "area": "tests",
+    "bytes": 8113,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "43444c9d5da68390d2a8ac5ea257de1a8c254293"
+  },
+  {
+    "source": "tests/e2e/full-menu-audit.spec.ts",
+    "area": "tests",
+    "bytes": 6194,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "740aff6425996dac92e321d2f23d3c04e3e7877c"
+  },
+  {
+    "source": "tests/e2e/functional-crud-audit.spec.ts",
+    "area": "tests",
+    "bytes": 17510,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "668a687f44fda56f4b768f4584323afdd2274050"
+  },
+  {
+    "source": "tests/e2e/generator-detail-trends.spec.ts",
+    "area": "tests",
+    "bytes": 4967,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "bd0619a9ccdf10b379a40601f63f926e04df97eb"
+  },
+  {
+    "source": "tests/e2e/modem-fixture.ts",
+    "area": "tests",
+    "bytes": 1696,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "3efbe4e8935105ea33d33a2c8fd9dfbd20342d63"
+  },
+  {
+    "source": "tests/e2e/resource-404.spec.ts",
+    "area": "tests",
+    "bytes": 1075,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "291d35605fa6414058aa87a359e589faf106aee5"
+  },
+  {
+    "source": "tests/e2e/responsive.spec.ts",
+    "area": "tests",
+    "bytes": 7255,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "5be4b472b014469c2d727c530f79cae11ac3b444"
+  },
+  {
+    "source": "tests/e2e/reverse-proxy.mjs",
+    "area": "tests",
+    "bytes": 1152,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "f5c91e1563d15860c3da8a5638a1d442e27ed3ee"
+  },
+  {
+    "source": "tests/e2e/vertical-card-reference.spec.ts",
+    "area": "tests",
+    "bytes": 18600,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "18700deabc364a6a55f796f143503f5bb47a06b6"
+  },
+  {
+    "source": "tests/e2e/videowall-compact.spec.ts",
+    "area": "tests",
+    "bytes": 7660,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "0af05d336ae7effda68b2b9be84d079b33a87645"
+  },
+  {
+    "source": "tsconfig.json",
+    "area": "root/configuração",
+    "bytes": 847,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "d58f6c0ea13ada78cbbd59b97ca945f358dfd4cb"
+  },
+  {
+    "source": "vite.config.ts",
+    "area": "root/configuração",
+    "bytes": 956,
+    "status": "inventariado; arquivo da baseline, não aprovação funcional",
+    "git_blob": "bdf10c56a64783fb0eb16b78f75f50c36a43e787"
+  }
+]

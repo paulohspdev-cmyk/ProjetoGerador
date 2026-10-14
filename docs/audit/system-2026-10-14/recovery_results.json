@@ -1,0 +1,65 @@
+{
+  "baseline": "afec24a",
+  "external_deliveries": 0,
+  "industrial_commands": 0,
+  "results": [
+    {
+      "case": "lifecycle_same_operation_id_and_payload_conflict",
+      "status": "aprovado no cenário isolado",
+      "details": {}
+    },
+    {
+      "case": "lifecycle_one_active_operation_per_generator",
+      "status": "aprovado no cenário isolado",
+      "details": {}
+    },
+    {
+      "case": "interrupted_lifecycle_fails_closed_not_automatic_field_retry",
+      "status": "aprovado no cenário isolado",
+      "details": {}
+    },
+    {
+      "case": "scheduler_claim_exclusivity_expiry_and_fencing",
+      "status": "aprovado no cenário isolado",
+      "details": {}
+    },
+    {
+      "case": "notification_crash_recovery_fencing_and_bounded_retry",
+      "status": "aprovado no cenário isolado",
+      "details": {}
+    },
+    {
+      "case": "webhook_without_destinations",
+      "status": "decisão de contrato pendente",
+      "details": {
+        "delivery_function_reports_success": true,
+        "detail": "Nenhum webhook ativo para este evento",
+        "note": "No network request occurred; decide skipped versus delivered, not a confirmed external delivery"
+      }
+    },
+    {
+      "case": "backup_rejects_absolute_paths_and_traversal",
+      "status": "aprovado no cenário isolado",
+      "details": {}
+    },
+    {
+      "case": "backup_rejects_symlinks",
+      "status": "aprovado no cenário isolado",
+      "details": {}
+    },
+    {
+      "case": "automation_engine_rejects_industrial_writes",
+      "status": "aprovado no cenário isolado",
+      "details": {}
+    },
+    {
+      "case": "schema_migration_and_integrity",
+      "status": "aprovado no cenário isolado",
+      "details": {
+        "schema": 5,
+        "integrity": "ok",
+        "foreign_key_violations": 0
+      }
+    }
+  ]
+}

@@ -1,0 +1,310 @@
+[
+  {
+    "id": "UI-0007",
+    "source": "frontend/src/features/auth/LoginScreen.tsx",
+    "line": 228,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{onSubmit}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0015",
+    "source": "frontend/src/features/auth/ResetPasswordScreen.tsx",
+    "line": 50,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{submit}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0033",
+    "source": "frontend/src/features/generators/GeneratorEditDialog.tsx",
+    "line": 192,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{save}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0069",
+    "source": "frontend/src/features/generators/RegisterGeneratorButton.tsx",
+    "line": 363,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{onSubmit}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0085",
+    "source": "frontend/src/features/scada/AgendaV3Screen.tsx",
+    "line": 111,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{submit}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0097",
+    "source": "frontend/src/features/scada/ApiV3Screen.tsx",
+    "line": 184,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{create}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0105",
+    "source": "frontend/src/features/scada/ControllersLifecycleScreen.tsx",
+    "line": 206,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{saveController}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0110",
+    "source": "frontend/src/features/scada/ControllersLifecycleScreen.tsx",
+    "line": 241,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{saveConnection}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0118",
+    "source": "frontend/src/features/scada/ControllersV3CreatePanel.tsx",
+    "line": 158,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{onCreate}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0131",
+    "source": "frontend/src/features/scada/ControllersV3Screen.tsx",
+    "line": 214,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{onCreateLink}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0136",
+    "source": "frontend/src/features/scada/ErpBmsLifecycleScreen.tsx",
+    "line": 151,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{save}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0141",
+    "source": "frontend/src/features/scada/HistoryReportsScreens.tsx",
+    "line": 81,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{onCreate}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0153",
+    "source": "frontend/src/features/scada/IndustrialEscalationScreen.tsx",
+    "line": 99,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{onCreate}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0162",
+    "source": "frontend/src/features/scada/IndustrialMaintenanceScreen.tsx",
+    "line": 131,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{onCreate}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0168",
+    "source": "frontend/src/features/scada/IntegrationsV3Screens.tsx",
+    "line": 104,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{test}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0171",
+    "source": "frontend/src/features/scada/IntegrationsV3Screens.tsx",
+    "line": 180,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{test}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0177",
+    "source": "frontend/src/features/scada/ManagementClientsUnitsScreens.tsx",
+    "line": 136,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{submit}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0184",
+    "source": "frontend/src/features/scada/ManagementClientsUnitsScreens.tsx",
+    "line": 388,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{submit}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0208",
+    "source": "frontend/src/features/scada/ReportsV3Screen.tsx",
+    "line": 86,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{create}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0213",
+    "source": "frontend/src/features/scada/SchedulesV3Screen.tsx",
+    "line": 192,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{save}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0224",
+    "source": "frontend/src/features/scada/SystemSettingsV3Screen.tsx",
+    "line": 167,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{changePassword}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0238",
+    "source": "frontend/src/features/scada/UsersV3Screen.tsx",
+    "line": 369,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{save}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0245",
+    "source": "frontend/src/features/scada/WebhooksScreen.tsx",
+    "line": 107,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{submit}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0250",
+    "source": "frontend/src/features/scada/energy-maint.tsx",
+    "line": 303,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{onCreate}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0254",
+    "source": "frontend/src/features/scada/energy-maint.tsx",
+    "line": 423,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{onCreate}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0259",
+    "source": "frontend/src/features/scada/equip-auto.tsx",
+    "line": 178,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{save}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0267",
+    "source": "frontend/src/features/scada/equip-auto.tsx",
+    "line": 369,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{onCreate}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0275",
+    "source": "frontend/src/features/scada/field-device-inventory.tsx",
+    "line": 312,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{save}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  }
+]

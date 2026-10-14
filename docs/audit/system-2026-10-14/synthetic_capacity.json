@@ -1,0 +1,32 @@
+{
+  "baseline": "afec24a",
+  "kind": "synthetic in-process API only",
+  "measurements": [
+    {
+      "generators": 17,
+      "concurrency": 4,
+      "requests": 4,
+      "median_ms": 2261.33,
+      "maximum_ms": 2404.94,
+      "response_bytes": 30353,
+      "http_errors": 0
+    },
+    {
+      "generators": 100,
+      "concurrency": 4,
+      "requests": 4,
+      "median_ms": 13827.42,
+      "maximum_ms": 14110.92,
+      "response_bytes": 178677,
+      "http_errors": 0
+    }
+  ],
+  "limits": [
+    "No industrial channels, Rapid collection, physical modem, network latency or snapshot contention",
+    "Four requests at each size are not a production capacity certification",
+    "Stops expanding fleet when maximum response exceeds 15 seconds; no p95 inferred from four samples",
+    "No endurance, fleet realism or production load was tested",
+    "Initial 20-request probe was interrupted due to long execution; no latency fabricated from that incomplete run",
+    "Probe timing can be affected by concurrent audit work in this local runtime"
+  ]
+}

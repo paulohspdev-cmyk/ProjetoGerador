@@ -1,0 +1,39 @@
+{
+  "baseline": "afec24a685e23707d7d2c230f6a3e373a8cd8ff6",
+  "routes": 132,
+  "authorization_cases": 354,
+  "authorization_failures": [
+    {
+      "id": "TOKEN-malformed-'Bearer '",
+      "role": "malformed-header",
+      "method": "GET",
+      "expected": 401,
+      "actual": 500,
+      "ok": false
+    },
+    {
+      "id": "TOKEN-malformed-'Bearer   '",
+      "role": "malformed-header",
+      "method": "GET",
+      "expected": 401,
+      "actual": 500,
+      "ok": false
+    }
+  ],
+  "get_probes": 55,
+  "get_server_errors": [],
+  "tables": 50,
+  "integrity": "ok",
+  "foreign_key_violations": 0,
+  "nav_slugs": 54,
+  "packs": 17,
+  "files": 422,
+  "production_writes": 0,
+  "dependencies": {
+    "fastapi": "0.141.1",
+    "starlette": "1.7.0",
+    "pydantic": "2.14.0",
+    "uvicorn": "0.54.0",
+    "cryptography": "50.0.2"
+  }
+}

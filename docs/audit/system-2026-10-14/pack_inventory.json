@@ -1,0 +1,138 @@
+[
+  {
+    "id": "PACK-001",
+    "source": "controllers/lab/comap/amf-09/manifest.json",
+    "pack_id": null,
+    "lifecycle": null,
+    "model": "AMF 09",
+    "status": "inventariado; testes simulados não homologam hardware"
+  },
+  {
+    "id": "PACK-002",
+    "source": "controllers/lab/comap/amf-25/manifest.json",
+    "pack_id": null,
+    "lifecycle": null,
+    "model": "AMF 25",
+    "status": "inventariado; testes simulados não homologam hardware"
+  },
+  {
+    "id": "PACK-003",
+    "source": "controllers/lab/comap/ig-nt/manifest.json",
+    "pack_id": null,
+    "lifecycle": null,
+    "model": "IG-NT",
+    "status": "inventariado; testes simulados não homologam hardware"
+  },
+  {
+    "id": "PACK-004",
+    "source": "controllers/lab/comap/ig4-200/manifest.json",
+    "pack_id": null,
+    "lifecycle": null,
+    "model": "IG4 200",
+    "status": "inventariado; testes simulados não homologam hardware"
+  },
+  {
+    "id": "PACK-005",
+    "source": "controllers/lab/comap/inteli-mains-comap/manifest.json",
+    "pack_id": null,
+    "lifecycle": null,
+    "model": "INTELI MAINS COMAP",
+    "status": "inventariado; testes simulados não homologam hardware"
+  },
+  {
+    "id": "PACK-006",
+    "source": "controllers/lab/comap/intelicompact-nt/manifest.json",
+    "pack_id": null,
+    "lifecycle": null,
+    "model": "InteliCompact NT",
+    "status": "inventariado; testes simulados não homologam hardware"
+  },
+  {
+    "id": "PACK-007",
+    "source": "controllers/lab/comap/inteligen1000-protocol/manifest.json",
+    "pack_id": null,
+    "lifecycle": null,
+    "model": "InteliGen 1000",
+    "status": "inventariado; testes simulados não homologam hardware"
+  },
+  {
+    "id": "PACK-008",
+    "source": "controllers/lab/comap/inteligen500-g2-protocol/manifest.json",
+    "pack_id": null,
+    "lifecycle": null,
+    "model": "InteliGen 500 G2",
+    "status": "inventariado; testes simulados não homologam hardware"
+  },
+  {
+    "id": "PACK-009",
+    "source": "controllers/lab/comap/intelilite4-integration-reference/manifest.json",
+    "pack_id": null,
+    "lifecycle": null,
+    "model": "InteliLite 4 Integration Reference",
+    "status": "inventariado; testes simulados não homologam hardware"
+  },
+  {
+    "id": "PACK-010",
+    "source": "controllers/lab/dse/dse8610-mkii/manifest.json",
+    "pack_id": null,
+    "lifecycle": null,
+    "model": "DSE8610 MKII",
+    "status": "inventariado; testes simulados não homologam hardware"
+  },
+  {
+    "id": "PACK-011",
+    "source": "controllers/production/comap/ig-nt/manifest.json",
+    "pack_id": null,
+    "lifecycle": null,
+    "model": "IG-NT",
+    "status": "inventariado; testes simulados não homologam hardware"
+  },
+  {
+    "id": "PACK-012",
+    "source": "controllers/production/comap/ig4-200/manifest.json",
+    "pack_id": null,
+    "lifecycle": null,
+    "model": "IG4 200",
+    "status": "inventariado; testes simulados não homologam hardware"
+  },
+  {
+    "id": "PACK-013",
+    "source": "controllers/production/comap/intelicompact-nt/manifest.json",
+    "pack_id": null,
+    "lifecycle": null,
+    "model": "InteliCompact NT",
+    "status": "inventariado; testes simulados não homologam hardware"
+  },
+  {
+    "id": "PACK-014",
+    "source": "controllers/production/comap/inteligen-200/manifest.json",
+    "pack_id": null,
+    "lifecycle": null,
+    "model": "InteliGen 200",
+    "status": "inventariado; testes simulados não homologam hardware"
+  },
+  {
+    "id": "PACK-015",
+    "source": "controllers/production/dse/dse-gencomm-v1/manifest.json",
+    "pack_id": null,
+    "lifecycle": null,
+    "model": "DSE GenComm Genset",
+    "status": "inventariado; testes simulados não homologam hardware"
+  },
+  {
+    "id": "PACK-016",
+    "source": "controllers/production/dse/dse5210-gencomm-v1/manifest.json",
+    "pack_id": null,
+    "lifecycle": null,
+    "model": "DSE5210",
+    "status": "inventariado; testes simulados não homologam hardware"
+  },
+  {
+    "id": "PACK-017",
+    "source": "controllers/production/dse/dse5xx-gencomm-v1/manifest.json",
+    "pack_id": null,
+    "lifecycle": null,
+    "model": "DSE5xx GenComm Serial",
+    "status": "inventariado; testes simulados não homologam hardware"
+  }
+]
