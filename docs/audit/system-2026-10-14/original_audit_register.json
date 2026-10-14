@@ -1,0 +1,182 @@
+[
+  {
+    "id": "A01",
+    "original_priority": "P0",
+    "problem": "Telemetria congelada pode aparecer como atual/online",
+    "original_evidence": "G-237 `online`, `telemetryStale=false`, com Communicator parado; reprodução isolada confirma",
+    "acceptance": "Usar evidência de atualização da fonte e heartbeat do coletor; dado expirado jamais habilita operação",
+    "current_status": "corrigido em código; regressões de frescor aprovadas; coletor/hardware exige evidência por equipamento",
+    "source": "Auditoria_RC_Geradores_2026-10-10.md; consultada em sua versão atual"
+  },
+  {
+    "id": "A02",
+    "original_priority": "P0",
+    "problem": "IG200 confunde aceitação com sucesso físico",
+    "original_evidence": "Simulação de START com RPM antes/depois=0 devolveu `ok=true`",
+    "acceptance": "Aplicar feedback RPM e timeout do pack; separar accepted de confirmed e failed",
+    "current_status": "corrigido em código e simulação; comandos físicos não testados",
+    "source": "Auditoria_RC_Geradores_2026-10-10.md; consultada em sua versão atual"
+  },
+  {
+    "id": "A03",
+    "original_priority": "P1",
+    "problem": "Coleta industrial produtiva parada",
+    "original_evidence": "`scadacomm6=failed`, resultado timeout desde 09/10",
+    "acceptance": "Investigar origem da parada, recuperar de modo controlado e monitorar coleta",
+    "current_status": "Communicator ativo na inspeção; causa histórica não identificada e saúde por device não certificada",
+    "source": "Auditoria_RC_Geradores_2026-10-10.md; consultada em sua versão atual"
+  },
+  {
+    "id": "A04",
+    "original_priority": "P1",
+    "problem": "2FA desativado em produção",
+    "original_evidence": "`RC_2FA_ENFORCED=0`",
+    "acceptance": "Cadastrar TOTP nas contas privilegiadas e habilitar enforcement sem bloquear o administrador",
+    "current_status": "adiado por decisão expressa do proprietário: manter 2FA=0",
+    "source": "Auditoria_RC_Geradores_2026-10-10.md; consultada em sua versão atual"
+  },
+  {
+    "id": "A05",
+    "original_priority": "P1",
+    "problem": "Recuperação externa não habilitada",
+    "original_evidence": "Readiness: backup off-site bloqueado; exigência não habilitada",
+    "acceptance": "Destino independente, cópia criptografada, retenção e restore verificado",
+    "current_status": "aberto / precisa aceite específico; evidência histórica não é estado atual",
+    "source": "Auditoria_RC_Geradores_2026-10-10.md; consultada em sua versão atual"
+  },
+  {
+    "id": "A06",
+    "original_priority": "P1, SaaS",
+    "problem": "Usuário web enxerga parque global",
+    "original_evidence": "`require_view` + `db.list_generators()` sem vínculo de usuário/cliente",
+    "acceptance": "Autorizar por tenant/cliente/site/ativo e testar acesso cruzado",
+    "current_status": "não aplicável à modalidade escolhida: instalação independente por cliente",
+    "source": "Auditoria_RC_Geradores_2026-10-10.md; consultada em sua versão atual"
+  },
+  {
+    "id": "A07",
+    "original_priority": "P1",
+    "problem": "Bootstrap expõe dados além das permissões das rotas dedicadas",
+    "original_evidence": "Visualizador recebe bootstrap com backups/configurações; `/api/backups` responde 403",
+    "acceptance": "Filtrar payload pelo perfil e restringir dados administrativos",
+    "current_status": "corrigido; regressões de bootstrap e RBAC aprovadas",
+    "source": "Auditoria_RC_Geradores_2026-10-10.md; consultada em sua versão atual"
+  },
+  {
+    "id": "A08",
+    "original_priority": "P1",
+    "problem": "Headers de proteção ausentes na borda publicada",
+    "original_evidence": "GET público de login/API sem HSTS/CSP/X-Frame-Options/nosniff/Permissions-Policy nos headers observados",
+    "acceptance": "Aplicar e verificar no NPM real, inclusive erros e assets",
+    "current_status": "aberto / precisa aceite específico; evidência histórica não é estado atual",
+    "source": "Auditoria_RC_Geradores_2026-10-10.md; consultada em sua versão atual"
+  },
+  {
+    "id": "A09",
+    "original_priority": "P1",
+    "problem": "Timeout frontend menor que contrato de comando",
+    "original_evidence": "Cliente HTTP 15 s; STOP IG200 declara 35 s; IG4 também pode exceder 15 s",
+    "acceptance": "Operação rastreável por ID, consulta de resultado e timeout coerente",
+    "current_status": "timeout HTTP corrigido para 45 s; acompanhamento persistente de comandos físicos permanece evolução",
+    "source": "Auditoria_RC_Geradores_2026-10-10.md; consultada em sua versão atual"
+  },
+  {
+    "id": "A10",
+    "original_priority": "P1",
+    "problem": "Estado GCB pode ser inferido no frontend",
+    "original_evidence": "`dseFlowProvesClosed` deriva fechamento de corrente/potência",
+    "acceptance": "Publicar feedback ou evidência derivada homologada no backend/pack; frontend não decide estado físico",
+    "current_status": "corrigido no Vertical; E2E não infere GCB pela carga",
+    "source": "Auditoria_RC_Geradores_2026-10-10.md; consultada em sua versão atual"
+  },
+  {
+    "id": "A11",
+    "original_priority": "P2",
+    "problem": "Mensagem de comando não cumpre TTL contratado",
+    "original_evidence": "Estado do card/detalhe sem timer automático de ~2 s",
+    "acceptance": "TTL visual + registro durável de falha/resultado",
+    "current_status": "corrigido no Vertical; detalhe/outras superfícies ainda requerem prova",
+    "source": "Auditoria_RC_Geradores_2026-10-10.md; consultada em sua versão atual"
+  },
+  {
+    "id": "A12",
+    "original_priority": "P2",
+    "problem": "API sem modelos explícitos de saída",
+    "original_evidence": "132 rotas sem `response_model`",
+    "acceptance": "Schemas de resposta, contrato versionado e validação de compatibilidade",
+    "current_status": "aberto / precisa aceite específico; evidência histórica não é estado atual",
+    "source": "Auditoria_RC_Geradores_2026-10-10.md; consultada em sua versão atual"
+  },
+  {
+    "id": "A13",
+    "original_priority": "P2",
+    "problem": "Escala não homologada",
+    "original_evidence": "Listagem global e gravação de snapshots no caminho de consultas",
+    "acceptance": "Paginar, compartilhar coleta/snapshot e medir capacidade sob carga",
+    "current_status": "aberto / precisa aceite específico; evidência histórica não é estado atual",
+    "source": "Auditoria_RC_Geradores_2026-10-10.md; consultada em sua versão atual"
+  },
+  {
+    "id": "A14",
+    "original_priority": "P2",
+    "problem": "Parte da proteção do CI busca diretório antigo",
+    "original_evidence": "Dois greps usam `src` quando o frontend reside em `frontend/src`",
+    "acceptance": "Corrigir caminho e diferenciar ausência de diretório de resultado sem match",
+    "current_status": "corrigido; regressões de caminhos de fonte aprovadas",
+    "source": "Auditoria_RC_Geradores_2026-10-10.md; consultada em sua versão atual"
+  },
+  {
+    "id": "A15",
+    "original_priority": "P2",
+    "problem": "Documentação comercial/técnica desatualizada",
+    "original_evidence": "README enumera cinco packs; inventário atual tem sete",
+    "acceptance": "Gerar matriz real de suporte e revisar documentação",
+    "current_status": "corrigido: README e guia refletem sete packs de produção",
+    "source": "Auditoria_RC_Geradores_2026-10-10.md; consultada em sua versão atual"
+  },
+  {
+    "id": "A16",
+    "original_priority": "P2",
+    "problem": "Dados técnicos e de cliente incompletos",
+    "original_evidence": "Readiness: nominais, tanque, firmware e cliente ausentes",
+    "acceptance": "Checklist de comissionamento por instalação/ativo",
+    "current_status": "aberto / precisa aceite específico; evidência histórica não é estado atual",
+    "source": "Auditoria_RC_Geradores_2026-10-10.md; consultada em sua versão atual"
+  },
+  {
+    "id": "A17",
+    "original_priority": "P2",
+    "problem": "Notificações externas não comissionadas",
+    "original_evidence": "SMTP/WhatsApp não configurados no diagnóstico",
+    "acceptance": "Configuração segura e comprovação de entrega, falha e reenvio",
+    "current_status": "aberto / precisa aceite específico; evidência histórica não é estado atual",
+    "source": "Auditoria_RC_Geradores_2026-10-10.md; consultada em sua versão atual"
+  },
+  {
+    "id": "A18",
+    "original_priority": "P2",
+    "problem": "Responsividade ainda não é homologação universal",
+    "original_evidence": "Chromium aprovado; sem Safari/Firefox/dispositivo físico nesta execução",
+    "acceptance": "Matriz de navegadores, zoom, teclado, contraste e aparelhos reais",
+    "current_status": "aberto / precisa aceite específico; evidência histórica não é estado atual",
+    "source": "Auditoria_RC_Geradores_2026-10-10.md; consultada em sua versão atual"
+  },
+  {
+    "id": "A19",
+    "original_priority": "P2",
+    "problem": "Legibilidade para LED depende do ambiente",
+    "original_evidence": "Há textos CSS de 8–11 px; encaixe geométrico aprovado",
+    "acceptance": "Perfil TV/LED, tamanho mínimo por distância e densidade selecionável",
+    "current_status": "aberto / precisa aceite específico; evidência histórica não é estado atual",
+    "source": "Auditoria_RC_Geradores_2026-10-10.md; consultada em sua versão atual"
+  },
+  {
+    "id": "A20",
+    "original_priority": "P2",
+    "problem": "Modularização e payloads ainda pesados",
+    "original_evidence": "Stores/bridge/rapid extensos; rota genérica importa muitas telas",
+    "acceptance": "Refatorar por domínio, lazy loading e medir payload/LCP/INP",
+    "current_status": "aberto / precisa aceite específico; evidência histórica não é estado atual",
+    "source": "Auditoria_RC_Geradores_2026-10-10.md; consultada em sua versão atual"
+  }
+]

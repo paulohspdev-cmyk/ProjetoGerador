@@ -1,5 +1,7 @@
 # Registro de problemas — Auditoria Zero
 
+Atualização de rastreabilidade em 14/10/2026: este ledger abaixo mantém a fotografia histórica. O estado consolidado/reverificação está em `docs/audit/system-2026-10-14/issue_ledger.json`, `original_audit_register.json` e no relatório `docs/audit/SYSTEM_AUDIT_2026-10-14.md`. Não tratar todo estado histórico confirmado como defeito atual nem todo teste verde como encerramento. O PR #235 contém o diagnóstico de cadastro; esta matriz registra novas provas sem modificar runtime.
+
 | ID | Problema | Domínio | Estado |
 |---|---|---|---|
 | BUG-001 | Mensagem informativa DSE/FC16 não some do card | Vertical/feedback | confirmado: `commandMessage` sem TTL |

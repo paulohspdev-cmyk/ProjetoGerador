@@ -1,0 +1,4035 @@
+[
+  {
+    "id": "UI-0001",
+    "source": "frontend/src/design-system/ui/command.tsx",
+    "line": 28,
+    "kind": "Dialog",
+    "label": "",
+    "attributes": {},
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0002",
+    "source": "frontend/src/design-system/ui/input.tsx",
+    "line": 8,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "type": "{type}",
+      "ref": "{ref}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0003",
+    "source": "frontend/src/design-system/ui/sidebar.tsx",
+    "line": 272,
+    "kind": "Button",
+    "label": "",
+    "attributes": {
+      "ref": "{ref}",
+      "data-sidebar": "\"trigger\"",
+      "variant": "\"ghost\"",
+      "size": "\"icon\"",
+      "onClick": "{(event) => {\n        onClick?.(event);\n        toggleSidebar();\n      }}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0004",
+    "source": "frontend/src/design-system/ui/sidebar.tsx",
+    "line": 296,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "ref": "{ref}",
+      "data-sidebar": "\"rail\"",
+      "aria-label": "\"Toggle Sidebar\"",
+      "tabIndex": "{-1}",
+      "onClick": "{toggleSidebar}",
+      "title": "\"Toggle Sidebar\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0005",
+    "source": "frontend/src/design-system/ui/sidebar.tsx",
+    "line": 341,
+    "kind": "Input",
+    "label": "",
+    "attributes": {
+      "ref": "{ref}",
+      "data-sidebar": "\"input\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0006",
+    "source": "frontend/src/features/auth/LoginScreen.tsx",
+    "line": 198,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{toggleTheme}",
+      "aria-label": "{theme === \"dark\" ? \"Ativar tema claro\" : \"Ativar tema escuro\"}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0007",
+    "source": "frontend/src/features/auth/LoginScreen.tsx",
+    "line": 228,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{onSubmit}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0008",
+    "source": "frontend/src/features/auth/LoginScreen.tsx",
+    "line": 254,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "type": "\"email\"",
+      "autoComplete": "\"username\"",
+      "value": "{username}",
+      "onChange": "{(event) => {\n                        setUsername(event.target.value);\n                        setError(null);\n                        resetSecondFactor();\n                      }}",
+      "placeholder": "\"usuario@empresa.com\"",
+      "aria-label": "\"E-mail\"",
+      "aria-invalid": "{error ? true : undefined}",
+      "aria-describedby": "{error ? \"login-error\" : undefined}",
+      "required": true,
+      "autoFocus": true
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0009",
+    "source": "frontend/src/features/auth/LoginScreen.tsx",
+    "line": 280,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "type": "{show ? \"text\" : \"password\"}",
+      "autoComplete": "\"current-password\"",
+      "value": "{password}",
+      "onChange": "{(event) => {\n                        setPassword(event.target.value);\n                        setError(null);\n                        resetSecondFactor();\n                      }}",
+      "placeholder": "\"Digite sua senha\"",
+      "aria-label": "\"Senha\"",
+      "aria-invalid": "{error ? true : undefined}",
+      "aria-describedby": "{error ? \"login-error\" : undefined}",
+      "required": true
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0010",
+    "source": "frontend/src/features/auth/LoginScreen.tsx",
+    "line": 297,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{() => setShow((value) => !value)}",
+      "aria-label": "{show ? \"Ocultar senha\" : \"Mostrar senha\"}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0011",
+    "source": "frontend/src/features/auth/LoginScreen.tsx",
+    "line": 318,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "type": "\"text\"",
+      "inputMode": "\"numeric\"",
+      "pattern": "\"[0-9]{6}\"",
+      "autoComplete": "\"one-time-code\"",
+      "value": "{otp}",
+      "onChange": "{(event) => {\n                        setOtp(event.target.value.replace(/\\D/g, \"\").slice(0, 6));\n                        setError(null);\n                      }}",
+      "placeholder": "\"— — — — — —\"",
+      "aria-label": "\"Código 2FA de 6 dígitos\"",
+      "aria-invalid": "{needsOtp && error ? true : undefined}",
+      "aria-describedby": "{error ? \"login-error\" : undefined}",
+      "required": "{needsOtp}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0012",
+    "source": "frontend/src/features/auth/LoginScreen.tsx",
+    "line": 346,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "disabled": "{resetBusy || busy}",
+      "onClick": "{() => void requestReset()}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0013",
+    "source": "frontend/src/features/auth/LoginScreen.tsx",
+    "line": 355,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"submit\"",
+      "disabled": "{busy}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0014",
+    "source": "frontend/src/features/auth/ResetPasswordScreen.tsx",
+    "line": 45,
+    "kind": "Link",
+    "label": "Entrar no sistema",
+    "attributes": {
+      "to": "\"/login\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0015",
+    "source": "frontend/src/features/auth/ResetPasswordScreen.tsx",
+    "line": 50,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{submit}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0016",
+    "source": "frontend/src/features/auth/ResetPasswordScreen.tsx",
+    "line": 60,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "type": "\"password\"",
+      "autoComplete": "\"new-password\"",
+      "minLength": "{8}",
+      "required": true,
+      "value": "{password}",
+      "onChange": "{(e) => setPassword(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0017",
+    "source": "frontend/src/features/auth/ResetPasswordScreen.tsx",
+    "line": 75,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "type": "\"password\"",
+      "autoComplete": "\"new-password\"",
+      "minLength": "{8}",
+      "required": true,
+      "value": "{confirm}",
+      "onChange": "{(e) => setConfirm(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0018",
+    "source": "frontend/src/features/auth/ResetPasswordScreen.tsx",
+    "line": 91,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "disabled": "{busy || !token}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0019",
+    "source": "frontend/src/features/auth/ResetPasswordScreen.tsx",
+    "line": 97,
+    "kind": "Link",
+    "label": "Voltar ao login",
+    "attributes": {
+      "to": "\"/login\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0020",
+    "source": "frontend/src/features/generators/CompactCard.tsx",
+    "line": 313,
+    "kind": "Link",
+    "label": "",
+    "attributes": {
+      "to": "\"/p/geradores/$id\"",
+      "params": "{{ id: gen.id }}",
+      "aria-label": "{`Abrir ${displayGeneratorName(gen)}`}",
+      "title": "\"Abrir gerador\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0021",
+    "source": "frontend/src/features/generators/CompactCard.tsx",
+    "line": 337,
+    "kind": "img",
+    "label": "",
+    "attributes": {
+      "src": "{src}",
+      "alt": "{gen.controller}",
+      "onError": "{(event) => {\n                event.currentTarget.src = CONTROLLER_IMAGE_FALLBACK;\n              }}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0022",
+    "source": "frontend/src/features/generators/DeleteGeneratorButton.tsx",
+    "line": 28,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "aria-label": "{`Retirar ${tag}`}",
+      "title": "\"Retirar gerador com ciclo de vida seguro\"",
+      "onClick": "{async (e) => {\n        e.preventDefault();\n        e.stopPropagation();\n        let lifecycle;\n        try {\n          lifecycle = await industrialApi.lifecycle.get(id);\n        } catch (err) {\n     "
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0023",
+    "source": "frontend/src/features/generators/GeneratorConnectionFields.tsx",
+    "line": 59,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "key": "{option.id}",
+      "type": "\"button\"",
+      "onClick": "{() => {\n                props.setTransport(option.id);\n                if (\n                  (option.id === \"modbus_tcp_direct\" || option.id === \"rtu_over_tcp\") &&\n                  !props.listenPor"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0024",
+    "source": "frontend/src/features/generators/GeneratorConnectionFields.tsx",
+    "line": 98,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{props.selectedModemId}",
+      "onChange": "{(event) => {\n                const modemId = event.target.value;\n                props.setSelectedModemId(modemId);\n                const modem = props.approvedModems.find((item) => item.id === modem",
+      "required": true
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0025",
+    "source": "frontend/src/features/generators/GeneratorConnectionFields.tsx",
+    "line": 149,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "value": "{props.host}",
+      "onChange": "{(event) => props.setHost(event.target.value)}",
+      "placeholder": "{isSerial ? \"/dev/ttyUSB0\" : \"IP da controladora ou gateway\"}",
+      "required": true
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0026",
+    "source": "frontend/src/features/generators/GeneratorConnectionFields.tsx",
+    "line": 179,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{() => props.setAdvanced(!props.advanced)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0027",
+    "source": "frontend/src/features/generators/GeneratorConnectionFields.tsx",
+    "line": 230,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{props.parity}",
+      "onChange": "{(event) => props.setParity(event.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0028",
+    "source": "frontend/src/features/generators/GeneratorConnectionFields.tsx",
+    "line": 245,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{props.stopBits}",
+      "onChange": "{(event) => props.setStopBits(event.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0029",
+    "source": "frontend/src/features/generators/GeneratorConnectionFields.tsx",
+    "line": 280,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "inputMode": "{numeric ? \"numeric\" : undefined}",
+      "value": "{value}",
+      "onChange": "{(event) =>\n          onChange(numeric ? event.target.value.replace(/\\D/g, \"\") : event.target.value)\n        }",
+      "placeholder": "{placeholder}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0030",
+    "source": "frontend/src/features/generators/GeneratorDetailScreen.tsx",
+    "line": 98,
+    "kind": "button",
+    "label": "×",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{() => setMessage(null)}",
+      "aria-label": "\"Fechar\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0031",
+    "source": "frontend/src/features/generators/GeneratorEditDialog.tsx",
+    "line": 172,
+    "kind": "Dialog",
+    "label": "",
+    "attributes": {
+      "open": "{open}",
+      "onOpenChange": "{handleOpenChange}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0032",
+    "source": "frontend/src/features/generators/GeneratorEditDialog.tsx",
+    "line": 175,
+    "kind": "button",
+    "label": "Editar",
+    "attributes": {
+      "type": "\"button\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0033",
+    "source": "frontend/src/features/generators/GeneratorEditDialog.tsx",
+    "line": 192,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{save}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0034",
+    "source": "frontend/src/features/generators/GeneratorEditDialog.tsx",
+    "line": 195,
+    "kind": "input",
+    "label": "Nome do gerador",
+    "attributes": {
+      "value": "{name}",
+      "onChange": "{(event) => setName(event.target.value)}",
+      "maxLength": "{160}",
+      "required": true
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0035",
+    "source": "frontend/src/features/generators/GeneratorEditDialog.tsx",
+    "line": 209,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{transport}",
+      "onChange": "{(event) => {\n                    const value = event.target.value as LifecycleTransport;\n                    setTransport(value);\n                    if (\n                      (value === \"modbus_tcp"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0036",
+    "source": "frontend/src/features/generators/GeneratorEditDialog.tsx",
+    "line": 236,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "value": "{host}",
+      "onChange": "{(event) => setHost(event.target.value)}",
+      "placeholder": "{\n                      transport === \"modbus_rtu_serial\" ? \"/dev/ttyUSB0\" : \"Ex.: 10.40.10.25\"\n                    }"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0037",
+    "source": "frontend/src/features/generators/GeneratorEditDialog.tsx",
+    "line": 251,
+    "kind": "input",
+    "label": "Porta TCP",
+    "attributes": {
+      "inputMode": "\"numeric\"",
+      "value": "{listenPort}",
+      "onChange": "{(event) => setListenPort(event.target.value.replace(/\\D/g, \"\"))}",
+      "placeholder": "{transport === \"reverse_tcp\" ? \"15006\" : \"502\"}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0038",
+    "source": "frontend/src/features/generators/GeneratorEditDialog.tsx",
+    "line": 262,
+    "kind": "input",
+    "label": "Unit ID Modbus",
+    "attributes": {
+      "inputMode": "\"numeric\"",
+      "value": "{modbusUnit}",
+      "onChange": "{(event) => setModbusUnit(event.target.value.replace(/\\D/g, \"\"))}",
+      "placeholder": "\"10\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0039",
+    "source": "frontend/src/features/generators/GeneratorEditDialog.tsx",
+    "line": 291,
+    "kind": "input",
+    "label": "Unidade",
+    "attributes": {
+      "value": "{site}",
+      "onChange": "{(event) => setSite(event.target.value)}",
+      "required": true
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0040",
+    "source": "frontend/src/features/generators/GeneratorEditDialog.tsx",
+    "line": 301,
+    "kind": "input",
+    "label": "Potência nominal (kW)",
+    "attributes": {
+      "type": "\"number\"",
+      "inputMode": "\"decimal\"",
+      "min": "\"0.1\"",
+      "max": "\"100000\"",
+      "step": "\"0.1\"",
+      "value": "{nominalPower}",
+      "onChange": "{(event) => setNominalPower(event.target.value)}",
+      "placeholder": "\"Ex.: 450\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0041",
+    "source": "frontend/src/features/generators/GeneratorEditDialog.tsx",
+    "line": 319,
+    "kind": "input",
+    "label": "Capacidade do tanque (L)",
+    "attributes": {
+      "type": "\"number\"",
+      "inputMode": "\"decimal\"",
+      "min": "\"0.1\"",
+      "max": "\"100000\"",
+      "step": "\"0.1\"",
+      "value": "{fuelCapacityLiters}",
+      "onChange": "{(event) => setFuelCapacityLiters(event.target.value)}",
+      "placeholder": "\"Ex.: 600\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0042",
+    "source": "frontend/src/features/generators/GeneratorEditDialog.tsx",
+    "line": 344,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "type": "\"checkbox\"",
+      "checked": "{enabled}",
+      "onChange": "{(event) => setEnabled(event.target.checked)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0043",
+    "source": "frontend/src/features/generators/GeneratorEditDialog.tsx",
+    "line": 366,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"submit\"",
+      "disabled": "{saving}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0044",
+    "source": "frontend/src/features/generators/GeneratorEquipmentFields.tsx",
+    "line": 38,
+    "kind": "input",
+    "label": "Nome do gerador",
+    "attributes": {
+      "value": "{name}",
+      "onChange": "{(event) => setName(event.target.value)}",
+      "placeholder": "\"Ex.: Gerador principal\"",
+      "maxLength": "{160}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0045",
+    "source": "frontend/src/features/generators/GeneratorEquipmentFields.tsx",
+    "line": 49,
+    "kind": "input",
+    "label": "Unidade",
+    "attributes": {
+      "list": "\"rc-generator-sites\"",
+      "value": "{site}",
+      "onChange": "{(event) => setSite(event.target.value)}",
+      "required": true
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0046",
+    "source": "frontend/src/features/generators/GeneratorEquipmentFields.tsx",
+    "line": 65,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{controller}",
+      "onChange": "{(event) => setController(event.target.value)}",
+      "disabled": "{loading || !controllers.length}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0047",
+    "source": "frontend/src/features/generators/GeneratorIdentityFields.tsx",
+    "line": 46,
+    "kind": "input",
+    "label": "Nome do gerador",
+    "attributes": {
+      "value": "{name}",
+      "onChange": "{(event) => setName(event.target.value)}",
+      "placeholder": "\"Ex.: Gerador principal\"",
+      "maxLength": "{160}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0048",
+    "source": "frontend/src/features/generators/GeneratorIdentityFields.tsx",
+    "line": 57,
+    "kind": "input",
+    "label": "Unidade",
+    "attributes": {
+      "list": "\"rc-generator-sites\"",
+      "value": "{site}",
+      "onChange": "{(event) => setSite(event.target.value)}",
+      "required": true
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0049",
+    "source": "frontend/src/features/generators/GeneratorIdentityFields.tsx",
+    "line": 73,
+    "kind": "input",
+    "label": "Potência nominal (kW)",
+    "attributes": {
+      "type": "\"number\"",
+      "inputMode": "\"decimal\"",
+      "min": "\"0.1\"",
+      "max": "\"100000\"",
+      "step": "\"0.1\"",
+      "value": "{nominalPower}",
+      "onChange": "{(event) => setNominalPower(event.target.value)}",
+      "placeholder": "\"Ex.: 450\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0050",
+    "source": "frontend/src/features/generators/GeneratorIdentityFields.tsx",
+    "line": 91,
+    "kind": "input",
+    "label": "Capacidade do tanque (L)",
+    "attributes": {
+      "type": "\"number\"",
+      "inputMode": "\"decimal\"",
+      "min": "\"0.1\"",
+      "max": "\"100000\"",
+      "step": "\"0.1\"",
+      "value": "{fuelCapacityLiters}",
+      "onChange": "{(event) => setFuelCapacityLiters(event.target.value)}",
+      "placeholder": "\"Ex.: 600\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0051",
+    "source": "frontend/src/features/generators/GeneratorIdentityFields.tsx",
+    "line": 109,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{controller}",
+      "onChange": "{(event) => setController(event.target.value)}",
+      "disabled": "{loading || !gensetCatalog.length}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0052",
+    "source": "frontend/src/features/generators/GeneratorTable.tsx",
+    "line": 26,
+    "kind": "Link",
+    "label": "Abrir",
+    "attributes": {
+      "to": "\"/p/geradores/$id\"",
+      "params": "{{ id }}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0053",
+    "source": "frontend/src/features/generators/GeneratorsBoard.tsx",
+    "line": 238,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0054",
+    "source": "frontend/src/features/generators/GeneratorsBoard.tsx",
+    "line": 268,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0055",
+    "source": "frontend/src/features/generators/GeneratorsBoard.tsx",
+    "line": 294,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "aria-label": "\"Página anterior\"",
+      "disabled": "{page === 0}",
+      "onClick": "{() => turnPage(-1)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0056",
+    "source": "frontend/src/features/generators/GeneratorsBoard.tsx",
+    "line": 306,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "aria-label": "\"Próxima página\"",
+      "disabled": "{page >= pages - 1}",
+      "onClick": "{() => turnPage(1)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0057",
+    "source": "frontend/src/features/generators/GeneratorsBoard.tsx",
+    "line": 318,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{() => void toggleFullscreen()}",
+      "title": "{fullscreen ? \"Sair da tela cheia\" : \"Tela cheia\"}",
+      "aria-label": "{fullscreen ? \"Sair da tela cheia\" : \"Tela cheia\"}",
+      "aria-pressed": "{fullscreen}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0058",
+    "source": "frontend/src/features/generators/GeneratorsBoard.tsx",
+    "line": 330,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "value": "{query}",
+      "onChange": "{(event) => {\n                setQuery(event.target.value);\n                setGroup(0);\n              }}",
+      "placeholder": "\"Buscar\"",
+      "aria-label": "\"Buscar gerador\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0059",
+    "source": "frontend/src/features/generators/GeneratorsBoard.tsx",
+    "line": 364,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{toggleMobile}",
+      "aria-label": "\"Abrir menu\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0060",
+    "source": "frontend/src/features/generators/GeneratorsBoard.tsx",
+    "line": 394,
+    "kind": "button",
+    "label": "Tentar novamente",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{() => void refresh()}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0061",
+    "source": "frontend/src/features/generators/GeneratorsBoard.tsx",
+    "line": 463,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "aria-label": "\"Página anterior\"",
+      "title": "\"Página anterior\"",
+      "disabled": "{page === 0}",
+      "onClick": "{() => turnPage(-1)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0062",
+    "source": "frontend/src/features/generators/GeneratorsBoard.tsx",
+    "line": 484,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "aria-label": "\"Próxima página\"",
+      "title": "\"Próxima página\"",
+      "disabled": "{page >= pages - 1}",
+      "onClick": "{() => turnPage(1)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0063",
+    "source": "frontend/src/features/generators/NetworkDiscoveryPanel.tsx",
+    "line": 48,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "value": "{cidr}",
+      "onChange": "{(event) => setCidr(event.target.value)}",
+      "placeholder": "\"10.40.10.0/24\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0064",
+    "source": "frontend/src/features/generators/NetworkDiscoveryPanel.tsx",
+    "line": 54,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "disabled": "{scanning}",
+      "onClick": "{() => void scan()}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0065",
+    "source": "frontend/src/features/generators/NetworkDiscoveryPanel.tsx",
+    "line": 66,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "key": "{item.host}",
+      "type": "\"button\"",
+      "onClick": "{() => onSelect(item.host)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0066",
+    "source": "frontend/src/features/generators/PowerFlowCard.tsx",
+    "line": 389,
+    "kind": "Link",
+    "label": "",
+    "attributes": {
+      "to": "\"/p/geradores/$id\"",
+      "params": "{{ id: gen.id }}",
+      "title": "{gen.controller}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0067",
+    "source": "frontend/src/features/generators/RegisterGeneratorButton.tsx",
+    "line": 298,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "title": "{collapsed ? \"Adicionar gerador\" : undefined}",
+      "onClick": "{() => {\n          setOpen(true);\n          onNavigate?.();\n        }}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0068",
+    "source": "frontend/src/features/generators/RegisterGeneratorButton.tsx",
+    "line": 315,
+    "kind": "Dialog",
+    "label": "",
+    "attributes": {
+      "open": "{open}",
+      "onOpenChange": "{(next) => {\n          setOpen(next);\n          if (!next) reset();\n        }}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0069",
+    "source": "frontend/src/features/generators/RegisterGeneratorButton.tsx",
+    "line": 363,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{onSubmit}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0070",
+    "source": "frontend/src/features/generators/RegisterGeneratorButton.tsx",
+    "line": 475,
+    "kind": "button",
+    "label": "Voltar",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{() => setStep((value) => Math.max(1, value - 1))}",
+      "disabled": "{step === 1 || saving || !!createdId}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0071",
+    "source": "frontend/src/features/generators/RegisterGeneratorButton.tsx",
+    "line": 485,
+    "kind": "button",
+    "label": "Continuar",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{() => setStep((value) => Math.min(3, value + 1))}",
+      "disabled": "{loading || (step === 1 ? !canContinueStep1 : !canContinueStep2)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0072",
+    "source": "frontend/src/features/generators/RegisterGeneratorButton.tsx",
+    "line": 494,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"submit\"",
+      "disabled": "{saving}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0073",
+    "source": "frontend/src/features/generators/detail/GeneratorDetailProfessionalLower.tsx",
+    "line": 466,
+    "kind": "Link",
+    "label": "Ver plano",
+    "attributes": {
+      "to": "\"/p/$slug\"",
+      "params": "{{ slug: \"manutencao\" }}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0074",
+    "source": "frontend/src/features/generators/detail/GeneratorDetailProfessionalTop.tsx",
+    "line": 295,
+    "kind": "button",
+    "label": "Editar",
+    "attributes": {
+      "type": "\"button\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0075",
+    "source": "frontend/src/features/generators/detail/GeneratorDetailProfessionalTop.tsx",
+    "line": 312,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "key": "{item.key}",
+      "type": "\"button\"",
+      "disabled": "{!enabled}",
+      "data-command": "{item.action ?? undefined}",
+      "title": "{\n                      enabled\n                        ? `Comandar ${item.label}`\n                        : \"Indicação do modo. Comando remoto não homologado.\"\n                    }",
+      "onClick": "{() => {\n                      if (item.action) void onCommand(item.action);\n                    }}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0076",
+    "source": "frontend/src/features/generators/detail/GeneratorDetailProfessionalTop.tsx",
+    "line": 340,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "disabled": "{!canAction(\"start\") || commandBusy !== null}",
+      "onClick": "{() => void onCommand(\"start\")}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0077",
+    "source": "frontend/src/features/generators/detail/GeneratorDetailProfessionalTop.tsx",
+    "line": 350,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "disabled": "{!canAction(\"stop\") || commandBusy !== null}",
+      "onClick": "{() => void onCommand(\"stop\")}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0078",
+    "source": "frontend/src/features/generators/detail/GeneratorDetailProfessionalTop.tsx",
+    "line": 362,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "key": "{action}",
+      "type": "\"button\"",
+      "disabled": "{!canAction(action) || commandBusy !== null}",
+      "onClick": "{() => void onCommand(action)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0079",
+    "source": "frontend/src/features/generators/detail/GeneratorDetailProfessionalTop.tsx",
+    "line": 381,
+    "kind": "img",
+    "label": "",
+    "attributes": {
+      "src": "{controllerImageSrc(gen.controller)}",
+      "alt": "{gen.controller}",
+      "onError": "{(event) => {\n                event.currentTarget.src = CONTROLLER_IMAGE_FALLBACK;\n              }}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0080",
+    "source": "frontend/src/features/generators/vertical-card/VerticalControls.tsx",
+    "line": 51,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "disabled": "{!canStart || busy !== null}",
+      "aria-label": "\"START\"",
+      "onClick": "{() => canStart && onCommand(\"start\")}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0081",
+    "source": "frontend/src/features/generators/vertical-card/VerticalControls.tsx",
+    "line": 60,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "disabled": "{!canStop || busy !== null}",
+      "aria-label": "\"STOP\"",
+      "onClick": "{() => canStop && onCommand(\"stop\")}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0082",
+    "source": "frontend/src/features/generators/vertical-card/VerticalControls.tsx",
+    "line": 76,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "disabled": "{!canManual || busy !== null}",
+      "aria-pressed": "{activeMode === \"MAN\"}",
+      "aria-label": "\"Manual\"",
+      "title": "{\n              canManual\n                ? \"Comando Manual homologado para esta controladora\"\n                : \"Comando ainda não homologado para esta controladora\"\n            }",
+      "onClick": "{() => canManual && onCommand(\"manual\")}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0083",
+    "source": "frontend/src/features/generators/vertical-card/VerticalControls.tsx",
+    "line": 91,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "disabled": "{!canAuto || busy !== null}",
+      "aria-pressed": "{activeMode === \"AUT\"}",
+      "aria-label": "\"Automático\"",
+      "title": "{\n              canAuto\n                ? \"Comando Automático homologado para esta controladora\"\n                : \"Comando ainda não homologado para esta controladora\"\n            }",
+      "onClick": "{() => canAuto && onCommand(\"auto\")}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0084",
+    "source": "frontend/src/features/generators/vertical-card/VerticalControls.tsx",
+    "line": 124,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "key": "{label}",
+      "type": "\"button\"",
+      "disabled": "{!available || busy !== null}",
+      "aria-pressed": "{active}",
+      "aria-label": "{label}",
+      "title": "{\n          available\n            ? `Comando ${label} homologado para esta controladora`\n            : \"Comando ainda não homologado para esta controladora\"\n        }",
+      "onClick": "{() => action && available && onCommand(action)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0085",
+    "source": "frontend/src/features/scada/AgendaV3Screen.tsx",
+    "line": 111,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{submit}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0086",
+    "source": "frontend/src/features/scada/AgendaV3Screen.tsx",
+    "line": 114,
+    "kind": "input",
+    "label": "Atividade",
+    "attributes": {
+      "value": "{title}",
+      "onChange": "{(e) => setTitle(e.target.value)}",
+      "required": true,
+      "minLength": "{2}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0087",
+    "source": "frontend/src/features/scada/AgendaV3Screen.tsx",
+    "line": 124,
+    "kind": "input",
+    "label": "Quando",
+    "attributes": {
+      "value": "{when}",
+      "onChange": "{(e) => setWhen(e.target.value)}",
+      "placeholder": "\"28/08 09:00\"",
+      "required": true
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0088",
+    "source": "frontend/src/features/scada/AgendaV3Screen.tsx",
+    "line": 134,
+    "kind": "input",
+    "label": "Local",
+    "attributes": {
+      "list": "\"agenda-v3-sites\"",
+      "value": "{site}",
+      "onChange": "{(e) => setSite(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0089",
+    "source": "frontend/src/features/scada/AgendaV3Screen.tsx",
+    "line": 147,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "disabled": "{busy}",
+      "type": "\"submit\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0090",
+    "source": "frontend/src/features/scada/AgendaV3Screen.tsx",
+    "line": 155,
+    "kind": "button",
+    "label": "Cancelar edição",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{reset}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0091",
+    "source": "frontend/src/features/scada/AlarmEventsScreens.tsx",
+    "line": 268,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "value": "{query}",
+      "onChange": "{(event) => setQuery(event.target.value)}",
+      "placeholder": "\"Gerador ou evento\"",
+      "aria-label": "\"Buscar eventos\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0092",
+    "source": "frontend/src/features/scada/AlarmEventsScreens.tsx",
+    "line": 279,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{level}",
+      "onChange": "{(event) => setLevel(event.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0093",
+    "source": "frontend/src/features/scada/AlarmEventsScreens.tsx",
+    "line": 293,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{site}",
+      "onChange": "{(event) => setSite(event.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0094",
+    "source": "frontend/src/features/scada/AlarmEventsScreens.tsx",
+    "line": 310,
+    "kind": "button",
+    "label": "Limpar filtros",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{() => {\n                setQuery(\"\");\n                setLevel(\"\");\n                setSite(\"\");\n              }}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0095",
+    "source": "frontend/src/features/scada/ApiV3Screen.tsx",
+    "line": 162,
+    "kind": "button",
+    "label": "Copiar",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{() => {\n                void navigator.clipboard?.writeText(issuedToken);\n              }}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0096",
+    "source": "frontend/src/features/scada/ApiV3Screen.tsx",
+    "line": 171,
+    "kind": "button",
+    "label": "Ocultar",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{() => setIssuedToken(null)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0097",
+    "source": "frontend/src/features/scada/ApiV3Screen.tsx",
+    "line": 184,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{create}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0098",
+    "source": "frontend/src/features/scada/ApiV3Screen.tsx",
+    "line": 187,
+    "kind": "input",
+    "label": "Nome",
+    "attributes": {
+      "required": true,
+      "minLength": "{2}",
+      "value": "{name}",
+      "onChange": "{(e) => setName(e.target.value)}",
+      "placeholder": "\"Integração BMS\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0099",
+    "source": "frontend/src/features/scada/ApiV3Screen.tsx",
+    "line": 208,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "type": "\"checkbox\"",
+      "checked": "{Boolean(checked)}",
+      "onChange": "{(e) => (setter as (value: boolean) => void)(e.target.checked)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0100",
+    "source": "frontend/src/features/scada/ApiV3Screen.tsx",
+    "line": 220,
+    "kind": "input",
+    "label": "Geradores permitidos",
+    "attributes": {
+      "value": "{allowedGenerators}",
+      "onChange": "{(e) => setAllowedGenerators(e.target.value)}",
+      "placeholder": "\"GEN157, GEN153\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0101",
+    "source": "frontend/src/features/scada/ApiV3Screen.tsx",
+    "line": 229,
+    "kind": "input",
+    "label": "CIDRs/IPs permitidos",
+    "attributes": {
+      "value": "{allowedCidrs}",
+      "onChange": "{(e) => setAllowedCidrs(e.target.value)}",
+      "placeholder": "\"10.10.10.0/24, 203.0.113.10/32\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0102",
+    "source": "frontend/src/features/scada/ApiV3Screen.tsx",
+    "line": 238,
+    "kind": "input",
+    "label": "Rate limit",
+    "attributes": {
+      "inputMode": "\"numeric\"",
+      "value": "{rateLimit}",
+      "onChange": "{(e) => setRateLimit(e.target.value.replace(/\\D/g, \"\"))}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0103",
+    "source": "frontend/src/features/scada/ApiV3Screen.tsx",
+    "line": 247,
+    "kind": "input",
+    "label": "Expira em dias",
+    "attributes": {
+      "inputMode": "\"numeric\"",
+      "value": "{expiresDays}",
+      "onChange": "{(e) => setExpiresDays(e.target.value.replace(/\\D/g, \"\"))}",
+      "placeholder": "\"vazio = sem data\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0104",
+    "source": "frontend/src/features/scada/ApiV3Screen.tsx",
+    "line": 259,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"submit\"",
+      "disabled": "{busy}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0105",
+    "source": "frontend/src/features/scada/ControllersLifecycleScreen.tsx",
+    "line": 206,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{saveController}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0106",
+    "source": "frontend/src/features/scada/ControllersLifecycleScreen.tsx",
+    "line": 207,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "aria-label": "\"Controladora\"",
+      "value": "{`${editingController.manufacturer} ${editingController.model}`}",
+      "disabled": true
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0107",
+    "source": "frontend/src/features/scada/ControllersLifecycleScreen.tsx",
+    "line": 213,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "value": "{firmware}",
+      "onChange": "{(e) => setFirmware(e.target.value)}",
+      "placeholder": "\"Firmware real, se conhecido\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0108",
+    "source": "frontend/src/features/scada/ControllersLifecycleScreen.tsx",
+    "line": 220,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"submit\"",
+      "disabled": "{busy}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0109",
+    "source": "frontend/src/features/scada/ControllersLifecycleScreen.tsx",
+    "line": 227,
+    "kind": "button",
+    "label": "Cancelar",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{() => setEditingController(null)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0110",
+    "source": "frontend/src/features/scada/ControllersLifecycleScreen.tsx",
+    "line": 241,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{saveConnection}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0111",
+    "source": "frontend/src/features/scada/ControllersLifecycleScreen.tsx",
+    "line": 242,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "required": true,
+      "value": "{connectionName}",
+      "onChange": "{(e) => setConnectionName(e.target.value)}",
+      "placeholder": "\"Nome\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0112",
+    "source": "frontend/src/features/scada/ControllersLifecycleScreen.tsx",
+    "line": 249,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "value": "{host}",
+      "onChange": "{(e) => setHost(e.target.value)}",
+      "placeholder": "\"Host/IP\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0113",
+    "source": "frontend/src/features/scada/ControllersLifecycleScreen.tsx",
+    "line": 255,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "inputMode": "\"numeric\"",
+      "value": "{port}",
+      "onChange": "{(e) => setPort(e.target.value.replace(/\\D/g, \"\"))}",
+      "placeholder": "\"Porta\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0114",
+    "source": "frontend/src/features/scada/ControllersLifecycleScreen.tsx",
+    "line": 262,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "inputMode": "\"numeric\"",
+      "value": "{unit}",
+      "onChange": "{(e) => setUnit(e.target.value.replace(/\\D/g, \"\"))}",
+      "placeholder": "\"Unit\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0115",
+    "source": "frontend/src/features/scada/ControllersLifecycleScreen.tsx",
+    "line": 269,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "inputMode": "\"numeric\"",
+      "value": "{rapidDevice}",
+      "onChange": "{(e) => setRapidDevice(e.target.value.replace(/\\D/g, \"\"))}",
+      "placeholder": "\"Rapid Device\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0116",
+    "source": "frontend/src/features/scada/ControllersLifecycleScreen.tsx",
+    "line": 277,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"submit\"",
+      "disabled": "{busy}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0117",
+    "source": "frontend/src/features/scada/ControllersLifecycleScreen.tsx",
+    "line": 284,
+    "kind": "button",
+    "label": "Cancelar",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{() => setEditingConnection(null)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0118",
+    "source": "frontend/src/features/scada/ControllersV3CreatePanel.tsx",
+    "line": 158,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{onCreate}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0119",
+    "source": "frontend/src/features/scada/ControllersV3CreatePanel.tsx",
+    "line": 161,
+    "kind": "input",
+    "label": "Tag do asset",
+    "attributes": {
+      "required": true,
+      "value": "{tag}",
+      "onChange": "{(e) => setTag(e.target.value.toUpperCase())}",
+      "placeholder": "\"ATS001 / REDE01 / BESS01\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0120",
+    "source": "frontend/src/features/scada/ControllersV3CreatePanel.tsx",
+    "line": 171,
+    "kind": "input",
+    "label": "Nome",
+    "attributes": {
+      "value": "{name}",
+      "onChange": "{(e) => setName(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0121",
+    "source": "frontend/src/features/scada/ControllersV3CreatePanel.tsx",
+    "line": 179,
+    "kind": "input",
+    "label": "Site",
+    "attributes": {
+      "required": true,
+      "list": "\"controller-v3-sites\"",
+      "value": "{site}",
+      "onChange": "{(e) => setSite(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0122",
+    "source": "frontend/src/features/scada/ControllersV3CreatePanel.tsx",
+    "line": 194,
+    "kind": "input",
+    "label": "Firmware",
+    "attributes": {
+      "value": "{firmware}",
+      "onChange": "{(e) => setFirmware(e.target.value)}",
+      "placeholder": "\"opcional\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0123",
+    "source": "frontend/src/features/scada/ControllersV3CreatePanel.tsx",
+    "line": 204,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "required": true,
+      "value": "{model}",
+      "onChange": "{(e) => setModel(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0124",
+    "source": "frontend/src/features/scada/ControllersV3CreatePanel.tsx",
+    "line": 250,
+    "kind": "input",
+    "label": "Cadastrar conexão de campo agora",
+    "attributes": {
+      "type": "\"checkbox\"",
+      "checked": "{withConnection}",
+      "onChange": "{(e) => setWithConnection(e.target.checked)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0125",
+    "source": "frontend/src/features/scada/ControllersV3CreatePanel.tsx",
+    "line": 262,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{transport}",
+      "onChange": "{(e) => setTransport(e.target.value as typeof transport)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0126",
+    "source": "frontend/src/features/scada/ControllersV3CreatePanel.tsx",
+    "line": 275,
+    "kind": "input",
+    "label": "Host / dispositivo",
+    "attributes": {
+      "value": "{host}",
+      "onChange": "{(e) => setHost(e.target.value)}",
+      "placeholder": "{\n                  transport === \"modbus_rtu_serial\"\n                    ? \"/dev/ttyUSB0\"\n                    : transport === \"reverse_tcp\"\n                      ? \"opcional\"\n                      : "
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0127",
+    "source": "frontend/src/features/scada/ControllersV3CreatePanel.tsx",
+    "line": 290,
+    "kind": "input",
+    "label": "Porta TCP",
+    "attributes": {
+      "disabled": "{transport === \"modbus_rtu_serial\"}",
+      "inputMode": "\"numeric\"",
+      "value": "{port}",
+      "onChange": "{(e) => setPort(e.target.value.replace(/\\D/g, \"\"))}",
+      "placeholder": "{transport === \"modbus_tcp_direct\" ? \"502\" : \"15002\"}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0128",
+    "source": "frontend/src/features/scada/ControllersV3CreatePanel.tsx",
+    "line": 302,
+    "kind": "input",
+    "label": "Unit ID",
+    "attributes": {
+      "inputMode": "\"numeric\"",
+      "value": "{unit}",
+      "onChange": "{(e) => setUnit(e.target.value.replace(/\\D/g, \"\"))}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0129",
+    "source": "frontend/src/features/scada/ControllersV3CreatePanel.tsx",
+    "line": 311,
+    "kind": "input",
+    "label": "Identificador de telemetria",
+    "attributes": {
+      "inputMode": "\"numeric\"",
+      "value": "{rapidDevice}",
+      "onChange": "{(e) => setRapidDevice(e.target.value.replace(/\\D/g, \"\"))}",
+      "placeholder": "\"opcional\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0130",
+    "source": "frontend/src/features/scada/ControllersV3CreatePanel.tsx",
+    "line": 324,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"submit\"",
+      "disabled": "{saving || !genericAssetAllowed || !selected}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0131",
+    "source": "frontend/src/features/scada/ControllersV3Screen.tsx",
+    "line": 214,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{onCreateLink}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0132",
+    "source": "frontend/src/features/scada/ControllersV3Screen.tsx",
+    "line": 217,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{linkFrom}",
+      "onChange": "{(e) => setLinkFrom(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0133",
+    "source": "frontend/src/features/scada/ControllersV3Screen.tsx",
+    "line": 231,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{relation}",
+      "onChange": "{(e) => setRelation(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0134",
+    "source": "frontend/src/features/scada/ControllersV3Screen.tsx",
+    "line": 246,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{linkTo}",
+      "onChange": "{(e) => setLinkTo(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0135",
+    "source": "frontend/src/features/scada/ControllersV3Screen.tsx",
+    "line": 259,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"submit\"",
+      "disabled": "{linking}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0136",
+    "source": "frontend/src/features/scada/ErpBmsLifecycleScreen.tsx",
+    "line": 151,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{save}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0137",
+    "source": "frontend/src/features/scada/ErpBmsLifecycleScreen.tsx",
+    "line": 152,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "required": true,
+      "type": "\"url\"",
+      "value": "{url}",
+      "onChange": "{(e) => setUrl(e.target.value)}",
+      "placeholder": "\"https://erp.exemplo.com/rc/events\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0138",
+    "source": "frontend/src/features/scada/ErpBmsLifecycleScreen.tsx",
+    "line": 160,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "required": true,
+      "value": "{event}",
+      "onChange": "{(e) => setEvent(e.target.value)}",
+      "placeholder": "\"* ou evento\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0139",
+    "source": "frontend/src/features/scada/ErpBmsLifecycleScreen.tsx",
+    "line": 168,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"submit\"",
+      "disabled": "{busy}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0140",
+    "source": "frontend/src/features/scada/ErpBmsLifecycleScreen.tsx",
+    "line": 176,
+    "kind": "button",
+    "label": "Cancelar",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{reset}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0141",
+    "source": "frontend/src/features/scada/HistoryReportsScreens.tsx",
+    "line": 81,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{onCreate}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0142",
+    "source": "frontend/src/features/scada/HistoryReportsScreens.tsx",
+    "line": 84,
+    "kind": "input",
+    "label": "Nome",
+    "attributes": {
+      "value": "{name}",
+      "onChange": "{(e) => setName(e.target.value)}",
+      "required": true
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0143",
+    "source": "frontend/src/features/scada/HistoryReportsScreens.tsx",
+    "line": 93,
+    "kind": "input",
+    "label": "Período / referência",
+    "attributes": {
+      "value": "{period}",
+      "onChange": "{(e) => setPeriod(e.target.value)}",
+      "required": true
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0144",
+    "source": "frontend/src/features/scada/HistoryReportsScreens.tsx",
+    "line": 101,
+    "kind": "button",
+    "label": "Gerar CSV real",
+    "attributes": {
+      "type": "\"submit\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0145",
+    "source": "frontend/src/features/scada/IndustrialAlarmHistoryScreens.tsx",
+    "line": 60,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{generatorId}",
+      "onChange": "{(e) => setGeneratorId(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0146",
+    "source": "frontend/src/features/scada/IndustrialAlarmHistoryScreens.tsx",
+    "line": 75,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{severity}",
+      "onChange": "{(e) => setSeverity(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0147",
+    "source": "frontend/src/features/scada/IndustrialAlarmsScreen.tsx",
+    "line": 162,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "value": "{query}",
+      "onChange": "{(event) => setQuery(event.target.value)}",
+      "placeholder": "\"Buscar por código, descrição, gerador ou origem...\"",
+      "aria-label": "\"Buscar alarmes\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0148",
+    "source": "frontend/src/features/scada/IndustrialAlarmsScreen.tsx",
+    "line": 170,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{severity}",
+      "onChange": "{(event) => setSeverity(event.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0149",
+    "source": "frontend/src/features/scada/IndustrialAlarmsScreen.tsx",
+    "line": 181,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{status}",
+      "onChange": "{(event) => setStatus(event.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0150",
+    "source": "frontend/src/features/scada/IndustrialAlarmsScreen.tsx",
+    "line": 190,
+    "kind": "button",
+    "label": "Limpar filtros",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{() => {\n              setQuery(\"\");\n              setSeverity(\"\");\n              setStatus(\"\");\n            }}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0151",
+    "source": "frontend/src/features/scada/IndustrialAlarmsScreen.tsx",
+    "line": 380,
+    "kind": "button",
+    "label": "Reconhecer alarme",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{() => void ack(selected)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0152",
+    "source": "frontend/src/features/scada/IndustrialAlarmsScreen.tsx",
+    "line": 401,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "key": "{row.alarm_key}",
+      "type": "\"button\"",
+      "onClick": "{() => setSelectedKey(row.alarm_key)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0153",
+    "source": "frontend/src/features/scada/IndustrialEscalationScreen.tsx",
+    "line": 99,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{onCreate}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0154",
+    "source": "frontend/src/features/scada/IndustrialEscalationScreen.tsx",
+    "line": 102,
+    "kind": "input",
+    "label": "Nome",
+    "attributes": {
+      "value": "{name}",
+      "onChange": "{(e) => setName(e.target.value)}",
+      "required": true
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0155",
+    "source": "frontend/src/features/scada/IndustrialEscalationScreen.tsx",
+    "line": 111,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{severity}",
+      "onChange": "{(e) => setSeverity(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0156",
+    "source": "frontend/src/features/scada/IndustrialEscalationScreen.tsx",
+    "line": 124,
+    "kind": "input",
+    "label": "Após (min)",
+    "attributes": {
+      "inputMode": "\"numeric\"",
+      "value": "{afterMinutes}",
+      "onChange": "{(e) => setAfterMinutes(e.target.value.replace(/\\D/g, \"\"))}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0157",
+    "source": "frontend/src/features/scada/IndustrialEscalationScreen.tsx",
+    "line": 133,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{channel}",
+      "onChange": "{(e) => setChannel(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0158",
+    "source": "frontend/src/features/scada/IndustrialEscalationScreen.tsx",
+    "line": 146,
+    "kind": "input",
+    "label": "Repete (min)",
+    "attributes": {
+      "inputMode": "\"numeric\"",
+      "value": "{repeatMinutes}",
+      "onChange": "{(e) => setRepeatMinutes(e.target.value.replace(/\\D/g, \"\"))}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0159",
+    "source": "frontend/src/features/scada/IndustrialEscalationScreen.tsx",
+    "line": 155,
+    "kind": "input",
+    "label": "Máx. envios",
+    "attributes": {
+      "inputMode": "\"numeric\"",
+      "value": "{maxRepeats}",
+      "onChange": "{(e) => setMaxRepeats(e.target.value.replace(/\\D/g, \"\"))}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0160",
+    "source": "frontend/src/features/scada/IndustrialEscalationScreen.tsx",
+    "line": 164,
+    "kind": "input",
+    "label": "Destino",
+    "attributes": {
+      "value": "{destination}",
+      "onChange": "{(e) => setDestination(e.target.value)}",
+      "placeholder": "\"e-mail / telefone / URL; vazio para painel\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0161",
+    "source": "frontend/src/features/scada/IndustrialEscalationScreen.tsx",
+    "line": 172,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"submit\"",
+      "disabled": "{busy}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0162",
+    "source": "frontend/src/features/scada/IndustrialMaintenanceScreen.tsx",
+    "line": 131,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{onCreate}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0163",
+    "source": "frontend/src/features/scada/IndustrialMaintenanceScreen.tsx",
+    "line": 134,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{generatorId}",
+      "onChange": "{(event) => setGeneratorId(event.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0164",
+    "source": "frontend/src/features/scada/IndustrialMaintenanceScreen.tsx",
+    "line": 148,
+    "kind": "input",
+    "label": "Plano",
+    "attributes": {
+      "value": "{name}",
+      "onChange": "{(event) => setName(event.target.value)}",
+      "required": true
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0165",
+    "source": "frontend/src/features/scada/IndustrialMaintenanceScreen.tsx",
+    "line": 157,
+    "kind": "input",
+    "label": "A cada quantas horas?",
+    "attributes": {
+      "inputMode": "\"decimal\"",
+      "value": "{hours}",
+      "onChange": "{(event) => setHours(event.target.value.replace(/[^0-9.]/g, \"\"))}",
+      "placeholder": "\"250\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0166",
+    "source": "frontend/src/features/scada/IndustrialMaintenanceScreen.tsx",
+    "line": 167,
+    "kind": "input",
+    "label": "Ou a cada quantos dias?",
+    "attributes": {
+      "inputMode": "\"numeric\"",
+      "value": "{days}",
+      "onChange": "{(event) => setDays(event.target.value.replace(/\\D/g, \"\"))}",
+      "placeholder": "\"Opcional\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0167",
+    "source": "frontend/src/features/scada/IndustrialMaintenanceScreen.tsx",
+    "line": 176,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"submit\"",
+      "disabled": "{busy}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0168",
+    "source": "frontend/src/features/scada/IntegrationsV3Screens.tsx",
+    "line": 104,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{test}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0169",
+    "source": "frontend/src/features/scada/IntegrationsV3Screens.tsx",
+    "line": 105,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "required": true,
+      "type": "\"email\"",
+      "value": "{destination}",
+      "onChange": "{(e) => setDestination(e.target.value)}",
+      "placeholder": "\"destino@empresa.com\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0170",
+    "source": "frontend/src/features/scada/IntegrationsV3Screens.tsx",
+    "line": 113,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"submit\"",
+      "disabled": "{!status?.configured || busy}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0171",
+    "source": "frontend/src/features/scada/IntegrationsV3Screens.tsx",
+    "line": 180,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{test}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0172",
+    "source": "frontend/src/features/scada/IntegrationsV3Screens.tsx",
+    "line": 181,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "required": true,
+      "value": "{destination}",
+      "onChange": "{(e) => setDestination(e.target.value)}",
+      "placeholder": "\"telefone/destino conforme provedor\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0173",
+    "source": "frontend/src/features/scada/IntegrationsV3Screens.tsx",
+    "line": 188,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"submit\"",
+      "disabled": "{!status?.configured || busy}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0174",
+    "source": "frontend/src/features/scada/MaintenanceHubScreen.tsx",
+    "line": 123,
+    "kind": "input",
+    "label": "Responsável",
+    "attributes": {
+      "list": "\"rc-responsible-users\"",
+      "value": "{responsible}",
+      "onChange": "{(event) => setResponsible(event.target.value)}",
+      "placeholder": "\"Nome da pessoa ou equipe\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0175",
+    "source": "frontend/src/features/scada/MaintenanceHubScreen.tsx",
+    "line": 139,
+    "kind": "button",
+    "label": "Salvar",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{() => void saveResponsible()}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0176",
+    "source": "frontend/src/features/scada/MaintenanceHubScreen.tsx",
+    "line": 146,
+    "kind": "button",
+    "label": "Cancelar",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{() => {\n                  setEditing(null);\n                  setResponsible(\"\");\n                }}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0177",
+    "source": "frontend/src/features/scada/ManagementClientsUnitsScreens.tsx",
+    "line": 136,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{submit}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0178",
+    "source": "frontend/src/features/scada/ManagementClientsUnitsScreens.tsx",
+    "line": 139,
+    "kind": "input",
+    "label": "Nome",
+    "attributes": {
+      "required": true,
+      "minLength": "{2}",
+      "value": "{name}",
+      "onChange": "{(e) => setName(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0179",
+    "source": "frontend/src/features/scada/ManagementClientsUnitsScreens.tsx",
+    "line": 149,
+    "kind": "input",
+    "label": "Unidades previstas",
+    "attributes": {
+      "type": "\"number\"",
+      "min": "\"0\"",
+      "value": "{units}",
+      "onChange": "{(e) => setUnits(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0180",
+    "source": "frontend/src/features/scada/ManagementClientsUnitsScreens.tsx",
+    "line": 159,
+    "kind": "input",
+    "label": "Geradores previstos",
+    "attributes": {
+      "type": "\"number\"",
+      "min": "\"0\"",
+      "value": "{gens}",
+      "onChange": "{(e) => setGens(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0181",
+    "source": "frontend/src/features/scada/ManagementClientsUnitsScreens.tsx",
+    "line": 169,
+    "kind": "input",
+    "label": "SLA",
+    "attributes": {
+      "value": "{sla}",
+      "onChange": "{(e) => setSla(e.target.value)}",
+      "placeholder": "\"ex.: 99,9%\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0182",
+    "source": "frontend/src/features/scada/ManagementClientsUnitsScreens.tsx",
+    "line": 177,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "disabled": "{busy}",
+      "type": "\"submit\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0183",
+    "source": "frontend/src/features/scada/ManagementClientsUnitsScreens.tsx",
+    "line": 185,
+    "kind": "button",
+    "label": "Cancelar",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{reset}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0184",
+    "source": "frontend/src/features/scada/ManagementClientsUnitsScreens.tsx",
+    "line": 388,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{submit}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0185",
+    "source": "frontend/src/features/scada/ManagementClientsUnitsScreens.tsx",
+    "line": 391,
+    "kind": "input",
+    "label": "Nome",
+    "attributes": {
+      "required": true,
+      "minLength": "{2}",
+      "value": "{name}",
+      "onChange": "{(e) => setName(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0186",
+    "source": "frontend/src/features/scada/ManagementClientsUnitsScreens.tsx",
+    "line": 401,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{clientId}",
+      "onChange": "{(e) => setClientId(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0187",
+    "source": "frontend/src/features/scada/ManagementClientsUnitsScreens.tsx",
+    "line": 416,
+    "kind": "input",
+    "label": "Cidade",
+    "attributes": {
+      "value": "{city}",
+      "onChange": "{(e) => setCity(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0188",
+    "source": "frontend/src/features/scada/ManagementClientsUnitsScreens.tsx",
+    "line": 424,
+    "kind": "input",
+    "label": "UF",
+    "attributes": {
+      "value": "{state}",
+      "onChange": "{(e) => setState(e.target.value.toUpperCase())}",
+      "maxLength": "{2}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0189",
+    "source": "frontend/src/features/scada/ManagementClientsUnitsScreens.tsx",
+    "line": 433,
+    "kind": "input",
+    "label": "Endereço",
+    "attributes": {
+      "value": "{address}",
+      "onChange": "{(e) => setAddress(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0190",
+    "source": "frontend/src/features/scada/ManagementClientsUnitsScreens.tsx",
+    "line": 441,
+    "kind": "input",
+    "label": "Latitude",
+    "attributes": {
+      "inputMode": "\"decimal\"",
+      "value": "{latitude}",
+      "onChange": "{(e) => setLatitude(e.target.value)}",
+      "placeholder": "\"-23.5505\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0191",
+    "source": "frontend/src/features/scada/ManagementClientsUnitsScreens.tsx",
+    "line": 451,
+    "kind": "input",
+    "label": "Longitude",
+    "attributes": {
+      "inputMode": "\"decimal\"",
+      "value": "{longitude}",
+      "onChange": "{(e) => setLongitude(e.target.value)}",
+      "placeholder": "\"-46.6333\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0192",
+    "source": "frontend/src/features/scada/ManagementClientsUnitsScreens.tsx",
+    "line": 460,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "disabled": "{busy}",
+      "type": "\"submit\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0193",
+    "source": "frontend/src/features/scada/ManagementClientsUnitsScreens.tsx",
+    "line": 468,
+    "kind": "button",
+    "label": "Cancelar",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{reset}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0194",
+    "source": "frontend/src/features/scada/MapScreen.tsx",
+    "line": 171,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{client}",
+      "onChange": "{(event) => setClient(event.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0195",
+    "source": "frontend/src/features/scada/MapScreen.tsx",
+    "line": 186,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{stateFilter}",
+      "onChange": "{(event) => setStateFilter(event.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0196",
+    "source": "frontend/src/features/scada/MapScreen.tsx",
+    "line": 201,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{statusFilter}",
+      "onChange": "{(event) => setStatusFilter(event.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0197",
+    "source": "frontend/src/features/scada/MapScreen.tsx",
+    "line": 213,
+    "kind": "button",
+    "label": "Limpar filtros",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{() => {\n                setClient(\"\");\n                setStateFilter(\"\");\n                setStatusFilter(\"\");\n              }}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0198",
+    "source": "frontend/src/features/scada/MapScreen.tsx",
+    "line": 347,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{() => setSelectedId(row.id)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0199",
+    "source": "frontend/src/features/scada/OperationCenterScreen.tsx",
+    "line": 110,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{siteFilter}",
+      "onChange": "{(event) => setSiteFilter(event.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0200",
+    "source": "frontend/src/features/scada/OperationCenterScreen.tsx",
+    "line": 125,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{clientFilter}",
+      "onChange": "{(event) => setClientFilter(event.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0201",
+    "source": "frontend/src/features/scada/OperationCenterScreen.tsx",
+    "line": 140,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{statusFilter}",
+      "onChange": "{(event) => setStatusFilter(event.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0202",
+    "source": "frontend/src/features/scada/OperationCenterScreen.tsx",
+    "line": 152,
+    "kind": "button",
+    "label": "Limpar filtros",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{clearFilters}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0203",
+    "source": "frontend/src/features/scada/OperationCenterScreen.tsx",
+    "line": 159,
+    "kind": "button",
+    "label": "Atualizar",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{() => void refreshGenerators()}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0204",
+    "source": "frontend/src/features/scada/OperationCenterScreen.tsx",
+    "line": 221,
+    "kind": "button",
+    "label": "Tentar novamente",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{() => void refreshGenerators()}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0205",
+    "source": "frontend/src/features/scada/OperationCenterScreen.tsx",
+    "line": 242,
+    "kind": "Link",
+    "label": "Ver todas",
+    "attributes": {
+      "to": "\"/p/$slug\"",
+      "params": "{{ slug: \"alarmes\" }}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0206",
+    "source": "frontend/src/features/scada/OperationCenterScreen.tsx",
+    "line": 302,
+    "kind": "Link",
+    "label": "",
+    "attributes": {
+      "key": "{action.slug}",
+      "to": "\"/p/$slug\"",
+      "params": "{{ slug: action.slug }}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0207",
+    "source": "frontend/src/features/scada/OperationOverviewScreens.tsx",
+    "line": 81,
+    "kind": "button",
+    "label": "Tentar novamente",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{() => {\n              void loadSites();\n              void refreshGenerators();\n            }}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0208",
+    "source": "frontend/src/features/scada/ReportsV3Screen.tsx",
+    "line": 86,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{create}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0209",
+    "source": "frontend/src/features/scada/ReportsV3Screen.tsx",
+    "line": 89,
+    "kind": "input",
+    "label": "Nome",
+    "attributes": {
+      "required": true,
+      "value": "{name}",
+      "onChange": "{(e) => setName(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0210",
+    "source": "frontend/src/features/scada/ReportsV3Screen.tsx",
+    "line": 98,
+    "kind": "input",
+    "label": "Tipo",
+    "attributes": {
+      "value": "\"Fotografia operacional\"",
+      "readOnly": true
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0211",
+    "source": "frontend/src/features/scada/ReportsV3Screen.tsx",
+    "line": 106,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{format}",
+      "onChange": "{(e) => setFormat(e.target.value as ReportFormat)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0212",
+    "source": "frontend/src/features/scada/ReportsV3Screen.tsx",
+    "line": 117,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "disabled": "{busy}",
+      "type": "\"submit\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0213",
+    "source": "frontend/src/features/scada/SchedulesV3Screen.tsx",
+    "line": 192,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{save}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0214",
+    "source": "frontend/src/features/scada/SchedulesV3Screen.tsx",
+    "line": 195,
+    "kind": "input",
+    "label": "Nome",
+    "attributes": {
+      "required": true,
+      "value": "{name}",
+      "onChange": "{(e) => setName(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0215",
+    "source": "frontend/src/features/scada/SchedulesV3Screen.tsx",
+    "line": 204,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{kind}",
+      "onChange": "{(e) => setKind(e.target.value as JobKind)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0216",
+    "source": "frontend/src/features/scada/SchedulesV3Screen.tsx",
+    "line": 216,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{interval}",
+      "onChange": "{(e) => setInterval(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0217",
+    "source": "frontend/src/features/scada/SchedulesV3Screen.tsx",
+    "line": 232,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{reportFormat}",
+      "onChange": "{(e) => setReportFormat(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0218",
+    "source": "frontend/src/features/scada/SchedulesV3Screen.tsx",
+    "line": 247,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{channel}",
+      "onChange": "{(e) => setChannel(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0219",
+    "source": "frontend/src/features/scada/SchedulesV3Screen.tsx",
+    "line": 260,
+    "kind": "input",
+    "label": "Destino",
+    "attributes": {
+      "value": "{destination}",
+      "onChange": "{(e) => setDestination(e.target.value)}",
+      "placeholder": "\"quando aplicável\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0220",
+    "source": "frontend/src/features/scada/SchedulesV3Screen.tsx",
+    "line": 270,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"submit\"",
+      "disabled": "{busy}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0221",
+    "source": "frontend/src/features/scada/SchedulesV3Screen.tsx",
+    "line": 278,
+    "kind": "button",
+    "label": "Cancelar",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{reset}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0222",
+    "source": "frontend/src/features/scada/SystemHealthScreen.tsx",
+    "line": 134,
+    "kind": "Link",
+    "label": "",
+    "attributes": {
+      "to": "\"/p/$slug\"",
+      "params": "{{ slug: action.slug }}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0223",
+    "source": "frontend/src/features/scada/SystemSettingsV3Screen.tsx",
+    "line": 151,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{() => setTheme(theme === \"dark\" ? \"light\" : \"dark\")}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0224",
+    "source": "frontend/src/features/scada/SystemSettingsV3Screen.tsx",
+    "line": 167,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{changePassword}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0225",
+    "source": "frontend/src/features/scada/SystemSettingsV3Screen.tsx",
+    "line": 170,
+    "kind": "input",
+    "label": "Senha atual",
+    "attributes": {
+      "required": true,
+      "type": "\"password\"",
+      "autoComplete": "\"current-password\"",
+      "value": "{currentPassword}",
+      "onChange": "{(e) => setCurrentPassword(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0226",
+    "source": "frontend/src/features/scada/SystemSettingsV3Screen.tsx",
+    "line": 181,
+    "kind": "input",
+    "label": "Nova senha",
+    "attributes": {
+      "required": true,
+      "minLength": "{8}",
+      "type": "\"password\"",
+      "autoComplete": "\"new-password\"",
+      "value": "{newPassword}",
+      "onChange": "{(e) => setNewPassword(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0227",
+    "source": "frontend/src/features/scada/SystemSettingsV3Screen.tsx",
+    "line": 193,
+    "kind": "input",
+    "label": "Confirmar nova senha",
+    "attributes": {
+      "required": true,
+      "minLength": "{8}",
+      "type": "\"password\"",
+      "autoComplete": "\"new-password\"",
+      "value": "{confirmPassword}",
+      "onChange": "{(e) => setConfirmPassword(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0228",
+    "source": "frontend/src/features/scada/SystemSettingsV3Screen.tsx",
+    "line": 204,
+    "kind": "button",
+    "label": "Alterar senha",
+    "attributes": {
+      "type": "\"submit\"",
+      "disabled": "{busy}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0229",
+    "source": "frontend/src/features/scada/SystemSettingsV3Screen.tsx",
+    "line": 235,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "inputMode": "\"numeric\"",
+      "autoComplete": "\"one-time-code\"",
+      "value": "{otp}",
+      "onChange": "{(e) => setOtp(e.target.value.replace(/\\D/g, \"\").slice(0, 8))}",
+      "placeholder": "\"000000\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0230",
+    "source": "frontend/src/features/scada/SystemSettingsV3Screen.tsx",
+    "line": 262,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "inputMode": "\"numeric\"",
+      "autoComplete": "\"one-time-code\"",
+      "value": "{otp}",
+      "onChange": "{(e) => setOtp(e.target.value.replace(/\\D/g, \"\").slice(0, 8))}",
+      "placeholder": "\"código atual\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0231",
+    "source": "frontend/src/features/scada/SystemSettingsV3Screen.tsx",
+    "line": 270,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "type": "\"password\"",
+      "autoComplete": "\"current-password\"",
+      "value": "{twoFactorPassword}",
+      "onChange": "{(e) => setTwoFactorPassword(e.target.value)}",
+      "placeholder": "\"senha atual\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0232",
+    "source": "frontend/src/features/scada/TrendsScreen.tsx",
+    "line": 91,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{generatorId}",
+      "onChange": "{(e) => setGeneratorId(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0233",
+    "source": "frontend/src/features/scada/TrendsScreen.tsx",
+    "line": 106,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{metric}",
+      "onChange": "{(e) => setMetric(e.target.value)}",
+      "disabled": "{!metrics.length}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0234",
+    "source": "frontend/src/features/scada/TrendsScreen.tsx",
+    "line": 122,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{hours}",
+      "onChange": "{(e) => setHours(Number(e.target.value))}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0235",
+    "source": "frontend/src/features/scada/UsersV3Screen.tsx",
+    "line": 283,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "aria-label": "\"Código 2FA para ativação\"",
+      "inputMode": "\"numeric\"",
+      "autoComplete": "\"one-time-code\"",
+      "value": "{twoFaCode}",
+      "onChange": "{(event) =>\n                    setTwoFaCode(event.target.value.replace(/\\D/g, \"\").slice(0, 6))\n                  }",
+      "placeholder": "\"000000\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0236",
+    "source": "frontend/src/features/scada/UsersV3Screen.tsx",
+    "line": 325,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "aria-label": "\"Senha atual para desativar 2FA\"",
+      "type": "\"password\"",
+      "autoComplete": "\"current-password\"",
+      "value": "{twoFaPassword}",
+      "onChange": "{(event) => setTwoFaPassword(event.target.value)}",
+      "placeholder": "\"Senha atual\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0237",
+    "source": "frontend/src/features/scada/UsersV3Screen.tsx",
+    "line": 334,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "aria-label": "\"Código 2FA para desativação\"",
+      "inputMode": "\"numeric\"",
+      "autoComplete": "\"one-time-code\"",
+      "value": "{twoFaCode}",
+      "onChange": "{(event) =>\n                    setTwoFaCode(event.target.value.replace(/\\D/g, \"\").slice(0, 6))\n                  }",
+      "placeholder": "\"Código 2FA\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0238",
+    "source": "frontend/src/features/scada/UsersV3Screen.tsx",
+    "line": 369,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{save}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0239",
+    "source": "frontend/src/features/scada/UsersV3Screen.tsx",
+    "line": 373,
+    "kind": "input",
+    "label": "Nome",
+    "attributes": {
+      "required": true,
+      "minLength": "{2}",
+      "autoComplete": "\"name\"",
+      "value": "{name}",
+      "onChange": "{(event) => setName(event.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0240",
+    "source": "frontend/src/features/scada/UsersV3Screen.tsx",
+    "line": 384,
+    "kind": "input",
+    "label": "Identificador de acesso",
+    "attributes": {
+      "required": "{!editing}",
+      "type": "\"email\"",
+      "autoComplete": "\"email\"",
+      "value": "{email}",
+      "onChange": "{(event) => setEmail(event.target.value)}",
+      "disabled": "{Boolean(editing)}",
+      "placeholder": "\"usuario@empresa.com\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0241",
+    "source": "frontend/src/features/scada/UsersV3Screen.tsx",
+    "line": 397,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "required": "{!editing}",
+      "minLength": "{editing && !password ? undefined : 8}",
+      "type": "\"password\"",
+      "autoComplete": "\"new-password\"",
+      "value": "{password}",
+      "onChange": "{(event) => setPassword(event.target.value)}",
+      "placeholder": "{editing ? \"Deixe vazio para manter\" : \"Mínimo de 8 caracteres\"}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0242",
+    "source": "frontend/src/features/scada/UsersV3Screen.tsx",
+    "line": 410,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{role}",
+      "onChange": "{(event) => setRole(event.target.value as UserRole)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0243",
+    "source": "frontend/src/features/scada/UsersV3Screen.tsx",
+    "line": 431,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"submit\"",
+      "disabled": "{busy}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0244",
+    "source": "frontend/src/features/scada/UsersV3Screen.tsx",
+    "line": 439,
+    "kind": "button",
+    "label": "Cancelar",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{reset}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0245",
+    "source": "frontend/src/features/scada/WebhooksScreen.tsx",
+    "line": 107,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{submit}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0246",
+    "source": "frontend/src/features/scada/WebhooksScreen.tsx",
+    "line": 108,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "required": true,
+      "type": "\"url\"",
+      "value": "{url}",
+      "onChange": "{(e) => setUrl(e.target.value)}",
+      "placeholder": "\"https://...\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0247",
+    "source": "frontend/src/features/scada/WebhooksScreen.tsx",
+    "line": 116,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "required": true,
+      "value": "{event}",
+      "onChange": "{(e) => setEvent(e.target.value)}",
+      "placeholder": "\"evento\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0248",
+    "source": "frontend/src/features/scada/WebhooksScreen.tsx",
+    "line": 124,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"submit\"",
+      "disabled": "{busy}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0249",
+    "source": "frontend/src/features/scada/WebhooksScreen.tsx",
+    "line": 132,
+    "kind": "button",
+    "label": "Cancelar",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{reset}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0250",
+    "source": "frontend/src/features/scada/energy-maint.tsx",
+    "line": 303,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{onCreate}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0251",
+    "source": "frontend/src/features/scada/energy-maint.tsx",
+    "line": 306,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{gen}",
+      "onChange": "{(e) => setGen(e.target.value)}",
+      "required": true
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0252",
+    "source": "frontend/src/features/scada/energy-maint.tsx",
+    "line": 324,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{type}",
+      "onChange": "{(e) => setType(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0253",
+    "source": "frontend/src/features/scada/energy-maint.tsx",
+    "line": 335,
+    "kind": "button",
+    "label": "Abrir OS",
+    "attributes": {
+      "type": "\"submit\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0254",
+    "source": "frontend/src/features/scada/energy-maint.tsx",
+    "line": 423,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{onCreate}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0255",
+    "source": "frontend/src/features/scada/energy-maint.tsx",
+    "line": 426,
+    "kind": "input",
+    "label": "Atividade",
+    "attributes": {
+      "value": "{title}",
+      "onChange": "{(e) => setTitle(e.target.value)}",
+      "required": true
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0256",
+    "source": "frontend/src/features/scada/energy-maint.tsx",
+    "line": 435,
+    "kind": "input",
+    "label": "Quando",
+    "attributes": {
+      "value": "{when}",
+      "onChange": "{(e) => setWhen(e.target.value)}",
+      "placeholder": "\"28/08 09:00\"",
+      "required": true
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0257",
+    "source": "frontend/src/features/scada/energy-maint.tsx",
+    "line": 445,
+    "kind": "input",
+    "label": "Local",
+    "attributes": {
+      "list": "\"agenda-sites\"",
+      "value": "{site}",
+      "onChange": "{(e) => setSite(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0258",
+    "source": "frontend/src/features/scada/energy-maint.tsx",
+    "line": 458,
+    "kind": "button",
+    "label": "Agendar",
+    "attributes": {
+      "type": "\"submit\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0259",
+    "source": "frontend/src/features/scada/equip-auto.tsx",
+    "line": 178,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{save}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0260",
+    "source": "frontend/src/features/scada/equip-auto.tsx",
+    "line": 179,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "required": true,
+      "minLength": "{2}",
+      "value": "{name}",
+      "onChange": "{(e) => setName(e.target.value)}",
+      "placeholder": "\"Nome da regra\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0261",
+    "source": "frontend/src/features/scada/equip-auto.tsx",
+    "line": 187,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{triggerType}",
+      "onChange": "{(e) => setTriggerType(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0262",
+    "source": "frontend/src/features/scada/equip-auto.tsx",
+    "line": 196,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{generator}",
+      "onChange": "{(e) => setGenerator(e.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0263",
+    "source": "frontend/src/features/scada/equip-auto.tsx",
+    "line": 208,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{actionType}",
+      "onChange": "{(e) => {\n                  setActionType(e.target.value);\n                  setActionValue(e.target.value === \"notify\" ? \"panel\" : \"Inspeção\");\n                }}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0264",
+    "source": "frontend/src/features/scada/equip-auto.tsx",
+    "line": 219,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "value": "{actionValue}",
+      "onChange": "{(e) => setActionValue(e.target.value)}",
+      "placeholder": "{actionType === \"notify\" ? \"panel/email/...\" : \"Inspeção\"}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0265",
+    "source": "frontend/src/features/scada/equip-auto.tsx",
+    "line": 227,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"submit\"",
+      "disabled": "{saving}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0266",
+    "source": "frontend/src/features/scada/equip-auto.tsx",
+    "line": 235,
+    "kind": "button",
+    "label": "Cancelar",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{reset}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0267",
+    "source": "frontend/src/features/scada/equip-auto.tsx",
+    "line": 369,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{onCreate}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0268",
+    "source": "frontend/src/features/scada/equip-auto.tsx",
+    "line": 370,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "required": true,
+      "value": "{when}",
+      "onChange": "{(e) => setWhen(e.target.value)}",
+      "placeholder": "\"Data/hora ou descrição\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0269",
+    "source": "frontend/src/features/scada/equip-auto.tsx",
+    "line": 377,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "value": "{site}",
+      "onChange": "{(e) => setSite(e.target.value)}",
+      "placeholder": "\"Site\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0270",
+    "source": "frontend/src/features/scada/equip-auto.tsx",
+    "line": 383,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"submit\"",
+      "disabled": "{busy}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0271",
+    "source": "frontend/src/features/scada/equip-connectivity.tsx",
+    "line": 184,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{carrierFilter}",
+      "onChange": "{(event) => setCarrierFilter(event.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0272",
+    "source": "frontend/src/features/scada/equip-connectivity.tsx",
+    "line": 199,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{statusFilter}",
+      "onChange": "{(event) => setStatusFilter(event.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0273",
+    "source": "frontend/src/features/scada/equip-connectivity.tsx",
+    "line": 212,
+    "kind": "select",
+    "label": "",
+    "attributes": {
+      "value": "{kindFilter}",
+      "onChange": "{(event) => setKindFilter(event.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0274",
+    "source": "frontend/src/features/scada/equip-connectivity.tsx",
+    "line": 224,
+    "kind": "button",
+    "label": "Limpar filtros",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{() => {\n                setCarrierFilter(\"\");\n                setKindFilter(\"\");\n                setStatusFilter(\"\");\n              }}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0275",
+    "source": "frontend/src/features/scada/field-device-inventory.tsx",
+    "line": 312,
+    "kind": "form",
+    "label": "",
+    "attributes": {
+      "onSubmit": "{save}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0276",
+    "source": "frontend/src/features/scada/field-device-inventory.tsx",
+    "line": 322,
+    "kind": "input",
+    "label": "Nome",
+    "attributes": {
+      "required": true,
+      "value": "{name}",
+      "onChange": "{(event) => setName(event.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0277",
+    "source": "frontend/src/features/scada/field-device-inventory.tsx",
+    "line": 332,
+    "kind": "input",
+    "label": "Fabricante",
+    "attributes": {
+      "value": "{manufacturer}",
+      "onChange": "{(event) => setManufacturer(event.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0278",
+    "source": "frontend/src/features/scada/field-device-inventory.tsx",
+    "line": 341,
+    "kind": "input",
+    "label": "Modelo",
+    "attributes": {
+      "value": "{model}",
+      "onChange": "{(event) => setModel(event.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0279",
+    "source": "frontend/src/features/scada/field-device-inventory.tsx",
+    "line": 349,
+    "kind": "input",
+    "label": "Endereço / IP",
+    "attributes": {
+      "value": "{host}",
+      "onChange": "{(event) => setHost(event.target.value)}",
+      "readOnly": "{!!approvalPeer}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0280",
+    "source": "frontend/src/features/scada/field-device-inventory.tsx",
+    "line": 360,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{() => setAdvanced((value) => !value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0281",
+    "source": "frontend/src/features/scada/field-device-inventory.tsx",
+    "line": 371,
+    "kind": "input",
+    "label": "IMEI",
+    "attributes": {
+      "value": "{imei}",
+      "onChange": "{(event) => setImei(event.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0282",
+    "source": "frontend/src/features/scada/field-device-inventory.tsx",
+    "line": 379,
+    "kind": "input",
+    "label": "SIM / ICCID",
+    "attributes": {
+      "value": "{sim}",
+      "onChange": "{(event) => setSim(event.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0283",
+    "source": "frontend/src/features/scada/field-device-inventory.tsx",
+    "line": 387,
+    "kind": "input",
+    "label": "Número do chip",
+    "attributes": {
+      "value": "{simPhone}",
+      "onChange": "{(event) => setSimPhone(event.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0284",
+    "source": "frontend/src/features/scada/field-device-inventory.tsx",
+    "line": 395,
+    "kind": "input",
+    "label": "Operadora",
+    "attributes": {
+      "value": "{carrier}",
+      "onChange": "{(event) => setCarrier(event.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0285",
+    "source": "frontend/src/features/scada/field-device-inventory.tsx",
+    "line": 403,
+    "kind": "input",
+    "label": "Número de série",
+    "attributes": {
+      "value": "{serial}",
+      "onChange": "{(event) => setSerial(event.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0286",
+    "source": "frontend/src/features/scada/field-device-inventory.tsx",
+    "line": 417,
+    "kind": "input",
+    "label": "Número de série",
+    "attributes": {
+      "value": "{serial}",
+      "onChange": "{(event) => setSerial(event.target.value)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0287",
+    "source": "frontend/src/features/scada/field-device-inventory.tsx",
+    "line": 426,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"submit\"",
+      "disabled": "{busy}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0288",
+    "source": "frontend/src/features/scada/field-device-inventory.tsx",
+    "line": 440,
+    "kind": "button",
+    "label": "Cancelar",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{reset}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0289",
+    "source": "frontend/src/features/scada/kit.tsx",
+    "line": 291,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{() => toggleSwitch(id, on)}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0290",
+    "source": "frontend/src/features/scada/kit.tsx",
+    "line": 324,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{onClick}",
+      "disabled": "{disabled}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0291",
+    "source": "frontend/src/features/scada/overview-dashboard-summary.tsx",
+    "line": 85,
+    "kind": "Link",
+    "label": "",
+    "attributes": {
+      "to": "\"/p/$slug\"",
+      "params": "{{ slug }}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0292",
+    "source": "frontend/src/features/scada/overview-dashboard-summary.tsx",
+    "line": 131,
+    "kind": "button",
+    "label": "Atualizar",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{onRefresh}",
+      "aria-label": "\"Atualizar painel\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0293",
+    "source": "frontend/src/features/scada/overview-dashboard-summary.tsx",
+    "line": 155,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{() => setOpen(false)}",
+      "aria-label": "\"Fechar aviso\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0294",
+    "source": "frontend/src/features/scada/overview-dashboard-summary.tsx",
+    "line": 165,
+    "kind": "button",
+    "label": "Tentar novamente",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{onRetry}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0295",
+    "source": "frontend/src/features/scada/scada-lib.tsx",
+    "line": 523,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{() => setTheme(dark ? \"light\" : \"dark\")}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0296",
+    "source": "frontend/src/features/scada/security.tsx",
+    "line": 56,
+    "kind": "Link",
+    "label": "Gerenciar usuários",
+    "attributes": {
+      "to": "\"/p/$slug\"",
+      "params": "{{ slug: \"usuarios\" }}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0297",
+    "source": "frontend/src/layout/AppSidebar.tsx",
+    "line": 114,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{onToggle}",
+      "aria-label": "{collapsed ? \"Expandir menu\" : \"Recolher menu\"}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0298",
+    "source": "frontend/src/layout/AppSidebar.tsx",
+    "line": 128,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{onClose}",
+      "aria-label": "\"Fechar menu\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0299",
+    "source": "frontend/src/layout/AppSidebar.tsx",
+    "line": 149,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{() => toggleGroup(group.title)}",
+      "aria-expanded": "{open}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0300",
+    "source": "frontend/src/layout/AppSidebar.tsx",
+    "line": 194,
+    "kind": "Link",
+    "label": "",
+    "attributes": {
+      "to": "{hrefFor(item.slug)}",
+      "title": "{\n                              collapsed\n                                ? `${item.label}${item.hint ? ` — ${item.hint}` : \"\"}`\n                                : undefined\n                           ",
+      "onClick": "{onNavigate}",
+      "aria-current": "{active ? \"page\" : undefined}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0301",
+    "source": "frontend/src/layout/AppSidebar.tsx",
+    "line": 265,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{onTools}",
+      "aria-expanded": "{toolsOpen}",
+      "aria-label": "{toolsOpen ? \"Fechar menu da lista\" : \"Abrir menu da lista\"}",
+      "title": "{toolsOpen ? \"Fechar menu da lista\" : \"Abrir menu da lista\"}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0302",
+    "source": "frontend/src/layout/Topbar.tsx",
+    "line": 47,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{toggleMobile}",
+      "aria-label": "\"Abrir menu\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0303",
+    "source": "frontend/src/layout/Topbar.tsx",
+    "line": 89,
+    "kind": "input",
+    "label": "",
+    "attributes": {
+      "value": "{search.value}",
+      "onChange": "{(event) => search.onChange(event.target.value)}",
+      "placeholder": "\"Buscar gerador, unidade ou cliente...\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0304",
+    "source": "frontend/src/layout/Topbar.tsx",
+    "line": 97,
+    "kind": "Link",
+    "label": "Buscar gerador, unidade ou cliente...",
+    "attributes": {
+      "to": "\"/p/$slug\"",
+      "params": "{{ slug: \"geradores\" }}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0305",
+    "source": "frontend/src/layout/Topbar.tsx",
+    "line": 125,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{toggleTheme}",
+      "title": "{theme === \"dark\" ? \"Ativar tema claro\" : \"Ativar tema escuro\"}",
+      "aria-label": "{theme === \"dark\" ? \"Ativar tema claro\" : \"Ativar tema escuro\"}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0306",
+    "source": "frontend/src/layout/Topbar.tsx",
+    "line": 147,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{toggleTheme}",
+      "title": "{theme === \"dark\" ? \"Ativar tema claro\" : \"Ativar tema escuro\"}",
+      "aria-label": "{theme === \"dark\" ? \"Ativar tema claro\" : \"Ativar tema escuro\"}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0307",
+    "source": "frontend/src/layout/Topbar.tsx",
+    "line": 156,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{toggleFullscreen}",
+      "title": "{fullscreen ? \"Sair da tela cheia\" : \"Tela cheia\"}",
+      "aria-label": "{fullscreen ? \"Sair da tela cheia\" : \"Tela cheia\"}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0308",
+    "source": "frontend/src/layout/Topbar.tsx",
+    "line": 169,
+    "kind": "Link",
+    "label": "",
+    "attributes": {
+      "to": "\"/p/$slug\"",
+      "params": "{{ slug: \"alarmes\" }}",
+      "title": "\"Alarmes\"",
+      "aria-label": "{`${alarmCount} alarmes pendentes`}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0309",
+    "source": "frontend/src/layout/Topbar.tsx",
+    "line": 201,
+    "kind": "button",
+    "label": "",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{logout}",
+      "title": "\"Sair\"",
+      "aria-label": "\"Sair\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0310",
+    "source": "frontend/src/routes/__root.tsx",
+    "line": 32,
+    "kind": "Link",
+    "label": "Voltar ao início",
+    "attributes": {
+      "to": "\"/\""
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0311",
+    "source": "frontend/src/routes/__root.tsx",
+    "line": 71,
+    "kind": "button",
+    "label": "Tentar novamente",
+    "attributes": {
+      "onClick": "{() => {\n              router.invalidate();\n              reset();\n            }}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0312",
+    "source": "frontend/src/routes/__root.tsx",
+    "line": 198,
+    "kind": "button",
+    "label": "Tentar novamente",
+    "attributes": {
+      "type": "\"button\"",
+      "onClick": "{() => {\n                void refreshGenerators();\n                void refreshOps();\n                if (can(\"manageUsers\")) void refreshUsers().catch(() => undefined);\n              }}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  },
+  {
+    "id": "UI-0313",
+    "source": "frontend/src/routes/p.geradores.$id.tsx",
+    "line": 44,
+    "kind": "Link",
+    "label": "Voltar",
+    "attributes": {
+      "to": "\"/p/$slug\"",
+      "params": "{{ slug: \"geradores\" }}"
+    },
+    "status": "inventariado; ocorrência em código não equivale a ação validada em todas as telas"
+  }
+]

@@ -1,0 +1,387 @@
+[
+  {
+    "id": "API-001",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-002",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-005",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-006",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-010",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-011",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-016",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-017",
+    "status": 422,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-018",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-019",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-020",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-021",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-022",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-023",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-025",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-027",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-030",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-032",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-035",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-037",
+    "status": 404,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-038",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-041",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-043",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-045",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-047",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-048",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-049",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-050",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-051",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-052",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-053",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-057",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-059",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-060",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-063",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-074",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-076",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-079",
+    "status": 401,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-080",
+    "status": 401,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-082",
+    "status": 404,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-083",
+    "status": 404,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-095",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-096",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-098",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-104",
+    "status": 404,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-105",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-107",
+    "status": 404,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-110",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-114",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-118",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-121",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-123",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-124",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-128",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  },
+  {
+    "id": "API-129",
+    "status": 200,
+    "server_error": false,
+    "content_type": "application/json",
+    "note": "IDs inexistentes e recursos externos ausentes são fixtures; status não certifica contrato completo"
+  }
+]

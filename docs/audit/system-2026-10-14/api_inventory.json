@@ -1,0 +1,2348 @@
+[
+  {
+    "id": "API-001",
+    "path": "/api/health",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "health",
+    "source": "backend/app/main.py",
+    "line": 227,
+    "permissions": [],
+    "authenticated": false,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "public"
+  },
+  {
+    "id": "API-002",
+    "path": "/api/system/health",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "system_health",
+    "source": "backend/app/main.py",
+    "line": 232,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-003",
+    "path": "/api/auth/login",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "auth_login",
+    "source": "backend/app/main.py",
+    "line": 237,
+    "permissions": [],
+    "authenticated": false,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "public"
+  },
+  {
+    "id": "API-004",
+    "path": "/api/auth/logout",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "auth_logout",
+    "source": "backend/app/main.py",
+    "line": 260,
+    "permissions": [],
+    "authenticated": false,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "public"
+  },
+  {
+    "id": "API-005",
+    "path": "/api/auth/me",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "auth_me",
+    "source": "backend/app/main.py",
+    "line": 273,
+    "permissions": [],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-006",
+    "path": "/api/users",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "users_list",
+    "source": "backend/app/main.py",
+    "line": 281,
+    "permissions": [
+      "manage_users"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-007",
+    "path": "/api/users",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "users_create",
+    "source": "backend/app/main.py",
+    "line": 286,
+    "permissions": [
+      "manage_users"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-008",
+    "path": "/api/users/{user_id}",
+    "methods": [
+      "PATCH"
+    ],
+    "endpoint": "users_update",
+    "source": "backend/app/main.py",
+    "line": 299,
+    "permissions": [
+      "manage_users"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-009",
+    "path": "/api/users/{user_id}",
+    "methods": [
+      "DELETE"
+    ],
+    "endpoint": "users_delete",
+    "source": "backend/app/main.py",
+    "line": 323,
+    "permissions": [
+      "manage_users"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-010",
+    "path": "/api/generators",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "generators_list",
+    "source": "backend/app/main.py",
+    "line": 368,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-011",
+    "path": "/api/generators/{generator_id}",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "generator_get",
+    "source": "backend/app/main.py",
+    "line": 373,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-012",
+    "path": "/api/generators",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "generator_create",
+    "source": "backend/app/main.py",
+    "line": 381,
+    "permissions": [
+      "create"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-013",
+    "path": "/api/generators/{generator_id}",
+    "methods": [
+      "PATCH"
+    ],
+    "endpoint": "generator_update",
+    "source": "backend/app/main.py",
+    "line": 430,
+    "permissions": [
+      "edit"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-014",
+    "path": "/api/generators/{generator_id}",
+    "methods": [
+      "DELETE"
+    ],
+    "endpoint": "generator_delete",
+    "source": "backend/app/main.py",
+    "line": 447,
+    "permissions": [
+      "remove"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-015",
+    "path": "/api/generators/{generator_id}/commands/{action}",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "generator_command",
+    "source": "backend/app/main.py",
+    "line": 466,
+    "permissions": [
+      "operate"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-016",
+    "path": "/api/generators/{generator_id}/metrics",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "generator_metrics",
+    "source": "backend/app/main.py",
+    "line": 493,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-017",
+    "path": "/api/generators/{generator_id}/trends/{metric}",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "generator_trend",
+    "source": "backend/app/main.py",
+    "line": 501,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-018",
+    "path": "/api/dashboard",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "dashboard_get",
+    "source": "backend/app/main.py",
+    "line": 516,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-019",
+    "path": "/api/events",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "events_get",
+    "source": "backend/app/main.py",
+    "line": 521,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-020",
+    "path": "/api/audit",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "audit_get",
+    "source": "backend/app/main.py",
+    "line": 530,
+    "permissions": [
+      "audit"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-021",
+    "path": "/api/controller-bindings",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "controller_bindings",
+    "source": "backend/app/main.py",
+    "line": 535,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-022",
+    "path": "/api/ops/bootstrap",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "ops_bootstrap",
+    "source": "backend/app/main.py",
+    "line": 544,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-023",
+    "path": "/api/clients",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "clients_list",
+    "source": "backend/app/main.py",
+    "line": 549,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-024",
+    "path": "/api/clients",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "clients_create",
+    "source": "backend/app/main.py",
+    "line": 554,
+    "permissions": [
+      "create"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-025",
+    "path": "/api/sites",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "sites_list",
+    "source": "backend/app/main.py",
+    "line": 562,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-026",
+    "path": "/api/sites",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "sites_create",
+    "source": "backend/app/main.py",
+    "line": 567,
+    "permissions": [
+      "create"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-027",
+    "path": "/api/work-orders",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "work_orders_list",
+    "source": "backend/app/main.py",
+    "line": 575,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-028",
+    "path": "/api/work-orders",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "work_orders_create",
+    "source": "backend/app/main.py",
+    "line": 580,
+    "permissions": [
+      "create"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-029",
+    "path": "/api/work-orders/{item_id}",
+    "methods": [
+      "PATCH"
+    ],
+    "endpoint": "work_orders_update",
+    "source": "backend/app/main.py",
+    "line": 588,
+    "permissions": [
+      "edit"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-030",
+    "path": "/api/agenda",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "agenda_list",
+    "source": "backend/app/main.py",
+    "line": 596,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-031",
+    "path": "/api/agenda",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "agenda_create",
+    "source": "backend/app/main.py",
+    "line": 601,
+    "permissions": [
+      "create"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-032",
+    "path": "/api/automation/rules",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "rules_list",
+    "source": "backend/app/main.py",
+    "line": 609,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-033",
+    "path": "/api/automation/rules",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "rules_create",
+    "source": "backend/app/main.py",
+    "line": 614,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-034",
+    "path": "/api/automation/rules/{item_id}",
+    "methods": [
+      "PATCH"
+    ],
+    "endpoint": "rules_update",
+    "source": "backend/app/main.py",
+    "line": 619,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-035",
+    "path": "/api/reports",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "reports_list",
+    "source": "backend/app/main.py",
+    "line": 634,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-036",
+    "path": "/api/reports",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "reports_create",
+    "source": "backend/app/main.py",
+    "line": 639,
+    "permissions": [
+      "create"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-037",
+    "path": "/api/reports/{report_id}/download",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "reports_download",
+    "source": "backend/app/main.py",
+    "line": 654,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-038",
+    "path": "/api/webhooks",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "webhooks_list",
+    "source": "backend/app/main.py",
+    "line": 678,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-039",
+    "path": "/api/webhooks",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "webhooks_create",
+    "source": "backend/app/main.py",
+    "line": 683,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-040",
+    "path": "/api/webhooks/{item_id}",
+    "methods": [
+      "PATCH"
+    ],
+    "endpoint": "webhooks_update",
+    "source": "backend/app/main.py",
+    "line": 690,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-041",
+    "path": "/api/settings",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "settings_list",
+    "source": "backend/app/main.py",
+    "line": 703,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-042",
+    "path": "/api/settings/{key}",
+    "methods": [
+      "PUT"
+    ],
+    "endpoint": "settings_update",
+    "source": "backend/app/main.py",
+    "line": 708,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-043",
+    "path": "/api/backups",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "backups_list",
+    "source": "backend/app/main.py",
+    "line": 715,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-044",
+    "path": "/api/backups",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "backups_create",
+    "source": "backend/app/main.py",
+    "line": 720,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-045",
+    "path": "/api/alarms/ack",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "alarm_acks_list",
+    "source": "backend/app/main.py",
+    "line": 731,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-046",
+    "path": "/api/alarms/ack",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "alarm_ack",
+    "source": "backend/app/main.py",
+    "line": 736,
+    "permissions": [
+      "operate"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-047",
+    "path": "/api/library",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "library",
+    "source": "backend/app/extra_routes.py",
+    "line": 130,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-048",
+    "path": "/api/library/channels",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "library_channels",
+    "source": "backend/app/extra_routes.py",
+    "line": 135,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-049",
+    "path": "/api/system/diagnostics",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "diagnostics",
+    "source": "backend/app/extra_routes.py",
+    "line": 140,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-050",
+    "path": "/api/system/version",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "version",
+    "source": "backend/app/extra_routes.py",
+    "line": 145,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-051",
+    "path": "/api/system/controller-homologation",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "controller_homologation",
+    "source": "backend/app/extra_routes.py",
+    "line": 150,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-052",
+    "path": "/api/system/bridge-peers",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "bridge_peers",
+    "source": "backend/app/extra_routes.py",
+    "line": 156,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-053",
+    "path": "/api/field-devices",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "field_devices",
+    "source": "backend/app/extra_routes.py",
+    "line": 168,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-054",
+    "path": "/api/field-devices",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "field_device_create",
+    "source": "backend/app/extra_routes.py",
+    "line": 173,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-055",
+    "path": "/api/field-devices/{item_id}",
+    "methods": [
+      "PATCH"
+    ],
+    "endpoint": "field_device_update",
+    "source": "backend/app/extra_routes.py",
+    "line": 181,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-056",
+    "path": "/api/field-devices/{item_id}",
+    "methods": [
+      "DELETE"
+    ],
+    "endpoint": "field_device_delete",
+    "source": "backend/app/extra_routes.py",
+    "line": 196,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-057",
+    "path": "/api/generators/{generator_id}/transport-config",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "transport_config_get",
+    "source": "backend/app/extra_routes.py",
+    "line": 202,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-058",
+    "path": "/api/generators/{generator_id}/transport-config",
+    "methods": [
+      "PUT"
+    ],
+    "endpoint": "transport_config_set",
+    "source": "backend/app/extra_routes.py",
+    "line": 209,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-059",
+    "path": "/api/notifications",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "notification_list",
+    "source": "backend/app/extra_routes.py",
+    "line": 221,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-060",
+    "path": "/api/notifications/deliveries",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "delivery_list",
+    "source": "backend/app/extra_routes.py",
+    "line": 226,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-061",
+    "path": "/api/notifications/test",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "notification_test",
+    "source": "backend/app/extra_routes.py",
+    "line": 231,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-062",
+    "path": "/api/notifications/process",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "notification_process",
+    "source": "backend/app/extra_routes.py",
+    "line": 246,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-063",
+    "path": "/api/scheduler",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "scheduler_list",
+    "source": "backend/app/extra_routes.py",
+    "line": 251,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-064",
+    "path": "/api/scheduler",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "scheduler_upsert",
+    "source": "backend/app/extra_routes.py",
+    "line": 256,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-065",
+    "path": "/api/scheduler/{item_id}",
+    "methods": [
+      "DELETE"
+    ],
+    "endpoint": "scheduler_delete",
+    "source": "backend/app/extra_routes.py",
+    "line": 266,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-066",
+    "path": "/api/automation/rules/{rule_id}/approve",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "automation_approve",
+    "source": "backend/app/extra_routes.py",
+    "line": 275,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-067",
+    "path": "/api/automation/rules/{rule_id}/enabled",
+    "methods": [
+      "PUT"
+    ],
+    "endpoint": "automation_enable",
+    "source": "backend/app/extra_routes.py",
+    "line": 286,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-068",
+    "path": "/api/auth/password/change",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "password_change",
+    "source": "backend/app/extra_routes.py",
+    "line": 297,
+    "permissions": [],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-069",
+    "path": "/api/auth/password/reset-request",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "password_reset_request",
+    "source": "backend/app/extra_routes.py",
+    "line": 305,
+    "permissions": [],
+    "authenticated": false,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "public"
+  },
+  {
+    "id": "API-070",
+    "path": "/api/auth/password/reset-confirm",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "password_reset_confirm",
+    "source": "backend/app/extra_routes.py",
+    "line": 312,
+    "permissions": [],
+    "authenticated": false,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "public"
+  },
+  {
+    "id": "API-071",
+    "path": "/api/auth/2fa/setup",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "twofa_setup",
+    "source": "backend/app/extra_routes.py",
+    "line": 320,
+    "permissions": [],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-072",
+    "path": "/api/auth/2fa/enable",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "twofa_enable",
+    "source": "backend/app/extra_routes.py",
+    "line": 328,
+    "permissions": [],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-073",
+    "path": "/api/auth/2fa/disable",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "twofa_disable",
+    "source": "backend/app/extra_routes.py",
+    "line": 336,
+    "permissions": [],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-074",
+    "path": "/api/auth/sessions",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "sessions",
+    "source": "backend/app/extra_routes.py",
+    "line": 344,
+    "permissions": [],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-075",
+    "path": "/api/auth/sessions",
+    "methods": [
+      "DELETE"
+    ],
+    "endpoint": "sessions_revoke",
+    "source": "backend/app/extra_routes.py",
+    "line": 349,
+    "permissions": [],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-076",
+    "path": "/api/api-tokens",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "token_list",
+    "source": "backend/app/extra_routes.py",
+    "line": 410,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-077",
+    "path": "/api/api-tokens",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "token_create",
+    "source": "backend/app/extra_routes.py",
+    "line": 415,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-078",
+    "path": "/api/api-tokens/{item_id}",
+    "methods": [
+      "DELETE"
+    ],
+    "endpoint": "token_revoke",
+    "source": "backend/app/extra_routes.py",
+    "line": 481,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-079",
+    "path": "/api/v1/generators",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "external_generators",
+    "source": "backend/app/extra_routes.py",
+    "line": 488,
+    "permissions": [],
+    "authenticated": false,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "bearer"
+  },
+  {
+    "id": "API-080",
+    "path": "/api/v1/generators/{generator_id}",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "external_generator",
+    "source": "backend/app/extra_routes.py",
+    "line": 498,
+    "permissions": [],
+    "authenticated": false,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "bearer"
+  },
+  {
+    "id": "API-081",
+    "path": "/api/v1/generators/{generator_id}/commands/{action}",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "external_command",
+    "source": "backend/app/extra_routes.py",
+    "line": 516,
+    "permissions": [],
+    "authenticated": false,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "bearer"
+  },
+  {
+    "id": "API-082",
+    "path": "/api/backups/{backup_id}/download",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "backup_download",
+    "source": "backend/app/extra_routes.py",
+    "line": 566,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-083",
+    "path": "/api/reports/{report_id}/artifact",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "report_artifact",
+    "source": "backend/app/extra_routes.py",
+    "line": 578,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-084",
+    "path": "/api/clients/{item_id}",
+    "methods": [
+      "PATCH"
+    ],
+    "endpoint": "client_update",
+    "source": "backend/app/completion_routes.py",
+    "line": 123,
+    "permissions": [
+      "edit"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-085",
+    "path": "/api/clients/{item_id}",
+    "methods": [
+      "DELETE"
+    ],
+    "endpoint": "client_delete",
+    "source": "backend/app/completion_routes.py",
+    "line": 151,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-086",
+    "path": "/api/sites/{item_id}",
+    "methods": [
+      "PATCH"
+    ],
+    "endpoint": "site_update",
+    "source": "backend/app/completion_routes.py",
+    "line": 166,
+    "permissions": [
+      "edit"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-087",
+    "path": "/api/sites/{item_id}",
+    "methods": [
+      "DELETE"
+    ],
+    "endpoint": "site_delete",
+    "source": "backend/app/completion_routes.py",
+    "line": 212,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-088",
+    "path": "/api/agenda/{item_id}",
+    "methods": [
+      "PATCH"
+    ],
+    "endpoint": "agenda_update",
+    "source": "backend/app/completion_routes.py",
+    "line": 236,
+    "permissions": [
+      "edit"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-089",
+    "path": "/api/agenda/{item_id}",
+    "methods": [
+      "DELETE"
+    ],
+    "endpoint": "agenda_delete",
+    "source": "backend/app/completion_routes.py",
+    "line": 264,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-090",
+    "path": "/api/work-orders/{item_id}",
+    "methods": [
+      "DELETE"
+    ],
+    "endpoint": "work_order_delete",
+    "source": "backend/app/completion_routes.py",
+    "line": 275,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-091",
+    "path": "/api/automation/rules/{item_id}",
+    "methods": [
+      "DELETE"
+    ],
+    "endpoint": "rule_delete",
+    "source": "backend/app/completion_routes.py",
+    "line": 290,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-092",
+    "path": "/api/webhooks/{item_id}",
+    "methods": [
+      "DELETE"
+    ],
+    "endpoint": "webhook_delete",
+    "source": "backend/app/completion_routes.py",
+    "line": 303,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-093",
+    "path": "/api/reports/{item_id}",
+    "methods": [
+      "DELETE"
+    ],
+    "endpoint": "report_delete",
+    "source": "backend/app/completion_routes.py",
+    "line": 315,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-094",
+    "path": "/api/backups/{item_id}",
+    "methods": [
+      "DELETE"
+    ],
+    "endpoint": "backup_delete",
+    "source": "backend/app/completion_routes.py",
+    "line": 346,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-095",
+    "path": "/api/integrations/status",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "integrations_status",
+    "source": "backend/app/domain_routes.py",
+    "line": 269,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-096",
+    "path": "/api/topology",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "topology",
+    "source": "backend/app/domain_routes.py",
+    "line": 274,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-097",
+    "path": "/api/equipment-bundles",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "equipment_bundle_create",
+    "source": "backend/app/domain_routes.py",
+    "line": 279,
+    "permissions": [
+      "create"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-098",
+    "path": "/api/generators/{generator_id}/lifecycle",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "generator_lifecycle",
+    "source": "backend/app/domain_routes.py",
+    "line": 294,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-099",
+    "path": "/api/network-discovery/modbus-tcp",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "network_discovery_modbus_tcp",
+    "source": "backend/app/domain_routes.py",
+    "line": 492,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-100",
+    "path": "/api/generators/{generator_id}/provision",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "generator_provision",
+    "source": "backend/app/domain_routes.py",
+    "line": 596,
+    "permissions": [
+      "create"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-101",
+    "path": "/api/generators/{generator_id}/deprovision",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "generator_deprovision",
+    "source": "backend/app/domain_routes.py",
+    "line": 610,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-102",
+    "path": "/api/generators/{generator_id}/reconfigure",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "generator_reconfigure",
+    "source": "backend/app/domain_routes.py",
+    "line": 624,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-103",
+    "path": "/api/generators/{generator_id}/retire",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "generator_retire",
+    "source": "backend/app/domain_routes.py",
+    "line": 642,
+    "permissions": [
+      "remove"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-104",
+    "path": "/api/generators/{generator_id}/operations/{operation_id}",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "generator_operation_status",
+    "source": "backend/app/domain_routes.py",
+    "line": 660,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-105",
+    "path": "/api/assets",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "assets_list",
+    "source": "backend/app/domain_routes.py",
+    "line": 695,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-106",
+    "path": "/api/assets",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "assets_create",
+    "source": "backend/app/domain_routes.py",
+    "line": 701,
+    "permissions": [
+      "create"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-107",
+    "path": "/api/assets/{asset_id}",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "asset_get",
+    "source": "backend/app/domain_routes.py",
+    "line": 713,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-108",
+    "path": "/api/assets/{asset_id}",
+    "methods": [
+      "PATCH"
+    ],
+    "endpoint": "asset_update",
+    "source": "backend/app/domain_routes.py",
+    "line": 721,
+    "permissions": [
+      "edit"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-109",
+    "path": "/api/assets/{asset_id}",
+    "methods": [
+      "DELETE"
+    ],
+    "endpoint": "asset_delete",
+    "source": "backend/app/domain_routes.py",
+    "line": 737,
+    "permissions": [
+      "remove"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-110",
+    "path": "/api/controllers",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "controllers_list",
+    "source": "backend/app/domain_routes.py",
+    "line": 759,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-111",
+    "path": "/api/controllers",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "controllers_create",
+    "source": "backend/app/domain_routes.py",
+    "line": 765,
+    "permissions": [
+      "create"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-112",
+    "path": "/api/controllers/{controller_id}",
+    "methods": [
+      "PATCH"
+    ],
+    "endpoint": "controller_update",
+    "source": "backend/app/domain_routes.py",
+    "line": 773,
+    "permissions": [
+      "edit"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-113",
+    "path": "/api/controllers/{controller_id}",
+    "methods": [
+      "DELETE"
+    ],
+    "endpoint": "controller_delete",
+    "source": "backend/app/domain_routes.py",
+    "line": 803,
+    "permissions": [
+      "remove"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-114",
+    "path": "/api/connections",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "connections_list",
+    "source": "backend/app/domain_routes.py",
+    "line": 821,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-115",
+    "path": "/api/connections",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "connections_create",
+    "source": "backend/app/domain_routes.py",
+    "line": 827,
+    "permissions": [
+      "create"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-116",
+    "path": "/api/connections/{connection_id}",
+    "methods": [
+      "PATCH"
+    ],
+    "endpoint": "connection_update",
+    "source": "backend/app/domain_routes.py",
+    "line": 836,
+    "permissions": [
+      "edit"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-117",
+    "path": "/api/connections/{connection_id}",
+    "methods": [
+      "DELETE"
+    ],
+    "endpoint": "connection_delete",
+    "source": "backend/app/domain_routes.py",
+    "line": 856,
+    "permissions": [
+      "remove"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-118",
+    "path": "/api/asset-links",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "asset_links_list",
+    "source": "backend/app/domain_routes.py",
+    "line": 879,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-119",
+    "path": "/api/asset-links",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "asset_links_create",
+    "source": "backend/app/domain_routes.py",
+    "line": 884,
+    "permissions": [
+      "create"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-120",
+    "path": "/api/asset-links/{link_id}",
+    "methods": [
+      "DELETE"
+    ],
+    "endpoint": "asset_link_delete",
+    "source": "backend/app/domain_routes.py",
+    "line": 898,
+    "permissions": [
+      "remove"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-121",
+    "path": "/api/industrial/alarms",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "alarms",
+    "source": "backend/app/industrial_routes.py",
+    "line": 117,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-122",
+    "path": "/api/industrial/alarms/ack",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "alarm_ack",
+    "source": "backend/app/industrial_routes.py",
+    "line": 124,
+    "permissions": [
+      "operate"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-123",
+    "path": "/api/industrial/process-events",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "process_events",
+    "source": "backend/app/industrial_routes.py",
+    "line": 132,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-124",
+    "path": "/api/industrial/maintenance",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "maintenance",
+    "source": "backend/app/industrial_routes.py",
+    "line": 137,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-125",
+    "path": "/api/industrial/maintenance",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "maintenance_create",
+    "source": "backend/app/industrial_routes.py",
+    "line": 143,
+    "permissions": [
+      "create"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-126",
+    "path": "/api/industrial/maintenance/{item_id}",
+    "methods": [
+      "PATCH"
+    ],
+    "endpoint": "maintenance_update",
+    "source": "backend/app/industrial_routes.py",
+    "line": 151,
+    "permissions": [
+      "edit"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-127",
+    "path": "/api/industrial/maintenance/{item_id}/complete",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "maintenance_complete",
+    "source": "backend/app/industrial_routes.py",
+    "line": 162,
+    "permissions": [
+      "edit"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-128",
+    "path": "/api/industrial/maintenance-history",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "maintenance_history",
+    "source": "backend/app/industrial_routes.py",
+    "line": 170,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-129",
+    "path": "/api/industrial/escalations",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "escalations",
+    "source": "backend/app/industrial_routes.py",
+    "line": 175,
+    "permissions": [
+      "view"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-130",
+    "path": "/api/industrial/escalations",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "escalation_create",
+    "source": "backend/app/industrial_routes.py",
+    "line": 180,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-131",
+    "path": "/api/industrial/escalations/{item_id}",
+    "methods": [
+      "PATCH"
+    ],
+    "endpoint": "escalation_update",
+    "source": "backend/app/industrial_routes.py",
+    "line": 188,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": true,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  },
+  {
+    "id": "API-132",
+    "path": "/api/industrial/escalations/{item_id}",
+    "methods": [
+      "DELETE"
+    ],
+    "endpoint": "escalation_delete",
+    "source": "backend/app/industrial_routes.py",
+    "line": 199,
+    "permissions": [
+      "admin"
+    ],
+    "authenticated": true,
+    "response_model": "None",
+    "body_required": false,
+    "status": "inventariado; contrato funcional exige cenários específicos",
+    "authentication_kind": "session"
+  }
+]
