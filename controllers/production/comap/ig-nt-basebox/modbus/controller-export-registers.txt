@@ -1,0 +1,23 @@
+# InteliGen NT BaseBox - register subset from controller-exported files supplied 2026-10-28.
+# Source attachments:
+# IG-BB REGISTER.TXT sha256=2f5b652d68ca5a6f31986fa8efadca7ace302effbf1f9b449b2fdb5c85ea81c2
+# IG-NTBB.TXT       sha256=f062e951461c566dc08224ed9b70d8296b7bd725f58606eddfc273c444a804f0
+# Holding-register notation is 4xxxx; zero-based Modbus address shown in second column.
+40013  12   battery_voltage     int16   scale=0.1 unit=V
+40163  162  engine_state_raw    uint16  scale=1
+40164  163  breaker_state_raw   uint16  scale=1
+40168  167  controller_mode_raw uint16  scale=1
+40249  248  voltage_l1          uint16  scale=1 unit=V
+40250  249  voltage_l2          uint16  scale=1 unit=V
+40251  250  voltage_l3          uint16  scale=1 unit=V
+40256  255  frequency           uint16  scale=0.1 unit=Hz
+40258  257  current_l1          uint16  scale=1 unit=A
+40259  258  current_l2          uint16  scale=1 unit=A
+40260  259  current_l3          uint16  scale=1 unit=A
+40261  260  power_factor        int16   scale=0.01
+40264  263  power_kw            int16   scale=1 unit=kW
+40288  287  mains_voltage_l1    uint16  scale=1 unit=V
+40289  288  mains_voltage_l2    uint16  scale=1 unit=V
+40290  289  mains_voltage_l3    uint16  scale=1 unit=V
+40296  295  mains_frequency     uint16  scale=0.1 unit=Hz
+40315  314  rpm                 int16   scale=1 unit=rpm

@@ -1,0 +1,336 @@
+{
+  "schema": 4,
+  "manufacturer": "ComAp",
+  "family": "InteliGen NT",
+  "model": "InteliGen NT BaseBox",
+  "aliases": [
+    "IG-NT-BB",
+    "InteliGen NT BB",
+    "IG NT BaseBox"
+  ],
+  "status": "production",
+  "application": "genset",
+  "category": "paralleling_genset",
+  "firmware": {
+    "tested": [],
+    "minimum": null,
+    "maximum": null,
+    "notes": "Mapa extraído da configuração real do G-204/1800Kva; firmware ainda não lido via sessão autenticada."
+  },
+  "protocols": [
+    "modbus",
+    "modbus_tcp"
+  ],
+  "transports": [
+    "modbus_tcp_direct"
+  ],
+  "capabilities": {
+    "telemetry": true,
+    "start": false,
+    "stop": false,
+    "off": false,
+    "auto": false,
+    "manual": false,
+    "test": false,
+    "mcb_open": false,
+    "mcb_close": false,
+    "gcb_open": false,
+    "gcb_close": false,
+    "paralleling": false
+  },
+  "validatedTelemetry": [],
+  "documentedTelemetry": [
+    "battery_voltage",
+    "engine_state_raw",
+    "breaker_state_raw",
+    "controller_mode_raw",
+    "voltage_l1",
+    "voltage_l2",
+    "voltage_l3",
+    "frequency",
+    "current_l1",
+    "current_l2",
+    "current_l3",
+    "power_factor",
+    "power_kw",
+    "mains_voltage_l1",
+    "mains_voltage_l2",
+    "mains_voltage_l3",
+    "mains_frequency",
+    "rpm"
+  ],
+  "metricUnits": {
+    "battery_voltage": "V",
+    "voltage_l1": "V",
+    "voltage_l2": "V",
+    "voltage_l3": "V",
+    "frequency": "Hz",
+    "current_l1": "A",
+    "current_l2": "A",
+    "current_l3": "A",
+    "power_kw": "kW",
+    "mains_voltage_l1": "V",
+    "mains_voltage_l2": "V",
+    "mains_voltage_l3": "V",
+    "mains_frequency": "Hz",
+    "rpm": "rpm"
+  },
+  "mapping": {
+    "kind": "modbus_register_export",
+    "readOnly": true,
+    "sourceFile": "modbus/controller-export-registers.txt",
+    "sourceSha256": "f596184992681aca36f4c505dc5ada3e68b53287b1b80e2c8c5a27ece5fda777",
+    "readFunctions": [
+      3
+    ],
+    "registers": {
+      "battery_voltage": {
+        "address": 12,
+        "count": 1,
+        "type": "int16",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "engine_state_raw": {
+        "address": 162,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1
+      },
+      "breaker_state_raw": {
+        "address": 163,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1
+      },
+      "controller_mode_raw": {
+        "address": 167,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1
+      },
+      "voltage_l1": {
+        "address": 248,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "V"
+      },
+      "voltage_l2": {
+        "address": 249,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "V"
+      },
+      "voltage_l3": {
+        "address": 250,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "V"
+      },
+      "frequency": {
+        "address": 255,
+        "count": 1,
+        "type": "uint16",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      "current_l1": {
+        "address": 257,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "A"
+      },
+      "current_l2": {
+        "address": 258,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "A"
+      },
+      "current_l3": {
+        "address": 259,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "A"
+      },
+      "power_factor": {
+        "address": 260,
+        "count": 1,
+        "type": "int16",
+        "scale": 0.01
+      },
+      "power_kw": {
+        "address": 263,
+        "count": 1,
+        "type": "int16",
+        "scale": 1,
+        "unit": "kW"
+      },
+      "mains_voltage_l1": {
+        "address": 287,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "V"
+      },
+      "mains_voltage_l2": {
+        "address": 288,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "V"
+      },
+      "mains_voltage_l3": {
+        "address": 289,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "V"
+      },
+      "mains_frequency": {
+        "address": 295,
+        "count": 1,
+        "type": "uint16",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      "rpm": {
+        "address": 314,
+        "count": 1,
+        "type": "int16",
+        "scale": 1,
+        "unit": "rpm"
+      }
+    }
+  },
+  "rapid": {
+    "template": "rapid/templates/DrvModbus_RC_IGNT_BB.xml",
+    "driver": "DrvModbus",
+    "channels": [
+      {
+        "key": "battery_voltage",
+        "tagCode": "battery_voltage_raw",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "engine_state_raw",
+        "tagCode": "engine_state_raw",
+        "scale": 1
+      },
+      {
+        "key": "breaker_state_raw",
+        "tagCode": "breaker_state_raw",
+        "scale": 1
+      },
+      {
+        "key": "controller_mode_raw",
+        "tagCode": "controller_mode_raw",
+        "scale": 1
+      },
+      {
+        "key": "voltage_l1",
+        "tagCode": "voltage_l1",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l2",
+        "tagCode": "voltage_l2",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l3",
+        "tagCode": "voltage_l3",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "frequency",
+        "tagCode": "frequency_raw",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      {
+        "key": "current_l1",
+        "tagCode": "current_l1",
+        "scale": 1,
+        "unit": "A"
+      },
+      {
+        "key": "current_l2",
+        "tagCode": "current_l2",
+        "scale": 1,
+        "unit": "A"
+      },
+      {
+        "key": "current_l3",
+        "tagCode": "current_l3",
+        "scale": 1,
+        "unit": "A"
+      },
+      {
+        "key": "power_factor",
+        "tagCode": "power_factor_raw",
+        "scale": 0.01
+      },
+      {
+        "key": "power_kw",
+        "tagCode": "power_kw",
+        "scale": 1,
+        "unit": "kW"
+      },
+      {
+        "key": "mains_voltage_l1",
+        "tagCode": "mains_voltage_l1",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "mains_voltage_l2",
+        "tagCode": "mains_voltage_l2",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "mains_voltage_l3",
+        "tagCode": "mains_voltage_l3",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "mains_frequency",
+        "tagCode": "mains_frequency_raw",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      {
+        "key": "rpm",
+        "tagCode": "rpm",
+        "scale": 1,
+        "unit": "rpm"
+      }
+    ],
+    "lineOptions": {
+      "CycleDelay": "5000",
+      "ReqRetries": "1"
+    }
+  },
+  "validation": {
+    "documentation": [
+      "User-supplied controller export: IG-BB REGISTER.TXT sha256=2f5b652d68ca5a6f31986fa8efadca7ace302effbf1f9b449b2fdb5c85ea81c2",
+      "User-supplied controller export: IG-NTBB.TXT sha256=f062e951461c566dc08224ed9b70d8296b7bd725f58606eddfc273c444a804f0"
+    ],
+    "lab": false,
+    "field": false,
+    "commandSafety": "Somente leitura FC03. Nenhum comando industrial ou escrita Modbus habilitados."
+  },
+  "notes": "Pack read-only específico da InteliGen NT BaseBox baseado no mapa extraído do G-204. Modbus/TCP via IB-COM pode exigir AccessCode por sessão; o pack não envia FC06/FC16.",
+  "commands": {}
+}

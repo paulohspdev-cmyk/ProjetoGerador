@@ -282,8 +282,9 @@
       "status": "inventory_only",
       "provisionable": false,
       "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
-      "supportState": "registration_only",
-      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
+      "supportState": "production_documented_read_only",
+      "supportNotes": "Controller Pack de produção somente leitura baseado em mapa exportado da controladora G-204; autenticação Modbus/TCP do IB-COM permanece externa ao pack.",
+      "supportPack": "ig-nt-basebox"
     },
     {
       "manufacturer": "ComAp",
