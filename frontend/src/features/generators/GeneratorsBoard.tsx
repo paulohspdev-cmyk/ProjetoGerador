@@ -50,7 +50,6 @@ const VERTICAL_GAP = 8;
 const VERTICAL_PADDING = 4;
 const VERTICAL_MIN_CARD_WIDTH = 285;
 const VERTICAL_MIN_CARD_HEIGHT = 720;
-const FULLSCREEN_AUTO_ROTATE_MS = 25_000;
 
 function verticalColumnCount(width: number) {
   const usableWidth = Math.max(1, width - VERTICAL_PADDING * 2);
@@ -210,19 +209,6 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
     },
     [pages],
   );
-
-  useEffect(() => {
-    if (!fullscreen || pages <= 1 || !ready || error) return;
-
-    const timer = window.setTimeout(() => {
-      setGroup((current) => {
-        const normalized = Math.min(Math.max(0, current), pages - 1);
-        return (normalized + 1) % pages;
-      });
-    }, FULLSCREEN_AUTO_ROTATE_MS);
-
-    return () => window.clearTimeout(timer);
-  }, [fullscreen, pages, page, ready, error]);
 
   useEffect(() => {
     if (!toolsOpen) {
@@ -512,9 +498,3 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
                 </p>
               )}
             </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
