@@ -5,7 +5,9 @@ import {
   useEffect,
   useMemo,
   useState,
+  type Dispatch,
   type ReactNode,
+  type SetStateAction,
 } from "react";
 
 type LayoutContextValue = {
@@ -21,6 +23,10 @@ type LayoutContextValue = {
   toggleTools: () => void;
   toolsPanel: ReactNode;
   setToolsPanel: (node: ReactNode) => void;
+  generatorPage: number;
+  setGeneratorPage: Dispatch<SetStateAction<number>>;
+  fullscreenGeneratorIds: string[] | null;
+  setFullscreenGeneratorIds: Dispatch<SetStateAction<string[] | null>>;
 };
 
 const LayoutContext = createContext<LayoutContextValue | null>(null);
@@ -33,6 +39,8 @@ export function LayoutProvider({ children }: { children: ReactNode }) {
   const [fullscreen, setFullscreen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
   const [toolsPanel, setToolsPanel] = useState<ReactNode>(null);
+  const [generatorPage, setGeneratorPage] = useState(0);
+  const [fullscreenGeneratorIds, setFullscreenGeneratorIds] = useState<string[] | null>(null);
 
   useEffect(() => {
     const mql = window.matchMedia(`(min-width: ${DESKTOP_MIN}px)`);
@@ -97,6 +105,10 @@ export function LayoutProvider({ children }: { children: ReactNode }) {
       toggleTools,
       toolsPanel,
       setToolsPanel,
+      generatorPage,
+      setGeneratorPage,
+      fullscreenGeneratorIds,
+      setFullscreenGeneratorIds,
     }),
     [
       collapsed,
@@ -104,6 +116,8 @@ export function LayoutProvider({ children }: { children: ReactNode }) {
       fullscreen,
       toolsOpen,
       toolsPanel,
+      generatorPage,
+      fullscreenGeneratorIds,
       toggleCollapsed,
       toggleMobile,
       toggleFullscreen,

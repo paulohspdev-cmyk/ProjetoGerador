@@ -98,9 +98,6 @@ app = FastAPI(
 
 _api_log = logging.getLogger("rc-geradores.api")
 
-_UI_RELEASE_ID = "7a7c335-no-auto-rotation"
-_UI_RELEASE_COOKIE = "rc_ui_release"
-
 
 @app.middleware("http")
 async def request_observability(request: Request, call_next):
@@ -124,23 +121,6 @@ async def request_observability(request: Request, call_next):
             headers={"X-Request-ID": request_id},
         )
     response.headers["X-Request-ID"] = request_id
-
-    if (
-        request.method == "GET"
-        and request.url.path == "/api/generators"
-        and request.cookies.get(_UI_RELEASE_COOKIE) != _UI_RELEASE_ID
-    ):
-        response.headers["Clear-Site-Data"] = '"cache", "executionContexts"'
-        response.set_cookie(
-            key=_UI_RELEASE_COOKIE,
-            value=_UI_RELEASE_ID,
-            max_age=7 * 24 * 60 * 60,
-            path="/",
-            secure=True,
-            httponly=True,
-            samesite="lax",
-        )
-
     return response
 
 

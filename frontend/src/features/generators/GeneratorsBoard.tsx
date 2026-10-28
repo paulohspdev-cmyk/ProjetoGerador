@@ -77,11 +77,20 @@ const filters: Array<{ id: GenStatus | "todos"; label: string }> = [
 
 export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
   const { generators, ready, error, refresh } = useGenerators();
-  const { fullscreen, toggleFullscreen, toolsOpen, setToolsPanel, toggleMobile } = useLayout();
+  const {
+    fullscreen,
+    toggleFullscreen,
+    toolsOpen,
+    setToolsPanel,
+    toggleMobile,
+    generatorPage: group,
+    setGeneratorPage: setGroup,
+    fullscreenGeneratorIds,
+    setFullscreenGeneratorIds,
+  } = useLayout();
   const [view, setView] = useState<View>("principal");
   const [status, setStatus] = useState<GenStatus | "todos">("todos");
   const [query, setQuery] = useState("");
-  const [group, setGroup] = useState(0);
   const [edgeHover, setEdgeHover] = useState<"left" | "right" | null>(null);
   const [fullscreenVerticalGrid, setFullscreenVerticalGrid] = useState<{
     columns: number;
@@ -155,6 +164,24 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
     [generators, status, query],
   );
 
+  useEffect(() => {
+    if (!fullscreen || view !== "principal") {
+      setFullscreenGeneratorIds(null);
+      return;
+    }
+
+    setFullscreenGeneratorIds((current) => current ?? items.map((generator) => generator.id));
+  }, [fullscreen, items, setFullscreenGeneratorIds, view]);
+
+  const pagedItems = useMemo(() => {
+    if (!fullscreen || view !== "principal" || !fullscreenGeneratorIds) return items;
+
+    const byId = new Map(items.map((generator) => [generator.id, generator]));
+    return fullscreenGeneratorIds
+      .map((id) => byId.get(id))
+      .filter((generator): generator is (typeof items)[number] => Boolean(generator));
+  }, [fullscreen, fullscreenGeneratorIds, items, view]);
+
   const compactLayoutState = useMemo(
     () =>
       compactLayout(
@@ -183,9 +210,9 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
     compactLayoutState.pageSize,
     fullscreenVerticalGrid,
   ]);
-  const pages = Math.max(1, Math.ceil(items.length / pageSize));
+  const pages = Math.max(1, Math.ceil(pagedItems.length / pageSize));
   const page = Math.min(group, pages - 1);
-  const visible = items.slice(page * pageSize, page * pageSize + pageSize);
+  const visible = pagedItems.slice(page * pageSize, page * pageSize + pageSize);
 
   const compactGridStyle = useMemo(
     () =>
@@ -233,16 +260,20 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
   const currentView = views.find((item) => item.id === view) ?? views[0]!;
   const currentFilter = filters.find((item) => item.id === status) ?? filters[0]!;
 
-  const setFilter = (id: GenStatus | "todos") => {
-    setStatus(id);
-    setGroup(0);
-  };
+  const setFilter = useCallback(
+    (id: GenStatus | "todos") => {
+      setStatus(id);
+      setFullscreenGeneratorIds(null);
+      setGroup(0);
+    },
+    [setFullscreenGeneratorIds, setGroup],
+  );
 
   const turnPage = useCallback(
     (delta: number) => {
       setGroup((current) => Math.min(pages - 1, Math.max(0, current + delta)));
     },
-    [pages],
+    [pages, setGroup],
   );
 
   useEffect(() => {
@@ -271,6 +302,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
                 value={view}
                 onValueChange={(value) => {
                   setView(value as View);
+                  setFullscreenGeneratorIds(null);
                   setGroup(0);
                 }}
               >
@@ -352,6 +384,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
               value={query}
               onChange={(event) => {
                 setQuery(event.target.value);
+                setFullscreenGeneratorIds(null);
                 setGroup(0);
               }}
               placeholder="Buscar"
@@ -375,6 +408,9 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
     currentView,
     currentFilter,
     setToolsPanel,
+    setFilter,
+    setFullscreenGeneratorIds,
+    setGroup,
     toggleFullscreen,
     turnPage,
   ]);
