@@ -83,6 +83,10 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState(0);
   const [edgeHover, setEdgeHover] = useState<"left" | "right" | null>(null);
+  const [fullscreenVerticalGrid, setFullscreenVerticalGrid] = useState<{
+    columns: number;
+    rows: number;
+  } | null>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
 
@@ -116,6 +120,27 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
     };
   }, [viewport]);
 
+  useEffect(() => {
+    if (!fullscreen || view !== "principal") {
+      setFullscreenVerticalGrid(null);
+      return;
+    }
+
+    let frame = 0;
+    frame = window.requestAnimationFrame(() => {
+      frame = window.requestAnimationFrame(() => {
+        const element = viewportRef.current;
+        if (!element) return;
+        setFullscreenVerticalGrid({
+          columns: verticalColumnCount(element.clientWidth),
+          rows: verticalRowCount(element.clientHeight),
+        });
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [fullscreen, view]);
+
   const items = useMemo(
     () =>
       generators.filter(
@@ -145,9 +170,19 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
       return view === "principal" ? 4 : view === "lista" ? 12 : 18;
     }
     if (view === "lista") return Math.max(1, Math.floor(viewport.height / 43));
-    if (view === "principal") return verticalLayout.pageSize;
+    if (view === "principal") {
+      return fullscreenVerticalGrid
+        ? fullscreenVerticalGrid.columns * fullscreenVerticalGrid.rows
+        : verticalLayout.pageSize;
+    }
     return compactLayoutState.pageSize;
-  }, [view, viewport, verticalLayout.pageSize, compactLayoutState.pageSize]);
+  }, [
+    view,
+    viewport,
+    verticalLayout.pageSize,
+    compactLayoutState.pageSize,
+    fullscreenVerticalGrid,
+  ]);
   const pages = Math.max(1, Math.ceil(items.length / pageSize));
   const page = Math.min(group, pages - 1);
   const visible = items.slice(page * pageSize, page * pageSize + pageSize);
@@ -166,8 +201,8 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
   );
 
   const verticalGridStyle = useMemo(() => {
-    const columns = Math.max(1, verticalLayout.columns);
-    const rows = Math.max(1, verticalLayout.rows);
+    const columns = Math.max(1, fullscreenVerticalGrid?.columns ?? verticalLayout.columns);
+    const rows = Math.max(1, fullscreenVerticalGrid?.rows ?? verticalLayout.rows);
     const usableWidth = Math.max(1, (viewport.width || 1200) - VERTICAL_PADDING * 2);
     const usableHeight = Math.max(1, (viewport.height || 720) - VERTICAL_PADDING * 2);
     // Preserve the normal grid even when the current page/filter has only a
@@ -191,7 +226,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
       "--vref-gap": VERTICAL_GAP + "px",
       "--vref-padding": VERTICAL_PADDING + "px",
     } as CSSProperties;
-  }, [verticalLayout, viewport.width, viewport.height, visible.length]);
+  }, [verticalLayout, fullscreenVerticalGrid, viewport.width, viewport.height, visible.length]);
 
   const trulyEmpty = ready && !error && generators.length === 0;
   const filterEmpty = ready && !error && generators.length > 0 && visible.length === 0;
@@ -498,3 +533,9 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
                 </p>
               )}
             </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
