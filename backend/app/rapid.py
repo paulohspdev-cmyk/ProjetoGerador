@@ -17,7 +17,7 @@ from .config import (
 )
 from .controller_library import pack_for_model
 from .power_topology import resolve_power_topology
-from . import db, ig4_prod, ibcom_web
+from . import db, ig4_prod, ibcom_web, ignt_basebox
 from .production_guard import production_mode
 
 _cache = {"at": 0.0, "channels": {}, "error": "", "requested": set()}
@@ -555,11 +555,19 @@ def _effective_capabilities(generator, status: str, binding_present: bool) -> di
             and isinstance((pack or {}).get("homologationCandidates", {}).get(action), dict)
             and (pack or {}).get("homologationCandidates", {}).get(action, {}).get("documented")
         )
+        basebox_documented_contract = bool(
+            action in ignt_basebox.ACTIONS
+            and ignt_basebox.is_target(generator)
+            and ignt_basebox.documented_command_ready(pack or {}, action)
+            and declared_contract
+        )
         result[action] = bool(
-            field_validated
-            and online
+            online
             and binding_present
-            and (declared_contract or ig4_target_contract)
+            and (
+                (field_validated and (declared_contract or ig4_target_contract))
+                or basebox_documented_contract
+            )
         )
     return result
 

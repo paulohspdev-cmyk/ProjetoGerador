@@ -19,7 +19,7 @@ import struct
 import time
 from pathlib import Path
 
-from . import db
+from . import db, ignt_basebox
 from .binding_store import load_runtime_bindings
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -31,6 +31,7 @@ RECONCILE_SECONDS = float(os.environ.get("RC_RAPID_RECONCILE_SECONDS", "5"))
 CONTROL_SOCKET = os.environ.get("RC_RAPID_CONTROL_SOCKET", "/run/rc-geradores/control.sock")
 ENABLE_IG200_CONTROL = os.environ.get("RC_ENABLE_IG200_CONTROL", "0").strip() == "1"
 ENABLE_IG4_PROD_CONTROL = os.environ.get("RC_ENABLE_IG4_PROD_CONTROL", "0").strip() == "1"
+ENABLE_IGNT_BASEBOX_CONTROL = ignt_basebox.enabled()
 
 READ_FUNCTIONS = {3, 4}
 IG200_RPM_ADDRESS = 1000
@@ -65,6 +66,25 @@ IG4_BREAKERS_OFF = 1
 IG4_STOP_BREAKER_STATES = {1, 2, 3, 4, 10, 11}
 IG4_ALARM_MASK = 0x0400
 IG4_RUNNING_STATES = {7, 8}
+
+IGNT_BB_ACCESS_ADDRESS = 6338
+IGNT_BB_ACCESS_REGISTERS = 8
+IGNT_BB_COMMAND_ARGUMENT_ADDRESS = 6358
+IGNT_BB_COMMAND_CODE_ADDRESS = 6360
+IGNT_BB_COMMAND_CODE = 0x0001
+IGNT_BB_START_ARGUMENT = 0x01FE0000
+IGNT_BB_STOP_ARGUMENT = 0x02FD0000
+IGNT_BB_START_RETURN = 0x000001FF
+IGNT_BB_STOP_RETURN = 0x000002FE
+IGNT_BB_RPM_ADDRESS = 314
+IGNT_BB_MODE_ADDRESS = 167
+IGNT_BB_ENGINE_ADDRESS = 162
+IGNT_BB_BREAKER_ADDRESS = 163
+IGNT_BB_MODE_MAN = 1
+IGNT_BB_ENGINE_READY = 1
+IGNT_BB_BREAKERS_OFF = 1
+IGNT_BB_RUNNING_STATES = {7, 8}
+IGNT_BB_STOP_BREAKER_STATES = {1, 2, 3, 4, 10, 11}
 
 
 def log(message):
@@ -139,6 +159,260 @@ def resolve_ig4_prod(generator_id, device_num):
         f"resolver IG4 de produção não instalado para Rapid Device {int(device_num or 0)}; "
         "execute app.bridge_runtime"
     )
+
+
+def _ignt_basebox_access_code(generator_id: str) -> str:
+    key = "RC_IBCOM_ACCESS_CODE_" + "".join(
+        char if char.isalnum() else "_" for char in str(generator_id or "")
+    ).upper()
+    code = str(os.environ.get(key) or "")
+    if not code:
+        raise PermissionError("AccessCode IB-COM não configurado para BaseBox")
+    if len(code) > 15 or not code.isascii():
+        raise ValueError("AccessCode IB-COM inválido")
+    return code
+
+
+def resolve_ignt_basebox_control(generator_id, device_num):
+    generator = db.get_generator(str(generator_id or ""))
+    if not generator:
+        raise ValueError("gerador BaseBox não encontrado")
+    if not generator.get("enabled"):
+        raise PermissionError("gerador BaseBox desabilitado")
+    if not ignt_basebox.is_target(generator):
+        raise PermissionError("BaseBox fora da allowlist de controle")
+    if int(generator.get("rapid_device_num") or 0) != int(device_num or 0):
+        raise PermissionError("Rapid Device BaseBox não confere com o cadastro")
+
+    binding = next(
+        (
+            item
+            for item in load_bindings()
+            if str(item.get("generator_id") or "") == str(generator.get("id") or "")
+        ),
+        None,
+    )
+    if not binding:
+        raise PermissionError("binding Rapid BaseBox ausente")
+    for key in ("controller_model", "transport", "host", "listen_port", "modbus_unit", "rapid_device_num"):
+        expected = generator.get(key)
+        actual = binding.get(key)
+        if key in {"listen_port", "modbus_unit", "rapid_device_num"}:
+            expected = int(expected or 0)
+            actual = int(actual or 0)
+        else:
+            expected = str(expected or "").strip().casefold()
+            actual = str(actual or "").strip().casefold()
+        if expected != actual:
+            raise PermissionError(f"binding BaseBox diverge em {key}")
+    _ignt_basebox_access_code(str(generator["id"]))
+    return generator
+
+
+def _ignt_access_pdu(code: str) -> bytes:
+    payload = code.encode("ascii") + bytes([0])
+    payload = payload.ljust(16, bytes([0]))[:16]
+    return struct.pack(
+        ">BHHB", 16, IGNT_BB_ACCESS_ADDRESS, IGNT_BB_ACCESS_REGISTERS, len(payload)
+    ) + payload
+
+
+async def _ignt_tcp_response(reader, expected_tid: int, expected_unit: int) -> bytes:
+    header = await asyncio.wait_for(reader.readexactly(7), timeout=4.0)
+    tid, proto, length, unit = struct.unpack(">HHHB", header)
+    if tid != expected_tid or proto != 0 or unit != expected_unit:
+        raise ValueError(
+            f"MBAP BaseBox inválido tid={tid} proto={proto} unit={unit}"
+        )
+    if length < 2 or length > 260:
+        raise ValueError(f"MBAP BaseBox length inválido: {length}")
+    return await asyncio.wait_for(reader.readexactly(length - 1), timeout=4.0)
+
+
+async def _ignt_tcp_request(reader, writer, tid: int, unit: int, pdu: bytes) -> bytes:
+    writer.write(mbap(tid, unit, pdu))
+    await writer.drain()
+    return await _ignt_tcp_response(reader, tid, unit)
+
+
+async def _ignt_snapshot(reader, writer, tid: int, unit: int) -> tuple[dict, int]:
+    values = {}
+    for name, address in (
+        ("rpm", IGNT_BB_RPM_ADDRESS),
+        ("mode", IGNT_BB_MODE_ADDRESS),
+        ("engine", IGNT_BB_ENGINE_ADDRESS),
+        ("breaker", IGNT_BB_BREAKER_ADDRESS),
+    ):
+        tid += 1
+        pdu = await _ignt_tcp_request(reader, writer, tid, unit, read_holding_pdu(address, 1))
+        raw = parse_registers(pdu, 1)[0]
+        if name == "rpm" and raw >= 0x8000:
+            raw -= 0x10000
+        values[name] = raw
+    return values, tid
+
+
+def _require_ignt_state(action: str, state: dict) -> None:
+    failures = []
+    if state.get("mode") != IGNT_BB_MODE_MAN:
+        failures.append(f"modo={state.get('mode')} (esperado MAN=1)")
+    if action == "start":
+        if state.get("rpm") != 0:
+            failures.append(f"rpm={state.get('rpm')} (esperado 0)")
+        if state.get("engine") != IGNT_BB_ENGINE_READY:
+            failures.append(f"engine={state.get('engine')} (esperado Ready=1)")
+        if state.get("breaker") != IGNT_BB_BREAKERS_OFF:
+            failures.append(f"breaker={state.get('breaker')} (esperado BrksOff=1)")
+    elif action == "stop":
+        if state.get("rpm", 0) <= 100:
+            failures.append(f"rpm={state.get('rpm')} (motor já parado/abaixo de 100 rpm)")
+        if state.get("breaker") not in IGNT_BB_STOP_BREAKER_STATES:
+            failures.append(f"breaker={state.get('breaker')} (estado não liberado para STOP)")
+    else:
+        failures.append(f"ação inválida {action}")
+    if failures:
+        raise PermissionError(
+            f"{action.upper()} BaseBox recusado: " + "; ".join(failures)
+        )
+
+
+async def ignt_basebox_command(generator: dict, action: str) -> dict:
+    if action not in ignt_basebox.ACTIONS:
+        raise ValueError("ação BaseBox inválida")
+
+    host = str(generator.get("host") or "").strip()
+    port = int(generator.get("listen_port") or 502)
+    unit = int(generator.get("modbus_unit") or 1)
+    code = _ignt_basebox_access_code(str(generator.get("id") or ""))
+    argument = IGNT_BB_START_ARGUMENT if action == "start" else IGNT_BB_STOP_ARGUMENT
+    expected_return = IGNT_BB_START_RETURN if action == "start" else IGNT_BB_STOP_RETURN
+
+    reader = writer = None
+    tid = 0x5100
+    try:
+        reader, writer = await asyncio.wait_for(
+            asyncio.open_connection(host, port), timeout=4.0
+        )
+
+        tid += 1
+        auth = await _ignt_tcp_request(reader, writer, tid, unit, _ignt_access_pdu(code))
+        ensure_write_ok(auth, 16)
+        if len(auth) != 5:
+            raise ValueError(f"eco AccessCode inválido: {auth.hex()}")
+        _, auth_address, auth_count = struct.unpack(">BHH", auth)
+        if auth_address != IGNT_BB_ACCESS_ADDRESS or auth_count != IGNT_BB_ACCESS_REGISTERS:
+            raise ValueError(
+                f"eco AccessCode inválido address={auth_address} count={auth_count}"
+            )
+
+        before, tid = await _ignt_snapshot(reader, writer, tid, unit)
+        _require_ignt_state(action, before)
+        await asyncio.sleep(0.15)
+        immediate, tid = await _ignt_snapshot(reader, writer, tid, unit)
+        _require_ignt_state(action, immediate)
+
+        critical = ("mode", "rpm", "engine", "breaker") if action == "start" else ("mode", "breaker")
+        if any(before[key] != immediate[key] for key in critical):
+            raise PermissionError(
+                f"{action.upper()} BaseBox recusado: estado crítico mudou entre validações"
+            )
+
+        tid += 1
+        arg_resp = await _ignt_tcp_request(
+            reader, writer, tid, unit,
+            write_multiple_u32_pdu(IGNT_BB_COMMAND_ARGUMENT_ADDRESS, argument),
+        )
+        ensure_write_ok(arg_resp, 16)
+        if len(arg_resp) != 5:
+            raise ValueError(f"eco FC16 BaseBox inválido: {arg_resp.hex()}")
+        _, arg_address, arg_count = struct.unpack(">BHH", arg_resp)
+        if arg_address != IGNT_BB_COMMAND_ARGUMENT_ADDRESS or arg_count != 2:
+            raise ValueError(
+                f"eco argumento BaseBox inválido address={arg_address} count={arg_count}"
+            )
+
+        await asyncio.sleep(0.10)
+        tid += 1
+        cmd_resp = await _ignt_tcp_request(
+            reader, writer, tid, unit,
+            write_single_pdu(IGNT_BB_COMMAND_CODE_ADDRESS, IGNT_BB_COMMAND_CODE),
+        )
+        ensure_write_ok(cmd_resp, 6)
+        if len(cmd_resp) != 5:
+            raise ValueError(f"eco FC06 BaseBox inválido: {cmd_resp.hex()}")
+        _, cmd_address, cmd_value = struct.unpack(">BHH", cmd_resp)
+        if cmd_address != IGNT_BB_COMMAND_CODE_ADDRESS or cmd_value != IGNT_BB_COMMAND_CODE:
+            raise ValueError(
+                f"eco comando BaseBox inválido address={cmd_address} value={cmd_value}"
+            )
+
+        await asyncio.sleep(0.25)
+        tid += 1
+        ret_pdu = await _ignt_tcp_request(
+            reader, writer, tid, unit,
+            read_holding_pdu(IGNT_BB_COMMAND_ARGUMENT_ADDRESS, 2),
+        )
+        regs = parse_registers(ret_pdu, 2)
+        return_value = (regs[0] << 16) | regs[1]
+
+        if return_value != expected_return:
+            reason = (
+                "controlador recusou: argumento inválido"
+                if return_value == 1
+                else "controlador recusou o comando (modo, acesso ou intertravamento)"
+                if return_value == 2
+                else f"retorno inesperado 0x{return_value:08X}"
+            )
+            return {
+                "ok": False,
+                "accepted": False,
+                "action": action,
+                "reason": reason,
+                "return_value": f"0x{return_value:08X}",
+                "state_before": before,
+                "feedback_confirmed": False,
+            }
+
+        feedback_confirmed = False
+        last_state = None
+        deadline = asyncio.get_running_loop().time() + (15.0 if action == "start" else 30.0)
+        while asyncio.get_running_loop().time() < deadline:
+            await asyncio.sleep(0.5)
+            try:
+                last_state, tid = await _ignt_snapshot(reader, writer, tid, unit)
+            except Exception:
+                continue
+            if action == "start":
+                feedback_confirmed = bool(
+                    last_state["rpm"] > 100
+                    and last_state["engine"] in IGNT_BB_RUNNING_STATES
+                )
+            else:
+                feedback_confirmed = bool(last_state["rpm"] <= 100)
+            if feedback_confirmed:
+                break
+
+        return {
+            "ok": bool(feedback_confirmed),
+            "accepted": True,
+            "action": action,
+            "reason": (
+                f"{action.upper()} aceito e feedback por RPM confirmado"
+                if feedback_confirmed
+                else f"{action.upper()} aceito, mas feedback por RPM não confirmou no prazo"
+            ),
+            "return_value": f"0x{return_value:08X}",
+            "state_before": before,
+            "state_after": last_state,
+            "feedback_confirmed": bool(feedback_confirmed),
+        }
+    finally:
+        if writer is not None:
+            writer.close()
+            try:
+                await writer.wait_closed()
+            except Exception:
+                pass
 
 
 class BridgePort:
@@ -645,23 +919,37 @@ async def handle_control(reader, writer):
                 req.get("generator_id"),
                 int(req.get("device") or 0),
             )
+        elif executor == "ignt_basebox_privileged":
+            if not ENABLE_IGNT_BASEBOX_CONTROL:
+                raise PermissionError("controle InteliGen NT BaseBox desabilitado")
+            generator = resolve_ignt_basebox_control(
+                req.get("generator_id"),
+                int(req.get("device") or 0),
+            )
+            port = int(generator.get("listen_port") or 502)
+            unit = int(generator.get("modbus_unit") or 1)
         else:
             raise PermissionError(f"executor não permitido no socket: {executor or 'N/D'}")
 
-        port_bridge = bridges.get(port)
-        if port_bridge is None:
-            raise ConnectionError(f"ponte da porta {port} não está ativa")
-        if port_bridge.remote_writer is None:
-            raise ConnectionError(f"modem da porta {port} está desconectado")
+        port_bridge = None
+        if executor != "ignt_basebox_privileged":
+            port_bridge = bridges.get(port)
+            if port_bridge is None:
+                raise ConnectionError(f"ponte da porta {port} não está ativa")
+            if port_bridge.remote_writer is None:
+                raise ConnectionError(f"modem da porta {port} está desconectado")
 
         if executor == "ig200_privileged":
             result = await port_bridge.execute_privileged_command(
                 executor, unit, action, password=req.get("password")
             )
             controller_label = "IG200"
-        else:
+        elif executor == "comap_privileged":
             result = await port_bridge.execute_privileged_command(executor, unit, action)
             controller_label = "IG4"
+        else:
+            result = await ignt_basebox_command(generator, action)
+            controller_label = "IG-NT BaseBox"
 
         response = {
             **result,
@@ -718,6 +1006,8 @@ async def start_control_server():
         modes.append("IG200 start/stop")
     if ENABLE_IG4_PROD_CONTROL:
         modes.append("IG4 allowlist start/stop")
+    if ENABLE_IGNT_BASEBOX_CONTROL:
+        modes.append("IG-NT BaseBox allowlist start/stop")
     mode = "ATIVO: " + ", ".join(modes) if modes else "DESABILITADO"
     log(f"socket de controle local {socket_path} ({mode})")
 

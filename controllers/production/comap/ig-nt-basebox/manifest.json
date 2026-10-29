@@ -12,10 +12,12 @@
   "application": "genset",
   "category": "paralleling_genset",
   "firmware": {
-    "tested": [],
+    "tested": [
+      "1.0-branch-207"
+    ],
     "minimum": null,
     "maximum": null,
-    "notes": "Mapa extraído da configuração real do G-204/1800Kva; firmware ainda não lido via sessão autenticada."
+    "notes": "G-204/1800Kva identificado ao vivo no IB-COM: SW version 1.0, SW branch 207."
   },
   "protocols": [
     "modbus",
@@ -26,8 +28,8 @@
   ],
   "capabilities": {
     "telemetry": true,
-    "start": false,
-    "stop": false,
+    "start": true,
+    "stop": true,
     "off": false,
     "auto": false,
     "manual": false,
@@ -330,8 +332,79 @@
     ],
     "lab": false,
     "field": false,
-    "commandSafety": "Somente leitura FC03. Nenhum comando industrial ou escrita Modbus habilitados."
+    "commandSafety": "START/STOP documentados no ComAp IGS-NT Communication Guide e no export real da G-204 (Used Commands: Engine Cmd, AccGroup No). Executor restrito a allowlist do G-204, firmware exato, telemetria fresca, modo MAN e feedback por RPM. Primeira atuação de campo ainda pendente."
   },
-  "notes": "Pack read-only específico da InteliGen NT BaseBox baseado no mapa extraído do G-204. Modbus/TCP via IB-COM pode exigir AccessCode por sessão; o pack não envia FC06/FC16.",
-  "commands": {}
+  "notes": "Pack da InteliGen NT BaseBox baseado no mapa extraído do G-204. Telemetria via IB-COM Web read-only. START/STOP usam Engine Cmd IGS-NT documentado em duas etapas, somente por executor privilegiado e allowlist; nenhum comando é disparado durante provisionamento.",
+  "commands": {
+    "start": {
+      "executor": "ignt_basebox_privileged",
+      "transport": "modbus_tcp_direct",
+      "confirmation": "START",
+      "preconditions": [
+        "generator_enabled",
+        "documented_command_path",
+        "allowlisted_generator",
+        "binding_match",
+        "firmware_exact",
+        "controller_online",
+        "mode_manual",
+        "engine_ready",
+        "breakers_off",
+        "engine_stopped"
+      ],
+      "feedback": {
+        "metric": "rpm",
+        "operator": "gt",
+        "value": 100,
+        "timeoutSeconds": 15
+      },
+      "timeoutSeconds": 20,
+      "notes": "IGS-NT Engine Cmd via IB-COM em duas etapas; sem execução automática."
+    },
+    "stop": {
+      "executor": "ignt_basebox_privileged",
+      "transport": "modbus_tcp_direct",
+      "confirmation": "STOP",
+      "preconditions": [
+        "generator_enabled",
+        "documented_command_path",
+        "allowlisted_generator",
+        "binding_match",
+        "firmware_exact",
+        "controller_online",
+        "mode_manual",
+        "engine_running"
+      ],
+      "feedback": {
+        "metric": "rpm",
+        "operator": "lte",
+        "value": 100,
+        "timeoutSeconds": 30
+      },
+      "timeoutSeconds": 35,
+      "notes": "IGS-NT Engine Cmd via IB-COM em duas etapas; sem execução automática."
+    }
+  },
+  "homologationCandidates": {
+    "start": {
+      "documented": true,
+      "mechanism": "igs_nt_engine_cmd_two_step",
+      "argumentAddress": 6358,
+      "commandAddress": 6360,
+      "commandCode": 1,
+      "argument": "0x01FE0000",
+      "expectedReturn": "0x000001FF",
+      "fieldState": "authorized_first_field_validation_pending"
+    },
+    "stop": {
+      "documented": true,
+      "mechanism": "igs_nt_engine_cmd_two_step",
+      "argumentAddress": 6358,
+      "commandAddress": 6360,
+      "commandCode": 1,
+      "argument": "0x02FD0000",
+      "expectedReturn": "0x000002FE",
+      "fieldState": "authorized_first_field_validation_pending"
+    }
+  }
 }

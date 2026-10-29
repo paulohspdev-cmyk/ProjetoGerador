@@ -2,7 +2,7 @@ import asyncio
 import json
 from pathlib import Path
 
-from . import domain_store, ig4_prod
+from . import domain_store, ibcom_web, ig4_prod, ignt_basebox
 from .binding_store import load_runtime_bindings
 from .config import CONTROL_SOCKET
 from .controller_library import (
@@ -124,13 +124,20 @@ def command_contract(generator: dict, action: str) -> tuple[dict, dict]:
     pack = pack_for_model(generator.get("controller_model") or "")
     if not pack or not pack_is_production_ready(pack):
         raise ValueError("Controle bloqueado: Controller Pack não está pronto para produção")
-    if pack.get("status") != "field_validated":
+    basebox_documented = bool(
+        action in ignt_basebox.ACTIONS
+        and ignt_basebox.is_target(generator)
+        and ignt_basebox.documented_command_ready(pack, action)
+    )
+    if pack.get("status") != "field_validated" and not basebox_documented:
         raise ValueError("Controle bloqueado: comandos exigem Controller Pack validado fisicamente em campo")
 
     capabilities = dict(pack.get("capabilities") or {})
     commands = dict(pack.get("commands") or {})
 
-    if action in ig4_prod.ACTIONS and ig4_prod.is_target(generator):
+    if basebox_documented:
+        contract = ignt_basebox.command_contract(pack, action)
+    elif action in ig4_prod.ACTIONS and ig4_prod.is_target(generator):
         contract = ig4_prod.command_contract(pack, action)
     else:
         if not bool(capabilities.get(action)):
@@ -162,7 +169,7 @@ async def send_homologated_command(generator: dict, action: str) -> dict:
     executor = str(contract.get("executor") or "")
     rapid_device = int(generator.get("rapid_device_num") or 0)
 
-    if executor not in {"ig200_privileged", "comap_privileged"}:
+    if executor not in {"ig200_privileged", "comap_privileged", "ignt_basebox_privileged"}:
         raise ValueError(
             f"Controle bloqueado: executor {executor or 'N/D'} ainda não possui implementação "
             "de produção homologada"
@@ -173,6 +180,33 @@ async def send_homologated_command(generator: dict, action: str) -> dict:
         )
     if executor == "comap_privileged" and not ig4_prod.is_target(generator):
         raise ValueError("Controle bloqueado: IG4 fora da allowlist de produção")
+    if executor == "ignt_basebox_privileged" and not ignt_basebox.is_target(generator):
+        raise ValueError("Controle bloqueado: BaseBox fora da allowlist de produção")
+
+    if executor == "ignt_basebox_privileged":
+        web_data, web_error = ibcom_web.telemetry(generator)
+        if not web_data or web_error:
+            raise ValueError(
+                "Controle bloqueado: telemetria IB-COM fresca não disponível"
+                + (f" ({web_error})" if web_error else "")
+            )
+        age = max(0, int(__import__("time").time()) - int(web_data.get("at") or 0))
+        if age > 20:
+            raise ValueError(f"Controle bloqueado: telemetria IB-COM com {age}s")
+        values = dict(web_data.get("values") or {})
+        mode = int(values.get("controller_mode_raw", -1))
+        rpm = float(values.get("rpm", -1))
+        engine = int(values.get("engine_state_raw", -1))
+        breaker = int(values.get("breaker_state_raw", -1))
+        if mode != 1:
+            raise ValueError(f"Controle bloqueado: BaseBox não está em MAN (modo={mode})")
+        if action == "start":
+            if rpm != 0 or engine != 1 or breaker != 1:
+                raise ValueError(
+                    "START bloqueado: exige RPM=0, Engine state=Ready e Breaker state=BrksOff"
+                )
+        elif rpm <= 100:
+            raise ValueError(f"STOP bloqueado: motor já está parado/abaixo de 100 rpm ({rpm:g})")
 
     timeout = float(contract.get("timeoutSeconds") or 20)
     payload = {
@@ -181,13 +215,26 @@ async def send_homologated_command(generator: dict, action: str) -> dict:
         "executor": executor,
         "confirm": "REMOTE_CONTROL_CONFIRMED",
     }
-    if executor == "comap_privileged":
+    if executor in {"comap_privileged", "ignt_basebox_privileged"}:
         payload["generator_id"] = str(generator.get("id") or "")
-    result = await _send_socket_command(
-        Path(CONTROL_SOCKET),
-        payload,
-        timeout=timeout,
-    )
+
+    if executor == "ignt_basebox_privileged":
+        ibcom_web.suspend_for_control(str(generator.get("id") or ""), seconds=50)
+        try:
+            await asyncio.sleep(0.75)
+            result = await _send_socket_command(
+                Path(CONTROL_SOCKET),
+                payload,
+                timeout=timeout,
+            )
+        finally:
+            ibcom_web.resume_after_control(str(generator.get("id") or ""), delay_seconds=2)
+    else:
+        result = await _send_socket_command(
+            Path(CONTROL_SOCKET),
+            payload,
+            timeout=timeout,
+        )
     return {
         **result,
         "ok": bool(result.get("accepted") and result.get("feedback_confirmed")),

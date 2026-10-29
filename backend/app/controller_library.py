@@ -91,6 +91,54 @@ def _documented_read_only_production_contract(pack: dict | None) -> bool:
     )
 
 
+def _documented_allowlisted_first_command_contract(pack: dict | None) -> bool:
+    """Aceita um primeiro teste de campo apenas para o executor BaseBox explicitamente restrito.
+
+    Não promove o pack a field_validated. A autorização operacional continua dependente
+    de allowlist por generator_id, firmware exato, binding e telemetria fresca.
+    """
+    if not pack:
+        return False
+    if str(pack.get("status") or "") != "production":
+        return False
+    if int(pack.get("schema") or 0) not in SUPPORTED_PACK_SCHEMAS:
+        return False
+    if str(pack.get("model") or "").strip().casefold() != "inteligen nt basebox":
+        return False
+
+    firmware = (pack.get("firmware") or {}).get("tested") or []
+    validation = pack.get("validation") or {}
+    capabilities = pack.get("capabilities") or {}
+    commands = pack.get("commands") or {}
+    candidates = pack.get("homologationCandidates") or {}
+
+    if not firmware or not validation.get("documentation") or validation.get("field") is True:
+        return False
+    if not capabilities.get("telemetry") or not capabilities.get("start") or not capabilities.get("stop"):
+        return False
+    if any(
+        bool(capabilities.get(name))
+        for name in COMMAND_CAPABILITIES
+        if name not in {"start", "stop"}
+    ):
+        return False
+
+    for action in ("start", "stop"):
+        contract = commands.get(action)
+        candidate = candidates.get(action)
+        if not isinstance(contract, dict) or not isinstance(candidate, dict):
+            return False
+        if contract.get("executor") != "ignt_basebox_privileged":
+            return False
+        if contract.get("transport") != "modbus_tcp_direct":
+            return False
+        if candidate.get("documented") is not True:
+            return False
+        if str(candidate.get("fieldState") or "") != "authorized_first_field_validation_pending":
+            return False
+    return True
+
+
 def pack_is_production_ready(pack: dict | None) -> bool:
     if not pack or pack.get("lifecycle") != "production":
         return False
@@ -98,7 +146,11 @@ def pack_is_production_ready(pack: dict | None) -> bool:
         str(pack.get("status") or "") == "field_validated"
         and int(pack.get("schema") or 0) in SUPPORTED_PACK_SCHEMAS
     )
-    return field_validated or _documented_read_only_production_contract(pack)
+    return (
+        field_validated
+        or _documented_read_only_production_contract(pack)
+        or _documented_allowlisted_first_command_contract(pack)
+    )
 
 
 def pack_is_lab_onboarding_ready(pack: dict | None) -> bool:
@@ -148,7 +200,11 @@ def _read_manifest(path: Path, lifecycle: str) -> dict:
             str(data.get("status") or "") == "field_validated"
             and int(data.get("schema") or 0) in SUPPORTED_PACK_SCHEMAS
         )
-        if not field_validated and not _documented_read_only_production_contract(data):
+        if (
+            not field_validated
+            and not _documented_read_only_production_contract(data)
+            and not _documented_allowlisted_first_command_contract(data)
+        ):
             effective_lifecycle = "invalid_production"
     return {
         **data,

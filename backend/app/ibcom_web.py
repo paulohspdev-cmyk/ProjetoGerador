@@ -25,6 +25,7 @@ _sessions: dict[str, "_Session"] = {}
 _guard = threading.Lock()
 _background_stop = threading.Event()
 _background_thread: threading.Thread | None = None
+_suspended_until: dict[str, float] = {}
 
 _GROUPS = ("values5.htm", "values6.htm", "values7.htm", "values17.htm", "values22.htm", "values23.htm")
 
@@ -155,6 +156,14 @@ class _Session:
             return self._login(path, page)
         return page
 
+    def logout(self) -> None:
+        with self.lock:
+            try:
+                self._open("exit.htm")
+            except Exception:
+                pass
+            self.jar.clear()
+
     def read(self) -> dict:
         with self.lock:
             merged: dict[str, str] = {}
@@ -245,6 +254,14 @@ def telemetry(generator: dict) -> tuple[dict | None, str]:
     now = time.monotonic()
     with _guard:
         entry = _cache.get(generator_id)
+        suspended = now < float(_suspended_until.get(generator_id) or 0)
+        if suspended:
+            data = (entry or {}).get("data")
+            if data:
+                data_age = now - float((entry or {}).get("data_at") or (entry or {}).get("at") or 0)
+                if data_age <= _STALE_AFTER:
+                    return data, ""
+            return None, "IB-COM reservado para controle remoto"
         if entry and entry.get("data"):
             data_age = now - float(entry.get("data_at") or entry.get("at") or 0)
             if data_age <= _CACHE_TTL:
@@ -305,3 +322,19 @@ def stop_background() -> None:
     if thread is not None and thread.is_alive():
         thread.join(timeout=2.0)
     _background_thread = None
+
+
+def suspend_for_control(generator_id: str, seconds: float = 45.0) -> None:
+    generator_id = str(generator_id or "")
+    session = None
+    with _guard:
+        _suspended_until[generator_id] = time.monotonic() + max(5.0, float(seconds))
+        session = _sessions.pop(generator_id, None)
+    if session is not None:
+        session.logout()
+
+
+def resume_after_control(generator_id: str, delay_seconds: float = 2.0) -> None:
+    generator_id = str(generator_id or "")
+    with _guard:
+        _suspended_until[generator_id] = time.monotonic() + max(0.0, float(delay_seconds))

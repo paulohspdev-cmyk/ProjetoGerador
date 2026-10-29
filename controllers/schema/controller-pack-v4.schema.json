@@ -417,7 +417,8 @@
           "enum": [
             "ig200_privileged",
             "dse_gencomm_privileged",
-            "comap_privileged"
+            "comap_privileged",
+            "ignt_basebox_privileged"
           ]
         },
         "transport": {
