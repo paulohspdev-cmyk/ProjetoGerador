@@ -167,10 +167,18 @@ class _Session:
     def read(self) -> dict:
         with self.lock:
             merged: dict[str, str] = {}
-            first = self.page(_GROUPS[0])
-            merged.update(_rows(first))
-            for path in _GROUPS[1:]:
-                merged.update(_rows(self.page(path)))
+            page_errors: list[str] = []
+            pages_ok: list[str] = []
+            for path in _GROUPS:
+                try:
+                    merged.update(_rows(self.page(path)))
+                    pages_ok.append(path)
+                except Exception as exc:
+                    page_errors.append(f"{path}: {exc}")
+                    # A slot rejection applies to the whole web session. Do not
+                    # hammer the remaining pages in the same cycle.
+                    if "sem slot de cliente" in str(exc).casefold():
+                        break
 
             values: dict[str, float | int] = {}
             for source, target in _NUMERIC_MAP.items():
@@ -203,7 +211,8 @@ class _Session:
                 values["breaker_state_raw"] = _BREAKER[breaker]
 
             if "rpm" not in values:
-                raise RuntimeError("IB-COM respondeu sem RPM; telemetria não comprovada")
+                suffix = ("; " + " | ".join(page_errors[:3])) if page_errors else ""
+                raise RuntimeError("IB-COM respondeu sem RPM; telemetria não comprovada" + suffix)
             return {
                 "values": values,
                 "at": int(time.time()),
@@ -213,6 +222,8 @@ class _Session:
                     "breakerState": breaker,
                     "swVersion": sw_version,
                     "swBranch": sw_branch,
+                    "pagesOk": pages_ok,
+                    "pageErrors": page_errors,
                 },
             }
 
@@ -251,16 +262,11 @@ def _refresh(generator: dict) -> None:
         _write_status(generator_id, ok=True, data=data)
         LOG.info("IB-COM telemetry refreshed for %s", generator_id)
     except Exception as exc:
-        failed_session = None
-        with _guard:
-            current = _sessions.get(generator_id)
-            if current is session:
-                failed_session = _sessions.pop(generator_id, None)
-        if failed_session is not None:
-            try:
-                failed_session.logout()
-            except Exception:
-                pass
+        # Preserve the CookieJar/session on transient read failures. Old IB-COM
+        # firmware can keep a server-side web slot reserved even after a socket
+        # timeout; creating a new client on every failure eventually exhausts
+        # the available slots. The same session can re-authenticate itself when
+        # the controller asks for login again.
         entry = {"at": time.monotonic(), "data": None, "error": str(exc), "refreshing": False}
         _write_status(generator_id, ok=False, error=str(exc))
         LOG.warning("IB-COM telemetry refresh failed for %s: %s", generator_id, exc)
