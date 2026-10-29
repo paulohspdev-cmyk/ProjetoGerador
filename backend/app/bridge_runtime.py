@@ -772,13 +772,29 @@ class HardenedRtuBridgePort(HardenedBridgePort):
 
     remote_framing = FRAMING_MODBUS_RTU
 
-    async def _read_rtu_response(self, expected_unit: int, expected_function: int) -> bytes:
+    def __init__(self, remote_port):
+        super().__init__(remote_port)
+        raw_timeout = str(
+            os.environ.get(f"RC_RAPID_BRIDGE_TIMEOUT_{int(remote_port)}", "")
+        ).strip()
+        self.rtu_timeout = float(raw_timeout) if raw_timeout else float(bridge.TIMEOUT)
+        if not 0.5 <= self.rtu_timeout <= 30.0:
+            raise ValueError(
+                f"timeout RTU inválido na porta {int(remote_port)}: {self.rtu_timeout}"
+            )
+
+    async def _read_rtu_response(
+        self,
+        expected_unit: int,
+        expected_function: int,
+        expected_byte_count: int | None = None,
+    ) -> bytes:
         reader = self.remote_reader
         if reader is None:
             raise ConnectionError("modem desconectado")
 
         loop = asyncio.get_running_loop()
-        deadline = loop.time() + bridge.TIMEOUT
+        deadline = loop.time() + self.rtu_timeout
 
         async def read_exactly(count: int) -> bytes:
             remaining = deadline - loop.time()
@@ -789,32 +805,42 @@ class HardenedRtuBridgePort(HardenedBridgePort):
             self.last_rx_at = int(time.time())
             return data
 
-        head = await read_exactly(2)
-        unit, function = head[0], head[1]
+        while True:
+            head = await read_exactly(2)
+            unit, function = head[0], head[1]
 
-        if unit != int(expected_unit):
-            raise ValueError(f"Unit ID RTU inesperado {unit}; esperado {int(expected_unit)}")
-        if function not in (expected_function, expected_function | 0x80):
-            raise ValueError(f"função RTU inesperada {function}; esperada {expected_function}")
+            if unit != int(expected_unit):
+                raise ValueError(f"Unit ID RTU inesperado {unit}; esperado {int(expected_unit)}")
+            if function not in (expected_function, expected_function | 0x80):
+                raise ValueError(f"função RTU inesperada {function}; esperada {expected_function}")
 
-        if function & 0x80:
-            tail = await read_exactly(3)
-            frame = head + tail
+            if function & 0x80:
+                tail = await read_exactly(3)
+                frame = head + tail
+                _validate_rtu_crc(frame)
+                return frame[1:-2]
+
+            if function not in bridge.READ_FUNCTIONS:
+                raise PermissionError(f"FC{function:02d} bloqueada no caminho RTU somente leitura")
+
+            byte_count_raw = await read_exactly(1)
+            byte_count = byte_count_raw[0]
+            if byte_count <= 0 or byte_count > 250:
+                raise ValueError(f"byte count RTU inválido: {byte_count}")
+
+            tail = await read_exactly(byte_count + 2)
+            frame = head + byte_count_raw + tail
             _validate_rtu_crc(frame)
+
+            if expected_byte_count is not None and byte_count != int(expected_byte_count):
+                bridge.log(
+                    f"porta {self.remote_port}: descartando resposta RTU atrasada "
+                    f"Unit {unit} FC{function:02d} byte_count={byte_count}; "
+                    f"esperado={int(expected_byte_count)}"
+                )
+                continue
+
             return frame[1:-2]
-
-        if function not in bridge.READ_FUNCTIONS:
-            raise PermissionError(f"FC{function:02d} bloqueada no caminho RTU somente leitura")
-
-        byte_count_raw = await read_exactly(1)
-        byte_count = byte_count_raw[0]
-        if byte_count <= 0 or byte_count > 250:
-            raise ValueError(f"byte count RTU inválido: {byte_count}")
-
-        tail = await read_exactly(byte_count + 2)
-        frame = head + byte_count_raw + tail
-        _validate_rtu_crc(frame)
-        return frame[1:-2]
 
     async def request_locked(self, unit, pdu):
         if not pdu:
@@ -832,20 +858,41 @@ class HardenedRtuBridgePort(HardenedBridgePort):
         await writer.drain()
         self.bytes_tx += len(frame)
         self.last_tx_at = int(time.time())
-        return await self._read_rtu_response(int(unit), int(function))
+
+        expected_byte_count = None
+        if function in bridge.READ_FUNCTIONS and len(pdu) >= 5:
+            register_count = struct.unpack(">H", pdu[3:5])[0]
+            expected_byte_count = int(register_count) * 2
+
+        return await self._read_rtu_response(
+            int(unit),
+            int(function),
+            expected_byte_count=expected_byte_count,
+        )
+
+    def snapshot(self):
+        return {
+            **super().snapshot(),
+            "rtuTimeoutSeconds": self.rtu_timeout,
+        }
 
     async def ig200_command(self, unit, action, password=None):
         raise PermissionError(
             "controle IG200 bloqueado no reverse TCP RTU; caminho Rapid disponível somente para FC03/FC04"
         )
 
-    async def _read_rtu_privileged_response(self, expected_unit: int, expected_function: int) -> bytes:
+    async def _read_rtu_privileged_response(
+        self,
+        expected_unit: int,
+        expected_function: int,
+        expected_byte_count: int | None = None,
+    ) -> bytes:
         reader = self.remote_reader
         if reader is None:
             raise ConnectionError("modem desconectado")
 
         loop = asyncio.get_running_loop()
-        deadline = loop.time() + bridge.TIMEOUT
+        deadline = loop.time() + self.rtu_timeout
 
         async def read_exactly(count: int) -> bytes:
             remaining = deadline - loop.time()
@@ -856,34 +903,100 @@ class HardenedRtuBridgePort(HardenedBridgePort):
             self.last_rx_at = int(time.time())
             return data
 
-        head = await read_exactly(2)
-        unit, function = head[0], head[1]
-        if unit != int(expected_unit):
-            raise ValueError(f"Unit ID RTU inesperado {unit}; esperado {int(expected_unit)}")
-        if function not in (expected_function, expected_function | 0x80):
-            raise ValueError(f"função RTU inesperada {function}; esperada {expected_function}")
+        while True:
+            head = await read_exactly(2)
+            unit, function = head[0], head[1]
 
-        if function & 0x80:
-            tail = await read_exactly(3)
-            frame = head + tail
-            _validate_rtu_crc(frame)
-            return frame[1:-2]
+            if function & 0x80:
+                tail = await read_exactly(3)
+                frame = head + tail
+                _validate_rtu_crc(frame)
+                if unit == int(expected_unit) and function == (expected_function | 0x80):
+                    return frame[1:-2]
+                bridge.log(
+                    f"porta {self.remote_port}: descartando exceção RTU atrasada "
+                    f"Unit {unit} FC{function:02X}; esperado Unit {int(expected_unit)} "
+                    f"FC{expected_function:02d}"
+                )
+                continue
 
-        if function in bridge.READ_FUNCTIONS:
-            byte_count_raw = await read_exactly(1)
-            byte_count = byte_count_raw[0]
-            if byte_count <= 0 or byte_count > 250:
-                raise ValueError(f"byte count RTU inválido: {byte_count}")
-            tail = await read_exactly(byte_count + 2)
-            frame = head + byte_count_raw + tail
-        elif function in {6, 16}:
-            tail = await read_exactly(6)
-            frame = head + tail
-        else:
-            raise PermissionError(f"FC{function:02d} não permitida no socket IG4 LAB")
+            if function in bridge.READ_FUNCTIONS:
+                byte_count_raw = await read_exactly(1)
+                byte_count = byte_count_raw[0]
+                if byte_count <= 0 or byte_count > 250:
+                    raise ValueError(f"byte count RTU inválido: {byte_count}")
+                tail = await read_exactly(byte_count + 2)
+                frame = head + byte_count_raw + tail
+                _validate_rtu_crc(frame)
 
-        _validate_rtu_crc(frame)
-        return frame[1:-2]
+                matches = (
+                    unit == int(expected_unit)
+                    and function == int(expected_function)
+                    and (
+                        expected_byte_count is None
+                        or byte_count == int(expected_byte_count)
+                    )
+                )
+                if matches:
+                    return frame[1:-2]
+
+                bridge.log(
+                    f"porta {self.remote_port}: descartando leitura RTU atrasada no "
+                    f"caminho privilegiado Unit {unit} FC{function:02d} "
+                    f"byte_count={byte_count}; esperado Unit {int(expected_unit)} "
+                    f"FC{expected_function:02d}"
+                    + (
+                        f" byte_count={int(expected_byte_count)}"
+                        if expected_byte_count is not None
+                        else ""
+                    )
+                )
+                continue
+
+            if function in {6, 16}:
+                tail = await read_exactly(6)
+                frame = head + tail
+                _validate_rtu_crc(frame)
+                if unit == int(expected_unit) and function == int(expected_function):
+                    return frame[1:-2]
+                bridge.log(
+                    f"porta {self.remote_port}: descartando eco RTU atrasado "
+                    f"Unit {unit} FC{function:02d}; esperado Unit {int(expected_unit)} "
+                    f"FC{expected_function:02d}"
+                )
+                continue
+
+            raise PermissionError(
+                f"FC{function:02d} não permitida no caminho RTU privilegiado"
+            )
+
+    async def _icnt_privileged_request_locked(self, unit: int, pdu: bytes) -> bytes:
+        if not pdu or pdu[0] not in {3, 6, 16}:
+            function = pdu[0] if pdu else 0
+            raise PermissionError(
+                f"FC{function:02d} não permitida no executor InteliCompact NT"
+            )
+        writer = self.remote_writer
+        if self.remote_reader is None or writer is None or writer.is_closing():
+            raise ConnectionError("modem desconectado")
+
+        function = int(pdu[0])
+        frame = _rtu_frame(unit, pdu)
+        writer.write(frame)
+        await writer.drain()
+        self.bytes_tx += len(frame)
+        self.last_tx_at = int(time.time())
+
+        expected_byte_count = None
+        if function in bridge.READ_FUNCTIONS and len(pdu) >= 5:
+            register_count = struct.unpack(">H", pdu[3:5])[0]
+            expected_byte_count = int(register_count) * 2
+
+        return await self._read_rtu_privileged_response(
+            int(unit),
+            function,
+            expected_byte_count=expected_byte_count,
+        )
 
     async def _ig4_lab_request_locked(self, unit: int, pdu: bytes) -> bytes:
         if not pdu or pdu[0] not in {3, 6, 16}:
@@ -898,7 +1011,15 @@ class HardenedRtuBridgePort(HardenedBridgePort):
         await writer.drain()
         self.bytes_tx += len(frame)
         self.last_tx_at = int(time.time())
-        return await self._read_rtu_privileged_response(int(unit), int(pdu[0]))
+        expected_byte_count = None
+        if int(pdu[0]) in bridge.READ_FUNCTIONS and len(pdu) >= 5:
+            register_count = struct.unpack(">H", pdu[3:5])[0]
+            expected_byte_count = int(register_count) * 2
+        return await self._read_rtu_privileged_response(
+            int(unit),
+            int(pdu[0]),
+            expected_byte_count=expected_byte_count,
+        )
 
     async def _ig4_lab_read_locked(self, unit: int, address: int, count: int = 1) -> list[int]:
         response = await self._ig4_lab_request_locked(unit, bridge.read_holding_pdu(address, count))

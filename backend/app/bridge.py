@@ -858,9 +858,15 @@ class BridgePort:
             pdu = await self.request_locked(unit, read_holding_pdu(address, count))
             return parse_registers(pdu, count)
 
+    async def _icnt_request_locked(self, unit, pdu):
+        privileged = getattr(self, "_icnt_privileged_request_locked", None)
+        if privileged is not None:
+            return await privileged(unit, pdu)
+        return await self.request_locked(unit, pdu)
+
     async def _icnt_snapshot_locked(self, unit):
         async def reg(address):
-            pdu = await self.request_locked(unit, read_holding_pdu(address, 1))
+            pdu = await self._icnt_request_locked(unit, read_holding_pdu(address, 1))
             return parse_registers(pdu, 1)[0]
         return {
             "mode": await reg(ICNT_MODE_ADDRESS),
@@ -909,7 +915,7 @@ class BridgePort:
                     f"{action.upper()} InteliCompact NT recusado: RPM mudou antes do comando"
                 )
 
-            arg_resp = await self.request_locked(
+            arg_resp = await self._icnt_request_locked(
                 unit,
                 write_multiple_u32_pdu(ICNT_COMMAND_ARGUMENT_ADDRESS, argument),
             )
@@ -923,7 +929,7 @@ class BridgePort:
                 )
 
             await asyncio.sleep(0.10)
-            cmd_resp = await self.request_locked(
+            cmd_resp = await self._icnt_request_locked(
                 unit,
                 write_single_pdu(ICNT_COMMAND_CODE_ADDRESS, ICNT_COMMAND_CODE),
             )
@@ -937,7 +943,7 @@ class BridgePort:
                 )
 
             await asyncio.sleep(0.25)
-            ret_pdu = await self.request_locked(
+            ret_pdu = await self._icnt_request_locked(
                 unit, read_holding_pdu(ICNT_COMMAND_ARGUMENT_ADDRESS, 2)
             )
             regs = parse_registers(ret_pdu, 2)
