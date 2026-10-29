@@ -19,7 +19,7 @@ import struct
 import time
 from pathlib import Path
 
-from . import db, ignt_basebox
+from . import db, ignt_basebox, il4_amf25
 from .binding_store import load_runtime_bindings
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -32,6 +32,7 @@ CONTROL_SOCKET = os.environ.get("RC_RAPID_CONTROL_SOCKET", "/run/rc-geradores/co
 ENABLE_IG200_CONTROL = os.environ.get("RC_ENABLE_IG200_CONTROL", "0").strip() == "1"
 ENABLE_IG4_PROD_CONTROL = os.environ.get("RC_ENABLE_IG4_PROD_CONTROL", "0").strip() == "1"
 ENABLE_IGNT_BASEBOX_CONTROL = ignt_basebox.enabled()
+ENABLE_IL4_AMF25_CONTROL = il4_amf25.enabled()
 
 READ_FUNCTIONS = {3, 4}
 IG200_RPM_ADDRESS = 1000
@@ -85,6 +86,15 @@ IGNT_BB_ENGINE_READY = 1
 IGNT_BB_BREAKERS_OFF = 1
 IGNT_BB_RUNNING_STATES = {7, 8}
 IGNT_BB_STOP_BREAKER_STATES = {1, 2, 3, 4, 10, 11}
+
+IL4_AMF25_COMMAND_ARGUMENT_ADDRESS = 4207
+IL4_AMF25_COMMAND_CODE_ADDRESS = 4209
+IL4_AMF25_COMMAND_CODE = 0x0001
+IL4_AMF25_START_ARGUMENT = 0x01FE0000
+IL4_AMF25_STOP_ARGUMENT = 0x02FD0000
+IL4_AMF25_START_RETURN = 0x000001FF
+IL4_AMF25_STOP_RETURN = 0x000002FE
+IL4_AMF25_RPM_ADDRESS = 1004
 
 
 def log(message):
@@ -207,6 +217,188 @@ def resolve_ignt_basebox_control(generator_id, device_num):
             raise PermissionError(f"binding BaseBox diverge em {key}")
     _ignt_basebox_access_code(str(generator["id"]))
     return generator
+
+
+def resolve_il4_amf25_control(generator_id, device_num):
+    generator = db.get_generator(str(generator_id or ""))
+    if not generator:
+        raise ValueError("gerador InteliLite 4 AMF25 não encontrado")
+    if not generator.get("enabled"):
+        raise PermissionError("gerador InteliLite 4 AMF25 desabilitado")
+    if not il4_amf25.is_target(generator):
+        raise PermissionError("InteliLite 4 AMF25 fora da allowlist de controle")
+    if int(generator.get("rapid_device_num") or 0) != int(device_num or 0):
+        raise PermissionError("Rapid Device InteliLite 4 AMF25 não confere com o cadastro")
+
+    binding = next(
+        (
+            item
+            for item in load_bindings()
+            if str(item.get("generator_id") or "") == str(generator.get("id") or "")
+        ),
+        None,
+    )
+    if not binding:
+        raise PermissionError("binding Rapid InteliLite 4 AMF25 ausente")
+    for key in ("controller_model", "transport", "host", "listen_port", "modbus_unit", "rapid_device_num"):
+        expected = generator.get(key)
+        actual = binding.get(key)
+        if key in {"listen_port", "modbus_unit", "rapid_device_num"}:
+            expected = int(expected or 0)
+            actual = int(actual or 0)
+        else:
+            expected = str(expected or "").strip().casefold()
+            actual = str(actual or "").strip().casefold()
+        if expected != actual:
+            raise PermissionError(f"binding InteliLite 4 AMF25 diverge em {key}")
+    return generator
+
+
+async def _il4_read_rpm(reader, writer, tid: int, unit: int) -> tuple[int, int]:
+    tid += 1
+    pdu = await _ignt_tcp_request(
+        reader, writer, tid, unit, read_holding_pdu(IL4_AMF25_RPM_ADDRESS, 1)
+    )
+    raw = parse_registers(pdu, 1)[0]
+    rpm = raw if raw < 0x8000 else raw - 0x10000
+    if rpm < 0 or rpm > 4000:
+        raise ValueError(f"RPM InteliLite 4 fora da faixa: {rpm}")
+    return rpm, tid
+
+
+async def il4_amf25_command(generator: dict, action: str) -> dict:
+    if action not in il4_amf25.ACTIONS:
+        raise ValueError("ação InteliLite 4 AMF25 inválida")
+
+    host = str(generator.get("host") or "").strip()
+    port = int(generator.get("listen_port") or 502)
+    unit = int(generator.get("modbus_unit") or 1)
+    if not host or port != 502 or unit != 1:
+        raise PermissionError("identidade TCP do G-1000 diverge do contrato homologado")
+
+    argument = IL4_AMF25_START_ARGUMENT if action == "start" else IL4_AMF25_STOP_ARGUMENT
+    expected_return = IL4_AMF25_START_RETURN if action == "start" else IL4_AMF25_STOP_RETURN
+    reader = writer = None
+    tid = 0x6100
+
+    try:
+        reader, writer = await asyncio.wait_for(
+            asyncio.open_connection(host, port), timeout=4.0
+        )
+
+        rpm_before, tid = await _il4_read_rpm(reader, writer, tid, unit)
+        if action == "start" and rpm_before != 0:
+            raise PermissionError(
+                f"START InteliLite 4 recusado: rpm={rpm_before} (esperado 0)"
+            )
+        if action == "stop" and rpm_before <= 100:
+            raise PermissionError(
+                f"STOP InteliLite 4 recusado: rpm={rpm_before} (motor já parado)"
+            )
+
+        await asyncio.sleep(0.15)
+        rpm_immediate, tid = await _il4_read_rpm(reader, writer, tid, unit)
+        if action == "start" and rpm_immediate != 0:
+            raise PermissionError(
+                f"START InteliLite 4 recusado: RPM mudou antes do comando ({rpm_immediate})"
+            )
+        if action == "stop" and rpm_immediate <= 100:
+            raise PermissionError(
+                f"STOP InteliLite 4 recusado: RPM caiu antes do comando ({rpm_immediate})"
+            )
+
+        tid += 1
+        arg_resp = await _ignt_tcp_request(
+            reader, writer, tid, unit,
+            write_multiple_u32_pdu(IL4_AMF25_COMMAND_ARGUMENT_ADDRESS, argument),
+        )
+        ensure_write_ok(arg_resp, 16)
+        if len(arg_resp) != 5:
+            raise ValueError(f"eco FC16 InteliLite 4 inválido: {arg_resp.hex()}")
+        _, arg_address, arg_count = struct.unpack(">BHH", arg_resp)
+        if arg_address != IL4_AMF25_COMMAND_ARGUMENT_ADDRESS or arg_count != 2:
+            raise ValueError(
+                f"eco argumento InteliLite 4 inválido address={arg_address} count={arg_count}"
+            )
+
+        await asyncio.sleep(0.10)
+        tid += 1
+        cmd_resp = await _ignt_tcp_request(
+            reader, writer, tid, unit,
+            write_single_pdu(IL4_AMF25_COMMAND_CODE_ADDRESS, IL4_AMF25_COMMAND_CODE),
+        )
+        ensure_write_ok(cmd_resp, 6)
+        if len(cmd_resp) != 5:
+            raise ValueError(f"eco FC06 InteliLite 4 inválido: {cmd_resp.hex()}")
+        _, cmd_address, cmd_value = struct.unpack(">BHH", cmd_resp)
+        if cmd_address != IL4_AMF25_COMMAND_CODE_ADDRESS or cmd_value != IL4_AMF25_COMMAND_CODE:
+            raise ValueError(
+                f"eco comando InteliLite 4 inválido address={cmd_address} value={cmd_value}"
+            )
+
+        await asyncio.sleep(0.25)
+        tid += 1
+        ret_pdu = await _ignt_tcp_request(
+            reader, writer, tid, unit,
+            read_holding_pdu(IL4_AMF25_COMMAND_ARGUMENT_ADDRESS, 2),
+        )
+        regs = parse_registers(ret_pdu, 2)
+        return_value = (regs[0] << 16) | regs[1]
+        if return_value != expected_return:
+            reason = (
+                "controlador recusou: argumento inválido"
+                if return_value == 1
+                else "controlador recusou o comando (modo, acesso ou intertravamento)"
+                if return_value == 2
+                else f"retorno inesperado 0x{return_value:08X}"
+            )
+            return {
+                "ok": False,
+                "accepted": False,
+                "action": action,
+                "reason": reason,
+                "return_value": f"0x{return_value:08X}",
+                "state_before": {"rpm": rpm_before},
+                "feedback_confirmed": False,
+            }
+
+        feedback_confirmed = False
+        rpm_after = None
+        deadline = asyncio.get_running_loop().time() + (15.0 if action == "start" else 30.0)
+        while asyncio.get_running_loop().time() < deadline:
+            await asyncio.sleep(0.5)
+            try:
+                rpm_after, tid = await _il4_read_rpm(reader, writer, tid, unit)
+            except Exception:
+                continue
+            if action == "start":
+                feedback_confirmed = rpm_after > 100
+            else:
+                feedback_confirmed = rpm_after <= 100
+            if feedback_confirmed:
+                break
+
+        return {
+            "ok": bool(feedback_confirmed),
+            "accepted": True,
+            "action": action,
+            "reason": (
+                f"{action.upper()} aceito e feedback por RPM confirmado"
+                if feedback_confirmed
+                else f"{action.upper()} aceito, mas feedback por RPM não confirmou no prazo"
+            ),
+            "return_value": f"0x{return_value:08X}",
+            "state_before": {"rpm": rpm_before},
+            "state_after": {"rpm": rpm_after} if rpm_after is not None else None,
+            "feedback_confirmed": bool(feedback_confirmed),
+        }
+    finally:
+        if writer is not None:
+            writer.close()
+            try:
+                await writer.wait_closed()
+            except Exception:
+                pass
 
 
 def _ignt_access_pdu(code: str) -> bytes:
@@ -928,11 +1120,20 @@ async def handle_control(reader, writer):
             )
             port = int(generator.get("listen_port") or 502)
             unit = int(generator.get("modbus_unit") or 1)
+        elif executor == "il4_amf25_privileged":
+            if not ENABLE_IL4_AMF25_CONTROL:
+                raise PermissionError("controle InteliLite 4 AMF25 desabilitado")
+            generator = resolve_il4_amf25_control(
+                req.get("generator_id"),
+                int(req.get("device") or 0),
+            )
+            port = int(generator.get("listen_port") or 502)
+            unit = int(generator.get("modbus_unit") or 1)
         else:
             raise PermissionError(f"executor não permitido no socket: {executor or 'N/D'}")
 
         port_bridge = None
-        if executor != "ignt_basebox_privileged":
+        if executor not in {"ignt_basebox_privileged", "il4_amf25_privileged"}:
             port_bridge = bridges.get(port)
             if port_bridge is None:
                 raise ConnectionError(f"ponte da porta {port} não está ativa")
@@ -947,9 +1148,12 @@ async def handle_control(reader, writer):
         elif executor == "comap_privileged":
             result = await port_bridge.execute_privileged_command(executor, unit, action)
             controller_label = "IG4"
-        else:
+        elif executor == "ignt_basebox_privileged":
             result = await ignt_basebox_command(generator, action)
             controller_label = "IG-NT BaseBox"
+        else:
+            result = await il4_amf25_command(generator, action)
+            controller_label = "InteliLite 4 AMF25"
 
         response = {
             **result,
@@ -1008,6 +1212,8 @@ async def start_control_server():
         modes.append("IG4 allowlist start/stop")
     if ENABLE_IGNT_BASEBOX_CONTROL:
         modes.append("IG-NT BaseBox allowlist start/stop")
+    if ENABLE_IL4_AMF25_CONTROL:
+        modes.append("InteliLite 4 AMF25 allowlist start/stop")
     mode = "ATIVO: " + ", ".join(modes) if modes else "DESABILITADO"
     log(f"socket de controle local {socket_path} ({mode})")
 

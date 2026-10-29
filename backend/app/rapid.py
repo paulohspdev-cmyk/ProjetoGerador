@@ -17,7 +17,7 @@ from .config import (
 )
 from .controller_library import pack_for_model
 from .power_topology import resolve_power_topology
-from . import db, ig4_prod, ibcom_web, ignt_basebox
+from . import db, ig4_prod, ibcom_web, ignt_basebox, il4_amf25
 from .production_guard import production_mode
 
 _cache = {"at": 0.0, "channels": {}, "error": "", "requested": set()}
@@ -561,12 +561,19 @@ def _effective_capabilities(generator, status: str, binding_present: bool) -> di
             and ignt_basebox.documented_command_ready(pack or {}, action)
             and declared_contract
         )
+        il4_documented_contract = bool(
+            action in il4_amf25.ACTIONS
+            and il4_amf25.is_target(generator)
+            and il4_amf25.documented_command_ready(pack or {}, action)
+            and declared_contract
+        )
         result[action] = bool(
             online
             and binding_present
             and (
                 (field_validated and (declared_contract or ig4_target_contract))
                 or basebox_documented_contract
+                or il4_documented_contract
             )
         )
     return result

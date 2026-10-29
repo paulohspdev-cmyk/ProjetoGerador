@@ -92,10 +92,11 @@ def _documented_read_only_production_contract(pack: dict | None) -> bool:
 
 
 def _documented_allowlisted_first_command_contract(pack: dict | None) -> bool:
-    """Aceita um primeiro teste de campo apenas para o executor BaseBox explicitamente restrito.
+    """Allow a first field command test only for narrowly scoped, documented executors.
 
-    Não promove o pack a field_validated. A autorização operacional continua dependente
-    de allowlist por generator_id, firmware exato, binding e telemetria fresca.
+    This does not promote the pack to field_validated. Runtime authorization remains
+    fail-closed through generator allowlist, binding identity, live telemetry/prechecks
+    and the dedicated privileged executor.
     """
     if not pack:
         return False
@@ -103,7 +104,13 @@ def _documented_allowlisted_first_command_contract(pack: dict | None) -> bool:
         return False
     if int(pack.get("schema") or 0) not in SUPPORTED_PACK_SCHEMAS:
         return False
-    if str(pack.get("model") or "").strip().casefold() != "inteligen nt basebox":
+
+    model = str(pack.get("model") or "").strip().casefold()
+    expected_executor = {
+        "inteligen nt basebox": "ignt_basebox_privileged",
+        "intelilite 4 amf 25": "il4_amf25_privileged",
+    }.get(model)
+    if not expected_executor:
         return False
 
     firmware = (pack.get("firmware") or {}).get("tested") or []
@@ -111,9 +118,17 @@ def _documented_allowlisted_first_command_contract(pack: dict | None) -> bool:
     capabilities = pack.get("capabilities") or {}
     commands = pack.get("commands") or {}
     candidates = pack.get("homologationCandidates") or {}
+    mapping = pack.get("mapping") or {}
 
-    if not firmware or not validation.get("documentation") or validation.get("field") is True:
+    if not validation.get("documentation") or validation.get("field") is True:
         return False
+    if model == "inteligen nt basebox" and not firmware:
+        return False
+    if model == "intelilite 4 amf 25":
+        rpm = (mapping.get("registers") or {}).get("rpm") or {}
+        if validation.get("lab") is not True or int(rpm.get("address") or -1) != 1004:
+            return False
+
     if not capabilities.get("telemetry") or not capabilities.get("start") or not capabilities.get("stop"):
         return False
     if any(
@@ -128,7 +143,7 @@ def _documented_allowlisted_first_command_contract(pack: dict | None) -> bool:
         candidate = candidates.get(action)
         if not isinstance(contract, dict) or not isinstance(candidate, dict):
             return False
-        if contract.get("executor") != "ignt_basebox_privileged":
+        if contract.get("executor") != expected_executor:
             return False
         if contract.get("transport") != "modbus_tcp_direct":
             return False

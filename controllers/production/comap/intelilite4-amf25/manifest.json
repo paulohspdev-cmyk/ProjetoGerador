@@ -1,0 +1,164 @@
+{
+  "schema": 4,
+  "manufacturer": "ComAp",
+  "family": "InteliLite 4",
+  "model": "InteliLite 4 AMF 25",
+  "aliases": [
+    "IL4 AMF 25",
+    "IL4AMF25"
+  ],
+  "status": "production",
+  "application": "genset",
+  "category": "single_genset",
+  "firmware": {
+    "tested": [],
+    "minimum": null,
+    "maximum": null,
+    "notes": "Firmware exato do G-1000 ainda não inventariado; primeira validação de START/STOP autorizada por generator_id allowlisted."
+  },
+  "protocols": [
+    "modbus",
+    "modbus_tcp"
+  ],
+  "transports": [
+    "modbus_tcp_direct"
+  ],
+  "capabilities": {
+    "telemetry": true,
+    "start": true,
+    "stop": true,
+    "off": false,
+    "auto": false,
+    "manual": false,
+    "test": false,
+    "mcb_open": false,
+    "mcb_close": false,
+    "gcb_open": false,
+    "gcb_close": false,
+    "paralleling": false
+  },
+  "validatedTelemetry": [
+    "rpm"
+  ],
+  "documentedTelemetry": [
+    "rpm"
+  ],
+  "metricUnits": {
+    "rpm": "rpm"
+  },
+  "metricLimits": {
+    "rpm": {
+      "displayMin": 0,
+      "displayMax": 4000
+    }
+  },
+  "mapping": {
+    "kind": "modbus_register_export",
+    "readOnly": true,
+    "sourceFile": "modbus/g1000-validated-registers.txt",
+    "sourceSha256": "bc165e5ba4227dd0c2cd9c636f3c92c92ad5f3a676a6a381355cd62db2a306df",
+    "readFunctions": [
+      3
+    ],
+    "registers": {
+      "rpm": {
+        "address": 1004,
+        "count": 1,
+        "type": "int16",
+        "scale": 1,
+        "unit": "rpm",
+        "sourceName": "RPM",
+        "object": 10123
+      }
+    }
+  },
+  "rapid": {
+    "template": "rapid/templates/DrvModbus_RC_IL4_AMF25_G1000.xml",
+    "driver": "DrvModbus",
+    "channels": [
+      {
+        "key": "rpm",
+        "tagCode": "rpm",
+        "scale": 1,
+        "unit": "rpm"
+      }
+    ],
+    "lineOptions": {
+      "CycleDelay": "2000",
+      "ReqRetries": "1"
+    }
+  },
+  "validation": {
+    "documentation": [
+      "ComAp InteliLite 4 AMF25 Global Guide: configurable Modbus map and reserved command registers 4207-4209",
+      "Live G-1000 FC03 validation: 10.60.4.215:502 Unit 1, address 1004"
+    ],
+    "lab": true,
+    "field": false,
+    "fieldReference": "G-1000 / 10.60.4.215 / Unit 1 / initial RPM read validated; first START/STOP validation authorized",
+    "commandSafety": "START/STOP only. Command path documented by ComAp. Executor restricted to G-1000 allowlist, direct TCP 502, Unit 1, binding match, live RPM precheck and RPM feedback. Exact firmware pending first field validation."
+  },
+  "notes": "Exact G-1000 onboarding pack. Telemetry intentionally limited to RPM until the actual InteliConfig Modbus table is exported. Generic InteliLite 4 mappings are not reused.",
+  "commands": {
+    "start": {
+      "executor": "il4_amf25_privileged",
+      "transport": "modbus_tcp_direct",
+      "confirmation": "START",
+      "preconditions": [
+        "generator_enabled",
+        "documented_command_path",
+        "allowlisted_generator",
+        "binding_match",
+        "controller_online",
+        "engine_stopped"
+      ],
+      "feedback": {
+        "metric": "rpm",
+        "operator": "gt",
+        "value": 100,
+        "timeoutSeconds": 15
+      },
+      "timeoutSeconds": 20,
+      "notes": "Engine Cmd documented by ComAp; first physical validation pending."
+    },
+    "stop": {
+      "executor": "il4_amf25_privileged",
+      "transport": "modbus_tcp_direct",
+      "confirmation": "STOP",
+      "preconditions": [
+        "generator_enabled",
+        "documented_command_path",
+        "allowlisted_generator",
+        "binding_match",
+        "controller_online",
+        "engine_running"
+      ],
+      "feedback": {
+        "metric": "rpm",
+        "operator": "lte",
+        "value": 100,
+        "timeoutSeconds": 30
+      },
+      "timeoutSeconds": 35,
+      "notes": "Engine Cmd documented by ComAp; first physical validation pending."
+    }
+  },
+  "homologationCandidates": {
+    "start": {
+      "documented": true,
+      "mechanism": "reserved_command",
+      "commandCode": 1,
+      "argument": "0x01FE0000",
+      "expectedReturn": "0x000001FF",
+      "fieldState": "authorized_first_field_validation_pending"
+    },
+    "stop": {
+      "documented": true,
+      "mechanism": "reserved_command",
+      "commandCode": 1,
+      "argument": "0x02FD0000",
+      "expectedReturn": "0x000002FE",
+      "fieldState": "authorized_first_field_validation_pending"
+    }
+  }
+}

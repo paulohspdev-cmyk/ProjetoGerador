@@ -52,8 +52,9 @@
       "status": "inventory_only",
       "provisionable": false,
       "notes": "Catálogo de produto. Requer Controller Pack homologado antes de provisionamento industrial.",
-      "supportState": "registration_only",
-      "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
+      "supportState": "production_minimal_field_map",
+      "supportNotes": "G-1000 validated minimal production map: RPM only; exact InteliConfig Modbus export still required for remaining telemetry.",
+      "supportPack": "intelilite4-amf25"
     },
     {
       "manufacturer": "ComAp",

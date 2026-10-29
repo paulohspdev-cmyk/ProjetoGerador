@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='utf-8'?>
+<DeviceTemplate>
+  <Options>
+    <ZeroAddr>true</ZeroAddr>
+    <DecAddr>true</DecAddr>
+    <DefByteOrder2 />
+    <DefByteOrder4 />
+    <DefByteOrder8 />
+  </Options>
+  <ElemGroups>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="1004" name="Motor - rotacao">
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="rpm" name="RPM" />
+    </ElemGroup>
+  </ElemGroups>
+  <Cmds />
+</DeviceTemplate>

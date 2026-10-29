@@ -1,0 +1,23 @@
+G-1000 / ComAp InteliLite 4 AMF 25
+IP: 10.60.4.215
+Modbus TCP: port 502
+Unit ID: 1
+Validation date: 2026-10-29
+
+READ-ONLY FIELD VALIDATION:
+FC03 address 1004 count 1 -> valid response, value 0 while engine stopped.
+This channel is used only as RPM / engine-running feedback for initial production onboarding.
+
+IMPORTANT:
+InteliLite 4 addresses 1000-2999 are configurable in the controller archive.
+Other generic InteliLite 4 reference addresses were NOT promoted because the live G-1000
+returned values/exceptions inconsistent with the generic reference map.
+Exact archive export from InteliConfig is still required before adding voltage, current,
+frequency, battery, power, hours, alarms, mode or breaker metrics.
+
+COMMAND PATH (documented by ComAp InteliLite 4 AMF25 Global Guide):
+4207-4208: command argument (FC16)
+4209: command code (FC06)
+Engine Start: code 0x01, argument 0x01FE0000, expected return 0x000001FF
+Engine Stop:  code 0x01, argument 0x02FD0000, expected return 0x000002FE
+No command was executed during this validation.
