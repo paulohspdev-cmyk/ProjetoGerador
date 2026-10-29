@@ -1,0 +1,82 @@
+{
+  "schema": 1,
+  "generator": {
+    "id": "gen-6c6e8f9ca5f8",
+    "tag": "G-113",
+    "controllerModel": "IG-NT",
+    "transport": "reverse_tcp",
+    "fieldPort": 15031,
+    "localBridgePort": 25031,
+    "modbusUnit": 12,
+    "rapidLine": 113,
+    "rapidDevice": 218,
+    "bindingStatus": "field_validated"
+  },
+  "documentaryEvidence": {
+    "family": "ComAp IGS-NT / InteliGen NT",
+    "commandArgumentRegisters": [6358, 6359],
+    "commandRegister": 6360,
+    "commandCode": 1,
+    "startArgument": "0x01FE0000",
+    "startExpectedReturn": "0x000001FF",
+    "stopArgument": "0x02FD0000",
+    "stopExpectedReturn": "0x000002FE",
+    "notes": [
+      "IGS-NT Communication Guide documents 6358-6359 as command argument and 6360 as command.",
+      "The guide documents one-step command writing for direct controller connection and two-step writing when a ComAp communication bridge such as IB-NT/I-LB+ is used.",
+      "The DR132 used by G-113 is treated only as a transparent serial transport hypothesis; this has not been promoted to an actuation contract."
+    ]
+  },
+  "readOnlyFieldEvidence": {
+    "validatedRegisters": {
+      "battery_voltage": 12,
+      "engine_state": 162,
+      "breaker_state": 163,
+      "controller_mode": 167,
+      "rpm": 314,
+      "active_alarm_count": 6353,
+      "command_release": [6358, 6359],
+      "user_id": 6362
+    },
+    "observations": [
+      "FC03 on Unit 12 previously returned battery 23.9 V, mode 1 and engine state 1.",
+      "FC03 register 314 returned RPM 0.",
+      "FC03 register 163 returned breaker state 1.",
+      "FC03 registers 6358-6359 returned 0x00000000.",
+      "No FC06 or FC16 command was sent during this preflight."
+    ]
+  },
+  "requiredPreconditions": {
+    "start": [
+      "communication_stable",
+      "controller_mode_manual",
+      "engine_state_ready",
+      "breaker_state_brks_off",
+      "rpm_zero",
+      "active_alarm_list_empty",
+      "critical_state_stable_across_two_reads"
+    ],
+    "stop": [
+      "communication_stable",
+      "controller_mode_manual",
+      "engine_running",
+      "rpm_above_100",
+      "breaker_state_stop_safe",
+      "critical_state_stable_across_two_reads"
+    ]
+  },
+  "firmware": {
+    "status": "not_inventoried",
+    "value": "",
+    "note": "SW version/branch still needs a read-only evidence path or local controller evidence before production promotion."
+  },
+  "currentState": {
+    "fieldState": "readonly_preflight_link_unstable",
+    "commandCapabilityEnabled": false,
+    "commandContractPresent": false,
+    "executorPresent": false,
+    "writesAuthorizedByThisFile": false,
+    "lastObservedIssue": "Port 15031 TCP session reconnects, but serial FC03 responses can stop and the bridge returns synthetic 0x83 0x0B/backoff."
+  },
+  "nextGate": "Restore stable FC03 communication and obtain two consecutive clean preflight snapshots before any first physical command homologation."
+}
