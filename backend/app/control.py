@@ -80,6 +80,28 @@ def _validated_controller_firmware(generator: dict, pack: dict) -> str:
         )
 
     firmware = str(controllers[0].get("firmware") or "").strip()
+    if not firmware and model == "inteligen nt basebox" and ibcom_web.supports(generator):
+        web_data, web_error = ibcom_web.telemetry(generator)
+        if web_data and not web_error:
+            age = max(0, int(__import__("time").time()) - int(web_data.get("at") or 0))
+            detail_data = dict(web_data.get("detail") or {})
+            version = str(detail_data.get("swVersion") or "").strip()
+            branch = str(detail_data.get("swBranch") or "").strip()
+            if age <= 20 and version and branch:
+                observed = f"{version}-branch-{branch}"
+                observed_ok, _observed_detail = command_firmware_approval(pack, observed)
+                if observed_ok:
+                    metadata = dict(controllers[0].get("metadata") or {})
+                    metadata.update({
+                        "firmwareObservedVia": "ibcom_web",
+                        "firmwareObservedAt": int(__import__("time").time()),
+                    })
+                    domain_store.update_controller(
+                        str(controllers[0].get("id") or ""),
+                        {"firmware": observed, "metadata": metadata},
+                        actor="system:ibcom-firmware-inventory",
+                    )
+                    firmware = observed
     approved, detail = command_firmware_approval(pack, firmware)
     if not approved:
         raise ValueError(f"Controle bloqueado: {detail}")

@@ -181,6 +181,20 @@ class _Session:
             mode = merged.get("ControllerMode")
             engine = merged.get("Engine state")
             breaker = merged.get("Breaker state")
+            sw_version = str(
+                merged.get("SW version")
+                or merged.get("SW Version")
+                or merged.get("FW version")
+                or merged.get("Firmware version")
+                or ""
+            ).strip()
+            sw_branch = str(
+                merged.get("SW branch")
+                or merged.get("SW Branch")
+                or merged.get("FW branch")
+                or merged.get("Firmware branch")
+                or ""
+            ).strip()
             if mode in _MODE:
                 values["controller_mode_raw"] = _MODE[mode]
             if engine in _ENGINE:
@@ -197,6 +211,8 @@ class _Session:
                     "controllerMode": mode,
                     "engineState": engine,
                     "breakerState": breaker,
+                    "swVersion": sw_version,
+                    "swBranch": sw_branch,
                 },
             }
 
@@ -209,6 +225,7 @@ def _write_status(generator_id: str, *, ok: bool, error: str = "", data: dict | 
             "updatedAt": int(time.time()),
             "error": error,
             "metrics": sorted(((data or {}).get("values") or {}).keys()),
+            "detail": dict((data or {}).get("detail") or {}),
         }
         _STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
         tmp = _STATUS_FILE.with_suffix(".tmp")
@@ -234,6 +251,16 @@ def _refresh(generator: dict) -> None:
         _write_status(generator_id, ok=True, data=data)
         LOG.info("IB-COM telemetry refreshed for %s", generator_id)
     except Exception as exc:
+        failed_session = None
+        with _guard:
+            current = _sessions.get(generator_id)
+            if current is session:
+                failed_session = _sessions.pop(generator_id, None)
+        if failed_session is not None:
+            try:
+                failed_session.logout()
+            except Exception:
+                pass
         entry = {"at": time.monotonic(), "data": None, "error": str(exc), "refreshing": False}
         _write_status(generator_id, ok=False, error=str(exc))
         LOG.warning("IB-COM telemetry refresh failed for %s: %s", generator_id, exc)
@@ -268,7 +295,7 @@ def telemetry(generator: dict) -> tuple[dict | None, str]:
                 return entry["data"], ""
         retry_blocked = bool(
             entry
-            and not entry.get("data")
+            and entry.get("error")
             and entry.get("at")
             and now - float(entry["at"]) < _RETRY_AFTER
         )
@@ -283,7 +310,9 @@ def telemetry(generator: dict) -> tuple[dict | None, str]:
         if data:
             data_age = now - float(entry.get("data_at") or entry.get("at") or 0)
             if data_age <= _STALE_AFTER:
-                return data, entry.get("error") or ""
+                # A última leitura continua válida até STALE_AFTER. Uma falha
+                # isolada de refresh não deve fazer o card oscilar online/offline.
+                return data, ""
         return None, entry.get("error") or "Leitura IB-COM em inicialização"
 
 
@@ -322,6 +351,14 @@ def stop_background() -> None:
     if thread is not None and thread.is_alive():
         thread.join(timeout=2.0)
     _background_thread = None
+    with _guard:
+        sessions = list(_sessions.values())
+        _sessions.clear()
+    for session in sessions:
+        try:
+            session.logout()
+        except Exception:
+            pass
 
 
 def suspend_for_control(generator_id: str, seconds: float = 45.0) -> None:

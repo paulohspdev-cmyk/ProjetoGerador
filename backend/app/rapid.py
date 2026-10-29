@@ -920,7 +920,25 @@ def _overlay_generators(generators):
             )
             continue
 
-        web_data, web_error = ibcom_web.telemetry(generator)
+        ibcom_mode = os.environ.get("RC_IBCOM_WEB_MODE", "direct").strip().lower() or "direct"
+        if ibcom_mode == "snapshot" and ibcom_web.supports(generator):
+            web_data = None
+            web_error = ""
+            if snapshot:
+                snapshot_age = time.time() - int(snapshot.get("updated_at") or 0)
+                stale_after = max(
+                    5.0,
+                    float(os.environ.get("RC_IBCOM_WEB_STALE_SECONDS", "20")),
+                )
+                if 0 <= snapshot_age <= stale_after:
+                    web_data = {
+                        "values": dict(snapshot.get("values") or {}),
+                        "at": int(snapshot.get("updated_at") or time.time()),
+                    }
+                else:
+                    web_error = "Snapshot IB-COM expirado"
+        else:
+            web_data, web_error = ibcom_web.telemetry(generator)
         if web_data:
             values = dict(web_data.get("values") or {})
             invalid_values = []
