@@ -2,7 +2,7 @@ import asyncio
 import json
 from pathlib import Path
 
-from . import domain_store, ibcom_web, ig4_prod, ignt_basebox, il4_amf25
+from . import domain_store, ibcom_web, ig4_prod, ignt_basebox, il4_amf25, icnt
 from .binding_store import load_runtime_bindings
 from .config import CONTROL_SOCKET
 from .controller_library import (
@@ -134,7 +134,18 @@ def command_contract(generator: dict, action: str) -> tuple[dict, dict]:
         and il4_amf25.is_target(generator)
         and il4_amf25.documented_command_ready(pack, action)
     )
-    if pack.get("status") != "field_validated" and not basebox_documented and not il4_documented:
+    icnt_documented = bool(
+        action in icnt.ACTIONS
+        and icnt.is_target(generator)
+        and icnt.documented_command_ready(pack, action)
+    )
+    if (
+        str(generator.get("controller_model") or "").strip().casefold() == icnt.MODEL.casefold()
+        and action in icnt.ACTIONS
+        and not icnt_documented
+    ):
+        raise ValueError("Controle bloqueado: InteliCompact NT fora da allowlist/documentação de comando")
+    if pack.get("status") != "field_validated" and not basebox_documented and not il4_documented and not icnt_documented:
         raise ValueError("Controle bloqueado: comandos exigem Controller Pack validado fisicamente em campo")
 
     capabilities = dict(pack.get("capabilities") or {})
@@ -144,6 +155,8 @@ def command_contract(generator: dict, action: str) -> tuple[dict, dict]:
         contract = ignt_basebox.command_contract(pack, action)
     elif il4_documented:
         contract = il4_amf25.command_contract(pack, action)
+    elif icnt_documented:
+        contract = icnt.command_contract(pack, action)
     elif action in ig4_prod.ACTIONS and ig4_prod.is_target(generator):
         contract = ig4_prod.command_contract(pack, action)
     else:
@@ -177,7 +190,7 @@ async def send_homologated_command(generator: dict, action: str) -> dict:
     executor = str(contract.get("executor") or "")
     rapid_device = int(generator.get("rapid_device_num") or 0)
 
-    if executor not in {"ig200_privileged", "comap_privileged", "ignt_basebox_privileged", "il4_amf25_privileged"}:
+    if executor not in {"ig200_privileged", "comap_privileged", "ignt_basebox_privileged", "il4_amf25_privileged", "icnt_privileged"}:
         raise ValueError(
             f"Controle bloqueado: executor {executor or 'N/D'} ainda não possui implementação "
             "de produção homologada"
@@ -192,6 +205,8 @@ async def send_homologated_command(generator: dict, action: str) -> dict:
         raise ValueError("Controle bloqueado: BaseBox fora da allowlist de produção")
     if executor == "il4_amf25_privileged" and not il4_amf25.is_target(generator):
         raise ValueError("Controle bloqueado: InteliLite 4 AMF25 fora da allowlist de produção")
+    if executor == "icnt_privileged" and not icnt.is_target(generator):
+        raise ValueError("Controle bloqueado: InteliCompact NT fora da allowlist de produção")
 
     if executor == "ignt_basebox_privileged":
         web_data, web_error = ibcom_web.telemetry(generator)
@@ -225,7 +240,7 @@ async def send_homologated_command(generator: dict, action: str) -> dict:
         "executor": executor,
         "confirm": "REMOTE_CONTROL_CONFIRMED",
     }
-    if executor in {"comap_privileged", "ignt_basebox_privileged", "il4_amf25_privileged"}:
+    if executor in {"comap_privileged", "ignt_basebox_privileged", "il4_amf25_privileged", "icnt_privileged"}:
         payload["generator_id"] = str(generator.get("id") or "")
 
     if executor == "ignt_basebox_privileged":

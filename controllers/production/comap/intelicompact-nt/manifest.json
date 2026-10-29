@@ -16,7 +16,7 @@
     ],
     "minimum": null,
     "maximum": null,
-    "notes": "G-132 Unit 1: FW Branch 1 / FW Version 2.5 lidos por FC03 em 2026-10-02."
+    "notes": "G-132 e G-043 confirmados em branch 1 / versão 2.5; G-043 lido ao vivo em 2026-10-29."
   },
   "protocols": [
     "modbus"
@@ -33,8 +33,8 @@
   },
   "capabilities": {
     "telemetry": true,
-    "start": false,
-    "stop": false,
+    "start": true,
+    "stop": true,
     "off": false,
     "auto": false,
     "manual": false,
@@ -46,42 +46,131 @@
     "paralleling": false
   },
   "validatedTelemetry": [
+    "voltage_l1",
+    "voltage_l2",
+    "voltage_l3",
+    "voltage_l1_l2",
+    "voltage_l2_l3",
+    "voltage_l3_l1",
+    "current_l1",
+    "current_l2",
+    "current_l3",
     "rpm",
     "frequency",
     "power_kw",
+    "power_kvar",
+    "power_factor",
     "battery_voltage",
+    "alternator_voltage",
+    "gcb_closed",
+    "mcb_closed",
     "engine_state_raw",
     "breaker_state_raw",
     "controller_mode_raw",
     "run_hours",
+    "maintenance_hours",
     "number_starts",
+    "genset_kwh",
     "nominal_power_kw",
     "nominal_current",
-    "nominal_voltage"
+    "nominal_voltage",
+    "total_fuel_consumption"
   ],
   "documentedTelemetry": [
+    "voltage_l1",
+    "voltage_l2",
+    "voltage_l3",
+    "voltage_l1_l2",
+    "voltage_l2_l3",
+    "voltage_l3_l1",
+    "current_l1",
+    "current_l2",
+    "current_l3",
     "rpm",
     "frequency",
     "power_kw",
+    "power_kw_l1",
+    "power_kw_l2",
+    "power_kw_l3",
+    "power_kvar",
+    "power_kvar_l1",
+    "power_kvar_l2",
+    "power_kvar_l3",
+    "power_factor",
+    "power_factor_l1",
+    "power_factor_l2",
+    "power_factor_l3",
+    "power_kva",
+    "power_kva_l1",
+    "power_kva_l2",
+    "power_kva_l3",
+    "bus_voltage_l1",
+    "bus_voltage_l2",
+    "bus_voltage_l3",
+    "bus_voltage_l1_l2",
+    "bus_voltage_l2_l3",
+    "bus_voltage_l3_l1",
+    "bus_frequency",
     "battery_voltage",
+    "alternator_voltage",
+    "oil_pressure",
+    "gcb_closed",
+    "mcb_closed",
     "engine_state_raw",
     "breaker_state_raw",
     "controller_mode_raw",
     "run_hours",
+    "maintenance_hours",
     "number_starts",
+    "genset_kwh",
+    "genset_kvarh",
     "nominal_power_kw",
     "nominal_current",
-    "nominal_voltage"
+    "nominal_voltage",
+    "total_fuel_consumption"
   ],
   "metricUnits": {
+    "voltage_l1": "V",
+    "voltage_l2": "V",
+    "voltage_l3": "V",
+    "voltage_l1_l2": "V",
+    "voltage_l2_l3": "V",
+    "voltage_l3_l1": "V",
+    "current_l1": "A",
+    "current_l2": "A",
+    "current_l3": "A",
     "rpm": "rpm",
     "frequency": "Hz",
     "power_kw": "kW",
+    "power_kw_l1": "kW",
+    "power_kw_l2": "kW",
+    "power_kw_l3": "kW",
+    "power_kvar": "kVAr",
+    "power_kvar_l1": "kVAr",
+    "power_kvar_l2": "kVAr",
+    "power_kvar_l3": "kVAr",
+    "power_kva": "kVA",
+    "power_kva_l1": "kVA",
+    "power_kva_l2": "kVA",
+    "power_kva_l3": "kVA",
+    "bus_voltage_l1": "V",
+    "bus_voltage_l2": "V",
+    "bus_voltage_l3": "V",
+    "bus_voltage_l1_l2": "V",
+    "bus_voltage_l2_l3": "V",
+    "bus_voltage_l3_l1": "V",
+    "bus_frequency": "Hz",
     "battery_voltage": "V",
+    "alternator_voltage": "V",
+    "oil_pressure": "bar",
     "run_hours": "h",
+    "maintenance_hours": "h",
+    "genset_kwh": "kWh",
+    "genset_kvarh": "kVArh",
     "nominal_power_kw": "kW",
     "nominal_current": "A",
-    "nominal_voltage": "V"
+    "nominal_voltage": "V",
+    "total_fuel_consumption": "L"
   },
   "metricLimits": {
     "rpm": {
@@ -91,14 +180,121 @@
     "battery_voltage": {
       "displayMin": 0,
       "displayMax": 36
+    },
+    "frequency": {
+      "displayMin": 0,
+      "displayMax": 70
+    },
+    "oil_pressure": {
+      "displayMin": 0,
+      "displayMax": 12
     }
   },
   "mapping": {
     "kind": "modbus_register_export",
     "readOnly": true,
     "sourceFile": "modbus/validated-map.txt",
-    "sourceSha256": "daad17bfdc5f77fe461091b266e11135cc1c775db7cd589d1d60acec191f2440",
+    "sourceSha256": "979c90dace6ccb124a96cacb53f8fbe216e064bbc80612c321220579135a6319",
     "registers": {
+      "voltage_l1": {
+        "address": 7,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Gen V L1-N",
+        "object": 8192,
+        "unit": "V"
+      },
+      "voltage_l2": {
+        "address": 8,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Gen V L2-N",
+        "object": 8193,
+        "unit": "V"
+      },
+      "voltage_l3": {
+        "address": 9,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Gen V L3-N",
+        "object": 8194,
+        "unit": "V"
+      },
+      "voltage_l1_l2": {
+        "address": 12,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Gen V L1-L2",
+        "object": 9628,
+        "unit": "V"
+      },
+      "voltage_l2_l3": {
+        "address": 13,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Gen V L2-L3",
+        "object": 9629,
+        "unit": "V"
+      },
+      "voltage_l3_l1": {
+        "address": 14,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Gen V L3-L1",
+        "object": 9630,
+        "unit": "V"
+      },
+      "current_l1": {
+        "address": 15,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Gen A L1",
+        "object": 8198,
+        "unit": "A"
+      },
+      "current_l2": {
+        "address": 16,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Gen A L2",
+        "object": 8199,
+        "unit": "A"
+      },
+      "current_l3": {
+        "address": 17,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Gen A L3",
+        "object": 8200,
+        "unit": "A"
+      },
       "rpm": {
         "address": 19,
         "count": 1,
@@ -136,6 +332,244 @@
         "object": 8202,
         "unit": "kW"
       },
+      "power_kw_l1": {
+        "address": 27,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Gen kW L1",
+        "object": 8524,
+        "unit": "kW"
+      },
+      "power_kw_l2": {
+        "address": 28,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Gen kW L2",
+        "object": 8525,
+        "unit": "kW"
+      },
+      "power_kw_l3": {
+        "address": 29,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Gen kW L3",
+        "object": 8526,
+        "unit": "kW"
+      },
+      "power_kvar": {
+        "address": 30,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Gen kVAr",
+        "object": 8203,
+        "unit": "kVAr"
+      },
+      "power_kvar_l1": {
+        "address": 31,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Gen kVAr L1",
+        "object": 8527,
+        "unit": "kVAr"
+      },
+      "power_kvar_l2": {
+        "address": 32,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Gen kVAr L2",
+        "object": 8528,
+        "unit": "kVAr"
+      },
+      "power_kvar_l3": {
+        "address": 33,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Gen kVAr L3",
+        "object": 8529,
+        "unit": "kVAr"
+      },
+      "power_factor": {
+        "address": 34,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 0.01,
+        "sourceName": "Gen PF",
+        "object": 8204
+      },
+      "power_factor_l1": {
+        "address": 35,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 0.01,
+        "sourceName": "Gen PF L1",
+        "object": 8533
+      },
+      "power_factor_l2": {
+        "address": 36,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 0.01,
+        "sourceName": "Gen PF L2",
+        "object": 8534
+      },
+      "power_factor_l3": {
+        "address": 37,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 0.01,
+        "sourceName": "Gen PF L3",
+        "object": 8535
+      },
+      "power_kva": {
+        "address": 43,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Gen kVA",
+        "object": 8565,
+        "unit": "kVA"
+      },
+      "power_kva_l1": {
+        "address": 44,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Gen kVA L1",
+        "object": 8530,
+        "unit": "kVA"
+      },
+      "power_kva_l2": {
+        "address": 45,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Gen kVA L2",
+        "object": 8531,
+        "unit": "kVA"
+      },
+      "power_kva_l3": {
+        "address": 46,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Gen kVA L3",
+        "object": 8532,
+        "unit": "kVA"
+      },
+      "bus_voltage_l1": {
+        "address": 47,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Bus V L1-N",
+        "object": 8195,
+        "unit": "V"
+      },
+      "bus_voltage_l2": {
+        "address": 48,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Bus V L2-N",
+        "object": 8196,
+        "unit": "V"
+      },
+      "bus_voltage_l3": {
+        "address": 49,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Bus V L3-N",
+        "object": 8197,
+        "unit": "V"
+      },
+      "bus_voltage_l1_l2": {
+        "address": 51,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Bus V L1-L2",
+        "object": 9631,
+        "unit": "V"
+      },
+      "bus_voltage_l2_l3": {
+        "address": 52,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Bus V L2-L3",
+        "object": 9632,
+        "unit": "V"
+      },
+      "bus_voltage_l3_l1": {
+        "address": 53,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Bus V L3-L1",
+        "object": 9633,
+        "unit": "V"
+      },
+      "bus_frequency": {
+        "address": 54,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 0.1,
+        "sourceName": "Bus Freq",
+        "object": 8211,
+        "unit": "Hz"
+      },
       "battery_voltage": {
         "address": 57,
         "count": 1,
@@ -148,6 +582,52 @@
         "unit": "V",
         "validMin": 0,
         "validMax": 36
+      },
+      "alternator_voltage": {
+        "address": 59,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 0.1,
+        "sourceName": "D+",
+        "object": 10603,
+        "unit": "V",
+        "validMin": 0,
+        "validMax": 36
+      },
+      "oil_pressure": {
+        "address": 60,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 0.1,
+        "sourceName": "Oil Press",
+        "object": 8227,
+        "unit": "bar",
+        "validMin": 0,
+        "validMax": 20
+      },
+      "gcb_closed": {
+        "address": 71,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Led GCB Green",
+        "object": 8316
+      },
+      "mcb_closed": {
+        "address": 72,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Led MCB Green",
+        "object": 8318
       },
       "engine_state_raw": {
         "address": 79,
@@ -193,6 +673,17 @@
         "unit": "h",
         "validMin": 0
       },
+      "maintenance_hours": {
+        "address": 3003,
+        "count": 1,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Maintenance",
+        "object": 9648,
+        "unit": "h"
+      },
       "number_starts": {
         "address": 3004,
         "count": 1,
@@ -203,6 +694,28 @@
         "sourceName": "Num Starts",
         "object": 8207,
         "validMin": 0
+      },
+      "genset_kwh": {
+        "address": 3005,
+        "count": 2,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Energy kWh",
+        "object": 8205,
+        "unit": "kWh"
+      },
+      "genset_kvarh": {
+        "address": 3007,
+        "count": 2,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "Energy kVArh",
+        "object": 8539,
+        "unit": "kVArh"
       },
       "nominal_power_kw": {
         "address": 3024,
@@ -242,6 +755,17 @@
         "unit": "V",
         "validMin": 80,
         "validMax": 20000
+      },
+      "total_fuel_consumption": {
+        "address": 3278,
+        "count": 2,
+        "readFunctions": [
+          3
+        ],
+        "scale": 1.0,
+        "sourceName": "PerTotFuelCons",
+        "object": 12970,
+        "unit": "L"
       }
     }
   },
@@ -249,6 +773,60 @@
     "template": "rapid/templates/DrvModbus_RC_ICNT.xml",
     "driver": "DrvModbus",
     "channels": [
+      {
+        "key": "voltage_l1",
+        "tagCode": "voltage_l1",
+        "scale": 1.0,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l2",
+        "tagCode": "voltage_l2",
+        "scale": 1.0,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l3",
+        "tagCode": "voltage_l3",
+        "scale": 1.0,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l1_l2",
+        "tagCode": "voltage_l1_l2",
+        "scale": 1.0,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l2_l3",
+        "tagCode": "voltage_l2_l3",
+        "scale": 1.0,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l3_l1",
+        "tagCode": "voltage_l3_l1",
+        "scale": 1.0,
+        "unit": "V"
+      },
+      {
+        "key": "current_l1",
+        "tagCode": "current_l1",
+        "scale": 1.0,
+        "unit": "A"
+      },
+      {
+        "key": "current_l2",
+        "tagCode": "current_l2",
+        "scale": 1.0,
+        "unit": "A"
+      },
+      {
+        "key": "current_l3",
+        "tagCode": "current_l3",
+        "scale": 1.0,
+        "unit": "A"
+      },
       {
         "key": "rpm",
         "tagCode": "rpm",
@@ -268,10 +846,160 @@
         "unit": "kW"
       },
       {
+        "key": "power_kw_l1",
+        "tagCode": "power_kw_l1",
+        "scale": 1.0,
+        "unit": "kW"
+      },
+      {
+        "key": "power_kw_l2",
+        "tagCode": "power_kw_l2",
+        "scale": 1.0,
+        "unit": "kW"
+      },
+      {
+        "key": "power_kw_l3",
+        "tagCode": "power_kw_l3",
+        "scale": 1.0,
+        "unit": "kW"
+      },
+      {
+        "key": "power_kvar",
+        "tagCode": "power_kvar",
+        "scale": 1.0,
+        "unit": "kVAr"
+      },
+      {
+        "key": "power_kvar_l1",
+        "tagCode": "power_kvar_l1",
+        "scale": 1.0,
+        "unit": "kVAr"
+      },
+      {
+        "key": "power_kvar_l2",
+        "tagCode": "power_kvar_l2",
+        "scale": 1.0,
+        "unit": "kVAr"
+      },
+      {
+        "key": "power_kvar_l3",
+        "tagCode": "power_kvar_l3",
+        "scale": 1.0,
+        "unit": "kVAr"
+      },
+      {
+        "key": "power_factor",
+        "tagCode": "power_factor_raw",
+        "scale": 0.01
+      },
+      {
+        "key": "power_factor_l1",
+        "tagCode": "power_factor_l1_raw",
+        "scale": 0.01
+      },
+      {
+        "key": "power_factor_l2",
+        "tagCode": "power_factor_l2_raw",
+        "scale": 0.01
+      },
+      {
+        "key": "power_factor_l3",
+        "tagCode": "power_factor_l3_raw",
+        "scale": 0.01
+      },
+      {
+        "key": "power_kva",
+        "tagCode": "power_kva",
+        "scale": 1.0,
+        "unit": "kVA"
+      },
+      {
+        "key": "power_kva_l1",
+        "tagCode": "power_kva_l1",
+        "scale": 1.0,
+        "unit": "kVA"
+      },
+      {
+        "key": "power_kva_l2",
+        "tagCode": "power_kva_l2",
+        "scale": 1.0,
+        "unit": "kVA"
+      },
+      {
+        "key": "power_kva_l3",
+        "tagCode": "power_kva_l3",
+        "scale": 1.0,
+        "unit": "kVA"
+      },
+      {
+        "key": "bus_voltage_l1",
+        "tagCode": "bus_voltage_l1",
+        "scale": 1.0,
+        "unit": "V"
+      },
+      {
+        "key": "bus_voltage_l2",
+        "tagCode": "bus_voltage_l2",
+        "scale": 1.0,
+        "unit": "V"
+      },
+      {
+        "key": "bus_voltage_l3",
+        "tagCode": "bus_voltage_l3",
+        "scale": 1.0,
+        "unit": "V"
+      },
+      {
+        "key": "bus_voltage_l1_l2",
+        "tagCode": "bus_voltage_l1_l2",
+        "scale": 1.0,
+        "unit": "V"
+      },
+      {
+        "key": "bus_voltage_l2_l3",
+        "tagCode": "bus_voltage_l2_l3",
+        "scale": 1.0,
+        "unit": "V"
+      },
+      {
+        "key": "bus_voltage_l3_l1",
+        "tagCode": "bus_voltage_l3_l1",
+        "scale": 1.0,
+        "unit": "V"
+      },
+      {
+        "key": "bus_frequency",
+        "tagCode": "bus_frequency_raw",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      {
         "key": "battery_voltage",
         "tagCode": "battery_voltage_raw",
         "scale": 0.1,
         "unit": "V"
+      },
+      {
+        "key": "alternator_voltage",
+        "tagCode": "alternator_voltage_raw",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "oil_pressure",
+        "tagCode": "oil_pressure_raw",
+        "scale": 0.1,
+        "unit": "bar"
+      },
+      {
+        "key": "gcb_closed",
+        "tagCode": "gcb_closed",
+        "scale": 1.0
+      },
+      {
+        "key": "mcb_closed",
+        "tagCode": "mcb_closed",
+        "scale": 1.0
       },
       {
         "key": "engine_state_raw",
@@ -295,9 +1023,27 @@
         "unit": "h"
       },
       {
+        "key": "maintenance_hours",
+        "tagCode": "maintenance_hours",
+        "scale": 1.0,
+        "unit": "h"
+      },
+      {
         "key": "number_starts",
         "tagCode": "number_starts",
         "scale": 1.0
+      },
+      {
+        "key": "genset_kwh",
+        "tagCode": "genset_kwh",
+        "scale": 1.0,
+        "unit": "kWh"
+      },
+      {
+        "key": "genset_kvarh",
+        "tagCode": "genset_kvarh",
+        "scale": 1.0,
+        "unit": "kVArh"
       },
       {
         "key": "nominal_power_kw",
@@ -316,18 +1062,97 @@
         "tagCode": "nominal_voltage",
         "scale": 1.0,
         "unit": "V"
+      },
+      {
+        "key": "total_fuel_consumption",
+        "tagCode": "total_fuel_consumption",
+        "scale": 1.0,
+        "unit": "L"
       }
-    ]
+    ],
+    "lineOptions": {
+      "ReqRetries": "1",
+      "CycleDelay": "5000",
+      "DetailedLog": "true"
+    }
   },
   "validation": {
     "documentation": [
-      "IC-NT modbus.TXT fornecido pelo operador; subset retido em modbus/validated-map.txt."
+      "IC-NT modbus.TXT fornecido pelo operador e correlacionado com o tráfego real do G-043.",
+      "IL-NT, IA-NT, IC-NT Communication Guide 12-2009: dedicated command objects 46359-46361."
     ],
     "lab": true,
     "field": true,
-    "fieldReference": "G-132 / reverse TCP 15001 / Unit 1 / 57600 8N1. FC03 validou bateria=11.9 V, RPM=0, frequência=0, kW=0, Engine State=25, Breaker State=42, ControllerMode=0 e parâmetros nominais em 2026-10-02.",
-    "commandSafety": "Somente leitura. Nenhum comando industrial homologado ou materializado."
+    "fieldReference": "G-043 / reverse TCP 15033 / Unit 17 / FW branch 1 version 2.5. Rapid Line115 Device220 Normal; leitura FC03 contínua confirmada em 2026-10-29.",
+    "commandSafety": "START/STOP documentados no IL-NT/IA-NT/IC-NT Communication Guide: argumento em offsets 6358-6359, command code em 6360, comando 1. Executor restrito ao G-043 por generator_id allowlist, firmware exato, binding, MAN e dupla leitura de RPM. Primeira atuação física ainda pendente; controlador pode recusar se comando estiver protegido por senha, Access Lock ativo, alarme impeditivo ou outro intertravamento."
   },
-  "notes": "Export 4xxxx é usado pelo template com offset zero-based. G-132 respondeu em campo no Unit 1.",
-  "commands": {}
+  "notes": "G-043 homologado para telemetria expandida a partir do export IC-NT e respostas reais da Line115. START/STOP usa dedicated command objects 6358-6360; não há escrita no provisionamento. CPU Temp e Temperatura foram retirados da coleta operacional do G-043 porque o hardware retorna sentinelas fora da faixa; permanecem documentados no export bruto.",
+  "commands": {
+    "start": {
+      "executor": "icnt_privileged",
+      "transport": "reverse_tcp",
+      "confirmation": "START",
+      "preconditions": [
+        "generator_enabled",
+        "allowlisted_generator",
+        "binding_match",
+        "firmware_exact",
+        "controller_online",
+        "mode_manual",
+        "engine_stopped"
+      ],
+      "feedback": {
+        "metric": "rpm",
+        "operator": "gt",
+        "value": 100,
+        "timeoutSeconds": 15
+      },
+      "timeoutSeconds": 20,
+      "notes": "IC-NT Engine start via command 1 / argument 0x01FE0000; first physical validation pending."
+    },
+    "stop": {
+      "executor": "icnt_privileged",
+      "transport": "reverse_tcp",
+      "confirmation": "STOP",
+      "preconditions": [
+        "generator_enabled",
+        "allowlisted_generator",
+        "binding_match",
+        "firmware_exact",
+        "controller_online",
+        "mode_manual",
+        "engine_running"
+      ],
+      "feedback": {
+        "metric": "rpm",
+        "operator": "lte",
+        "value": 100,
+        "timeoutSeconds": 30
+      },
+      "timeoutSeconds": 35,
+      "notes": "IC-NT Engine stop via command 1 / argument 0x02FD0000; first physical validation pending."
+    }
+  },
+  "homologationCandidates": {
+    "start": {
+      "documented": true,
+      "mechanism": "dedicated_command_objects",
+      "argumentAddress": 6358,
+      "commandAddress": 6360,
+      "commandCode": 1,
+      "argument": "0x01FE0000",
+      "expectedReturn": "0x000001FF",
+      "fieldState": "authorized_first_field_validation_pending"
+    },
+    "stop": {
+      "documented": true,
+      "mechanism": "dedicated_command_objects",
+      "argumentAddress": 6358,
+      "commandAddress": 6360,
+      "commandCode": 1,
+      "argument": "0x02FD0000",
+      "expectedReturn": "0x000002FE",
+      "fieldState": "authorized_first_field_validation_pending"
+    }
+  }
 }

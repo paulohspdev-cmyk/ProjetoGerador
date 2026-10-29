@@ -419,7 +419,8 @@
             "dse_gencomm_privileged",
             "comap_privileged",
             "ignt_basebox_privileged",
-            "il4_amf25_privileged"
+            "il4_amf25_privileged",
+            "icnt_privileged"
           ]
         },
         "transport": {

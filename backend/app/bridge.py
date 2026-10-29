@@ -19,7 +19,7 @@ import struct
 import time
 from pathlib import Path
 
-from . import db, ignt_basebox, il4_amf25
+from . import db, ignt_basebox, il4_amf25, icnt
 from .binding_store import load_runtime_bindings
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -33,6 +33,7 @@ ENABLE_IG200_CONTROL = os.environ.get("RC_ENABLE_IG200_CONTROL", "0").strip() ==
 ENABLE_IG4_PROD_CONTROL = os.environ.get("RC_ENABLE_IG4_PROD_CONTROL", "0").strip() == "1"
 ENABLE_IGNT_BASEBOX_CONTROL = ignt_basebox.enabled()
 ENABLE_IL4_AMF25_CONTROL = il4_amf25.enabled()
+ENABLE_ICNT_CONTROL = icnt.enabled()
 
 READ_FUNCTIONS = {3, 4}
 IG200_RPM_ADDRESS = 1000
@@ -95,6 +96,17 @@ IL4_AMF25_STOP_ARGUMENT = 0x02FD0000
 IL4_AMF25_START_RETURN = 0x000001FF
 IL4_AMF25_STOP_RETURN = 0x000002FE
 IL4_AMF25_RPM_ADDRESS = 1000
+
+ICNT_RPM_ADDRESS = 19
+ICNT_MODE_ADDRESS = 89
+ICNT_MODE_MAN = 1
+ICNT_COMMAND_ARGUMENT_ADDRESS = 6358
+ICNT_COMMAND_CODE_ADDRESS = 6360
+ICNT_COMMAND_CODE = 0x0001
+ICNT_START_ARGUMENT = 0x01FE0000
+ICNT_STOP_ARGUMENT = 0x02FD0000
+ICNT_START_RETURN = 0x000001FF
+ICNT_STOP_RETURN = 0x000002FE
 
 
 def log(message):
@@ -169,6 +181,42 @@ def resolve_ig4_prod(generator_id, device_num):
         f"resolver IG4 de produção não instalado para Rapid Device {int(device_num or 0)}; "
         "execute app.bridge_runtime"
     )
+
+
+def resolve_icnt_control(generator_id, device_num):
+    generator = db.get_generator(str(generator_id or ""))
+    if not generator:
+        raise ValueError("gerador InteliCompact NT não encontrado")
+    if not generator.get("enabled"):
+        raise PermissionError("gerador InteliCompact NT desabilitado")
+    if not icnt.is_target(generator):
+        raise PermissionError("InteliCompact NT fora da allowlist de controle")
+    if int(generator.get("rapid_device_num") or 0) != int(device_num or 0):
+        raise PermissionError("Rapid Device InteliCompact NT não confere com o cadastro")
+
+    binding = next(
+        (
+            item
+            for item in load_bindings()
+            if str(item.get("generator_id") or "") == str(generator.get("id") or "")
+        ),
+        None,
+    )
+    if not binding:
+        raise PermissionError("binding Rapid InteliCompact NT ausente")
+
+    for key in ("controller_model", "transport", "listen_port", "modbus_unit", "rapid_device_num"):
+        expected = generator.get(key)
+        actual = binding.get(key)
+        if key in {"listen_port", "modbus_unit", "rapid_device_num"}:
+            expected = int(expected or 0)
+            actual = int(actual or 0)
+        else:
+            expected = str(expected or "").strip().casefold()
+            actual = str(actual or "").strip().casefold()
+        if expected != actual:
+            raise PermissionError(f"binding InteliCompact NT diverge em {key}")
+    return generator
 
 
 def _ignt_basebox_access_code(generator_id: str) -> str:
@@ -810,6 +858,143 @@ class BridgePort:
             pdu = await self.request_locked(unit, read_holding_pdu(address, count))
             return parse_registers(pdu, count)
 
+    async def _icnt_snapshot_locked(self, unit):
+        async def reg(address):
+            pdu = await self.request_locked(unit, read_holding_pdu(address, 1))
+            return parse_registers(pdu, 1)[0]
+        return {
+            "mode": await reg(ICNT_MODE_ADDRESS),
+            "rpm": await reg(ICNT_RPM_ADDRESS),
+        }
+
+    @staticmethod
+    def _require_icnt_state(action, state):
+        failures = []
+        if state.get("mode") != ICNT_MODE_MAN:
+            failures.append(f"mode={state.get('mode')} (esperado MAN=1)")
+        rpm = int(state.get("rpm") or 0)
+        if action == "start":
+            if rpm != 0:
+                failures.append(f"rpm={rpm} (esperado 0)")
+        elif action == "stop":
+            if rpm <= 100:
+                failures.append(f"rpm={rpm} (motor já parado/abaixo de 100 rpm)")
+        else:
+            failures.append(f"ação inválida {action}")
+        if failures:
+            raise PermissionError(
+                f"{action.upper()} InteliCompact NT recusado: " + "; ".join(failures)
+            )
+
+    async def icnt_command(self, unit, action):
+        if action not in ("start", "stop"):
+            raise ValueError("ação InteliCompact NT inválida")
+
+        argument = ICNT_START_ARGUMENT if action == "start" else ICNT_STOP_ARGUMENT
+        expected_return = ICNT_START_RETURN if action == "start" else ICNT_STOP_RETURN
+
+        async with self.remote_lock:
+            before = await self._icnt_snapshot_locked(unit)
+            self._require_icnt_state(action, before)
+            await asyncio.sleep(0.15)
+            immediate = await self._icnt_snapshot_locked(unit)
+            self._require_icnt_state(action, immediate)
+
+            if before["mode"] != immediate["mode"]:
+                raise PermissionError(
+                    f"{action.upper()} InteliCompact NT recusado: modo mudou entre validações"
+                )
+            if action == "start" and before["rpm"] != immediate["rpm"]:
+                raise PermissionError(
+                    f"{action.upper()} InteliCompact NT recusado: RPM mudou antes do comando"
+                )
+
+            arg_resp = await self.request_locked(
+                unit,
+                write_multiple_u32_pdu(ICNT_COMMAND_ARGUMENT_ADDRESS, argument),
+            )
+            ensure_write_ok(arg_resp, 16)
+            if len(arg_resp) != 5:
+                raise ValueError(f"eco FC16 InteliCompact NT inválido: {arg_resp.hex()}")
+            _, arg_address, arg_count = struct.unpack(">BHH", arg_resp)
+            if arg_address != ICNT_COMMAND_ARGUMENT_ADDRESS or arg_count != 2:
+                raise ValueError(
+                    f"eco argumento InteliCompact NT inválido address={arg_address} count={arg_count}"
+                )
+
+            await asyncio.sleep(0.10)
+            cmd_resp = await self.request_locked(
+                unit,
+                write_single_pdu(ICNT_COMMAND_CODE_ADDRESS, ICNT_COMMAND_CODE),
+            )
+            ensure_write_ok(cmd_resp, 6)
+            if len(cmd_resp) != 5:
+                raise ValueError(f"eco FC06 InteliCompact NT inválido: {cmd_resp.hex()}")
+            _, cmd_address, cmd_value = struct.unpack(">BHH", cmd_resp)
+            if cmd_address != ICNT_COMMAND_CODE_ADDRESS or cmd_value != ICNT_COMMAND_CODE:
+                raise ValueError(
+                    f"eco comando InteliCompact NT inválido address={cmd_address} value={cmd_value}"
+                )
+
+            await asyncio.sleep(0.25)
+            ret_pdu = await self.request_locked(
+                unit, read_holding_pdu(ICNT_COMMAND_ARGUMENT_ADDRESS, 2)
+            )
+            regs = parse_registers(ret_pdu, 2)
+            return_value = (regs[0] << 16) | regs[1]
+
+        if return_value != expected_return:
+            if return_value == 0x00000001:
+                reason = "controlador recusou: argumento inválido"
+            elif return_value == 0x00000002:
+                reason = (
+                    "controlador recusou o comando "
+                    "(modo, senha/acesso, Access Lock, alarme ou intertravamento)"
+                )
+            else:
+                reason = f"retorno inesperado 0x{return_value:08X}"
+            return {
+                "ok": False,
+                "accepted": False,
+                "action": action,
+                "reason": reason,
+                "return_value": f"0x{return_value:08X}",
+                "state_before": before,
+                "feedback_confirmed": False,
+            }
+
+        feedback_confirmed = False
+        rpm_after = None
+        deadline = asyncio.get_running_loop().time() + (15.0 if action == "start" else 30.0)
+        while asyncio.get_running_loop().time() < deadline:
+            await asyncio.sleep(0.5)
+            try:
+                rpm_after = (
+                    await self.read_registers_privileged(unit, ICNT_RPM_ADDRESS, 1)
+                )[0]
+            except Exception:
+                continue
+            feedback_confirmed = (
+                rpm_after > 100 if action == "start" else rpm_after <= 100
+            )
+            if feedback_confirmed:
+                break
+
+        return {
+            "ok": bool(feedback_confirmed),
+            "accepted": True,
+            "action": action,
+            "reason": (
+                f"{action.upper()} aceito e feedback por RPM confirmado"
+                if feedback_confirmed
+                else f"{action.upper()} aceito, mas feedback por RPM não confirmou no prazo"
+            ),
+            "return_value": f"0x{return_value:08X}",
+            "state_before": before,
+            "state_after": {"rpm": rpm_after} if rpm_after is not None else None,
+            "feedback_confirmed": bool(feedback_confirmed),
+        }
+
     async def execute_privileged_command(self, executor, unit, action, password=None):
         # Hold the per-device operation gate until physical feedback finishes.
         # The short Modbus transport lock alone allows duplicate writes while
@@ -822,6 +1007,8 @@ class BridgePort:
                 return await self.ig200_command(unit, action, password=password)
             if executor == "comap_privileged":
                 return await self.ig4_command(unit, action)
+            if executor == "icnt_privileged":
+                return await self.icnt_command(unit, action)
             raise PermissionError("executor privilegiado desconhecido")
 
     async def ig200_command(self, unit, action, password=None):
@@ -1129,6 +1316,15 @@ async def handle_control(reader, writer):
             )
             port = int(generator.get("listen_port") or 502)
             unit = int(generator.get("modbus_unit") or 1)
+        elif executor == "icnt_privileged":
+            if not ENABLE_ICNT_CONTROL:
+                raise PermissionError("controle InteliCompact NT desabilitado")
+            generator = resolve_icnt_control(
+                req.get("generator_id"),
+                int(req.get("device") or 0),
+            )
+            port = int(generator.get("listen_port") or 0)
+            unit = int(generator.get("modbus_unit") or 0)
         else:
             raise PermissionError(f"executor não permitido no socket: {executor or 'N/D'}")
 
@@ -1151,9 +1347,12 @@ async def handle_control(reader, writer):
         elif executor == "ignt_basebox_privileged":
             result = await ignt_basebox_command(generator, action)
             controller_label = "IG-NT BaseBox"
-        else:
+        elif executor == "il4_amf25_privileged":
             result = await il4_amf25_command(generator, action)
             controller_label = "InteliLite 4 AMF25"
+        else:
+            result = await port_bridge.execute_privileged_command(executor, unit, action)
+            controller_label = "InteliCompact NT"
 
         response = {
             **result,
@@ -1214,6 +1413,8 @@ async def start_control_server():
         modes.append("IG-NT BaseBox allowlist start/stop")
     if ENABLE_IL4_AMF25_CONTROL:
         modes.append("InteliLite 4 AMF25 allowlist start/stop")
+    if ENABLE_ICNT_CONTROL:
+        modes.append("InteliCompact NT allowlist start/stop")
     mode = "ATIVO: " + ", ".join(modes) if modes else "DESABILITADO"
     log(f"socket de controle local {socket_path} ({mode})")
 

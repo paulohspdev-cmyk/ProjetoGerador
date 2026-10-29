@@ -1,12 +1,60 @@
-19 8209 RPM
-20 8210 Gen Freq
-26 8202 Gen kW
-57 8213 Battery Volts
+7 8192 Gen V L1-N V unsigned dec0
+8 8193 Gen V L2-N V unsigned dec0
+9 8194 Gen V L3-N V unsigned dec0
+12 9628 Gen V L1-L2 V unsigned dec0
+13 9629 Gen V L2-L3 V unsigned dec0
+14 9630 Gen V L3-L1 V unsigned dec0
+15 8198 Gen A L1 A unsigned dec0
+16 8199 Gen A L2 A unsigned dec0
+17 8200 Gen A L3 A unsigned dec0
+19 8209 RPM RPM unsigned dec0
+20 8210 Gen Freq Hz unsigned dec1
+26 8202 Gen kW kW integer dec0
+27 8524 Gen kW L1 kW integer dec0
+28 8525 Gen kW L2 kW integer dec0
+29 8526 Gen kW L3 kW integer dec0
+30 8203 Gen kVAr kVAr integer dec0
+31 8527 Gen kVAr L1 kVAr integer dec0
+32 8528 Gen kVAr L2 kVAr integer dec0
+33 8529 Gen kVAr L3 kVAr integer dec0
+34 8204 Gen PF integer dec2
+35 8533 Gen PF L1 integer dec2
+36 8534 Gen PF L2 integer dec2
+37 8535 Gen PF L3 integer dec2
+43 8565 Gen kVA kVA integer dec0
+44 8530 Gen kVA L1 kVA integer dec0
+45 8531 Gen kVA L2 kVA integer dec0
+46 8532 Gen kVA L3 kVA integer dec0
+47 8195 Bus V L1-N V unsigned dec0
+48 8196 Bus V L2-N V unsigned dec0
+49 8197 Bus V L3-N V unsigned dec0
+51 9631 Bus V L1-L2 V unsigned dec0
+52 9632 Bus V L2-L3 V unsigned dec0
+53 9633 Bus V L3-L1 V unsigned dec0
+54 8211 Bus Freq Hz unsigned dec1
+57 8213 Battery Volts V integer dec1
+58 10124 CPU Temp C integer dec1
+59 10603 D+ V integer dec1
+60 8227 Oil Press Bar integer dec1
+61 8228 Temperatura C integer dec1
+71 8316 Led GCB Green unsigned dec0
+72 8318 Led MCB Green unsigned dec0
 79 8330 Engine State
 80 8455 Breaker State
 89 9651 ControllerMode
-3000 8206 Run Hours
-3004 8207 Num Starts
-3024 8276 Nominal Power
-3025 8275 Nomin Current
-3031 8277 Nominal Volts
+3000 8206 Run Hours uint32 h dec0
+3003 9648 Maintenance h unsigned dec0
+3004 8207 Num Starts unsigned dec0
+3005 8205 Energy kWh int32 dec0
+3007 8539 Energy kVArh int32 dec0
+3024 8276 Nominal Power kW unsigned dec0
+3025 8275 Nomin Current A unsigned dec0
+3031 8277 Nominal Volts V unsigned dec0
+3278 12970 Total Fuel Consumption L uint32 dec0
+
+Dedicated command objects from IL-NT/IA-NT/IC-NT Communication Guide:
+6358-6359 (registers 46359-46360): command argument, read/write Unsigned32
+6360 (register 46361): command code, write Unsigned16
+Command 1 / Engine start argument 0x01FE0000 / success 0x000001FF
+Command 1 / Engine stop  argument 0x02FD0000 / success 0x000002FE
+G-043 live firmware: FW Branch raw=1, FW Version raw=25 => branch-1/version-2.5

@@ -25,20 +25,43 @@
       <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="rpm" name="RPM" />
       <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="frequency_raw" name="Gen Freq" />
     </ElemGroup>
-    <ElemGroup active="true" dataBlock="HoldingRegisters" address="26" name="Potencia ativa">
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="26" name="Potencias">
       <Elem type="short" readOnly="true" isBitMask="false" tagCode="power_kw" name="Gen kW" />
-    </ElemGroup>
-    <ElemGroup active="true" dataBlock="HoldingRegisters" address="30" name="Potencia reativa">
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="power_kw_l1" name="Gen kW L1" />
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="power_kw_l2" name="Gen kW L2" />
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="power_kw_l3" name="Gen kW L3" />
       <Elem type="short" readOnly="true" isBitMask="false" tagCode="power_kvar" name="Gen kVAr" />
-    </ElemGroup>
-    <ElemGroup active="true" dataBlock="HoldingRegisters" address="34" name="Fator de potencia">
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="power_kvar_l1" name="Gen kVAr L1" />
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="power_kvar_l2" name="Gen kVAr L2" />
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="power_kvar_l3" name="Gen kVAr L3" />
       <Elem type="short" readOnly="true" isBitMask="false" tagCode="power_factor_raw" name="Gen PF" />
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="power_factor_l1_raw" name="Gen PF L1" />
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="power_factor_l2_raw" name="Gen PF L2" />
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="power_factor_l3_raw" name="Gen PF L3" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="43" name="Potencia aparente">
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="power_kva" name="Gen kVA" />
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="power_kva_l1" name="Gen kVA L1" />
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="power_kva_l2" name="Gen kVA L2" />
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="power_kva_l3" name="Gen kVA L3" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="47" name="Barramento - tensoes LN">
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="bus_voltage_l1" name="Bus V L1-N" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="bus_voltage_l2" name="Bus V L2-N" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="bus_voltage_l3" name="Bus V L3-N" />
+    </ElemGroup>
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="51" name="Barramento - tensoes LL e frequencia">
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="bus_voltage_l1_l2" name="Bus V L1-L2" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="bus_voltage_l2_l3" name="Bus V L2-L3" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="bus_voltage_l3_l1" name="Bus V L3-L1" />
+      <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="bus_frequency_raw" name="Bus Freq" />
     </ElemGroup>
     <ElemGroup active="true" dataBlock="HoldingRegisters" address="57" name="Controlador - bateria">
       <Elem type="short" readOnly="true" isBitMask="false" tagCode="battery_voltage_raw" name="Battery Volts" />
     </ElemGroup>
-    <ElemGroup active="true" dataBlock="HoldingRegisters" address="59" name="Controlador - alternador">
+    <ElemGroup active="true" dataBlock="HoldingRegisters" address="59" name="Motor - D+ e oleo">
       <Elem type="short" readOnly="true" isBitMask="false" tagCode="alternator_voltage_raw" name="D+" />
+      <Elem type="short" readOnly="true" isBitMask="false" tagCode="oil_pressure_raw" name="Oil Press" />
     </ElemGroup>
     <ElemGroup active="true" dataBlock="HoldingRegisters" address="71" name="Disjuntores - LEDs">
       <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="gcb_closed" name="Led GCB Green" />
@@ -58,6 +81,7 @@
       <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="maintenance_hours" name="Maintenance" />
       <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="number_starts" name="Num Starts" />
       <Elem type="uint" readOnly="true" isBitMask="false" tagCode="genset_kwh" name="Energy kWh" />
+      <Elem type="uint" readOnly="true" isBitMask="false" tagCode="genset_kvarh" name="Energy kVArh" />
     </ElemGroup>
     <ElemGroup active="true" dataBlock="HoldingRegisters" address="3024" name="Nominais - potencia e corrente">
       <Elem type="ushort" readOnly="true" isBitMask="false" tagCode="nominal_power_kw" name="Nominal Power" />
