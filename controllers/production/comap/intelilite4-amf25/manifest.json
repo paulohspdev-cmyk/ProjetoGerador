@@ -38,13 +38,113 @@
     "paralleling": false
   },
   "validatedTelemetry": [
-    "rpm"
+    "rpm",
+    "power_kw",
+    "power_factor",
+    "frequency",
+    "voltage_l1",
+    "voltage_l2",
+    "voltage_l3",
+    "voltage_l1_l2",
+    "voltage_l2_l3",
+    "voltage_l3_l1",
+    "current_l1",
+    "current_l2",
+    "current_l3",
+    "mains_frequency",
+    "mains_voltage_l1",
+    "mains_voltage_l2",
+    "mains_voltage_l3",
+    "battery_voltage",
+    "dplus_voltage",
+    "oil_pressure",
+    "coolant_temperature",
+    "fuel_level_l",
+    "engine_state_raw",
+    "breaker_state_raw",
+    "connection_type_raw"
   ],
   "documentedTelemetry": [
-    "rpm"
+    "rpm",
+    "power_kw",
+    "power_kw_l1",
+    "power_kw_l2",
+    "power_kw_l3",
+    "power_kvar",
+    "power_kvar_l1",
+    "power_kvar_l2",
+    "power_kvar_l3",
+    "power_kva",
+    "power_kva_l1",
+    "power_kva_l2",
+    "power_kva_l3",
+    "power_factor",
+    "power_factor_l1",
+    "power_factor_l2",
+    "power_factor_l3",
+    "frequency",
+    "voltage_l1",
+    "voltage_l2",
+    "voltage_l3",
+    "voltage_l1_l2",
+    "voltage_l2_l3",
+    "voltage_l3_l1",
+    "current_l1",
+    "current_l2",
+    "current_l3",
+    "mains_frequency",
+    "mains_voltage_l1",
+    "mains_voltage_l2",
+    "mains_voltage_l3",
+    "mains_voltage_l1_l2",
+    "mains_voltage_l2_l3",
+    "mains_voltage_l3_l1",
+    "battery_voltage",
+    "dplus_voltage",
+    "oil_pressure",
+    "coolant_temperature",
+    "fuel_level_l",
+    "engine_state_raw",
+    "breaker_state_raw",
+    "timer_text_raw",
+    "connection_type_raw"
   ],
   "metricUnits": {
-    "rpm": "rpm"
+    "rpm": "rpm",
+    "power_kw": "kW",
+    "power_kw_l1": "kW",
+    "power_kw_l2": "kW",
+    "power_kw_l3": "kW",
+    "power_kvar": "kVAr",
+    "power_kvar_l1": "kVAr",
+    "power_kvar_l2": "kVAr",
+    "power_kvar_l3": "kVAr",
+    "power_kva": "kVA",
+    "power_kva_l1": "kVA",
+    "power_kva_l2": "kVA",
+    "power_kva_l3": "kVA",
+    "frequency": "Hz",
+    "voltage_l1": "V",
+    "voltage_l2": "V",
+    "voltage_l3": "V",
+    "voltage_l1_l2": "V",
+    "voltage_l2_l3": "V",
+    "voltage_l3_l1": "V",
+    "current_l1": "A",
+    "current_l2": "A",
+    "current_l3": "A",
+    "mains_frequency": "Hz",
+    "mains_voltage_l1": "V",
+    "mains_voltage_l2": "V",
+    "mains_voltage_l3": "V",
+    "mains_voltage_l1_l2": "V",
+    "mains_voltage_l2_l3": "V",
+    "mains_voltage_l3_l1": "V",
+    "battery_voltage": "V",
+    "dplus_voltage": "V",
+    "oil_pressure": "kgf",
+    "coolant_temperature": "°C",
+    "fuel_level_l": "L"
   },
   "metricLimits": {
     "rpm": {
@@ -56,19 +156,303 @@
     "kind": "modbus_register_export",
     "readOnly": true,
     "sourceFile": "modbus/g1000-validated-registers.txt",
-    "sourceSha256": "bc165e5ba4227dd0c2cd9c636f3c92c92ad5f3a676a6a381355cd62db2a306df",
+    "sourceSha256": "61597e958ad81c207b5e8432bb7e31c1897c375e2240243f6acbe872902af0bf",
     "readFunctions": [
       3
     ],
     "registers": {
       "rpm": {
+        "address": 1000,
+        "count": 1,
+        "type": "int16",
+        "scale": 1,
+        "unit": "rpm"
+      },
+      "power_kw": {
+        "address": 1001,
+        "count": 1,
+        "type": "int16",
+        "scale": 1,
+        "unit": "kW"
+      },
+      "power_kw_l1": {
+        "address": 1002,
+        "count": 1,
+        "type": "int16",
+        "scale": 1,
+        "unit": "kW"
+      },
+      "power_kw_l2": {
+        "address": 1003,
+        "count": 1,
+        "type": "int16",
+        "scale": 1,
+        "unit": "kW"
+      },
+      "power_kw_l3": {
         "address": 1004,
         "count": 1,
         "type": "int16",
         "scale": 1,
-        "unit": "rpm",
-        "sourceName": "RPM",
-        "object": 10123
+        "unit": "kW"
+      },
+      "power_kvar": {
+        "address": 1005,
+        "count": 1,
+        "type": "int16",
+        "scale": 1,
+        "unit": "kVAr"
+      },
+      "power_kvar_l1": {
+        "address": 1006,
+        "count": 1,
+        "type": "int16",
+        "scale": 1,
+        "unit": "kVAr"
+      },
+      "power_kvar_l2": {
+        "address": 1007,
+        "count": 1,
+        "type": "int16",
+        "scale": 1,
+        "unit": "kVAr"
+      },
+      "power_kvar_l3": {
+        "address": 1008,
+        "count": 1,
+        "type": "int16",
+        "scale": 1,
+        "unit": "kVAr"
+      },
+      "power_kva": {
+        "address": 1009,
+        "count": 1,
+        "type": "int16",
+        "scale": 1,
+        "unit": "kVA"
+      },
+      "power_kva_l1": {
+        "address": 1010,
+        "count": 1,
+        "type": "int16",
+        "scale": 1,
+        "unit": "kVA"
+      },
+      "power_kva_l2": {
+        "address": 1011,
+        "count": 1,
+        "type": "int16",
+        "scale": 1,
+        "unit": "kVA"
+      },
+      "power_kva_l3": {
+        "address": 1012,
+        "count": 1,
+        "type": "int16",
+        "scale": 1,
+        "unit": "kVA"
+      },
+      "power_factor": {
+        "address": 1013,
+        "count": 1,
+        "type": "int16",
+        "scale": 0.01
+      },
+      "power_factor_l1": {
+        "address": 1014,
+        "count": 1,
+        "type": "int16",
+        "scale": 0.01
+      },
+      "power_factor_l2": {
+        "address": 1015,
+        "count": 1,
+        "type": "int16",
+        "scale": 0.01
+      },
+      "power_factor_l3": {
+        "address": 1016,
+        "count": 1,
+        "type": "int16",
+        "scale": 0.01
+      },
+      "frequency": {
+        "address": 1017,
+        "count": 1,
+        "type": "uint16",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      "voltage_l1": {
+        "address": 1018,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "V"
+      },
+      "voltage_l2": {
+        "address": 1019,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "V"
+      },
+      "voltage_l3": {
+        "address": 1020,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "V"
+      },
+      "voltage_l1_l2": {
+        "address": 1021,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "V"
+      },
+      "voltage_l2_l3": {
+        "address": 1022,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "V"
+      },
+      "voltage_l3_l1": {
+        "address": 1023,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "V"
+      },
+      "current_l1": {
+        "address": 1024,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "A"
+      },
+      "current_l2": {
+        "address": 1025,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "A"
+      },
+      "current_l3": {
+        "address": 1026,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "A"
+      },
+      "mains_frequency": {
+        "address": 1029,
+        "count": 1,
+        "type": "uint16",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      "mains_voltage_l1": {
+        "address": 1030,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "V"
+      },
+      "mains_voltage_l2": {
+        "address": 1031,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "V"
+      },
+      "mains_voltage_l3": {
+        "address": 1032,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "V"
+      },
+      "mains_voltage_l1_l2": {
+        "address": 1033,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "V"
+      },
+      "mains_voltage_l2_l3": {
+        "address": 1034,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "V"
+      },
+      "mains_voltage_l3_l1": {
+        "address": 1035,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1,
+        "unit": "V"
+      },
+      "battery_voltage": {
+        "address": 1036,
+        "count": 1,
+        "type": "int16",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "dplus_voltage": {
+        "address": 1037,
+        "count": 1,
+        "type": "int16",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      "oil_pressure": {
+        "address": 1038,
+        "count": 1,
+        "type": "int16",
+        "scale": 0.01,
+        "unit": "kgf"
+      },
+      "coolant_temperature": {
+        "address": 1039,
+        "count": 1,
+        "type": "int16",
+        "scale": 0.1,
+        "unit": "°C"
+      },
+      "fuel_level_l": {
+        "address": 1040,
+        "count": 1,
+        "type": "int16",
+        "scale": 0.1,
+        "unit": "L"
+      },
+      "engine_state_raw": {
+        "address": 1286,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1
+      },
+      "breaker_state_raw": {
+        "address": 1287,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1
+      },
+      "timer_text_raw": {
+        "address": 1288,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1
+      },
+      "connection_type_raw": {
+        "address": 1289,
+        "count": 1,
+        "type": "uint16",
+        "scale": 1
       }
     }
   },
@@ -81,6 +465,246 @@
         "tagCode": "rpm",
         "scale": 1,
         "unit": "rpm"
+      },
+      {
+        "key": "power_kw",
+        "tagCode": "power_kw",
+        "scale": 1,
+        "unit": "kW"
+      },
+      {
+        "key": "power_kw_l1",
+        "tagCode": "power_kw_l1",
+        "scale": 1,
+        "unit": "kW"
+      },
+      {
+        "key": "power_kw_l2",
+        "tagCode": "power_kw_l2",
+        "scale": 1,
+        "unit": "kW"
+      },
+      {
+        "key": "power_kw_l3",
+        "tagCode": "power_kw_l3",
+        "scale": 1,
+        "unit": "kW"
+      },
+      {
+        "key": "power_kvar",
+        "tagCode": "power_kvar",
+        "scale": 1,
+        "unit": "kVAr"
+      },
+      {
+        "key": "power_kvar_l1",
+        "tagCode": "power_kvar_l1",
+        "scale": 1,
+        "unit": "kVAr"
+      },
+      {
+        "key": "power_kvar_l2",
+        "tagCode": "power_kvar_l2",
+        "scale": 1,
+        "unit": "kVAr"
+      },
+      {
+        "key": "power_kvar_l3",
+        "tagCode": "power_kvar_l3",
+        "scale": 1,
+        "unit": "kVAr"
+      },
+      {
+        "key": "power_kva",
+        "tagCode": "power_kva",
+        "scale": 1,
+        "unit": "kVA"
+      },
+      {
+        "key": "power_kva_l1",
+        "tagCode": "power_kva_l1",
+        "scale": 1,
+        "unit": "kVA"
+      },
+      {
+        "key": "power_kva_l2",
+        "tagCode": "power_kva_l2",
+        "scale": 1,
+        "unit": "kVA"
+      },
+      {
+        "key": "power_kva_l3",
+        "tagCode": "power_kva_l3",
+        "scale": 1,
+        "unit": "kVA"
+      },
+      {
+        "key": "power_factor",
+        "tagCode": "power_factor_raw",
+        "scale": 0.01,
+        "unit": ""
+      },
+      {
+        "key": "power_factor_l1",
+        "tagCode": "power_factor_l1_raw",
+        "scale": 0.01,
+        "unit": ""
+      },
+      {
+        "key": "power_factor_l2",
+        "tagCode": "power_factor_l2_raw",
+        "scale": 0.01,
+        "unit": ""
+      },
+      {
+        "key": "power_factor_l3",
+        "tagCode": "power_factor_l3_raw",
+        "scale": 0.01,
+        "unit": ""
+      },
+      {
+        "key": "frequency",
+        "tagCode": "frequency_raw",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      {
+        "key": "voltage_l1",
+        "tagCode": "voltage_l1",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l2",
+        "tagCode": "voltage_l2",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l3",
+        "tagCode": "voltage_l3",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l1_l2",
+        "tagCode": "voltage_l1_l2",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l2_l3",
+        "tagCode": "voltage_l2_l3",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "voltage_l3_l1",
+        "tagCode": "voltage_l3_l1",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "current_l1",
+        "tagCode": "current_l1",
+        "scale": 1,
+        "unit": "A"
+      },
+      {
+        "key": "current_l2",
+        "tagCode": "current_l2",
+        "scale": 1,
+        "unit": "A"
+      },
+      {
+        "key": "current_l3",
+        "tagCode": "current_l3",
+        "scale": 1,
+        "unit": "A"
+      },
+      {
+        "key": "mains_frequency",
+        "tagCode": "mains_frequency_raw",
+        "scale": 0.1,
+        "unit": "Hz"
+      },
+      {
+        "key": "mains_voltage_l1",
+        "tagCode": "mains_voltage_l1",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "mains_voltage_l2",
+        "tagCode": "mains_voltage_l2",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "mains_voltage_l3",
+        "tagCode": "mains_voltage_l3",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "mains_voltage_l1_l2",
+        "tagCode": "mains_voltage_l1_l2",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "mains_voltage_l2_l3",
+        "tagCode": "mains_voltage_l2_l3",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "mains_voltage_l3_l1",
+        "tagCode": "mains_voltage_l3_l1",
+        "scale": 1,
+        "unit": "V"
+      },
+      {
+        "key": "battery_voltage",
+        "tagCode": "battery_voltage_raw",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "dplus_voltage",
+        "tagCode": "dplus_voltage_raw",
+        "scale": 0.1,
+        "unit": "V"
+      },
+      {
+        "key": "oil_pressure",
+        "tagCode": "oil_pressure_raw",
+        "scale": 0.01,
+        "unit": "kgf"
+      },
+      {
+        "key": "coolant_temperature",
+        "tagCode": "coolant_temperature_raw",
+        "scale": 0.1,
+        "unit": "°C"
+      },
+      {
+        "key": "fuel_level_l",
+        "tagCode": "fuel_level_l_raw",
+        "scale": 0.1,
+        "unit": "L"
+      },
+      {
+        "key": "engine_state_raw",
+        "tagCode": "engine_state_raw",
+        "scale": 1,
+        "unit": ""
+      },
+      {
+        "key": "breaker_state_raw",
+        "tagCode": "breaker_state_raw",
+        "scale": 1,
+        "unit": ""
       }
     ],
     "lineOptions": {
@@ -90,15 +714,16 @@
   },
   "validation": {
     "documentation": [
+      "User-provided AMF25 Modbus export (Amf 25 modbus.txt), correlated with live G-1000 FC03/FC04 scans",
       "ComAp InteliLite 4 AMF25 Global Guide: configurable Modbus map and reserved command registers 4207-4209",
-      "Live G-1000 FC03 validation: 10.60.4.215:502 Unit 1, address 1004"
+      "Live G-1000 validation: 10.60.4.215:502 Unit 1; RPM address 1000; electrical/analog signatures validated while running"
     ],
     "lab": true,
     "field": false,
-    "fieldReference": "G-1000 / 10.60.4.215 / Unit 1 / initial RPM read validated; first START/STOP validation authorized",
+    "fieldReference": "G-1000 live read-only reconstruction validated on 2026-10-29; engine running signature matched RPM/frequency/voltage/battery/sensor physics.",
     "commandSafety": "START/STOP only. Command path documented by ComAp. Executor restricted to G-1000 allowlist, direct TCP 502, Unit 1, binding match, live RPM precheck and RPM feedback. Exact firmware pending first field validation."
   },
-  "notes": "Exact G-1000 onboarding pack. Telemetry intentionally limited to RPM until the actual InteliConfig Modbus table is exported. Generic InteliLite 4 mappings are not reused.",
+  "notes": "G-1000 exact reconstructed map. Generic InteliLite4 map was rejected. RPM is address 1000. Electrical and analog blocks were reconstructed from live FC03/FC04 scans correlated with the user's AMF25 export.",
   "commands": {
     "start": {
       "executor": "il4_amf25_privileged",

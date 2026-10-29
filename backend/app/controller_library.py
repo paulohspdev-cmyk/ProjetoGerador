@@ -126,7 +126,7 @@ def _documented_allowlisted_first_command_contract(pack: dict | None) -> bool:
         return False
     if model == "intelilite 4 amf 25":
         rpm = (mapping.get("registers") or {}).get("rpm") or {}
-        if validation.get("lab") is not True or int(rpm.get("address") or -1) != 1004:
+        if validation.get("lab") is not True or int(rpm.get("address") or -1) != 1000:
             return False
 
     if not capabilities.get("telemetry") or not capabilities.get("start") or not capabilities.get("stop"):

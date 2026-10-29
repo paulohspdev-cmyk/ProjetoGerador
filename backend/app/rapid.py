@@ -455,6 +455,8 @@ def available_metrics(generator):
 
 def _mode(generator, values):
     if "controller_mode_raw" not in values:
+        if str(generator.get("controller_model") or "").strip().casefold() == "intelilite 4 amf 25":
+            return "N/D"
         return "OFF"
     raw = values.get("controller_mode_raw")
     model = str(generator.get("controller_model") or "").strip().casefold()

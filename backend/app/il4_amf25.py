@@ -57,5 +57,5 @@ def documented_command_ready(pack: dict, action: str) -> bool:
         and validation.get("lab") is True
         and validation.get("field") is not True
         and "start/stop" in str(validation.get("commandSafety") or "").casefold()
-        and int(rpm.get("address") or -1) == 1004
+        and int(rpm.get("address") or -1) == 1000
     )
