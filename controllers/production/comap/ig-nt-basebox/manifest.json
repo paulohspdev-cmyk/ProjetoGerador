@@ -320,7 +320,8 @@
     "lineOptions": {
       "CycleDelay": "5000",
       "ReqRetries": "1"
-    }
+    },
+    "pollingEnabled": false
   },
   "validation": {
     "documentation": [

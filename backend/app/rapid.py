@@ -17,7 +17,7 @@ from .config import (
 )
 from .controller_library import pack_for_model
 from .power_topology import resolve_power_topology
-from . import db, ig4_prod
+from . import db, ig4_prod, ibcom_web
 from .production_guard import production_mode
 
 _cache = {"at": 0.0, "channels": {}, "error": "", "requested": set()}
@@ -457,6 +457,9 @@ def _mode(generator, values):
     if "controller_mode_raw" not in values:
         return "OFF"
     raw = values.get("controller_mode_raw")
+    model = str(generator.get("controller_model") or "").strip().casefold()
+    if model == "inteligen nt basebox":
+        return {0: "OFF", 1: "MANUAL", 2: "SEM", 3: "AUTO"}.get(raw, "N/D")
     vendor = str(generator.get("controller_type") or "").strip().upper()
     if vendor == "DSE":
         # GenComm control modes: 0 Stop, 1 Auto, 2 Manual, 3 Test on load,
@@ -635,6 +638,7 @@ def _frontend_generator(
     telemetry_at=None,
     telemetry_stale=False,
     stale_metrics=None,
+    telemetry_source=None,
 ):
     enabled = bool(generator.get("enabled"))
     online = status == "online"
@@ -767,7 +771,9 @@ def _frontend_generator(
         "metricUnits": units,
         "metricLimits": _metric_limits(generator),
         "capabilities": _effective_capabilities(generator, status, binding_present),
-        "telemetrySource": "last_known"
+        "telemetrySource": telemetry_source
+        if telemetry_source
+        else "last_known"
         if telemetry_stale and values
         else "rapid_scada"
         if not telemetry_stale and binding_present and status in {"online", "fault", "connected", "partial"}
@@ -880,6 +886,74 @@ def _overlay_generators(generators):
                     configured_metrics=[],
                     binding_present=False,
                     health=health,
+                )
+            )
+            continue
+
+        web_data, web_error = ibcom_web.telemetry(generator)
+        if web_data:
+            values = dict(web_data.get("values") or {})
+            invalid_values = []
+            for key, value in list(values.items()):
+                try:
+                    numeric = float(value)
+                except (TypeError, ValueError, OverflowError):
+                    invalid_values.append(key)
+                    values.pop(key, None)
+                    continue
+                if not math.isfinite(numeric) or not _metric_value_in_documented_range(
+                    generator, key, numeric
+                ):
+                    invalid_values.append(key)
+                    values.pop(key, None)
+                    continue
+                if key == "power_factor" and not -1.001 <= numeric <= 1.001:
+                    invalid_values.append(key)
+                    values.pop(key, None)
+
+            derived = _derive_breaker_feedback(values)
+            if derived:
+                configured = sorted(set([*configured, *derived]))
+            defined = sorted(values.keys())
+            web_at = int(web_data.get("at") or time.time())
+            controller_ok = _has_controller_health(values, configured)
+            health.update(
+                {
+                    "transport": "connected",
+                    "controller": "responding" if controller_ok else "partial",
+                    "telemetry": "fresh"
+                    if controller_ok and not invalid_values and not web_error
+                    else "partial",
+                }
+            )
+            try:
+                db.save_telemetry_snapshot(generator["id"], values, defined, updated_at=web_at)
+            except sqlite3.Error as exc:
+                print(
+                    f"[ibcom-web] falha ao persistir snapshot de {generator['id']}: {exc}",
+                    flush=True,
+                )
+            detail_parts = []
+            if web_error:
+                detail_parts.append(web_error)
+            if invalid_values:
+                detail_parts.append(
+                    "Valores IB-COM inválidos: " + ", ".join(sorted(invalid_values))
+                )
+            if not controller_ok:
+                detail_parts.append("IB-COM sem métrica de saúde válida")
+            result.append(
+                _frontend_generator(
+                    generator,
+                    values,
+                    "online" if controller_ok and not web_error else "partial",
+                    "; ".join(detail_parts),
+                    defined=defined,
+                    configured_metrics=configured,
+                    binding_present=True,
+                    health=health,
+                    telemetry_at=web_at,
+                    telemetry_source="ibcom_web",
                 )
             )
             continue

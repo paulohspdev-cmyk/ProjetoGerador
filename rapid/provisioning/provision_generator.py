@@ -366,10 +366,14 @@ def _apply_pack_line_options(line, pack: dict) -> list[str]:
     """
     rapid = dict(pack.get("rapid") or {})
     raw = dict(rapid.get("lineOptions") or {})
+    desired_active = "false" if rapid.get("pollingEnabled") is False else None
     # Controller Packs may tune polling/logging, but must never override the
     # global read-only command policy enforced by LINE_OPTION_DEFAULTS.
     allowed = {"ReqRetries", "CycleDelay", "DetailedLog"}
     changes: list[str] = []
+    if desired_active is not None and line.get("active") != desired_active:
+        changes.append(f"xml.line.active:{line.get('active')!r}->{desired_active!r}")
+        line.set("active", desired_active)
     if not raw:
         return changes
     opts = line.find("LineOptions")

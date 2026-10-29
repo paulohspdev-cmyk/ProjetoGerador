@@ -7,7 +7,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 
-from . import db, domain_store, ops_store, platform_store, transport_store
+from . import db, domain_store, ibcom_web, ops_store, platform_store, transport_store
 from .auth import (
     authenticate,
     can,
@@ -83,7 +83,11 @@ async def lifespan(app: FastAPI):
             print(f"[api] falha ao criar administrador inicial: {exc}", flush=True)
     elif db.count_users() == 0:
         print("[api] AVISO: nenhum usuário cadastrado e RC_ADMIN_PASSWORD não foi definido", flush=True)
-    yield
+    ibcom_web.start_background(db.list_generators)
+    try:
+        yield
+    finally:
+        ibcom_web.stop_background()
 
 
 app = FastAPI(
