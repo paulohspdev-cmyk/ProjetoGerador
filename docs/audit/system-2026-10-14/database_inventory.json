@@ -1,0 +1,4505 @@
+[
+  {
+    "id": "DB-001",
+    "name": "agenda",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "title",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "when_text",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "site",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "generator_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "kind",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'manual'",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "enabled",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "1",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "updated_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "generators",
+        "from": "generator_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "SET NULL",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_agenda_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE agenda (\n                id TEXT PRIMARY KEY,\n                title TEXT NOT NULL,\n                when_text TEXT NOT NULL,\n                site TEXT NOT NULL DEFAULT '',\n                generator_id TEXT,\n                kind TEXT NOT NULL DEFAULT 'manual',\n                enabled INTEGER NOT NULL DEFAULT 1,\n                created_at INTEGER NOT NULL,\n                updated_at INTEGER NOT NULL,\n                FOREIGN KEY(generator_id) REFERENCES generators(id) ON DELETE SET NULL\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-002",
+    "name": "alarm_ack",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "alarm_key",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "acked_by",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "acked_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_alarm_ack_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE alarm_ack (\n                alarm_key TEXT PRIMARY KEY,\n                acked_by TEXT NOT NULL,\n                acked_at INTEGER NOT NULL\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-003",
+    "name": "api_rate",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "token_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "minute_bucket",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 2
+      },
+      {
+        "cid": 2,
+        "name": "request_count",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "0",
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "api_tokens",
+        "from": "token_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_api_rate_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE api_rate (\n                token_id TEXT NOT NULL,\n                minute_bucket INTEGER NOT NULL,\n                request_count INTEGER NOT NULL DEFAULT 0,\n                PRIMARY KEY(token_id, minute_bucket),\n                FOREIGN KEY(token_id) REFERENCES api_tokens(id) ON DELETE CASCADE\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-004",
+    "name": "api_tokens",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "name",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "token_hash",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "token_prefix",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "scopes",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "allowed_generators",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "allowed_cidrs",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "rate_limit",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "120",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "active",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "1",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "expires_at",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "last_used",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 11,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_api_tokens_2",
+        "unique": 1,
+        "origin": "u",
+        "partial": 0
+      },
+      {
+        "seq": 1,
+        "name": "sqlite_autoindex_api_tokens_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE api_tokens (\n                id TEXT PRIMARY KEY,\n                name TEXT NOT NULL,\n                token_hash TEXT NOT NULL UNIQUE,\n                token_prefix TEXT NOT NULL,\n                scopes TEXT NOT NULL,\n                allowed_generators TEXT NOT NULL DEFAULT '',\n                allowed_cidrs TEXT NOT NULL DEFAULT '',\n                rate_limit INTEGER NOT NULL DEFAULT 120,\n                active INTEGER NOT NULL DEFAULT 1,\n                expires_at INTEGER,\n                last_used INTEGER,\n                created_at INTEGER NOT NULL\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-005",
+    "name": "app_settings",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "key",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "value_json",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "updated_by",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'system'",
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "updated_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_app_settings_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE app_settings (\n                key TEXT PRIMARY KEY,\n                value_json TEXT NOT NULL,\n                updated_by TEXT NOT NULL DEFAULT 'system',\n                updated_at INTEGER NOT NULL\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-006",
+    "name": "asset_links",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "from_asset_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "to_asset_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "relation",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "metadata_json",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'{}'",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "assets",
+        "from": "to_asset_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE",
+        "match": "NONE"
+      },
+      {
+        "id": 1,
+        "seq": 0,
+        "table": "assets",
+        "from": "from_asset_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_asset_links_to",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      },
+      {
+        "seq": 1,
+        "name": "idx_asset_links_from",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      },
+      {
+        "seq": 2,
+        "name": "sqlite_autoindex_asset_links_2",
+        "unique": 1,
+        "origin": "u",
+        "partial": 0
+      },
+      {
+        "seq": 3,
+        "name": "sqlite_autoindex_asset_links_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE asset_links(\n                id TEXT PRIMARY KEY,\n                from_asset_id TEXT NOT NULL,\n                to_asset_id TEXT NOT NULL,\n                relation TEXT NOT NULL,\n                metadata_json TEXT NOT NULL DEFAULT '{}',\n                created_at INTEGER NOT NULL,\n                UNIQUE(from_asset_id,to_asset_id,relation),\n                FOREIGN KEY(from_asset_id) REFERENCES assets(id) ON DELETE CASCADE,\n                FOREIGN KEY(to_asset_id) REFERENCES assets(id) ON DELETE CASCADE\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-007",
+    "name": "assets",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "tag",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "name",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "kind",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "site",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "site_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "customer",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "legacy_generator_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "enabled",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "1",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "metadata_json",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'{}'",
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 11,
+        "name": "updated_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_assets_kind",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      },
+      {
+        "seq": 1,
+        "name": "idx_assets_site",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      },
+      {
+        "seq": 2,
+        "name": "sqlite_autoindex_assets_3",
+        "unique": 1,
+        "origin": "u",
+        "partial": 0
+      },
+      {
+        "seq": 3,
+        "name": "sqlite_autoindex_assets_2",
+        "unique": 1,
+        "origin": "u",
+        "partial": 0
+      },
+      {
+        "seq": 4,
+        "name": "sqlite_autoindex_assets_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE assets(\n                id TEXT PRIMARY KEY,\n                tag TEXT NOT NULL UNIQUE COLLATE NOCASE,\n                name TEXT NOT NULL,\n                kind TEXT NOT NULL,\n                site TEXT NOT NULL DEFAULT '',\n                site_id TEXT,\n                customer TEXT NOT NULL DEFAULT '',\n                legacy_generator_id TEXT UNIQUE,\n                enabled INTEGER NOT NULL DEFAULT 1,\n                metadata_json TEXT NOT NULL DEFAULT '{}',\n                created_at INTEGER NOT NULL,\n                updated_at INTEGER NOT NULL\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-008",
+    "name": "audit_log",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "actor",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'system'",
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "action",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "entity_type",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "entity_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "detail",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_audit_log_created_at",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE audit_log (\n                id INTEGER PRIMARY KEY AUTOINCREMENT,\n                created_at INTEGER NOT NULL,\n                actor TEXT NOT NULL DEFAULT 'system',\n                action TEXT NOT NULL,\n                entity_type TEXT NOT NULL,\n                entity_id TEXT NOT NULL,\n                detail TEXT NOT NULL DEFAULT ''\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-009",
+    "name": "automation_rules",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "name",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "trigger_text",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "action_text",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "enabled",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "safety_state",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'draft'",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "updated_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_automation_rules_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE automation_rules (\n                id TEXT PRIMARY KEY,\n                name TEXT NOT NULL,\n                trigger_text TEXT NOT NULL,\n                action_text TEXT NOT NULL,\n                enabled INTEGER NOT NULL DEFAULT 0,\n                safety_state TEXT NOT NULL DEFAULT 'draft',\n                created_at INTEGER NOT NULL,\n                updated_at INTEGER NOT NULL\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-010",
+    "name": "automation_runs",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "rule_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "result",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "detail",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [],
+    "sql": "CREATE TABLE automation_runs (\n                id INTEGER PRIMARY KEY AUTOINCREMENT,\n                rule_id TEXT NOT NULL,\n                result TEXT NOT NULL,\n                detail TEXT NOT NULL DEFAULT '',\n                created_at INTEGER NOT NULL\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-011",
+    "name": "automation_state",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "rule_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "last_value",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "updated_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_automation_state_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE automation_state(\n                rule_id TEXT PRIMARY KEY,\n                last_value TEXT NOT NULL DEFAULT '',\n                updated_at INTEGER NOT NULL\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-012",
+    "name": "backup_records",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "path",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "size_bytes",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "type",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'Manual'",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "result",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "detail",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_backup_records_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE backup_records (\n                id TEXT PRIMARY KEY,\n                created_at INTEGER NOT NULL,\n                path TEXT NOT NULL,\n                size_bytes INTEGER NOT NULL DEFAULT 0,\n                type TEXT NOT NULL DEFAULT 'Manual',\n                result TEXT NOT NULL,\n                detail TEXT NOT NULL DEFAULT ''\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-013",
+    "name": "bridge_availability_state",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "remote_port",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "connected",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "changed_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "last_seen_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [],
+    "sql": "CREATE TABLE bridge_availability_state (\n                remote_port INTEGER PRIMARY KEY,\n                connected INTEGER NOT NULL,\n                changed_at INTEGER NOT NULL,\n                last_seen_at INTEGER NOT NULL\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-014",
+    "name": "bridge_outages",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "remote_port",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "started_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "ended_at",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "observed_reason",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'tcp_disconnected'",
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_bridge_outages_port_time",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE bridge_outages (\n                id INTEGER PRIMARY KEY AUTOINCREMENT,\n                remote_port INTEGER NOT NULL,\n                started_at INTEGER NOT NULL,\n                ended_at INTEGER,\n                observed_reason TEXT NOT NULL DEFAULT 'tcp_disconnected'\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-015",
+    "name": "bridge_peer_observations",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "remote_port",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "remote_ip",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 2
+      },
+      {
+        "cid": 2,
+        "name": "first_seen_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "last_seen_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "accepted_count",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "rejected_count",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "last_accepted_at",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "last_rejected_at",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "last_decision",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "last_reason",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_bridge_peer_observations_last_seen",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      },
+      {
+        "seq": 1,
+        "name": "sqlite_autoindex_bridge_peer_observations_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE bridge_peer_observations (\n                remote_port INTEGER NOT NULL,\n                remote_ip TEXT NOT NULL,\n                first_seen_at INTEGER NOT NULL,\n                last_seen_at INTEGER NOT NULL,\n                accepted_count INTEGER NOT NULL DEFAULT 0,\n                rejected_count INTEGER NOT NULL DEFAULT 0,\n                last_accepted_at INTEGER,\n                last_rejected_at INTEGER,\n                last_decision TEXT NOT NULL,\n                last_reason TEXT NOT NULL DEFAULT '',\n                PRIMARY KEY(remote_port, remote_ip)\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-016",
+    "name": "bridge_traffic_daily",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "day",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "remote_port",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 2
+      },
+      {
+        "cid": 2,
+        "name": "bytes_rx",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "bytes_tx",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "updated_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_bridge_traffic_daily_day",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      },
+      {
+        "seq": 1,
+        "name": "sqlite_autoindex_bridge_traffic_daily_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE bridge_traffic_daily (\n                day TEXT NOT NULL,\n                remote_port INTEGER NOT NULL,\n                bytes_rx INTEGER NOT NULL DEFAULT 0,\n                bytes_tx INTEGER NOT NULL DEFAULT 0,\n                updated_at INTEGER NOT NULL,\n                PRIMARY KEY(day, remote_port)\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-017",
+    "name": "bridge_traffic_state",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "remote_port",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "bytes_rx",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "bytes_tx",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "updated_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [],
+    "sql": "CREATE TABLE bridge_traffic_state (\n                remote_port INTEGER PRIMARY KEY,\n                bytes_rx INTEGER NOT NULL DEFAULT 0,\n                bytes_tx INTEGER NOT NULL DEFAULT 0,\n                updated_at INTEGER NOT NULL\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-018",
+    "name": "clients",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "name",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "units",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "gens",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "sla",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "active",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "1",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "updated_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_clients_2",
+        "unique": 1,
+        "origin": "u",
+        "partial": 0
+      },
+      {
+        "seq": 1,
+        "name": "sqlite_autoindex_clients_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE clients (\n                id TEXT PRIMARY KEY,\n                name TEXT NOT NULL UNIQUE COLLATE NOCASE,\n                units INTEGER NOT NULL DEFAULT 0,\n                gens INTEGER NOT NULL DEFAULT 0,\n                sla TEXT NOT NULL DEFAULT '',\n                active INTEGER NOT NULL DEFAULT 1,\n                created_at INTEGER NOT NULL,\n                updated_at INTEGER NOT NULL\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-019",
+    "name": "controller_connections",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "controller_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "name",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'Principal'",
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "transport",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "host",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "listen_port",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "modbus_unit",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "1",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "rapid_device_num",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "enabled",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "1",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "config_json",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'{}'",
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 11,
+        "name": "updated_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "controller_instances",
+        "from": "controller_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_connection_reverse",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      },
+      {
+        "seq": 1,
+        "name": "idx_connection_controller",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      },
+      {
+        "seq": 2,
+        "name": "sqlite_autoindex_controller_connections_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE controller_connections(\n                id TEXT PRIMARY KEY,\n                controller_id TEXT NOT NULL,\n                name TEXT NOT NULL DEFAULT 'Principal',\n                transport TEXT NOT NULL,\n                host TEXT NOT NULL DEFAULT '',\n                listen_port INTEGER NOT NULL DEFAULT 0,\n                modbus_unit INTEGER NOT NULL DEFAULT 1,\n                rapid_device_num INTEGER,\n                enabled INTEGER NOT NULL DEFAULT 1,\n                config_json TEXT NOT NULL DEFAULT '{}',\n                created_at INTEGER NOT NULL,\n                updated_at INTEGER NOT NULL,\n                FOREIGN KEY(controller_id) REFERENCES controller_instances(id) ON DELETE CASCADE\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-020",
+    "name": "controller_instances",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "asset_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "manufacturer",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "family",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "model",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "firmware",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "pack_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "pack_lifecycle",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "state",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'inventory_only'",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "enabled",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "1",
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "metadata_json",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'{}'",
+        "pk": 0
+      },
+      {
+        "cid": 11,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 12,
+        "name": "updated_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "assets",
+        "from": "asset_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_controller_model",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      },
+      {
+        "seq": 1,
+        "name": "idx_controller_asset",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      },
+      {
+        "seq": 2,
+        "name": "sqlite_autoindex_controller_instances_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE controller_instances(\n                id TEXT PRIMARY KEY,\n                asset_id TEXT,\n                manufacturer TEXT NOT NULL,\n                family TEXT NOT NULL DEFAULT '',\n                model TEXT NOT NULL,\n                firmware TEXT NOT NULL DEFAULT '',\n                pack_id TEXT,\n                pack_lifecycle TEXT,\n                state TEXT NOT NULL DEFAULT 'inventory_only',\n                enabled INTEGER NOT NULL DEFAULT 1,\n                metadata_json TEXT NOT NULL DEFAULT '{}',\n                created_at INTEGER NOT NULL,\n                updated_at INTEGER NOT NULL,\n                FOREIGN KEY(asset_id) REFERENCES assets(id) ON DELETE CASCADE\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-021",
+    "name": "escalation_policies",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "name",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "severity",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'alarm'",
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "after_seconds",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "300",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "channel",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'panel'",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "destination",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "repeat_seconds",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "max_repeats",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "1",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "enabled",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "1",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "updated_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_escalation_policies_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE escalation_policies(\n                id TEXT PRIMARY KEY,\n                name TEXT NOT NULL,\n                severity TEXT NOT NULL DEFAULT 'alarm',\n                after_seconds INTEGER NOT NULL DEFAULT 300,\n                channel TEXT NOT NULL DEFAULT 'panel',\n                destination TEXT NOT NULL DEFAULT '',\n                repeat_seconds INTEGER NOT NULL DEFAULT 0,\n                max_repeats INTEGER NOT NULL DEFAULT 1,\n                enabled INTEGER NOT NULL DEFAULT 1,\n                created_at INTEGER NOT NULL,\n                updated_at INTEGER NOT NULL\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-022",
+    "name": "escalation_runs",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "policy_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "alarm_key",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 2
+      },
+      {
+        "cid": 2,
+        "name": "sends",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "last_sent",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "escalation_policies",
+        "from": "policy_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_escalation_runs_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE escalation_runs(\n                policy_id TEXT NOT NULL,\n                alarm_key TEXT NOT NULL,\n                sends INTEGER NOT NULL DEFAULT 0,\n                last_sent INTEGER,\n                PRIMARY KEY(policy_id,alarm_key),\n                FOREIGN KEY(policy_id) REFERENCES escalation_policies(id) ON DELETE CASCADE\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-023",
+    "name": "events",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "generator_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "level",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "message",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "generators",
+        "from": "generator_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "SET NULL",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_events_created_at",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE events (\n                id INTEGER PRIMARY KEY AUTOINCREMENT,\n                generator_id TEXT,\n                level TEXT NOT NULL,\n                message TEXT NOT NULL,\n                created_at INTEGER NOT NULL,\n                FOREIGN KEY(generator_id) REFERENCES generators(id) ON DELETE SET NULL\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-024",
+    "name": "field_device_links",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "field_device_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "generator_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 2
+      },
+      {
+        "cid": 2,
+        "name": "relation",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'transport'",
+        "pk": 3
+      },
+      {
+        "cid": 3,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "generators",
+        "from": "generator_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE",
+        "match": "NONE"
+      },
+      {
+        "id": 1,
+        "seq": 0,
+        "table": "field_devices",
+        "from": "field_device_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_field_device_links_generator",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      },
+      {
+        "seq": 1,
+        "name": "sqlite_autoindex_field_device_links_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE field_device_links (\n                field_device_id TEXT NOT NULL,\n                generator_id TEXT NOT NULL,\n                relation TEXT NOT NULL DEFAULT 'transport',\n                created_at INTEGER NOT NULL,\n                PRIMARY KEY(field_device_id,generator_id,relation),\n                FOREIGN KEY(field_device_id) REFERENCES field_devices(id) ON DELETE CASCADE,\n                FOREIGN KEY(generator_id) REFERENCES generators(id) ON DELETE CASCADE\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-025",
+    "name": "field_devices",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "kind",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "name",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "site_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "generator_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "manufacturer",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "model",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "serial",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "imei",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "sim_phone",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "sim_iccid",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 11,
+        "name": "carrier",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 12,
+        "name": "apn",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 13,
+        "name": "host",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 14,
+        "name": "listen_port",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 15,
+        "name": "rssi",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 16,
+        "name": "status",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'unknown'",
+        "pk": 0
+      },
+      {
+        "cid": 17,
+        "name": "last_seen",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 18,
+        "name": "metadata_json",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'{}'",
+        "pk": 0
+      },
+      {
+        "cid": 19,
+        "name": "active",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "1",
+        "pk": 0
+      },
+      {
+        "cid": 20,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 21,
+        "name": "updated_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "generators",
+        "from": "generator_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "SET NULL",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_field_devices_modem_port",
+        "unique": 1,
+        "origin": "c",
+        "partial": 1
+      },
+      {
+        "seq": 1,
+        "name": "idx_field_devices_generator",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      },
+      {
+        "seq": 2,
+        "name": "idx_field_devices_kind",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      },
+      {
+        "seq": 3,
+        "name": "sqlite_autoindex_field_devices_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE field_devices (\n                id TEXT PRIMARY KEY,\n                kind TEXT NOT NULL CHECK(kind IN ('modem','gateway')),\n                name TEXT NOT NULL,\n                site_id TEXT,\n                generator_id TEXT,\n                manufacturer TEXT NOT NULL DEFAULT '',\n                model TEXT NOT NULL DEFAULT '',\n                serial TEXT NOT NULL DEFAULT '',\n                imei TEXT NOT NULL DEFAULT '',\n                sim_phone TEXT NOT NULL DEFAULT '',\n                sim_iccid TEXT NOT NULL DEFAULT '',\n                carrier TEXT NOT NULL DEFAULT '',\n                apn TEXT NOT NULL DEFAULT '',\n                host TEXT NOT NULL DEFAULT '',\n                listen_port INTEGER,\n                rssi REAL,\n                status TEXT NOT NULL DEFAULT 'unknown',\n                last_seen INTEGER,\n                metadata_json TEXT NOT NULL DEFAULT '{}',\n                active INTEGER NOT NULL DEFAULT 1,\n                created_at INTEGER NOT NULL,\n                updated_at INTEGER NOT NULL,\n                FOREIGN KEY(generator_id) REFERENCES generators(id) ON DELETE SET NULL\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-026",
+    "name": "generator_telemetry_snapshots",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "generator_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "values_json",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'{}'",
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "defined_json",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'[]'",
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "updated_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "generators",
+        "from": "generator_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_generator_telemetry_snapshots_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE generator_telemetry_snapshots (\n                generator_id TEXT PRIMARY KEY,\n                values_json TEXT NOT NULL DEFAULT '{}',\n                defined_json TEXT NOT NULL DEFAULT '[]',\n                updated_at INTEGER NOT NULL,\n                FOREIGN KEY(generator_id) REFERENCES generators(id) ON DELETE CASCADE\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-027",
+    "name": "generator_transport_config",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "generator_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "config_json",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'{}'",
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "updated_by",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'system'",
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "updated_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "generators",
+        "from": "generator_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_generator_transport_config_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE generator_transport_config(\n                generator_id TEXT PRIMARY KEY,\n                config_json TEXT NOT NULL DEFAULT '{}',\n                updated_by TEXT NOT NULL DEFAULT 'system',\n                updated_at INTEGER NOT NULL,\n                FOREIGN KEY(generator_id) REFERENCES generators(id) ON DELETE CASCADE\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-028",
+    "name": "generators",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "tag",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "name",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "customer",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "site",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "controller_type",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "controller_model",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "transport",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'reverse_tcp'",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "host",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "listen_port",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "modbus_unit",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "1",
+        "pk": 0
+      },
+      {
+        "cid": 11,
+        "name": "rapid_device_num",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 12,
+        "name": "nominal_power_kw",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 13,
+        "name": "fuel_capacity_l",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 14,
+        "name": "power_topology",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'auto'",
+        "pk": 0
+      },
+      {
+        "cid": 15,
+        "name": "enabled",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "1",
+        "pk": 0
+      },
+      {
+        "cid": 16,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 17,
+        "name": "updated_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_generators_rapid_device_unique",
+        "unique": 1,
+        "origin": "c",
+        "partial": 1
+      },
+      {
+        "seq": 1,
+        "name": "idx_generators_reverse_identity_unique",
+        "unique": 1,
+        "origin": "c",
+        "partial": 1
+      },
+      {
+        "seq": 2,
+        "name": "sqlite_autoindex_generators_2",
+        "unique": 1,
+        "origin": "u",
+        "partial": 0
+      },
+      {
+        "seq": 3,
+        "name": "sqlite_autoindex_generators_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE generators (\n                id TEXT PRIMARY KEY,\n                tag TEXT NOT NULL UNIQUE,\n                name TEXT NOT NULL,\n                customer TEXT NOT NULL DEFAULT '',\n                site TEXT NOT NULL,\n                controller_type TEXT NOT NULL,\n                controller_model TEXT NOT NULL,\n                transport TEXT NOT NULL DEFAULT 'reverse_tcp',\n                host TEXT NOT NULL DEFAULT '',\n                listen_port INTEGER NOT NULL DEFAULT 0,\n                modbus_unit INTEGER NOT NULL DEFAULT 1,\n                rapid_device_num INTEGER,\n                nominal_power_kw REAL,\n                fuel_capacity_l REAL,\n                power_topology TEXT NOT NULL DEFAULT 'auto',\n                enabled INTEGER NOT NULL DEFAULT 1,\n                created_at INTEGER NOT NULL,\n                updated_at INTEGER NOT NULL\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-029",
+    "name": "industrial_alarms",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "alarm_key",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "generator_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "asset_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "source",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "code",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "severity",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "message",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "active",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "1",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "first_seen",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "last_seen",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "cleared_at",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 11,
+        "name": "acked_by",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 12,
+        "name": "acked_at",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 13,
+        "name": "metadata_json",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'{}'",
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_industrial_alarm_generator",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      },
+      {
+        "seq": 1,
+        "name": "idx_industrial_alarm_active",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      },
+      {
+        "seq": 2,
+        "name": "sqlite_autoindex_industrial_alarms_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE industrial_alarms(\n                alarm_key TEXT PRIMARY KEY,\n                generator_id TEXT,\n                asset_id TEXT,\n                source TEXT NOT NULL,\n                code TEXT NOT NULL DEFAULT '',\n                severity TEXT NOT NULL,\n                message TEXT NOT NULL,\n                active INTEGER NOT NULL DEFAULT 1,\n                first_seen INTEGER NOT NULL,\n                last_seen INTEGER NOT NULL,\n                cleared_at INTEGER,\n                acked_by TEXT,\n                acked_at INTEGER,\n                metadata_json TEXT NOT NULL DEFAULT '{}'\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-030",
+    "name": "lifecycle_operations",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "generator_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "kind",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "actor",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'system'",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "actor_role",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "payload_json",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'{}'",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "status",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'queued'",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "result_json",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'{}'",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "error",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "updated_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_lifecycle_operations_generator",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      },
+      {
+        "seq": 1,
+        "name": "idx_lifecycle_operations_queue",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      },
+      {
+        "seq": 2,
+        "name": "sqlite_autoindex_lifecycle_operations_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE lifecycle_operations (\n                id TEXT PRIMARY KEY,\n                generator_id TEXT NOT NULL,\n                kind TEXT NOT NULL,\n                actor TEXT NOT NULL DEFAULT 'system',\n                actor_role TEXT NOT NULL DEFAULT '',\n                payload_json TEXT NOT NULL DEFAULT '{}',\n                status TEXT NOT NULL DEFAULT 'queued',\n                result_json TEXT NOT NULL DEFAULT '{}',\n                error TEXT NOT NULL DEFAULT '',\n                created_at INTEGER NOT NULL,\n                updated_at INTEGER NOT NULL\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-031",
+    "name": "login_attempts",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "attempt_key",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "window_started",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "failures",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "locked_until",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "0",
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_login_attempts_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE login_attempts (\n                attempt_key TEXT PRIMARY KEY,\n                window_started INTEGER NOT NULL,\n                failures INTEGER NOT NULL DEFAULT 0,\n                locked_until INTEGER NOT NULL DEFAULT 0\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-032",
+    "name": "maintenance_history",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "plan_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "generator_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "asset_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "serviced_hours",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "serviced_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "notes",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "actor",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "maintenance_plans",
+        "from": "plan_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_maintenance_history_plan",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE maintenance_history(\n                id INTEGER PRIMARY KEY AUTOINCREMENT,\n                plan_id TEXT NOT NULL,\n                generator_id TEXT,\n                asset_id TEXT,\n                serviced_hours REAL,\n                serviced_at INTEGER NOT NULL,\n                notes TEXT NOT NULL DEFAULT '',\n                actor TEXT NOT NULL,\n                FOREIGN KEY(plan_id) REFERENCES maintenance_plans(id) ON DELETE CASCADE\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-033",
+    "name": "maintenance_plans",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "generator_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "asset_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "name",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "kind",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'preventiva'",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "interval_hours",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "interval_days",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "warning_hours",
+        "type": "REAL",
+        "notnull": 1,
+        "dflt_value": "25",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "warning_days",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "7",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "last_service_hours",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "last_service_at",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 11,
+        "name": "notes",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 12,
+        "name": "enabled",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "1",
+        "pk": 0
+      },
+      {
+        "cid": 13,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 14,
+        "name": "updated_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_maintenance_generator",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      },
+      {
+        "seq": 1,
+        "name": "sqlite_autoindex_maintenance_plans_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE maintenance_plans(\n                id TEXT PRIMARY KEY,\n                generator_id TEXT,\n                asset_id TEXT,\n                name TEXT NOT NULL,\n                kind TEXT NOT NULL DEFAULT 'preventiva',\n                interval_hours REAL,\n                interval_days INTEGER,\n                warning_hours REAL NOT NULL DEFAULT 25,\n                warning_days INTEGER NOT NULL DEFAULT 7,\n                last_service_hours REAL,\n                last_service_at INTEGER,\n                notes TEXT NOT NULL DEFAULT '',\n                enabled INTEGER NOT NULL DEFAULT 1,\n                created_at INTEGER NOT NULL,\n                updated_at INTEGER NOT NULL\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-034",
+    "name": "modem_admission_decisions",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "remote_port",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "state",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "field_device_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "actor",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "reason",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "updated_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "field_devices",
+        "from": "field_device_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "SET NULL",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [],
+    "sql": "CREATE TABLE modem_admission_decisions (\n                remote_port INTEGER PRIMARY KEY,\n                state TEXT NOT NULL CHECK(state IN ('approved','rejected')),\n                field_device_id TEXT,\n                actor TEXT NOT NULL DEFAULT '',\n                reason TEXT NOT NULL DEFAULT '',\n                created_at INTEGER NOT NULL,\n                updated_at INTEGER NOT NULL,\n                FOREIGN KEY(field_device_id) REFERENCES field_devices(id) ON DELETE SET NULL\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-035",
+    "name": "notification_deliveries",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "queue_id",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "channel",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "destination",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "status",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "detail",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "notification_queue",
+        "from": "queue_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "SET NULL",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_notification_deliveries_created_at",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE notification_deliveries (\n                id INTEGER PRIMARY KEY AUTOINCREMENT,\n                queue_id INTEGER,\n                channel TEXT NOT NULL,\n                destination TEXT NOT NULL DEFAULT '',\n                status TEXT NOT NULL,\n                detail TEXT NOT NULL DEFAULT '',\n                created_at INTEGER NOT NULL,\n                FOREIGN KEY(queue_id) REFERENCES notification_queue(id) ON DELETE SET NULL\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-036",
+    "name": "notification_queue",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "event_type",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "channel",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "destination",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "subject",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "body",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "payload_json",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'{}'",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "status",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'queued'",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "attempts",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "max_attempts",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "5",
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "next_attempt_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 11,
+        "name": "claim_token",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 12,
+        "name": "last_error",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 13,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 14,
+        "name": "updated_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_notification_retention",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      },
+      {
+        "seq": 1,
+        "name": "idx_notification_due",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE notification_queue (\n                id INTEGER PRIMARY KEY AUTOINCREMENT,\n                event_type TEXT NOT NULL,\n                channel TEXT NOT NULL,\n                destination TEXT NOT NULL DEFAULT '',\n                subject TEXT NOT NULL DEFAULT '',\n                body TEXT NOT NULL DEFAULT '',\n                payload_json TEXT NOT NULL DEFAULT '{}',\n                status TEXT NOT NULL DEFAULT 'queued',\n                attempts INTEGER NOT NULL DEFAULT 0,\n                max_attempts INTEGER NOT NULL DEFAULT 5,\n                next_attempt_at INTEGER NOT NULL,\n                claim_token TEXT NOT NULL DEFAULT '',\n                last_error TEXT NOT NULL DEFAULT '',\n                created_at INTEGER NOT NULL,\n                updated_at INTEGER NOT NULL\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-037",
+    "name": "password_reset_requests",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "request_key",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "window_started",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "requests",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "last_request",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "0",
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_password_reset_requests_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE password_reset_requests (\n                request_key TEXT PRIMARY KEY,\n                window_started INTEGER NOT NULL,\n                requests INTEGER NOT NULL DEFAULT 0,\n                last_request INTEGER NOT NULL DEFAULT 0\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-038",
+    "name": "password_reset_tokens",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "token_hash",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "user_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "expires_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "used_at",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "users",
+        "from": "user_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_password_reset_tokens_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE password_reset_tokens (\n                token_hash TEXT PRIMARY KEY,\n                user_id TEXT NOT NULL,\n                expires_at INTEGER NOT NULL,\n                used_at INTEGER,\n                created_at INTEGER NOT NULL,\n                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-039",
+    "name": "process_events",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "generator_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "asset_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "source",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "event_type",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "severity",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'info'",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "code",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "message",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "value_json",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'{}'",
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_process_events_generator",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      },
+      {
+        "seq": 1,
+        "name": "idx_process_events_time",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE process_events(\n                id INTEGER PRIMARY KEY AUTOINCREMENT,\n                created_at INTEGER NOT NULL,\n                generator_id TEXT,\n                asset_id TEXT,\n                source TEXT NOT NULL,\n                event_type TEXT NOT NULL,\n                severity TEXT NOT NULL DEFAULT 'info',\n                code TEXT NOT NULL DEFAULT '',\n                message TEXT NOT NULL,\n                value_json TEXT NOT NULL DEFAULT '{}'\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-040",
+    "name": "report_artifacts",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "report_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "path",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "media_type",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "size_bytes",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_report_artifacts_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE report_artifacts (\n                report_id TEXT PRIMARY KEY,\n                path TEXT NOT NULL,\n                media_type TEXT NOT NULL,\n                size_bytes INTEGER NOT NULL,\n                created_at INTEGER NOT NULL\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-041",
+    "name": "reports",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "name",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "period",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "format",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'CSV'",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "status",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'Pronto'",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "created_by",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'system'",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "updated_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_reports_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE reports (\n                id TEXT PRIMARY KEY,\n                name TEXT NOT NULL,\n                period TEXT NOT NULL,\n                format TEXT NOT NULL DEFAULT 'CSV',\n                status TEXT NOT NULL DEFAULT 'Pronto',\n                created_by TEXT NOT NULL DEFAULT 'system',\n                created_at INTEGER NOT NULL,\n                updated_at INTEGER NOT NULL\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-042",
+    "name": "scheduler_jobs",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "name",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "kind",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "interval_seconds",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "payload_json",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'{}'",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "enabled",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "1",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "next_run",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "last_run",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "last_result",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "claim_token",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 11,
+        "name": "updated_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_scheduler_due",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      },
+      {
+        "seq": 1,
+        "name": "sqlite_autoindex_scheduler_jobs_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE scheduler_jobs (\n                id TEXT PRIMARY KEY,\n                name TEXT NOT NULL,\n                kind TEXT NOT NULL,\n                interval_seconds INTEGER NOT NULL,\n                payload_json TEXT NOT NULL DEFAULT '{}',\n                enabled INTEGER NOT NULL DEFAULT 1,\n                next_run INTEGER NOT NULL,\n                last_run INTEGER,\n                last_result TEXT NOT NULL DEFAULT '',\n                claim_token TEXT NOT NULL DEFAULT '',\n                created_at INTEGER NOT NULL,\n                updated_at INTEGER NOT NULL\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-043",
+    "name": "schema_migrations",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "version",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "applied_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "description",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [],
+    "sql": "CREATE TABLE schema_migrations(\n                version INTEGER PRIMARY KEY,\n                applied_at INTEGER NOT NULL,\n                description TEXT NOT NULL\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-044",
+    "name": "sessions",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "token_hash",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "user_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "expires_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "last_seen",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "remote_ip",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "user_agent",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "users",
+        "from": "user_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_sessions_expiry",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      },
+      {
+        "seq": 1,
+        "name": "idx_sessions_user",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      },
+      {
+        "seq": 2,
+        "name": "sqlite_autoindex_sessions_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE sessions (\n                token_hash TEXT PRIMARY KEY,\n                user_id TEXT NOT NULL,\n                expires_at INTEGER NOT NULL,\n                created_at INTEGER NOT NULL,\n                last_seen INTEGER NOT NULL,\n                remote_ip TEXT NOT NULL DEFAULT '',\n                user_agent TEXT NOT NULL DEFAULT '',\n                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-045",
+    "name": "sites",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "name",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "client_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "city",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "state",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "address",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "latitude",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "longitude",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "timezone",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'America/Sao_Paulo'",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "active",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "1",
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 11,
+        "name": "updated_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "clients",
+        "from": "client_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "SET NULL",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_sites_2",
+        "unique": 1,
+        "origin": "u",
+        "partial": 0
+      },
+      {
+        "seq": 1,
+        "name": "sqlite_autoindex_sites_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE sites (\n                id TEXT PRIMARY KEY,\n                name TEXT NOT NULL UNIQUE COLLATE NOCASE,\n                client_id TEXT,\n                city TEXT NOT NULL DEFAULT '',\n                state TEXT NOT NULL DEFAULT '',\n                address TEXT NOT NULL DEFAULT '',\n                latitude REAL,\n                longitude REAL,\n                timezone TEXT NOT NULL DEFAULT 'America/Sao_Paulo',\n                active INTEGER NOT NULL DEFAULT 1,\n                created_at INTEGER NOT NULL,\n                updated_at INTEGER NOT NULL,\n                FOREIGN KEY(client_id) REFERENCES clients(id) ON DELETE SET NULL\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-046",
+    "name": "user_totp",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "user_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "secret_base32",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "enabled",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "updated_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "users",
+        "from": "user_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_user_totp_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE user_totp (\n                user_id TEXT PRIMARY KEY,\n                secret_base32 TEXT NOT NULL,\n                enabled INTEGER NOT NULL DEFAULT 0,\n                created_at INTEGER NOT NULL,\n                updated_at INTEGER NOT NULL,\n                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-047",
+    "name": "users",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "name",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "email",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "password_hash",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "role",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "active",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "1",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "last_access",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "updated_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_users_2",
+        "unique": 1,
+        "origin": "u",
+        "partial": 0
+      },
+      {
+        "seq": 1,
+        "name": "sqlite_autoindex_users_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE users (\n                id TEXT PRIMARY KEY,\n                name TEXT NOT NULL,\n                email TEXT NOT NULL UNIQUE COLLATE NOCASE,\n                password_hash TEXT NOT NULL,\n                role TEXT NOT NULL CHECK(role IN ('administrador','operador','cadastro','visualizacao')),\n                active INTEGER NOT NULL DEFAULT 1,\n                last_access INTEGER,\n                created_at INTEGER NOT NULL,\n                updated_at INTEGER NOT NULL\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-048",
+    "name": "webhooks",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "url",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "event",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "status",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'Pausado'",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "failures",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "last_delivery_at",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "updated_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_webhooks_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE webhooks (\n                id TEXT PRIMARY KEY,\n                url TEXT NOT NULL,\n                event TEXT NOT NULL,\n                status TEXT NOT NULL DEFAULT 'Pausado',\n                failures INTEGER NOT NULL DEFAULT 0,\n                last_delivery_at INTEGER,\n                created_at INTEGER NOT NULL,\n                updated_at INTEGER NOT NULL\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-049",
+    "name": "work_orders",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "generator_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "gen",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "site",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "type",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "due",
+        "type": "REAL",
+        "notnull": 1,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "tech",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "status",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'Planejada'",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "description",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "created_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "updated_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "generators",
+        "from": "generator_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "SET NULL",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_work_orders_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE work_orders (\n                id TEXT PRIMARY KEY,\n                generator_id TEXT,\n                gen TEXT NOT NULL DEFAULT '',\n                site TEXT NOT NULL DEFAULT '',\n                type TEXT NOT NULL,\n                due REAL NOT NULL DEFAULT 0,\n                tech TEXT NOT NULL DEFAULT '',\n                status TEXT NOT NULL DEFAULT 'Planejada',\n                description TEXT NOT NULL DEFAULT '',\n                created_at INTEGER NOT NULL,\n                updated_at INTEGER NOT NULL,\n                FOREIGN KEY(generator_id) REFERENCES generators(id) ON DELETE SET NULL\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  },
+  {
+    "id": "DB-050",
+    "name": "worker_heartbeats",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "name",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "status",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'starting'",
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "pid",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "detail",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "updated_at",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_worker_heartbeats_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "sql": "CREATE TABLE worker_heartbeats (\n                name TEXT PRIMARY KEY,\n                status TEXT NOT NULL DEFAULT 'starting',\n                pid INTEGER NOT NULL DEFAULT 0,\n                detail TEXT NOT NULL DEFAULT '',\n                updated_at INTEGER NOT NULL\n            )",
+    "status": "schema inventariado; sem aprovação automática de semântica"
+  }
+]

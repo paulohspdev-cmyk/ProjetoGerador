@@ -1,0 +1,2846 @@
+[
+  {
+    "id": "API-002",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-005",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-006",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-006",
+    "role": "operador",
+    "method": "GET",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-006",
+    "role": "cadastro",
+    "method": "GET",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-006",
+    "role": "visualizacao",
+    "method": "GET",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-007",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-007",
+    "role": "operador",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-007",
+    "role": "cadastro",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-007",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-008",
+    "role": "anonymous",
+    "method": "PATCH",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-008",
+    "role": "operador",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-008",
+    "role": "cadastro",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-008",
+    "role": "visualizacao",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-009",
+    "role": "anonymous",
+    "method": "DELETE",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-009",
+    "role": "operador",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-009",
+    "role": "cadastro",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-009",
+    "role": "visualizacao",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-010",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-011",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-012",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-012",
+    "role": "operador",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-012",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-013",
+    "role": "anonymous",
+    "method": "PATCH",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-013",
+    "role": "operador",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-013",
+    "role": "visualizacao",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-014",
+    "role": "anonymous",
+    "method": "DELETE",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-014",
+    "role": "operador",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-014",
+    "role": "cadastro",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-014",
+    "role": "visualizacao",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-015",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-015",
+    "role": "cadastro",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-015",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-016",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-017",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-018",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-019",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-020",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-020",
+    "role": "operador",
+    "method": "GET",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-020",
+    "role": "cadastro",
+    "method": "GET",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-020",
+    "role": "visualizacao",
+    "method": "GET",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-021",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-022",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-023",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-024",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-024",
+    "role": "operador",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-024",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-025",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-026",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-026",
+    "role": "operador",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-026",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-027",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-028",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-028",
+    "role": "operador",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-028",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-029",
+    "role": "anonymous",
+    "method": "PATCH",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-029",
+    "role": "operador",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-029",
+    "role": "visualizacao",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-030",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-031",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-031",
+    "role": "operador",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-031",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-032",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-033",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-033",
+    "role": "operador",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-033",
+    "role": "cadastro",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-033",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-034",
+    "role": "anonymous",
+    "method": "PATCH",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-034",
+    "role": "operador",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-034",
+    "role": "cadastro",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-034",
+    "role": "visualizacao",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-035",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-036",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-036",
+    "role": "operador",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-036",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-037",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-038",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-038",
+    "role": "operador",
+    "method": "GET",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-038",
+    "role": "cadastro",
+    "method": "GET",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-038",
+    "role": "visualizacao",
+    "method": "GET",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-039",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-039",
+    "role": "operador",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-039",
+    "role": "cadastro",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-039",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-040",
+    "role": "anonymous",
+    "method": "PATCH",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-040",
+    "role": "operador",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-040",
+    "role": "cadastro",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-040",
+    "role": "visualizacao",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-041",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-042",
+    "role": "anonymous",
+    "method": "PUT",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-042",
+    "role": "operador",
+    "method": "PUT",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-042",
+    "role": "cadastro",
+    "method": "PUT",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-042",
+    "role": "visualizacao",
+    "method": "PUT",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-043",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-043",
+    "role": "operador",
+    "method": "GET",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-043",
+    "role": "cadastro",
+    "method": "GET",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-043",
+    "role": "visualizacao",
+    "method": "GET",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-044",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-044",
+    "role": "operador",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-044",
+    "role": "cadastro",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-044",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-045",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-046",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-046",
+    "role": "cadastro",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-046",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-047",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-048",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-049",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-050",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-051",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-051",
+    "role": "operador",
+    "method": "GET",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-051",
+    "role": "cadastro",
+    "method": "GET",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-051",
+    "role": "visualizacao",
+    "method": "GET",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-052",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-052",
+    "role": "operador",
+    "method": "GET",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-052",
+    "role": "cadastro",
+    "method": "GET",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-052",
+    "role": "visualizacao",
+    "method": "GET",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-053",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-054",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-054",
+    "role": "operador",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-054",
+    "role": "cadastro",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-054",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-055",
+    "role": "anonymous",
+    "method": "PATCH",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-055",
+    "role": "operador",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-055",
+    "role": "cadastro",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-055",
+    "role": "visualizacao",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-056",
+    "role": "anonymous",
+    "method": "DELETE",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-056",
+    "role": "operador",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-056",
+    "role": "cadastro",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-056",
+    "role": "visualizacao",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-057",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-058",
+    "role": "anonymous",
+    "method": "PUT",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-058",
+    "role": "operador",
+    "method": "PUT",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-058",
+    "role": "cadastro",
+    "method": "PUT",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-058",
+    "role": "visualizacao",
+    "method": "PUT",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-059",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-060",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-060",
+    "role": "operador",
+    "method": "GET",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-060",
+    "role": "cadastro",
+    "method": "GET",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-060",
+    "role": "visualizacao",
+    "method": "GET",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-061",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-061",
+    "role": "operador",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-061",
+    "role": "cadastro",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-061",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-062",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-062",
+    "role": "operador",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-062",
+    "role": "cadastro",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-062",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-063",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-064",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-064",
+    "role": "operador",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-064",
+    "role": "cadastro",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-064",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-065",
+    "role": "anonymous",
+    "method": "DELETE",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-065",
+    "role": "operador",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-065",
+    "role": "cadastro",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-065",
+    "role": "visualizacao",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-066",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-066",
+    "role": "operador",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-066",
+    "role": "cadastro",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-066",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-067",
+    "role": "anonymous",
+    "method": "PUT",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-067",
+    "role": "operador",
+    "method": "PUT",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-067",
+    "role": "cadastro",
+    "method": "PUT",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-067",
+    "role": "visualizacao",
+    "method": "PUT",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-068",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-071",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-072",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-073",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-074",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-075",
+    "role": "anonymous",
+    "method": "DELETE",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-076",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-076",
+    "role": "operador",
+    "method": "GET",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-076",
+    "role": "cadastro",
+    "method": "GET",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-076",
+    "role": "visualizacao",
+    "method": "GET",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-077",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-077",
+    "role": "operador",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-077",
+    "role": "cadastro",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-077",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-078",
+    "role": "anonymous",
+    "method": "DELETE",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-078",
+    "role": "operador",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-078",
+    "role": "cadastro",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-078",
+    "role": "visualizacao",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-079",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-079",
+    "role": "administrador",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true,
+    "note": "session cookie is not a Bearer credential"
+  },
+  {
+    "id": "API-079",
+    "role": "operador",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true,
+    "note": "session cookie is not a Bearer credential"
+  },
+  {
+    "id": "API-079",
+    "role": "cadastro",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true,
+    "note": "session cookie is not a Bearer credential"
+  },
+  {
+    "id": "API-079",
+    "role": "visualizacao",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true,
+    "note": "session cookie is not a Bearer credential"
+  },
+  {
+    "id": "API-080",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-080",
+    "role": "administrador",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true,
+    "note": "session cookie is not a Bearer credential"
+  },
+  {
+    "id": "API-080",
+    "role": "operador",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true,
+    "note": "session cookie is not a Bearer credential"
+  },
+  {
+    "id": "API-080",
+    "role": "cadastro",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true,
+    "note": "session cookie is not a Bearer credential"
+  },
+  {
+    "id": "API-080",
+    "role": "visualizacao",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true,
+    "note": "session cookie is not a Bearer credential"
+  },
+  {
+    "id": "API-081",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-081",
+    "role": "administrador",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true,
+    "note": "session cookie is not a Bearer credential"
+  },
+  {
+    "id": "API-081",
+    "role": "operador",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true,
+    "note": "session cookie is not a Bearer credential"
+  },
+  {
+    "id": "API-081",
+    "role": "cadastro",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true,
+    "note": "session cookie is not a Bearer credential"
+  },
+  {
+    "id": "API-081",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true,
+    "note": "session cookie is not a Bearer credential"
+  },
+  {
+    "id": "API-082",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-082",
+    "role": "operador",
+    "method": "GET",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-082",
+    "role": "cadastro",
+    "method": "GET",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-082",
+    "role": "visualizacao",
+    "method": "GET",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-083",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-084",
+    "role": "anonymous",
+    "method": "PATCH",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-084",
+    "role": "operador",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-084",
+    "role": "visualizacao",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-085",
+    "role": "anonymous",
+    "method": "DELETE",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-085",
+    "role": "operador",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-085",
+    "role": "cadastro",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-085",
+    "role": "visualizacao",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-086",
+    "role": "anonymous",
+    "method": "PATCH",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-086",
+    "role": "operador",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-086",
+    "role": "visualizacao",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-087",
+    "role": "anonymous",
+    "method": "DELETE",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-087",
+    "role": "operador",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-087",
+    "role": "cadastro",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-087",
+    "role": "visualizacao",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-088",
+    "role": "anonymous",
+    "method": "PATCH",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-088",
+    "role": "operador",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-088",
+    "role": "visualizacao",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-089",
+    "role": "anonymous",
+    "method": "DELETE",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-089",
+    "role": "operador",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-089",
+    "role": "cadastro",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-089",
+    "role": "visualizacao",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-090",
+    "role": "anonymous",
+    "method": "DELETE",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-090",
+    "role": "operador",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-090",
+    "role": "cadastro",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-090",
+    "role": "visualizacao",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-091",
+    "role": "anonymous",
+    "method": "DELETE",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-091",
+    "role": "operador",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-091",
+    "role": "cadastro",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-091",
+    "role": "visualizacao",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-092",
+    "role": "anonymous",
+    "method": "DELETE",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-092",
+    "role": "operador",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-092",
+    "role": "cadastro",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-092",
+    "role": "visualizacao",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-093",
+    "role": "anonymous",
+    "method": "DELETE",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-093",
+    "role": "operador",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-093",
+    "role": "cadastro",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-093",
+    "role": "visualizacao",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-094",
+    "role": "anonymous",
+    "method": "DELETE",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-094",
+    "role": "operador",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-094",
+    "role": "cadastro",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-094",
+    "role": "visualizacao",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-095",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-096",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-097",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-097",
+    "role": "operador",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-097",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-098",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-099",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-099",
+    "role": "operador",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-099",
+    "role": "cadastro",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-099",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-100",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-100",
+    "role": "operador",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-100",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-101",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-101",
+    "role": "operador",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-101",
+    "role": "cadastro",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-101",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-102",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-102",
+    "role": "operador",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-102",
+    "role": "cadastro",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-102",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-103",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-103",
+    "role": "operador",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-103",
+    "role": "cadastro",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-103",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-104",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-105",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-106",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-106",
+    "role": "operador",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-106",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-107",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-108",
+    "role": "anonymous",
+    "method": "PATCH",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-108",
+    "role": "operador",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-108",
+    "role": "visualizacao",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-109",
+    "role": "anonymous",
+    "method": "DELETE",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-109",
+    "role": "operador",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-109",
+    "role": "cadastro",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-109",
+    "role": "visualizacao",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-110",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-111",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-111",
+    "role": "operador",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-111",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-112",
+    "role": "anonymous",
+    "method": "PATCH",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-112",
+    "role": "operador",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-112",
+    "role": "visualizacao",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-113",
+    "role": "anonymous",
+    "method": "DELETE",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-113",
+    "role": "operador",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-113",
+    "role": "cadastro",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-113",
+    "role": "visualizacao",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-114",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-115",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-115",
+    "role": "operador",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-115",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-116",
+    "role": "anonymous",
+    "method": "PATCH",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-116",
+    "role": "operador",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-116",
+    "role": "visualizacao",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-117",
+    "role": "anonymous",
+    "method": "DELETE",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-117",
+    "role": "operador",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-117",
+    "role": "cadastro",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-117",
+    "role": "visualizacao",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-118",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-119",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-119",
+    "role": "operador",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-119",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-120",
+    "role": "anonymous",
+    "method": "DELETE",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-120",
+    "role": "operador",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-120",
+    "role": "cadastro",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-120",
+    "role": "visualizacao",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-121",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-122",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-122",
+    "role": "cadastro",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-122",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-123",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-124",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-125",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-125",
+    "role": "operador",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-125",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-126",
+    "role": "anonymous",
+    "method": "PATCH",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-126",
+    "role": "operador",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-126",
+    "role": "visualizacao",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-127",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-127",
+    "role": "operador",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-127",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-128",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-129",
+    "role": "anonymous",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-130",
+    "role": "anonymous",
+    "method": "POST",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-130",
+    "role": "operador",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-130",
+    "role": "cadastro",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-130",
+    "role": "visualizacao",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-131",
+    "role": "anonymous",
+    "method": "PATCH",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-131",
+    "role": "operador",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-131",
+    "role": "cadastro",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-131",
+    "role": "visualizacao",
+    "method": "PATCH",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-132",
+    "role": "anonymous",
+    "method": "DELETE",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "API-132",
+    "role": "operador",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-132",
+    "role": "cadastro",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "API-132",
+    "role": "visualizacao",
+    "method": "DELETE",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "TOKEN-read-list",
+    "role": "bearer",
+    "method": "GET",
+    "expected": 200,
+    "actual": 200,
+    "ok": true
+  },
+  {
+    "id": "TOKEN-read-detail",
+    "role": "bearer",
+    "method": "GET",
+    "expected": 200,
+    "actual": 200,
+    "ok": true
+  },
+  {
+    "id": "TOKEN-read-token-command-denied",
+    "role": "bearer",
+    "method": "POST",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "TOKEN-unknown-token",
+    "role": "bearer",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "TOKEN-expired-token",
+    "role": "bearer",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "TOKEN-origin-allowlist",
+    "role": "bearer",
+    "method": "GET",
+    "expected": 403,
+    "actual": 403,
+    "ok": true
+  },
+  {
+    "id": "TOKEN-generator-allowlist",
+    "role": "bearer",
+    "method": "GET",
+    "expected": 404,
+    "actual": 404,
+    "ok": true
+  },
+  {
+    "id": "TOKEN-revoked",
+    "role": "bearer",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "TOKEN-malformed-'Bearer'",
+    "role": "malformed-header",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "TOKEN-malformed-'Bearer '",
+    "role": "malformed-header",
+    "method": "GET",
+    "expected": 401,
+    "actual": 500,
+    "ok": false
+  },
+  {
+    "id": "TOKEN-malformed-'Bearer   '",
+    "role": "malformed-header",
+    "method": "GET",
+    "expected": 401,
+    "actual": 500,
+    "ok": false
+  },
+  {
+    "id": "TOKEN-malformed-'Basic audit-invalid'",
+    "role": "malformed-header",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  },
+  {
+    "id": "TOKEN-malformed-'Bearer     audit-invalid'",
+    "role": "malformed-header",
+    "method": "GET",
+    "expected": 401,
+    "actual": 401,
+    "ok": true
+  }
+]

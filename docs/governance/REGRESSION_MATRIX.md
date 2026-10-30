@@ -43,6 +43,12 @@ Toda correção deve acrescentar ou reforçar uma linha desta matriz.
 | SEC-001 | Segurança | ações privilegiadas obedecem política forte configurada | backend/E2E sanitizado |
 | SEC-002 | Segurança | artefatos operacionais respeitam menor privilégio | smoke de permissões |
 | CONT-001 | Continuidade | PROJECT_STATE atualizado no PR | validação CI |
+| AUD-001 | Auditoria | inventário inclui routers incluídos, arquivos da baseline e controles dinâmicos com limites explícitos | coletores em scripts/audit + comparação de contagens/IDs |
+| AUD-002 | Autorização | sessão/Bearer e perfis distintos não são confundidos | matriz de 354 casos da baseline; atualizar conforme contratos |
+| AUD-003 | API externa | Bearer malformado deve retornar 401, nunca IndexError/500 | dois defeitos reproduzidos; correção funcional pendente |
+| AUD-004 | Filas | claim expirado e resultado tardio não sobrescrevem lease atual | recovery_matrix: lifecycle/scheduler/notification |
+| AUD-005 | Restore | archive recusa traversal/symlink e banco recuperado passa integridade/FK | recovery_matrix + restore isolado; VM completa permanece outro aceite |
+| AUD-006 | Performance | custo de catálogo/overlay medido com ambiente e limites | synthetic_capacity/profile_overlay; não equivale a limite comercial |
 
 ## Regra
 

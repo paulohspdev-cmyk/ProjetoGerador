@@ -1,0 +1,40 @@
+{
+  "baseline": "afec24a685e23707d7d2c230f6a3e373a8cd8ff6",
+  "marker_equals_head": true,
+  "services_checked_active": [
+    "rc-geradores-api",
+    "rc-geradores-frontend",
+    "rc-geradores-worker",
+    "rc-geradores-provision",
+    "rc-geradores-bridge",
+    "scadaserver6",
+    "scadacomm6"
+  ],
+  "backup_sqlite_restore": {
+    "integrity": "ok",
+    "foreign_key_violations": 0,
+    "generators": 17,
+    "full_vm_restore": false
+  },
+  "public_response": {
+    "http_status": 200,
+    "headers_present": {
+      "strict-transport-security": false,
+      "content-security-policy": false,
+      "x-content-type-options": false,
+      "referrer-policy": false
+    }
+  },
+  "browser_suite": {
+    "tests": 30,
+    "result": "passed",
+    "includes_characterizations": 5,
+    "industrial_commands": 0
+  },
+  "backend_suite": {
+    "files": 14,
+    "result": "passed"
+  },
+  "frontend_check": "passed",
+  "connection_event": "agent connection lost briefly and recovered; no product restart inferred or initiated"
+}

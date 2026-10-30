@@ -1,0 +1,127 @@
+{
+  "records": 100,
+  "elapsed_seconds": 7.0954,
+  "kind": "CPU profile with unbound fixtures; not Rapid field performance",
+  "top_cumulative": [
+    {
+      "function": "rapid.py:overlay_generators",
+      "line": 1031,
+      "calls": 1,
+      "cumulative_seconds": 7.0928
+    },
+    {
+      "function": "rapid.py:_overlay_generators",
+      "line": 785,
+      "calls": 1,
+      "cumulative_seconds": 7.0928
+    },
+    {
+      "function": "rapid.py:_frontend_generator",
+      "line": 626,
+      "calls": 100,
+      "cumulative_seconds": 5.2992
+    },
+    {
+      "function": "power_topology.py:resolve_power_topology",
+      "line": 156,
+      "calls": 100,
+      "cumulative_seconds": 3.7223
+    },
+    {
+      "function": "controller_library.py:list_controller_packs",
+      "line": 179,
+      "calls": 500,
+      "cumulative_seconds": 3.5581
+    },
+    {
+      "function": "power_topology.py:_catalog_topology",
+      "line": 61,
+      "calls": 100,
+      "cumulative_seconds": 3.537
+    },
+    {
+      "function": "controller_library.py:catalog_for_model",
+      "line": 474,
+      "calls": 100,
+      "cumulative_seconds": 3.5364
+    },
+    {
+      "function": "controller_library.py:controller_catalog_with_state",
+      "line": 313,
+      "calls": 100,
+      "cumulative_seconds": 3.3343
+    },
+    {
+      "function": "~:<built-in method builtins.sorted>",
+      "line": 0,
+      "calls": 1634,
+      "cumulative_seconds": 3.1112
+    },
+    {
+      "function": "rapid.py:_pack",
+      "line": 477,
+      "calls": 400,
+      "cumulative_seconds": 2.9871
+    },
+    {
+      "function": "controller_library.py:pack_for_model",
+      "line": 463,
+      "calls": 400,
+      "cumulative_seconds": 2.9854
+    },
+    {
+      "function": "controller_library.py:_controller_pack_inventory",
+      "line": 167,
+      "calls": 500,
+      "cumulative_seconds": 2.759
+    },
+    {
+      "function": "pathlib.py:rglob",
+      "line": 1097,
+      "calls": 9500,
+      "cumulative_seconds": 2.2197
+    },
+    {
+      "function": "pathlib.py:_select_from",
+      "line": 234,
+      "calls": 9500,
+      "cumulative_seconds": 2.192
+    },
+    {
+      "function": "pathlib.py:_iterate_directories",
+      "line": 228,
+      "calls": 19500,
+      "cumulative_seconds": 1.341
+    },
+    {
+      "function": "controller_library.py:_norm",
+      "line": 32,
+      "calls": 188500,
+      "cumulative_seconds": 0.9633
+    },
+    {
+      "function": "pathlib.py:_make_child_relpath",
+      "line": 1065,
+      "calls": 43500,
+      "cumulative_seconds": 0.9285
+    },
+    {
+      "function": "pathlib.py:walk",
+      "line": 1112,
+      "calls": 19500,
+      "cumulative_seconds": 0.8859
+    },
+    {
+      "function": "controller_library.py:list_controller_catalog",
+      "line": 198,
+      "calls": 100,
+      "cumulative_seconds": 0.8418
+    },
+    {
+      "function": "pathlib.py:_select_from",
+      "line": 200,
+      "calls": 27000,
+      "cumulative_seconds": 0.7882
+    }
+  ]
+}

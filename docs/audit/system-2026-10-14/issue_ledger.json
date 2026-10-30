@@ -1,0 +1,452 @@
+[
+  {
+    "id": "BUG-001",
+    "problem": "Mensagem informativa DSE/FC16 não some do card",
+    "domain": "Vertical/feedback",
+    "historical_state": "confirmado: `commandMessage` sem TTL",
+    "current_status": "mitigado: TTL Vertical aprovado; detalhe requer revisão",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-002",
+    "problem": "Escrita/FC16 pode ser confundida com ação física confirmada",
+    "domain": "Comando DSE",
+    "historical_state": "confirmado; contrato accepted/pending/confirmed precisa ser separado",
+    "current_status": "histórico: requer reprodução/reverificação na baseline; não declarar resolvido",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-003",
+    "problem": "Cards não correspondem à realidade em todos os estados",
+    "domain": "Semântica/UI",
+    "historical_state": "confirmado ao menos no GEN163: warning do controle não chega ao card",
+    "current_status": "histórico: requer reprodução/reverificação na baseline; não declarar resolvido",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-004",
+    "problem": "Leitura disponível mas OFF/MAN/AUTO/TEST bloqueados em alguns modelos",
+    "domain": "Controller Pack/comando",
+    "historical_state": "comportamento correto quando não homologado; auditar modelo/firmware individualmente",
+    "current_status": "histórico: requer reprodução/reverificação na baseline; não declarar resolvido",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-005",
+    "problem": "Cores representam saúde sem contrato suficiente",
+    "domain": "Semântica/UI",
+    "historical_state": "confirmado no Compacto: valor presente recebe `text-online`",
+    "current_status": "histórico: requer reprodução/reverificação na baseline; não declarar resolvido",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-006",
+    "problem": "Mudança de uma visualização pode atingir outra",
+    "domain": "Arquitetura frontend",
+    "historical_state": "confirmado em `GeneratorsBoard.tsx`",
+    "current_status": "histórico: requer reprodução/reverificação na baseline; não declarar resolvido",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-007",
+    "problem": "VM diverge da `main`",
+    "domain": "Deploy/drift",
+    "historical_state": "**resolvido 2026-10-06**: `HEAD`, `origin/main` e `deployed-commit` alinhados após deploy controlado",
+    "current_status": "resolvido na baseline conferida",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-008",
+    "problem": "Continuidade entre chats/IDEs não era persistente",
+    "domain": "Governança",
+    "historical_state": "endereçado por AGENTS/PROJECT_STATE/handoff + contexto SentinelX",
+    "current_status": "histórico: requer reprodução/reverificação na baseline; não declarar resolvido",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-009",
+    "problem": "Produção contém código de PR ainda aberto",
+    "domain": "Release/governança",
+    "historical_state": "**resolvido 2026-10-06**: produção implantada a partir de `main`, release por SHA e marcador conferente",
+    "current_status": "resolvido na baseline conferida",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-010",
+    "problem": "PR #86 mistura múltiplos domínios",
+    "domain": "Processo/arquitetura",
+    "historical_state": "confirmado: 41 commits e 22 arquivos em backend/bridge/packs/frontend/API",
+    "current_status": "histórico: requer reprodução/reverificação na baseline; não declarar resolvido",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-011",
+    "problem": "Hipótese de diagnóstico sem `.git`",
+    "domain": "Deploy/observabilidade",
+    "historical_state": "**descartado após verificação direta**: `.git` existe, HEAD está limpo/detached em `20a68c2...` e `version_info()` retorna o SHA correto",
+    "current_status": "histórico: requer reprodução/reverificação na baseline; não declarar resolvido",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-012",
+    "problem": "Binding GEN163 não corresponde ao Controller Pack implantado",
+    "domain": "Rapid/provisionamento",
+    "historical_state": "confirmado: binding 26 canais vs pack 40; faltam 15 e sobra `alarm_class_raw`",
+    "current_status": "histórico: requer reprodução/reverificação na baseline; não declarar resolvido",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-013",
+    "problem": "Estado DSE visto pelo controle difere do estado mostrado no card",
+    "domain": "Telemetria/semântica",
+    "historical_state": "confirmado: controle lê warning `0x0400`; payload normal mostra `alarms=0`",
+    "current_status": "histórico: requer reprodução/reverificação na baseline; não declarar resolvido",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-014",
+    "problem": "Release pode ficar parcialmente reconciliada",
+    "domain": "Deploy/Rapid",
+    "historical_state": "**mitigado/resolvido no gate atual**: smoke valida 13/13 bindings contra cadastro e Controller Pack; manter regressão obrigatória",
+    "current_status": "histórico: requer reprodução/reverificação na baseline; não declarar resolvido",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-015",
+    "problem": "Falha transitória da API muda todos os cards para stale/offline visual",
+    "domain": "Frontend/semântica",
+    "historical_state": "confirmado no `GeneratorsProvider`; precisa distinguir falha browser/API de perda industrial",
+    "current_status": "histórico: requer reprodução/reverificação na baseline; não declarar resolvido",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-016",
+    "problem": "Card Compacto em alerta pode manter glow verde de \"online\"",
+    "domain": "Compacto/semântica",
+    "historical_state": "confirmado: `isGeneratorConnected` inclui alerta e ativa `glow-online`",
+    "current_status": "histórico: requer reprodução/reverificação na baseline; não declarar resolvido",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-017",
+    "problem": "Gauges kW usam zonas verde/amarelo/vermelho 70/20/10 sem limite homologado",
+    "domain": "Vertical/Compacto/semântica",
+    "historical_state": "confirmado; packs auditados não fornecem thresholds de `power_kw`",
+    "current_status": "histórico: requer reprodução/reverificação na baseline; não declarar resolvido",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-018",
+    "problem": "MCB/GCB aberto é tratado visualmente como alerta",
+    "domain": "Lista/semântica",
+    "historical_state": "confirmado; estado físico está sendo confundido com severidade",
+    "current_status": "histórico: requer reprodução/reverificação na baseline; não declarar resolvido",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-019",
+    "problem": "AUTO/TEST reutilizam cores reservadas a saúde/alarme",
+    "domain": "Semântica/UI",
+    "historical_state": "confirmado como ambiguidade visual; requer contrato de cores por eixo",
+    "current_status": "histórico: requer reprodução/reverificação na baseline; não declarar resolvido",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-020",
+    "problem": "Status `online` pode coexistir com qualidade de telemetria `partial`",
+    "domain": "Backend/UI",
+    "historical_state": "confirmado em GEN203/204; UI precisa representar ambos os eixos",
+    "current_status": "histórico: requer reprodução/reverificação na baseline; não declarar resolvido",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-021",
+    "problem": "IG200 marca START/STOP aceito sem exigir feedback físico declarado no pack",
+    "domain": "Comando/IG200",
+    "historical_state": "confirmado: RPM após 2 s é lido mas não participa de `accepted`",
+    "current_status": "corrigido em código e teste simulado; campo pendente",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-022",
+    "problem": "Evento/auditoria IG200 não preserva feedback final suficiente",
+    "domain": "Eventos/IG200",
+    "historical_state": "confirmado: evento grava RPM anterior; audit grava accepted/reason",
+    "current_status": "histórico: requer reprodução/reverificação na baseline; não declarar resolvido",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-023",
+    "problem": "DSE usa 3 s para confirmar modos enquanto pack declara 5 s",
+    "domain": "Comando/DSE",
+    "historical_state": "confirmado: timeout hard-coded diverge do contrato",
+    "current_status": "histórico: requer reprodução/reverificação na baseline; não declarar resolvido",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-024",
+    "problem": "IG4 observa START por ~6 s enquanto pack declara 8 s",
+    "domain": "Comando/IG4",
+    "historical_state": "confirmado: timeout de feedback duplicado e divergente",
+    "current_status": "histórico: requer reprodução/reverificação na baseline; não declarar resolvido",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-025",
+    "problem": "Wrapper colapsa accepted/pending/confirmed em `controller_accepted`",
+    "domain": "Comando/API",
+    "historical_state": "confirmado em `send_homologated_command()`",
+    "current_status": "corrigido: resposta terminal distingue confirmado/failed/rejected",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-026",
+    "problem": "Vertical muda altura conforme quantidade de cards visíveis",
+    "domain": "Vertical/layout",
+    "historical_state": "confirmado: `displayRows` depende de `visible.length`",
+    "current_status": "histórico: requer reprodução/reverificação na baseline; não declarar resolvido",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-027",
+    "problem": "Filtro ONLINE usa status bruto e pode incluir card visualmente stale",
+    "domain": "Board/semântica",
+    "historical_state": "confirmado: filtro ignora `telemetryStale`",
+    "current_status": "histórico: requer reprodução/reverificação na baseline; não declarar resolvido",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-028",
+    "problem": "Vertical e Compacto compartilham algoritmo no mesmo `GeneratorsBoard.tsx`",
+    "domain": "Frontend/arquitetura",
+    "historical_state": "confirmado; alto risco de regressão cruzada",
+    "current_status": "histórico: requer reprodução/reverificação na baseline; não declarar resolvido",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-029",
+    "problem": "Compacto não possui cobertura E2E dedicada equivalente ao Vertical",
+    "domain": "Testes/Compacto",
+    "historical_state": "**resolvido 2026-10-06**: suíte dedicada `videowall-compact.spec.ts` integrada e verde",
+    "current_status": "resolvido: E2E videowall executado",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-030",
+    "problem": "Não existe backup completo periódico agendado",
+    "domain": "Backup/operação",
+    "historical_state": "**resolvido 2026-10-06**: job diário idempotente restaurado e garantido por install/deploy",
+    "current_status": "resolvido: backup diário presente",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-031",
+    "problem": "Falhas de backup por permissão precederam remoção do job diário",
+    "domain": "Backup/operação",
+    "historical_state": "**resolvido operacionalmente 2026-10-06**: full backup manual pós-remediação concluído com sucesso; retenção local validada",
+    "current_status": "mitigado: backup recente e restore SQLite aprovados",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-032",
+    "problem": "Hardening de segundo fator ainda não está na baseline operacional desejada",
+    "domain": "Segurança/RBAC",
+    "historical_state": "detalhe de produção mantido no contexto privado",
+    "current_status": "adiado por decisão expressa: 2FA=0",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-033",
+    "problem": "Permissões de artefato operacional precisam aderir ao menor privilégio",
+    "domain": "Segurança/filesystem",
+    "historical_state": "detalhe de produção mantido no contexto privado",
+    "current_status": "histórico: requer reprodução/reverificação na baseline; não declarar resolvido",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-034",
+    "problem": "Dependência Node `source-map-js` com vulnerabilidade HIGH",
+    "domain": "Dependências/segurança",
+    "historical_state": "**resolvido 2026-10-06**: lockfile atualizado para 1.2.2; `npm audit` e Quality/Security verdes",
+    "current_status": "resolvido: npm audit sem vulnerabilidades conhecidas",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-035",
+    "problem": "PR podia ser mesclado mesmo com CI/Quality vermelhos",
+    "domain": "Governança/GitHub",
+    "historical_state": "**pendente de configuração administrativa**: gates de CI existem e estão verdes; enforcement obrigatório de branch/ruleset exige permissão admin do GitHub",
+    "current_status": "histórico: requer reprodução/reverificação na baseline; não declarar resolvido",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-036",
+    "problem": "Estado oficial/documentação não refletia remediações posteriores à Auditoria Zero",
+    "domain": "Governança",
+    "historical_state": "**resolvido 2026-10-06** por atualização do PROJECT_STATE, ledger e relatório de remediação",
+    "current_status": "histórico: requer reprodução/reverificação na baseline; não declarar resolvido",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "BUG-037",
+    "problem": "Backup off-site não possui destino externo configurado",
+    "domain": "Continuidade/operação",
+    "historical_state": "**pendente de infraestrutura externa**: backup local periódico está ativo; não usar diretório do mesmo disco como falso off-site",
+    "current_status": "histórico: requer reprodução/reverificação na baseline; não declarar resolvido",
+    "evidence": "ledger histórico; provas novas limitadas aos cenários identificados"
+  },
+  {
+    "id": "CAD-01",
+    "problem": "Consultar relatório de cadastro e provas no PR #235",
+    "domain": "cadastro/diagrama/inventário conforme relatório",
+    "current_status": "defeito aberto na baseline afec24a",
+    "evidence": "16 cenários API/banco e cinco caracterizações E2E; não aprova comportamento defeituoso"
+  },
+  {
+    "id": "CAD-02",
+    "problem": "Consultar relatório de cadastro e provas no PR #235",
+    "domain": "cadastro/diagrama/inventário conforme relatório",
+    "current_status": "defeito aberto na baseline afec24a",
+    "evidence": "16 cenários API/banco e cinco caracterizações E2E; não aprova comportamento defeituoso"
+  },
+  {
+    "id": "CAD-03",
+    "problem": "Consultar relatório de cadastro e provas no PR #235",
+    "domain": "cadastro/diagrama/inventário conforme relatório",
+    "current_status": "defeito aberto na baseline afec24a",
+    "evidence": "16 cenários API/banco e cinco caracterizações E2E; não aprova comportamento defeituoso"
+  },
+  {
+    "id": "CAD-04",
+    "problem": "Consultar relatório de cadastro e provas no PR #235",
+    "domain": "cadastro/diagrama/inventário conforme relatório",
+    "current_status": "defeito aberto na baseline afec24a",
+    "evidence": "16 cenários API/banco e cinco caracterizações E2E; não aprova comportamento defeituoso"
+  },
+  {
+    "id": "CAD-05",
+    "problem": "Consultar relatório de cadastro e provas no PR #235",
+    "domain": "cadastro/diagrama/inventário conforme relatório",
+    "current_status": "defeito aberto na baseline afec24a",
+    "evidence": "16 cenários API/banco e cinco caracterizações E2E; não aprova comportamento defeituoso"
+  },
+  {
+    "id": "CAD-06",
+    "problem": "Consultar relatório de cadastro e provas no PR #235",
+    "domain": "cadastro/diagrama/inventário conforme relatório",
+    "current_status": "defeito aberto na baseline afec24a",
+    "evidence": "16 cenários API/banco e cinco caracterizações E2E; não aprova comportamento defeituoso"
+  },
+  {
+    "id": "CAD-07",
+    "problem": "Consultar relatório de cadastro e provas no PR #235",
+    "domain": "cadastro/diagrama/inventário conforme relatório",
+    "current_status": "defeito aberto na baseline afec24a",
+    "evidence": "16 cenários API/banco e cinco caracterizações E2E; não aprova comportamento defeituoso"
+  },
+  {
+    "id": "CAD-08",
+    "problem": "Consultar relatório de cadastro e provas no PR #235",
+    "domain": "cadastro/diagrama/inventário conforme relatório",
+    "current_status": "defeito aberto na baseline afec24a",
+    "evidence": "16 cenários API/banco e cinco caracterizações E2E; não aprova comportamento defeituoso"
+  },
+  {
+    "id": "CAD-09",
+    "problem": "Consultar relatório de cadastro e provas no PR #235",
+    "domain": "cadastro/diagrama/inventário conforme relatório",
+    "current_status": "divergência DB/XML observada; política de atualização de rótulos pendente",
+    "evidence": "16 cenários API/banco e cinco caracterizações E2E; não aprova comportamento defeituoso"
+  },
+  {
+    "id": "CAD-10",
+    "problem": "Consultar relatório de cadastro e provas no PR #235",
+    "domain": "cadastro/diagrama/inventário conforme relatório",
+    "current_status": "inconsistência entre passos autorizados do perfil cadastro; decisão/correção pendente",
+    "evidence": "16 cenários API/banco e cinco caracterizações E2E; não aprova comportamento defeituoso"
+  },
+  {
+    "id": "CAD-11",
+    "problem": "Consultar relatório de cadastro e provas no PR #235",
+    "domain": "cadastro/diagrama/inventário conforme relatório",
+    "current_status": "defeito aberto na baseline afec24a",
+    "evidence": "16 cenários API/banco e cinco caracterizações E2E; não aprova comportamento defeituoso"
+  },
+  {
+    "id": "CAD-12",
+    "problem": "Consultar relatório de cadastro e provas no PR #235",
+    "domain": "cadastro/diagrama/inventário conforme relatório",
+    "current_status": "defeito aberto na baseline afec24a",
+    "evidence": "16 cenários API/banco e cinco caracterizações E2E; não aprova comportamento defeituoso"
+  },
+  {
+    "id": "CAD-13",
+    "problem": "Consultar relatório de cadastro e provas no PR #235",
+    "domain": "cadastro/diagrama/inventário conforme relatório",
+    "current_status": "defeito aberto na baseline afec24a",
+    "evidence": "16 cenários API/banco e cinco caracterizações E2E; não aprova comportamento defeituoso"
+  },
+  {
+    "id": "CAD-14",
+    "problem": "Consultar relatório de cadastro e provas no PR #235",
+    "domain": "cadastro/diagrama/inventário conforme relatório",
+    "current_status": "defeito aberto na baseline afec24a",
+    "evidence": "16 cenários API/banco e cinco caracterizações E2E; não aprova comportamento defeituoso"
+  },
+  {
+    "id": "SYS-001",
+    "problem": "Webhook sem destino retorna sucesso da função de entrega",
+    "domain": "notificações",
+    "current_status": "decisão de contrato pendente: skipped versus delivered",
+    "evidence": "recovery_results.json; nenhuma entrega externa foi efetuada"
+  },
+  {
+    "id": "SYS-002",
+    "problem": "pip 24.0 presente na venv produtiva possui advisories conhecidos",
+    "domain": "instalação/deploy",
+    "current_status": "aberto; não confundir com vulnerabilidade confirmada da API em execução",
+    "evidence": "python_installer_audit.json; seis IDs únicos, scanner repete registros"
+  },
+  {
+    "id": "SYS-003",
+    "problem": "132 rotas sem response_model explícito",
+    "domain": "contratos API",
+    "current_status": "lacuna confirmada; não significa 132 bugs individuais",
+    "evidence": "api_inventory.json"
+  },
+  {
+    "id": "SYS-004",
+    "problem": "Cabeçalhos de segurança ausentes no proxy público",
+    "domain": "infraestrutura HTTPS",
+    "current_status": "aberto; proxy externo requer acesso próprio",
+    "evidence": "consulta HTTP pública de 14/10; HSTS/CSP/nosniff/Referrer-Policy ausentes",
+    "related_ids": [
+      "A08"
+    ]
+  },
+  {
+    "id": "SYS-005",
+    "problem": "Destino off-site não configurado",
+    "domain": "backup/infraestrutura",
+    "current_status": "pendente de destino externo real",
+    "evidence": "production_inventory.json; backup local saudável não substitui off-site",
+    "related_ids": [
+      "A05",
+      "BUG-037"
+    ]
+  },
+  {
+    "id": "SYS-006",
+    "problem": "Bearer apenas com espaços provoca IndexError e HTTP 500 no TestClient",
+    "domain": "API externa/autenticação",
+    "current_status": "defeito reproduzido em contrato isolado de headers; sem bypass de autorização demonstrado",
+    "evidence": "authorization_results.json; duas variações malformadas deveriam retornar 401; HTTP real/proxy precisa confirmação complementar"
+  },
+  {
+    "id": "SYS-007",
+    "problem": "Overlay repete varredura de inventário de packs por registro",
+    "domain": "performance/API",
+    "current_status": "custo repetido medido em perfil sintético; capacidade comercial permanece pendente",
+    "evidence": "overlay_profile.json: 500 inventários e 9500 rglob para 100 registros não provisionados; synthetic_capacity.json"
+  }
+]

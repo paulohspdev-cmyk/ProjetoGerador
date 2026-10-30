@@ -1,0 +1,210 @@
+[
+  {
+    "slug": "central-de-operacao",
+    "component": "OperationCenter"
+  },
+  {
+    "slug": "sites",
+    "component": "SitesScreen"
+  },
+  {
+    "slug": "mapa",
+    "component": "MapScreen"
+  },
+  {
+    "slug": "alarmes",
+    "component": "IndustrialAlarmsScreen"
+  },
+  {
+    "slug": "eventos",
+    "component": "EventsScreen"
+  },
+  {
+    "slug": "tendencias",
+    "component": "TrendsScreen"
+  },
+  {
+    "slug": "historico",
+    "component": "ProcessHistoryScreen"
+  },
+  {
+    "slug": "relatorios",
+    "component": "ReportsV3Screen"
+  },
+  {
+    "slug": "energia-rede",
+    "component": "EnergyRede"
+  },
+  {
+    "slug": "energia-geradores",
+    "component": "EnergyGens"
+  },
+  {
+    "slug": "energia-carga",
+    "component": "EnergyLoad"
+  },
+  {
+    "slug": "energia-transferencia",
+    "component": "EnergyTransfer"
+  },
+  {
+    "slug": "energia-paralelismo",
+    "component": "EnergyParallel"
+  },
+  {
+    "slug": "manutencao",
+    "component": "MaintenanceHubScreen"
+  },
+  {
+    "slug": "combustivel",
+    "component": "FuelScreen"
+  },
+  {
+    "slug": "baterias",
+    "component": "BatteriesScreen"
+  },
+  {
+    "slug": "horimetros",
+    "component": "HourmetersScreen"
+  },
+  {
+    "slug": "agenda",
+    "component": "AgendaV3Screen"
+  },
+  {
+    "slug": "controladoras",
+    "component": "ControllersLifecycleScreen"
+  },
+  {
+    "slug": "modems",
+    "component": "ModemsScreen"
+  },
+  {
+    "slug": "gateways",
+    "component": "GatewaysScreen"
+  },
+  {
+    "slug": "conectividade",
+    "component": "ConnectivityScreen"
+  },
+  {
+    "slug": "comunicacao",
+    "component": "CommunicationScreen"
+  },
+  {
+    "slug": "regras",
+    "component": "RulesScreen"
+  },
+  {
+    "slug": "exercicio-automatico",
+    "component": "ExerciseScreen"
+  },
+  {
+    "slug": "agendamentos",
+    "component": "SchedulesV3Screen"
+  },
+  {
+    "slug": "notificacoes",
+    "component": "NotificationsScreen"
+  },
+  {
+    "slug": "escalonamento",
+    "component": "EscalationV3Screen"
+  },
+  {
+    "slug": "canais",
+    "component": "ChannelsScreen"
+  },
+  {
+    "slug": "tags",
+    "component": "TagsScreen"
+  },
+  {
+    "slug": "templates",
+    "component": "TemplatesScreen"
+  },
+  {
+    "slug": "rapid-scada",
+    "component": "RapidScadaScreen"
+  },
+  {
+    "slug": "diagnostico",
+    "component": "DiagnosticScreen"
+  },
+  {
+    "slug": "fabricantes",
+    "component": "ManufacturersScreen"
+  },
+  {
+    "slug": "lib-controladoras",
+    "component": "LibControllersScreen"
+  },
+  {
+    "slug": "protocolos",
+    "component": "ProtocolsScreen"
+  },
+  {
+    "slug": "controller-packs",
+    "component": "PacksScreen"
+  },
+  {
+    "slug": "laboratorio",
+    "component": "LabScreen"
+  },
+  {
+    "slug": "clientes",
+    "component": "ClientsScreen"
+  },
+  {
+    "slug": "unidades",
+    "component": "UnitsScreen"
+  },
+  {
+    "slug": "usuarios",
+    "component": "UsersV3Screen"
+  },
+  {
+    "slug": "perfis",
+    "component": "RolesScreen"
+  },
+  {
+    "slug": "auditoria",
+    "component": "AuditScreen"
+  },
+  {
+    "slug": "api",
+    "component": "ApiV3Screen"
+  },
+  {
+    "slug": "webhooks",
+    "component": "WebhooksScreen"
+  },
+  {
+    "slug": "email",
+    "component": "EmailV3Screen"
+  },
+  {
+    "slug": "whatsapp",
+    "component": "WhatsAppV3Screen"
+  },
+  {
+    "slug": "erp-bms",
+    "component": "ErpBmsLifecycleScreen"
+  },
+  {
+    "slug": "configuracoes",
+    "component": "SystemSettingsV3Screen"
+  },
+  {
+    "slug": "backups",
+    "component": "BackupsV3Screen"
+  },
+  {
+    "slug": "saude",
+    "component": "HealthScreen"
+  },
+  {
+    "slug": "versao",
+    "component": "VersionScreen"
+  }
+]
