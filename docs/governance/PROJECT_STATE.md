@@ -1,5 +1,14 @@
 # Estado oficial do projeto
 
+## DEIF AGC 150 — catálogo e pré-homologação FC04 — 2026-11-05
+
+- Domínio: Controller Packs. Branch `feat/deif-agc150-catalog-20261105`. Inclusão de `DEIF / AGC 150` no catálogo como `registration_only`, sem Controller Pack de produção e sem provisionamento Rapid/comando habilitado.
+- A VM `scada` (`10.10.10.130`) alcança o gateway `10.10.10.1`, mas os testes realizados nela a `10.60.15.107` (ping e TCP 502/80/443/8080) tiveram timeout; teste a `10.60.15.1` também sem resposta. O operador relata ping positivo a partir de outro ponto, insuficiente para demonstrar acesso pela VM. Roteamento/túnel/ACL exigem diagnóstico independente.
+- Instrumento `controllers/tools/deif_agc150_probe_readonly.py` usa estritamente FC04/MBAP com Unit ID obrigatório. Endereços provisórios de medição 501–503, 507, 519 são apenas referência da coluna GEN, a comparar com firmware/variante e planilha DEIF 4189341212. Testes sintéticos de FC04/framing/exceção/Unit passaram (6 cenários), sem executar escrita ou comando físico.
+- Sem deploy, sem cadastro de instância/gerador, sem alteração de banco, bridge ou configuração do Rapid; serviços de produção e geradores existentes permanecem intocados por esta branch.
+- Próximo passo: reestabelecer/confirmar conectividade SCADA→AGC 150, identificar variante exata, firmware e Unit ID, obter medições FC04 comparadas à IHM. Depois criar pack, template Rapid, testes de regressão, revisão e deploy isolado. START/STOP e disjuntores exigem homologação industrial própria e PR separado.
+- Rollback desta branch: reverter os commits do catálogo/instrumento/documentação; nenhum estado físico/binding de produção foi alterado.
+
 ## Evidência de implantação dedicada — 2026-10-11
 
 - Domínio: governança/documentação. Branch `docs/production-release-evidence-20261011`, base e release funcional `e0fc6a551e0c0432aae6002d956a8cd328766f08`; PRs #225–#233 integrados. Este registro modifica somente esta documentação e não altera runtime.

@@ -2597,6 +2597,18 @@
       "notes": "Geração anterior do InteliLite 4 AMF 25; descontinuado, remote monitoring e InteliConfig documentados.",
       "supportState": "registration_only",
       "supportNotes": "Modelo reconhecido, mas sem Controller Pack exato suficientemente comprovado para provisionamento automático."
+    },
+    {
+      "manufacturer": "DEIF",
+      "family": "AGC 150",
+      "model": "AGC 150",
+      "application": "genset",
+      "category": "single_genset",
+      "status": "inventory_only",
+      "provisionable": false,
+      "notes": "Controladora AGC 150 reconhecida para cadastro. A variante exata (Generator/Stand-alone/PMS lite), firmware e mapa Modbus do equipamento precisam ser confirmados antes de telemetria em produção.",
+      "supportState": "registration_only",
+      "supportNotes": "Cadastro permitido; sem Controller Pack DEIF homologado, sem provisionamento Rapid e sem comandos industriais. Homologar comunicação Modbus TCP/FC04 e leituras reais antes de promoção."
     }
   ]
 }
