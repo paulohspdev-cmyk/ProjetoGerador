@@ -46,6 +46,8 @@ Toda correção deve acrescentar ou reforçar uma linha desta matriz.
 
 | CAD-001 | Cadastro de geradores | Continuar para confirmação não executa POST; somente confirmar registra uma vez | E2E com contagem de POST e banco de teste isolado |
 
+| SEC-API-001 | API externa | Bearer ausente, vazio ou malformado retorna HTTP 401, nunca 500 | Backend audit_regressions.py + testes da API |
+
 ## Regra
 
 Não remover um teste de regressão para fazer o build passar. Se o contrato mudou de propósito, alterar primeiro o contrato/documentação e registrar a decisão.
