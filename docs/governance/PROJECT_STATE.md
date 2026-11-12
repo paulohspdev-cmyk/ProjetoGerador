@@ -1,5 +1,13 @@
 # Estado oficial do projeto
 
+## Revisão de validadores de Controller Pack — 2026-11-12 (CI, sem mudança industrial)
+
+- Domínio: governança/CI. Origem: issue #244, incompatibilidade entre verificador antigo e documentação ComAp BaseBox e InteliLite4 G-1000. Branch `fix/controller-validator-document-evidence-20261112`, encadeada ao refactor frontend PR #242.
+- Validação de fonte passa a reconhecer holding-register em duas colunas (40001+address e address) com nome exato, ou endereços/ranges das assinaturas **read-only** documentadas do G-1000. As fontes e seus SHA-256 continuam obrigatórios.
+- Aceita apenas os dois modelos conhecidos no estado de *primeira homologação física de comandos pendente*, quando runtime mantém flag desligada por padrão, allowlist por ID, telemetria somente leitura, condições e feedback declarados. Não declara comandos homologados em campo, não muda capabilities, manifests, registradores, comandos ou ambientes.
+- Testes realizados isoladamente: verificador passou com 9 packs production/10 LAB. Ao trocar endereço IG-NT 314 por 9999 e ao mudar flag padrão do executor de desligado para ligado, o mesmo verificador rejeitou ambas as mudanças.
+- CI completo e E2E devem ser conferidos no GitHub antes de merge. Nenhuma VM alterada, nenhum comando Modbus executado. Rollback: reverter PR de CI.
+
 ## Governança de domínios: helper de layout da tela Geradores — 2026-11-12
 
 - Branch `fix/board-layout-boundary-20261112` baseada em `ab39aba32da77cd559ad9fd6d29d0cad058561ca`. Domínio exclusivo: **governança/CI**, sem alteração de runtime.
