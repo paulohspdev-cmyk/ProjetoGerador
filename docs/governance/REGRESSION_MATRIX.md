@@ -44,6 +44,8 @@ Toda correção deve acrescentar ou reforçar uma linha desta matriz.
 | SEC-002 | Segurança | artefatos operacionais respeitam menor privilégio | smoke de permissões |
 | CONT-001 | Continuidade | PROJECT_STATE atualizado no PR | validação CI |
 
+| CAD-001 | Cadastro de geradores | Continuar para confirmação não executa POST; somente confirmar registra uma vez | E2E com contagem de POST e banco de teste isolado |
+
 ## Regra
 
 Não remover um teste de regressão para fazer o build passar. Se o contrato mudou de propósito, alterar primeiro o contrato/documentação e registrar a decisão.

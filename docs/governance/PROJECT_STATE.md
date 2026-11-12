@@ -1,5 +1,12 @@
 # Estado oficial do projeto
 
+## Cadastro de geradores — confirmação explícita (12/11/2026; PR isolado)
+
+- Domínio: frontend de cadastro/edição (CAD-01 da auditoria de 14/10). A etapa 2 de Comunicação deve somente avançar para Confirmação; não cria cadastro nem inicia provisionamento antes de clicar no botão final.
+- Mudança proposta: botões Continuar e Confirmar usam identidades React distintas, submit exige step 3 e evento de envio exclusivamente do botão final, sem alterar contrato da API, banco, transportes nem packs.
+- Prova: teste E2E existente de cadastro registration-only valida que nenhum POST /api/generators foi disparado após clicar em Continuar; após confirmação única, exige um POST. CI/E2E do PR obrigatórios.
+- Risco/rollback: apenas formulário de novo gerador; reverter PR se o cadastro não concluir. Nenhum deploy na VM, alteração de controladora, Modbus de escrita ou automação física nesta alteração.
+
 ## Situação da organização GitHub — 12/11/2026 (pós-integração)
 
 - PRs #243, #242, #247, #245 e #246 integrados à `main` até o commit `fd8c5c478433801af45fbb3361d5099ded77ca82`. As alterações tratam fronteiras CI, layout de geradores, validação documental restrita de packs, dependências e tipagem da rota de erro.

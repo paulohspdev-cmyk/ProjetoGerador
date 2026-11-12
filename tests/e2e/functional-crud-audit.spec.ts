@@ -374,7 +374,16 @@ test("cadastro registration-only salva e mantém comandos bloqueados", async ({ 
 
   await expect(dialog.getByText("Configuração automática", { exact: true })).toBeVisible();
   await dialog.getByLabel("Modem aprovado").selectOption({ index: 1 });
+  const generatorPostRequests: string[] = [];
+  page.on("request", (request) => {
+    if (request.method() === "POST" && new URL(request.url()).pathname === "/api/generators") {
+      generatorPostRequests.push(request.url());
+    }
+  });
   await dialog.getByRole("button", { name: /Continuar/i }).click();
+  await expect(dialog.getByRole("heading", { name: "Confirmar cadastro" })).toBeVisible();
+  await page.waitForTimeout(350);
+  expect(generatorPostRequests).toHaveLength(0);
   await expect(
     dialog.getByText(/Cadastro técnico liberado|Cadastro liberado pelo fluxo/),
   ).toBeVisible();
@@ -386,6 +395,7 @@ test("cadastro registration-only salva e mantém comandos bloqueados", async ({ 
   if (finalLabel !== "Configurando…") {
     expect(["Cadastrar gerador", "Cadastrar para homologação"]).toContain(finalLabel);
     await finalSubmit.click();
+    await expect.poll(() => generatorPostRequests.length).toBe(1);
   }
   await expect(dialog).not.toBeVisible({ timeout: 15_000 });
 
