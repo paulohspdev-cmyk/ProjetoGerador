@@ -41,6 +41,8 @@ Fontes CI: [CI](https://github.com/paulohspdev-cmyk/ProjetoGerador/actions/runs/
 
 As áreas com responsabilidade excessiva devem ser divididas **por PR**, preservando comportamento: `GeneratorsBoard.tsx`, integrações de bridge e módulos que misturam comando e telemetria. Não reorganizar diretórios inteiros num único commit.
 
+Inventário detalhado das referências: [BRANCH_INVENTORY_2026-11-12.md](BRANCH_INVENTORY_2026-11-12.md). A branch criada para esta auditoria elevou a contagem temporária de 135 para 136.
+
 ## 4. Política de branches
 
 Novos nomes:
