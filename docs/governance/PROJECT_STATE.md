@@ -1,5 +1,29 @@
 # Estado oficial do projeto
 
+## Revisão de validadores de Controller Pack — 2026-11-12 (CI, sem mudança industrial)
+
+- Domínio: governança/CI. Origem: issue #244, incompatibilidade entre verificador antigo e documentação ComAp BaseBox e InteliLite4 G-1000. Branch `fix/controller-validator-document-evidence-20261112`, encadeada ao refactor frontend PR #242.
+- Validação de fonte passa a reconhecer holding-register em duas colunas (40001+address e address) com nome exato, ou endereços/ranges das assinaturas **read-only** documentadas do G-1000. As fontes e seus SHA-256 continuam obrigatórios.
+- Aceita apenas os dois modelos conhecidos no estado de *primeira homologação física de comandos pendente*, quando runtime mantém flag desligada por padrão, allowlist por ID, telemetria somente leitura, condições e feedback declarados. Não declara comandos homologados em campo, não muda capabilities, manifests, registradores, comandos ou ambientes.
+- Testes realizados isoladamente: verificador passou com 9 packs production/10 LAB. Ao trocar endereço IG-NT 314 por 9999 e ao mudar flag padrão do executor de desligado para ligado, o mesmo verificador rejeitou ambas as mudanças.
+- CI completo e E2E devem ser conferidos no GitHub antes de merge. Nenhuma VM alterada, nenhum comando Modbus executado. Rollback: reverter PR de CI.
+
+## Governança de domínios: helper de layout da tela Geradores — 2026-11-12
+
+- Branch `fix/board-layout-boundary-20261112` baseada em `ab39aba32da77cd559ad9fd6d29d0cad058561ca`. Domínio exclusivo: **governança/CI**, sem alteração de runtime.
+- Classifica `frontend/src/features/generators/vertical-board-layout.ts` no mesmo domínio de `GeneratorsBoard.tsx` para permitir extração de matemática pura por PR encadeado; mantém rejeição de mistura com Vertical, Compacto, Lista, Provider e transportes.
+- Regressão: `node scripts/validation/check-change-boundaries.mjs --self-test` verifica classificação; o guardrail geral continua estrito. CI da `main` já estava vermelho por tamanho de `GeneratorsBoard.tsx`; o reparo real fica no PR frontend separado (issue #239).
+- Não alterou VM, compilação, Rapid, bridge, banco, modems, 2FA ou capacidades industriais. Rollback: reverter PR de governança.
+
+## Frontend — extração de cálculo do layout vertical (2026-11-12; PR em rascunho)
+
+- Domínio: **Layout da tela Geradores**, sem modificar cards Vertical, Compacto ou Lista. Base `main` em `ab39aba32da77cd559ad9fd6d29d0cad058561ca`.
+- Motivo: CI da `main` falhou em `check:architecture` porque `GeneratorsBoard.tsx` ultrapassou 20 KiB. O cálculo puro do layout vertical foi movido para `frontend/src/features/generators/vertical-board-layout.ts`. O Board passou de 21.354 para 19.185 bytes.
+- Regras matemáticas, paginação, resolução, viewport, grid e estilos foram preservados; o novo módulo não faz leitura industrial, filtragem de geradores nem comando. Verificar comportamento com CI/TypeScript/build e E2E antes de integrar.
+- Mudança somente no GitHub, não aplicada na VM. Sem reinício, deploy, alteração de modem, Rapid, bridge, banco, Controller Pack ou 2FA.
+- Regressão requerida: `npm run check:architecture`, `npm run check`, E2E de responsividade, fullscreen e cards, e revisão do diff. Falha preexistente de dependências em Quality and Security é tratada isoladamente na issue #240.
+- Rollback: reverter este PR de frontend. Continuidade: após testes e aprovação, integrar na `main` e implantar pelo procedimento transacional; não alterar marcador de implantação antes do deploy validado.
+
 ## Evidência de implantação dedicada — 2026-10-11
 
 - Domínio: governança/documentação. Branch `docs/production-release-evidence-20261011`, base e release funcional `e0fc6a551e0c0432aae6002d956a8cd328766f08`; PRs #225–#233 integrados. Este registro modifica somente esta documentação e não altera runtime.
