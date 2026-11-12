@@ -45,8 +45,12 @@ function documentedSourceAddress(lines, mapping, metric, entry) {
     // Source has holding register, zero-based address, then exact metric name.
     return lines.some((line) => {
       const match = line.trim().match(/^(4\d{4})\s+(\d+)\s+([a-z_][a-z0-9_]*)\b/);
-      return Boolean(match && Number(match[1]) === 40001 + address &&
-        Number(match[2]) === address && match[3] === metric);
+      return Boolean(
+        match &&
+        Number(match[1]) === 40001 + address &&
+        Number(match[2]) === address &&
+        match[3] === metric,
+      );
     });
   }
   if (source.endsWith("g1000-validated-registers.txt")) {
@@ -97,17 +101,19 @@ function validateSource(path, profile) {
   for (const [metric, entry] of Object.entries(entries)) {
     const covered = documentedSourceAddress(lines, mapping, metric, entry);
     if (covered === null) {
-    const objectNumber = entry.object == null ? "" : String(entry.object);
-    const candidates =
-      entry.address == null
-        ? lines.filter((line) => new RegExp(`^\\s*${objectNumber}\\s+`).test(line))
-        : lines.filter((line) => new RegExp(`^\\s*0*${Number(entry.address)}(?:\\s|-)`).test(line));
-    if (
-      candidates.length === 0 ||
-      (objectNumber && !candidates.some((line) => new RegExp(`\\b${objectNumber}\\b`).test(line)))
-    ) {
-      failures.push(`${path}: ${metric} não confere com a fonte documental`);
-    }
+      const objectNumber = entry.object == null ? "" : String(entry.object);
+      const candidates =
+        entry.address == null
+          ? lines.filter((line) => new RegExp(`^\\s*${objectNumber}\\s+`).test(line))
+          : lines.filter((line) =>
+              new RegExp(`^\\s*0*${Number(entry.address)}(?:\\s|-)`).test(line),
+            );
+      if (
+        candidates.length === 0 ||
+        (objectNumber && !candidates.some((line) => new RegExp(`\\b${objectNumber}\\b`).test(line)))
+      ) {
+        failures.push(`${path}: ${metric} não confere com a fonte documental`);
+      }
     } else if (!covered) {
       failures.push(path + ": " + metric + " não confere com a fonte documental");
     }
@@ -131,40 +137,58 @@ function documentedRestrictedFirstFieldProduction(profile) {
   // Existing, explicitly allowlisted first field-test paths. Command execution
   // remains disabled by default; telemetry mapping stays read-only.
   const known = {
-    "InteliGen NT BaseBox": ["ignt_basebox_privileged",
-      "backend/app/ignt_basebox.py", "RC_ENABLE_IGNT_BASEBOX_CONTROL", true],
-    "InteliLite 4 AMF 25": ["il4_amf25_privileged",
-      "backend/app/il4_amf25.py", "RC_ENABLE_IL4_AMF25_CONTROL", false],
+    "InteliGen NT BaseBox": [
+      "ignt_basebox_privileged",
+      "backend/app/ignt_basebox.py",
+      "RC_ENABLE_IGNT_BASEBOX_CONTROL",
+      true,
+    ],
+    "InteliLite 4 AMF 25": [
+      "il4_amf25_privileged",
+      "backend/app/il4_amf25.py",
+      "RC_ENABLE_IL4_AMF25_CONTROL",
+      false,
+    ],
   };
   const guard = known[profile.model];
-  if (!guard || profile.schema !== 4 || profile.status !== "production" ||
-      profile.mapping?.readOnly !== true ||
-      profile.capabilities?.telemetry !== true ||
-      profile.capabilities?.start !== true || profile.capabilities?.stop !== true ||
-      profile.validation?.field === true ||
-      (profile.validation?.documentation ?? []).length === 0 ||
-      !profile.rapid?.template || (profile.rapid?.channels ?? []).length === 0 ||
-      forbiddenCommands.slice(2).some((name) => profile.capabilities?.[name] !== false))
+  if (
+    !guard ||
+    profile.schema !== 4 ||
+    profile.status !== "production" ||
+    profile.mapping?.readOnly !== true ||
+    profile.capabilities?.telemetry !== true ||
+    profile.capabilities?.start !== true ||
+    profile.capabilities?.stop !== true ||
+    profile.validation?.field === true ||
+    (profile.validation?.documentation ?? []).length === 0 ||
+    !profile.rapid?.template ||
+    (profile.rapid?.channels ?? []).length === 0 ||
+    forbiddenCommands.slice(2).some((name) => profile.capabilities?.[name] !== false)
+  )
     return false;
   for (const name of ["start", "stop"]) {
     const command = profile.commands?.[name];
     const candidate = profile.homologationCandidates?.[name];
-    if (command?.executor !== guard[0] ||
-        command?.confirmation !== name.toUpperCase() ||
-        command?.feedback?.metric !== "rpm" ||
-        !command.preconditions?.includes("allowlisted_generator") ||
-        !command.preconditions?.includes("binding_match") ||
-        !command.preconditions?.includes("controller_online") ||
-        (guard[3] && !command.preconditions?.includes("firmware_exact")) ||
-        candidate?.documented !== true ||
-        candidate?.fieldState !== "authorized_first_field_validation_pending")
+    if (
+      command?.executor !== guard[0] ||
+      command?.confirmation !== name.toUpperCase() ||
+      command?.feedback?.metric !== "rpm" ||
+      !command.preconditions?.includes("allowlisted_generator") ||
+      !command.preconditions?.includes("binding_match") ||
+      !command.preconditions?.includes("controller_online") ||
+      (guard[3] && !command.preconditions?.includes("firmware_exact")) ||
+      candidate?.documented !== true ||
+      candidate?.fieldState !== "authorized_first_field_validation_pending"
+    )
       return false;
   }
   const runtime = read(guard[1]);
-  return runtime.includes(guard[2]) &&
+  return (
+    runtime.includes(guard[2]) &&
     runtime.includes('os.environ.get("' + guard[2] + '", "0")') &&
     runtime.includes("enabled()") &&
-    runtime.includes('and str(generator.get("id") or "") in allowlist()');
+    runtime.includes('and str(generator.get("id") or "") in allowlist()')
+  );
 }
 
 function validateLineOptions(path, profile) {
@@ -232,7 +256,11 @@ for (const path of productionPaths) {
       failures.push(`${path}: capability ${command} exige contrato commands.${command}`);
     }
   }
-  if (profile.status !== "field_validated" && !documentedReadOnlyProduction(profile) && !documentedRestrictedFirstFieldProduction(profile)) {
+  if (
+    profile.status !== "field_validated" &&
+    !documentedReadOnlyProduction(profile) &&
+    !documentedRestrictedFirstFieldProduction(profile)
+  ) {
     failures.push(
       `${path}: production exige field_validated ou contrato documental estritamente read-only`,
     );
@@ -366,17 +394,23 @@ for (const item of comapCatalog) {
       failures.push(`ComAp: ${item.model} marcado production_read_only sem pack documental real`);
     }
   } else if (item.supportState === "production_documented_read_only") {
-    if (item.model !== "InteliGen NT BaseBox" || !production ||
-        !documentedRestrictedFirstFieldProduction(production.profile) ||
-        (production.profile.validatedTelemetry ?? []).length !== 0 ||
-        !item.supportPack)
+    if (
+      item.model !== "InteliGen NT BaseBox" ||
+      !production ||
+      !documentedRestrictedFirstFieldProduction(production.profile) ||
+      (production.profile.validatedTelemetry ?? []).length !== 0 ||
+      !item.supportPack
+    )
       failures.push("ComAp: " + item.model + " sem contrato documental restrito");
   } else if (item.supportState === "production_minimal_field_map") {
-    if (item.model !== "InteliLite 4 AMF 25" || !production ||
-        !documentedRestrictedFirstFieldProduction(production.profile) ||
-        production.profile.validation?.lab !== true ||
-        !(production.profile.validatedTelemetry ?? []).includes("rpm") ||
-        !item.supportPack)
+    if (
+      item.model !== "InteliLite 4 AMF 25" ||
+      !production ||
+      !documentedRestrictedFirstFieldProduction(production.profile) ||
+      production.profile.validation?.lab !== true ||
+      !(production.profile.validatedTelemetry ?? []).includes("rpm") ||
+      !item.supportPack
+    )
       failures.push("ComAp: " + item.model + " sem contrato mínimo restrito");
   } else if (item.supportState === "registration_only") {
     if (item.application !== "genset") {
