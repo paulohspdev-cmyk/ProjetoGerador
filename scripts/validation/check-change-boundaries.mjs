@@ -43,7 +43,10 @@ export function changeDomain(input) {
     return "frontend:generator-list";
   }
 
-  if (path === "frontend/src/features/generators/GeneratorsBoard.tsx") {
+  if (
+    path === "frontend/src/features/generators/GeneratorsBoard.tsx" ||
+    path === "frontend/src/features/generators/vertical-board-layout.ts"
+  ) {
     return "frontend:generator-board";
   }
 
@@ -210,6 +213,12 @@ if (process.argv.includes("--self-test")) {
   if (!rejected) {
     throw new Error("self-test: mistura Vertical+Compacto deveria ser rejeitada");
   }
+  validate([
+    "frontend/src/features/generators/GeneratorsBoard.tsx",
+    "frontend/src/features/generators/vertical-board-layout.ts",
+    "docs/governance/PROJECT_STATE.md",
+  ]);
+
   process.stdout.write("Self-test de fronteiras: OK\n");
 } else {
   validate(changedFiles());

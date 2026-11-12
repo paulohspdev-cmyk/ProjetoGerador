@@ -30,6 +30,12 @@ import { KpiStrip } from "./KpiStrip";
 import { PowerFlowCard } from "./PowerFlowCard";
 import { useGenerators } from "./GeneratorsProvider";
 import {
+  calculateVerticalGridStyle,
+  calculateVerticalLayout,
+  verticalColumnCount,
+  verticalRowCount,
+} from "./vertical-board-layout";
+import {
   COMPACT_GAP,
   COMPACT_MIN_CARD_HEIGHT,
   COMPACT_MIN_CARD_WIDTH,
@@ -45,27 +51,6 @@ const views: Array<{ id: View; label: string; icon: typeof List }> = [
   { id: "compacto", label: "Compacto", icon: LayoutGrid },
   { id: "lista", label: "Lista", icon: List },
 ];
-
-const VERTICAL_GAP = 8;
-const VERTICAL_PADDING = 4;
-const VERTICAL_MIN_CARD_WIDTH = 285;
-const VERTICAL_MIN_CARD_HEIGHT = 720;
-
-function verticalColumnCount(width: number) {
-  const usableWidth = Math.max(1, width - VERTICAL_PADDING * 2);
-  return Math.max(
-    1,
-    Math.floor((usableWidth + VERTICAL_GAP) / (VERTICAL_MIN_CARD_WIDTH + VERTICAL_GAP)),
-  );
-}
-
-function verticalRowCount(height: number) {
-  const usableHeight = Math.max(1, height - VERTICAL_PADDING * 2);
-  return Math.max(
-    1,
-    Math.floor((usableHeight + VERTICAL_GAP) / (VERTICAL_MIN_CARD_HEIGHT + VERTICAL_GAP)),
-  );
-}
 
 const filters: Array<{ id: GenStatus | "todos"; label: string }> = [
   { id: "todos", label: "Todos" },
@@ -109,25 +94,10 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
     return () => observer.disconnect();
   }, []);
 
-  const verticalLayout = useMemo(() => {
-    const width = Math.max(1, viewport.width || 1200);
-    const height = Math.max(1, viewport.height || 720);
-    const usableWidth = Math.max(1, width - VERTICAL_PADDING * 2);
-    const usableHeight = Math.max(1, height - VERTICAL_PADDING * 2);
-    const columns = verticalColumnCount(width);
-    const rows = verticalRowCount(height);
-    const cardWidth =
-      (usableWidth - VERTICAL_GAP * Math.max(0, columns - 1)) / Math.max(1, columns);
-    const cardHeight = (usableHeight - VERTICAL_GAP * Math.max(0, rows - 1)) / Math.max(1, rows);
-
-    return {
-      columns,
-      rows,
-      pageSize: columns * rows,
-      cardWidth: Math.max(1, cardWidth),
-      cardHeight: Math.max(1, cardHeight),
-    };
-  }, [viewport]);
+  const verticalLayout = useMemo(
+    () => calculateVerticalLayout(viewport.width, viewport.height),
+    [viewport],
+  );
 
   useEffect(() => {
     if (!fullscreen || view !== "principal") {
@@ -227,33 +197,17 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
     [compactLayoutState],
   );
 
-  const verticalGridStyle = useMemo(() => {
-    const columns = Math.max(1, fullscreenVerticalGrid?.columns ?? verticalLayout.columns);
-    const rows = Math.max(1, fullscreenVerticalGrid?.rows ?? verticalLayout.rows);
-    const usableWidth = Math.max(1, (viewport.width || 1200) - VERTICAL_PADDING * 2);
-    const usableHeight = Math.max(1, (viewport.height || 720) - VERTICAL_PADDING * 2);
-    // Preserve the normal grid even when the current page/filter has only a
-    // partial row. This keeps cards at their standard width and always places
-    // the first generator in the left-most column instead of stretching a
-    // single card across the entire viewport.
-    const displayColumns = columns;
-    const displayRows = Math.max(
-      1,
-      Math.min(rows, Math.ceil(Math.max(1, visible.length) / displayColumns)),
-    );
-    const cardWidth =
-      (usableWidth - VERTICAL_GAP * Math.max(0, displayColumns - 1)) / displayColumns;
-    const cardHeight = (usableHeight - VERTICAL_GAP * Math.max(0, displayRows - 1)) / displayRows;
-
-    return {
-      "--vref-columns": displayColumns,
-      "--vref-rows": displayRows,
-      "--vref-card-width": Math.max(1, cardWidth) + "px",
-      "--vref-card-height": Math.max(1, cardHeight) + "px",
-      "--vref-gap": VERTICAL_GAP + "px",
-      "--vref-padding": VERTICAL_PADDING + "px",
-    } as CSSProperties;
-  }, [verticalLayout, fullscreenVerticalGrid, viewport.width, viewport.height, visible.length]);
+  const verticalGridStyle = useMemo(
+    () =>
+      calculateVerticalGridStyle({
+        layout: verticalLayout,
+        fullscreenGrid: fullscreenVerticalGrid,
+        viewportWidth: viewport.width,
+        viewportHeight: viewport.height,
+        visibleCount: visible.length,
+      }),
+    [verticalLayout, fullscreenVerticalGrid, viewport.width, viewport.height, visible.length],
+  );
 
   const trulyEmpty = ready && !error && generators.length === 0;
   const filterEmpty = ready && !error && generators.length > 0 && visible.length === 0;
