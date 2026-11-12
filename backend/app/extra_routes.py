@@ -362,9 +362,12 @@ def _ip_allowed(remote_ip: str, cidrs: list[str]) -> bool:
 
 
 def external_token(request: Request, authorization: str | None = Header(default=None)):
-    if not authorization or not authorization.lower().startswith("bearer "):
+    if not authorization:
         raise HTTPException(status_code=401, detail="Bearer token obrigatório")
-    raw = authorization.split(None, 1)[1].strip()
+    scheme, separator, credential = authorization.partition(" ")
+    if scheme.lower() != "bearer" or not separator or not credential.strip():
+        raise HTTPException(status_code=401, detail="Bearer token obrigatório")
+    raw = credential.strip()
     token = platform_store.authenticate_api_token(raw)
     if not token:
         raise HTTPException(status_code=401, detail="Token inválido ou expirado")
