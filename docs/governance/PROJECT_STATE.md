@@ -1,5 +1,12 @@
 # Estado oficial do projeto
 
+## API externa — cabeçalho Bearer vazio (12/11/2026; PR isolado)
+
+- Domínio: backend/API de autenticação externa. A auditoria de 14/10 identificou dois formatos de header Bearer vazio que geravam HTTP 500; contrato correto é 401 sem autenticação.
+- Corrige extração do token com checagem explícita de scheme, separador e credencial não vazia antes de solicitar autenticação. Permissões, autenticação real, scopes, allowlists e rate limiting permanecem inalterados.
+- Regressão no teste audit_regressions.py verifica oito formatos inválidos, incluindo espaços e tabulações, sempre HTTP 401. Não envia nenhum comando industrial.
+- Risco: nenhum token válido deve perder acesso; requer suíte backend e CI antes de integrar. Rollback: reverter PR. Nenhum deploy na VM nesta alteração.
+
 ## Cadastro de geradores — confirmação explícita (12/11/2026; PR isolado)
 
 - Domínio: frontend de cadastro/edição (CAD-01 da auditoria de 14/10). A etapa 2 de Comunicação deve somente avançar para Confirmação; não cria cadastro nem inicia provisionamento antes de clicar no botão final.
