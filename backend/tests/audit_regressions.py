@@ -1576,6 +1576,29 @@ assert not duplicates, duplicates
 print("Production hardening regressions: OK")
 
 
+# SEC-API-001: malformed or empty bearer credentials must always return 401, not 500.
+from fastapi import HTTPException  # noqa: E402
+from app.extra_routes import external_token  # noqa: E402
+
+for malformed_header in (
+    None,
+    "",
+    "Bearer",
+    "Bearer ",
+    "Bearer   ",
+    "Bearer \t  ",
+    "Basic test",
+    "Bearer\ttest",
+):
+    try:
+        external_token(request=None, authorization=malformed_header)
+    except HTTPException as exc:
+        assert exc.status_code == 401, malformed_header
+    else:
+        raise AssertionError(f"Malformed API Authorization was accepted: {malformed_header!r}")
+print("API bearer malformed header regression: OK")
+
+
 # Fxx: external API tokens must persist scopes/allowlists, enforce rate limiting and revoke cleanly.
 raw_token, token_item = platform_store.create_api_token(
     "audit read token",

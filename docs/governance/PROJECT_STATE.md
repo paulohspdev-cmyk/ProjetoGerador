@@ -18,6 +18,21 @@
 - Esta etapa não contém sonda nem mapa FC04 nem documentação LAB; essas superfícies ficam em PRs encadeados próprios para respeitar fronteiras.
 - Firmware, variante, Unit ID, endereço de campo, escala e retorno real permanecem não homologados. Sem deploy da VM. Rollback por revert do PR #237.
 
+## Auditorias históricas consolidadas (12/11/2026; documentação)
+
+- As constatações dos PRs de outubro #235 (CAD-01–CAD-14) e #236 (SYS-001/002/003/006/007) foram sintetizadas em `docs/audit/AUDIT_CONSOLIDATED_2026-11-12.md`, sem importar inventários brutos de produção potencialmente sensíveis.
+- Os relatórios de outubro são fotografias do SHA afec24a; suas contagens não são uma declaração sobre a main atual. As pendências permanecem rastreadas na issue #106.
+- CAD-01: frontend corrigido no PR #249 e integrado à main com CI/E2E; SYS-006: PR #250 de backend com regressão 401, conferir integração no GitHub.
+- As branches e PRs originais seguem preservados como referências históricas. Consolidar documentos **não** significa declarar resolvidos CAD-02–CAD-14 ou os SYS restantes.
+- Não foi executado deploy, modificação de banco/SCADA/Modbus, nem alteração de controladoras nesta triagem. Rollback: reverter PR documental.
+
+## API externa — cabeçalho Bearer vazio (12/11/2026; PR isolado)
+
+- Domínio: backend/API de autenticação externa. A auditoria de 14/10 identificou dois formatos de header Bearer vazio que geravam HTTP 500; contrato correto é 401 sem autenticação.
+- Corrige extração do token com checagem explícita de scheme, separador e credencial não vazia antes de solicitar autenticação. Permissões, autenticação real, scopes, allowlists e rate limiting permanecem inalterados.
+- Regressão no teste audit_regressions.py verifica oito formatos inválidos, incluindo espaços e tabulações, sempre HTTP 401. Não envia nenhum comando industrial.
+- Risco: nenhum token válido deve perder acesso; requer suíte backend e CI antes de integrar. Rollback: reverter PR. Nenhum deploy na VM nesta alteração.
+
 ## Cadastro de geradores — confirmação explícita (12/11/2026; PR isolado)
 
 - Domínio: frontend de cadastro/edição (CAD-01 da auditoria de 14/10). A etapa 2 de Comunicação deve somente avançar para Confirmação; não cria cadastro nem inicia provisionamento antes de clicar no botão final.
