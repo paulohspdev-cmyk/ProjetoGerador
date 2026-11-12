@@ -1,5 +1,14 @@
 # Estado oficial do projeto
 
+## Frontend — extração de cálculo do layout vertical (2026-11-12; PR em rascunho)
+
+- Domínio: **Layout da tela Geradores**, sem modificar cards Vertical, Compacto ou Lista. Base `main` em `ab39aba32da77cd559ad9fd6d29d0cad058561ca`.
+- Motivo: CI da `main` falhou em `check:architecture` porque `GeneratorsBoard.tsx` ultrapassou 20 KiB. O cálculo puro do layout vertical foi movido para `frontend/src/features/generators/vertical-board-layout.ts`. O Board passou de 21.354 para 19.185 bytes.
+- Regras matemáticas, paginação, resolução, viewport, grid e estilos foram preservados; o novo módulo não faz leitura industrial, filtragem de geradores nem comando. Verificar comportamento com CI/TypeScript/build e E2E antes de integrar.
+- Mudança somente no GitHub, não aplicada na VM. Sem reinício, deploy, alteração de modem, Rapid, bridge, banco, Controller Pack ou 2FA.
+- Regressão requerida: `npm run check:architecture`, `npm run check`, E2E de responsividade, fullscreen e cards, e revisão do diff. Falha preexistente de dependências em Quality and Security é tratada isoladamente na issue #240.
+- Rollback: reverter este PR de frontend. Continuidade: após testes e aprovação, integrar na `main` e implantar pelo procedimento transacional; não alterar marcador de implantação antes do deploy validado.
+
 ## Evidência de implantação dedicada — 2026-10-11
 
 - Domínio: governança/documentação. Branch `docs/production-release-evidence-20261011`, base e release funcional `e0fc6a551e0c0432aae6002d956a8cd328766f08`; PRs #225–#233 integrados. Este registro modifica somente esta documentação e não altera runtime.
