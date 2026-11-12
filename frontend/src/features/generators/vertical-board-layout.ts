@@ -23,7 +23,6 @@ export function verticalRowCount(height: number) {
   );
 }
 
-
 export function calculateVerticalLayout(viewportWidth: number, viewportHeight: number) {
   const width = Math.max(1, viewportWidth || 1200);
   const height = Math.max(1, viewportHeight || 720);
@@ -68,10 +67,8 @@ export function calculateVerticalGridStyle({
     1,
     Math.min(rows, Math.ceil(Math.max(1, visibleCount) / displayColumns)),
   );
-  const cardWidth =
-    (usableWidth - VERTICAL_GAP * Math.max(0, displayColumns - 1)) / displayColumns;
-  const cardHeight =
-    (usableHeight - VERTICAL_GAP * Math.max(0, displayRows - 1)) / displayRows;
+  const cardWidth = (usableWidth - VERTICAL_GAP * Math.max(0, displayColumns - 1)) / displayColumns;
+  const cardHeight = (usableHeight - VERTICAL_GAP * Math.max(0, displayRows - 1)) / displayRows;
 
   return {
     "--vref-columns": displayColumns,
