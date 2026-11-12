@@ -1,5 +1,11 @@
 # Estado oficial do projeto
 
+## DEIF AGC 150 — plano LAB de homologação FC04 (12/11/2026)
+
+- Domínio exclusivo controller-pack:lab. Documenta variantes DEIF, leitura FC04 candidata, requisitos de firmware, Unit ID, escalas e comparação com o display físico. Não publica mapa homologado nem declara equipamento online.
+- Requer catálogo técnico PR #237 previamente integrado, sonda FC04 em PR separado de tooling e testes de leitura exclusivamente read-only. Sem START/STOP, sem provisioning e sem deploy.
+- Rollback: reverter PR de documentação LAB.
+
 ## DEIF AGC 150 — catalogação somente técnica (12/11/2026; PR #237)
 
 - Domínio exclusivo controller-catalog. Adiciona o modelo AGC 150 com status inventory_only, supportState registration_only, provisionable=false, sem Controller Pack de produção, sem provisioning automático e sem qualquer capacidade de START/STOP.
