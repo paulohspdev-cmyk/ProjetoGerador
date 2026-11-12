@@ -1,5 +1,11 @@
 # Estado oficial do projeto
 
+## DEIF AGC 150 — sonda FC04 somente leitura (12/11/2026)
+
+- Domínio controller-tooling. Inclui utilitário Modbus/TCP que aceita host, port e Unit ID por CLI, limita a FC04 (input registers), valida MBAP, exceções, signed-int16 e exige confirmação externa de escalas e variante.
+- Testes locais: seis cenários de framing, signed, exceção, Unit ID e no broadcast. Os registros exemplificativos são candidatos documentais, não homologação de campo.
+- DEPENDÊNCIAS: catálogo PR #237 e documentação LAB PR #252. Nenhum comando de escrita, alteração Rapid, banco, serviço ou VM. Rollback: reverter PR de tooling.
+
 ## DEIF AGC 150 — plano LAB de homologação FC04 (12/11/2026)
 
 - Domínio exclusivo controller-pack:lab. Documenta variantes DEIF, leitura FC04 candidata, requisitos de firmware, Unit ID, escalas e comparação com o display físico. Não publica mapa homologado nem declara equipamento online.
