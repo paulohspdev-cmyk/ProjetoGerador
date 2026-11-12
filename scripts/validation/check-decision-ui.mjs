@@ -72,11 +72,7 @@ for (const marker of [
   if (!board.includes(marker))
     failures.push(`toolbar/modos de geradores perdeu seletor ou contrato responsivo: ${marker}`);
 }
-for (const marker of [
-  "VERTICAL_MIN_CARD_WIDTH",
-  "VERTICAL_MIN_CARD_HEIGHT",
-  "columns * rows",
-]) {
+for (const marker of ["VERTICAL_MIN_CARD_WIDTH", "VERTICAL_MIN_CARD_HEIGHT", "columns * rows"]) {
   if (!boardLayout.includes(marker)) {
     failures.push(`layout vertical perdeu contrato responsivo: ${marker}`);
   }
