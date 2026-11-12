@@ -6,6 +6,7 @@
 - Incluído utilitário diagnóstico Modbus/TCP exclusivamente FC04, que exige host/port/Unit ID explícitos, junto à documentação de homologação e regressões offline de framing/exceções/Unit.
 - O endereço 10.60.15.107 é histórico do equipamento de campo, não parâmetro global nem prova de conectividade atual; variante, firmware, Unit ID, mapa FC04 e resultados de display físico seguem pendentes.
 - Esta integração altera apenas catálogo LAB/ferramentas, não a VM de produção. Para ativar telemetria, usar PR próprio após homologação física e dry-run. Rollback: reverter PR #237.
+- Testes realizados em clone isolado da branch atual: seis cenários unitários FC04, npm ci, npm run check (arquitetura, superfícies, lint, TypeScript e build), npm audit (zero vulnerabilidades). Esses testes não substituem validação física; exigir CI e E2E do GitHub antes da integração.
 
 ## Situação da organização GitHub — 12/11/2026 (pós-integração)
 
