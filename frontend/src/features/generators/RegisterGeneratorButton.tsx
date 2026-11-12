@@ -194,6 +194,9 @@ export function RegisterGeneratorButton({
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
+    if (step !== 3 || saving) return;
+    const submitter = (event.nativeEvent as SubmitEvent).submitter;
+    if (submitter?.getAttribute("data-rc-register-confirm") !== "true") return;
     if (createdId) {
       await retryProvision();
       return;
@@ -483,6 +486,7 @@ export function RegisterGeneratorButton({
 
               {step < 3 ? (
                 <button
+                  key="register-continue"
                   type="button"
                   onClick={() => setStep((value) => Math.min(3, value + 1))}
                   disabled={loading || (step === 1 ? !canContinueStep1 : !canContinueStep2)}
@@ -492,6 +496,8 @@ export function RegisterGeneratorButton({
                 </button>
               ) : (
                 <button
+                  key="register-confirm"
+                  data-rc-register-confirm="true"
                   type="submit"
                   disabled={saving}
                   className="h-10 rounded-lg bg-primary px-5 text-sm font-extrabold text-primary-foreground disabled:opacity-50"
