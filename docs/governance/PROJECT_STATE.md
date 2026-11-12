@@ -1,5 +1,15 @@
 # Estado oficial do projeto
 
+## Resultado da organização GitHub — encerramento da rodada de 12/11/2026
+
+- Main em `8f292d5fd6e7d39b62fafc568cef23ed3078832f` após PRs #249 (CAD-01), #250 (SYS-006), #251 (consolidado auditável), #237 (catálogo AGC150), #252 (LAB), #253 (sonda read-only), além dos PRs anteriores de CI e dependências. Os testes Quality and Security e E2E independentes do commit passaram; CI validate passou e E2E duplicado da execução CI deve ser confirmado antes da publicação de release.
+- `npm audit` chegou a zero vulnerabilidades (todas as severidades) nas versões testadas e integradas; as notas anteriores sobre sete alertas moderados são **fotografias de antes do PR #248**.
+- PRs antigos #62, #235 e #236 encerrados administrativamente, **sem merge e sem exclusão das branches**. Auditores CAD/SYS consolidados em `docs/audit/AUDIT_CONSOLIDATED_2026-11-12.md`, com defeitos ainda abertos na issue #106.
+- PRs abertos: **zero** antes de iniciar este PR exclusivamente documental. Issues abertas: **12**, por corresponderem a tarefas industriais, backend, rede, segurança e deploy ainda sem evidências de conclusão.
+- Inventário completo de **149 branches** (incluindo a branch temporária deste PR), registrado em `docs/governance/BRANCH_INVENTORY_2026-11-12.md`. Nenhuma exclusão. Branch protection ainda não foi aplicada (`main.protected=false` na API).
+- O checkout/build/marcador de deploy da **VM dedicada permanecem fora de sincronia verificada**; nenhum deploy, DB migration, reinício, START/STOP ou escrita Modbus foi efetuado nesta rodada. Field tests DEIF e demais controladoras ainda são requisitos separados.
+- Próximo aceite de governança: ativar PR+review+checks obrigatórios em Settings → Rules; revisar branches históricas individualmente; executar deploy separado com backup, smoke e rollback. Rastreio na issue #238.
+
 ## DEIF AGC 150 — sonda FC04 somente leitura (12/11/2026)
 
 - Domínio controller-tooling. Inclui utilitário Modbus/TCP que aceita host, port e Unit ID por CLI, limita a FC04 (input registers), valida MBAP, exceções, signed-int16 e exige confirmação externa de escalas e variante.
