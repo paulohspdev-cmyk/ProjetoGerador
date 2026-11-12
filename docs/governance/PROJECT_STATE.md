@@ -1,12 +1,17 @@
 # Estado oficial do projeto
 
-## DEIF AGC 150 — catálogo técnico e sonda FC04 (12/11/2026)
+## DEIF AGC 150 — catalogação somente técnica (12/11/2026; PR #237)
 
-- Modelo DEIF AGC 150 adicionado somente como registration_only/inventory_only, sem pack de produção, sem provisionamento Rapid, sem START/STOP, sem capacidade de comando e sem leitura validada em campo.
-- Incluído utilitário diagnóstico Modbus/TCP exclusivamente FC04, que exige host/port/Unit ID explícitos, junto à documentação de homologação e regressões offline de framing/exceções/Unit.
-- O endereço 10.60.15.107 é histórico do equipamento de campo, não parâmetro global nem prova de conectividade atual; variante, firmware, Unit ID, mapa FC04 e resultados de display físico seguem pendentes.
-- Esta integração altera apenas catálogo LAB/ferramentas, não a VM de produção. Para ativar telemetria, usar PR próprio após homologação física e dry-run. Rollback: reverter PR #237.
-- Testes realizados em clone isolado da branch atual: seis cenários unitários FC04, npm ci, npm run check (arquitetura, superfícies, lint, TypeScript e build), npm audit (zero vulnerabilidades). Esses testes não substituem validação física; exigir CI e E2E do GitHub antes da integração.
+- Domínio exclusivo controller-catalog. Adiciona o modelo AGC 150 com status inventory_only, supportState registration_only, provisionable=false, sem Controller Pack de produção, sem provisioning automático e sem qualquer capacidade de START/STOP.
+- Esta etapa não contém sonda nem mapa FC04 nem documentação LAB; essas superfícies ficam em PRs encadeados próprios para respeitar fronteiras.
+- Firmware, variante, Unit ID, endereço de campo, escala e retorno real permanecem não homologados. Sem deploy da VM. Rollback por revert do PR #237.
+
+## Cadastro de geradores — confirmação explícita (12/11/2026; PR isolado)
+
+- Domínio: frontend de cadastro/edição (CAD-01 da auditoria de 14/10). A etapa 2 de Comunicação deve somente avançar para Confirmação; não cria cadastro nem inicia provisionamento antes de clicar no botão final.
+- Mudança proposta: botões Continuar e Confirmar usam identidades React distintas, submit exige step 3 e evento de envio exclusivamente do botão final, sem alterar contrato da API, banco, transportes nem packs.
+- Prova: teste E2E existente de cadastro registration-only valida que nenhum POST /api/generators foi disparado após clicar em Continuar; após confirmação única, exige um POST. CI/E2E do PR obrigatórios.
+- Risco/rollback: apenas formulário de novo gerador; reverter PR se o cadastro não concluir. Nenhum deploy na VM, alteração de controladora, Modbus de escrita ou automação física nesta alteração.
 
 ## Situação da organização GitHub — 12/11/2026 (pós-integração)
 
