@@ -1,5 +1,11 @@
 # Estado oficial do projeto
 
+## DEIF AGC 150 — catalogação somente técnica (12/11/2026; PR #237)
+
+- Domínio exclusivo controller-catalog. Adiciona o modelo AGC 150 com status inventory_only, supportState registration_only, provisionable=false, sem Controller Pack de produção, sem provisioning automático e sem qualquer capacidade de START/STOP.
+- Esta etapa não contém sonda nem mapa FC04 nem documentação LAB; essas superfícies ficam em PRs encadeados próprios para respeitar fronteiras.
+- Firmware, variante, Unit ID, endereço de campo, escala e retorno real permanecem não homologados. Sem deploy da VM. Rollback por revert do PR #237.
+
 ## Auditorias históricas consolidadas (12/11/2026; documentação)
 
 - As constatações dos PRs de outubro #235 (CAD-01–CAD-14) e #236 (SYS-001/002/003/006/007) foram sintetizadas em `docs/audit/AUDIT_CONSOLIDATED_2026-11-12.md`, sem importar inventários brutos de produção potencialmente sensíveis.
