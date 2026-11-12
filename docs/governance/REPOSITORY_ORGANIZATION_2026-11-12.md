@@ -2,6 +2,15 @@
 
 > Auditoria de 12/11/2026. Este documento define **processo e inventário**, não homologa equipamentos e não altera o runtime. Controle principal: [#238](https://github.com/paulohspdev-cmyk/ProjetoGerador/issues/238).
 
+## Atualização de 12/11/2026 — situação após correções
+
+- A `main` foi atualizada para `8f292d5` e Quality and Security e E2E independentes passaram; a etapa de validação do CI passou, restando confirmar a duplicata de E2E no run final.
+- Os PRs de segurança, frontend, API e validação industrial foram integrados após testes. Os antigos PRs #62, #235 e #236 foram arquivados sem merge, mantendo branches e histórico. O trabalho DEIF foi dividido por domínios e não habilitou comandos.
+- `docs/governance/BRANCH_INVENTORY_2026-11-12.md` agora contém a listagem recente de **149 referências**, inclusive esta branch documental; o total flutua conforme PRs e branches são criados.
+- **Não excluímos branches nem ativamos proteção da main.** A conexão GitHub disponível não oferece alteração de ruleset ou delete-ref; para evitar perda de versões por cliente, mantenha revisão manual dessas ações.
+- Uma issue aberta pode representar trabalho real; os 12 itens remanescentes não são X vermelhos de CI e não devem ser encerrados ficticiamente.
+- Este documento preserva abaixo a fotografia histórica anterior às integrações, que não deve ser usada como status atual.
+
 ## 1. Fonte oficial e regras de publicação
 
 - **`main`**: ramo de integração do produto. Mudanças devem entrar por PR com verificações aprovadas; não fazer push direto para `main`.
