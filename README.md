@@ -6,6 +6,8 @@ Plataforma SCADA/gestão para grupos geradores e ativos elétricos, com **Rapid 
 
 A política de branches, PRs, inventário de versões, ações de segurança e plano de limpeza segura está em [Organização do repositório (12/11/2026)](docs/governance/REPOSITORY_ORGANIZATION_2026-11-12.md). O acompanhamento é feito na [issue #238](https://github.com/paulohspdev-cmyk/ProjetoGerador/issues/238). Não excluir branches históricas nem alterar a VM sem revisão dos impactos.
 
+As pendências das auditorias de cadastro e da matriz sistêmica de outubro foram consolidadas em [Auditorias históricas e pendências (12/11/2026)](docs/audit/AUDIT_CONSOLIDATED_2026-11-12.md), com critérios de revalidação. Os relatórios antigos continuam acessíveis nos PRs #235 e #236.
+
 ## Arquitetura
 
 ```text
