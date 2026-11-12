@@ -2,6 +2,10 @@
 
 Plataforma SCADA/gestão para grupos geradores e ativos elétricos, com **Rapid SCADA como motor industrial** e o painel RC Geradores como camada de produto.
 
+## Manutenção e organização do GitHub
+
+A política de branches, PRs, inventário de versões, ações de segurança e plano de limpeza segura está em [Organização do repositório (12/11/2026)](docs/governance/REPOSITORY_ORGANIZATION_2026-11-12.md). O acompanhamento é feito na [issue #238](https://github.com/paulohspdev-cmyk/ProjetoGerador/issues/238). Não excluir branches históricas nem alterar a VM sem revisão dos impactos.
+
 ## Arquitetura
 
 ```text
