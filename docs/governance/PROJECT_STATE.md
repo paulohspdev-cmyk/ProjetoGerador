@@ -1,5 +1,13 @@
 # Estado oficial do projeto
 
+## Auditoria de organização GitHub — 2026-11-12 (somente documentação)
+
+- Inventário da `main`: `ab39aba32da77cd559ad9fd6d29d0cad058561ca`; 432 arquivos. Branch da VM: `feat/g113-ignt-readonly-preflight` em `e3f20c7ad8979234f2fbbba2ace5123628160f8d`, checkout limpo, 1 commit de pré-homologação somente leitura à frente da `main`.
+- Marcador de implantação informado pela VM: `afec24a685e23707d7d2c230f6a3e373a8cd8ff6`, divergente; não foi modificado nesta etapa. Requer auditoria de build, runtime e deploy antes de reconciliação.
+- GitHub com 135 branches e quatro PRs draft (#62, #235, #236, #237). Nenhuma branch removida; critérios de triagem e governança registrados em `docs/governance/REPOSITORY_ORGANIZATION_2026-11-12.md`.
+- No run mais recente da `main` em 29/10/2026, CI falha no limite de tamanho de `GeneratorsBoard.tsx` e Quality and Security acusa 8 vulnerabilidades npm (5 críticas/3 altas); E2E separado passou. Acompanhamento nas issues #238, #239 e #240. É preciso revalidar em branch isolada antes de correção.
+- Domínio: documentação/governança. Não houve alteração de runtime, frontend compilado, banco, Rapid operacional, serviços ou controladoras; nenhuma escrita Modbus ou comando físico foi enviada. Rollback: reverter PR documental. Próximos passos: PRs distintos por segurança, frontend, drift e higiene de branches, com CI e aprovação.
+
 ## Evidência de implantação dedicada — 2026-10-11
 
 - Domínio: governança/documentação. Branch `docs/production-release-evidence-20261011`, base e release funcional `e0fc6a551e0c0432aae6002d956a8cd328766f08`; PRs #225–#233 integrados. Este registro modifica somente esta documentação e não altera runtime.
