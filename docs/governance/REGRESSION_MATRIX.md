@@ -44,6 +44,8 @@ Toda correção deve acrescentar ou reforçar uma linha desta matriz.
 | SEC-002 | Segurança | artefatos operacionais respeitam menor privilégio | smoke de permissões |
 | CONT-001 | Continuidade | PROJECT_STATE atualizado no PR | validação CI |
 
+| SEC-API-001 | API externa | Bearer ausente, vazio ou malformado retorna HTTP 401, nunca 500 | Backend audit_regressions.py + testes da API |
+
 ## Regra
 
 Não remover um teste de regressão para fazer o build passar. Se o contrato mudou de propósito, alterar primeiro o contrato/documentação e registrar a decisão.
