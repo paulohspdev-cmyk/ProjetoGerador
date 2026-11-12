@@ -50,6 +50,9 @@ if (!dashboardModel.includes("readGeneratorTelemetry(generator)")) {
 }
 
 const board = read("frontend/src/features/generators/GeneratorsBoard.tsx");
+const boardLayout = board.includes('from "./vertical-board-layout"')
+  ? read("frontend/src/features/generators/vertical-board-layout.ts")
+  : board;
 const triggers = [...board.matchAll(/<DropdownMenuTrigger\b/g)].length;
 if (triggers !== 2)
   failures.push(`toolbar de geradores deve ter dois seletores; encontrou ${triggers}`);
@@ -62,15 +65,17 @@ for (const marker of [
   "<CompactCard",
   "<GeneratorTable",
   "ResizeObserver",
-  "VERTICAL_MIN_CARD_WIDTH",
-  "VERTICAL_MIN_CARD_HEIGHT",
   "COMPACT_MIN_CARD_WIDTH",
   "COMPACT_MIN_CARD_HEIGHT",
-  "columns * rows",
   "compact-generator-grid",
 ]) {
   if (!board.includes(marker))
     failures.push(`toolbar/modos de geradores perdeu seletor ou contrato responsivo: ${marker}`);
+}
+for (const marker of ["VERTICAL_MIN_CARD_WIDTH", "VERTICAL_MIN_CARD_HEIGHT", "columns * rows"]) {
+  if (!boardLayout.includes(marker)) {
+    failures.push(`layout vertical perdeu contrato responsivo: ${marker}`);
+  }
 }
 for (const forbidden of ["Cards verticais", "Cards compactos"]) {
   if (board.includes(forbidden))
@@ -83,7 +88,7 @@ if (board.includes('import "./operator-card-refinement.css"')) {
   failures.push("board voltou a carregar CSS concorrente do card vertical");
 }
 
-const verticalMinHeightMatch = board.match(/const VERTICAL_MIN_CARD_HEIGHT = (\d+);/);
+const verticalMinHeightMatch = boardLayout.match(/const VERTICAL_MIN_CARD_HEIGHT = (\d+);/);
 const verticalMinHeight = verticalMinHeightMatch ? Number(verticalMinHeightMatch[1]) : NaN;
 if (!Number.isFinite(verticalMinHeight) || verticalMinHeight > 780) {
   failures.push(
