@@ -1,5 +1,12 @@
 # Estado oficial do projeto
 
+## Governança de domínios: helper de layout da tela Geradores — 2026-11-12
+
+- Branch `fix/board-layout-boundary-20261112` baseada em `ab39aba32da77cd559ad9fd6d29d0cad058561ca`. Domínio exclusivo: **governança/CI**, sem alteração de runtime.
+- Classifica `frontend/src/features/generators/vertical-board-layout.ts` no mesmo domínio de `GeneratorsBoard.tsx` para permitir extração de matemática pura por PR encadeado; mantém rejeição de mistura com Vertical, Compacto, Lista, Provider e transportes.
+- Regressão: `node scripts/validation/check-change-boundaries.mjs --self-test` verifica classificação; o guardrail geral continua estrito. CI da `main` já estava vermelho por tamanho de `GeneratorsBoard.tsx`; o reparo real fica no PR frontend separado (issue #239).
+- Não alterou VM, compilação, Rapid, bridge, banco, modems, 2FA ou capacidades industriais. Rollback: reverter PR de governança.
+
 ## Evidência de implantação dedicada — 2026-10-11
 
 - Domínio: governança/documentação. Branch `docs/production-release-evidence-20261011`, base e release funcional `e0fc6a551e0c0432aae6002d956a8cd328766f08`; PRs #225–#233 integrados. Este registro modifica somente esta documentação e não altera runtime.
