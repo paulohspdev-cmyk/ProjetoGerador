@@ -1,13 +1,50 @@
 # Estado oficial do projeto
 
-## DEIF AGC 150 — catálogo e pré-homologação FC04 — 2026-11-05
+## DEIF AGC 150 — catálogo técnico e sonda FC04 (12/11/2026)
 
-- Domínio: Controller Packs. Branch `feat/deif-agc150-catalog-20261105`. Inclusão de `DEIF / AGC 150` no catálogo como `registration_only`, sem Controller Pack de produção e sem provisionamento Rapid/comando habilitado.
-- A VM `scada` (`10.10.10.130`) alcança o gateway `10.10.10.1`, mas os testes realizados nela a `10.60.15.107` (ping e TCP 502/80/443/8080) tiveram timeout; teste a `10.60.15.1` também sem resposta. O operador relata ping positivo a partir de outro ponto, insuficiente para demonstrar acesso pela VM. Roteamento/túnel/ACL exigem diagnóstico independente.
-- Instrumento `controllers/tools/deif_agc150_probe_readonly.py` usa estritamente FC04/MBAP com Unit ID obrigatório. Endereços provisórios de medição 501–503, 507, 519 são apenas referência da coluna GEN, a comparar com firmware/variante e planilha DEIF 4189341212. Testes sintéticos de FC04/framing/exceção/Unit passaram (6 cenários), sem executar escrita ou comando físico.
-- Sem deploy, sem cadastro de instância/gerador, sem alteração de banco, bridge ou configuração do Rapid; serviços de produção e geradores existentes permanecem intocados por esta branch.
-- Próximo passo: reestabelecer/confirmar conectividade SCADA→AGC 150, identificar variante exata, firmware e Unit ID, obter medições FC04 comparadas à IHM. Depois criar pack, template Rapid, testes de regressão, revisão e deploy isolado. START/STOP e disjuntores exigem homologação industrial própria e PR separado.
-- Rollback desta branch: reverter os commits do catálogo/instrumento/documentação; nenhum estado físico/binding de produção foi alterado.
+- Modelo DEIF AGC 150 adicionado somente como registration_only/inventory_only, sem pack de produção, sem provisionamento Rapid, sem START/STOP, sem capacidade de comando e sem leitura validada em campo.
+- Incluído utilitário diagnóstico Modbus/TCP exclusivamente FC04, que exige host/port/Unit ID explícitos, junto à documentação de homologação e regressões offline de framing/exceções/Unit.
+- O endereço 10.60.15.107 é histórico do equipamento de campo, não parâmetro global nem prova de conectividade atual; variante, firmware, Unit ID, mapa FC04 e resultados de display físico seguem pendentes.
+- Esta integração altera apenas catálogo LAB/ferramentas, não a VM de produção. Para ativar telemetria, usar PR próprio após homologação física e dry-run. Rollback: reverter PR #237.
+
+## Situação da organização GitHub — 12/11/2026 (pós-integração)
+
+- PRs #243, #242, #247, #245 e #246 integrados à `main` até o commit `fd8c5c478433801af45fbb3361d5099ded77ca82`. As alterações tratam fronteiras CI, layout de geradores, validação documental restrita de packs, dependências e tipagem da rota de erro.
+- Antes da integração, a branch final foi validada por `npm run check`, `npm audit --audit-level=high`, CI, Quality and Security e E2E aprovados. Restam 7 vulnerabilidades moderadas no ecossistema `typescript-eslint`/`minimatch`; sem erros altos/críticos na auditoria.
+- Os registros abaixo de `ab39aba` e 135 branches são uma fotografia **anterior** às integrações. A VM de produção não foi atualizada neste trabalho; seu SHA de checkout e marcador devem ser reconciliados por deploy separado, com backup e homologação.
+- Backup do código original: `backup/main-before-ci-security-fixes-20261112`. Branches históricas preservadas, sem exclusão ou limpeza destrutiva.
+
+## Auditoria de organização GitHub — 2026-11-12 (somente documentação)
+
+- Inventário da `main`: `ab39aba32da77cd559ad9fd6d29d0cad058561ca`; 432 arquivos. Branch da VM: `feat/g113-ignt-readonly-preflight` em `e3f20c7ad8979234f2fbbba2ace5123628160f8d`, checkout limpo, 1 commit de pré-homologação somente leitura à frente da `main`.
+- Marcador de implantação informado pela VM: `afec24a685e23707d7d2c230f6a3e373a8cd8ff6`, divergente; não foi modificado nesta etapa. Requer auditoria de build, runtime e deploy antes de reconciliação.
+- GitHub com 135 branches e quatro PRs draft (#62, #235, #236, #237). Nenhuma branch removida; critérios de triagem e governança registrados em `docs/governance/REPOSITORY_ORGANIZATION_2026-11-12.md`.
+- No run mais recente da `main` em 29/10/2026, CI falha no limite de tamanho de `GeneratorsBoard.tsx` e Quality and Security acusa 8 vulnerabilidades npm (5 críticas/3 altas); E2E separado passou. Acompanhamento nas issues #238, #239 e #240. É preciso revalidar em branch isolada antes de correção.
+- Domínio: documentação/governança. Não houve alteração de runtime, frontend compilado, banco, Rapid operacional, serviços ou controladoras; nenhuma escrita Modbus ou comando físico foi enviada. Rollback: reverter PR documental. Próximos passos: PRs distintos por segurança, frontend, drift e higiene de branches, com CI e aprovação.
+
+## Revisão de validadores de Controller Pack — 2026-11-12 (CI, sem mudança industrial)
+
+- Domínio: governança/CI. Origem: issue #244, incompatibilidade entre verificador antigo e documentação ComAp BaseBox e InteliLite4 G-1000. Branch `fix/controller-validator-document-evidence-20261112`, encadeada ao refactor frontend PR #242.
+- Validação de fonte passa a reconhecer holding-register em duas colunas (40001+address e address) com nome exato, ou endereços/ranges das assinaturas **read-only** documentadas do G-1000. As fontes e seus SHA-256 continuam obrigatórios.
+- Aceita apenas os dois modelos conhecidos no estado de *primeira homologação física de comandos pendente*, quando runtime mantém flag desligada por padrão, allowlist por ID, telemetria somente leitura, condições e feedback declarados. Não declara comandos homologados em campo, não muda capabilities, manifests, registradores, comandos ou ambientes.
+- Testes realizados isoladamente: verificador passou com 9 packs production/10 LAB. Ao trocar endereço IG-NT 314 por 9999 e ao mudar flag padrão do executor de desligado para ligado, o mesmo verificador rejeitou ambas as mudanças.
+- CI completo e E2E devem ser conferidos no GitHub antes de merge. Nenhuma VM alterada, nenhum comando Modbus executado. Rollback: reverter PR de CI.
+
+## Governança de domínios: helper de layout da tela Geradores — 2026-11-12
+
+- Branch `fix/board-layout-boundary-20261112` baseada em `ab39aba32da77cd559ad9fd6d29d0cad058561ca`. Domínio exclusivo: **governança/CI**, sem alteração de runtime.
+- Classifica `frontend/src/features/generators/vertical-board-layout.ts` no mesmo domínio de `GeneratorsBoard.tsx` para permitir extração de matemática pura por PR encadeado; mantém rejeição de mistura com Vertical, Compacto, Lista, Provider e transportes.
+- Regressão: `node scripts/validation/check-change-boundaries.mjs --self-test` verifica classificação; o guardrail geral continua estrito. CI da `main` já estava vermelho por tamanho de `GeneratorsBoard.tsx`; o reparo real fica no PR frontend separado (issue #239).
+- Não alterou VM, compilação, Rapid, bridge, banco, modems, 2FA ou capacidades industriais. Rollback: reverter PR de governança.
+
+## Frontend — extração de cálculo do layout vertical (2026-11-12; PR em rascunho)
+
+- Domínio: **Layout da tela Geradores**, sem modificar cards Vertical, Compacto ou Lista. Base `main` em `ab39aba32da77cd559ad9fd6d29d0cad058561ca`.
+- Motivo: CI da `main` falhou em `check:architecture` porque `GeneratorsBoard.tsx` ultrapassou 20 KiB. O cálculo puro do layout vertical foi movido para `frontend/src/features/generators/vertical-board-layout.ts`. O Board passou de 21.354 para 19.185 bytes.
+- Regras matemáticas, paginação, resolução, viewport, grid e estilos foram preservados; o novo módulo não faz leitura industrial, filtragem de geradores nem comando. Verificar comportamento com CI/TypeScript/build e E2E antes de integrar.
+- Mudança somente no GitHub, não aplicada na VM. Sem reinício, deploy, alteração de modem, Rapid, bridge, banco, Controller Pack ou 2FA.
+- Regressão requerida: `npm run check:architecture`, `npm run check`, E2E de responsividade, fullscreen e cards, e revisão do diff. Falha preexistente de dependências em Quality and Security é tratada isoladamente na issue #240.
+- Rollback: reverter este PR de frontend. Continuidade: após testes e aprovação, integrar na `main` e implantar pelo procedimento transacional; não alterar marcador de implantação antes do deploy validado.
 
 ## Evidência de implantação dedicada — 2026-10-11
 
