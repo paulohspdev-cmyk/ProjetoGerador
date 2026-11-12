@@ -47,4 +47,7 @@
 | BUG-036 | Estado oficial/documentação não refletia remediações posteriores à Auditoria Zero | Governança | **resolvido 2026-10-06** por atualização do PROJECT_STATE, ledger e relatório de remediação |
 | BUG-037 | Backup off-site não possui destino externo configurado | Continuidade/operação | **pendente de infraestrutura externa**: backup local periódico está ativo; não usar diretório do mesmo disco como falso off-site |
 
+| BUG-038 | Assistente de cadastro enviava POST ao clicar em Continuar (CAD-01) | Frontend/cadastro | **corrigido no código da main (PR #249)**, E2E aprovado; ainda não implantado na VM |
+| BUG-039 | Token Bearer vazio provocava HTTP 500 (SYS-006) | Backend/API externa | **corrigido no código da main (PR #250)**, testes 401 aprovados; ainda não implantado na VM |
+
 Todo novo bug deve receber ID, reprodução, domínio, teste de regressão e PR correspondente.
