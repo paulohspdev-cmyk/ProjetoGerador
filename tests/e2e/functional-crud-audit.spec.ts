@@ -260,7 +260,7 @@ test("manutenção, regras, exercício, scheduler, escalonamento e relatórios p
 
   await page.goto("/p/notificacoes");
   await page.getByRole("button", { name: "Testar painel" }).click();
-  await expect(page.locator("tr").filter({ hasText: "panel" }).first()).toBeVisible();
+  await expect(page.locator("tr").filter({ hasText: "Painel" }).first()).toBeVisible();
   await page.getByRole("button", { name: "Processar fila" }).click();
 });
 
