@@ -74,7 +74,7 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
   }, [admin, kind, load]);
 
   const pendingPeers = useMemo(
-    () => admissions.filter((entry) => entry.state === "pending" && entry.acceptedCount > 0),
+    () => admissions.filter((entry) => entry.state === "pending" && entry.lastSeenAt > 0),
     [admissions],
   );
   const rejectedAdmissions = useMemo(
