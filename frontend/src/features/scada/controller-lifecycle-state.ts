@@ -1,4 +1,8 @@
-import type { ControllerConnectionV3, ControllerInstanceV3, TopologyV3 } from "@/lib/domain-api";
+import type {
+  ControllerConnectionV3,
+  ControllerInstanceV3,
+  TopologyV3,
+} from "@/lib/domain-api";
 
 export const emptyTopology: TopologyV3 = {
   assets: [],
@@ -20,4 +24,3 @@ export type ConnectionRow = ControllerConnectionV3 & {
   assetTag: string;
   controllerModel: string;
 };
-
