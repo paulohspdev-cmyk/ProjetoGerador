@@ -398,10 +398,24 @@ def record_bridge_traffic(sessions: list[dict] | None, now: int | None = None) -
 
 
 def traffic_summary(now: int | None = None) -> dict:
+    """Snapshot de tráfego e indisponibilidades sem registrar novas amostras.
+
+    O worker é o único responsável por contabilizar deltas e transições.
+    Consultas da API não devem alterar o histórico da bridge.
+    """
     init_traffic_db()
     timestamp = int(now or _now())
     with db.connect() as conn:
-        return _summary(conn, timestamp)
+        summary = _summary(conn, timestamp)
+        states = conn.execute(
+            "SELECT remote_port,connected,changed_at,last_seen_at FROM bridge_availability_state ORDER BY remote_port"
+        ).fetchall()
+        incidents = conn.execute(
+            "SELECT id,remote_port,started_at,ended_at,observed_reason FROM bridge_outages ORDER BY started_at DESC LIMIT 200"
+        ).fetchall()
+        summary["availability"] = [dict(row) for row in states]
+        summary["outages"] = [dict(row) for row in incidents]
+        return summary
 
 
 def sample_status_file(path: str | Path) -> dict:
