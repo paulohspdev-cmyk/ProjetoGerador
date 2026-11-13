@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Gauge, MapPin, RefreshCw, Server } from "lucide-react";
 
 import { useGenerators } from "@/features/generators/GeneratorsProvider";
+import { generatorDisplayStatus } from "@/data/generators";
 import { metricNumber } from "@/features/generators/generator-metrics";
 import { rcApi, type OpsSite } from "@/lib/api";
 import { Panel, ScreenBody, Stats } from "./kit";
@@ -43,9 +44,9 @@ export function SitesScreen() {
           : null;
         return {
           ...site,
-          online: gens.filter((generator) => generator.status === "online").length,
-          alerta: gens.filter((generator) => generator.status === "alerta").length,
-          offline: gens.filter((generator) => generator.status === "offline").length,
+          online: gens.filter((generator) => generatorDisplayStatus(generator) === "online").length,
+          alerta: gens.filter((generator) => generatorDisplayStatus(generator) === "alerta").length,
+          offline: gens.filter((generator) => ["offline", "stale"].includes(generatorDisplayStatus(generator))).length,
           total: gens.length,
           measuredLoad: siteLoad,
           loadSources: measuredRows.length,
@@ -67,7 +68,7 @@ export function SitesScreen() {
           { icon: Server, label: "Geradores", value: generatorsError ? "—" : generators.length },
           {
             icon: Gauge,
-            label: "Carga medida",
+            label: "Potência medida dos geradores",
             value: hasFailure ? "—" : parkLoad == null ? "N/D" : `${fmt(parkLoad, 1)} kW`,
           },
         ]}
@@ -133,7 +134,7 @@ export function SitesScreen() {
               </div>
               <p className="mt-3 text-xs text-muted-foreground">
                 {site.total} geradores ·{" "}
-                {site.measuredLoad == null ? "carga N/D" : `${fmt(site.measuredLoad, 1)} kW`}
+                {site.measuredLoad == null ? "potência N/D" : `${fmt(site.measuredLoad, 1)} kW`}
               </p>
             </article>
           ))}
