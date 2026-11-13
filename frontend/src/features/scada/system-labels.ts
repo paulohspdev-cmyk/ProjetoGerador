@@ -16,17 +16,27 @@ const metricLabels: Record<string, string> = {
   running_hours: "Horímetro",
 };
 const auditActions: Record<string, string> = {
-  create: "Criação", update: "Alteração", delete: "Exclusão",
-  login: "Acesso", logout: "Saída", enable: "Habilitação",
-  disable: "Desabilitação", acknowledge: "Reconhecimento",
+  create: "Criação",
+  update: "Alteração",
+  delete: "Exclusão",
+  login: "Acesso",
+  logout: "Saída",
+  enable: "Habilitação",
+  disable: "Desabilitação",
+  acknowledge: "Reconhecimento",
 };
 const auditEntities: Record<string, string> = {
-  generator: "Gerador", controller: "Controladora",
+  generator: "Gerador",
+  controller: "Controladora",
   controller_connection: "Conexão da controladora",
-  asset: "Equipamento", asset_link: "Vínculo entre equipamentos",
-  user: "Usuário", api_token: "Token de API",
-  webhook: "Webhook", backup: "Backup",
-  modem: "Modem", setting: "Configuração",
+  asset: "Equipamento",
+  asset_link: "Vínculo entre equipamentos",
+  user: "Usuário",
+  api_token: "Token de API",
+  webhook: "Webhook",
+  backup: "Backup",
+  modem: "Modem",
+  setting: "Configuração",
 };
 const transportLabels: Record<string, string> = {
   reverse_tcp: "TCP reverso",
@@ -35,18 +45,34 @@ const transportLabels: Record<string, string> = {
   rtu_over_tcp: "Modbus RTU sobre TCP",
 };
 const lifecycleLabels: Record<string, string> = {
-  production: "Produção", lab: "Laboratório",
-  validated: "Validado", draft: "Rascunho",
-  active: "Ativo", inactive: "Inativo",
-  pending: "Pendente", experimental: "Experimental",
+  production: "Produção",
+  lab: "Laboratório",
+  validated: "Validado",
+  draft: "Rascunho",
+  active: "Ativo",
+  inactive: "Inativo",
+  pending: "Pendente",
+  experimental: "Experimental",
 };
 function humanizeUnknown(code: string): string {
   // Preserva códigos desconhecidos, evitando traduções incorretas de engenharia.
   return code;
 }
-export const metricLabel = (code: string) => metricLabels[code] ?? humanizeUnknown(code);
-export const auditActionLabel = (code: string) => auditActions[code] ?? humanizeUnknown(code);
-export const auditEntityLabel = (code: string) => auditEntities[code] ?? humanizeUnknown(code);
-export const transportLabel = (code: string) => transportLabels[code] ?? humanizeUnknown(code);
-export const lifecycleLabel = (code: string) => lifecycleLabels[code] ?? humanizeUnknown(code);
-export const channelAccessLabel = (code: string) => code === "R" ? "Somente leitura" : code === "W" ? "Somente escrita" : code === "RW" ? "Leitura e escrita" : code;
+export const metricLabel = (code: string) =>
+  metricLabels[code] ?? humanizeUnknown(code);
+export const auditActionLabel = (code: string) =>
+  auditActions[code] ?? humanizeUnknown(code);
+export const auditEntityLabel = (code: string) =>
+  auditEntities[code] ?? humanizeUnknown(code);
+export const transportLabel = (code: string) =>
+  transportLabels[code] ?? humanizeUnknown(code);
+export const lifecycleLabel = (code: string) =>
+  lifecycleLabels[code] ?? humanizeUnknown(code);
+export const channelAccessLabel = (code: string) =>
+  code === "R"
+    ? "Somente leitura"
+    : code === "W"
+      ? "Somente escrita"
+      : code === "RW"
+        ? "Leitura e escrita"
+        : code;
