@@ -51,6 +51,8 @@ Toda correção deve acrescentar ou reforçar uma linha desta matriz.
 | CAD-05 | Cadastro e edição | Campos obrigatórios apenas com espaços resultam em HTTP 422, sem persistência | `backend/tests/smoke.py` |
 | CAD-13 | Estado industrial | PATCH cadastral rejeita `enabled`, retornando 409; reconfiguração privilegiada permanece funcional | `backend/tests/smoke.py` e `backend/tests/reconfigure_transaction.py` |
 
+| CAD-13-DB | Banco/persistência | Alterar `enabled` diretamente sem autorização industrial é rejeitado; lifecycle privilegiado continua funcional | `backend/tests/reconfigure_transaction.py` |
+
 ## Regra
 
 Não remover um teste de regressão para fazer o build passar. Se o contrato mudou de propósito, alterar primeiro o contrato/documentação e registrar a decisão.

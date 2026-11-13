@@ -1,5 +1,11 @@
 # Estado oficial do projeto
 
+## Persistência de estado industrial — CAD-13-DB (13/11/2026; PR encadeado)
+
+- Camada `db.update_generator` impede mudança de `enabled` fora de fluxos com `allow_industrial_identity=True`, mesmo se um chamador interno ignorar a restrição HTTP. O fluxo `lifecycle/reconfigure` continua usando a autorização administrativa e o rollback existentes.
+- Teste `backend/tests/reconfigure_transaction.py` reproduz tentativa de alteração direta, verifica recusa com `sqlite3.IntegrityError` e mantém a reconfiguração privilegiada funcional.
+- Domínio primário exclusivo `backend:database`. Não altera tabelas, migrações, dados de produção, permissões Modbus ou serviços da VM. Rollback: reverter PR.
+
 ## Correção de cadastro backend — CAD-05 e CAD-13 (13/11/2026; PR isolado)
 
 - O backend rejeita tag/site/controladora (criação) e tag/nome/site (edição) vazios após remoção de espaços. APIs retornam HTTP 422 e não persistem cadastros inválidos.
