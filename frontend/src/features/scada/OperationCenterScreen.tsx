@@ -36,7 +36,13 @@ export function OperationCenter() {
       generators.filter((generator) => {
         if (siteFilter && generator.site !== siteFilter) return false;
         if (clientFilter && generator.customer !== clientFilter) return false;
-        if (statusFilter && (statusFilter === "offline" ? !["offline", "stale"].includes(generatorDisplayStatus(generator)) : generatorDisplayStatus(generator) !== statusFilter)) return false;
+        if (
+          statusFilter &&
+          (statusFilter === "offline"
+            ? !["offline", "stale"].includes(generatorDisplayStatus(generator))
+            : generatorDisplayStatus(generator) !== statusFilter)
+        )
+          return false;
         return true;
       }),
     [clientFilter, generators, siteFilter, statusFilter],
@@ -54,7 +60,9 @@ export function OperationCenter() {
   const alarmRows = allAlarmRows.filter((alarm) => visibleTags.has(alarm.gen));
   const pendingAlarms = alarmRows.filter((alarm) => !alarm.ack);
   const criticalAlarms = pendingAlarms.filter((alarm) => alarm.severity === "falha");
-  const online = visibleGenerators.filter((generator) => generatorDisplayStatus(generator) === "online").length;
+  const online = visibleGenerators.filter(
+    (generator) => generatorDisplayStatus(generator) === "online",
+  ).length;
   const urgentWork = workOrders.filter((order) =>
     ["urgente", "urgent"].includes((order.status || "").trim().toLowerCase()),
   ).length;
