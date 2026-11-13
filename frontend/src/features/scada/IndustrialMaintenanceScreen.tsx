@@ -8,6 +8,11 @@ import { industrialApi, type MaintenancePlan } from "@/lib/industrial-api";
 import { useScadaOps } from "./ScadaOpsProvider";
 import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats } from "./kit";
 
+function isOpenWorkOrder(status: string) {
+  const normalized = status.trim().toLowerCase();
+  return !["concluída", "concluida", "cancelada", "cancelado"].includes(normalized);
+}
+
 function dt(epoch?: number | null) {
   return epoch ? new Date(epoch * 1000).toLocaleString("pt-BR") : "—";
 }
@@ -52,10 +57,22 @@ export function MaintenanceV3Screen({ embedded = false }: { embedded?: boolean }
     setMessage("");
     setError("");
     const generator = byId.get(generatorId);
-    if (!generator) return;
+    if (!generator) {
+      setError("Selecione um gerador válido para o plano.");
+      return;
+    }
     const intervalHours = hours ? Number(hours) : undefined;
     const intervalDays = days ? Number(days) : undefined;
-    if (!intervalHours && !intervalDays) {
+    if (
+      (hours.trim() &&
+        (intervalHours == null || !Number.isFinite(intervalHours) || intervalHours <= 0)) ||
+      (days.trim() &&
+        (intervalDays == null || !Number.isInteger(intervalDays) || intervalDays <= 0))
+    ) {
+      setError("Intervalos devem ser positivos; dias precisam ser números inteiros.");
+      return;
+    }
+    if (intervalHours == null && intervalDays == null) {
       setError("Informe o intervalo por horas e/ou dias.");
       return;
     }
@@ -110,7 +127,7 @@ export function MaintenanceV3Screen({ embedded = false }: { embedded?: boolean }
           {
             icon: Wrench,
             label: "OS abertas",
-            value: workOrders.filter((workOrder) => workOrder.status !== "Concluída").length,
+            value: workOrders.filter((workOrder) => isOpenWorkOrder(workOrder.status)).length,
           },
         ]}
       />
@@ -155,9 +172,12 @@ export function MaintenanceV3Screen({ embedded = false }: { embedded?: boolean }
             <label className="text-sm font-semibold">
               A cada quantas horas?
               <input
+                type="number"
+                min="0.01"
+                step="any"
                 inputMode="decimal"
                 value={hours}
-                onChange={(event) => setHours(event.target.value.replace(/[^0-9.]/g, ""))}
+                onChange={(event) => setHours(event.target.value)}
                 placeholder="250"
                 className="mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
               />
@@ -165,9 +185,12 @@ export function MaintenanceV3Screen({ embedded = false }: { embedded?: boolean }
             <label className="text-sm font-semibold">
               Ou a cada quantos dias?
               <input
+                type="number"
+                min="1"
+                step="1"
                 inputMode="numeric"
                 value={days}
-                onChange={(event) => setDays(event.target.value.replace(/\D/g, ""))}
+                onChange={(event) => setDays(event.target.value)}
                 placeholder="Opcional"
                 className="mt-1.5 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
               />

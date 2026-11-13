@@ -5,6 +5,13 @@ import { useAuth } from "@/features/auth/AuthProvider";
 import { rcApi, type AgendaItemApi, type OpsSite } from "@/lib/api";
 import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats } from "./kit";
 
+const agendaKindLabels: Record<string, string> = {
+  manual: "Compromisso",
+  exercise: "Exercício planejado",
+  visit: "Visita",
+  maintenance: "Manutenção",
+};
+
 export function AgendaV3Screen() {
   const { can } = useAuth();
   const admin = can("manageUsers");
@@ -46,6 +53,10 @@ export function AgendaV3Screen() {
   };
   const submit = async (event: FormEvent) => {
     event.preventDefault();
+    if (editing && !can("edit")) {
+      setError("Seu perfil não possui permissão para editar compromissos.");
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -124,7 +135,7 @@ export function AgendaV3Screen() {
               <input
                 value={when}
                 onChange={(e) => setWhen(e.target.value)}
-                placeholder="28/08 09:00"
+                placeholder="Ex.: 13/11/2026 09:00"
                 required
                 className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
               />
@@ -171,7 +182,7 @@ export function AgendaV3Screen() {
             { label: "Quando", render: (r) => <span className="num">{r.when}</span> },
             { label: "Atividade", render: (r) => <b>{r.title}</b> },
             { label: "Local", render: (r) => r.site || "—" },
-            { label: "Tipo", render: (r) => r.kind || "manual" },
+            { label: "Tipo", render: (r) => agendaKindLabels[r.kind || "manual"] ?? r.kind },
             {
               label: "Estado",
               render: (r) => (
