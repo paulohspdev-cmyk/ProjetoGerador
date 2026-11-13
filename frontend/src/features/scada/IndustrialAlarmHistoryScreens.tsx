@@ -10,11 +10,15 @@ function dt(epoch?: number | null) {
 }
 
 const severityLabels: Record<string, string> = {
-  fault: "Falha", alarm: "Alarme", warning: "Aviso", info: "Informação",
+  fault: "Falha",
+  alarm: "Alarme",
+  warning: "Aviso",
+  info: "Informação",
 };
 const eventLabels: Record<string, string> = {
   maintenance_completed: "Manutenção concluída",
-  alarm_raised: "Alarme ativado", alarm_cleared: "Alarme normalizado",
+  alarm_raised: "Alarme ativado",
+  alarm_cleared: "Alarme normalizado",
   alarm_acknowledged: "Alarme reconhecido",
 };
 
@@ -97,8 +101,8 @@ export function ProcessHistoryScreen() {
       </Panel>
       <p className="rounded-md border border-border bg-card px-3 py-2 text-[11px] text-muted-foreground">
         Este histórico é de eventos/estados industriais. Tendências analógicas continuam no menu
-        Tendências, lendo o histórico de telemetria. Auditoria de usuários permanece separada no menu
-        Sistema → Auditoria.
+        Tendências, lendo o histórico de telemetria. Auditoria de usuários permanece separada no
+        menu Sistema → Auditoria.
       </p>
       {error && (
         <p className="rounded-md border border-offline/40 bg-offline/10 p-3 text-sm text-offline">
@@ -120,10 +124,19 @@ export function ProcessHistoryScreen() {
                 </b>
               ),
             },
-            { label: "Evento", render: (r) => <span title={r.event_type}>{eventLabels[r.event_type] ?? r.event_type}</span> },
+            {
+              label: "Evento",
+              render: (r) => (
+                <span title={r.event_type}>{eventLabels[r.event_type] ?? r.event_type}</span>
+              ),
+            },
             {
               label: "Severidade",
-              render: (r) => <Pill tone={severityTone(r.severity)}>{severityLabels[r.severity] ?? r.severity}</Pill>,
+              render: (r) => (
+                <Pill tone={severityTone(r.severity)}>
+                  {severityLabels[r.severity] ?? r.severity}
+                </Pill>
+              ),
             },
             { label: "Código", render: (r) => <span className="num">{r.code || "—"}</span> },
             { label: "Mensagem", render: (r) => r.message },
