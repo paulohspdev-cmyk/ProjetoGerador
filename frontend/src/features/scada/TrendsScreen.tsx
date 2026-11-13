@@ -33,7 +33,9 @@ export function TrendsScreen() {
       .then((rows) => {
         if (!active) return;
         setMetrics(rows);
-        setMetric((prev) => (rows.some((x) => x.key === prev) ? prev : rows[0]?.key || ""));
+        setMetric((prev) =>
+          rows.some((x) => x.key === prev) ? prev : rows[0]?.key || "",
+        );
         setError(null);
       })
       .catch((err) => {
@@ -41,7 +43,11 @@ export function TrendsScreen() {
           setMetrics([]);
           setMetric("");
           setTrend(null);
-          setError(err instanceof Error ? err.message : "Falha ao consultar métricas Rapid.");
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Falha ao consultar métricas Rapid.",
+          );
         }
       });
     return () => {
@@ -57,7 +63,12 @@ export function TrendsScreen() {
     }
     setLoading(true);
     void rcApi.generators
-      .trend(generatorId, metric, hours, hours <= 48 ? 1 : hours <= 24 * 14 ? 2 : 3)
+      .trend(
+        generatorId,
+        metric,
+        hours,
+        hours <= 48 ? 1 : hours <= 24 * 14 ? 2 : 3,
+      )
       .then((data) => {
         if (active) {
           setTrend(data);
@@ -68,7 +79,9 @@ export function TrendsScreen() {
         if (active) {
           setTrend(null);
           setError(
-            err instanceof Error ? err.message : "Histórico de telemetria ainda indisponível.",
+            err instanceof Error
+              ? err.message
+              : "Histórico de telemetria ainda indisponível.",
           );
         }
       })
@@ -80,7 +93,10 @@ export function TrendsScreen() {
     };
   }, [generatorId, metric, hours]);
 
-  const chart = (trend?.points ?? []).map((p) => ({ t: shortTime(p.timestamp), v: p.value }));
+  const chart = (trend?.points ?? []).map((p) => ({
+    t: shortTime(p.timestamp),
+    v: p.value,
+  }));
   const selected = generators.find((g) => g.id === generatorId);
 
   return (
@@ -138,7 +154,13 @@ export function TrendsScreen() {
           {error}
         </p>
       )}
-      <Panel title={selected && metric ? `${selected.tag} · ${metricLabel(metric)}` : "Histórico"}>
+      <Panel
+        title={
+          selected && metric
+            ? `${selected.tag} · ${metricLabel(metric)}`
+            : "Histórico"
+        }
+      >
         {loading ? (
           <p className="py-16 text-center text-sm text-muted-foreground">
             Consultando histórico de telemetria…
