@@ -3,7 +3,12 @@ import { Cable, Cpu, Layers } from "lucide-react";
 
 import { useAuth } from "@/features/auth/AuthProvider";
 import { transportLabel } from "./system-labels";
-import { emptyTopology, errorText, type ControllerRow, type ConnectionRow } from "./controller-lifecycle-state";
+import {
+  emptyTopology,
+  errorText,
+  type ControllerRow,
+  type ConnectionRow,
+} from "./controller-lifecycle-state";
 import {
   domainApi,
   type AssetV3,
