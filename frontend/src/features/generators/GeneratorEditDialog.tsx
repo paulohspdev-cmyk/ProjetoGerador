@@ -130,6 +130,7 @@ export function GeneratorEditDialog({
       port !== currentPort ||
       unit !== Number(generator.modbusUnit || 1);
     const enabledChanged = enabled !== (generator.enabled !== false);
+    const canManageIndustrialState = user?.role === "administrador";
 
     setSaving(true);
     setError(null);
@@ -138,7 +139,7 @@ export function GeneratorEditDialog({
       // Identidade industrial e estado operacional são uma única transação no
       // backend. Isso evita desabilitar primeiro e depois tentar reprovisionar um
       // cadastro já marcado como inativo.
-      if (connectionChanged || enabledChanged) {
+      if (canManageIndustrialState && (connectionChanged || enabledChanged)) {
         await industrialApi.lifecycle.reconfigure(generator.id, generator.tag, {
           transport,
           ip: transport === "reverse_tcp" ? "" : host.trim(),
@@ -333,21 +334,28 @@ export function GeneratorEditDialog({
             </span>
           </label>
 
-          <label className="flex items-center justify-between gap-3 rounded-xl border border-border p-3">
-            <span>
-              <b className="block text-sm">Cadastro ativo</b>
-              <span className="text-xs text-muted-foreground">
-                Ao desativar um equipamento provisionado, a configuração ativa é retirada do Rapid
-                motor de telemetria com histórico preservado.
+          {user?.role === "administrador" ? (
+            <label className="flex items-center justify-between gap-3 rounded-xl border border-border p-3">
+              <span>
+                <b className="block text-sm">Cadastro ativo</b>
+                <span className="text-xs text-muted-foreground">
+                  Ao desativar um equipamento provisionado, a configuração ativa é retirada do Rapid
+                  motor de telemetria com histórico preservado.
+                </span>
               </span>
-            </span>
-            <input
-              type="checkbox"
-              checked={enabled}
-              onChange={(event) => setEnabled(event.target.checked)}
-              className="size-4"
-            />
-          </label>
+              <input
+                type="checkbox"
+                checked={enabled}
+                onChange={(event) => setEnabled(event.target.checked)}
+                className="size-4"
+              />
+            </label>
+          ) : (
+            <p className="rounded-xl border border-border bg-background/35 p-3 text-xs text-muted-foreground">
+              Cadastro {generator.enabled !== false ? "ativo" : "inativo"}. Somente administradores
+              podem alterar a ativação e a configuração industrial.
+            </p>
+          )}
 
           <details className="rounded-xl border border-border bg-background/35 p-3 text-xs text-muted-foreground">
             <summary className="cursor-pointer font-semibold text-foreground">
