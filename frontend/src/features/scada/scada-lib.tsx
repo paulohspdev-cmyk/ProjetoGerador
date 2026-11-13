@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Cable, FlaskConical, Info, Layers, Library, Package, Settings, Tags } from "lucide-react";
 
 import { useTheme } from "@/layout/ThemeProvider";
+import { channelAccessLabel, lifecycleLabel, metricLabel } from "@/lib/system-labels";
 import {
   rcApi,
   type ChannelCatalogItem,
@@ -95,12 +96,12 @@ export function ChannelsScreen() {
             rows={rows}
             columns={[
               { label: "Canal", render: (r) => <span className="num">{r.cnl}</span> },
-              { label: "Tag", render: (r) => <b>{r.name}</b> },
+              { label: "Medição", render: (r) => <span title={r.name}><b>{metricLabel(r.name)}</b>{metricLabel(r.name) !== r.name && <span className="block text-[10px] text-muted-foreground">{r.name}</span>}</span> },
               { label: "Modelo", render: (r) => r.model },
               { label: "Escala", render: (r) => <span className="num">{r.scale}</span> },
               {
                 label: "Acesso",
-                render: (r) => <Pill tone={r.access === "R" ? "ok" : "warn"}>{r.access}</Pill>,
+                render: (r) => <Pill tone={r.access === "R" ? "ok" : "warn"}>{channelAccessLabel(r.access)}</Pill>,
               },
               { label: "Fonte", render: (r) => r.source },
             ]}
@@ -127,10 +128,10 @@ export function TagsScreen() {
             rows={rows}
             columns={[
               { label: "ID", render: (r) => <span className="num">{r.id}</span> },
-              { label: "Tag", render: (r) => <b>{r.name}</b> },
+              { label: "Medição", render: (r) => <span title={r.name}><b>{metricLabel(r.name)}</b>{metricLabel(r.name) !== r.name && <span className="block text-[10px] text-muted-foreground">{r.name}</span>}</span> },
               { label: "Modelo", render: (r) => r.model },
               { label: "Canal interno", render: (r) => <span className="num">{r.cnl}</span> },
-              { label: "Acesso", render: (r) => r.access },
+              { label: "Acesso", render: (r) => channelAccessLabel(r.access) },
             ]}
           />
         )}
@@ -156,7 +157,7 @@ export function TemplatesScreen() {
                 {p.manufacturer} {p.model}
               </p>
               <p className="text-[11px] text-muted-foreground">
-                {p.validatedTelemetry?.length ?? 0} telemetrias validadas · {p.status}
+                {p.validatedTelemetry?.length ?? 0} telemetrias validadas · {lifecycleLabel(p.status)}
               </p>
             </div>
           ))}
@@ -368,7 +369,7 @@ export function LibControllersScreen() {
                     <Pill>CATÁLOGO</Pill>
                   ),
               },
-              { label: "Estado", render: (r) => r.packStatus || r.catalogStatus },
+              { label: "Estado", render: (r) => lifecycleLabel(r.packStatus || r.catalogStatus) },
             ]}
           />
         )}
@@ -435,9 +436,9 @@ export function PacksScreen() {
                 <b>
                   {p.manufacturer} {p.model}
                 </b>{" "}
-                · schema {String((p as { schema?: number }).schema ?? "—")} · {p.status}
+                · esquema {String((p as { schema?: number }).schema ?? "—")} · {lifecycleLabel(p.status)}
               </span>
-              <Pill tone={p.lifecycle === "production" ? "ok" : "warn"}>{p.lifecycle}</Pill>
+              <Pill tone={p.lifecycle === "production" ? "ok" : "warn"}>{lifecycleLabel(p.lifecycle)}</Pill>
             </div>
           ))}
         </div>
