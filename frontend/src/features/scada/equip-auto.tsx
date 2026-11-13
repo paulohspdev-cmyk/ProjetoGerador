@@ -9,7 +9,13 @@ import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats } from "./kit";
 
 export { ConnectivityScreen, GatewaysScreen, ModemsScreen } from "./equip-connectivity";
 
-import { actionLabels, notificationChannelLabels, notificationStatusLabels, rulePartLabel, triggerLabels } from "./automation-labels";
+import {
+  actionLabels,
+  notificationChannelLabels,
+  notificationStatusLabels,
+  rulePartLabel,
+  triggerLabels,
+} from "./automation-labels";
 
 function errText(error: unknown) {
   return error instanceof Error ? error.message : "Falha na operação";
