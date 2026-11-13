@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Cable, FlaskConical, Info, Layers, Library, Package, Settings, Tags } from "lucide-react";
 
 import { useTheme } from "@/layout/ThemeProvider";
-import { channelAccessLabel, lifecycleLabel, metricLabel } from "@/lib/system-labels";
+import { channelAccessLabel, lifecycleLabel, metricLabel } from "./system-labels";
 import {
   rcApi,
   type ChannelCatalogItem,
