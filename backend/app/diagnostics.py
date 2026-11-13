@@ -804,9 +804,9 @@ def system_diagnostics():
         }
         for session in runtime_bridge.get("sessions") or []
     ]
-    traffic = traffic_store.record_bridge_traffic(
-        runtime_bridge.get("sessions") or [],
-        runtime_bridge.get("updatedAt") or int(time.time()),
+    # O worker registra transições de conectividade; GET de diagnóstico somente consulta.
+    traffic = traffic_store.traffic_summary(
+        runtime_bridge.get("updatedAt") or int(time.time())
     )
     workers = platform_store.worker_health()
     queues = platform_store.queue_health()
