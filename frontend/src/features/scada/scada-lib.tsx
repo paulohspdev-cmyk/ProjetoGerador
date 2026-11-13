@@ -1,21 +1,8 @@
 import { useEffect, useState } from "react";
-import {
-  Cable,
-  FlaskConical,
-  Info,
-  Layers,
-  Library,
-  Package,
-  Settings,
-  Tags,
-} from "lucide-react";
+import { Cable, FlaskConical, Info, Layers, Library, Package, Settings, Tags } from "lucide-react";
 
 import { useTheme } from "@/layout/ThemeProvider";
-import {
-  channelAccessLabel,
-  lifecycleLabel,
-  metricLabel,
-} from "./system-labels";
+import { channelAccessLabel, lifecycleLabel, metricLabel } from "./system-labels";
 import {
   rcApi,
   type ChannelCatalogItem,
@@ -23,15 +10,7 @@ import {
   type SystemDiagnostics,
 } from "@/lib/api";
 import { useScadaOps } from "./ScadaOpsProvider";
-import {
-  ActionBtn,
-  Panel,
-  Pill,
-  ScadaTable,
-  ScreenBody,
-  Stats,
-  Tone,
-} from "./kit";
+import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats, Tone } from "./kit";
 
 type CatalogController = {
   catalogId: string;
@@ -51,9 +30,7 @@ type CatalogController = {
 
 type LibraryV3 = ControllerLibrary & {
   catalog?: CatalogController[];
-  manufacturers: Array<
-    ControllerLibrary["manufacturers"][number] & { inventoryOnly?: number }
-  >;
+  manufacturers: Array<ControllerLibrary["manufacturers"][number] & { inventoryOnly?: number }>;
   counts: ControllerLibrary["counts"] & {
     catalogTotal?: number;
     catalogProvisionable?: number;
@@ -76,10 +53,7 @@ export function useRemote<T>(loader: () => Promise<T>, initial: T) {
         }
       })
       .catch((err) => {
-        if (active)
-          setError(
-            err instanceof Error ? err.message : "Falha ao consultar API",
-          );
+        if (active) setError(err instanceof Error ? err.message : "Falha ao consultar API");
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -100,19 +74,9 @@ export function RemoteState({
   error: string;
   empty?: boolean;
 }) {
-  if (loading)
-    return (
-      <p className="text-[12px] text-muted-foreground">
-        Carregando dados reais…
-      </p>
-    );
+  if (loading) return <p className="text-[12px] text-muted-foreground">Carregando dados reais…</p>;
   if (error) return <p className="text-[12px] text-offline">{error}</p>;
-  if (empty)
-    return (
-      <p className="text-[12px] text-muted-foreground">
-        Nenhum dado disponível.
-      </p>
-    );
+  if (empty) return <p className="text-[12px] text-muted-foreground">Nenhum dado disponível.</p>;
   return null;
 }
 
@@ -124,11 +88,7 @@ export function ChannelsScreen() {
   } = useRemote<ChannelCatalogItem[]>(() => rcApi.library.channels(), []);
   return (
     <ScreenBody>
-      <Stats
-        items={[
-          { icon: Layers, label: "Canais homologados", value: rows.length },
-        ]}
-      />
+      <Stats items={[{ icon: Layers, label: "Canais homologados", value: rows.length }]} />
       <Panel title="Canais dos perfis homologados">
         <RemoteState loading={loading} error={error} empty={!rows.length} />
         {!!rows.length && (
@@ -145,9 +105,7 @@ export function ChannelsScreen() {
                   <span title={r.name}>
                     <b>{metricLabel(r.name)}</b>
                     {metricLabel(r.name) !== r.name && (
-                      <span className="block text-[10px] text-muted-foreground">
-                        {r.name}
-                      </span>
+                      <span className="block text-[10px] text-muted-foreground">{r.name}</span>
                     )}
                   </span>
                 ),
@@ -182,9 +140,7 @@ export function TagsScreen() {
   } = useRemote<ChannelCatalogItem[]>(() => rcApi.library.channels(), []);
   return (
     <ScreenBody>
-      <Stats
-        items={[{ icon: Tags, label: "Tags homologadas", value: rows.length }]}
-      />
+      <Stats items={[{ icon: Tags, label: "Tags homologadas", value: rows.length }]} />
       <Panel title="Mapa de tags real">
         <RemoteState loading={loading} error={error} empty={!rows.length} />
         {!!rows.length && (
@@ -201,9 +157,7 @@ export function TagsScreen() {
                   <span title={r.name}>
                     <b>{metricLabel(r.name)}</b>
                     {metricLabel(r.name) !== r.name && (
-                      <span className="block text-[10px] text-muted-foreground">
-                        {r.name}
-                      </span>
+                      <span className="block text-[10px] text-muted-foreground">{r.name}</span>
                     )}
                   </span>
                 ),
@@ -259,9 +213,7 @@ export function DiagnosticsTable({ data }: { data: SystemDiagnostics }) {
         {
           label: "Status",
           render: (r) => (
-            <Tone
-              tone={r.status === "active" || r.status === "OK" ? "ok" : "warn"}
-            >
+            <Tone tone={r.status === "active" || r.status === "OK" ? "ok" : "warn"}>
               {lifecycleLabel(r.status)}
             </Tone>
           ),
@@ -277,8 +229,7 @@ export function RapidScadaScreen() {
     () => rcApi.system.diagnostics(),
     null,
   );
-  const services =
-    data?.services.filter((s) => s.id.toLowerCase().includes("scada")) ?? [];
+  const services = data?.services.filter((s) => s.id.toLowerCase().includes("scada")) ?? [];
   return (
     <ScreenBody>
       <Stats
@@ -310,11 +261,7 @@ export function RapidScadaScreen() {
               {
                 label: "Status",
                 render: (r) => (
-                  <Tone
-                    tone={
-                      r.status === "active" || r.status === "OK" ? "ok" : "warn"
-                    }
-                  >
+                  <Tone tone={r.status === "active" || r.status === "OK" ? "ok" : "warn"}>
                     {lifecycleLabel(r.status)}
                   </Tone>
                 ),
@@ -347,18 +294,10 @@ export function DiagnosticScreen() {
             <DiagnosticsTable data={data} />
             <div className="mt-3 grid gap-2 text-[12px] sm:grid-cols-3">
               <div className="rounded-md border border-border p-2">
-                Memória:{" "}
-                <b>
-                  {data.host.memory
-                    ? `${data.host.memory.usedPercent}%`
-                    : "N/D"}
-                </b>
+                Memória: <b>{data.host.memory ? `${data.host.memory.usedPercent}%` : "N/D"}</b>
               </div>
               <div className="rounded-md border border-border p-2">
-                Disco:{" "}
-                <b>
-                  {data.host.disk ? `${data.host.disk.usedPercent}%` : "N/D"}
-                </b>
+                Disco: <b>{data.host.disk ? `${data.host.disk.usedPercent}%` : "N/D"}</b>
               </div>
               <div className="rounded-md border border-border p-2">
                 Geradores: <b>{data.generators.length}</b>
@@ -391,8 +330,7 @@ export function ManufacturersScreen() {
           {
             icon: Package,
             label: "Provisionáveis",
-            value:
-              lib?.counts.catalogProvisionable ?? data?.counts.production ?? 0,
+            value: lib?.counts.catalogProvisionable ?? data?.counts.production ?? 0,
             tone: "text-online",
           },
         ]}
@@ -407,11 +345,7 @@ export function ManufacturersScreen() {
               { label: "Modelos", render: (r) => r.models },
               {
                 label: "Produção",
-                render: (r) => (
-                  <Tone tone={r.production ? "ok" : "muted"}>
-                    {r.production}
-                  </Tone>
-                ),
+                render: (r) => <Tone tone={r.production ? "ok" : "muted"}>{r.production}</Tone>,
               },
               { label: "Lab", render: (r) => r.lab },
               {
@@ -452,8 +386,7 @@ export function LibControllersScreen() {
           {
             icon: FlaskConical,
             label: "Em lab",
-            value: catalog.filter((item) => item.packLifecycle === "lab")
-              .length,
+            value: catalog.filter((item) => item.packLifecycle === "lab").length,
           },
           {
             icon: Info,
@@ -463,9 +396,9 @@ export function LibControllersScreen() {
         ]}
       />
       <p className="rounded-md border border-border bg-card px-3 py-2 text-[11px] text-muted-foreground">
-        Catálogo identifica os modelos suportados pelo produto. Somente linhas
-        marcadas como PRODUÇÃO possuem perfil autorizado para provisionamento
-        industrial; catálogo/laboratório não habilita polling nem comandos.
+        Catálogo identifica os modelos suportados pelo produto. Somente linhas marcadas como
+        PRODUÇÃO possuem perfil autorizado para provisionamento industrial; catálogo/laboratório não
+        habilita polling nem comandos.
       </p>
       <Panel title="Biblioteca de controladoras">
         <RemoteState loading={loading} error={error} empty={!rows.length} />
@@ -508,11 +441,7 @@ export function ProtocolsScreen() {
   const rows = data?.protocols ?? [];
   return (
     <ScreenBody>
-      <Stats
-        items={[
-          { icon: Cable, label: "Protocolos homologados", value: rows.length },
-        ]}
-      />
+      <Stats items={[{ icon: Cable, label: "Protocolos homologados", value: rows.length }]} />
       <Panel title="Protocolos declarados nos perfis homologados">
         <RemoteState loading={loading} error={error} empty={!rows.length} />
         {!!rows.length && (
@@ -559,11 +488,7 @@ export function PacksScreen() {
         ]}
       />
       <Panel title="Perfis de controladora">
-        <RemoteState
-          loading={loading}
-          error={error}
-          empty={!data?.packs.length}
-        />
+        <RemoteState loading={loading} error={error} empty={!data?.packs.length} />
         <div className="space-y-2 text-[13px]">
           {data?.packs.map((p) => (
             <div
@@ -631,9 +556,10 @@ export function LabScreen() {
 }
 
 export function VersionScreen() {
-  const { data, error, loading } = useRemote<
-    SystemDiagnostics["version"] | null
-  >(() => rcApi.system.version(), null);
+  const { data, error, loading } = useRemote<SystemDiagnostics["version"] | null>(
+    () => rcApi.system.version(),
+    null,
+  );
   return (
     <ScreenBody>
       <Panel title="Versão do sistema">
