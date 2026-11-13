@@ -22,7 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/design-system/ui/dropdown-menu";
 import { useLayout } from "@/layout/LayoutContext";
-import { generatorDisplayStatus, statusLabel, type GenStatus } from "@/data/generators";
+import { statusLabel, type GenStatus } from "@/data/generators";
 import { cn } from "@/lib/utils";
 import { CompactCard } from "./CompactCard";
 import { GeneratorTable } from "./GeneratorTable";
@@ -124,10 +124,7 @@ export function GeneratorsBoard({ showKpis = true }: { showKpis?: boolean }) {
     () =>
       generators.filter(
         (generator) =>
-          (status === "todos" ||
-            (status === "offline"
-              ? ["offline", "stale"].includes(generatorDisplayStatus(generator))
-              : generatorDisplayStatus(generator) === status)) &&
+          (status === "todos" || generator.status === status) &&
           (generator.tag.toLowerCase().includes(query.toLowerCase()) ||
             (generator.name ?? "").toLowerCase().includes(query.toLowerCase()) ||
             (generator.customer ?? "").toLowerCase().includes(query.toLowerCase()) ||
