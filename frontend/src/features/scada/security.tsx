@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 import { useAuth } from "@/features/auth/AuthProvider";
 import { ROLE_LABEL, ROLE_META, ROLE_PERMS, type Permission } from "@/lib/auth";
-import { auditActionLabel, auditEntityLabel } from "@/lib/system-labels";
+import { auditActionLabel, auditEntityLabel } from "./system-labels";
 import { rcApi, type AuditItem } from "@/lib/api";
 import { Panel, ScadaTable, ScreenBody, Stats } from "./kit";
 
