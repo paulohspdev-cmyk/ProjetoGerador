@@ -2,6 +2,13 @@ import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { Cable, Cpu, Layers } from "lucide-react";
 
 import { useAuth } from "@/features/auth/AuthProvider";
+import { transportLabel } from "./system-labels";
+import {
+  emptyTopology,
+  errorText,
+  type ControllerRow,
+  type ConnectionRow,
+} from "./controller-lifecycle-state";
 import {
   domainApi,
   type AssetV3,
@@ -11,27 +18,6 @@ import {
 } from "@/lib/domain-api";
 import { ControllersV3Screen } from "./ControllersV3Screen";
 import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats } from "./kit";
-
-const emptyTopology: TopologyV3 = {
-  assets: [],
-  links: [],
-  counts: { assets: 0, controllers: 0, connections: 0, links: 0 },
-};
-
-function errorText(error: unknown) {
-  return error instanceof Error ? error.message : "Falha na operação.";
-}
-
-type ControllerRow = ControllerInstanceV3 & {
-  legacy: boolean;
-  assetTag: string;
-};
-
-type ConnectionRow = ControllerConnectionV3 & {
-  legacy: boolean;
-  assetTag: string;
-  controllerModel: string;
-};
 
 export function ControllersLifecycleScreen() {
   const { can } = useAuth();
@@ -116,7 +102,10 @@ export function ControllersLifecycleScreen() {
     event.preventDefault();
     if (!editingController) return;
     const saved = await run(
-      () => domainApi.updateController(editingController.id, { firmware: firmware.trim() }),
+      () =>
+        domainApi.updateController(editingController.id, {
+          firmware: firmware.trim(),
+        }),
       "Controladora atualizada.",
     );
     if (saved) setEditingController(null);
@@ -171,8 +160,8 @@ export function ControllersLifecycleScreen() {
       setError("Desative o asset antes de excluí-lo.");
       return;
     }
-    if (!window.confirm(`Excluir o asset ${row.tag}?`)) return;
-    await run(() => domainApi.removeAsset(row.id), "Asset removido.");
+    if (!window.confirm(`Excluir o equipamento ${row.tag}?`)) return;
+    await run(() => domainApi.removeAsset(row.id), "Equipamento removido.");
   };
 
   return (
@@ -181,8 +170,16 @@ export function ControllersLifecycleScreen() {
       <Stats
         items={[
           { icon: Layers, label: "Assets", value: topology.counts.assets },
-          { icon: Cpu, label: "Controladoras", value: topology.counts.controllers },
-          { icon: Cable, label: "Conexões", value: topology.counts.connections },
+          {
+            icon: Cpu,
+            label: "Controladoras",
+            value: topology.counts.controllers,
+          },
+          {
+            icon: Cable,
+            label: "Conexões",
+            value: topology.counts.connections,
+          },
         ]}
       />
       <p className="rounded-md border border-border bg-card px-3 py-2 text-[11px] text-muted-foreground">
@@ -334,7 +331,10 @@ export function ControllersLifecycleScreen() {
                         disabled={busy}
                         onClick={() =>
                           void run(
-                            () => domainApi.updateAsset(r.id, { enabled: !r.enabled }),
+                            () =>
+                              domainApi.updateAsset(r.id, {
+                                enabled: !r.enabled,
+                              }),
                             r.enabled ? "Asset desativado." : "Asset ativado.",
                           )
                         }
@@ -363,7 +363,7 @@ export function ControllersLifecycleScreen() {
           rows={controllerRows}
           min="900px"
           columns={[
-            { label: "Asset", render: (r) => <b>{r.assetTag}</b> },
+            { label: "Equipamento", render: (r) => <b>{r.assetTag}</b> },
             {
               label: "Controladora",
               render: (r) => (
@@ -415,7 +415,10 @@ export function ControllersLifecycleScreen() {
                         disabled={busy}
                         onClick={() =>
                           void run(
-                            () => domainApi.updateController(r.id, { enabled: !r.enabled }),
+                            () =>
+                              domainApi.updateController(r.id, {
+                                enabled: !r.enabled,
+                              }),
                             r.enabled ? "Controladora desativada." : "Controladora ativada.",
                           )
                         }
@@ -450,10 +453,13 @@ export function ControllersLifecycleScreen() {
           rows={connectionRows}
           min="1050px"
           columns={[
-            { label: "Asset", render: (r) => <b>{r.assetTag}</b> },
+            { label: "Equipamento", render: (r) => <b>{r.assetTag}</b> },
             { label: "Controladora", render: (r) => r.controllerModel },
             { label: "Conexão", render: (r) => r.name },
-            { label: "Transporte", render: (r) => <span className="num">{r.transport}</span> },
+            {
+              label: "Comunicação",
+              render: (r) => <span title={r.transport}>{transportLabel(r.transport)}</span>,
+            },
             {
               label: "Host / porta",
               render: (r) => (
@@ -494,7 +500,10 @@ export function ControllersLifecycleScreen() {
                         disabled={busy}
                         onClick={() =>
                           void run(
-                            () => domainApi.updateConnection(r.id, { enabled: !r.enabled }),
+                            () =>
+                              domainApi.updateConnection(r.id, {
+                                enabled: !r.enabled,
+                              }),
                             r.enabled ? "Conexão desativada." : "Conexão ativada.",
                           )
                         }
@@ -525,9 +534,15 @@ export function ControllersLifecycleScreen() {
         <ScadaTable
           rows={topology.links}
           columns={[
-            { label: "Origem", render: (r) => <span className="num">{r.from_asset_id}</span> },
+            {
+              label: "Origem",
+              render: (r) => <span className="num">{r.from_asset_id}</span>,
+            },
             { label: "Relação", render: (r) => <b>{r.relation}</b> },
-            { label: "Destino", render: (r) => <span className="num">{r.to_asset_id}</span> },
+            {
+              label: "Destino",
+              render: (r) => <span className="num">{r.to_asset_id}</span>,
+            },
             {
               label: "Ação",
               render: (r) =>

@@ -3,7 +3,8 @@ import { Check, Minus, ScrollText, ShieldCheck, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/features/auth/AuthProvider";
-import { ROLE_LABEL, ROLE_PERMS, type Permission, type UserRole } from "@/lib/auth";
+import { ROLE_LABEL, ROLE_META, ROLE_PERMS, type Permission } from "@/lib/auth";
+import { auditActionLabel, auditEntityLabel } from "./system-labels";
 import { rcApi, type AuditItem } from "@/lib/api";
 import { Panel, ScadaTable, ScreenBody, Stats } from "./kit";
 
@@ -17,7 +18,7 @@ function NoAccess() {
   );
 }
 
-const roles: UserRole[] = ["administrador", "cadastro", "visualizacao"];
+const roles = ROLE_META.map((role) => role.id);
 const permissionLabels: Array<{ id: Permission; label: string }> = [
   { id: "view", label: "Visualizar" },
   { id: "operate", label: "Operar START/STOP" },
@@ -140,7 +141,15 @@ export function AuditScreen() {
 
   return (
     <ScreenBody>
-      <Stats items={[{ icon: ScrollText, label: "Eventos de auditoria", value: rows.length }]} />
+      <Stats
+        items={[
+          {
+            icon: ScrollText,
+            label: "Eventos de auditoria",
+            value: rows.length,
+          },
+        ]}
+      />
       {error && (
         <p className="rounded-xl border border-offline/40 bg-offline/10 px-3 py-2 text-sm text-offline">
           {error}
@@ -155,8 +164,16 @@ export function AuditScreen() {
               render: (row) => <span className="num">{formatAuditDate(row.created_at)}</span>,
             },
             { label: "Usuário", render: (row) => row.actor },
-            { label: "Ação", render: (row) => row.action },
-            { label: "Tipo", render: (row) => row.entity_type },
+            {
+              label: "Ação",
+              render: (row) => <span title={row.action}>{auditActionLabel(row.action)}</span>,
+            },
+            {
+              label: "Tipo",
+              render: (row) => (
+                <span title={row.entity_type}>{auditEntityLabel(row.entity_type)}</span>
+              ),
+            },
             { label: "Alvo", render: (row) => <b>{row.entity_id}</b> },
             { label: "Detalhe", render: (row) => row.detail || "—" },
           ]}

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Cable, FlaskConical, Info, Layers, Library, Package, Settings, Tags } from "lucide-react";
 
 import { useTheme } from "@/layout/ThemeProvider";
+import { channelAccessLabel, lifecycleLabel, metricLabel } from "./system-labels";
 import {
   rcApi,
   type ChannelCatalogItem,
@@ -94,13 +95,33 @@ export function ChannelsScreen() {
           <ScadaTable
             rows={rows}
             columns={[
-              { label: "Canal", render: (r) => <span className="num">{r.cnl}</span> },
-              { label: "Tag", render: (r) => <b>{r.name}</b> },
+              {
+                label: "Canal",
+                render: (r) => <span className="num">{r.cnl}</span>,
+              },
+              {
+                label: "Medição",
+                render: (r) => (
+                  <span title={r.name}>
+                    <b>{metricLabel(r.name)}</b>
+                    {metricLabel(r.name) !== r.name && (
+                      <span className="block text-[10px] text-muted-foreground">{r.name}</span>
+                    )}
+                  </span>
+                ),
+              },
               { label: "Modelo", render: (r) => r.model },
-              { label: "Escala", render: (r) => <span className="num">{r.scale}</span> },
+              {
+                label: "Escala",
+                render: (r) => <span className="num">{r.scale}</span>,
+              },
               {
                 label: "Acesso",
-                render: (r) => <Pill tone={r.access === "R" ? "ok" : "warn"}>{r.access}</Pill>,
+                render: (r) => (
+                  <Pill tone={r.access === "R" ? "ok" : "warn"}>
+                    {channelAccessLabel(r.access)}
+                  </Pill>
+                ),
               },
               { label: "Fonte", render: (r) => r.source },
             ]}
@@ -126,11 +147,27 @@ export function TagsScreen() {
           <ScadaTable
             rows={rows}
             columns={[
-              { label: "ID", render: (r) => <span className="num">{r.id}</span> },
-              { label: "Tag", render: (r) => <b>{r.name}</b> },
+              {
+                label: "ID",
+                render: (r) => <span className="num">{r.id}</span>,
+              },
+              {
+                label: "Medição",
+                render: (r) => (
+                  <span title={r.name}>
+                    <b>{metricLabel(r.name)}</b>
+                    {metricLabel(r.name) !== r.name && (
+                      <span className="block text-[10px] text-muted-foreground">{r.name}</span>
+                    )}
+                  </span>
+                ),
+              },
               { label: "Modelo", render: (r) => r.model },
-              { label: "Canal interno", render: (r) => <span className="num">{r.cnl}</span> },
-              { label: "Acesso", render: (r) => r.access },
+              {
+                label: "Canal interno",
+                render: (r) => <span className="num">{r.cnl}</span>,
+              },
+              { label: "Acesso", render: (r) => channelAccessLabel(r.access) },
             ]}
           />
         )}
@@ -156,7 +193,8 @@ export function TemplatesScreen() {
                 {p.manufacturer} {p.model}
               </p>
               <p className="text-[11px] text-muted-foreground">
-                {p.validatedTelemetry?.length ?? 0} telemetrias validadas · {p.status}
+                {p.validatedTelemetry?.length ?? 0} telemetrias validadas ·{" "}
+                {lifecycleLabel(p.status)}
               </p>
             </div>
           ))}
@@ -176,7 +214,7 @@ export function DiagnosticsTable({ data }: { data: SystemDiagnostics }) {
           label: "Status",
           render: (r) => (
             <Tone tone={r.status === "active" || r.status === "OK" ? "ok" : "warn"}>
-              {r.status}
+              {lifecycleLabel(r.status)}
             </Tone>
           ),
         },
@@ -196,8 +234,16 @@ export function RapidScadaScreen() {
     <ScreenBody>
       <Stats
         items={[
-          { icon: Settings, label: "Vínculos", value: data?.rapid.bindingsExists ? "OK" : "N/D" },
-          { icon: Settings, label: "Leitor", value: data?.rapid.readerExists ? "OK" : "N/D" },
+          {
+            icon: Settings,
+            label: "Vínculos",
+            value: data?.rapid.bindingsExists ? "OK" : "N/D",
+          },
+          {
+            icon: Settings,
+            label: "Leitor",
+            value: data?.rapid.readerExists ? "OK" : "N/D",
+          },
           {
             icon: Settings,
             label: "Comunicação",
@@ -216,7 +262,7 @@ export function RapidScadaScreen() {
                 label: "Status",
                 render: (r) => (
                   <Tone tone={r.status === "active" || r.status === "OK" ? "ok" : "warn"}>
-                    {r.status}
+                    {lifecycleLabel(r.status)}
                   </Tone>
                 ),
               },
@@ -302,7 +348,10 @@ export function ManufacturersScreen() {
                 render: (r) => <Tone tone={r.production ? "ok" : "muted"}>{r.production}</Tone>,
               },
               { label: "Lab", render: (r) => r.lab },
-              { label: "Somente catálogo", render: (r) => r.inventoryOnly ?? 0 },
+              {
+                label: "Somente catálogo",
+                render: (r) => r.inventoryOnly ?? 0,
+              },
             ]}
           />
         )}
@@ -323,7 +372,11 @@ export function LibControllersScreen() {
     <ScreenBody>
       <Stats
         items={[
-          { icon: Library, label: "Modelos catalogados", value: catalog.length },
+          {
+            icon: Library,
+            label: "Modelos catalogados",
+            value: catalog.length,
+          },
           {
             icon: Package,
             label: "Produção",
@@ -368,7 +421,10 @@ export function LibControllersScreen() {
                     <Pill>CATÁLOGO</Pill>
                   ),
               },
-              { label: "Estado", render: (r) => r.packStatus || r.catalogStatus },
+              {
+                label: "Estado",
+                render: (r) => lifecycleLabel(r.packStatus || r.catalogStatus),
+              },
             ]}
           />
         )}
@@ -412,7 +468,11 @@ export function PacksScreen() {
     <ScreenBody>
       <Stats
         items={[
-          { icon: Package, label: "Perfis homologados", value: data?.counts.total ?? 0 },
+          {
+            icon: Package,
+            label: "Perfis homologados",
+            value: data?.counts.total ?? 0,
+          },
           {
             icon: Package,
             label: "Produção",
@@ -420,7 +480,11 @@ export function PacksScreen() {
             tone: "text-online",
           },
           { icon: FlaskConical, label: "Lab", value: data?.counts.lab ?? 0 },
-          { icon: Library, label: "Catálogo alvo", value: lib?.counts.catalogTotal ?? 0 },
+          {
+            icon: Library,
+            label: "Catálogo alvo",
+            value: lib?.counts.catalogTotal ?? 0,
+          },
         ]}
       />
       <Panel title="Perfis de controladora">
@@ -435,9 +499,12 @@ export function PacksScreen() {
                 <b>
                   {p.manufacturer} {p.model}
                 </b>{" "}
-                · schema {String((p as { schema?: number }).schema ?? "—")} · {p.status}
+                · esquema {String((p as { schema?: number }).schema ?? "—")} ·{" "}
+                {lifecycleLabel(p.status)}
               </span>
-              <Pill tone={p.lifecycle === "production" ? "ok" : "warn"}>{p.lifecycle}</Pill>
+              <Pill tone={p.lifecycle === "production" ? "ok" : "warn"}>
+                {lifecycleLabel(p.lifecycle)}
+              </Pill>
             </div>
           ))}
         </div>
@@ -457,7 +524,11 @@ export function LabScreen() {
     <ScreenBody>
       <Stats
         items={[
-          { icon: FlaskConical, label: "Packs em laboratório", value: lab.length },
+          {
+            icon: FlaskConical,
+            label: "Packs em laboratório",
+            value: lab.length,
+          },
           {
             icon: Library,
             label: "Fila de homologação",
@@ -498,8 +569,8 @@ export function VersionScreen() {
             {[
               ["Aplicação", data.application],
               ["API", data.apiVersion],
-              ["Git", data.gitSha || "N/D"],
-              ["Branch", data.gitBranch || "N/D"],
+              ["Commit implantado (Git)", data.gitSha || "N/D"],
+              ["Branch informado pela API", data.gitBranch || "N/D"],
               ["Motor de telemetria", data.rapidScada || "N/D"],
             ].map(([label, value]) => (
               <div key={label} className="rounded-md border border-border p-3">
@@ -514,57 +585,4 @@ export function VersionScreen() {
   );
 }
 
-export function SettingsScreen() {
-  const { theme, setTheme } = useTheme();
-  const dark = theme === "dark";
-  return (
-    <ScreenBody>
-      <Panel title="Configurações da interface">
-        <button
-          type="button"
-          onClick={() => setTheme(dark ? "light" : "dark")}
-          className="flex w-full items-center justify-between gap-3 rounded-md border border-border px-3 py-2 text-left hover:bg-secondary/40"
-        >
-          <div className="min-w-0">
-            <p className="text-[13px] font-semibold">Tema escuro</p>
-            <p className="text-[11px] text-muted-foreground">
-              Preferência visual local; não altera configuração industrial.
-            </p>
-          </div>
-          <Pill tone={dark ? "ok" : "muted"}>{dark ? "ON" : "OFF"}</Pill>
-        </button>
-      </Panel>
-    </ScreenBody>
-  );
-}
-
-export function BackupsScreen() {
-  const { backups, runBackup } = useScadaOps();
-  return (
-    <ScreenBody>
-      <Stats items={[{ icon: Info, label: "Backups", value: backups.length }]} />
-      <Panel
-        title="Backups reais"
-        actions={<ActionBtn onClick={runBackup}>Fazer backup agora</ActionBtn>}
-      >
-        {!backups.length && (
-          <p className="text-[12px] text-muted-foreground">Nenhum backup executado.</p>
-        )}
-        {!!backups.length && (
-          <ScadaTable
-            rows={backups}
-            columns={[
-              { label: "Quando", render: (r) => r.when },
-              { label: "Tipo", render: (r) => r.type },
-              { label: "Tamanho", render: (r) => r.size },
-              {
-                label: "Resultado",
-                render: (r) => <Tone tone={r.result === "OK" ? "ok" : "warn"}>{r.result}</Tone>,
-              },
-            ]}
-          />
-        )}
-      </Panel>
-    </ScreenBody>
-  );
-}
+export { SettingsScreen, BackupsScreen } from "./scada-legacy-utility";
