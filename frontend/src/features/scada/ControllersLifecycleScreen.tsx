@@ -25,11 +25,9 @@ export function ControllersLifecycleScreen() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
-  const [editingController, setEditingController] =
-    useState<ControllerRow | null>(null);
+  const [editingController, setEditingController] = useState<ControllerRow | null>(null);
   const [firmware, setFirmware] = useState("");
-  const [editingConnection, setEditingConnection] =
-    useState<ConnectionRow | null>(null);
+  const [editingConnection, setEditingConnection] = useState<ConnectionRow | null>(null);
   const [connectionName, setConnectionName] = useState("");
   const [host, setHost] = useState("");
   const [port, setPort] = useState("");
@@ -119,9 +117,7 @@ export function ControllersLifecycleScreen() {
     setHost(row.host ?? "");
     setPort(String(row.listen_port ?? 0));
     setUnit(String(row.modbus_unit ?? 1));
-    setRapidDevice(
-      row.rapid_device_num == null ? "" : String(row.rapid_device_num),
-    );
+    setRapidDevice(row.rapid_device_num == null ? "" : String(row.rapid_device_num));
     setEditingController(null);
   };
 
@@ -146,9 +142,7 @@ export function ControllersLifecycleScreen() {
           host: host.trim(),
           listen_port: listenPort,
           modbus_unit: modbusUnit,
-          ...(rapidDeviceNum != null &&
-          Number.isInteger(rapidDeviceNum) &&
-          rapidDeviceNum > 0
+          ...(rapidDeviceNum != null && Number.isInteger(rapidDeviceNum) && rapidDeviceNum > 0
             ? { rapid_device_num: rapidDeviceNum }
             : {}),
         }),
@@ -159,9 +153,7 @@ export function ControllersLifecycleScreen() {
 
   const removeAsset = async (row: AssetV3) => {
     if (row.legacy_generator_id) {
-      setError(
-        "Asset de gerador legado deve ser retirado pelo lifecycle do gerador.",
-      );
+      setError("Asset de gerador legado deve ser retirado pelo lifecycle do gerador.");
       return;
     }
     if (row.enabled) {
@@ -191,9 +183,9 @@ export function ControllersLifecycleScreen() {
         ]}
       />
       <p className="rounded-md border border-border bg-card px-3 py-2 text-[11px] text-muted-foreground">
-        Lifecycle seguro: equipamentos derivados de geradores legados não são
-        apagados aqui. Para eles, use a retirada do gerador. Controladoras e
-        conexões independentes precisam ser desativadas antes da exclusão.
+        Lifecycle seguro: equipamentos derivados de geradores legados não são apagados aqui. Para
+        eles, use a retirada do gerador. Controladoras e conexões independentes precisam ser
+        desativadas antes da exclusão.
       </p>
       {error && (
         <p className="rounded-md border border-offline/40 bg-offline/10 p-3 text-sm text-offline">
@@ -208,10 +200,7 @@ export function ControllersLifecycleScreen() {
 
       {editingController && can("edit") && (
         <Panel title={`Editar controladora · ${editingController.assetTag}`}>
-          <form
-            onSubmit={saveController}
-            className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]"
-          >
+          <form onSubmit={saveController} className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
             <input
               aria-label="Controladora"
               value={`${editingController.manufacturer} ${editingController.model}`}
@@ -277,9 +266,7 @@ export function ControllersLifecycleScreen() {
             <input
               inputMode="numeric"
               value={rapidDevice}
-              onChange={(e) =>
-                setRapidDevice(e.target.value.replace(/\D/g, ""))
-              }
+              onChange={(e) => setRapidDevice(e.target.value.replace(/\D/g, ""))}
               placeholder="Rapid Device"
               className="h-9 rounded-md border border-input bg-background px-2 text-sm"
             />
@@ -312,9 +299,7 @@ export function ControllersLifecycleScreen() {
               render: (r) => (
                 <span>
                   <b>{r.tag}</b>
-                  <span className="block text-[10px] text-muted-foreground">
-                    {r.name}
-                  </span>
+                  <span className="block text-[10px] text-muted-foreground">{r.name}</span>
                 </span>
               ),
             },
@@ -331,9 +316,7 @@ export function ControllersLifecycleScreen() {
             {
               label: "Estado",
               render: (r) => (
-                <Pill tone={r.enabled ? "ok" : "muted"}>
-                  {r.enabled ? "Ativo" : "Inativo"}
-                </Pill>
+                <Pill tone={r.enabled ? "ok" : "muted"}>{r.enabled ? "Ativo" : "Inativo"}</Pill>
               ),
             },
             {
@@ -388,9 +371,7 @@ export function ControllersLifecycleScreen() {
                   <b>
                     {r.manufacturer} {r.model}
                   </b>
-                  <span className="block text-[10px] text-muted-foreground">
-                    {r.family || "—"}
-                  </span>
+                  <span className="block text-[10px] text-muted-foreground">{r.family || "—"}</span>
                 </span>
               ),
             },
@@ -414,9 +395,7 @@ export function ControllersLifecycleScreen() {
             {
               label: "Estado",
               render: (r) => (
-                <Pill tone={r.enabled ? "ok" : "muted"}>
-                  {r.enabled ? "Ativa" : "Inativa"}
-                </Pill>
+                <Pill tone={r.enabled ? "ok" : "muted"}>{r.enabled ? "Ativa" : "Inativa"}</Pill>
               ),
             },
             {
@@ -427,10 +406,7 @@ export function ControllersLifecycleScreen() {
                 ) : (
                   <span className="flex flex-wrap gap-1">
                     {can("edit") && (
-                      <ActionBtn
-                        disabled={busy}
-                        onClick={() => editController(r)}
-                      >
+                      <ActionBtn disabled={busy} onClick={() => editController(r)}>
                         Editar
                       </ActionBtn>
                     )}
@@ -443,9 +419,7 @@ export function ControllersLifecycleScreen() {
                               domainApi.updateController(r.id, {
                                 enabled: !r.enabled,
                               }),
-                            r.enabled
-                              ? "Controladora desativada."
-                              : "Controladora ativada.",
+                            r.enabled ? "Controladora desativada." : "Controladora ativada.",
                           )
                         }
                       >
@@ -455,11 +429,7 @@ export function ControllersLifecycleScreen() {
                     {can("remove") && (
                       <ActionBtn
                         tone="danger"
-                        disabled={
-                          busy ||
-                          r.enabled ||
-                          (r.connections ?? []).some((c) => c.enabled)
-                        }
+                        disabled={busy || r.enabled || (r.connections ?? []).some((c) => c.enabled)}
                         onClick={() => {
                           if (window.confirm(`Excluir ${r.model}?`))
                             void run(
@@ -488,9 +458,7 @@ export function ControllersLifecycleScreen() {
             { label: "Conexão", render: (r) => r.name },
             {
               label: "Comunicação",
-              render: (r) => (
-                <span title={r.transport}>{transportLabel(r.transport)}</span>
-              ),
+              render: (r) => <span title={r.transport}>{transportLabel(r.transport)}</span>,
             },
             {
               label: "Host / porta",
@@ -512,9 +480,7 @@ export function ControllersLifecycleScreen() {
             {
               label: "Estado",
               render: (r) => (
-                <Pill tone={r.enabled ? "ok" : "muted"}>
-                  {r.enabled ? "Ativa" : "Inativa"}
-                </Pill>
+                <Pill tone={r.enabled ? "ok" : "muted"}>{r.enabled ? "Ativa" : "Inativa"}</Pill>
               ),
             },
             {
@@ -525,10 +491,7 @@ export function ControllersLifecycleScreen() {
                 ) : (
                   <span className="flex flex-wrap gap-1">
                     {can("edit") && (
-                      <ActionBtn
-                        disabled={busy}
-                        onClick={() => editConnection(r)}
-                      >
+                      <ActionBtn disabled={busy} onClick={() => editConnection(r)}>
                         Editar
                       </ActionBtn>
                     )}
@@ -541,9 +504,7 @@ export function ControllersLifecycleScreen() {
                               domainApi.updateConnection(r.id, {
                                 enabled: !r.enabled,
                               }),
-                            r.enabled
-                              ? "Conexão desativada."
-                              : "Conexão ativada.",
+                            r.enabled ? "Conexão desativada." : "Conexão ativada.",
                           )
                         }
                       >
@@ -556,10 +517,7 @@ export function ControllersLifecycleScreen() {
                         disabled={busy || r.enabled}
                         onClick={() => {
                           if (window.confirm(`Excluir conexão ${r.name}?`))
-                            void run(
-                              () => domainApi.removeConnection(r.id),
-                              "Conexão removida.",
-                            );
+                            void run(() => domainApi.removeConnection(r.id), "Conexão removida.");
                         }}
                       >
                         Excluir
@@ -594,10 +552,7 @@ export function ControllersLifecycleScreen() {
                     disabled={busy}
                     onClick={() => {
                       if (window.confirm("Excluir esta relação de topologia?"))
-                        void run(
-                          () => domainApi.removeLink(r.id),
-                          "Relação removida.",
-                        );
+                        void run(() => domainApi.removeLink(r.id), "Relação removida.");
                     }}
                   >
                     Excluir relação
