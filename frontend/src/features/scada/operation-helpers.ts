@@ -47,7 +47,10 @@ export function realAlarms(
         gen: g.tag,
         site: g.site,
         severity: "falha",
-        message: status === "stale" ? "Telemetria expirada · última leitura não é atual" : g.lastError?.trim() || "Comunicação/telemetria indisponível",
+        message:
+          status === "stale"
+            ? "Telemetria expirada · última leitura não é atual"
+            : g.lastError?.trim() || "Comunicação/telemetria indisponível",
         since: "estado atual",
       });
     } else if (status === "alerta") {
