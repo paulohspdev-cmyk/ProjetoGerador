@@ -9,36 +9,7 @@ import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats } from "./kit";
 
 export { ConnectivityScreen, GatewaysScreen, ModemsScreen } from "./equip-connectivity";
 
-const triggerLabels: Record<string, string> = {
-  generator_online: "Gerador conectado",
-  generator_offline: "Gerador sem comunicação",
-  generator_alert: "Gerador em alerta",
-};
-const actionLabels: Record<string, string> = {
-  notify: "Enviar notificação",
-  work_order: "Criar ordem de serviço",
-};
-const notificationStatusLabels: Record<string, string> = {
-  queued: "Na fila",
-  retry: "Nova tentativa",
-  sending: "Enviando",
-  sent: "Enviada",
-  failed: "Falha",
-  cancelled: "Cancelada",
-};
-const notificationChannelLabels: Record<string, string> = {
-  panel: "Painel",
-  email: "E-mail",
-  whatsapp: "WhatsApp",
-  webhook: "Webhook",
-};
-function rulePartLabel(text: string, labels: Record<string, string>) {
-  const separator = text.indexOf(":");
-  if (separator < 0) return labels[text] ?? text;
-  const code = text.slice(0, separator);
-  const value = text.slice(separator + 1);
-  return `${labels[code] ?? code}: ${value}`;
-}
+import { actionLabels, notificationChannelLabels, notificationStatusLabels, rulePartLabel, triggerLabels } from "./automation-labels";
 
 function errText(error: unknown) {
   return error instanceof Error ? error.message : "Falha na operação";
