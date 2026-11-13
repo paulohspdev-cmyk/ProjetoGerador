@@ -9,6 +9,15 @@ function dt(epoch?: number | null) {
   return epoch ? new Date(epoch * 1000).toLocaleString("pt-BR") : "—";
 }
 
+const severityLabels: Record<string, string> = {
+  fault: "Falha", alarm: "Alarme", warning: "Aviso", info: "Informação",
+};
+const eventLabels: Record<string, string> = {
+  maintenance_completed: "Manutenção concluída",
+  alarm_raised: "Alarme ativado", alarm_cleared: "Alarme normalizado",
+  alarm_acknowledged: "Alarme reconhecido",
+};
+
 function severityTone(value: string): "err" | "warn" | "info" | "muted" {
   if (value === "fault") return "err";
   if (value === "alarm" || value === "warning") return "warn";
@@ -78,18 +87,18 @@ export function ProcessHistoryScreen() {
               className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
             >
               <option value="">Todas</option>
-              <option value="fault">Fault</option>
-              <option value="alarm">Alarm</option>
-              <option value="warning">Warning</option>
-              <option value="info">Info</option>
+              <option value="fault">Falha</option>
+              <option value="alarm">Alarme</option>
+              <option value="warning">Aviso</option>
+              <option value="info">Informação</option>
             </select>
           </label>
         </div>
       </Panel>
       <p className="rounded-md border border-border bg-card px-3 py-2 text-[11px] text-muted-foreground">
         Este histórico é de eventos/estados industriais. Tendências analógicas continuam no menu
-        Tendências, lendo o histórico de telemetria. Auditoria de usuários permanece separada em
-        Gestão → Auditoria.
+        Tendências, lendo o histórico de telemetria. Auditoria de usuários permanece separada no menu
+        Sistema → Auditoria.
       </p>
       {error && (
         <p className="rounded-md border border-offline/40 bg-offline/10 p-3 text-sm text-offline">
@@ -102,7 +111,7 @@ export function ProcessHistoryScreen() {
           columns={[
             { label: "Quando", render: (r) => <span className="num">{dt(r.created_at)}</span> },
             {
-              label: "Gerador / asset",
+              label: "Gerador / equipamento",
               render: (r) => (
                 <b>
                   {r.generator_id
@@ -111,10 +120,10 @@ export function ProcessHistoryScreen() {
                 </b>
               ),
             },
-            { label: "Evento", render: (r) => r.event_type },
+            { label: "Evento", render: (r) => <span title={r.event_type}>{eventLabels[r.event_type] ?? r.event_type}</span> },
             {
               label: "Severidade",
-              render: (r) => <Pill tone={severityTone(r.severity)}>{r.severity}</Pill>,
+              render: (r) => <Pill tone={severityTone(r.severity)}>{severityLabels[r.severity] ?? r.severity}</Pill>,
             },
             { label: "Código", render: (r) => <span className="num">{r.code || "—"}</span> },
             { label: "Mensagem", render: (r) => r.message },
