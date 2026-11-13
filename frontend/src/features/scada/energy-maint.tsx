@@ -26,6 +26,28 @@ function hasMetric(g: Generator, key: string) {
   return !g.telemetryStale && (g.definedMetrics ?? g.availableMetrics ?? []).includes(key);
 }
 
+function breakerClosed(g: Generator, key: "mcb_closed" | "gcb_closed"): boolean | null {
+  const measured = metricNumber(g, key, undefined);
+  if (measured === 1) return true;
+  if (measured === 0) return false;
+  return null;
+}
+
+function breakerLabel(value: boolean | null, name: "MCB" | "GCB") {
+  return value == null ? `${name} N/D` : `${name} ${value ? "fechado" : "aberto"}`;
+}
+
+function supplyState(g: Generator) {
+  const mcb = breakerClosed(g, "mcb_closed");
+  const gcb = breakerClosed(g, "gcb_closed");
+  if (mcb == null || gcb == null) return "Alimentação não confirmada";
+  if (mcb && gcb) return "Ambos fechados — verificar topologia";
+  if (mcb) return "MCB fechado; GCB aberto";
+  if (gcb) return "GCB fechado; MCB aberto";
+  return "Ambos abertos";
+}
+
+
 function metricUnit(g: Generator, key: string, fallback = "") {
   const unit = g.metricUnits?.[key];
   return typeof unit === "string" && unit.trim() ? unit.trim() : fallback;
@@ -50,8 +72,14 @@ function supportedCount(generators: Generator[], metric: string) {
 
 function EnergyTable({
   rows,
+  principal = "Principal",
+  secondary = "Secundário",
+  state = "Estado",
 }: {
   rows: Array<{ id: string; gen: string; a: string; b: string; c: string }>;
+  principal?: string;
+  secondary?: string;
+  state?: string;
 }) {
   return (
     <Panel title="Por gerador">
@@ -59,9 +87,9 @@ function EnergyTable({
         rows={rows}
         columns={[
           { label: "Gerador", render: (r) => <b>{r.gen}</b> },
-          { label: "Principal", render: (r) => <span className="num">{r.a}</span> },
-          { label: "Secundário", render: (r) => <span className="num">{r.b}</span> },
-          { label: "Estado", render: (r) => r.c },
+          { label: principal, render: (r) => <span className="num">{r.a}</span> },
+          { label: secondary, render: (r) => <span className="num">{r.b}</span> },
+          { label: state, render: (r) => r.c },
         ]}
       />
     </Panel>
@@ -70,9 +98,9 @@ function EnergyTable({
 
 export function EnergyRede() {
   const { generators } = useGenerators();
-  const mainsVoltage = generators.filter((g) => hasMetric(g, "mains_voltage_l1"));
-  const mainsFreq = generators.filter((g) => hasMetric(g, "mains_frequency"));
-  const mcb = generators.filter((g) => hasMetric(g, "mcb_closed"));
+  const mainsVoltage = generators.filter((g) => g.powerTopology !== "genset_only" && hasMetric(g, "mains_voltage_l1"));
+  const mainsFreq = generators.filter((g) => g.powerTopology !== "genset_only" && hasMetric(g, "mains_frequency"));
+  const mcb = generators.filter((g) => g.powerTopology !== "genset_only" && breakerClosed(g, "mcb_closed") != null);
   return (
     <ScreenBody>
       <Stats
@@ -90,13 +118,17 @@ export function EnergyRede() {
           { icon: Power, label: "MCB monitorados", value: `${mcb.length}/${generators.length}` },
         ]}
       />
+      <p className="text-xs text-muted-foreground">Rede exibida somente quando existem canais reais de leitura. Em topologias sem rede, não inferimos tensão, frequência ou MCB.</p>
       <EnergyTable
+        principal="Tensão de rede"
+        secondary="Frequência da rede"
+        state="Disjuntor da rede"
         rows={generators.map((g) => ({
           id: g.id,
           gen: g.tag,
-          a: valueOrDash(g, "mains_voltage_l1", g.mains.l1, "V", 1),
-          b: valueOrDash(g, "mains_frequency", g.mainsFrequency, "Hz", 2),
-          c: hasMetric(g, "mcb_closed") ? (g.mcb ? "MCB fechado" : "MCB aberto") : "MCB N/D",
+          a: g.powerTopology === "genset_only" ? "Não aplicável" : valueOrDash(g, "mains_voltage_l1", g.mains.l1, "V", 1),
+          b: g.powerTopology === "genset_only" ? "Não aplicável" : valueOrDash(g, "mains_frequency", g.mainsFrequency, "Hz", 2),
+          c: g.powerTopology === "genset_only" ? "Sem rede nesta topologia" : breakerLabel(breakerClosed(g, "mcb_closed"), "MCB"),
         }))}
       />
     </ScreenBody>
@@ -121,7 +153,7 @@ export function EnergyGens() {
         items={[
           {
             icon: Gauge,
-            label: "Potência ativa",
+            label: "Potência ativa medida dos geradores",
             value: powerSupported ? `${fmt(totalKw)} kW` : "N/D",
             tone: powerSupported ? "text-online" : undefined,
           },
@@ -134,15 +166,16 @@ export function EnergyGens() {
         ]}
       />
       <EnergyTable
+        principal="Potência do gerador"
+        secondary="Frequência do gerador"
+        state="Disjuntor / rotação"
         rows={generators.map((g) => ({
           id: g.id,
           gen: g.tag,
           a: valueOrDash(g, "power_kw", g.load, "kW", 1),
           b: valueOrDash(g, "frequency", g.frequency, "Hz", 2),
-          c: hasMetric(g, "gcb_closed")
-            ? g.gcb
-              ? "GCB fechado"
-              : "GCB aberto"
+          c: breakerClosed(g, "gcb_closed") != null
+            ? breakerLabel(breakerClosed(g, "gcb_closed"), "GCB")
             : valueOrDash(g, "rpm", g.rpm, "rpm", 0),
         }))}
       />
@@ -157,7 +190,7 @@ export function EnergyLoad() {
     gen: g.tag,
     a: valueOrDash(g, "power_kw", g.load, "kW", 1),
     b: g.site || "—",
-    c: hasMetric(g, "power_kw") ? "Medido" : "Sem canal de potência",
+    c: metricNumber(g, "power_kw", g.load) != null ? "Potência do gerador medida" : "Potência N/D",
   }));
   const measured = generators.filter((g) => metricNumber(g, "power_kw", g.load) != null);
   const total = measured.reduce((s, g) => s + (metricNumber(g, "power_kw", g.load) ?? 0), 0);
@@ -167,7 +200,7 @@ export function EnergyLoad() {
         items={[
           {
             icon: Factory,
-            label: "Carga medida",
+            label: "Potência medida dos geradores",
             value: measured.length ? `${fmt(total)} kW` : "N/D",
           },
           {
@@ -177,7 +210,8 @@ export function EnergyLoad() {
           },
         ]}
       />
-      <EnergyTable rows={rows} />
+      <p className="text-xs text-muted-foreground">O kW do gerador indica geração medida, não a demanda total da planta. Consumo da instalação exige medidor específico de carga/rede; não estimamos o que não foi medido.</p>
+      <EnergyTable principal="Potência do gerador" secondary="Unidade" state="Origem" rows={rows} />
     </ScreenBody>
   );
 }
@@ -185,7 +219,7 @@ export function EnergyLoad() {
 export function EnergyTransfer() {
   const { generators } = useGenerators();
   const monitored = generators.filter(
-    (g) => hasMetric(g, "mcb_closed") || hasMetric(g, "gcb_closed"),
+    (g) => breakerClosed(g, "mcb_closed") != null && breakerClosed(g, "gcb_closed") != null,
   );
   return (
     <ScreenBody>
@@ -193,38 +227,27 @@ export function EnergyTransfer() {
         items={[
           {
             icon: ArrowLeftRight,
-            label: "Transferência monitorada",
+            label: "MCB e GCB com leituras confirmadas",
             value: `${monitored.length}/${generators.length}`,
           },
           {
             icon: UtilityPole,
             label: "MCB monitorados",
-            value: supportedCount(generators, "mcb_closed"),
+            value: generators.filter((g) => breakerClosed(g, "mcb_closed") != null).length,
           },
-          { icon: Fan, label: "GCB monitorados", value: supportedCount(generators, "gcb_closed") },
+          { icon: Fan, label: "GCB monitorados", value: generators.filter((g) => breakerClosed(g, "gcb_closed") != null).length },
         ]}
       />
-      <EnergyTable
-        rows={generators.map((g) => {
-          const mcb = hasMetric(g, "mcb_closed")
-            ? g.mcb
-              ? "MCB fechado"
-              : "MCB aberto"
-            : "MCB N/D";
-          const gcb = hasMetric(g, "gcb_closed")
-            ? g.gcb
-              ? "GCB fechado"
-              : "GCB aberto"
-            : "GCB N/D";
+      <p className="text-xs text-muted-foreground">Fechamento de disjuntor não confirma sozinho o caminho real da energia. O estado é descritivo e requer topologia homologada.</p>
+      <EnergyTable principal="MCB" secondary="GCB" state="Estado dos disjuntores" rows={generators.map((g) => {
+          const mcb = breakerLabel(breakerClosed(g, "mcb_closed"), "MCB");
+          const gcb = breakerLabel(breakerClosed(g, "gcb_closed"), "GCB");
           return {
             id: g.id,
             gen: g.tag,
             a: mcb,
             b: gcb,
-            c:
-              hasMetric(g, "mcb_closed") && hasMetric(g, "gcb_closed")
-                ? "Monitorado"
-                : "Parcial/N/D",
+            c: supplyState(g),
           };
         })}
       />
@@ -234,7 +257,7 @@ export function EnergyTransfer() {
 
 export function EnergyParallel() {
   const { generators } = useGenerators();
-  const capable = generators.filter((g) => hasMetric(g, "paralleling_active"));
+  const capable = generators.filter((g) => metricNumber(g, "paralleling_active", undefined) != null);
   return (
     <ScreenBody>
       <Stats
@@ -247,18 +270,26 @@ export function EnergyParallel() {
           {
             icon: Waves,
             label: "Sincronismo",
-            value: supportedCount(generators, "sync_ok") ? "Disponível" : "N/D",
+            value: `${generators.filter((g) => metricNumber(g, "sync_ok", undefined) != null).length}/${generators.length}`,
           },
         ]}
       />
+      <p className="text-xs text-muted-foreground">Paralelismo e sincronismo são exibidos somente com canais homologados e leituras atuais. GCB fechado não prova, isoladamente, operação em paralelo.</p>
       <EnergyTable
-        rows={generators.map((g) => ({
-          id: g.id,
-          gen: g.tag,
-          a: valueOrDash(g, "frequency", g.frequency, "Hz", 2),
-          b: valueOrDash(g, "rpm", g.rpm, "rpm", 0),
-          c: hasMetric(g, "paralleling_active") ? "Monitorado" : "Paralelismo N/D",
-        }))}
+        principal="Paralelismo"
+        secondary="Sincronismo"
+        state="Leituras adicionais"
+        rows={generators.map((g) => {
+          const parallel = metricNumber(g, "paralleling_active", undefined);
+          const sync = metricNumber(g, "sync_ok", undefined);
+          return {
+            id: g.id,
+            gen: g.tag,
+            a: parallel === 1 ? "Ativo (medido)" : parallel === 0 ? "Inativo (medido)" : "N/D",
+            b: sync === 1 ? "Sincronizado (medido)" : sync === 0 ? "Sem sincronismo (medido)" : "N/D",
+            c: `${valueOrDash(g, "frequency", g.frequency, "Hz", 2)} · ${valueOrDash(g, "rpm", g.rpm, "rpm", 0)}`,
+          };
+        })}
       />
     </ScreenBody>
   );
