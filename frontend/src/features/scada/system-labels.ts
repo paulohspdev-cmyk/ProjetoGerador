@@ -58,16 +58,11 @@ function humanizeUnknown(code: string): string {
   // Preserva códigos desconhecidos, evitando traduções incorretas de engenharia.
   return code;
 }
-export const metricLabel = (code: string) =>
-  metricLabels[code] ?? humanizeUnknown(code);
-export const auditActionLabel = (code: string) =>
-  auditActions[code] ?? humanizeUnknown(code);
-export const auditEntityLabel = (code: string) =>
-  auditEntities[code] ?? humanizeUnknown(code);
-export const transportLabel = (code: string) =>
-  transportLabels[code] ?? humanizeUnknown(code);
-export const lifecycleLabel = (code: string) =>
-  lifecycleLabels[code] ?? humanizeUnknown(code);
+export const metricLabel = (code: string) => metricLabels[code] ?? humanizeUnknown(code);
+export const auditActionLabel = (code: string) => auditActions[code] ?? humanizeUnknown(code);
+export const auditEntityLabel = (code: string) => auditEntities[code] ?? humanizeUnknown(code);
+export const transportLabel = (code: string) => transportLabels[code] ?? humanizeUnknown(code);
+export const lifecycleLabel = (code: string) => lifecycleLabels[code] ?? humanizeUnknown(code);
 export const channelAccessLabel = (code: string) =>
   code === "R"
     ? "Somente leitura"
