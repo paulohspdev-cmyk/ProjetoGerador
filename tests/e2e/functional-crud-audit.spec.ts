@@ -332,7 +332,7 @@ test("backup e cadastro técnico de controladora funcionam sem comando industria
   await expect(assetRow).toContainText("Inativo");
   await expect(assetRow.getByRole("button", { name: "Excluir" })).toBeEnabled();
   await acceptDialog(page, () => assetRow.getByRole("button", { name: "Excluir" }).click());
-  await expect(page.getByText("Asset removido.")).toBeVisible();
+  await expect(page.getByText("Equipamento removido.")).toBeVisible();
   await expect(page.locator("tr").filter({ hasText: "AUDITATS" })).toHaveCount(0);
 
   await page.goto("/p/backups");
