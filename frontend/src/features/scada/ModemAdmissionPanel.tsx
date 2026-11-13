@@ -29,7 +29,10 @@ export function ModemAdmissionPanel({
           columns={[
             { label: "Entrada", render: (peer) => <b>TCP {peer.remotePort}</b> },
             { label: "Origem observada", render: (peer) => peer.remoteIp || "—" },
-            { label: "Tentativas", render: (peer) => `Aceitas: ${peer.acceptedCount} · Recusadas: ${peer.rejectedCount}` },
+            {
+              label: "Tentativas",
+              render: (peer) => `Aceitas: ${peer.acceptedCount} · Recusadas: ${peer.rejectedCount}`,
+            },
             { label: "Primeiro acesso", render: (peer) => dateTime(peer.firstSeenAt) },
             {
               label: "Último acesso",
