@@ -60,9 +60,15 @@ export function MapScreen() {
         const measured = gens
           .map((generator) => metricNumber(generator, "power_kw", generator.load))
           .filter((value): value is number => value != null);
-        const online = gens.filter((generator) => generatorDisplayStatus(generator) === "online").length;
-        const alert = gens.filter((generator) => generatorDisplayStatus(generator) === "alerta").length;
-        const offline = gens.filter((generator) => ["offline", "stale"].includes(generatorDisplayStatus(generator))).length;
+        const online = gens.filter(
+          (generator) => generatorDisplayStatus(generator) === "online",
+        ).length;
+        const alert = gens.filter(
+          (generator) => generatorDisplayStatus(generator) === "alerta",
+        ).length;
+        const offline = gens.filter((generator) =>
+          ["offline", "stale"].includes(generatorDisplayStatus(generator)),
+        ).length;
         return {
           ...site,
           gens,
@@ -270,7 +276,11 @@ export function MapScreen() {
                       ? "Em alerta"
                       : siteStatus(selected) === "offline"
                         ? "Crítica"
-                        : siteStatus(selected) === "unknown" ? "Sem estado confirmado" : siteStatus(row) === "unknown" ? "Sem estado confirmado" : "Sem gerador"}
+                        : siteStatus(selected) === "unknown"
+                          ? "Sem estado confirmado"
+                          : siteStatus(row) === "unknown"
+                            ? "Sem estado confirmado"
+                            : "Sem gerador"}
                 </Pill>
               </div>
               <div className="grid grid-cols-3 gap-2 border-b border-border/60 py-4 text-center">
@@ -318,7 +328,10 @@ export function MapScreen() {
                       className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 py-2 text-xs"
                     >
                       <b className="truncate">{generator.tag}</b>
-                      <StatusPill status={generator.status} telemetryStale={generator.telemetryStale} />
+                      <StatusPill
+                        status={generator.status}
+                        telemetryStale={generator.telemetryStale}
+                      />
                       <span className="num min-w-16 text-right text-muted-foreground">
                         {(() => {
                           const load = metricNumber(generator, "power_kw", generator.load);
