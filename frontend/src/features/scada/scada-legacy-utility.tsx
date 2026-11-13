@@ -1,15 +1,7 @@
 import { Info } from "lucide-react";
 import { useTheme } from "@/layout/ThemeProvider";
 import { useScadaOps } from "./ScadaOpsProvider";
-import {
-  ActionBtn,
-  Panel,
-  Pill,
-  ScadaTable,
-  ScreenBody,
-  Stats,
-  Tone,
-} from "./kit";
+import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats, Tone } from "./kit";
 
 export function SettingsScreen() {
   const { theme, setTheme } = useTheme();
@@ -39,17 +31,13 @@ export function BackupsScreen() {
   const { backups, runBackup } = useScadaOps();
   return (
     <ScreenBody>
-      <Stats
-        items={[{ icon: Info, label: "Backups", value: backups.length }]}
-      />
+      <Stats items={[{ icon: Info, label: "Backups", value: backups.length }]} />
       <Panel
         title="Backups reais"
         actions={<ActionBtn onClick={runBackup}>Fazer backup agora</ActionBtn>}
       >
         {!backups.length && (
-          <p className="text-[12px] text-muted-foreground">
-            Nenhum backup executado.
-          </p>
+          <p className="text-[12px] text-muted-foreground">Nenhum backup executado.</p>
         )}
         {!!backups.length && (
           <ScadaTable
@@ -60,11 +48,7 @@ export function BackupsScreen() {
               { label: "Tamanho", render: (r) => r.size },
               {
                 label: "Resultado",
-                render: (r) => (
-                  <Tone tone={r.result === "OK" ? "ok" : "warn"}>
-                    {r.result}
-                  </Tone>
-                ),
+                render: (r) => <Tone tone={r.result === "OK" ? "ok" : "warn"}>{r.result}</Tone>,
               },
             ]}
           />
