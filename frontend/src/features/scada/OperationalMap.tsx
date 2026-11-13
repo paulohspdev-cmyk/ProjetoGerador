@@ -137,9 +137,13 @@ export function OperationalMap({
           return {
             ...site,
             gens,
-            online: gens.filter((generator) => generatorDisplayStatus(generator) === "online").length,
-            alerta: gens.filter((generator) => generatorDisplayStatus(generator) === "alerta").length,
-            offline: gens.filter((generator) => ["offline", "stale"].includes(generatorDisplayStatus(generator))).length,
+            online: gens.filter((generator) => generatorDisplayStatus(generator) === "online")
+              .length,
+            alerta: gens.filter((generator) => generatorDisplayStatus(generator) === "alerta")
+              .length,
+            offline: gens.filter((generator) =>
+              ["offline", "stale"].includes(generatorDisplayStatus(generator)),
+            ).length,
             load: measuredLoad.length ? measuredLoad.reduce((sum, value) => sum + value, 0) : null,
           };
         }),
