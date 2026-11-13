@@ -2,6 +2,7 @@ import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { Cable, Cpu, Layers } from "lucide-react";
 
 import { useAuth } from "@/features/auth/AuthProvider";
+import { transportLabel } from "@/lib/system-labels";
 import {
   domainApi,
   type AssetV3,
@@ -171,8 +172,8 @@ export function ControllersLifecycleScreen() {
       setError("Desative o asset antes de excluí-lo.");
       return;
     }
-    if (!window.confirm(`Excluir o asset ${row.tag}?`)) return;
-    await run(() => domainApi.removeAsset(row.id), "Asset removido.");
+    if (!window.confirm(`Excluir o equipamento ${row.tag}?`)) return;
+    await run(() => domainApi.removeAsset(row.id), "Equipamento removido.");
   };
 
   return (
@@ -363,7 +364,7 @@ export function ControllersLifecycleScreen() {
           rows={controllerRows}
           min="900px"
           columns={[
-            { label: "Asset", render: (r) => <b>{r.assetTag}</b> },
+            { label: "Equipamento", render: (r) => <b>{r.assetTag}</b> },
             {
               label: "Controladora",
               render: (r) => (
@@ -450,10 +451,10 @@ export function ControllersLifecycleScreen() {
           rows={connectionRows}
           min="1050px"
           columns={[
-            { label: "Asset", render: (r) => <b>{r.assetTag}</b> },
+            { label: "Equipamento", render: (r) => <b>{r.assetTag}</b> },
             { label: "Controladora", render: (r) => r.controllerModel },
             { label: "Conexão", render: (r) => r.name },
-            { label: "Transporte", render: (r) => <span className="num">{r.transport}</span> },
+            { label: "Comunicação", render: (r) => <span title={r.transport}>{transportLabel(r.transport)}</span> },
             {
               label: "Host / porta",
               render: (r) => (
