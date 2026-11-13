@@ -54,6 +54,32 @@ assert down["outages"][0]["ended_at"] is None
 up = traffic_store.record_bridge_traffic([session(True)], 1_160)
 assert up["outages"][0]["ended_at"] == 1_160
 
+# Consultar um resumo não deve atualizar a linha do tempo nem contabilizar tráfego.
+with db.connect() as conn:
+    before = conn.execute(
+        "SELECT connected,changed_at,last_seen_at FROM bridge_availability_state WHERE remote_port=15001"
+    ).fetchone()
+    before_state = tuple(before)
+    before_traffic = conn.execute(
+        "SELECT SUM(bytes_rx + bytes_tx) FROM bridge_traffic_daily"
+    ).fetchone()[0]
+
+snapshot = traffic_store.traffic_summary(1_160)
+assert snapshot["outages"][0]["ended_at"] == 1_160
+assert snapshot["availability"][0]["connected"] == 1
+with db.connect() as conn:
+    after_state = tuple(
+        conn.execute(
+            "SELECT connected,changed_at,last_seen_at FROM bridge_availability_state WHERE remote_port=15001"
+        ).fetchone()
+    )
+    after_traffic = conn.execute(
+        "SELECT SUM(bytes_rx + bytes_tx) FROM bridge_traffic_daily"
+    ).fetchone()[0]
+assert before_state == after_state
+assert before_traffic == after_traffic
+
+
 # A origem provável deve diferenciar infraestrutura, campo e controladora.
 listeners = {15001: {"remoteListening": True, "localListening": True}}
 assert _connection_diagnosis(session(False), listeners, True)["origin"] == "field"
