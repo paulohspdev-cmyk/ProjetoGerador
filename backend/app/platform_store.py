@@ -695,11 +695,13 @@ def approve_modem_admission(remote_port: int, data: dict, actor: str) -> dict:
         "kind": "modem",
         "listen_port": port,
         "host": admission.get("remoteIp") or "",
-        "status": "approved",
+        "status": "approved_unlinked",
         "last_seen": admission.get("lastSeenAt"),
         "active": True,
     }
     metadata = dict(data.get("metadata") or {})
+    metadata["admissionPort"] = port
+    metadata["admissionIp"] = admission.get("remoteIp") or ""
     metadata["admission"] = {
         "remotePort": port,
         "firstSeenAt": admission.get("firstSeenAt"),
