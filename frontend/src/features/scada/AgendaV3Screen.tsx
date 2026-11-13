@@ -6,8 +6,10 @@ import { rcApi, type AgendaItemApi, type OpsSite } from "@/lib/api";
 import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats } from "./kit";
 
 const agendaKindLabels: Record<string, string> = {
-  manual: "Compromisso", exercise: "Exercício planejado",
-  visit: "Visita", maintenance: "Manutenção",
+  manual: "Compromisso",
+  exercise: "Exercício planejado",
+  visit: "Visita",
+  maintenance: "Manutenção",
 };
 
 export function AgendaV3Screen() {
