@@ -1,4 +1,5 @@
 import asyncio
+import sqlite3
 import os
 import tempfile
 from pathlib import Path
@@ -28,6 +29,16 @@ generator = db.create_generator(
         "enabled": True,
     }
 )
+# CAD-13-DB: mesmo uma chamada direta à persistência não pode contornar
+# o fluxo industrial privilegiado de ativação/desativação.
+try:
+    db.update_generator(generator["id"], {"enabled": False}, actor="test")
+except sqlite3.IntegrityError:
+    pass
+else:
+    raise AssertionError("update_generator permitiu alterar enabled fora do lifecycle")
+assert db.get_generator(generator["id"])["enabled"] is True
+
 user = {"email": "admin@test", "role": "administrador"}
 state = {"active": True, "provisions": 0}
 
