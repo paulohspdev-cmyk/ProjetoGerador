@@ -120,18 +120,20 @@ export function FuelScreen() {
 export function BatteriesScreen() {
   const { generators } = useGenerators();
   const measured = generators.filter((g) => metricNumber(g, "battery_voltage", g.battery) != null);
-  const mean = measured.length
-    ? measured.reduce((s, g) => s + (metricNumber(g, "battery_voltage", g.battery) ?? 0), 0) /
-      measured.length
-    : null;
+  const voltages = measured
+    .map((g) => metricNumber(g, "battery_voltage", g.battery))
+    .filter((value): value is number => value != null);
+  const voltageRange = voltages.length
+    ? `${fmt(Math.min(...voltages))}–${fmt(Math.max(...voltages))} V`
+    : "N/D";
   return (
     <ScreenBody>
       <Stats
         items={[
           {
             icon: BatteryCharging,
-            label: "Média medida",
-            value: mean == null ? "N/D" : `${fmt(mean)} V`,
+            label: "Faixa medida",
+            value: voltageRange,
           },
           {
             icon: BatteryCharging,
@@ -179,7 +181,7 @@ export function HourmetersScreen() {
         items={[
           {
             icon: Timer,
-            label: "Horas medidas",
+            label: "Soma dos horímetros medidos",
             value: measured.length ? `${fmt(total, 0)} h` : "N/D",
           },
           {
