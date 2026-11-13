@@ -1,7 +1,7 @@
-import type { BridgePeerObservation } from "@/lib/api";
+import type { ModemAdmission } from "./modem-admission-api";
 import { ActionBtn, Panel, Pill, ScadaTable } from "./kit";
 
-export type ModemAdmissionRow = BridgePeerObservation & { id: string };
+export type ModemAdmissionRow = ModemAdmission & { id: string };
 
 function dateTime(epoch: number | null | undefined) {
   if (!epoch) return "—";
@@ -14,30 +14,35 @@ export function ModemAdmissionPanel({
   onReject,
 }: {
   rows: ModemAdmissionRow[];
-  onApprove: (peer: BridgePeerObservation) => void;
-  onReject: (peer: BridgePeerObservation) => void;
+  onApprove: (peer: ModemAdmission) => void;
+  onReject: (peer: ModemAdmission) => void;
 }) {
   return (
     <Panel title="Aguardando aprovação">
       {!rows.length ? (
         <p className="py-6 text-center text-sm text-muted-foreground">
-          Nenhum modem novo aguardando aprovação.
+          Nenhuma porta observada está pendente de admissão.
         </p>
       ) : (
         <ScadaTable
           rows={rows}
           columns={[
             { label: "Entrada", render: (peer) => <b>TCP {peer.remotePort}</b> },
-            { label: "Origem", render: (peer) => peer.remoteIp },
+            { label: "Origem observada", render: (peer) => peer.remoteIp || "—" },
+            {
+              label: "Tentativas",
+              render: (peer) => `Aceitas: ${peer.acceptedCount} · Recusadas: ${peer.rejectedCount}`,
+            },
             { label: "Primeiro acesso", render: (peer) => dateTime(peer.firstSeenAt) },
             {
               label: "Último acesso",
               render: (peer) => {
-                const connected = Date.now() / 1000 - peer.lastSeenAt <= 30;
+                const recentlySeen =
+                  peer.lastSeenAt > 0 && Date.now() / 1000 - peer.lastSeenAt <= 30;
                 return (
                   <span className="flex flex-wrap items-center gap-2">
-                    <Pill tone={connected ? "ok" : "muted"}>
-                      {connected ? "Conectado" : "Sem atividade"}
+                    <Pill tone={recentlySeen ? "info" : "muted"}>
+                      {recentlySeen ? "Observação recente" : "Sem observação recente"}
                     </Pill>
                     <span>{dateTime(peer.lastSeenAt)}</span>
                   </span>

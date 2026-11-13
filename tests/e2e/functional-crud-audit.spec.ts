@@ -140,7 +140,11 @@ test("modems, gateways, webhooks e ERP/BMS fazem CRUD real", async ({ page }) =>
     await f.locator('button[type="submit"]').click();
     r = row(page, spec.name + " Editado");
     await r.getByRole("button", { name: "Desativar" }).click();
-    await expect(row(page, spec.name + " Editado")).toContainText("Inativo");
+    await expect(row(page, spec.name + " Editado")).toContainText(
+      spec.path === "/p/modems" || spec.path === "/p/gateways"
+        ? "Desativado no cadastro"
+        : "Inativo",
+    );
     await acceptDialog(page, () =>
       row(page, spec.name + " Editado")
         .getByRole("button", { name: "Excluir" })

@@ -41,6 +41,7 @@ function sessionName(session: BridgeSession) {
 }
 
 function diagnosisTone(session: BridgeSession) {
+  if (!session.connected) return "err" as const;
   if (session.diagnosis?.origin === "none") return "ok" as const;
   if (session.diagnosis?.origin === "controller" || session.diagnosis?.origin === "configuration")
     return "warn" as const;
@@ -133,7 +134,9 @@ export function ConnectivitySecondaryPanels({
               <div className="min-w-0">
                 <b className="block truncate text-xs">{sessionName(session)}</b>
                 <p className="mt-0.5 truncate text-[10px] text-muted-foreground">
-                  {session.diagnosis?.label || "Conexão degradada"}
+                  {!session.connected
+                    ? "Sem conexão ativa"
+                    : session.diagnosis?.label || "Conexão degradada"}
                 </p>
                 <p className="mt-0.5 text-[10px] text-muted-foreground">
                   Reconexões: {session.reconnections} · Timeouts: {session.timeouts} · Erros:{" "}
@@ -141,13 +144,15 @@ export function ConnectivitySecondaryPanels({
                 </p>
               </div>
               <Pill tone={diagnosisTone(session)}>
-                {session.diagnosis?.origin === "field"
-                  ? "CAMPO/MODEM"
-                  : session.diagnosis?.origin === "controller"
-                    ? "CONTROLADORA"
-                    : session.diagnosis?.origin === "configuration"
-                      ? "CONFIG"
-                      : "SISTEMA"}
+                {!session.connected
+                  ? "OFFLINE"
+                  : session.diagnosis?.origin === "field"
+                    ? "CAMPO/MODEM"
+                    : session.diagnosis?.origin === "controller"
+                      ? "CONTROLADORA"
+                      : session.diagnosis?.origin === "configuration"
+                        ? "CONFIG"
+                        : "SISTEMA"}
               </Pill>
             </div>
           ))}
@@ -170,7 +175,7 @@ export function ConnectivitySecondaryPanels({
           ))}
           {!badSessions.length && !(traffic?.outages ?? []).length && (
             <p className="py-8 text-center text-sm text-online">
-              Nenhum incidente de conectividade ativo.
+              Nenhum incidente registrado na amostra consultada.
             </p>
           )}
         </div>

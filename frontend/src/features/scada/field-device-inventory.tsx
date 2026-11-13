@@ -2,16 +2,13 @@ import { Network, Router, Signal } from "lucide-react";
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "@/features/auth/AuthProvider";
-import { rcApi, type BridgePeerObservation, type FieldDevice } from "@/lib/api";
+import { rcApi, type FieldDevice } from "@/lib/api";
+import { modemAdmissionApi, type ModemAdmission } from "./modem-admission-api";
 import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats } from "./kit";
 import { ModemAdmissionPanel } from "./ModemAdmissionPanel";
 
 function errText(error: unknown) {
   return error instanceof Error ? error.message : "Falha na operação";
-}
-
-function admissionKey(remotePort: number, remoteIp: string) {
-  return String(remotePort) + "|" + remoteIp.trim();
 }
 
 function metadataText(metadata: Record<string, unknown> | undefined, key: string) {
@@ -33,9 +30,9 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
   const { can } = useAuth();
   const admin = can("manageUsers");
   const [rows, setRows] = useState<FieldDevice[]>([]);
-  const [peers, setPeers] = useState<BridgePeerObservation[]>([]);
+  const [admissions, setAdmissions] = useState<ModemAdmission[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
-  const [approvalPeer, setApprovalPeer] = useState<BridgePeerObservation | null>(null);
+  const [approvalPeer, setApprovalPeer] = useState<ModemAdmission | null>(null);
   const [metadataBase, setMetadataBase] = useState<Record<string, unknown>>({});
   const [name, setName] = useState("");
   const [manufacturer, setManufacturer] = useState("");
@@ -53,15 +50,15 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
   const load = useCallback(async () => {
     try {
       if (kind === "modem" && admin) {
-        const [deviceRows, peerRows] = await Promise.all([
+        const [deviceRows, admissionRows] = await Promise.all([
           rcApi.fieldDevices.list(kind),
-          rcApi.system.bridgePeers(200),
+          modemAdmissionApi.list(),
         ]);
         setRows(deviceRows);
-        setPeers(peerRows);
+        setAdmissions(admissionRows);
       } else {
         setRows(await rcApi.fieldDevices.list(kind));
-        setPeers([]);
+        setAdmissions([]);
       }
       setError("");
     } catch (loadError) {
@@ -76,33 +73,16 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
     return () => window.clearInterval(timer);
   }, [admin, kind, load]);
 
-  const registeredAdmissionPorts = useMemo(() => {
-    const ports = new Set<number>();
-    for (const row of rows) {
-      const port = metadataNumber(row.metadata, "admissionPort");
-      if (port) ports.add(port);
-    }
-    return ports;
-  }, [rows]);
-
-  const pendingPeers = useMemo(() => {
-    const latestAcceptedByPort = new Map<number, BridgePeerObservation>();
-    for (const peer of peers) {
-      if (registeredAdmissionPorts.has(peer.remotePort)) continue;
-      if (!peer.lastAcceptedAt || Number(peer.acceptedCount || 0) <= 0) continue;
-      const current = latestAcceptedByPort.get(peer.remotePort);
-      if (!current || Number(peer.lastAcceptedAt) > Number(current.lastAcceptedAt || 0)) {
-        latestAcceptedByPort.set(peer.remotePort, peer);
-      }
-    }
-    return [...latestAcceptedByPort.values()];
-  }, [peers, registeredAdmissionPorts]);
+  const pendingPeers = useMemo(
+    () => admissions.filter((entry) => entry.state === "pending" && entry.lastSeenAt > 0),
+    [admissions],
+  );
+  const rejectedAdmissions = useMemo(
+    () => admissions.filter((entry) => entry.state === "rejected"),
+    [admissions],
+  );
   const pendingRows = useMemo(
-    () =>
-      pendingPeers.map((peer) => ({
-        ...peer,
-        id: admissionKey(peer.remotePort, peer.remoteIp),
-      })),
+    () => pendingPeers.map((peer) => ({ ...peer, id: String(peer.remotePort) })),
     [pendingPeers],
   );
 
@@ -125,7 +105,7 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
     setAdvanced(false);
   };
 
-  const beginApprove = (peer: BridgePeerObservation) => {
+  const beginApprove = (peer: ModemAdmission) => {
     reset();
     setApprovalPeer(peer);
     setName("MDM-" + String(peer.remotePort));
@@ -181,12 +161,18 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
       };
       if (editing) {
         await rcApi.fieldDevices.update(editing, payload);
-      } else {
-        await rcApi.fieldDevices.create({
-          kind,
-          ...payload,
-          status: kind === "modem" && approvalPeer ? "approved_unlinked" : "unknown",
+      } else if (kind === "modem" && approvalPeer) {
+        await modemAdmissionApi.approve(approvalPeer.remotePort, {
+          name: payload.name,
+          model: payload.model,
+          serial: payload.serial,
+          imei: payload.imei,
+          sim_iccid: payload.sim_iccid,
+          carrier: payload.carrier,
+          metadata: payload.metadata,
         });
+      } else {
+        await rcApi.fieldDevices.create({ kind, ...payload, status: "unknown" });
       }
       reset();
       await load();
@@ -197,33 +183,28 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
     }
   };
 
-  const rejectPeer = async (peer: BridgePeerObservation) => {
-    if (!window.confirm("Rejeitar modem em " + peer.remoteIp + ":" + String(peer.remotePort) + "?"))
-      return;
+  const rejectPeer = async (peer: ModemAdmission) => {
+    if (!window.confirm("Rejeitar a admissão da porta TCP " + peer.remotePort + "?")) return;
     setBusy(true);
     setError("");
     try {
-      const rejected = await rcApi.fieldDevices.create({
-        kind: "modem",
-        name: "Rejeitado " + peer.remoteIp + ":" + String(peer.remotePort),
-        model: "",
-        host: peer.remoteIp,
-        serial: "",
-        imei: "",
-        sim_iccid: "",
-        carrier: "",
-        status: "rejected",
-        metadata: {
-          admissionPort: peer.remotePort,
-          admissionIp: peer.remoteIp,
-          admissionFirstSeenAt: peer.firstSeenAt,
-          admissionLastSeenAt: peer.lastSeenAt,
-        },
-      });
-      await rcApi.fieldDevices.update(rejected.id, { active: false });
+      await modemAdmissionApi.reject(peer.remotePort);
       await load();
     } catch (rejectError) {
       setError(errText(rejectError));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const reopenPeer = async (remotePort: number) => {
+    setBusy(true);
+    setError("");
+    try {
+      await modemAdmissionApi.reopen(remotePort);
+      await load();
+    } catch (reopenError) {
+      setError(errText(reopenError));
     } finally {
       setBusy(false);
     }
@@ -258,7 +239,9 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
         <h2 className="text-lg font-extrabold">{label}</h2>
         {kind === "modem" && (
           <p className="mt-1 text-sm text-muted-foreground">
-            Primeiro aprove o modem que chegou ao servidor. O gerador será vinculado somente depois.
+            A admissão por porta TCP exige aprovação administrativa. O gerador só pode ser vinculado
+            depois de uma decisão persistida. O cadastro manual de inventário não aprova a porta nem
+            configura a VPN.
           </p>
         )}
       </div>
@@ -278,7 +261,7 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
             : []),
           {
             icon: Signal,
-            label: "Ativos",
+            label: "Cadastros habilitados",
             value: registeredRows.filter((row) => row.active).length,
             tone: "text-online",
           },
@@ -292,11 +275,36 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
       )}
 
       {kind === "modem" && admin && (
-        <ModemAdmissionPanel
-          rows={pendingRows}
-          onApprove={beginApprove}
-          onReject={(peer) => void rejectPeer(peer)}
-        />
+        <>
+          <ModemAdmissionPanel
+            rows={pendingRows}
+            onApprove={beginApprove}
+            onReject={(peer) => void rejectPeer(peer)}
+          />
+          {rejectedAdmissions.length > 0 && (
+            <Panel title="Admissões rejeitadas">
+              <ScadaTable
+                rows={rejectedAdmissions.map((entry) => ({
+                  ...entry,
+                  id: String(entry.remotePort),
+                }))}
+                columns={[
+                  { label: "Porta", render: (entry) => <b>TCP {entry.remotePort}</b> },
+                  { label: "Origem observada", render: (entry) => entry.remoteIp || "—" },
+                  { label: "Decisão", render: () => <Pill tone="warn">Rejeitada</Pill> },
+                  {
+                    label: "Ações",
+                    render: (entry) => (
+                      <ActionBtn disabled={busy} onClick={() => void reopenPeer(entry.remotePort)}>
+                        Reabrir análise
+                      </ActionBtn>
+                    ),
+                  },
+                ]}
+              />
+            </Panel>
+          )}
+        </>
       )}
 
       {admin && (
@@ -312,8 +320,9 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
           <form onSubmit={save} className="space-y-3">
             {approvalPeer && (
               <p className="rounded-lg border border-online/30 bg-online/8 p-3 text-xs text-muted-foreground">
-                Conexão detectada em {approvalPeer.remoteIp}:{approvalPeer.remotePort}. Aprovar não
-                cria gerador, não cria Rapid Device e não libera comandos.
+                Porta observada: {approvalPeer.remoteIp}:{approvalPeer.remotePort}. A aprovação
+                registra a decisão administrativa no backend. Não cria gerador, não configura VPN,
+                não cria Rapid Device e não libera comandos.
               </p>
             )}
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -479,11 +488,13 @@ function FieldInventory({ kind }: { kind: "modem" | "gateway" }) {
                 label: "Cadastro",
                 render: (row) => (
                   <Pill tone={row.active ? "ok" : "muted"}>
-                    {row.status === "approved_unlinked"
-                      ? "Aprovado · sem gerador"
-                      : row.active
-                        ? "Ativo"
-                        : "Inativo"}
+                    {row.active === false
+                      ? "Desativado no cadastro"
+                      : row.status === "approved_unlinked" || row.status === "approved_linked"
+                        ? row.status === "approved_linked"
+                          ? "Aprovado · vinculado"
+                          : "Aprovado · sem gerador"
+                        : "Cadastrado · aprovação N/D"}
                   </Pill>
                 ),
               },

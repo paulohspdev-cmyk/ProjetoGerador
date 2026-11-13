@@ -35,6 +35,7 @@ type ProductDiagnostics = SystemDiagnostics & {
 
 function sessionState(session: BridgeSession, fresh: boolean) {
   if (!fresh) return { label: "N/D", tone: "muted" as const };
+  if (!session.connected) return { label: "OFFLINE", tone: "err" as const };
   const origin = session.diagnosis?.origin;
   if (origin === "none") return { label: "ONLINE", tone: "ok" as const };
   if (origin === "controller") return { label: "CONTROLADORA", tone: "warn" as const };
@@ -70,7 +71,7 @@ export function ConnectivityScreen() {
       try {
         const [system, inventory] = await Promise.all([
           rcApi.system.health(),
-          rcApi.fieldDevices.list().catch(() => [] as FieldDevice[]),
+          rcApi.fieldDevices.list(),
         ]);
         if (active) {
           setHealth(system as ProductDiagnostics);
@@ -92,7 +93,7 @@ export function ConnectivityScreen() {
   const fresh = health?.bridge.statusFresh === true;
   const sessions = health?.bridge.sessions ?? [];
   const healthy = fresh
-    ? sessions.filter((session) => session.diagnosis?.origin === "none").length
+    ? sessions.filter((session) => session.connected && session.diagnosis?.origin === "none").length
     : 0;
   const degraded = fresh ? Math.max(0, sessions.length - healthy) : 0;
   const traffic = health?.bridge.traffic;
@@ -104,7 +105,9 @@ export function ConnectivityScreen() {
   const gateways = devices.filter((device) => device.kind === "gateway");
   const activeModems = modems.filter((device) => device.active).length;
   const activeGateways = gateways.filter((device) => device.active).length;
-  const badSessions = sessions.filter((session) => fresh && session.diagnosis?.origin !== "none");
+  const badSessions = sessions.filter(
+    (session) => fresh && (!session.connected || session.diagnosis?.origin !== "none"),
+  );
   const maxTraffic = Math.max(1, ...(traffic?.ports ?? []).map((item) => item.monthBytes));
   const signalDevices = devices.filter(
     (device) => device.rssi != null && Number.isFinite(Number(device.rssi)),
@@ -116,8 +119,7 @@ export function ConnectivityScreen() {
     if (carrierFilter && device.carrier !== carrierFilter) return false;
     if (kindFilter && kindFilter !== device.kind) return false;
     if (statusFilter) {
-      const normalized = (device.status || "").toLowerCase();
-      const key = !device.active || normalized.includes("offline") ? "offline" : "online";
+      const key = !device.active ? "inactive" : "inventory";
       if (key !== statusFilter) return false;
     }
     return true;
@@ -127,7 +129,14 @@ export function ConnectivityScreen() {
     if (kindFilter && kindFilter !== "bridge") return false;
     if (!statusFilter) return true;
     const state = sessionState(session, fresh);
-    const key = state.tone === "ok" ? "online" : session.connected ? "degraded" : "offline";
+    const key =
+      state.tone === "muted"
+        ? "unknown"
+        : state.tone === "ok"
+          ? "online"
+          : session.connected
+            ? "degraded"
+            : "offline";
     return key === statusFilter;
   });
 
@@ -137,17 +146,17 @@ export function ConnectivityScreen() {
         items={[
           {
             icon: Router,
-            label: "Modems ativos",
+            label: "Modems habilitados no cadastro",
             value: `${activeModems}/${modems.length}`,
             tone: activeModems === modems.length && modems.length ? "text-online" : undefined,
-            sub: `${Math.max(0, modems.length - activeModems)} inativo(s)`,
+            sub: `${Math.max(0, modems.length - activeModems)} desativado(s) no cadastro`,
           },
           {
             icon: Network,
-            label: "Gateways ativos",
+            label: "Gateways habilitados no cadastro",
             value: `${activeGateways}/${gateways.length}`,
             tone: activeGateways === gateways.length && gateways.length ? "text-online" : undefined,
-            sub: `${Math.max(0, gateways.length - activeGateways)} inativo(s)`,
+            sub: `${Math.max(0, gateways.length - activeGateways)} desativado(s) no cadastro`,
           },
           {
             icon: Database,
@@ -205,6 +214,9 @@ export function ConnectivityScreen() {
               <option value="online">Online</option>
               <option value="degraded">Atenção</option>
               <option value="offline">Offline</option>
+              <option value="inventory">Cadastro habilitado (sem status de rede)</option>
+              <option value="inactive">Cadastro desativado</option>
+              <option value="unknown">Status de conexão N/D</option>
             </select>
           </label>
           <label className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
@@ -254,7 +266,7 @@ export function ConnectivityScreen() {
                     "Tipo",
                     "Operadora / IP",
                     "Sinal",
-                    "Status",
+                    "Rede / cadastro",
                     "Hoje",
                     "Mês",
                     "Última leitura",
@@ -270,7 +282,7 @@ export function ConnectivityScreen() {
               </thead>
               <tbody>
                 {visibleDevices.map((device) => {
-                  const status = device.active ? device.status || "Ativo" : "Inativo";
+                  const status = device.active ? "Cadastrado · rede N/D" : "Cadastro desativado";
                   const rssi = device.rssi == null ? null : Number(device.rssi);
                   return (
                     <tr key={device.id}>
@@ -290,7 +302,7 @@ export function ConnectivityScreen() {
                         <span className="num">{rssi == null ? "N/D" : `${rssi} dBm`}</span>
                       </td>
                       <td className="border-b border-border/45 px-3 py-2.5">
-                        <Pill tone={device.active ? "ok" : "muted"}>{status}</Pill>
+                        <Pill tone="muted">{status}</Pill>
                       </td>
                       <td className="border-b border-border/45 px-3 py-2.5 text-muted-foreground">
                         —
@@ -351,7 +363,7 @@ export function ConnectivityScreen() {
           </div>
         </Panel>
 
-        <Panel title="Qualidade de sinal / conexões" className="xl:col-span-5">
+        <Panel title="RSSI registrado / conexões" className="xl:col-span-5">
           {signalDevices.length ? (
             <div className="space-y-3">
               {signalDevices.slice(0, 10).map((device) => {
@@ -395,7 +407,7 @@ export function ConnectivityScreen() {
             </div>
           ) : (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              Nenhuma leitura de sinal disponível.
+              Nenhuma medição RSSI cadastrada. Sinal registrado não comprova conexão atual.
             </p>
           )}
         </Panel>
