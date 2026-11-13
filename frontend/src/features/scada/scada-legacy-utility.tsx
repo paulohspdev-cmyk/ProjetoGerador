@@ -1,7 +1,15 @@
 import { Info } from "lucide-react";
 import { useTheme } from "@/layout/ThemeProvider";
 import { useScadaOps } from "./ScadaOpsProvider";
-import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats, Tone } from "./kit";
+import {
+  ActionBtn,
+  Panel,
+  Pill,
+  ScadaTable,
+  ScreenBody,
+  Stats,
+  Tone,
+} from "./kit";
 
 export function SettingsScreen() {
   const { theme, setTheme } = useTheme();
