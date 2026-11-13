@@ -21,14 +21,15 @@ export function ModemAdmissionPanel({
     <Panel title="Aguardando aprovação">
       {!rows.length ? (
         <p className="py-6 text-center text-sm text-muted-foreground">
-          Nenhum modem novo aguardando aprovação.
+          Nenhuma porta observada está pendente de admissão.
         </p>
       ) : (
         <ScadaTable
           rows={rows}
           columns={[
             { label: "Entrada", render: (peer) => <b>TCP {peer.remotePort}</b> },
-            { label: "Origem", render: (peer) => peer.remoteIp },
+            { label: "Origem observada", render: (peer) => peer.remoteIp || "—" },
+            { label: "Tentativas", render: (peer) => `Aceitas: ${peer.acceptedCount} · Recusadas: ${peer.rejectedCount}` },
             { label: "Primeiro acesso", render: (peer) => dateTime(peer.firstSeenAt) },
             {
               label: "Último acesso",
