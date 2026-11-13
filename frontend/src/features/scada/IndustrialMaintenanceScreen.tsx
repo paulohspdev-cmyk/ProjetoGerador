@@ -64,8 +64,10 @@ export function MaintenanceV3Screen({ embedded = false }: { embedded?: boolean }
     const intervalHours = hours ? Number(hours) : undefined;
     const intervalDays = days ? Number(days) : undefined;
     if (
-      (hours.trim() && (intervalHours == null || !Number.isFinite(intervalHours) || intervalHours <= 0)) ||
-      (days.trim() && (intervalDays == null || !Number.isInteger(intervalDays) || intervalDays <= 0))
+      (hours.trim() &&
+        (intervalHours == null || !Number.isFinite(intervalHours) || intervalHours <= 0)) ||
+      (days.trim() &&
+        (intervalDays == null || !Number.isInteger(intervalDays) || intervalDays <= 0))
     ) {
       setError("Intervalos devem ser positivos; dias precisam ser números inteiros.");
       return;
