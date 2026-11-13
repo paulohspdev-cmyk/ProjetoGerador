@@ -4,6 +4,7 @@ import { useGenerators } from "@/features/generators/GeneratorsProvider";
 import { rcApi, type RapidMetric, type RapidTrend } from "@/lib/api";
 import { Panel, ScreenBody, Trend } from "./kit";
 import { shortTime } from "./operation-helpers";
+import { metricLabel } from "@/lib/system-labels";
 
 export function TrendsScreen() {
   const { generators } = useGenerators();
@@ -112,7 +113,7 @@ export function TrendsScreen() {
               <option value="">Sem métrica</option>
               {metrics.map((m) => (
                 <option key={m.key} value={m.key}>
-                  {m.key} · canal {m.cnl}
+                  {metricLabel(m.key)} · canal {m.cnl}
                 </option>
               ))}
             </select>
@@ -137,7 +138,7 @@ export function TrendsScreen() {
           {error}
         </p>
       )}
-      <Panel title={selected && metric ? `${selected.tag} · ${metric}` : "Histórico"}>
+      <Panel title={selected && metric ? `${selected.tag} · ${metricLabel(metric)}` : "Histórico"}>
         {loading ? (
           <p className="py-16 text-center text-sm text-muted-foreground">
             Consultando histórico de telemetria…
