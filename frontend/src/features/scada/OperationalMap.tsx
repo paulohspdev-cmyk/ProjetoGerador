@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useGenerators } from "@/features/generators/GeneratorsProvider";
 import { metricNumber } from "@/features/generators/generator-metrics";
 import { useTheme } from "@/layout/ThemeProvider";
-import type { Generator } from "@/data/generators";
+import { generatorDisplayStatus, type Generator } from "@/data/generators";
 import { rcApi, type OpsSite } from "@/lib/api";
 
 import "leaflet/dist/leaflet.css";
@@ -28,6 +28,7 @@ function siteColor(site: OperationalMapSite) {
   if (site.gens.length === 0) return "var(--muted-foreground)";
   if (site.offline > 0) return "var(--offline)";
   if (site.alerta > 0) return "var(--alert)";
+  if (site.online !== site.gens.length) return "var(--muted-foreground)";
   return "var(--online)";
 }
 
@@ -42,11 +43,11 @@ function popupHtml(site: OperationalMapSite) {
     .slice(0, 8)
     .map((generator) => {
       const status =
-        generator.status === "online"
+        generatorDisplayStatus(generator) === "online"
           ? { label: "ONLINE", css: "text-online" }
-          : generator.status === "alerta"
+          : generatorDisplayStatus(generator) === "alerta"
             ? { label: "ALERTA", css: "text-alert" }
-            : generator.status === "offline"
+            : ["offline", "stale"].includes(generatorDisplayStatus(generator))
               ? { label: "OFFLINE", css: "text-offline" }
               : { label: "N/D", css: "text-muted-foreground" };
       return `<li class="flex items-center justify-between gap-2">
@@ -136,9 +137,9 @@ export function OperationalMap({
           return {
             ...site,
             gens,
-            online: gens.filter((generator) => generator.status === "online").length,
-            alerta: gens.filter((generator) => generator.status === "alerta").length,
-            offline: gens.filter((generator) => generator.status === "offline").length,
+            online: gens.filter((generator) => generatorDisplayStatus(generator) === "online").length,
+            alerta: gens.filter((generator) => generatorDisplayStatus(generator) === "alerta").length,
+            offline: gens.filter((generator) => ["offline", "stale"].includes(generatorDisplayStatus(generator))).length,
             load: measuredLoad.length ? measuredLoad.reduce((sum, value) => sum + value, 0) : null,
           };
         }),
