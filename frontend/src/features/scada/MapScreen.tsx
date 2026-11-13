@@ -13,7 +13,7 @@ function siteStatus(row: { total: number; online: number; offline: number; alert
   if (!row.total) return "empty" as const;
   if (row.offline) return "offline" as const;
   if (row.alert) return "alert" as const;
-  if (row.total !== ("online" in row ? Number(row.online) : row.total)) return "unknown" as const;
+  if (row.online !== row.total) return "unknown" as const;
   return "online" as const;
 }
 
@@ -210,6 +210,7 @@ export function MapScreen() {
                 <option value="alert">Em alerta</option>
                 <option value="offline">Crítica / offline</option>
                 <option value="empty">Sem gerador</option>
+                <option value="unknown">Sem estado confirmado</option>
               </select>
             </label>
             <button
@@ -269,7 +270,7 @@ export function MapScreen() {
                       ? "Em alerta"
                       : siteStatus(selected) === "offline"
                         ? "Crítica"
-                        : "Sem gerador"}
+                        : siteStatus(selected) === "unknown" ? "Sem estado confirmado" : siteStatus(row) === "unknown" ? "Sem estado confirmado" : "Sem gerador"}
                 </Pill>
               </div>
               <div className="grid grid-cols-3 gap-2 border-b border-border/60 py-4 text-center">
