@@ -201,12 +201,12 @@ test("manutenção, regras, exercício, scheduler, escalonamento e relatórios p
   let r = row(page, "Audit Regra");
   await expect(r).toBeVisible();
   await r.getByRole("button", { name: /Aprovar e ligar/i }).click();
-  await expect(row(page, "Audit Regra")).toContainText("ON");
-  await expect(row(page, "Audit Regra")).toContainText("approved_nonindustrial");
+  await expect(row(page, "Audit Regra")).toContainText("Ativa");
+  await expect(row(page, "Audit Regra")).toContainText("Aprovada para avisos/OS");
   await row(page, "Audit Regra")
     .getByRole("button", { name: /Desligar/i })
     .click();
-  await expect(row(page, "Audit Regra")).toContainText("OFF");
+  await expect(row(page, "Audit Regra")).toContainText("Desativada");
   await acceptDialog(page, () =>
     row(page, "Audit Regra").getByRole("button", { name: "Excluir" }).click(),
   );
@@ -260,7 +260,7 @@ test("manutenção, regras, exercício, scheduler, escalonamento e relatórios p
 
   await page.goto("/p/notificacoes");
   await page.getByRole("button", { name: "Testar painel" }).click();
-  await expect(page.locator("tr").filter({ hasText: "panel" }).first()).toBeVisible();
+  await expect(page.locator("tr").filter({ hasText: "Painel" }).first()).toBeVisible();
   await page.getByRole("button", { name: "Processar fila" }).click();
 });
 

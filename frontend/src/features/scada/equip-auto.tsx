@@ -9,6 +9,14 @@ import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats } from "./kit";
 
 export { ConnectivityScreen, GatewaysScreen, ModemsScreen } from "./equip-connectivity";
 
+import {
+  actionLabels,
+  notificationChannelLabels,
+  notificationStatusLabels,
+  rulePartLabel,
+  triggerLabels,
+} from "./automation-labels";
+
 function errText(error: unknown) {
   return error instanceof Error ? error.message : "Falha na operação";
 }
@@ -169,8 +177,9 @@ export function RulesScreen() {
         ]}
       />
       <p className="rounded-md border border-alert/30 bg-alert/5 px-3 py-2 text-[11px] text-muted-foreground">
-        Motor fechado: somente generator_online / generator_offline / generator_alert → notify /
-        work_order. START, STOP, MCB, GCB e paralelismo são rejeitados pelo backend deste motor.
+        As regras podem avisar quando um gerador conectar, perder a comunicação ou entrar em alerta,
+        e podem gerar uma ordem de serviço. Este recurso não executa partida, parada ou comandos de
+        disjuntores.
       </p>
       {error && <p className="text-[11px] text-offline">{error}</p>}
       {admin && (
@@ -256,21 +265,34 @@ export function RulesScreen() {
               { label: "Regra", render: (r) => <b>{r.name}</b> },
               {
                 label: "Gatilho",
-                render: (r) => <span className="num text-[11px]">{r.trigger}</span>,
+                render: (r) => (
+                  <span className="num text-[11px]">{rulePartLabel(r.trigger, triggerLabels)}</span>
+                ),
               },
-              { label: "Ação", render: (r) => <span className="num text-[11px]">{r.action}</span> },
+              {
+                label: "Ação",
+                render: (r) => (
+                  <span className="num text-[11px]">{rulePartLabel(r.action, actionLabels)}</span>
+                ),
+              },
               {
                 label: "Homologação",
                 render: (r) => (
                   <Pill tone={r.safetyState === "approved_nonindustrial" ? "ok" : "warn"}>
-                    {r.safetyState || "draft"}
+                    {r.safetyState === "approved_nonindustrial"
+                      ? "Aprovada para avisos/OS"
+                      : r.safetyState === "draft" || !r.safetyState
+                        ? "Pendente de aprovação"
+                        : r.safetyState}
                   </Pill>
                 ),
               },
               {
                 label: "Estado",
                 render: (r) => (
-                  <Pill tone={r.enabled ? "ok" : "muted"}>{r.enabled ? "ON" : "OFF"}</Pill>
+                  <Pill tone={r.enabled ? "ok" : "muted"}>
+                    {r.enabled ? "Ativa" : "Desativada"}
+                  </Pill>
                 ),
               },
               {
@@ -307,7 +329,11 @@ export function ExerciseScreen() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const exercises = useMemo(
-    () => agenda.filter((item) => (item.title || "").toLowerCase().includes("exercício")),
+    () =>
+      agenda.filter(
+        (item) =>
+          item.kind === "exercise" || (item.title || "").toLowerCase().includes("exercício"),
+      ),
     [agenda],
   );
 
@@ -317,7 +343,12 @@ export function ExerciseScreen() {
     setBusy(true);
     setError("");
     try {
-      await rcApi.agenda.create({ title: "Exercício de gerador (planejamento)", when, site });
+      await rcApi.agenda.create({
+        title: "Exercício de gerador (planejamento)",
+        when,
+        site,
+        kind: "exercise",
+      });
       setWhen("");
       setSite("");
       await refresh();
@@ -360,8 +391,8 @@ export function ExerciseScreen() {
         ]}
       />
       <p className="rounded-md border border-alert/30 bg-alert/5 px-3 py-2 text-[11px] text-muted-foreground">
-        Este módulo é agenda/planejamento. Não existe execução automática de START, transferência,
-        MCB, GCB ou paralelismo por esta tela.
+        Esta tela registra somente o planejamento de exercícios. Ela não executa partida automática,
+        parada, transferência nem operação de disjuntores.
       </p>
       {error && <p className="text-[11px] text-offline">{error}</p>}
       {can("create") && (
@@ -482,7 +513,7 @@ export function NotificationsScreen() {
         title="Fila real de notificações"
         actions={
           <span className="flex gap-1">
-            <ActionBtn onClick={() => void testPanel()}>Testar painel</ActionBtn>
+            {admin && <ActionBtn onClick={() => void testPanel()}>Testar painel</ActionBtn>}
             {admin && <ActionBtn onClick={() => void process()}>Processar fila</ActionBtn>}
           </span>
         }
@@ -496,14 +527,25 @@ export function NotificationsScreen() {
           <ScadaTable
             rows={rows.map((r) => ({ ...r, id: String(r.id) }))}
             columns={[
-              { label: "Evento", render: (r) => <b>{r.event_type}</b> },
-              { label: "Canal", render: (r) => r.channel },
+              {
+                label: "Evento",
+                render: (r) => (
+                  <b title={r.event_type}>
+                    {r.event_type === "system.test"
+                      ? "Teste do sistema"
+                      : r.event_type === "automation.rule"
+                        ? "Regra de automação"
+                        : r.event_type}
+                  </b>
+                ),
+              },
+              { label: "Canal", render: (r) => notificationChannelLabels[r.channel] ?? r.channel },
               { label: "Destino", render: (r) => r.destination || "—" },
               {
                 label: "Estado",
                 render: (r) => (
                   <Pill tone={r.status === "sent" ? "ok" : r.status === "failed" ? "err" : "warn"}>
-                    {r.status}
+                    {notificationStatusLabels[r.status] ?? r.status}
                   </Pill>
                 ),
               },

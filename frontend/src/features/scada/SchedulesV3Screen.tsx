@@ -6,6 +6,22 @@ import { rcApi, type SchedulerJob } from "@/lib/api";
 import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats } from "./kit";
 
 type JobKind = "backup" | "report" | "notification";
+const jobLabels: Record<JobKind, string> = {
+  backup: "Backup",
+  report: "Relatório",
+  notification: "Notificação",
+};
+const outcomeLabels: Record<string, string> = {
+  OK: "Concluído",
+  ERROR: "Falha",
+  failed: "Falha",
+  queued: "Na fila",
+};
+function jobResultLabel(value: string | null | undefined) {
+  if (!value) return "—";
+  if (value === "OK enfileirado") return "Notificação colocada na fila";
+  return outcomeLabels[value] ?? value;
+}
 
 function fmtInterval(seconds: number) {
   if (seconds % 86400 === 0) return `${seconds / 86400} dia(s)`;
@@ -154,7 +170,7 @@ export function SchedulesV3Screen() {
     <ScreenBody>
       <Stats
         items={[
-          { icon: CalendarClock, label: "Jobs persistentes", value: rows.length },
+          { icon: CalendarClock, label: "Agendamentos cadastrados", value: rows.length },
           {
             icon: HardDriveDownload,
             label: "Backups",
@@ -173,8 +189,8 @@ export function SchedulesV3Screen() {
         ]}
       />
       <p className="rounded-md border border-alert/30 bg-alert/5 px-3 py-2 text-[11px] text-muted-foreground">
-        Scheduler fechado: aceita exclusivamente backup, relatório e notificação. START, STOP,
-        transferência, MCB, GCB e paralelismo não fazem parte deste motor.
+        O agendador executa somente backups, relatórios e envio de notificações. Não executa
+        comandos industriais como partida, parada, transferência ou disjuntores.
       </p>
       {error && (
         <p className="rounded-md border border-offline/40 bg-offline/10 p-3 text-sm text-offline">
@@ -272,7 +288,7 @@ export function SchedulesV3Screen() {
                 disabled={busy}
                 className="h-9 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"
               >
-                {busy ? "Salvando…" : editing ? "Salvar" : "Criar job"}
+                {busy ? "Salvando…" : editing ? "Salvar" : "Criar agendamento"}
               </button>
               {editing && (
                 <button
@@ -294,7 +310,7 @@ export function SchedulesV3Screen() {
           min="940px"
           columns={[
             { label: "Nome", render: (r) => <b>{r.name}</b> },
-            { label: "Tipo", render: (r) => <Pill>{r.kind}</Pill> },
+            { label: "Tipo", render: (r) => <Pill>{jobLabels[r.kind as JobKind] ?? r.kind}</Pill> },
             {
               label: "Intervalo",
               render: (r) => <span className="num">{fmtInterval(r.interval_seconds)}</span>,
@@ -305,7 +321,7 @@ export function SchedulesV3Screen() {
                 <span className="num">{new Date(r.next_run * 1000).toLocaleString("pt-BR")}</span>
               ),
             },
-            { label: "Último resultado", render: (r) => r.last_result || "—" },
+            { label: "Último resultado", render: (r) => jobResultLabel(r.last_result) },
             {
               label: "Estado",
               render: (r) => (
