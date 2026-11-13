@@ -74,13 +74,30 @@ export function ClientsScreen() {
   };
   const submit = async (event: FormEvent) => {
     event.preventDefault();
+    const plannedUnits = Number(units);
+    const plannedGenerators = Number(gens);
+    if (
+      !Number.isInteger(plannedUnits) ||
+      plannedUnits < 0 ||
+      plannedUnits > 100000 ||
+      !Number.isInteger(plannedGenerators) ||
+      plannedGenerators < 0 ||
+      plannedGenerators > 100000
+    ) {
+      setError("Informe quantidades inteiras entre 0 e 100.000 para unidades e geradores.");
+      return;
+    }
+    if (editing && !canEdit) {
+      setError("Seu perfil não possui permissão para editar clientes.");
+      return;
+    }
     setBusy(true);
     setError("");
     try {
       const payload = {
         name: name.trim(),
-        units: Number(units) || 0,
-        gens: Number(gens) || 0,
+        units: Number(units),
+        gens: Number(gens),
         sla: sla.trim(),
       };
       if (editing) await rcApi.clients.update(editing, payload);
@@ -149,6 +166,8 @@ export function ClientsScreen() {
               <input
                 type="number"
                 min="0"
+                max="100000"
+                step="1"
                 value={units}
                 onChange={(e) => setUnits(e.target.value)}
                 className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
@@ -159,6 +178,8 @@ export function ClientsScreen() {
               <input
                 type="number"
                 min="0"
+                max="100000"
+                step="1"
                 value={gens}
                 onChange={(e) => setGens(e.target.value)}
                 className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
@@ -291,8 +312,16 @@ export function UnitsScreen() {
     setError("");
     const lat = latitude.trim() ? Number(latitude) : null;
     const lng = longitude.trim() ? Number(longitude) : null;
-    if ((lat != null && !Number.isFinite(lat)) || (lng != null && !Number.isFinite(lng))) {
-      setError("Latitude/longitude inválidas.");
+    if (
+      (lat != null && (!Number.isFinite(lat) || lat < -90 || lat > 90)) ||
+      (lng != null && (!Number.isFinite(lng) || lng < -180 || lng > 180))
+    ) {
+      setError("Latitude deve estar entre -90 e 90; longitude entre -180 e 180.");
+      setBusy(false);
+      return;
+    }
+    if (editing && !canEdit) {
+      setError("Seu perfil não possui permissão para editar unidades.");
       setBusy(false);
       return;
     }
@@ -337,7 +366,7 @@ export function UnitsScreen() {
   const remove = async (row: OpsSite) => {
     if (
       !window.confirm(
-        `Excluir a unidade ${row.name}? Geradores, assets, equipamentos, OS ou agenda vinculados bloquearão a operação.`,
+        `Excluir a unidade ${row.name}? Geradores, ativos, equipamentos, ordens de serviço ou agenda vinculados bloquearão a operação.`,
       )
     )
       return;
@@ -440,6 +469,7 @@ export function UnitsScreen() {
               Latitude
               <input
                 inputMode="decimal"
+                aria-label="Latitude em graus decimais, entre -90 e 90"
                 value={latitude}
                 onChange={(e) => setLatitude(e.target.value)}
                 placeholder="-23.5505"
@@ -450,6 +480,7 @@ export function UnitsScreen() {
               Longitude
               <input
                 inputMode="decimal"
+                aria-label="Longitude em graus decimais, entre -180 e 180"
                 value={longitude}
                 onChange={(e) => setLongitude(e.target.value)}
                 placeholder="-46.6333"
