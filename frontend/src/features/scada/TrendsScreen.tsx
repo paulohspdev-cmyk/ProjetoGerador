@@ -4,7 +4,7 @@ import { useGenerators } from "@/features/generators/GeneratorsProvider";
 import { rcApi, type RapidMetric, type RapidTrend } from "@/lib/api";
 import { Panel, ScreenBody, Trend } from "./kit";
 import { shortTime } from "./operation-helpers";
-import { metricLabel } from "@/lib/system-labels";
+import { metricLabel } from "./system-labels";
 
 export function TrendsScreen() {
   const { generators } = useGenerators();
