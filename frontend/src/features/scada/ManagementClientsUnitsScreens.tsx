@@ -77,8 +77,12 @@ export function ClientsScreen() {
     const plannedUnits = Number(units);
     const plannedGenerators = Number(gens);
     if (
-      !Number.isInteger(plannedUnits) || plannedUnits < 0 || plannedUnits > 100000 ||
-      !Number.isInteger(plannedGenerators) || plannedGenerators < 0 || plannedGenerators > 100000
+      !Number.isInteger(plannedUnits) ||
+      plannedUnits < 0 ||
+      plannedUnits > 100000 ||
+      !Number.isInteger(plannedGenerators) ||
+      plannedGenerators < 0 ||
+      plannedGenerators > 100000
     ) {
       setError("Informe quantidades inteiras entre 0 e 100.000 para unidades e geradores.");
       return;
