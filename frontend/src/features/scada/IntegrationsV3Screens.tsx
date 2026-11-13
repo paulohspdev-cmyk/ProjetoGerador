@@ -50,11 +50,7 @@ export function EmailV3Screen() {
   useEffect(() => {
     void getStatus()
       .then((s) => setStatus(s.email))
-      .catch((e) =>
-        setError(
-          e instanceof Error ? e.message : "Falha ao consultar integração.",
-        ),
-      );
+      .catch((e) => setError(e instanceof Error ? e.message : "Falha ao consultar integração."));
   }, []);
   const test = async (e: FormEvent) => {
     e.preventDefault();
@@ -62,10 +58,7 @@ export function EmailV3Screen() {
     setBusy(true);
     setMessage("");
     try {
-      const result = await rcApi.notifications.test(
-        "email",
-        destination.trim(),
-      );
+      const result = await rcApi.notifications.test("email", destination.trim());
       setMessage(
         `Teste enfileirado #${result.id}. A fila de Notificações registra a entrega/tentativas.`,
       );
@@ -83,21 +76,14 @@ export function EmailV3Screen() {
           {
             icon: Mail,
             label: "SMTP",
-            value:
-              status === null
-                ? "N/D"
-                : status.configured
-                  ? "CONFIGURADO"
-                  : "NÃO CONFIGURADO",
+            value: status === null ? "N/D" : status.configured ? "CONFIGURADO" : "NÃO CONFIGURADO",
             tone: status?.configured ? "text-online" : undefined,
           },
         ]}
       />
       <ErrorBox error={error} />
       {status === null && !error && (
-        <p className="text-xs text-muted-foreground">
-          Consultando configuração do provedor…
-        </p>
+        <p className="text-xs text-muted-foreground">Consultando configuração do provedor…</p>
       )}
       <Panel title="E-mail / SMTP">
         <div className="grid gap-2 text-[12px] md:grid-cols-3">
@@ -111,11 +97,7 @@ export function EmailV3Screen() {
             <br />
             <b>
               {status?.port || "N/D"} ·{" "}
-              {status === null
-                ? "TLS N/D"
-                : status.startTls
-                  ? "STARTTLS"
-                  : "sem STARTTLS"}
+              {status === null ? "TLS N/D" : status.startTls ? "STARTTLS" : "sem STARTTLS"}
             </b>
           </div>
           <div className="rounded-md border border-border p-3">
@@ -125,8 +107,7 @@ export function EmailV3Screen() {
           </div>
         </div>
         <p className="mt-2 text-[11px] text-muted-foreground">
-          Credenciais permanecem no ambiente seguro do backend e nunca são
-          devolvidas ao navegador.
+          Credenciais permanecem no ambiente seguro do backend e nunca são devolvidas ao navegador.
         </p>
       </Panel>
       {can("manageUsers") && (
@@ -157,9 +138,7 @@ export function EmailV3Screen() {
 
 export function WhatsAppV3Screen() {
   const { can } = useAuth();
-  const [status, setStatus] = useState<IntegrationStatus["whatsapp"] | null>(
-    null,
-  );
+  const [status, setStatus] = useState<IntegrationStatus["whatsapp"] | null>(null);
   const [destination, setDestination] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -167,11 +146,7 @@ export function WhatsAppV3Screen() {
   useEffect(() => {
     void getStatus()
       .then((s) => setStatus(s.whatsapp))
-      .catch((e) =>
-        setError(
-          e instanceof Error ? e.message : "Falha ao consultar integração.",
-        ),
-      );
+      .catch((e) => setError(e instanceof Error ? e.message : "Falha ao consultar integração."));
   }, []);
   const test = async (e: FormEvent) => {
     e.preventDefault();
@@ -179,16 +154,11 @@ export function WhatsAppV3Screen() {
     setBusy(true);
     setMessage("");
     try {
-      const result = await rcApi.notifications.test(
-        "whatsapp",
-        destination.trim(),
-      );
+      const result = await rcApi.notifications.test("whatsapp", destination.trim());
       setMessage(`Teste enfileirado #${result.id}.`);
       setError("");
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Falha ao testar WhatsApp.",
-      );
+      setError(err instanceof Error ? err.message : "Falha ao testar WhatsApp.");
     } finally {
       setBusy(false);
     }
@@ -200,36 +170,23 @@ export function WhatsAppV3Screen() {
           {
             icon: MessageCircle,
             label: "WhatsApp",
-            value:
-              status === null
-                ? "N/D"
-                : status.configured
-                  ? "CONFIGURADO"
-                  : "NÃO CONFIGURADO",
+            value: status === null ? "N/D" : status.configured ? "CONFIGURADO" : "NÃO CONFIGURADO",
             tone: status?.configured ? "text-online" : undefined,
           },
         ]}
       />
       <ErrorBox error={error} />
       {status === null && !error && (
-        <p className="text-xs text-muted-foreground">
-          Consultando configuração do provedor…
-        </p>
+        <p className="text-xs text-muted-foreground">Consultando configuração do provedor…</p>
       )}
       <Panel title="Provedor WhatsApp">
         <div className="rounded-md border border-border p-3 text-[12px]">
           Endpoint: <b>{status?.host || "N/D"}</b> · credencial:{" "}
-          <b>
-            {status === null
-              ? "N/D"
-              : status.tokenConfigured
-                ? "configurada"
-                : "ausente"}
-          </b>
+          <b>{status === null ? "N/D" : status.tokenConfigured ? "configurada" : "ausente"}</b>
         </div>
         <p className="mt-2 text-[11px] text-muted-foreground">
-          O canal é exclusivamente de notificação. Mensagens recebidas não
-          executam START/STOP, disjuntores ou paralelismo.
+          O canal é exclusivamente de notificação. Mensagens recebidas não executam START/STOP,
+          disjuntores ou paralelismo.
         </p>
       </Panel>
       {can("manageUsers") && (
