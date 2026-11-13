@@ -2,7 +2,7 @@ import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { Cable, Cpu, Layers } from "lucide-react";
 
 import { useAuth } from "@/features/auth/AuthProvider";
-import { transportLabel } from "@/lib/system-labels";
+import { transportLabel } from "./system-labels";
 import {
   domainApi,
   type AssetV3,
