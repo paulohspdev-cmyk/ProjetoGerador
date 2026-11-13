@@ -3,8 +3,8 @@
 ## Correção de cadastro backend — CAD-05 e CAD-13 (13/11/2026; PR isolado)
 
 - O backend rejeita tag/site/controladora (criação) e tag/nome/site (edição) vazios após remoção de espaços. APIs retornam HTTP 422 e não persistem cadastros inválidos.
-- O PATCH genérico `/api/generators/{id}` rejeita alterações de `enabled` com HTTP 409; o fluxo administrativo específico de reconfiguração permanece o único meio autorizado de alterar o ciclo de vida industrial. Camada de persistência também recusa mudança direta de `enabled` fora do fluxo privilegiado.
-- Testes backend smoke simulam valores em branco, edição permitida sem mudança de estado, recusa de alteração de enabled e proteção da camada SQLite. Reconfiguração privilegiada coberta por teste próprio.
+- O PATCH genérico `/api/generators/{id}` rejeita alterações de `enabled` com HTTP 409; o fluxo administrativo específico de reconfiguração permanece o único meio autorizado de alterar o ciclo de vida industrial.
+- Testes backend smoke simulam valores em branco, edição permitida sem mudança de estado, recusa de alteração de enabled. Reconfiguração privilegiada coberta por teste próprio.
 - Domínio: backend/API do cadastro. Não modifica redes, bridge, Rapid, firmware, modems, 2FA, comandos START/STOP, banco de produção ou VM. Rollback: reverter PR após revisão de CI e segurança.
 
 ## Resultado da organização GitHub — encerramento da rodada de 12/11/2026
