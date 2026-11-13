@@ -278,9 +278,7 @@ export function MapScreen() {
                         ? "Crítica"
                         : siteStatus(selected) === "unknown"
                           ? "Sem estado confirmado"
-                          : siteStatus(row) === "unknown"
-                            ? "Sem estado confirmado"
-                            : "Sem gerador"}
+                          : "Sem gerador"}
                 </Pill>
               </div>
               <div className="grid grid-cols-3 gap-2 border-b border-border/60 py-4 text-center">
@@ -411,7 +409,9 @@ export function MapScreen() {
                       ? "Em alerta"
                       : siteStatus(row) === "offline"
                         ? "Crítica"
-                        : "Sem gerador"}
+                        : siteStatus(row) === "unknown"
+                          ? "Sem estado confirmado"
+                          : "Sem gerador"}
                 </Pill>
               ),
             },
