@@ -78,26 +78,17 @@ export function RolesScreen() {
             </thead>
             <tbody>
               {roles.map((role) => (
-                <tr
-                  key={role}
-                  className="border-b border-border/50 last:border-0"
-                >
+                <tr key={role} className="border-b border-border/50 last:border-0">
                   <td className="px-3 py-3 font-bold">{ROLE_LABEL[role]}</td>
                   <td className="num px-3 py-3 text-center">
-                    {
-                      users.filter((item) => item.active && item.role === role)
-                        .length
-                    }
+                    {users.filter((item) => item.active && item.role === role).length}
                   </td>
                   {permissionLabels.map((permission) => {
                     const allowed = ROLE_PERMS[role][permission.id];
                     return (
                       <td key={permission.id} className="px-3 py-3 text-center">
                         {allowed ? (
-                          <Check
-                            className="mx-auto size-4 text-online"
-                            aria-label="Permitido"
-                          />
+                          <Check className="mx-auto size-4 text-online" aria-label="Permitido" />
                         ) : (
                           <Minus
                             className="mx-auto size-4 text-muted-foreground"
@@ -113,9 +104,8 @@ export function RolesScreen() {
           </table>
         </div>
         <p className="mt-3 text-xs text-muted-foreground">
-          O perfil é atribuído individualmente na tela Usuários. Funções
-          industriais não liberadas pelo produto continuam indisponíveis mesmo
-          para o gestor do sistema.
+          O perfil é atribuído individualmente na tela Usuários. Funções industriais não liberadas
+          pelo produto continuam indisponíveis mesmo para o gestor do sistema.
         </p>
       </Panel>
     </ScreenBody>
@@ -140,10 +130,7 @@ export function AuditScreen() {
         if (mounted) setRows(items);
       })
       .catch((err) => {
-        if (mounted)
-          setError(
-            err instanceof Error ? err.message : "Falha ao carregar auditoria.",
-          );
+        if (mounted) setError(err instanceof Error ? err.message : "Falha ao carregar auditoria.");
       });
     return () => {
       mounted = false;
@@ -174,23 +161,17 @@ export function AuditScreen() {
           columns={[
             {
               label: "Quando",
-              render: (row) => (
-                <span className="num">{formatAuditDate(row.created_at)}</span>
-              ),
+              render: (row) => <span className="num">{formatAuditDate(row.created_at)}</span>,
             },
             { label: "Usuário", render: (row) => row.actor },
             {
               label: "Ação",
-              render: (row) => (
-                <span title={row.action}>{auditActionLabel(row.action)}</span>
-              ),
+              render: (row) => <span title={row.action}>{auditActionLabel(row.action)}</span>,
             },
             {
               label: "Tipo",
               render: (row) => (
-                <span title={row.entity_type}>
-                  {auditEntityLabel(row.entity_type)}
-                </span>
+                <span title={row.entity_type}>{auditEntityLabel(row.entity_type)}</span>
               ),
             },
             { label: "Alvo", render: (row) => <b>{row.entity_id}</b> },
