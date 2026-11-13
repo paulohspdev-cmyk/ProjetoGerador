@@ -177,7 +177,7 @@ export function DiagnosticsTable({ data }: { data: SystemDiagnostics }) {
           label: "Status",
           render: (r) => (
             <Tone tone={r.status === "active" || r.status === "OK" ? "ok" : "warn"}>
-              {r.status}
+              {lifecycleLabel(r.status)}
             </Tone>
           ),
         },
@@ -217,7 +217,7 @@ export function RapidScadaScreen() {
                 label: "Status",
                 render: (r) => (
                   <Tone tone={r.status === "active" || r.status === "OK" ? "ok" : "warn"}>
-                    {r.status}
+                    {lifecycleLabel(r.status)}
                   </Tone>
                 ),
               },
@@ -499,8 +499,8 @@ export function VersionScreen() {
             {[
               ["Aplicação", data.application],
               ["API", data.apiVersion],
-              ["Git", data.gitSha || "N/D"],
-              ["Branch", data.gitBranch || "N/D"],
+              ["Commit implantado (Git)", data.gitSha || "N/D"],
+              ["Branch informado pela API", data.gitBranch || "N/D"],
               ["Motor de telemetria", data.rapidScada || "N/D"],
             ].map(([label, value]) => (
               <div key={label} className="rounded-md border border-border p-3">
