@@ -53,6 +53,20 @@ class FieldDeviceCreate(BaseModel):
     metadata: dict = Field(default_factory=dict)
 
 
+class ModemAdmissionApprove(BaseModel):
+    name: str = Field(min_length=1, max_length=160)
+    model: str = Field(default="", max_length=160)
+    serial: str = Field(default="", max_length=160)
+    imei: str = Field(default="", max_length=64)
+    sim_iccid: str = Field(default="", max_length=100)
+    carrier: str = Field(default="", max_length=120)
+    metadata: dict = Field(default_factory=dict)
+
+
+class ModemAdmissionReject(BaseModel):
+    reason: str = Field(default="", max_length=500)
+
+
 class FieldDeviceUpdate(BaseModel):
     name: str | None = None
     site_id: str | None = None
@@ -163,6 +177,47 @@ def bridge_peers(
         return traffic_store.list_bridge_peers(limit=limit, remote_port=remote_port)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/api/modem-admissions")
+def modem_admissions(user: dict = Depends(require_admin)):
+    return platform_store.list_modem_admissions()
+
+
+@router.post("/api/modem-admissions/{remote_port}/approve")
+def modem_admission_approve(
+    remote_port: int,
+    payload: ModemAdmissionApprove,
+    user: dict = Depends(require_admin),
+):
+    try:
+        return platform_store.approve_modem_admission(
+            remote_port, payload.model_dump(), actor(user)
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post("/api/modem-admissions/{remote_port}/reject")
+def modem_admission_reject(
+    remote_port: int,
+    payload: ModemAdmissionReject,
+    user: dict = Depends(require_admin),
+):
+    try:
+        return platform_store.reject_modem_admission(
+            remote_port, payload.reason, actor(user)
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post("/api/modem-admissions/{remote_port}/reopen")
+def modem_admission_reopen(remote_port: int, user: dict = Depends(require_admin)):
+    try:
+        return platform_store.reopen_modem_admission(remote_port, actor(user))
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @router.get("/api/field-devices")
