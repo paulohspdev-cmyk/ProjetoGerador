@@ -1,4 +1,4 @@
-import type { Generator } from "@/data/generators";
+import { generatorDisplayStatus, type Generator } from "@/data/generators";
 
 export function fmt(n: number, d = 1) {
   return Number.isFinite(n) ? n.toFixed(d).replace(".", ",") : "N/D";
@@ -40,16 +40,20 @@ export function realAlarms(
 ): LiveAlarm[] {
   return generators.flatMap((g) => {
     const rows: Omit<LiveAlarm, "ack">[] = [];
-    if (g.status === "offline") {
+    const status = generatorDisplayStatus(g);
+    if (status === "offline" || status === "stale") {
       rows.push({
         id: `COMM-${g.id}`,
         gen: g.tag,
         site: g.site,
         severity: "falha",
-        message: g.lastError?.trim() || "Comunicação/telemetria indisponível",
+        message:
+          status === "stale"
+            ? "Telemetria expirada · última leitura não é atual"
+            : g.lastError?.trim() || "Comunicação/telemetria indisponível",
         since: "estado atual",
       });
-    } else if (g.status === "alerta") {
+    } else if (status === "alerta") {
       rows.push({
         id: `SCADA-${g.id}`,
         gen: g.tag,

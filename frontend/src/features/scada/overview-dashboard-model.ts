@@ -332,9 +332,10 @@ export function useOverviewDecisionModel() {
         offline: 0,
       };
       current.total += 1;
-      if (generator.status === "online") current.online += 1;
-      if (generator.status === "alerta") current.alert += 1;
-      if (generator.status === "offline") current.offline += 1;
+      const state = generatorDisplayStatus(generator);
+      if (state === "online") current.online += 1;
+      if (state === "alerta") current.alert += 1;
+      if (state === "offline" || state === "stale") current.offline += 1;
       grouped.set(generator.site, current);
     }
     return [...grouped.values()].sort((a, b) => b.total - a.total || a.site.localeCompare(b.site));

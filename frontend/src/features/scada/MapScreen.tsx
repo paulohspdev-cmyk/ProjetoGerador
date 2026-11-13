@@ -3,15 +3,17 @@ import { AlertTriangle, Building2, CircleOff, MapPin, MapPinned } from "lucide-r
 
 import { StatusPill } from "@/features/generators/StatusPill";
 import { useGenerators } from "@/features/generators/GeneratorsProvider";
+import { generatorDisplayStatus } from "@/data/generators";
 import { metricNumber } from "@/features/generators/generator-metrics";
 import { rcApi, type OpsSite } from "@/lib/api";
 import { OperationalMap, type OperationalMapSite } from "./OperationalMap";
 import { Panel, Pill, ScadaTable, ScreenBody, Stats } from "./kit";
 
-function siteStatus(row: { total: number; offline: number; alert: number }) {
+function siteStatus(row: { total: number; online: number; offline: number; alert: number }) {
   if (!row.total) return "empty" as const;
   if (row.offline) return "offline" as const;
   if (row.alert) return "alert" as const;
+  if (row.online !== row.total) return "unknown" as const;
   return "online" as const;
 }
 
@@ -58,9 +60,15 @@ export function MapScreen() {
         const measured = gens
           .map((generator) => metricNumber(generator, "power_kw", generator.load))
           .filter((value): value is number => value != null);
-        const online = gens.filter((generator) => generator.status === "online").length;
-        const alert = gens.filter((generator) => generator.status === "alerta").length;
-        const offline = gens.filter((generator) => generator.status === "offline").length;
+        const online = gens.filter(
+          (generator) => generatorDisplayStatus(generator) === "online",
+        ).length;
+        const alert = gens.filter(
+          (generator) => generatorDisplayStatus(generator) === "alerta",
+        ).length;
+        const offline = gens.filter((generator) =>
+          ["offline", "stale"].includes(generatorDisplayStatus(generator)),
+        ).length;
         return {
           ...site,
           gens,
@@ -208,6 +216,7 @@ export function MapScreen() {
                 <option value="alert">Em alerta</option>
                 <option value="offline">Crítica / offline</option>
                 <option value="empty">Sem gerador</option>
+                <option value="unknown">Sem estado confirmado</option>
               </select>
             </label>
             <button
@@ -267,7 +276,9 @@ export function MapScreen() {
                       ? "Em alerta"
                       : siteStatus(selected) === "offline"
                         ? "Crítica"
-                        : "Sem gerador"}
+                        : siteStatus(selected) === "unknown"
+                          ? "Sem estado confirmado"
+                          : "Sem gerador"}
                 </Pill>
               </div>
               <div className="grid grid-cols-3 gap-2 border-b border-border/60 py-4 text-center">
@@ -315,7 +326,10 @@ export function MapScreen() {
                       className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 py-2 text-xs"
                     >
                       <b className="truncate">{generator.tag}</b>
-                      <StatusPill status={generator.status} />
+                      <StatusPill
+                        status={generator.status}
+                        telemetryStale={generator.telemetryStale}
+                      />
                       <span className="num min-w-16 text-right text-muted-foreground">
                         {(() => {
                           const load = metricNumber(generator, "power_kw", generator.load);
@@ -395,7 +409,9 @@ export function MapScreen() {
                       ? "Em alerta"
                       : siteStatus(row) === "offline"
                         ? "Crítica"
-                        : "Sem gerador"}
+                        : siteStatus(row) === "unknown"
+                          ? "Sem estado confirmado"
+                          : "Sem gerador"}
                 </Pill>
               ),
             },
@@ -408,7 +424,7 @@ export function MapScreen() {
               ),
             },
             {
-              label: "Carga medida",
+              label: "Potência medida dos geradores",
               render: (row) => (
                 <span className="num">
                   {row.load == null ? "N/D" : `${row.load.toFixed(0)} kW`}
