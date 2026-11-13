@@ -47,7 +47,6 @@ function supplyState(g: Generator) {
   return "Ambos abertos";
 }
 
-
 function metricUnit(g: Generator, key: string, fallback = "") {
   const unit = g.metricUnits?.[key];
   return typeof unit === "string" && unit.trim() ? unit.trim() : fallback;
@@ -98,9 +97,15 @@ function EnergyTable({
 
 export function EnergyRede() {
   const { generators } = useGenerators();
-  const mainsVoltage = generators.filter((g) => g.powerTopology !== "genset_only" && hasMetric(g, "mains_voltage_l1"));
-  const mainsFreq = generators.filter((g) => g.powerTopology !== "genset_only" && hasMetric(g, "mains_frequency"));
-  const mcb = generators.filter((g) => g.powerTopology !== "genset_only" && breakerClosed(g, "mcb_closed") != null);
+  const mainsVoltage = generators.filter(
+    (g) => g.powerTopology !== "genset_only" && hasMetric(g, "mains_voltage_l1"),
+  );
+  const mainsFreq = generators.filter(
+    (g) => g.powerTopology !== "genset_only" && hasMetric(g, "mains_frequency"),
+  );
+  const mcb = generators.filter(
+    (g) => g.powerTopology !== "genset_only" && breakerClosed(g, "mcb_closed") != null,
+  );
   return (
     <ScreenBody>
       <Stats
@@ -118,7 +123,10 @@ export function EnergyRede() {
           { icon: Power, label: "MCB monitorados", value: `${mcb.length}/${generators.length}` },
         ]}
       />
-      <p className="text-xs text-muted-foreground">Rede exibida somente quando existem canais reais de leitura. Em topologias sem rede, não inferimos tensão, frequência ou MCB.</p>
+      <p className="text-xs text-muted-foreground">
+        Rede exibida somente quando existem canais reais de leitura. Em topologias sem rede, não
+        inferimos tensão, frequência ou MCB.
+      </p>
       <EnergyTable
         principal="Tensão de rede"
         secondary="Frequência da rede"
@@ -126,9 +134,18 @@ export function EnergyRede() {
         rows={generators.map((g) => ({
           id: g.id,
           gen: g.tag,
-          a: g.powerTopology === "genset_only" ? "Não aplicável" : valueOrDash(g, "mains_voltage_l1", g.mains.l1, "V", 1),
-          b: g.powerTopology === "genset_only" ? "Não aplicável" : valueOrDash(g, "mains_frequency", g.mainsFrequency, "Hz", 2),
-          c: g.powerTopology === "genset_only" ? "Sem rede nesta topologia" : breakerLabel(breakerClosed(g, "mcb_closed"), "MCB"),
+          a:
+            g.powerTopology === "genset_only"
+              ? "Não aplicável"
+              : valueOrDash(g, "mains_voltage_l1", g.mains.l1, "V", 1),
+          b:
+            g.powerTopology === "genset_only"
+              ? "Não aplicável"
+              : valueOrDash(g, "mains_frequency", g.mainsFrequency, "Hz", 2),
+          c:
+            g.powerTopology === "genset_only"
+              ? "Sem rede nesta topologia"
+              : breakerLabel(breakerClosed(g, "mcb_closed"), "MCB"),
         }))}
       />
     </ScreenBody>
@@ -174,9 +191,10 @@ export function EnergyGens() {
           gen: g.tag,
           a: valueOrDash(g, "power_kw", g.load, "kW", 1),
           b: valueOrDash(g, "frequency", g.frequency, "Hz", 2),
-          c: breakerClosed(g, "gcb_closed") != null
-            ? breakerLabel(breakerClosed(g, "gcb_closed"), "GCB")
-            : valueOrDash(g, "rpm", g.rpm, "rpm", 0),
+          c:
+            breakerClosed(g, "gcb_closed") != null
+              ? breakerLabel(breakerClosed(g, "gcb_closed"), "GCB")
+              : valueOrDash(g, "rpm", g.rpm, "rpm", 0),
         }))}
       />
     </ScreenBody>
@@ -210,7 +228,10 @@ export function EnergyLoad() {
           },
         ]}
       />
-      <p className="text-xs text-muted-foreground">O kW do gerador indica geração medida, não a demanda total da planta. Consumo da instalação exige medidor específico de carga/rede; não estimamos o que não foi medido.</p>
+      <p className="text-xs text-muted-foreground">
+        O kW do gerador indica geração medida, não a demanda total da planta. Consumo da instalação
+        exige medidor específico de carga/rede; não estimamos o que não foi medido.
+      </p>
       <EnergyTable principal="Potência do gerador" secondary="Unidade" state="Origem" rows={rows} />
     </ScreenBody>
   );
@@ -235,11 +256,22 @@ export function EnergyTransfer() {
             label: "MCB monitorados",
             value: generators.filter((g) => breakerClosed(g, "mcb_closed") != null).length,
           },
-          { icon: Fan, label: "GCB monitorados", value: generators.filter((g) => breakerClosed(g, "gcb_closed") != null).length },
+          {
+            icon: Fan,
+            label: "GCB monitorados",
+            value: generators.filter((g) => breakerClosed(g, "gcb_closed") != null).length,
+          },
         ]}
       />
-      <p className="text-xs text-muted-foreground">Fechamento de disjuntor não confirma sozinho o caminho real da energia. O estado é descritivo e requer topologia homologada.</p>
-      <EnergyTable principal="MCB" secondary="GCB" state="Estado dos disjuntores" rows={generators.map((g) => {
+      <p className="text-xs text-muted-foreground">
+        Fechamento de disjuntor não confirma sozinho o caminho real da energia. O estado é
+        descritivo e requer topologia homologada.
+      </p>
+      <EnergyTable
+        principal="MCB"
+        secondary="GCB"
+        state="Estado dos disjuntores"
+        rows={generators.map((g) => {
           const mcb = breakerLabel(breakerClosed(g, "mcb_closed"), "MCB");
           const gcb = breakerLabel(breakerClosed(g, "gcb_closed"), "GCB");
           return {
@@ -257,7 +289,9 @@ export function EnergyTransfer() {
 
 export function EnergyParallel() {
   const { generators } = useGenerators();
-  const capable = generators.filter((g) => metricNumber(g, "paralleling_active", undefined) != null);
+  const capable = generators.filter(
+    (g) => metricNumber(g, "paralleling_active", undefined) != null,
+  );
   return (
     <ScreenBody>
       <Stats
@@ -274,7 +308,10 @@ export function EnergyParallel() {
           },
         ]}
       />
-      <p className="text-xs text-muted-foreground">Paralelismo e sincronismo são exibidos somente com canais homologados e leituras atuais. GCB fechado não prova, isoladamente, operação em paralelo.</p>
+      <p className="text-xs text-muted-foreground">
+        Paralelismo e sincronismo são exibidos somente com canais homologados e leituras atuais. GCB
+        fechado não prova, isoladamente, operação em paralelo.
+      </p>
       <EnergyTable
         principal="Paralelismo"
         secondary="Sincronismo"
@@ -286,7 +323,12 @@ export function EnergyParallel() {
             id: g.id,
             gen: g.tag,
             a: parallel === 1 ? "Ativo (medido)" : parallel === 0 ? "Inativo (medido)" : "N/D",
-            b: sync === 1 ? "Sincronizado (medido)" : sync === 0 ? "Sem sincronismo (medido)" : "N/D",
+            b:
+              sync === 1
+                ? "Sincronizado (medido)"
+                : sync === 0
+                  ? "Sem sincronismo (medido)"
+                  : "N/D",
             c: `${valueOrDash(g, "frequency", g.frequency, "Hz", 2)} · ${valueOrDash(g, "rpm", g.rpm, "rpm", 0)}`,
           };
         })}
