@@ -3,6 +3,7 @@ import { Cable, Cpu, Layers } from "lucide-react";
 
 import { useAuth } from "@/features/auth/AuthProvider";
 import { transportLabel } from "./system-labels";
+import { emptyTopology, errorText, type ControllerRow, type ConnectionRow } from "./controller-lifecycle-state";
 import {
   domainApi,
   type AssetV3,
@@ -12,27 +13,6 @@ import {
 } from "@/lib/domain-api";
 import { ControllersV3Screen } from "./ControllersV3Screen";
 import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats } from "./kit";
-
-const emptyTopology: TopologyV3 = {
-  assets: [],
-  links: [],
-  counts: { assets: 0, controllers: 0, connections: 0, links: 0 },
-};
-
-function errorText(error: unknown) {
-  return error instanceof Error ? error.message : "Falha na operação.";
-}
-
-type ControllerRow = ControllerInstanceV3 & {
-  legacy: boolean;
-  assetTag: string;
-};
-
-type ConnectionRow = ControllerConnectionV3 & {
-  legacy: boolean;
-  assetTag: string;
-  controllerModel: string;
-};
 
 export function ControllersLifecycleScreen() {
   const { can } = useAuth();
