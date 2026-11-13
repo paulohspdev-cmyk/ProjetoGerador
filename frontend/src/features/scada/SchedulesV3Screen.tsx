@@ -7,10 +7,15 @@ import { ActionBtn, Panel, Pill, ScadaTable, ScreenBody, Stats } from "./kit";
 
 type JobKind = "backup" | "report" | "notification";
 const jobLabels: Record<JobKind, string> = {
-  backup: "Backup", report: "Relatório", notification: "Notificação",
+  backup: "Backup",
+  report: "Relatório",
+  notification: "Notificação",
 };
 const outcomeLabels: Record<string, string> = {
-  OK: "Concluído", ERROR: "Falha", failed: "Falha", queued: "Na fila",
+  OK: "Concluído",
+  ERROR: "Falha",
+  failed: "Falha",
+  queued: "Na fila",
 };
 function jobResultLabel(value: string | null | undefined) {
   if (!value) return "—";
