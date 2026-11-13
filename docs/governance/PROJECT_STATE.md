@@ -1,5 +1,13 @@
 # Estado oficial do projeto
 
+## Frontend: controles administrativos de geradores (13/11/2026; PR encadeado)
+
+- A caixa "Cadastro ativo" da tela Editar gerador agora é interativa apenas para administradores. O perfil "cadastro", que pode editar nome, unidade e dados cadastrais, vê o estado como leitura e não solicita reconfiguração industrial.
+- A proteção do frontend complementa o bloqueio real na API/DB do PR #255; não substitui autorização do backend.
+- Novo E2E testa ambos os perfis: administrador visualiza a caixa de ativação; perfil cadastro não a visualiza, consegue editar o nome e preserva `enabled=true`.
+- Testes em cópia descartável: `npm run check` e `npm audit --audit-level=high` aprovados. CI/E2E no GitHub ainda necessários.
+- Domínio exclusivo: frontend de edição de geradores. Nenhuma mudança de comando, Rapid, modem, DB de produção ou VM. Rollback: reverter PR de frontend.
+
 ## Persistência de estado industrial — CAD-13-DB (13/11/2026; PR encadeado)
 
 - Camada `db.update_generator` impede mudança de `enabled` fora de fluxos com `allow_industrial_identity=True`, mesmo se um chamador interno ignorar a restrição HTTP. O fluxo `lifecycle/reconfigure` continua usando a autorização administrativa e o rollback existentes.
