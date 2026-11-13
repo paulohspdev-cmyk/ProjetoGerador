@@ -28,4 +28,3 @@ export function rulePartLabel(text: string, labels: Record<string, string>) {
   const value = text.slice(separator + 1);
   return `${labels[code] ?? code}: ${value}`;
 }
-
