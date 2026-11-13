@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class LoginRequest(BaseModel):
@@ -40,6 +40,24 @@ class GeneratorCreate(BaseModel):
     fuelCapacityLiters: float | None = Field(default=None, gt=0, le=100000)
     powerTopology: Literal["auto", "mains_genset", "genset_only"] = "auto"
     enabled: bool = True
+
+    @field_validator("tag", "site", "controller")
+    @classmethod
+    def require_nonblank_generator_field(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("Campo obrigatório do gerador não pode conter apenas espaços")
+        return cleaned
+
+    @field_validator("name")
+    @classmethod
+    def require_nonblank_generator_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("Nome do gerador não pode conter apenas espaços")
+        return cleaned
 
     @model_validator(mode="after")
     def normalize_controller(self):
@@ -115,6 +133,16 @@ class GeneratorUpdate(BaseModel):
     fuelCapacityLiters: float | None = Field(default=None, gt=0, le=100000)
     powerTopology: Literal["auto", "mains_genset", "genset_only"] | None = None
     enabled: bool | None = None
+
+    @field_validator("tag", "name", "site")
+    @classmethod
+    def require_nonblank_generator_update(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("Campo obrigatório do gerador não pode conter apenas espaços")
+        return cleaned
 
     @model_validator(mode="after")
     def validate_transport(self):

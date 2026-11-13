@@ -48,6 +48,9 @@ Toda correção deve acrescentar ou reforçar uma linha desta matriz.
 
 | SEC-API-001 | API externa | Bearer ausente, vazio ou malformado retorna HTTP 401, nunca 500 | Backend audit_regressions.py + testes da API |
 
+| CAD-05 | Cadastro e edição | Campos obrigatórios apenas com espaços resultam em HTTP 422, sem persistência | `backend/tests/smoke.py` |
+| CAD-13 | Estado industrial | PATCH cadastral não altera `enabled`, retornando 409; reconfiguração privilegiada permanece funcional | `backend/tests/smoke.py` e `backend/tests/reconfigure_transaction.py` |
+
 ## Regra
 
 Não remover um teste de regressão para fazer o build passar. Se o contrato mudou de propósito, alterar primeiro o contrato/documentação e registrar a decisão.

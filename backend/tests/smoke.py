@@ -1,4 +1,5 @@
 import json
+import sqlite3
 import os
 import tempfile
 from pathlib import Path
@@ -113,6 +114,18 @@ with TestClient(app) as client:
     ).json()
     assert modem["status"] == "approved_unlinked"
 
+    # CAD-05: valores compostos apenas de espaços não são campos válidos.
+    base_generator = {
+        "tag": "GEN-BLANK",
+        "site": "Teste",
+        "controller": "ComAp InteliGen 200",
+        "transport": "reverse_tcp",
+        "listenPort": 15001,
+    }
+    for invalid_field in ("tag", "site", "controller"):
+        invalid_payload = {**base_generator, invalid_field: "   "}
+        expect(client.post("/api/generators", json=invalid_payload), 422)
+
     generator = expect(
         client.post(
             "/api/generators",
@@ -131,6 +144,31 @@ with TestClient(app) as client:
     ).json()
     assert generator["tag"] == "GEN001"
     assert generator["rapidDeviceNum"] == 200
+
+    # CAD-13: PATCH genérico nunca pode alterar o estado de habilitação,
+    # mesmo que o usuário possua permissão de edição cadastral.
+    expect(client.patch(f"/api/generators/{generator['id']}", json={"enabled": False}), 409)
+    assert db.get_generator(generator["id"])["enabled"] is True
+    try:
+        db.update_generator(generator["id"], {"enabled": False}, actor="smoke")
+    except sqlite3.IntegrityError:
+        pass
+    else:
+        raise AssertionError("Persistência direta ignorou a proteção de ciclo de vida")
+    assert db.get_generator(generator["id"])["enabled"] is True
+    for invalid_field in ("tag", "name", "site"):
+        expect(
+            client.patch(
+                f"/api/generators/{generator['id']}", json={invalid_field: "   "}
+            ),
+            422,
+        )
+    expect(
+        client.patch(
+            f"/api/generators/{generator['id']}", json={"name": generator["name"]}
+        ),
+        200,
+    )
 
     # O smoke representa runtime provisionado; o binding vivo pertence ao DATA_DIR,
     # nunca ao rapid/bindings.json canônico do repositório.

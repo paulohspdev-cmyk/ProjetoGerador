@@ -433,6 +433,11 @@ def generator_create(payload: GeneratorCreate, user: dict = Depends(require_crea
 
 @app.patch("/api/generators/{generator_id}")
 def generator_update(generator_id: str, payload: GeneratorUpdate, user: dict = Depends(require_edit)):
+    if payload.enabled is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="Ativação e desativação exigem o fluxo administrativo de reconfiguração industrial.",
+        )
     actor_name = actor(user)
     try:
         updated = db.update_generator(generator_id, payload.to_db(), actor=actor_name)

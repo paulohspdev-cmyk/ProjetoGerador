@@ -663,6 +663,10 @@ def update_generator(
                 "Identidade industrial de gerador provisionado não pode ser alterada diretamente. "
                 "Deprovisione com preservação de histórico antes de mudar tag/controladora/transporte/porta/Unit/Device."
             )
+        if key == "enabled" and value != current_value and not allow_industrial_identity:
+            raise sqlite3.IntegrityError(
+                "Estado de habilitação deve ser alterado pelo fluxo industrial de reconfiguração"
+            )
         if value == current_value:
             continue
         fields.append(f"{key}=?")
