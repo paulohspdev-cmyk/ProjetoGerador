@@ -1,7 +1,7 @@
-import type { BridgePeerObservation } from "@/lib/api";
+import type { ModemAdmission } from "./modem-admission-api";
 import { ActionBtn, Panel, Pill, ScadaTable } from "./kit";
 
-export type ModemAdmissionRow = BridgePeerObservation & { id: string };
+export type ModemAdmissionRow = ModemAdmission & { id: string };
 
 function dateTime(epoch: number | null | undefined) {
   if (!epoch) return "—";
@@ -14,8 +14,8 @@ export function ModemAdmissionPanel({
   onReject,
 }: {
   rows: ModemAdmissionRow[];
-  onApprove: (peer: BridgePeerObservation) => void;
-  onReject: (peer: BridgePeerObservation) => void;
+  onApprove: (peer: ModemAdmission) => void;
+  onReject: (peer: ModemAdmission) => void;
 }) {
   return (
     <Panel title="Aguardando aprovação">
@@ -33,11 +33,12 @@ export function ModemAdmissionPanel({
             {
               label: "Último acesso",
               render: (peer) => {
-                const connected = Date.now() / 1000 - peer.lastSeenAt <= 30;
+                const recentlySeen =
+                  peer.lastSeenAt > 0 && Date.now() / 1000 - peer.lastSeenAt <= 30;
                 return (
                   <span className="flex flex-wrap items-center gap-2">
-                    <Pill tone={connected ? "ok" : "muted"}>
-                      {connected ? "Conectado" : "Sem atividade"}
+                    <Pill tone={recentlySeen ? "info" : "muted"}>
+                      {recentlySeen ? "Observação recente" : "Sem observação recente"}
                     </Pill>
                     <span>{dateTime(peer.lastSeenAt)}</span>
                   </span>

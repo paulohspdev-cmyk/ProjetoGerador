@@ -26,6 +26,7 @@ export function CommunicationScreen() {
                 rapidSource &&
                 !g.telemetryStale &&
                 (g.status === "online" || g.status === "alerta");
+              const measured = live && (g.definedMetrics ?? g.availableMetrics ?? []).length > 0;
               const endpoint =
                 g.transport === "reverse_tcp" && g.listenPort != null
                   ? `Porta reversa ${g.listenPort}`
@@ -34,14 +35,26 @@ export function CommunicationScreen() {
                 <div key={g.id} className="rounded-md border border-border p-3">
                   <div className="flex items-center justify-between gap-2">
                     <b>{g.tag}</b>
-                    <Pill tone={live ? "ok" : rapidSource && g.telemetryStale ? "warn" : "muted"}>
-                      {live
-                        ? "ATIVA"
-                        : rapidSource && g.telemetryStale
-                          ? "EXPIRADA"
-                          : rapidSource
-                            ? "INDISPONÍVEL"
-                            : "N/D"}
+                    <Pill
+                      tone={
+                        measured
+                          ? "ok"
+                          : live
+                            ? "warn"
+                            : rapidSource && g.telemetryStale
+                              ? "warn"
+                              : "muted"
+                      }
+                    >
+                      {measured
+                        ? "TELEMETRIA RECEBIDA"
+                        : live
+                          ? "CONECTADO · SEM MEDIÇÃO"
+                          : rapidSource && g.telemetryStale
+                            ? "TELEMETRIA EXPIRADA"
+                            : rapidSource
+                              ? "TELEMETRIA INDISPONÍVEL"
+                              : "FONTE NÃO CONFIGURADA"}
                     </Pill>
                   </div>
                   <p className="mt-1 text-[11px] text-muted-foreground">{g.controller}</p>
