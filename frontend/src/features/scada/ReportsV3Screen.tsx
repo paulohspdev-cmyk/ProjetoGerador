@@ -34,6 +34,8 @@ export function ReportsV3Screen() {
 
   const create = async (e: FormEvent) => {
     e.preventDefault();
+    if (busy) return;
+    setError("");
     setBusy(true);
     try {
       const created = await rcApi.reports.create({
