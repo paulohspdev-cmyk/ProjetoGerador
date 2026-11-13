@@ -19,11 +19,18 @@ const actionLabels: Record<string, string> = {
   work_order: "Criar ordem de serviço",
 };
 const notificationStatusLabels: Record<string, string> = {
-  queued: "Na fila", retry: "Nova tentativa", sending: "Enviando",
-  sent: "Enviada", failed: "Falha", cancelled: "Cancelada",
+  queued: "Na fila",
+  retry: "Nova tentativa",
+  sending: "Enviando",
+  sent: "Enviada",
+  failed: "Falha",
+  cancelled: "Cancelada",
 };
 const notificationChannelLabels: Record<string, string> = {
-  panel: "Painel", email: "E-mail", whatsapp: "WhatsApp", webhook: "Webhook",
+  panel: "Painel",
+  email: "E-mail",
+  whatsapp: "WhatsApp",
+  webhook: "Webhook",
 };
 function rulePartLabel(text: string, labels: Record<string, string>) {
   const separator = text.indexOf(":");
@@ -194,8 +201,8 @@ export function RulesScreen() {
       />
       <p className="rounded-md border border-alert/30 bg-alert/5 px-3 py-2 text-[11px] text-muted-foreground">
         As regras podem avisar quando um gerador conectar, perder a comunicação ou entrar em alerta,
-        e podem gerar uma ordem de serviço. Este recurso não executa partida, parada ou comandos
-        de disjuntores.
+        e podem gerar uma ordem de serviço. Este recurso não executa partida, parada ou comandos de
+        disjuntores.
       </p>
       {error && <p className="text-[11px] text-offline">{error}</p>}
       {admin && (
@@ -281,21 +288,34 @@ export function RulesScreen() {
               { label: "Regra", render: (r) => <b>{r.name}</b> },
               {
                 label: "Gatilho",
-                render: (r) => <span className="num text-[11px]">{rulePartLabel(r.trigger, triggerLabels)}</span>,
+                render: (r) => (
+                  <span className="num text-[11px]">{rulePartLabel(r.trigger, triggerLabels)}</span>
+                ),
               },
-              { label: "Ação", render: (r) => <span className="num text-[11px]">{rulePartLabel(r.action, actionLabels)}</span> },
+              {
+                label: "Ação",
+                render: (r) => (
+                  <span className="num text-[11px]">{rulePartLabel(r.action, actionLabels)}</span>
+                ),
+              },
               {
                 label: "Homologação",
                 render: (r) => (
                   <Pill tone={r.safetyState === "approved_nonindustrial" ? "ok" : "warn"}>
-                    {r.safetyState === "approved_nonindustrial" ? "Aprovada para avisos/OS" : r.safetyState === "draft" || !r.safetyState ? "Pendente de aprovação" : r.safetyState}
+                    {r.safetyState === "approved_nonindustrial"
+                      ? "Aprovada para avisos/OS"
+                      : r.safetyState === "draft" || !r.safetyState
+                        ? "Pendente de aprovação"
+                        : r.safetyState}
                   </Pill>
                 ),
               },
               {
                 label: "Estado",
                 render: (r) => (
-                  <Pill tone={r.enabled ? "ok" : "muted"}>{r.enabled ? "Ativa" : "Desativada"}</Pill>
+                  <Pill tone={r.enabled ? "ok" : "muted"}>
+                    {r.enabled ? "Ativa" : "Desativada"}
+                  </Pill>
                 ),
               },
               {
@@ -332,7 +352,11 @@ export function ExerciseScreen() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const exercises = useMemo(
-    () => agenda.filter((item) => item.kind === "exercise" || (item.title || "").toLowerCase().includes("exercício")),
+    () =>
+      agenda.filter(
+        (item) =>
+          item.kind === "exercise" || (item.title || "").toLowerCase().includes("exercício"),
+      ),
     [agenda],
   );
 
@@ -342,7 +366,12 @@ export function ExerciseScreen() {
     setBusy(true);
     setError("");
     try {
-      await rcApi.agenda.create({ title: "Exercício de gerador (planejamento)", when, site, kind: "exercise" });
+      await rcApi.agenda.create({
+        title: "Exercício de gerador (planejamento)",
+        when,
+        site,
+        kind: "exercise",
+      });
       setWhen("");
       setSite("");
       await refresh();
@@ -521,7 +550,18 @@ export function NotificationsScreen() {
           <ScadaTable
             rows={rows.map((r) => ({ ...r, id: String(r.id) }))}
             columns={[
-              { label: "Evento", render: (r) => <b title={r.event_type}>{r.event_type === "system.test" ? "Teste do sistema" : r.event_type === "automation.rule" ? "Regra de automação" : r.event_type}</b> },
+              {
+                label: "Evento",
+                render: (r) => (
+                  <b title={r.event_type}>
+                    {r.event_type === "system.test"
+                      ? "Teste do sistema"
+                      : r.event_type === "automation.rule"
+                        ? "Regra de automação"
+                        : r.event_type}
+                  </b>
+                ),
+              },
               { label: "Canal", render: (r) => notificationChannelLabels[r.channel] ?? r.channel },
               { label: "Destino", render: (r) => r.destination || "—" },
               {
