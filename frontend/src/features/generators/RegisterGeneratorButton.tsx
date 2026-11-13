@@ -39,7 +39,7 @@ export function RegisterGeneratorButton({
   touchFriendly?: boolean | undefined;
   onNavigate?: (() => void) | undefined;
 }) {
-  const { user } = useAuth();
+  const { user, can } = useAuth();
   const { generators, refresh } = useGenerators();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);
@@ -181,7 +181,9 @@ export function RegisterGeneratorButton({
     setError(null);
     try {
       await applyTransportConfig(createdId);
-      await industrialApi.lifecycle.provision(createdId);
+      if (selectedController?.provisionable) {
+        await industrialApi.lifecycle.provision(createdId);
+      }
       await refresh();
       reset();
       setOpen(false);
@@ -197,6 +199,10 @@ export function RegisterGeneratorButton({
     if (step !== 3 || saving) return;
     const submitter = (event.nativeEvent as SubmitEvent).submitter;
     if (submitter?.getAttribute("data-rc-register-confirm") !== "true") return;
+    if (!can("create")) {
+      setError("Seu perfil não possui permissão para cadastrar geradores.");
+      return;
+    }
     if (createdId) {
       await retryProvision();
       return;
@@ -295,6 +301,8 @@ export function RegisterGeneratorButton({
       setSaving(false);
     }
   };
+
+  if (!can("create")) return null;
 
   return (
     <>
