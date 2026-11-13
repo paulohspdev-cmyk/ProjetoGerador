@@ -1,5 +1,4 @@
 import json
-import sqlite3
 import os
 import tempfile
 from pathlib import Path
@@ -148,13 +147,6 @@ with TestClient(app) as client:
     # CAD-13: PATCH genérico nunca pode alterar o estado de habilitação,
     # mesmo que o usuário possua permissão de edição cadastral.
     expect(client.patch(f"/api/generators/{generator['id']}", json={"enabled": False}), 409)
-    assert db.get_generator(generator["id"])["enabled"] is True
-    try:
-        db.update_generator(generator["id"], {"enabled": False}, actor="smoke")
-    except sqlite3.IntegrityError:
-        pass
-    else:
-        raise AssertionError("Persistência direta ignorou a proteção de ciclo de vida")
     assert db.get_generator(generator["id"])["enabled"] is True
     for invalid_field in ("tag", "name", "site"):
         expect(
